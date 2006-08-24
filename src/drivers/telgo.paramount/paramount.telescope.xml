@@ -1,0 +1,50 @@
+<?xml version="1.0"?>
+
+<driver>
+
+  <name>Paramount</name>
+  <type>Telescope</type>
+
+  <cmdline>
+telgo.paramount.py $server:$port $ra $dec
+  </cmdline>
+
+  <parameters>
+     <parameter>
+        <name>server</name>
+        <type>str</type>
+        <default>localhost</default>
+        <doc>Server IP address.</doc>
+     </parameter>
+
+     <parameter>
+        <name>port</name>
+        <type>int</type>
+        <default>10000</default>
+        <doc>Server port.</doc>
+     </parameter>
+
+     <parameter>
+        <name>ra</name>
+        <type>str</type>
+        <default>00:00:00</default>
+        <doc>RA to slew. Hours mode.</doc>
+     </parameter>
+
+     <parameter>
+        <name>dec</name>
+        <type>str</type>
+        <default>00:00:00</default>
+        <doc>DEC to slew. Sexagesimal mode.</doc>
+     </parameter>
+
+     <parameter>
+        <name>verbose</name>
+        <type>bool</type>
+        <default>True</default>
+        <doc>Verbose mode.</doc>
+     </parameter>
+
+  </parameters>
+
+</driver>

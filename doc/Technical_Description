@@ -1,0 +1,34 @@
+Instruments are controlled by a daemon. These daemons are 
+composed by three programs: 
+ 
+1. A low level driver program, which interfaces to the hardware 
+such as a telescope or CCD camera. All the hardware-specific 
+code is kept in this level. 
+ 
+2. A generic instrument daemon. This program sends requests to 
+the driver using a standard "protocol". 
+ 
+3. A communication daemon - the Secretary. The instrument 
+daemon feeds the secretary with its status. All other instruments
+that need to know the status of this instrument, will talk to
+this
+program. 
+ 
+In our first approach there are three instruments. A telescope 
+(Meade LX-200), a CCD camera (SBIG ST-7E) and a "virtual"
+instrument called Synchronizer, which takes care of scheduling 
+of observations. It receives observational data (coordinates, 
+imaging information, etc) from a web interface. 
+ 
+One important character of the instrument control daemons is 
+that they do not receive commands, but rather take their 
+decisions based on the status of the rest of the observatory. We 
+believe that with this approach we avoid a super-complex 
+control program that takes care of everything, having instead
+the
+"intelligence" distributed through the various daemons.
+ 
+All the programs are being written in C/C++, and some scripts in 
+python and PHP. The communication is made through network 
+sockets, using the Simple Sockets Library. Please see 
+http://users.erols.com/astronaut/ssl/ 

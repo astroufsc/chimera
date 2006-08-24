@@ -1,0 +1,92 @@
+<?xml version="1.0"?>
+
+<driver>
+
+  <name>SBIG</name>
+  <type>Camera</type>
+
+  <cmdline>
+camfits.st7 --device $device --CCD $ccd --filter $filter --exptime $exp_time --nexp $n_exp --openshutter $shutter --interval $interval --window $window --binning $binning --output $output
+  </cmdline>
+
+  <parameters>
+     <parameter>
+        <name>device</name>
+        <type>int</type>
+        <default>0</default>
+        <doc>Device to connect. 0 = USB, 1 = LPT1, 2 = LPT2, ...</doc>
+     </parameter>
+
+     <parameter>
+        <name>ccd</name>
+        <type>int</type>
+        <default>0</default>
+        <doc>CCD chip to use. 0 = Imaging, 1 = Tracking.</doc>
+     </parameter>
+
+     <parameter>
+        <name>filter</name>
+        <type>str</type>
+        <default>clear</default>
+        <doc>Filter to use. Names come from filter device used. (Always will exists a clear one).</doc>
+     </parameter>
+
+     <parameter>
+        <name>exp_time</name>
+        <type>float</type>
+        <default>1.0</default>
+        <doc>Integration time in seconds. Min and max comes from CCDcap.</doc>
+     </parameter>
+
+     <parameter>
+        <name>n_exp</name>
+        <type>int</type>
+        <default>1</default>
+        <doc>Number of frames to take.</doc>
+     </parameter>
+
+     <parameter>
+        <name>shutter</name>
+        <type>bool</type>
+        <default>True</default>
+        <doc>Open the shutter?.</doc>
+     </parameter>
+
+     <parameter>
+        <name>interval</name>
+        <type>float</type>
+        <default>1.0</default>
+        <doc>Interval between exposures.</doc>
+     </parameter>
+
+     <parameter>
+        <name>window</name>
+        <type>str</type>
+        <default>0:$max,0,$max</default>
+        <doc>Sub-window to be readout. x1:y1,x2:y2. $max means the maximun value in the given direction. Math can be used, e.g. $max /2 (half chip)</doc>
+     </parameter>
+
+     <parameter>
+        <name>binning</name>
+        <type>int</type>
+        <default>0</default>
+        <doc>Binning mode. Values come from CCDcap.</doc>
+     </parameter>
+
+     <parameter>
+        <name>output</name>
+        <type>str</type>
+        <default>img-$time-$object-$filter</default>
+        <doc>Filename of the output image (wildcards allowed: $time, $object, $filter).</doc>
+     </parameter>
+
+     <parameter>
+        <name>verbose</name>
+        <type>bool</type>
+        <default>True</default>
+        <doc>Verbose mode.</doc>
+     </parameter>
+
+  </parameters>
+
+</driver>

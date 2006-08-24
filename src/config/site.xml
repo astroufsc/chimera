@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+
+<uts>
+
+<site name="UFSC" latitude="-22.0" longitude="-40.0" altitude="1000"/>
+
+<instruments>
+
+   <instrument name="telFake" class="Telescope">
+      <option name="driver" value="fake.telescope"/>
+      <option name="device" value="/dev/ttyS0"/>
+   </instrument>
+
+   <instrument name="camFake" class="Camera">
+      <option name="driver" value="fake.camera"/>
+      <option name="device" value="usb"/>
+   </instrument>
+
+</instruments>
+
+<controllers>
+
+   <controller name="queue" class="Queue">
+      <option name="max-queue" value="100"/>
+   </controller>	
+
+</controllers>
+
+</uts>

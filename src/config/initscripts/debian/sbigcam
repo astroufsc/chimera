@@ -1,0 +1,68 @@
+#! /bin/sh
+#
+# sbigcam	UTS CCD Camera drivers
+# Author:	P. Henrique Silva <henrique@astro.ufsc.br>
+#
+
+set -e
+
+# Read config file if it is present.
+if [ -r /etc/default/uts ]; then
+    . /etc/default/uts
+else
+    echo "Error: cannot read '/etc/default/uts'. Check yout installation."
+    exit -1
+fi
+
+NAME=sbigcam
+DESC="UTS CCD Camera drivers"
+SCRIPTNAME=/etc/init.d/$NAME
+
+# Gracefully exit if the package has been removed.
+test -x $UTS_BIN/sbig_load_usb_suse || exit 0
+test -x $UTS_BIN/sbig_unload_usb    || exit 0
+test -x $UTS_BIN/sbig_load_lpt_suse || exit 0
+test -x $UTS_BIN/sbig_unload_lpt    || exit 0
+
+#
+#	Function that starts the daemon/service.
+#
+d_start() {
+	start-stop-daemon --start --quiet --exec $UTS_BIN/sbig_load_usb_suse
+	start-stop-daemon --start --quiet --exec $UTS_BIN/sbig_load_lpt_suse
+}
+
+#
+#	Function that stops the daemon/service.
+#
+d_stop() {
+	start-stop-daemon --stop --quiet --name $UTS_BIN/sbig_unload_lpt
+	start-stop-daemon --stop --quiet --name $UTS_BIN/sbig_unload_usb
+}
+
+case "$1" in
+  start)
+	echo -n "Starting $DESC: $NAME"
+	d_start
+	echo "."
+	;;
+  stop)
+	echo -n "Stopping $DESC: $NAME"
+	d_stop
+	echo "."
+	;;
+
+  restart)
+	echo -n "Restarting $DESC: $NAME"
+	d_stop
+	sleep 1
+	d_start
+	echo "."
+	;;
+  *)
+	echo "Usage: $SCRIPTNAME {start|stop|restart}" >&2
+	exit 1
+	;;
+esac
+
+exit 0

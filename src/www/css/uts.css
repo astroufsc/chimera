@@ -1,0 +1,186 @@
+<!--
+
+body {
+	font-family: Verdana, Arial, Helvetica, sans-serif;
+	font-size: 12px; text-decoration: none;
+	background-color: #000000; color: #FFFFFF
+}
+
+#titulo {
+
+	text-align: center;
+	font-size: 16pt;
+	font-face: Verdana, Arial, Helvetica, sans-serif;
+
+}
+
+A:link, A:visited, A:hover, A:active {
+	color: #CCCCCC;
+	text-decoration: none
+}
+
+A.arquivo, A.comando {
+	color: black;
+}
+
+.botao {
+	font-family: Verdana, Arial, Helvetica, sans-serif;
+	font-size: 12px;
+	text-decoration: none;
+	border-style: solid
+}
+
+.tabela-home, .listaTempo { 
+	font-family: Verdana, Arial, Helvetica, sans-serif;
+	font-size: 12px;
+	text-decoration: none;
+	color: #000000
+}
+	
+.tabelaH {
+	font-family: Verdana, Arial, Helvetica, sans-serif;
+	font-size: 12px;
+	text-decoration: none ;
+	background-color: #666666;
+	color: #FFFFFF
+}
+
+.tabelaOn {
+	font-family: Verdana, Arial, Helvetica, sans-serif;
+	font-size: 12px;
+	text-decoration: none ;
+	background-color: #999999
+}
+
+.tabelaOff {
+	font-family: Verdana, Arial, Helvetica, sans-serif;
+	font-size: 12px;
+	text-decoration: none ;
+	background-color: #CCCCCC
+}
+
+.debug {
+	font-family: Verdana, Arial, Helvetica, sans-serif;
+	font-size: 12px;
+	text-decoration: none ;
+	background-color: #FFFFFF;
+	color: #000000
+}
+
+.ajuda, div.nicetitle {
+	font-family: Verdana, Arial, Helvetica, sans-serif;
+	font-size: 12px;
+	text-decoration: none;
+	background-color: #FFFFFF;
+	color: #000000;
+	text-align: center;
+	border-style: dashed;
+	border-top-width: 1px;
+	border-right-width: 1px;
+	border-bottom-width: 1px;
+	border-left-width: 1px
+}
+
+#contador {
+
+  background-color: green;
+  padding-top: 5px;
+  padding-bottom: 5px;
+  font-size: 14px;
+  visibility: hidden;
+}
+
+#warning {
+  visibility: hidden;
+}
+
+#counter {
+
+  font-weight: bold;
+
+}
+
+#status {
+
+  border-style: solid;
+  background-color: black;
+  visibility: hidden;
+
+}
+
+.txt {
+	font-family: Verdana, Arial, Helvetica, sans-serif;
+	font-size: 12px;	
+	text-decoration: none;
+	border-style: solid;
+	border-top-width: 1px;
+	border-right-width: 1px;
+	border-bottom-width: 1px;
+	border-left-width: 1px;
+	background-color: #CCCCCC
+}
+
+div.nicetitle {
+    font-family: Verdana, Arial, Helvetica, sans-serif;
+    font-size: 13px;
+    text-decoration: none;
+    background-color: #FFFFFF;
+    color: #000000;
+    position: absolute;
+    padding: 4px;
+    top: 0px;
+    left: 0px;
+    color: black;
+    width: 25em;
+    font-weight: bold;
+    
+}
+
+div.nicetitle,p {
+    margin: 0; padding: 0 3px;
+}
+
+div.nicetitle p.destination {
+    font-size: 12px;
+    text-align: left;
+    padding-top: 3px;
+    font-weight: normal;
+}
+
+input, select { border: 1px solid silver;
+		background-color: #CCCCCC;
+}
+
+input.error, select.error {
+		padding-right: 16px;
+		background-color: #FFFCE2;
+		background-image: url(../imagens/warning.gif);
+		background-position: right;
+		background-repeat: no-repeat;
+}
+
+input:focus, select:focus {
+		border: 1px solid white;
+		background-color:#EFEFEF;
+}
+
+#erro {
+
+        color: #000;
+        font-family: Verdana;
+	font-size: 10pt;
+
+        margin: 10px 200px;
+        padding: 2px;
+
+        border: 1px solid white;
+
+        text-align: center;
+
+        background-color: #FFFCE2;
+        background-image: url(../imagens/warning.gif);
+        background-position: right;
+        background-repeat: no-repeat;
+}
+
+-->

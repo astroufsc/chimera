@@ -1,0 +1,101 @@
+#! /usr/bin/python
+# -*- coding: iso-8859-1 -*-
+#
+# a parser to generate .conf file to 'sec'
+#
+
+import sys
+import imp
+import os.path
+import glob
+
+daemons = {}
+rpc = []
+
+default_uts_etc = "/etc/uts/sec"
+
+# build instruments list
+inst_list = []
+
+for dir in sys.path:
+	s = os.path.join(dir, 'uts/instruments/[a-zA-Z]*.py')
+	inst_list += glob.glob(s)
+
+# look on ~/uts
+dir = os.path.expanduser('~/uts')
+inst_list += glob.glob(os.path.join(dir, '[a-zA-Z]*.py'))
+
+try:
+
+	for d in inst_list:
+
+		daemonFullPath = os.path.abspath(d)
+
+		daemonPath, daemonFile = os.path.split(daemonFullPath)
+
+		daemon = os.path.splitext(daemonFile)[0]
+
+		sys.path.append(daemonPath)
+
+		(f, p, d) = imp.find_module(daemon)
+
+		mod = imp.load_module(daemon, f, p, d)
+		
+		me = ""
+
+		if(hasattr(mod, '_me')):
+			me = mod._me
+		else:
+			me = mod.__name__
+
+		# me found
+		daemons[me] = {"rpc": [], "notify": []}
+			
+		if(hasattr(mod, '_rpc')):
+			daemons[me]["rpc"] = mod._rpc
+
+		if(hasattr(mod, '_notify')):
+			daemons[me]["notify"] = mod._notify
+
+	# make rpc list
+	for (d, v) in daemons.items():
+		for r in v["rpc"]:
+			rpc.append(d+"_"+r)
+
+	# save rpc list to file
+	rpc_file = file(os.path.join(default_uts_etc, "rpc.conf"), "w+")
+
+	# header
+	rpc_file.write("INSTNAME RPC\n")
+	rpc_file.write("NSTATCLIENTS 10\n\n")
+	
+	# save each notify list to a file named daemon.conf
+	for (d,v) in daemons.items():
+
+		d_file = file(os.path.join(default_uts_etc, d.lower()+".conf"), "w+")
+
+		# header
+		d_file.write("INSTNAME %s\n" % d.upper())
+		d_file.write("NSTATCLIENTS 10\n\n")
+
+		for n in v["notify"]:
+			d_file.write("STATUS %s\n" % n)
+
+		# write rpc entries
+		for r in v["rpc"]:
+			rpc_file.write("STATUS %s_%s\n" % (d, r))
+
+		rpc_file.write("STATUS %s_END_OF_LINE\n\n" % d.upper())
+
+		d_file.close()
+	
+	rpc_file.close()
+
+except ImportError, e:
+	print "Cannot import module:", str(e)
+
+except AttributeError, e:
+	print "Cannot get attribute:", str(e)
+
+except IOError, e:
+	print "Cannot write file:", str(e)

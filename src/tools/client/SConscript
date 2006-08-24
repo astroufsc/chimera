@@ -1,0 +1,15 @@
+#! /usr/bin/python
+
+Import("env")
+
+_sources = Split(
+
+"""
+main.c
+"""
+)
+    
+env.Program('sclient', _sources,
+            CPPPATH=['.', '#contrib/include'],
+            LIBPATH=['#contrib/lib'],
+            LIBS=['simpleskts'])

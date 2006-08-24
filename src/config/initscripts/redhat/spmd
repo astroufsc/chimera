@@ -1,0 +1,57 @@
+#!/bin/bash
+#
+#	/etc/rc.d/init.d/spmd
+#
+# Starts the Spm daemon
+#
+# chkconfig: 4 40 62
+# description: Spm is the Simple Sockets Library (SSL)
+#    PortMaster. It controls server names and their port numbers.
+# processname: Spm
+
+# Source function library.
+. /etc/rc.d/init.d/functions
+
+. /etc/sysconfig/uts
+
+test -x $UTS_BIN/Spm || exit 0
+
+RETVAL=0
+
+#
+#	See how we were called.
+#
+case "$1" in
+  start)
+	# Check if Spm is already running
+	if [ ! -f /var/lock/subsys/Spm ]; then
+	    echo -n 'Starting Spm daemon: '
+	    daemon $UTS_BIN/Spm
+	    RETVAL=$?
+	    [ $RETVAL -eq 0 ] && touch /var/lock/subsys/Spm
+	    echo
+            sleep 2
+	fi
+	;;
+  stop)
+	echo -n 'Stopping Spm daemon: '
+	killproc $UTS_BIN/Spm
+	RETVAL=$?
+	[ $RETVAL -eq 0 ] && rm -f /var/lock/subsys/Spm
+	echo
+	;;
+  reload|restart)
+	$0 stop
+	$0 start
+	RETVAL=$?
+	;;
+  status)
+	status $UTS_BIN/Spm
+	RETVAL=$?
+	;;
+  *)
+	echo "Usage: /etc/rc.d/init.d/spmd {start|stop|restart|reload|status}"
+	exit 1
+esac
+
+exit $RETVAL

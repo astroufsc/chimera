@@ -1,0 +1,72 @@
+#! /bin/sh
+#
+# secd	        UTS Socket secretaries
+# Author:	P. Henrique Silva <henrique@astro.ufsc.br>
+#
+
+set -e
+
+# Read config file if it is present.
+if [ -r /etc/default/uts ]; then
+    . /etc/default/uts
+else
+    echo "Error: cannot read '/etc/default/uts'. Check yout installation."
+    exit -1
+fi
+
+NAME=secd
+DESC="UTS Socket secretaries"
+DAEMON=$UTS_BIN/$NAME
+SCRIPTNAME=/etc/init.d/$NAME
+
+# Gracefully exit if the package has been removed.
+test -x $DAEMON || exit 0
+
+#
+#	Function that starts the daemon/service.
+#
+d_start() {
+
+    for i in `ls -1 $UTS_SEC/*.conf`; do
+	start-stop-daemon --start --quiet --exec $DAEMON -- -d $i
+    done
+
+}
+
+#
+#	Function that stops the daemon/service.
+#
+d_stop() {
+
+    for i in `ls -1 $UTS_SEC/*.conf`; do
+	start-stop-daemon --stop --quiet --name $NAME
+    done
+
+}
+
+case "$1" in
+  start)
+	echo -n "Starting $DESC: $NAME"
+	d_start
+	echo "."
+	;;
+  stop)
+	echo -n "Stopping $DESC: $NAME"
+	d_stop
+	echo "."
+	;;
+
+  restart)
+	echo -n "Restarting $DESC: $NAME"
+	d_stop
+	sleep 1
+	d_start
+	echo "."
+	;;
+  *)
+	echo "Usage: $SCRIPTNAME {start|stop|restart}" >&2
+	exit 1
+	;;
+esac
+
+exit 0

@@ -1,0 +1,7 @@
+
+sh autogen.sh
+./configure --prefix=/usr
+make
+make install
+
+(make install deve ser rodado como root)

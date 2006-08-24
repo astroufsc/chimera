@@ -1,0 +1,24 @@
+#! /usr/bin/python
+
+Import("env")
+
+_sources = Split(
+
+"""
+server.c sec_config.c sec_server.c main.c
+"""
+)
+
+_libSources = Split(
+"""
+sec.c messages.c skterror.c sktlist.c fields.c
+"""
+)
+
+env.Program('sec', _sources,
+            CPPPATH=['.', '#contrib/include'],
+            LIBPATH=['#contrib/lib', '.'],
+            LIBS=['simpleskts', 'sec'])
+
+env.StaticLibrary('sec', _libSources,
+                  CPPPATH=['.', '#contrib/include'])
