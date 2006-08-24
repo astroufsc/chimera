@@ -1,3 +1,0 @@
-
-class NotImplemented(Exception):
-    pass
