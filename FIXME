@@ -1,0 +1,15 @@
+./src/drivers/camfits.st7/main.cpp:243:		// fill the header // FIXME add more header here
+./src/python/uts/core/driver.py:37:                # FIXME type checking
+./src/python/uts/core/driver.py:45:        # FIXME type checking and conversion as appopriate
+./src/python/uts/core/driver.py:52:        # FIXME type checking
+./src/python/uts/core/driver.py:66:        # FIXME: $max on window, filter name to index,
+./src/python/uts/core/manager.py:111:        # FIXME: extend to controllers
+./src/python/uts/core/site.py:24:# FIXME: handle instruments and controllers main function error
+./src/python/uts/core/site.py:161:    # FIXME Ugly hacks to python threading works with signal
+./src/python/uts/core/site.py:162:    # FIXME see http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/496735
+./src/python/uts/core/site.py:163:    # FIXME see http://greenteapress.com/semaphores/
+./src/python/uts/util/etree/HTMLTreeBuilder.py:102:    # FIXME: shouldn't this class be named Parser, not Builder?
+./src/python/uts/util/etree/TidyTools.py:45:    # FIXME: support more tidy options!
+./src/python/uts/util/etree/ElementTree.py:135:    # FIXME: issue warning in this case?
+./src/python/uts/util/etree/ElementTree.py:724:    # FIXME: not sure about this; might be a better idea to look
+./src/python/uts/util/etree/ElementTree.py:821:        text = replace(text, "'", "&apos;") # FIXME: overkill
