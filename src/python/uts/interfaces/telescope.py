@@ -41,3 +41,70 @@ class TelescopeSlew(object):
 
     def targetChanged(self, position):
         pass
+
+class TelescopeTracking(object):
+
+    # properties
+    trackingRates = []
+    trackingRate = 0
+    tracking = False
+
+    # methods
+    def setTracking(self, track, trackingRate):
+        pass
+
+    # events
+    @event
+    def trackingRateChanged(self, trackingRate):
+        pass
+         
+class TelescopeSync(object):
+
+    # properties
+    syncRa = 0
+    syncDec = 0
+    syncAz = 0
+    syncAlt = 0
+
+    # methods
+    def sync(self, coord):
+        pass
+    
+    # events
+    @event
+    def syncComplete(self, position):
+        pass
+
+class TelescopePark(object):
+
+    # properties
+    parkRa = 0
+    parkDec = 0
+    parkAz = 0
+    parkAlt = 0
+    parking = 0
+    
+    # methods
+    def park(self, coord = None):
+        pass
+
+    def unpark(self):
+        pass
+
+    # events
+    @event
+    def parkComplete(self, position):
+        pass
+
+class TelescopeHome(object):
+
+    # methods
+    def findHome(self):
+        pass
+    
+    # events
+    @event
+    def homeComplete(self, position):
+        pass
+
+

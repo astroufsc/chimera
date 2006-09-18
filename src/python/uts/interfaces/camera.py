@@ -28,12 +28,35 @@ class CameraExpose(object):
         pass
 
     # events
+    @event
     def exposeComplete (self):
         pass
 
+    @event
     def exposeAborted (self):
         pass
 
+    @event
     def exposeStopped (self):
         pass
 
+
+class CameraTemperture(object):
+
+    # properties
+    cooler = False
+    coolerPower = 1.0
+    ccdTemperature = 0.0
+    ambientTemperature = 0.0
+
+    # methods
+    def setTemperture(self, double):
+        pass
+
+    def setCooler(self, on, power):
+        pass
+
+    # events
+    @event
+    def temperture(self, threshold):
+        pass
