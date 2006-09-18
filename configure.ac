@@ -6,7 +6,7 @@ AC_INIT([uts], [1.0RC1], [henrique@astro.ufsc.br] )
 AC_CONFIG_SRCDIR([src/sec/main.c])
 AM_INIT_AUTOMAKE
 
-AC_DEFINE([PROGRAM_URL], ["http://www.astro.ufsc.br/"], [ ])
+AC_DEFINE([PROGRAM_URL], ["http://www.astro.ufsc.br/~henrique/uts"], [ ])
 
 # Checks for programs.
 AC_PROG_CXX
@@ -55,42 +55,43 @@ AC_CONFIG_FILES([
 		 Makefile
                  src/Makefile
 
-		 src/drivers/Makefile
-                 src/drivers/camfits.fake/Makefile
-                 src/drivers/camfits.st4/Makefile
-                 src/drivers/camfits.st7/Makefile
-                 src/drivers/telgo.fake/Makefile
-                 src/drivers/telgo.lx200/Makefile
-                 src/drivers/telgo.paramount/Makefile
-		 src/drivers/weather.wx200/Makefile
-
-		 src/sec/Makefile
+#		 src/drivers/Makefile
+#                src/drivers/camfits.fake/Makefile
+#                src/drivers/camfits.st4/Makefile
+#                 src/drivers/camfits.st7/Makefile
+#                 src/drivers/telgo.fake/Makefile
+#                 src/drivers/telgo.lx200/Makefile
+#                 src/drivers/telgo.paramount/Makefile
+#		 src/drivers/weather.wx200/Makefile
 
 		 src/tools/Makefile
                  src/tools/client/Makefile
 
                  src/config/Makefile
-		 src/config/initscripts/Makefile
-		 src/config/initscripts/redhat/Makefile
-		 src/config/initscripts/redhat/uts
-		 src/config/initscripts/suse/Makefile
-		 src/config/initscripts/suse/uts
-		 src/config/initscripts/debian/Makefile
-		 src/config/initscripts/debian/uts
+#		 src/config/initscripts/Makefile
+#		 src/config/initscripts/redhat/Makefile
+#		 src/config/initscripts/redhat/uts
+#		 src/config/initscripts/suse/Makefile
+#		 src/config/initscripts/suse/uts
+#		 src/config/initscripts/debian/Makefile
+#		 src/config/initscripts/debian/uts
 	
                  src/python/Makefile
+		 src/python/bin/Makefile
                  src/python/uts/Makefile
                  src/python/uts/core/Makefile
+		 src/python/uts/controllers/Makefile
                  src/python/uts/instruments/Makefile
                  src/python/uts/interfaces/Makefile
 	
-		 contrib/Makefile
-		 contrib/bin/Makefile
-		 contrib/bin/sbig_load_lpt
-		 contrib/bin/sbig_load_usb
-		 contrib/bin/sbig_load_usb_suse
- 		 contrib/fits2jpeg/Makefile
-		 contrib/lib/Makefile]) 
+#		 contrib/Makefile
+#		 contrib/bin/Makefile
+#		 contrib/bin/sbig_load_lpt
+#		 contrib/bin/sbig_load_usb
+#		 contrib/bin/sbig_load_usb_suse
+# 		 contrib/fits2jpeg/Makefile
+#		 contrib/lib/Makefile])
+		) 
 
 AC_OUTPUT
 

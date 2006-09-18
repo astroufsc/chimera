@@ -1,0 +1,3 @@
+- finalizar interfaces do telescopio, camera e focalizador
+- finalizar classes Instrument e Controller, adicionando ciclo de vida
+- testar uso do Driver dentro do Instrument
