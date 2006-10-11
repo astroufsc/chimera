@@ -1,6 +1,8 @@
 #! /usr/bin/python
 # -*- coding: iso-8859-1 -*-
 
+from uts.core.event import event
+
 class TelescopeSlew(object):
 
     # properties
@@ -33,12 +35,15 @@ class TelescopeSlew(object):
 
     # events
 
+    @event
     def slewComplete(self, position, tracking, trackingRate):
         pass
 
+    @event
     def abortComplete(self, position):
         pass
 
+    @event
     def targetChanged(self, position):
         pass
 
