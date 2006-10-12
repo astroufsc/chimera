@@ -8,13 +8,15 @@ class Meade(Driver):
 
     def __init__(self, manager):
         Driver.__init__(self, manager)
-        logging.info("Meade init")
 
         self.slewing = False
         self.abortEvent = threading.Event()
 
-    def init(self, config):
-        pass    
+    def init(self):
+        pass
+
+    def shutdown(self):
+        pass
 
     def isSlewing(self):
         logging.info("Meade isSlewing")
