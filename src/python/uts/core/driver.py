@@ -1,13 +1,15 @@
 import threading
 
-class Driver(object):
+from uts.interfaces.driver import IDriver
+
+class Driver(IDriver):
 
     def __init__(self, manager):
 
         self.manager = manager
         self.term = threading.Event()
-
-    def init(self, config):
+        
+    def init(self):
         pass
 
     def shutdown(self):

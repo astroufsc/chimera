@@ -1,12 +1,19 @@
 import threading
 
-class Controller(object):
+from uts.interfaces.controller import IController
 
-    def __init__(self, manager, location):
+class Controller(IController):
+
+    def __init__(self, manager):
 
         self.manager = manager
-        self.location = location
         self.term = threading.Event()
+        
+    def init(self):
+        pass
+
+    def shutdown(self):
+        self.term.set()
 
     def main(self):
         pass
