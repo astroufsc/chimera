@@ -4,24 +4,28 @@
 
 <site name="UFSC" latitude="-22.0" longitude="-40.0" altitude="1000"/>
 
+<drivers>
+
+   <driver name="meade" class="Meade">
+      <option name="device" value="/dev/ttyS0"/>
+   </driver>
+
+</drivers>
+
 <instruments>
 
-   <instrument name="telFake" class="Telescope">
-      <option name="driver" value="fake.telescope"/>
-      <option name="device" value="/dev/ttyS0"/>
-   </instrument>
-
-   <instrument name="camFake" class="Camera">
-      <option name="driver" value="fake.camera"/>
-      <option name="device" value="usb"/>
+   <instrument name="lx200gps" class="Telescope">
+      <option name="driver" value="/Meade/meade" />
+      <option name="limits" value="some magic number"/>
+      <option name="pointintModel" value="more magic"/>
    </instrument>
 
 </instruments>
 
 <controllers>
 
-   <controller name="queue" class="Queue">
-      <option name="max-queue" value="100"/>
+   <controller name="sample" class="Sample">
+       <option name="max-queue" value="100"/>
    </controller>	
 
 </controllers>
