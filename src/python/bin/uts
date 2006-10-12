@@ -1,26 +1,8 @@
 #! /usr/bin/env python
 # -*- coding: iso-8859-1 -*-
 
-import os
 import sys
- 
-here = os.path.dirname(os.path.realpath(__file__))
-swhome = os.path.dirname(here)
- 
-for parts in [("src",), ("lib", "python"), ("Lib", "site-packages")]:
-    d = os.path.join(swhome, *(parts + ("uts", "core", "site")))
-    if os.path.isdir(d):
-        d = os.path.join(swhome, *parts)
-        sys.path.insert(0, d)
-        break
-else:
-    try:
-        import uts.core.site
-    except ImportError:
-        print >>sys.stderr, "Could not locate UTS software installation!"
-        sys.exit(1)
- 
- 
+
 from uts.core.site import main
  
 sys.exit(main(sys.argv))
