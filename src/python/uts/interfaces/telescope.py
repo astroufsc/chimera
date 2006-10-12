@@ -1,9 +1,10 @@
 #! /usr/bin/python
 # -*- coding: iso-8859-1 -*-
 
+from uts.core.interface import Interface
 from uts.core.event import event
 
-class TelescopeSlew(object):
+class ITelescopeSlew(Interface):
 
     # properties
     
@@ -47,7 +48,7 @@ class TelescopeSlew(object):
     def targetChanged(self, position):
         pass
 
-class TelescopeTracking(object):
+class ITelescopeTracking(Interface):
 
     # properties
     trackingRates = []
@@ -63,7 +64,7 @@ class TelescopeTracking(object):
     def trackingRateChanged(self, trackingRate):
         pass
          
-class TelescopeSync(object):
+class ITelescopeSync(Interface):
 
     # properties
     syncRa = 0
@@ -80,7 +81,7 @@ class TelescopeSync(object):
     def syncComplete(self, position):
         pass
 
-class TelescopePark(object):
+class ITelescopePark(Interface):
 
     # properties
     parkRa = 0
@@ -101,7 +102,7 @@ class TelescopePark(object):
     def parkComplete(self, position):
         pass
 
-class TelescopeHome(object):
+class ITelescopeHome(Interface):
 
     # methods
     def findHome(self):

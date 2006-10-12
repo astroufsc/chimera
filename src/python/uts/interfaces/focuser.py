@@ -1,4 +1,7 @@
-class Focuser(object):
+from uts.core.interface import Interface
+from uts.core.event import event
+
+class IFocuser(Interface):
 
     # properties
     position = 0.0

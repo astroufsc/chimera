@@ -1,7 +1,10 @@
 #! /usr/bin/python
 # -*- coding: iso-8859-1 -*-
 
-class CameraExpose(object):
+from uts.core.interface import Interface
+from uts.core.event import event
+
+class ICameraExpose(Interface):
 
     # properties
     expTime = 0
@@ -41,7 +44,7 @@ class CameraExpose(object):
         pass
 
 
-class CameraTemperture(object):
+class ICameraTemperture(Interface):
 
     # properties
     cooler = False

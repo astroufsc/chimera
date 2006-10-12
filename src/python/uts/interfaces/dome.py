@@ -1,4 +1,7 @@
-class Dome(object):
+from uts.core.interface import Interface
+from uts.core.event import event
+
+class Dome(Interface):
 
     # properties
     azimute = 0
