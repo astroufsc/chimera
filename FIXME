@@ -13,3 +13,38 @@
 ./src/python/uts/util/etree/ElementTree.py:135:    # FIXME: issue warning in this case?
 ./src/python/uts/util/etree/ElementTree.py:724:    # FIXME: not sure about this; might be a better idea to look
 ./src/python/uts/util/etree/ElementTree.py:821:        text = replace(text, "'", "&apos;") # FIXME: overkill
+./src/drivers/camfits.st7/main.cpp:243:		// fill the header // FIXME add more header here
+./src/python/uts/core/async.py:6:# FIXME: exception handling
+./src/python/uts/core/manager.py:153:            # FIXME: thread exception handling
+./src/python/uts/core/config.py:58:        # FIXME: refactor (tá na cara o que fazer... o código está todo repetido)
+./src/python/uts/core/instrument.py:44:        # FIXME: better main loop control
+./src/python/uts/core/site.py:24:# FIXME: handle instruments and controllers main function error
+./src/python/uts/core/site.py:179:    # FIXME Ugly hacks to python threading works with signal
+./src/python/uts/core/site.py:180:    # FIXME see http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/496735
+./src/python/uts/core/site.py:181:    # FIXME see http://greenteapress.com/semaphores/
+./src/python/uts/core/cmdlinedriver.py:39:                # FIXME type checking
+./src/python/uts/core/cmdlinedriver.py:47:        # FIXME type checking and conversion as appopriate
+./src/python/uts/core/cmdlinedriver.py:54:        # FIXME type checking
+./src/python/uts/core/cmdlinedriver.py:68:        # FIXME: $max on window, filter name to index,
+./src/python/uts/util/etree/HTMLTreeBuilder.py:102:    # FIXME: shouldn't this class be named Parser, not Builder?
+./src/python/uts/util/etree/TidyTools.py:45:    # FIXME: support more tidy options!
+./src/python/uts/util/etree/ElementTree.py:135:    # FIXME: issue warning in this case?
+./src/python/uts/util/etree/ElementTree.py:724:    # FIXME: not sure about this; might be a better idea to look
+./src/python/uts/util/etree/ElementTree.py:821:        text = replace(text, "'", "&apos;") # FIXME: overkill
+./src/python/build/lib/uts/core/async.py:6:# FIXME: exception handling
+./src/python/build/lib/uts/core/manager.py:153:            # FIXME: thread exception handling
+./src/python/build/lib/uts/core/config.py:58:        # FIXME: refactor (tá na cara o que fazer... o código está todo repetido)
+./src/python/build/lib/uts/core/instrument.py:44:        # FIXME: better main loop control
+./src/python/build/lib/uts/core/site.py:24:# FIXME: handle instruments and controllers main function error
+./src/python/build/lib/uts/core/site.py:179:    # FIXME Ugly hacks to python threading works with signal
+./src/python/build/lib/uts/core/site.py:180:    # FIXME see http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/496735
+./src/python/build/lib/uts/core/site.py:181:    # FIXME see http://greenteapress.com/semaphores/
+./src/python/build/lib/uts/core/cmdlinedriver.py:39:                # FIXME type checking
+./src/python/build/lib/uts/core/cmdlinedriver.py:47:        # FIXME type checking and conversion as appopriate
+./src/python/build/lib/uts/core/cmdlinedriver.py:54:        # FIXME type checking
+./src/python/build/lib/uts/core/cmdlinedriver.py:68:        # FIXME: $max on window, filter name to index,
+./src/python/build/lib/uts/util/etree/HTMLTreeBuilder.py:102:    # FIXME: shouldn't this class be named Parser, not Builder?
+./src/python/build/lib/uts/util/etree/TidyTools.py:45:    # FIXME: support more tidy options!
+./src/python/build/lib/uts/util/etree/ElementTree.py:135:    # FIXME: issue warning in this case?
+./src/python/build/lib/uts/util/etree/ElementTree.py:724:    # FIXME: not sure about this; might be a better idea to look
+./src/python/build/lib/uts/util/etree/ElementTree.py:821:        text = replace(text, "'", "&apos;") # FIXME: overkill

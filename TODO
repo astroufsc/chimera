@@ -2,3 +2,18 @@
 ./src/python/uts/core/instrument.py:10:### TODO Add life cycle code (start/stop/query/etc)
 ./src/python/uts/util/etree/ElementTree.py:138:# TODO: add support for custom namespace resolvers/default namespaces
 ./src/python/uts/util/etree/ElementTree.py:139:# TODO: add improved support for incremental parsing
+./src/drivers/camfits.st7/getindex.c:41:  /* TODO: must somehow free the space allocated by scandir()
+./src/python/uts/core/manager.py:62:        # TODO: - add a reload method
+./src/python/uts/core/manager.py:63:        # TODO: - use separate include path for different objects
+./src/python/uts/core/instrument.py:25:    # TODO: driver loading
+./src/python/uts/core/event.py:11:# TODO: argument checking
+./src/python/uts/core/event.py:12:# TODO: define delegate signature
+./src/python/uts/util/etree/ElementTree.py:138:# TODO: add support for custom namespace resolvers/default namespaces
+./src/python/uts/util/etree/ElementTree.py:139:# TODO: add improved support for incremental parsing
+./src/python/build/lib/uts/core/manager.py:62:        # TODO: - add a reload method
+./src/python/build/lib/uts/core/manager.py:63:        # TODO: - use separate include path for different objects
+./src/python/build/lib/uts/core/instrument.py:25:    # TODO: driver loading
+./src/python/build/lib/uts/core/event.py:11:# TODO: argument checking
+./src/python/build/lib/uts/core/event.py:12:# TODO: define delegate signature
+./src/python/build/lib/uts/util/etree/ElementTree.py:138:# TODO: add support for custom namespace resolvers/default namespaces
+./src/python/build/lib/uts/util/etree/ElementTree.py:139:# TODO: add improved support for incremental parsing
