@@ -3,6 +3,8 @@ import time
 
 from uts.core.threads import getThreadPool
 
+# FIXME: exception handling
+
 class AsyncResult(object):
 
     def __init__(self, func, pool = None):
