@@ -1,46 +1,16 @@
 import uts
 
-from uts.core.proxy import AsyncResult
+from uts.interfaces.instrument import IInstrument
 from uts.core.event import EventsProxy
 
 import time
-
 import threading
 
-### TODO Add life cycle code (start/stop/query/etc)
+class Instrument(IInstrument):
 
-class InstrumentMeta(type):
+    def __init__(self, manager):
 
-	def __new__(metacls, clsname, bases, dictionary):
-		
-		_evs = []
-		for name, obj in dictionary.iteritems():
-			if callable(obj) and not name.startswith('__') and hasattr(obj, 'event'):
-				_evs.append(name)
-
-		for name in _evs:
-			del dictionary[name]
-
-		dictionary['__events__'] = _evs
-				
-		return super(InstrumentMeta, metacls).__new__(metacls, clsname, bases, dictionary)
-
-
-class Instrument:
-
-    __metaclass__ = InstrumentMeta
-
-    def __init__(self, name):
-
-        self.name   = name
-
-        self.manager = None
-        self.location = None
-        self.rpc = None
-
-        self.driver = None
-
-        self.events = EventsProxy(self.__events__)
+        self.manager = manager
 
         # loop control
         self.timeslice = 0.5
@@ -49,17 +19,30 @@ class Instrument:
         # term event
         self.term = threading.Event()
 
-	def __getattr__(self, attr):
-		if attr in self.events:
-			return self.events.__getattr__(attr)
-		else:
-			raise AttributeError
-		
+        # event handling
+        self.__eventsProxy__ = EventsProxy(self.__events__)
+
+    # TODO: driver loading
+    
+    def init(self):
+        pass
+
+    def shutdown(self):
+        pass
+
     def inst_main(self):
         pass
 
+    def __getattr__(self, attr):
+        if attr in self.__eventsProxy__:
+            return self.__eventsProxy__[attr]
+        else:
+            raise AttributeError
+        
     def main(self):
 
+        # FIXME: better main loop control
+        
         # enter main loop
         self._main()
         
