@@ -5,9 +5,11 @@ import glob
 import logging
 
 from string import Template
-import uts.util.etree.ElementTree as ET
 
-class Driver(object):
+from uts.util.etree import ElementTree as ET
+from uts.interfaces.driver import IDriver
+
+class CommandLineDriver(IDriver):
 
     def __init__(self, config):
 
@@ -168,7 +170,7 @@ class DriverFactory(object):
         drivers = glob.glob('%s/*%s*.xml' % (self.base, drv))
 
         if drivers:
-            driver = Driver(drivers[0])
+            driver = CommandLineDriver(drivers[0])
             return driver
         else:
             return NullDriver()
