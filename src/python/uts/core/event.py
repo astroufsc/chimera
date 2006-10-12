@@ -8,34 +8,41 @@ def event(f):
 # based on this recipe http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/410686
 # by Zoran Isailovskii
 
+# TODO: argument checking
+# TODO: define delegate signature
+
 class EventsProxy:
 
     def __init__(self, evs):
-        self.__events__ = evs
+        self._slots = {}
+
+        for ev in evs:
+            self._slots[ev] = _EventSlot(ev)
         
-    def __getattr__(self, name):
-        if hasattr(self, '__events__'):
-            assert name in self.__events__, "Event '%s' is not declared" % name
-        self.__dict__[name] = ev = _EventSlot(name)
-        return ev
+    def __getitem__(self, name):
+        if name in self._slots.keys():
+            return self._slots[name]
         
-    def __repr__(self):
-        return 'Events' + str(list(self))
+    def __contains__(self, attr):
+        return attr in self._slots.keys()
     
     def __str__(self):
-        return self.__repr__()
+        return 'Events' + str(self._slots)
 
-    def __contains__(self, attr):
-        return attr in self.__events__
+    def __repr__(self):
+        return self.__str__()
 
 class _EventSlot:
 
     def __init__(self, name):
         self.targets = []
         self.__name__ = name
+        
+    def __str__(self):
+        return 'event ' + self.__name__
 
-#   def __repr__(self):
-#       return 'event ' + self.__name__
+    def __repr__(self):
+        return self.__str__()
 
     def __call__(self, *a, **kw):
         for f in self.targets: f(*a, **kw)

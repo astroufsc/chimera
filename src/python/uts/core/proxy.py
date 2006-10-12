@@ -1,7 +1,6 @@
 #! /usr/bin/python
 # -*- coding: iso8859-1 -*-
 
-
 import logging
 import threading
 
@@ -15,14 +14,24 @@ class Proxy(object):
         self._pool = threadPool
 
     def __getattribute__(self, value):
+
         obj = object.__getattribute__(self, '_obj')
         pool = object.__getattribute__(self, '_pool')
 
-        if(hasattr(obj, value)):
-            prop = getattr(obj, value)
+        # event handling
+        
+        try:
+            events = object.__getattribute__(obj, '__eventsProxy__')
+            if value in events:
+                return events[value]
+        except AttributeError:
+            # no event handling definition, treat as a normal attribute
+            pass
 
-# 			if(callable(prop) and hasattr(prop, "event")):
-# 				return AsyncEvent(prop, pool)
+        # normal attributes
+        if hasattr(obj, value):
+            
+            prop = object.__getattribute__(obj, value)
 
             if(callable(prop)):
                 return AsyncResult(prop, pool)
