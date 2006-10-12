@@ -5,6 +5,7 @@ class Register(object):
     def __init__(self, kind = None):
 
         self.objects = {}
+        self.kind = kind
 
     def register(self, location, instance):
 
@@ -12,19 +13,20 @@ class Register(object):
             return False
 
         self.objects[location] = instance
+        return True
 
     def unregister(self, location):
         if not location in self.objects:
             return False
 
         del self.objects[location]
+        return True
 
     def update(self, location, instance):
-        self.unregister(location)
-        self.register(location, instance)
+        return self.unregister(location) and self.register(location, instance)
 
     def __repr__(self):
-        _str = "There are %d objects avaiable.\n" % len(self.objects)
+        _str = "There are %d %s(s) avaiable.\n" % (len(self.objects), self.kind)
         _str += self.objects.__repr__()
         
         return _str
@@ -53,6 +55,7 @@ class Register(object):
         return self.objects.values()
     
     def __getitem__(self, item):
+
         r = self.get(item)
 
         if not r:
@@ -62,29 +65,21 @@ class Register(object):
 
     def get(self, item):
 
-        if type(item) == StringType:
-            item = Location(item)
-            
-            if not item.isValid():
-                return False
+        if not item.isValid():
+            return None
 
-            # try to get by index first
-            try:
-                numberedInstance = True
-                number = int(item._name)
-            except ValueError:
-                numberedInstance = False
-
-            if numberedInstance:
-                return self.getByIndex(item._class, number)
+        try:
+            number = int(item._name)
+            return self.getByIndex(item._class, number)
+        except ValueError:
+            # not a numbered instance
+            pass
 
         if self.__contains__(item):
             ret = filter(lambda x: x == item, self.objects.keys())
-            
             return self.objects[ret[0]]
         else:
-            return False
-
+            return None
 
     def getByClass(self, cls):
 
@@ -105,6 +100,14 @@ class Register(object):
         else:
             return False
 
+    def getLocation(self, instance):
+        
+        if not instance in self.objects.items():
+            return None
+
+        for location, inst in self.objects:
+            if inst == instance:
+                return location
 
 if __name__ == '__main__':
 
