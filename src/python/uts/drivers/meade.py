@@ -1,87 +1,83 @@
-import threading
-import logging
-import time
+import serial
 
-from uts.core.driver import Driver
+class Meade(object):
 
-class Meade(Driver):
+    def __init__(self):
+	self.tty = None
 
-    def __init__(self, manager):
-        Driver.__init__(self, manager)
+    def open(self, device):
+	self.tty = serial.Serial()
+	self.tty.port = device
 
-        self.slewing = False
-        self.abortEvent = threading.Event()
+	try:
+		self.tty.open()
+	except IOError,e:
+		self.setEtror(e)
+		return False
 
-    def init(self):
-        pass
+	return True
 
-    def shutdown(self):
-        pass
-
-    def isSlewing(self):
-        logging.info("Meade isSlewing")
-
-        return self.slewing
+    def close(self):
+	if self.tty.isOpen():
+		self.tty.close()
+		return True
+	else:
+		self.setError(-1, "Device not open")
+		return False
 
     def slewToRaDec(self, ra, dec):
+	pass
 
-        # verifica estado
-        if self.slewing:
-            logging.info("Meade busy")
-            return "ocupado. esta mensagem deve chegar ao objeto que originou o pedido"
-
-        # transicao de estado
-        self.slewing = True
-
-        # verifica conexao com telescopio
-        logging.info("Meade pinging telescope...")
-        time.sleep(1)
-        
-        # manda apontar
-        logging.info("Meade slewing to...")
-        time.sleep(1)
-
-        # checa erros
-
-        dummy = 5
-        while dummy > 0:
-
-            if self.abortEvent.isSet():
-                logging.info("Meade slew aborting")
-                self.abortEvent.clear()
-                return "aborted"
-
-            # acompanha o movimento
-            logging.info("Meade waiting to reach target position...")
-            time.sleep(1)
-            # publica posicao atual
-            #self.currentPosition(position)
-            dummy -= 1
-
-        # aguarda estabilizar... etc..
-
-        self.slewing = False
-
-        return "ok, chegou na posicao x"
+    def slewToAltAz(self, alt, az):
+        pass
 
     def abortSlew(self):
-        if not self.slewing:
-            return True
+	pass
 
-        self.abortEvent.set()
+    def moveEast(self, duration):
+	pass
 
-        # manda parar
-        time.sleep(1)
+    def moveWest(self, duration):
+	pass
 
-        return True
+    def moveNorth(self, duration):
+	pass
+
+    def moveSouth(self, duration):
+	pass
 
     def getRa(self):
-        
-        # low-level getRa
-        logging.info("Meade getting RA")
-        return 10
+	pass
 
     def getDec(self):
-        return 100000
-                         
+	pass
+
+    def getAz(self):
+	pass
+
+    def getAz(self):
+	pass
+
+    # low-level 
+
+    def _read(self, n = 1):
+	if not self.tty.isOpen():
+		self.setError(-1, "Device not open")
+		return ""
+	
+	return self.tty.read(n)
+
+    def _readline(self, n = 1, eol='#'):
+	if not self.tty.isOpen():
+		self.setError(-1, "Device not open")
+		return ""
+	
+	return self.tty.readline(n, eol)
+
+    def _write(self, data):
+	if not self.tty.isOpen():
+		self.setError(-1, "Device not open")
+		return ""
+
+	return self.tty.write(data)
 
