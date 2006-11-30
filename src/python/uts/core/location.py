@@ -12,7 +12,7 @@ class Location(object):
 
     def __init__(self, location):
 
-        self._re =  re.compile('/+(?P<class>[\w]*)/+(?P<name>[\w]*)\??(?P<options>[\w=,]*)')
+        self._re =  re.compile('/+(?P<class>[\w]*)/+(?P<name>[\w]*)\??(?P<options>[\w\S\s=,]*)')
 
         self._class = "class"
         self._name = "name"
@@ -21,7 +21,6 @@ class Location(object):
         self._valid = True
 
         try:
-
             if type(location) == DictType:
                 self._class         = location["class"]
                 self._name          = location["name"]
@@ -39,6 +38,10 @@ class Location(object):
         except (KeyError, IndexError), e:
             self._valid = False
 
+    cls     = property(lambda self: self._class)
+    name    = property(lambda self: self._name)
+    options = property(lambda self: self._options)
+                
     def isValid(self):
 
         return self._valid
@@ -81,3 +84,10 @@ class Location(object):
 
     def get(self):
         return self.__repr__(self)
+
+if __name__ == '__main__':
+
+    l = Location('/Sample/s?device=/dev/ttyS0,model=25.txt')
+    print l.cls
+    print l.name
+    print l.options
