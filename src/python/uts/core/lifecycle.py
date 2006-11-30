@@ -24,7 +24,7 @@ class BasicLifeCycle(ILifeCycle):
 
     # TODO: driver loading
     
-    def init(self):
+    def init(self, config):
         pass
 
     def shutdown(self):
