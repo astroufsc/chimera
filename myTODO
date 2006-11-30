@@ -1,0 +1,5 @@
+* finalizar interfaces: camera e telescopio(instrumento e driver)
+* finalizar driver meade e sbig
+* documentar config's
+* manager: getDriver
+* site config 
