@@ -1,14 +1,14 @@
 import logging
 import time
 
-from uts.core.controller import Controller
+from uts.core.lifecycle import BasicLifeCycle
 
 class Sample(Controller):
 
     def __init__(self, manager):
-        Controller.__init__(self, manager)
+        BasicLifeCycle.__init__(self, manager)
             
-    def init(self):
+    def init(self, config):
         pass
 
     def shutdown(self):

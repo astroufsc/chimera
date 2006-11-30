@@ -1,17 +1,18 @@
 import logging
 import time
 
-from uts.core.instrument import Instrument
+from uts.core.lifecycle import BasicLifeCycle
+
 from uts.interfaces.telescope import ITelescopeSlew
 
-class Telescope(Instrument, ITelescopeSlew):
+class Telescope(BasicLifeCycle, ITelescopeSlew):
 
     def __init__(self, manager):
-        Instrument.__init__(self, manager)
+        BasicLifeCycle.__init__(self, manager)
 
         #self.timeslice = 0.05 # 20 Hz
             
-    def init(self):
+    def init(self, config):
         pass
 
     def shutdown(self):
