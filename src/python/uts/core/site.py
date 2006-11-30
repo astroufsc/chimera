@@ -1,8 +1,6 @@
 #! /usr/bin/python
 #! -*- coding: iso-8859-1 -*-
 
-from uts.core.instrument import Instrument
-from uts.core.controller import Controller
 from uts.core.register import Register
 from uts.core.config import SiteConfiguration
 from uts.core.threads import ThreadPool
@@ -45,13 +43,13 @@ class Site(object):
         # directories
 
         for _dir in self.options.inst_dir:
-            self.manager.appendPath(_dir)
+            self.manager.appendPath("instrument", _dir)
 
         for _dir in self.options.ctrl_dir:
-            self.manager.appendPath(_dir)
+            self.manager.appendPath("controller", _dir)
 
         for _dir in self.options.drv_dir:
-            self.manager.appendPath(_dir)
+            self.manager.appendPath("driver", _dir)
 
 
     def parseArgs(self, args):

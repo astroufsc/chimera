@@ -15,7 +15,9 @@ class Manager(object):
     def __init__(self):
         logging.debug("Starting manager.")
 
-        self._includePath = []
+        self._includePath = {"instrument": [],
+                             "controller": [],
+                             "driver"    : []}
 
         self._instruments = Register("instrument")
         self._controllers = Register("controller")
@@ -39,20 +41,19 @@ class Manager(object):
             self.shutdownDriver(location)
             self.removeDriver(location)
 
-    def appendPath(self, path):
+    def appendPath(self, kind, path):
+
         if not os.path.isabs(path):
             path = os.path.abspath(path)
             
-        logging.debug("Adding %s to include path." % path)
+        logging.debug("Adding %s to %s include path." % (path, kind))
 
-        if path not in sys.path:
-            self._includePath.append(path)
-            sys.path.insert(0, path)
+        self._includePath[kind].append(path)
 
     def setPool(self, pool):
         self._pool = pool
 
-    def _getClass(self, name):
+    def _getClass(self, name, kind):
         """
         Based on this recipe
         http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/52241
@@ -68,7 +69,14 @@ class Manager(object):
         try:
             logging.debug("Looking for module %s." % name.lower())
 
+            # adjust sys.path accordingly to kind
+            tmpSysPath = sys.path
+            sys.path = sys.path + self._includePath[kind]
+
             module = __import__(name.lower(), globals(), locals(), [name])
+
+            # turns sys.path back
+            sys.path = tmpSysPath
 
             if not name in vars(module).keys():
                 logging.error("Module found but there are no class named %s on module %s (%s)." % (name,
@@ -108,7 +116,7 @@ class Manager(object):
     def _add(self, location, register):
 
         # get the class
-        cls = self._getClass(location._class)
+        cls = self._getClass(location._class, register.kind)
 
         if not cls:
             return False
@@ -143,7 +151,7 @@ class Manager(object):
         # run object init
         # it runs on the same thread, so be a good boy and don't block manager's thread
         try:
-            register[location].init()
+            register[location].init(location.options)
         except Exception:
             logging.exception("Error running %s %s init method. Exception follows..." %
                               (register.kind, location))
