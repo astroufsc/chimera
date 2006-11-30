@@ -102,10 +102,10 @@ class Register(object):
 
     def getLocation(self, instance):
         
-        if not instance in self.objects.items():
+        if not instance in self.objects.values():
             return None
 
-        for location, inst in self.objects:
+        for location, inst in self.objects.items():
             if inst == instance:
                 return location
 
