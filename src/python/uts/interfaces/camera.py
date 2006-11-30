@@ -6,28 +6,11 @@ from uts.core.event import event
 
 class ICameraExpose(Interface):
 
-    # properties
-    expTime = 0
-    nExp = 0
-    window = None
-    binning  = 0
-    binningList = []
-    gain = 0
-    gainList = []
-    chipSize = None
-    pixelSize = None
-    maxADU = 0
-    fullWellCapacity = 0
-    exposing = False
-
     # methods
-    def expose (self, expTime, nexp):
+    def expose (self, config):
         pass
     
-    def abortExposure (self):
-        pass
-
-    def stopExposure (self):
+    def abortExposure (self, readout = True):
         pass
 
     # events
@@ -40,17 +23,10 @@ class ICameraExpose(Interface):
         pass
 
     @event
-    def exposeStopped (self):
+    def readoutComplete (self):
         pass
 
-
 class ICameraTemperture(Interface):
-
-    # properties
-    cooler = False
-    coolerPower = 1.0
-    ccdTemperature = 0.0
-    ambientTemperature = 0.0
 
     # methods
     def setTemperture(self, double):
@@ -62,4 +38,40 @@ class ICameraTemperture(Interface):
     # events
     @event
     def temperture(self, threshold):
+        pass
+
+
+class ICameraDriver(Interface):
+
+    # methods
+
+    def open(self, device):
+        pass
+
+    def close(self):
+        pass
+
+    def ping(self):
+        pass
+
+    def exposing(self):
+        pass
+
+    def espose(self, config):
+        pass
+
+    def abortExposure(self, readout = True):
+        pass
+
+    # events
+    @event
+    def exposeComplete (self):
+        pass
+
+    @event
+    def exposeAborted (self):
+        pass
+
+    @event
+    def readoutComplete (self):
         pass
