@@ -1,8 +1,8 @@
 import threading
 
-from uts.interfaces.controller import IController
+from uts.interfaces.lifecycle import ILifeCycle
 
-class Controller(IController):
+class Controller(ILifeCycle)
 
     def __init__(self, manager):
 

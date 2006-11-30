@@ -1,8 +1,8 @@
 import threading
 
-from uts.interfaces.driver import IDriver
+from uts.interfaces.lifecycle import ILifeCycle
 
-class Driver(IDriver):
+class Driver(ILifeCycle):
 
     def __init__(self, manager):
 
