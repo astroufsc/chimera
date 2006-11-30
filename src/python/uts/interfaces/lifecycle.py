@@ -24,10 +24,13 @@ class ILifeCycle (Interface):
         @type manager: L{Manager}
         """
         
-    def init(self):
+    def init(self, config):
         """
         Do device initialization. Open files, access drivers and
         sockets. This method it's called by Manager, just after the constructor.
+
+        @param config: configuration dictionary.
+        @type config: dict
 
         @note: Runs on the L{Manager} thread.
         @warning: This method must not block, so be a good boy/girl.
