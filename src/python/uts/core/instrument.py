@@ -1,12 +1,12 @@
 import uts
 
-from uts.interfaces.instrument import IInstrument
+from uts.interfaces.lifecycle import ILifeCycle
 from uts.core.event import EventsProxy
 
 import time
 import threading
 
-class Instrument(IInstrument):
+class BasicLifeCycle(ILifeCycle):
 
     def __init__(self, manager):
 
@@ -30,23 +30,17 @@ class Instrument(IInstrument):
     def shutdown(self):
         pass
 
-    def inst_main(self):
-        pass
-
-    def __getattr__(self, attr):
-        if attr in self.__eventsProxy__:
-            return self.__eventsProxy__[attr]
-        else:
-            raise AttributeError
-        
     def main(self):
-
+            
         # FIXME: better main loop control
         
         # enter main loop
         self._main()
         
         return True
+
+    def control(self):
+        pass
 
     def _main(self):
 
@@ -60,12 +54,19 @@ class Instrument(IInstrument):
                     self.looping = False
                     return
             
-                # run instrument control functions
-                self.inst_main()
+                # run control function
+                self.control()
 
                 time.sleep(self.timeslice)
 
         except KeyboardInterrupt, e:
             self.looping = False
             return
+
+    def __getattr__(self, attr):
+        if attr in self.__eventsProxy__:
+            return self.__eventsProxy__[attr]
+        else:
+            raise AttributeError
+        
         
