@@ -7,6 +7,22 @@ import logging
 import uts.util.etree.ElementTree as ET
 from xml.parsers.expat import ExpatError, ErrorString
 
+class Config(dict):
+
+    def __init__(self, d = {}):
+        dict.__init__(self, d)
+
+    def __getattr__(self, attr):
+
+        if attr in self.keys():
+            return self.get(attr)
+        else:
+            raise KeyError("%s" % attr)
+
+    def __setattr__(self, key, value):
+
+        self[key] = value
+
 class SiteConfiguration(object):
 
     def __init__(self):

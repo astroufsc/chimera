@@ -8,6 +8,8 @@ from types import (DictType, ListType,
                    TupleType, StringType)
 
 
+from config import Config
+
 class Location(object):
 
     def __init__(self, location):
@@ -16,7 +18,7 @@ class Location(object):
 
         self._class = "class"
         self._name = "name"
-        self._options = {}
+        self._options = Config()
 
         self._valid = True
 
@@ -24,12 +26,12 @@ class Location(object):
             if type(location) == DictType:
                 self._class         = location["class"]
                 self._name          = location["name"]
-                self._options       = location["options"]
+                self._options       = Config(location["options"])
                 
             elif type(location) in [ListType, TupleType]:
                 self._class         = location[1]
                 self._name          = location[2]
-                self._options       = location[3]
+                self._options       = Config(location[3])
 
             elif type(location) == StringType:
 
@@ -54,7 +56,7 @@ class Location(object):
 
             cls, name, tmpOpts = matches.groups()
 
-            opts = {}
+            opts = Config()
 
             if tmpOpts:
                 for opt in tmpOpts.split(","):
@@ -65,7 +67,7 @@ class Location(object):
             self._valid = False
             cls  = "class"
             name = "name"
-            opts = {}
+            opts = Config()
 
             logging.debug("Invalid location %s." % location)
 
