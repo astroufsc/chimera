@@ -16,7 +16,9 @@ class Camera(BasicLifeCycle, ICameraExpose):
 
     # methods
     def expose (self, config):
-        self.drv.expose(config)
+        #self.drv.expose(config)
+        pass
     
     def abortExposure (self, readout = True):
-        self.drv.abortExposure(readout)
+        #self.drv.abortExposure(readout)
+        pass
