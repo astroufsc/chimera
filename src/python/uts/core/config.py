@@ -93,18 +93,15 @@ class SiteConfiguration(object):
             tmpInst = {}
             tmpInst["name"]    = inst.get("name", "inst" + str(len(self.__instruments) + 1))
             tmpInst["class"]   = inst.get("class", object)
-            tmpInst["options"] = []
+            tmpInst["options"] = Config()
 
             # get all options
             opts = inst.findall("option")
 
             for opt in opts:
-                tmpOpt = {}
-                tmpOpt["name"]  = opt.get("name")
-                tmpOpt["value"] = opt.get("value")
-
-                tmpInst["options"].append(tmpOpt)
-                
+                tmpKey   = opt.get("name")
+                tmpValue =  opt.get("value")
+                tmpInst["options"][tmpKey] = tmpValue
 
             self.__instruments.append(tmpInst)
 
@@ -115,17 +112,15 @@ class SiteConfiguration(object):
             tmpCtrl = {}
             tmpCtrl["name"]    = ctrl.get("name", "ctrl" + str(len(self.__controllers) + 1))
             tmpCtrl["class"]   = ctrl.get("class", object)
-            tmpCtrl["options"] = []
+            tmpCtrl["options"] = Config()
 
             # get all options
             opts = ctrl.findall("option")
 
             for opt in opts:
-                tmpOpt = {}
-                tmpOpt["name"]  = opt.get("name")
-                tmpOpt["value"] = opt.get("value")
-
-                tmpCtrl["options"].append(tmpOpt)
+                tmpKey   = opt.get("name")
+                tmpValue =  opt.get("value")
+                tmpCtrl["options"][tmpKey] = tmpValue
 
             self.__controllers.append(tmpCtrl)
 
@@ -137,17 +132,15 @@ class SiteConfiguration(object):
             tmpDrv = {}
             tmpDrv["name"]    = drv.get("name", "drv" + str(len(self.__drivers) + 1))
             tmpDrv["class"]   = drv.get("class", object)
-            tmpDrv["options"] = []
+            tmpDrv["options"] = Config()
 
             # get all options
-            opts = inst.findall("option")
+            opts = drv.findall("option")
 
             for opt in opts:
-                tmpOpt = {}
-                tmpOpt["name"]  = opt.get("name")
-                tmpOpt["value"] = opt.get("value")
-
-                tmpDrv["options"].append(tmpOpt)
+                tmpKey   = opt.get("name")
+                tmpValue =  opt.get("value")
+                tmpDrv["options"][tmpKey] = tmpValue
                 
             self.__drivers.append(tmpDrv)
 
@@ -158,8 +151,8 @@ class SiteConfiguration(object):
             print s,"="*len(s)
             print
             
-            for opt in l["options"]:
-                print "%s = %s" % (opt["name"], opt["value"])
+            for k,v in l["options"].items():
+                print "%s = %s" % (k, v)
 
             print
 
