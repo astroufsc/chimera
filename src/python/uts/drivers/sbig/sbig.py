@@ -1,303 +1,264 @@
-import sbigudrv as udrv
-import numpy
+import os
+import time
+import logging
+import pwd
+import threading
+import string
 
-class ReadoutMode(object):
+# ask to use numpy
+os.environ["NUMERIX"] = "numpy"
+import pyfits
+	
+from sbigdrv import *
 
-    def __init__(self, mode):
-        self.mode =  mode.mode
-        self.gain = float(hex(mode.gain).split('x')[1]) / 100.0
-        self.width = mode.width
-        self.height = mode.height
-        self.pixelWidth = float(hex(mode.pixel_width).split('x')[1]) / 100.0
-        self.pixelHeight = float(hex(mode.pixel_height).split('x')[1]) / 100.0
+from uts.core.lifecycle import BasicLifeCycle
+from uts.interfaces.camera import ICameraDriver
+	
+class SBIG(BasicLifeCycle, ICameraDriver):
 
-    def getSize(self):
-        return (self.height, self.width)
+        def __init__(self, manager):
+                BasicLifeCycle.__init__(self, manager)
 
-    def getWindow(self):
-        return [0, 0, self.width, self.height]
+                self.drv = SBIGDrv()
+		self.ccd = SBIGDrv.imaging
 
-    def getLine(self):
-        return [0, self.width]
+		self.term = threading.Event()
 
-    def __str__(self):
-        return "%d: %.2f [%d,%d] [%.2f, %.2f]" % (self.mode, self.gain,
-                                                  self.width, self.height,
-                                                  self.pixelWidth, self.pixelHeight)
-    
+	def init(self, config):
 
-    def __repr__(self):
-        return self.__str__()
+		if config.ccd == "imaging":
+			self.ccd = SBIGDrv.imaging
+		elif config.ccd == "tracking":
+			self.ccd = SBIGDrv.tracking
 
+	def shutdown(self):
+		pass
 
-class SBIG(object):
+	def control(self):
+		pass
 
-    lpt1 = udrv.DEV_LPT1
-    lpt2 = udrv.DEV_LPT2
-    lpt3 = udrv.DEV_LPT3
-    usb  = udrv.DEV_USB
-    usb1 = udrv.DEV_USB1
-    usb2 = udrv.DEV_USB2
-    usb3 = udrv.DEV_USB3
-    usb4 = udrv.DEV_USB4
-    
-    imaging = udrv.CCD_IMAGING
-    tracking = udrv.CCD_TRACKING
+        def open(self, device):
 
-    openShutter  = udrv.SC_OPEN_SHUTTER
-    closeShutter = udrv.SC_CLOSE_SHUTTER
-    leaveShutter = udrv.SC_LEAVE_SHUTTER
+		if device == "usb":
+			dev = SBIGDrv.usb
+		else:
+			dev = SBIG.lpt1
+			
 
-    readoutModes = {imaging: {},
-                    tracking: {}}
+		if not self.drv.openDriver():
+			logging.error("Error opening driver: %d %s." % self.drv.getError())
+			return False
 
-    # private
-    _imgIdle       = 0x0
-    _imgInProgress = 0x2
-    _imgComplete   = 0x3
-    _trkIdle       = 0x0
-    _trkInProgress = 0x8
-    _trkComplete   = 0xc
+		if not self.drv.openDevice(dev):
+			logging.error("Error opening device: %d %s." % self.drv.getError())
+			return False
 
-    def __init__(self):
-        #FIXME: check device permissions and module status
+		if not self.drv.establishLink():
+			logging.error("Error establishing link: %d %s." % self.drv.getError())
+			return False
 
-        self._errorNo = 0
-        self._errorString = ""
-
-    def openDriver(self):
-        return self._cmd(udrv.CC_OPEN_DRIVER, None, None)
-
-    def closeDriver(self):
-        return self._cmd(udrv.CC_CLOSE_DRIVER, None, None)
-
-    def openDevice(self, device):
-
-        odp = udrv.OpenDeviceParams()
-        odp.deviceType = device
-
-        return self._cmd(udrv.CC_OPEN_DEVICE, odp, None)
-
-    def closeDevice(self):
-        return self._cmd(udrv.CC_CLOSE_DEVICE, None, None)
-
-    def establishLink(self):
-        elp = udrv.EstablishLinkParams()
-        elr = udrv.EstablishLinkResults()
-
-        return self._cmd(udrv.CC_ESTABLISH_LINK, elp, elr)
-
-    def isLinked(self):
-        # FIXME: ask SBIG to get a better CC_GET_LINK_STATUS.. this one it too bogus
-        glsr = udrv.GetLinkStatusResults()
-
-        self._cmd(udrv.CC_GET_LINK_STATUS, None, glsr)
-
-        return bool(glsr.linkEstablished)
-
-    def startExposure(self, ccd, exp_time, shutter):
-        sep = udrv.StartExposureParams()
-
-        sep.ccd = ccd
-        sep.openShutter = shutter
-        sep.abgState = 0
-        sep.exposureTime = exp_time
-
-        return self._cmd(udrv.CC_START_EXPOSURE, sep, None)
-
-    def endExposure(self, ccd):
-        eep = udrv.EndExposureParams()
-        eep.ccd = ccd
-
-        return self._cmd(udrv.CC_END_EXPOSURE, eep, None)
-
-    def exposing(self, ccd):
-        if ccd == self.imaging:
-            return ((self._status(udrv.CC_START_EXPOSURE) & self._imgComplete) == self._imgInProgress)
-
-        if ccd == self.tracking:
-            return ((self._status(udrv.CC_START_EXPOSURE) & self._trkComplete) == self._trkInProgress0)
-
-    def startReadout(self, ccd, mode = 0, window = None):
-
-        if mode not in self.readoutModes[ccd].keys():
-            self.setError(-1, "Invalid readout mode")
-            return False
-
-        # geometry checking
-        readoutMode = self.readoutModes[ccd][mode]
-
-        window = window or readoutMode.getWindow()
+		if not self.drv.queryCCDInfo():
+			logging.error("Error querying ccd: %d %s." % self.drv.getError())
+			return False
         
-        if (window[0] < 0 or window[0] > readoutMode.height):
-            self.setError(-1, "Invalid window top point")
-            return False
+        def close(self):
+                self.drv.closeDevice()
+                self.drv.closeDriver()
 
-        if (window[1] < 0 or window[1] > readoutMode.width):
-            self.setError(-1, "Invalid window left point")
-            return False
+        def ping(self):
+                return self.drv.isLnked()
 
-        if (window[2] < 0 or window[2] > readoutMode.width):
-            self.setError(-1, "Invalid window width")
-            return False
+	def exposing(self):
+                return self.drv.exposing(self.ccd)
 
-        if (window[3] < 0 or window[3] > readoutMode.height):
-            self.setError(-1, "Invalid window height")
-            return False
+	def expose(self, config):
 
-        srp = udrv.StartReadoutParams()
-        srp.ccd = ccd
-        srp.readoutMode = mode
-        srp.top    = window[0]
-        srp.left   = window[1]
-        srp.height = window[2]
-        srp.width  = window[3]
+		self.term.clear()
 
-        return self._cmd(udrv.CC_START_READOUT, srp, None)
+		if self._expose(config):
+			self._readout(config)
+			return True
+		
+		return False
 
-    def endReadout(self, ccd):
-        erp = udrv.EndReadoutParams()
+	def abortExposure(self, readout = True):
 
-        erp.ccd = ccd
+		if not self.exposing():
+			logging.debug("There are no exposition in course... abort cancelled.")
+			return False
+		
+		self.term.set()
 
-        return self._cmd(udrv.CC_END_READOUT, erp, None)
-    
-    def readoutLine(self, ccd, mode = 0, line = None):
+		logging.debug("Aborting exposure...")
 
-        if mode not in self.readoutModes[ccd].keys():
-            self.setError(-1, "Invalid readout mode")
-            return False
+		return True
 
-        # geometry check
-        readoutMode = self.readoutModes[ccd][mode]
+	def _expose(self, config):
 
-        line = line or readoutMode.getLine()
+		if config.shutter == "open":
+			shutter = SBIGDrv.openShutter
+		elif config.shutter == "close":
+			shutter = SBIGDrv.closeShutter
+		elif config.shutter == "leave":
+			shutter = SBIGDrv.leaveShutter
+		else:
+			logging.error("Incorrect shutter option (%s). Leaving shutter intact" % config.shutter)
+			shutter = leaveShutter
 
-        if (line[0] < 0 or line[0] > readoutMode.width):
-            self.setError(-1, "Invalid pixel start")
-            return False
-            
-        if (line[1] < 0 or line[1] > readoutMode.width):
-            self.setError(-1, "Invalid pixel lenght")
-            return False
+		if not self.drv.startExposure(self.ccd, int(config.exptime), shutter):
+			err = self.drv.getError()
+			logging.error("Error starting exposure: %d %s" %  (err))
+			return False
 
-        rolp = udrv.ReadoutLineParams()
-        rolp.ccd = ccd
-        rolp.readoutMode = mode
-        rolp.pixelStart = line[0]
-        rolp.pixelLength = line[1]
+		# save time exposure started
+		config.start_time = time.time()
 
-        # create a numpy array to hold the line
-        buff = numpy.zeros(line[1], numpy.ushort)
+		while self.drv.exposing(self.ccd):
+					
+			# check if user asked to abort
+			if self.term.isSet():
+				# ok, abort and check if user asked to do a readout anyway
+				self._endExposure(config)
+				
+				if int(config.readout_aborted):
+					self._readout(config)
 
-        if not self._cmd(udrv.CC_READOUT_LINE, rolp, buff):
-            return False
+				return False
 
-        return buff
+		# end exposure and returns
+		self._endExposure(config)
 
-    # query and info functions
+		return True
 
-    def queryUSB(self):
+	def _endExposure(self, config):
 
-        usb = udrv.QueryUSBResults()
+		if not self.drv.endExposure(self.ccd):
+			err = self.drv.getError()
+			logging.error("Error ending exposure: %d %s" % err)
+			return False
 
-        if not self._cmd(udrv.CC_QUERY_USB, None, usb):
-            return False
+		# fire exposeComplete event
+		self.exposeComplete()
 
-        cams = []
+		return True
 
-        for cam in usb.usbInfo:
-            if cam.cameraFound:
-                cams.append(cam.name)
+	def _readout(self, config):
 
-        return cams
-    
-    def queryDriverInfo(self):
-        pass
+		# start readout
+		# FIXME: bitpix selection
+                img = numpy.zeros(self.drv.readoutModes[self.ccd][int(config.readout_mode)].getSize(), numpy.int16)
 
-    def queryCCDInfo(self):
+		if not self.drv.startReadout(self.ccd, 0):
+			err = self.drv.getError()
+			logging.error("Error starting readout: %d %s" % err)
+			return False
 
-        infoImg = udrv.GetCCDInfoResults0()
-        infoTrk = udrv.GetCCDInfoResults0()
+                i = 0
+                for line in range(self.drv.readoutModes[self.ccd][int(config.readout_mode)].height):
+                        img[i] = self.drv.readoutLine(self.ccd, 0)
+                        i = i + 1
 
-        gcip = udrv.GetCCDInfoParams()
+			# check if user asked to abort
+			if self.term.isSet():
+				self._endReadout(config)
+				self._saveFITS(config, img)
+				
+				return True
 
-        gcip.request = udrv.CCD_INFO_IMAGING
-        if not self._cmd(udrv.CC_GET_CCD_INFO, gcip, infoImg):
-            return False
+		# end readout and save
+		self._endReadout(config)
+		self._saveFITS(config, img)
 
-        gcip.request = udrv.CCD_INFO_TRACKING
-        if not self._cmd(udrv.CC_GET_CCD_INFO, gcip, infoTrk):
-            return False
+		return True
 
-        # imaging ccd readout modes
-        for i in range(infoImg.readoutModes):
-            mode = infoImg.readoutInfo[i]
-            self.readoutModes[self.imaging][mode.mode] = ReadoutMode(mode)
+	def _saveFITS(self, config, img):
+                                        
+		# check if config.directory exists
+		# also check write permissions. If user don't have permission, try to write on /tmp
+		# and log this so user can try to copy this later
 
-        for i in range(infoTrk.readoutModes):
-            mode = infoTrk.readoutInfo[i]
-            self.readoutModes[self.tracking][mode.mode] = ReadoutMode(mode)
+		#config.dateformat = '%d%m%y'
+		#config.fileformat = '$num-$observer-$date-%objname'
 
-        return True
+		dest = config.directory
 
-    # low-level commands
+		dest = os.path.expanduser(dest)
+		dest = os.path.expandvars(dest)
+		dest = os.path.realpath(dest)
 
-    def setError(self, errorNo, errorString):
-        self._errorNo = errorNo
-        self._errorString = errorString
+		# existence of the directory
+		if not os.path.exists(dest):
+			# directory doesn't exist, check config to know what to do
+			if not config.save_on_temp == "true":
+				logging.warning("The direcotry specified (%s) doesn't exist "
+						"and save_on_temp was not active, the current"
+						"exposure will be lost." % (dest))
 
-    def getError(self):
-        if self._errorNo:
-            ret = (self._errorNo, self._errorString)
-        else:
-            ret = 0
+				return False
+			
+		# permission
+		if not os.access(dest, os.W_OK):
+			# user doesn't have permission to write on dest, check config to know what to do
+			if not config.save_on_temp == "true":
 
-        self._errorNo = 0
-        self._errorString = ""
+				uid = os.getuid()
+				user = pwd.getpwuid(uid)[0]
+				logging.warning("User %s (%d) doesn't have permission to write"
+						"on %s and save_on_temp was not active, the current"
+						"exposure will be lost." % (user, uid, dest))
 
-        return ret
+				return False
+		# create filename
+		# FIXME: UTC or not UTC?
+		date = time.strftime(config.date_format, time.gmtime(config.start_time))
+		subs_dict = {'num': int(config.seq_num),
+			     'observer': config.observer,
+			     'date': date,
+			     'objname': config.obj_name}
+		
+		filename = string.Template(config.file_format).safe_substitute(subs_dict)
+		finalname = os.path.join(dest, "%s%s%s" % (filename, os.path.extsep,config.file_extension))
 
-    def _cmd(self, cmd, cin, cout):
-        err = udrv.SBIGUnivDrvCommand(cmd, cin, cout)
+# 		# check if the finalname doesn't exist
+# 		if os.path.exists(finalname):
+# 			# what to do
 
-        if err == udrv.CE_NO_ERROR:
-            return True
-        else:
-            gesp = udrv.GetErrorStringParams()
-            gesr = udrv.GetErrorStringResults()
+		# ok, finally save the file
 
-            gesp.errorNo = err
-            
-            udrv.SBIGUnivDrvCommand(udrv.CC_GET_ERROR_STRING, gesp, gesr)
+		try:
+			hdu  = pyfits.PrimaryHDU(img)
 
-            self.setError(err, gesr.errorString)
+			# add basic header (DATE, DATE-OBS) ad this information can get lost
+			# any other header should be added later by the controller
+			fits_date_format = "%Y-%m-%dT%H:%M:%S"
+			date = time.strftime(fits_date_format, time.gmtime())
+			dateobs = time.strftime(fits_date_format, time.gmtime(config.start_time))
 
-            return False
+			hdu.header.update("DATE", date, "date of file creation")
+			hdu.header.update("DATE-OBS", dateobs, "date of the observation")
+			
+			fits = pyfits.HDUList([hdu])
+			fits.writeto(finalname)
 
-    def _status(self, cmd):
+		except IOError, e:
+			logging.error("An error ocurred trying to save on %s. The current image will be lost" %
+				      (finalname, e.message))
+			
+			return False
 
-        qcsp = udrv.QueryCommandStatusParams()
-        qcsr = udrv.QueryCommandStatusResults()
-        qcsp.command = cmd
+		return finalname
 
-        if not self._cmd(udrv.CC_QUERY_COMMAND_STATUS, qcsp, qcsr):
-            return False
+	def _endReadout(self, config):
+			
+		if not self.drv.endReadout(self.ccd):
+			err = self.drv.getError()
+			logging.error("Error ending readout: %d %s" % err)
+			return False
+		
+		# fire exposeComplete event
+		self.readoutComplete()
 
-        return qcsr.status
+		return True
 
-if __name__ == '__main__':
 
-    import time
 
-    s = SBIG()
-    t1 = time.time()
-    s.openDriver()
-    s.openDevice(SBIG.usb)
-    s.establishLink()
-    t2 = time.time()
-
-    print t2 - t1
-
-    
-    
