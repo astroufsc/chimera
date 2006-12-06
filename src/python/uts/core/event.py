@@ -58,12 +58,12 @@ class _EventSlot:
 
 if __name__ == '__main__':
 
-    from uts.core.instrument import Instrument
+    from uts.core.lifecycle import BasicLifeCycle
 
-    class ExampleDefinition(Instrument):
+    class ExampleDefinition(BasicLifeCycle):
 
         def __init__(self):
-            Instrument.__init__(self)
+            BasicLifeCycle.__init__(self)
 
         def doSomething(self, data):
             self.somethingHappened(self, data)
