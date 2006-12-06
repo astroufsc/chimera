@@ -10,6 +10,24 @@
       <option name="device" value="/dev/ttyS0"/>
    </driver>
 
+   <driver name="sbig" class="SBIG">
+	<option name="device"		value="/dev/ttyS0"/>
+	<option name="ccd"		value="imaging">
+	<option name="exptime"		value=0>
+	<option name="shutter"		value="open">
+	<option name="start_time"	value="">
+	<option name="readoutAborted"	value="1"
+	<option name="readout_mode"	value="1">
+	<option name="dateformat"	value="%d%m%y">
+	<option name="fileformat"	value="$num-$observer-$date-%objname">
+	<option name="directory"	value="">
+	<option name="save_on_temp"	value="">
+	<option name="seq_num"		value="">
+	<option name="observer"		value="">
+	<option name="objname"		value="">
+   </driver>
+
+
 </drivers>
 
 <instruments>
