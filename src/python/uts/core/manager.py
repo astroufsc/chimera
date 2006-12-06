@@ -3,6 +3,7 @@
 
 import sys
 import os.path
+import traceback
 import logging
 from types import StringType
 
@@ -89,8 +90,23 @@ class Manager(object):
 
             return self._cache[name]
 
-        except ImportError:
-            logging.error("Couldn't found module %s." % name)
+        except ImportError, e:
+
+            # Python trick: An ImportError exception catched here could came from both the __import__ above or
+            # from the module imported by the __import__ above... So, we need a way to know the difference
+            # between those exceptions.
+            # A simple (reliable?) way is to use the lenght of the exception traceback as a indicator
+            # If the traceback had only 1 entry, the exceptions comes from the __import__ above, more than one
+            # the exception comes from the imported module
+
+            tb_size = len(traceback.extract_tb(sys.exc_info()[2]))
+
+            if tb_size == 1:
+                logging.error("Couldn't found module %s." % name)
+            else:
+                logging.error("Module %s found but couldn't be loaded. Exception follows..." % name)
+                logging.exception("")
+
             return False
 
         except Exception, e:
@@ -103,7 +119,10 @@ class Manager(object):
         if type(location) == StringType:
             location = Location(location)
 
-        if location not in register:
+        obj = register.get(location)
+
+        if not obj:
+            logging.debug("Could't found %s." %  location)
             return None
 
         obj = register[location]
