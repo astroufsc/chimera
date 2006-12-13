@@ -90,7 +90,7 @@ class Manager(object):
 
             return self._cache[name]
 
-        except ImportError, e:
+        except Exception, e:
 
             # Python trick: An ImportError exception catched here could came from both the __import__ above or
             # from the module imported by the __import__ above... So, we need a way to know the difference
@@ -109,10 +109,6 @@ class Manager(object):
 
             return False
 
-        except Exception, e:
-            logging.error("Module %s found but couldn't be loaded. Exception follows..." % name)
-            logging.exception("")
-            return False
     
     def _get(self, location, register, proxy = True):
 
