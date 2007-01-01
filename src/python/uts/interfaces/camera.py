@@ -4,13 +4,17 @@
 from uts.core.interface import Interface
 from uts.core.event import event
 
+
 class ICameraExpose(Interface):
 
+    # config
+    __options__ = {"driver" : "/Fake/camera"}
+    
     # methods
     def expose (self, config):
         pass
     
-    def abortExposure (self, readout = True):
+    def abortExposure (self, config):
         pass
 
     # events
@@ -25,6 +29,7 @@ class ICameraExpose(Interface):
     @event
     def readoutComplete (self):
         pass
+
 
 class ICameraTemperture(Interface):
 
@@ -43,6 +48,24 @@ class ICameraTemperture(Interface):
 
 class ICameraDriver(Interface):
 
+    # config
+    __options__ = {"device"	         : "/dev/ttyS0",
+                   "ccd"                 : ["imaging", "tracking"],
+                   "exp_time"	         : (10, 600000),
+                   "shutter" 	         : ["open", "close", "leave"],
+                   "readout_aborted"     : True,
+                   "readout_mode"	 : 1,
+                   "date_format"	 : "%d%m%y",
+                   "file_format"	 : "$num-$observer-$date-%objname",
+                   "file_extension"  	 : "fits",
+                   "directory"	         : "/home/someuser/images",
+                   "save_on_temp"	 : False,
+                   "seq_num"	         : 1,
+                   "start_time"          : 0,
+                   "observer"	         : "observer name",
+                   "obj_name"	         : "object name"}
+
+    
     # methods
 
     def open(self, device):
@@ -60,7 +83,7 @@ class ICameraDriver(Interface):
     def espose(self, config):
         pass
 
-    def abortExposure(self, readout = True):
+    def abortExposure(self, config):
         pass
 
     # events
