@@ -9,7 +9,22 @@ class Sample(BasicLifeCycle):
         BasicLifeCycle.__init__(self, manager)
             
     def init(self, config):
-        pass
+
+        # FIXME: automatic?
+        self.config += config
+
+        self.cam = self.manager.getInstrument('/Camera/st8')
+
+        self.cam.exposeComplete += self.exposeComplete
+        self.cam.readoutComplete += self.readoutComplete
+
+        self.cam.expose({"exp_time": 100})
+
+    def exposeComplete (self):
+        print "tada!!!.. acabou de expor"
+
+    def readoutComplete (self):
+        print "tada!!!.. acabou de gravar"
 
     def shutdown(self):
         pass
@@ -17,22 +32,3 @@ class Sample(BasicLifeCycle):
     def control(self):
         pass
 
-    def slewCompleteCb(self, a, b, c):
-        print a
-
-        # instrument
-        tel = self.manager.getInstrument("/Telescope/lx200gps")
-
-        if tel:
-            print tel.getDec()
-            tel.slewComplete += self.slewCompleteCb
-        else:
-            logging.error("There are no instrument /Telescope/lx200gps avaiable")
-
-        # driver
-        driver = self.manager.getDriver("/Meade/meade")
-
-        if driver:
-            print driver.getDec()
-        else:
-            logging.error("There are no driver /Meade/meade avaiable")
