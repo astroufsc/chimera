@@ -3,6 +3,8 @@ import uts
 from uts.interfaces.lifecycle import ILifeCycle
 from uts.core.event import EventsProxy
 
+from uts.core.config import Config
+
 import time
 import threading
 
@@ -21,6 +23,9 @@ class BasicLifeCycle(ILifeCycle):
 
         # event handling
         self.__eventsProxy__ = EventsProxy(self.__events__)
+
+        # create configuration as necessary
+        self.config = Config(self.__options__)
 
     # TODO: driver loading
     

@@ -212,9 +212,15 @@ class RangeChecker (Checker):
     def __init__ (self, value):
         Checker.__init__ (self)
 
-        self._min = float (value[0])
-        self._max = float (value[1])
-        self._checker = FloatChecker ()
+        self._min = value[0]
+        self._max = value[1]
+
+        if type (value[0]) == FloatType:
+            self._checker = FloatChecker ()
+
+        else:
+            self._checker = IntChecker ()
+           
 
     def check (self, value):
 
@@ -289,6 +295,7 @@ class Config (object):
             return self._options[name].get ()
 
         else:
+            logging.debug ("invalid option ('%s')." % name)
             raise KeyError
 
     def __setitem__ (self, name, value):
@@ -297,9 +304,11 @@ class Config (object):
         if name in self:
             self._options[name].set (value)
 
-        # just add to _config, no type/range checking
+        # rant about invalid option
         else:
-            self._options[name] = Option (name, value, IgnoreChecker ())
+            logging.debug ("invalid option ('%s')." % name)
+            raise KeyError
+       
 
     def __iter__ (self):
 
@@ -343,8 +352,17 @@ class Config (object):
         if name in self:
             return self[name]
 
+        else:
+            logging.debug ("invalid option ('%s')." % name)
+            raise AttributeError
+
     def __setattr__ (self, name, value):
-        self[name] = value
+
+        if name in self:
+            self[name] = value
+        else:
+            logging.debug ("invalid option ('%s')." % name)
+            raise AttributeError
 
     
 if __name__ == '__main__':

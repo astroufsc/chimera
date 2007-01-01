@@ -19,7 +19,23 @@ class InterfaceMeta(type):
                 _evs += base.__events__
 
         dictionary['__events__'] = _evs
-                
+
+        
+        # look for configurations
+
+        _options = {}
+        
+        for name, obj in dictionary.iteritems():
+            if name == "__options__":
+                _options.update(obj)
+
+        # search for configs in class bases
+        for base in bases:
+            if hasattr(base, '__options__'):
+                _options.update(base.__options__)
+
+        dictionary['__options__'] = _options
+        
         return super(InterfaceMeta, metacls).__new__(metacls, clsname, bases, dictionary)
 
 
