@@ -189,7 +189,7 @@ class ThreadPoolThread(threading.Thread):
 
 __tp = None
 
-def getThreadPool(n):
+def getThreadPool(n = 10):
 
     global __tp
 
