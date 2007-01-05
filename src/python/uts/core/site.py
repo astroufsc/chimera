@@ -2,7 +2,6 @@
 #! -*- coding: iso-8859-1 -*-
 
 from uts.core.register import Register
-from uts.core.threads import ThreadPool
 from uts.core.proxy import Proxy
 from uts.core.location import Location
 from uts.core.manager import Manager
@@ -190,22 +189,9 @@ class Site(object):
         if self.options.verbose:
             logging.getLogger().setLevel(logging.DEBUG)
 
+        self.manager = None
+
         logging.debug("Starting system.")
-
-        # manager
-        self.manager = Manager()
-
-        # directories
-
-        for _dir in self.options.inst_dir:
-            self.manager.appendPath("instrument", _dir)
-
-        for _dir in self.options.ctrl_dir:
-            self.manager.appendPath("controller", _dir)
-
-        for _dir in self.options.drv_dir:
-            self.manager.appendPath("driver", _dir)
-
 
     def parseArgs(self, args):
 
@@ -247,28 +233,40 @@ class Site(object):
         parser.add_option("-v", "--verbose", action="store_true", dest='verbose',
                           help="Increase screen log level.")
 
-	prefix = os.path.realpath(os.path.join(os.path.abspath(__file__), '../../'))
-        
 	parser.set_defaults(instruments = [],
                         controllers = [],
                         drivers     = [],
                         config = [],
-                        inst_dir = [os.path.join(prefix, 'instruments')],
-                        ctrl_dir = [os.path.join(prefix, 'controllers')],
-                        drv_dir = [os.path.join(prefix, 'drivers')],
+                        inst_dir = [],
+                        ctrl_dir = [],
+                        drv_dir = [],
                         verbose=False)
 
         return parser.parse_args(args)
 
     def init(self):
-        self._pool = ThreadPool(10)
-        self.manager.setPool(self._pool)
+
+        # manager
+        self.manager = Manager()
 
         # config file
         self.config = SiteConfiguration()
         
         for config in self.options.config:
             self.config.read(config)
+
+        # directories
+
+        for _dir in self.options.inst_dir:
+            self.manager.appendPath("instrument", _dir)
+    
+        for _dir in self.options.ctrl_dir:
+            self.manager.appendPath("controller", _dir)
+        
+        for _dir in self.options.drv_dir:
+            self.manager.appendPath("driver", _dir)
+
+        # init from config
 
         for drv in self.config.getDrivers():
             l = Location(drv)
@@ -282,7 +280,7 @@ class Site(object):
             l = Location(ctrl)
             self.manager.initController(l)
             
-        # add all instruments from config and from cmdline
+        # init from cmd line
         for drv in self.options.drivers:
             l = Location(drv)
             self.manager.initDriver(l)
