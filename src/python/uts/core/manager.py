@@ -10,10 +10,11 @@ from types import StringType
 from uts.core.register import Register
 from uts.core.proxy import Proxy
 from uts.core.location import Location
+from uts.core.threads import getThreadPool
 
 class Manager(object):
 
-    def __init__(self):
+    def __init__(self, pool = None, add_system_path = True):
         logging.debug("Starting manager.")
 
         self._includePath = {"instrument": [],
@@ -24,9 +25,12 @@ class Manager(object):
         self._controllers = Register("controller")
         self._drivers     = Register("driver")
 
-        self._pool = None
+        self._pool = pool or getThreadPool ()
 
         self._cache = { }
+
+        if add_system_path:
+            self._addSystemPath ()
 
     def shutdown(self):
 
@@ -41,6 +45,14 @@ class Manager(object):
         for location in self._drivers.keys():
             self.shutdownDriver(location)
             self.removeDriver(location)
+
+    def _addSystemPath (self):
+        
+        prefix = os.path.realpath(os.path.join(os.path.abspath(__file__), '../../'))
+        
+        self.appendPath ("instrument", os.path.join(prefix, 'instruments'))
+        self.appendPath ("controller", os.path.join(prefix, 'controllers'))
+        self.appendPath ("driver", os.path.join(prefix, 'drivers'))
 
     def appendPath(self, kind, path):
 
@@ -114,6 +126,9 @@ class Manager(object):
 
         if type(location) == StringType:
             location = Location(location)
+
+        if location not in register:
+            self._init (location, register) 
 
         obj = register.get(location)
 
