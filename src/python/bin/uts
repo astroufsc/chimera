@@ -1,8 +1,15 @@
 #! /usr/bin/env python
 # -*- coding: iso-8859-1 -*-
 
-import sys
 
-from uts.core.site import main
- 
-sys.exit(main(sys.argv))
+if __name__ == '__main__':
+
+    import sys
+
+    from uts.core.runner import Runner
+    from uts.core.site import Site
+
+    s = Site (sys.argv)
+
+    runner = Runner (s)
+    sys.exit (runner.main ())
