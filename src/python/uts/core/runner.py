@@ -20,7 +20,7 @@ class Runner (object):
     
     def main(self):
 
-        shutdown = threading.Event ()
+        # FIXME: shutdown = threading.Event ()
 
         # from here we will have 2 process. Child process will return from splitAndWatch,
         # while the main process will watch for signals and will kill the child

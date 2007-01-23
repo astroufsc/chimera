@@ -1,5 +1,3 @@
-from types import StringType
-
 class Register(object):
 
     def __init__(self, kind = None):
@@ -119,14 +117,14 @@ if __name__ == '__main__':
     ll = Location("/Telescope/paramount?opt1=val1,opt2=val2")
 
 
-    r = Register()
-    r.register(l, a)
-    r.register(ll, b)
+    reg = Register()
+    reg.register(l, a)
+    reg.register(ll, b)
 
-    print r
-    print r[l]
-    print r["/Telescope/meade"]
+    print reg
+    print reg[l]
+    print reg["/Telescope/meade"]
 
-    lll = r.getByClass("Telescope")
+    lll = reg.getByClass("Telescope")
     for i in lll:
-        print r[i]
+        print reg[i]

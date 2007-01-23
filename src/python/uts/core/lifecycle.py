@@ -1,5 +1,3 @@
-import uts
-
 from uts.interfaces.lifecycle import ILifeCycle
 from uts.core.event import EventsProxy
 

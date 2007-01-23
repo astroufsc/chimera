@@ -1,20 +1,13 @@
 #! /usr/bin/python
 #! -*- coding: iso-8859-1 -*-
 
-from uts.core.register import Register
-from uts.core.proxy import Proxy
 from uts.core.location import Location
 from uts.core.manager import Manager
 
 from uts.core.version import _uts_version
 
-import signal
-import sys
-import os
 import os.path
-import distutils.sysconfig
 import logging
-import threading
 
 from optparse import OptionParser
 import uts.util.etree.ElementTree as ET
@@ -233,7 +226,7 @@ class Site(object):
         parser.add_option("-v", "--verbose", action="store_true", dest='verbose',
                           help="Increase screen log level.")
 
-	parser.set_defaults(instruments = [],
+        parser.set_defaults(instruments = [],
                         controllers = [],
                         drivers     = [],
                         config = [],

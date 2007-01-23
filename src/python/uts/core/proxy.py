@@ -42,8 +42,8 @@ class Proxy(object):
             raise AttributeError
 
 def lock(func):
-	func.lock = threading.Lock()
-	return func
+        func.lock = threading.Lock()
+        return func
 
 
 if __name__ == '__main__':
@@ -82,7 +82,7 @@ if __name__ == '__main__':
         print r1
 
         # calls nome asynchronously in a new thread, will
-		# call p1.nomeCallback when nome finishes
+                # call p1.nomeCallback when nome finishes
         r2 = p1.nome.begin(callback=p1.nomeCallback)
 
         # calls outroNome asynchronously in a new thread

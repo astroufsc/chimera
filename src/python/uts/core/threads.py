@@ -3,8 +3,6 @@
 
 import threading
 import logging
-import signal
-import time
 
 from time import sleep, time
 

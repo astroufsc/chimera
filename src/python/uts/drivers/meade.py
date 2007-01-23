@@ -2,7 +2,7 @@ import time
 import serial
 import signal
 
-from coord import Coord, Ra, Dec, Lat, Long, Point
+from uts.util.coord import Coord, Ra, Dec, Lat, Long, Point
 
 class Meade(object):
 
@@ -25,7 +25,7 @@ class Meade(object):
 
     def open(self, device, timeout = 10):
         self.tty.port = device
-	self.tty.timeout = timeout
+        self.tty.timeout = timeout
 
         try:
             self.tty.open()
@@ -36,7 +36,7 @@ class Meade(object):
         return True
 
     def close(self):
-        if self.self.tty.isOpen():
+        if self.tty.isOpen():
             self.tty.close()
             return True
         else:
@@ -247,7 +247,7 @@ class Meade(object):
         if not self.tty.isOpen():
             self.setError(-1, "Device not open")
             return ""
-	
+        
         return self.tty.readline(None, eol)
 
     def _readbool(self, n = 1):
@@ -264,7 +264,7 @@ class Meade(object):
             return ""
 
         self.tty.flushOutput()
-	
+        
         return self.tty.write(data)
 
 

@@ -48,7 +48,8 @@ class Manager(object):
 
     def _addSystemPath (self):
         
-        prefix = os.path.realpath(os.path.join(os.path.abspath(__file__), '../../'))
+        prefix = os.path.realpath(os.path.join(os.path.abspath(__file__),
+                                               '../../'))
         
         self.appendPath ("instrument", os.path.join(prefix, 'instruments'))
         self.appendPath ("controller", os.path.join(prefix, 'controllers'))
@@ -92,24 +93,28 @@ class Manager(object):
             sys.path = tmpSysPath
 
             if not name in vars(module).keys():
-                logging.error("Module found but there are no class named %s on module %s (%s)." % (name,
-                                                                                                   name.lower(), module.__file__))
+                logging.error("Module found but there are no class named %s on module %s (%s)." %
+                              (name, name.lower(), module.__file__))
                 return False
 
             self._cache[name] = vars(module)[name]
 
-            logging.debug("Module %s found (%s)" % (name.lower(), module.__file__))
+            logging.debug("Module %s found (%s)" % (name.lower(),
+                                                    module.__file__))
 
             return self._cache[name]
 
-        except Exception, e:
+        except Exception:
 
-            # Python trick: An ImportError exception catched here could came from both the __import__ above or
-            # from the module imported by the __import__ above... So, we need a way to know the difference
-            # between those exceptions.
-            # A simple (reliable?) way is to use the lenght of the exception traceback as a indicator
-            # If the traceback had only 1 entry, the exceptions comes from the __import__ above, more than one
-            # the exception comes from the imported module
+            # Python trick: An ImportError exception catched here
+            # could came from both the __import__ above or from the
+            # module imported by the __import__ above... So, we need a
+            # way to know the difference between those exceptions.  A
+            # simple (reliable?) way is to use the lenght of the
+            # exception traceback as a indicator If the traceback had
+            # only 1 entry, the exceptions comes from the __import__
+            # above, more than one the exception comes from the
+            # imported module
 
             tb_size = len(traceback.extract_tb(sys.exc_info()[2]))
 
@@ -117,6 +122,7 @@ class Manager(object):
                 logging.error("Couldn't found module %s." % name)
             else:
                 logging.error("Module %s found but couldn't be loaded. Exception follows..." % name)
+                
                 logging.exception("")
 
             return False
@@ -152,7 +158,8 @@ class Manager(object):
             return False
 
         # run object constructor
-        # it runs on the same thread, so be a good boy and don't block manager's thread
+        # it runs on the same thread, so be a good boy
+        # and don't block manager's thread
         try:
             obj = cls(self)
             return register.register(location, obj)

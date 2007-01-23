@@ -116,7 +116,7 @@ class SBIGDrv(object):
             return ((self._status(udrv.CC_START_EXPOSURE) & self._imgComplete) == self._imgInProgress)
 
         if ccd == self.tracking:
-            return ((self._status(udrv.CC_START_EXPOSURE) & self._trkComplete) == self._trkInProgress0)
+            return ((self._status(udrv.CC_START_EXPOSURE) & self._trkComplete) == self._trkInProgress)
 
     def startReadout(self, ccd, mode = 0, window = None):
 

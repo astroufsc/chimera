@@ -65,7 +65,7 @@ class Location(object):
             self._valid = False
             cls  = "class"
             name = "name"
-            opts = Config()
+            opts = {}
 
             logging.debug("Invalid location %s." % location)
 

@@ -57,7 +57,7 @@ class IntChecker (Checker):
         # if we can't get one from "value"
 
         # simple case
-        if type (value) in (IntType, FloatType):
+        if type (value) in (IntType, LongType, FloatType):
             return int (value)
 
         if type (value) == StringType:
@@ -84,7 +84,7 @@ class FloatChecker (Checker):
         # if we can't get one from "value"
 
         # simple case
-        if type (value) in (FloatType, IntType):
+        if type (value) in (FloatType, IntType, LongType):
             return float (value)
 
         if type (value) == StringType:
@@ -131,7 +131,7 @@ class BoolChecker (Checker):
 
         # only accept 0 and 1 as valid booleans...
         # cause a lot of problems in OptionChecker accept the same as python truth tables assume
-        if type (value) in (IntType, FloatType):
+        if type (value) in (IntType, LongType, FloatType):
     
             if value == 1:
                 return True
@@ -166,7 +166,7 @@ class OptionsChecker (Checker):
         
         for value in opt:
 
-            if type (value) == IntType:
+            if type (value) in (IntType, LongType):
                 options.append ({"value": value,
                                  "checker": IntChecker ()})
                 continue
@@ -200,8 +200,7 @@ class OptionsChecker (Checker):
                 else:
                     continue
 
-            except OptionConversionException, e:
-
+            except OptionConversionException:
                 continue
 
         raise OptionConversionException ("'%s' isn't a valid option." % str (value))
@@ -227,7 +226,7 @@ class RangeChecker (Checker):
         try:
             tmp = self._checker.check (value)
 
-        except OptionConversionException, e:
+        except OptionConversionException:
 
             raise OptionConversionException ("'%s' isn't a valid option." % str (value))
 
@@ -252,7 +251,7 @@ class Config (object):
 
         for name, value in opt.items ():
 
-            if type (value) == IntType:
+            if type (value) in (IntType, LongType):
                 options[name] = Option (name, value, IntChecker ())
                 continue
 
@@ -367,7 +366,7 @@ class Config (object):
     
 if __name__ == '__main__':
 
-    options = {
+    test_options = {
         "device"	: "/dev/ttyS0",
         "ccd"		: ["imaging", "tracking"],
         "exp_time"	: (0.1, 6000.0),
@@ -382,4 +381,4 @@ if __name__ == '__main__':
         "observer"	: "observer name",
         "obj_name"	: "object name"}
 
-    c = Config (options)
+    c = Config (test_options)
