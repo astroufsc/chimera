@@ -1,10 +1,13 @@
-from uts.interfaces.lifecycle import ILifeCycle
-from uts.core.event import EventsProxy
+#! /usr/bin/python
+# -*- coding: iso8859-1 -*-
 
-from uts.core.config import Config
 
 import time
 import threading
+
+from uts.interfaces.lifecycle import ILifeCycle
+from uts.core.event import EventsProxy
+from uts.core.config import Config
 
 class BasicLifeCycle(ILifeCycle):
 

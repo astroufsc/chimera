@@ -1,3 +1,6 @@
+#! /usr/bin/python
+# -*- coding: iso8859-1 -*-
+
 import logging
 
 from types import (IntType, FloatType, StringType, LongType,

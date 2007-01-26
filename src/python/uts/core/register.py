@@ -1,3 +1,6 @@
+#! /usr/bin/python
+# -*- coding: iso8859-1 -*-
+
 class Register(object):
 
     def __init__(self, kind = None):
