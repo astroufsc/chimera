@@ -1,7 +1,0 @@
-* finalizar interfaces: camera e telescopio(instrumento e driver)
-* finalizar driver meade e sbig
-* documentar config's
-* manager: getDriver
-* site config 
-* log: mostrar quem originou o problema e não onde o log foi criado
-* melhorar detecçao e seleção dos modos de leitura

@@ -1,0 +1,32 @@
+Chimera - Observatory Automation System
+=======================================
+
+Requirements:
+
+        Chimera core:
+
+        - GNU/Linux OS with 2.6.x kernel
+        - Python v. 2.4.x or greater
+
+        SBIG drivers:
+
+        - Numpy v. xxx or numarray v. xxx (Numpy is recomended)
+        - pyfits v. xxx
+
+        Meade driver:
+
+        - pyserial v. 2
+
+Installation:
+
+Chimera use standard Python distutils module (link here). Just use:
+
+$ cd <uncompressed_chimera_dir>
+# python setup.py install 
+
+setup.py must be run as root user to install Chimera in a system-wide basis. To run Chimera
+with a non-root account use:
+
+
+... <how_to_run_with_non_root.txt>
+

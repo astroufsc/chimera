@@ -1,7 +1,10 @@
+Chimera - Observatory Automation System
+=======================================
 
-sh autogen.sh
-./configure --prefix=/usr
-make
-make install
+Welcome!
 
-(make install deve ser rodado como root)
+Look at INSTALL to see how to install chimera.
+
+Thanks,
+
+-- P. Henrique

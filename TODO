@@ -1,19 +1,48 @@
-./src/drivers/camfits.st7/getindex.c:41:  /* TODO: must somehow free the space allocated by scandir()
-./src/python/uts/core/instrument.py:10:### TODO Add life cycle code (start/stop/query/etc)
-./src/python/uts/util/etree/ElementTree.py:138:# TODO: add support for custom namespace resolvers/default namespaces
-./src/python/uts/util/etree/ElementTree.py:139:# TODO: add improved support for incremental parsing
-./src/drivers/camfits.st7/getindex.c:41:  /* TODO: must somehow free the space allocated by scandir()
-./src/python/uts/core/manager.py:62:        # TODO: - add a reload method
-./src/python/uts/core/manager.py:63:        # TODO: - use separate include path for different objects
-./src/python/uts/core/instrument.py:25:    # TODO: driver loading
-./src/python/uts/core/event.py:11:# TODO: argument checking
-./src/python/uts/core/event.py:12:# TODO: define delegate signature
-./src/python/uts/util/etree/ElementTree.py:138:# TODO: add support for custom namespace resolvers/default namespaces
-./src/python/uts/util/etree/ElementTree.py:139:# TODO: add improved support for incremental parsing
-./src/python/build/lib/uts/core/manager.py:62:        # TODO: - add a reload method
-./src/python/build/lib/uts/core/manager.py:63:        # TODO: - use separate include path for different objects
-./src/python/build/lib/uts/core/instrument.py:25:    # TODO: driver loading
-./src/python/build/lib/uts/core/event.py:11:# TODO: argument checking
-./src/python/build/lib/uts/core/event.py:12:# TODO: define delegate signature
-./src/python/build/lib/uts/util/etree/ElementTree.py:138:# TODO: add support for custom namespace resolvers/default namespaces
-./src/python/build/lib/uts/util/etree/ElementTree.py:139:# TODO: add improved support for incremental parsing
+
+chimera
+===
+
+Tasks to be done, in random order:
+
+- implements IFilterWheel to SBIG CFW8
+
+- implements ITelescopeAxis
+
+- filtro e foco: ao trocar o filtro, o controlador deve procurar qual a configuracao de foco adequado, focar, testar (configuravel), e se nao houver configuracao de foco, deve preparar uma e salvar no banco de configuracoes
+
+- configuracoes: necessÃ¡rio.. e muito...
+
+
+- FITS headers
+
+
+- controle de temperatura
+- controle de eixos individuais
+- NSEW control
+
+* finalizar interfaces: camera e telescopio(instrumento e driver)
+
+* finalizar driver meade e sbig
+
+* documentar config's
+
+* manager: getDriver
+
+* site config 
+
+* log: mostrar quem originou o problema e não onde o log foi criado
+
+* melhorar detecçao e seleção dos modos de leitura
+
+* adicionar controlador de configuração e acionamento remoto, para permitir configuração
+
+  ex.: dado um sistema rodando, o controlador admin permite obter a instancia da classe Manager
+       responsavel, assim o cliente poderá controlar o sistema , adicionar objetos e modificar os 
+       existentes.
+
+* script de inicializacao: baseado no Site       
+
+* permitir adicao de objetos no SiteConfiguration
+
+* salvar SiteConfiguration para arquivo
+
