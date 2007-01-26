@@ -35,14 +35,14 @@ load-plugins=
 [REPORTS]
 
 # Tells wether to display a full report or only the messages
-reports=yes
+reports=no
 
 # Use HTML as output format instead of text
-html=yes
+html=no
 
 # Use a parseable text output format, so your favorite text editor will be able
 # to jump to the line corresponding to a message.
-parseable=no
+parseable=yes
 
 # Colorizes text output using ansi escape codes
 color=no
@@ -64,7 +64,7 @@ evaluation=10.0 - ((float(5 * error + warning + refactor + convention) / stateme
 comment=no
 
 # Include message's id in output
-include-ids=no
+include-ids=yes
 
 
 # checks for
