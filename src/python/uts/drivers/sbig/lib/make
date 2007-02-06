@@ -1,3 +1,0 @@
-
-gcc -o sbigudrv_wrap.o -c sbigudrv_wrap.c -I /usr/include/python -I /usr/lib/python/site-packages/numpy/core/include/
-gcc -o _sbigudrv.so -shared sbigudrv_wrap.o -lsbigudrv
