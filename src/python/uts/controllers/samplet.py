@@ -23,7 +23,7 @@ import time
 
 from uts.core.lifecycle import BasicLifeCycle
 
-class Sample(BasicLifeCycle):
+class Samplet(BasicLifeCycle):
 
     def __init__(self, manager):
         BasicLifeCycle.__init__(self, manager)
@@ -34,18 +34,14 @@ class Sample(BasicLifeCycle):
         self.config += config
 
         self.cam = self.manager.getInstrument('/Camera/st8')
+        self.cam.temperatureChanged += self.temperatureChanged
 
-        self.cam.exposeComplete += self.exposeComplete
-        self.cam.readoutComplete += self.readoutComplete
+        self.cam.setTemperature ({"temp_regulation": True,
+                                  "temp_setpoint"  : 20.0})
 
-        self.cam.expose({"exp_time": 1000,
-                         "shutter" : "close"})
 
-    def exposeComplete (self):
-        print "tada!!!.. acabou de expor"
-
-    def readoutComplete (self):
-        print "tada!!!.. acabou de gravar"
+    def temperatureChanged (self, lastTemp, newTemp):
+        print "newTemp: %f lastTemp: %f" % (newTemp, lastTemp)
 
     def shutdown(self):
         pass

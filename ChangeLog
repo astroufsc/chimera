@@ -1,5 +1,11 @@
 2007-02-07  P. Henrique Silva  <henrique@astro.ufsc.br>
 
+	* src/python/uts/controllers/sample.py: Better testing.
+	* src/python/uts/controllers/samplet.py:
+	* src/python/uts/controllers/samplef.py:
+
+	New
+
 	* src/python/uts/interfaces/filterwheel.py:
 
 	Cleanup IFilterWheel interface.

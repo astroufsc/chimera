@@ -20,10 +20,11 @@
 
 import logging
 import time
+import sys
 
 from uts.core.lifecycle import BasicLifeCycle
 
-class Sample(BasicLifeCycle):
+class Samplef(BasicLifeCycle):
 
     def __init__(self, manager):
         BasicLifeCycle.__init__(self, manager)
@@ -33,19 +34,36 @@ class Sample(BasicLifeCycle):
         # FIXME: automatic?
         self.config += config
 
-        self.cam = self.manager.getInstrument('/Camera/st8')
+        self.wheel = self.manager.getInstrument('/FilterWheel/0')
+        self.wheel.filterChanged += self.filterChanged
 
-        self.cam.exposeComplete += self.exposeComplete
-        self.cam.readoutComplete += self.readoutComplete
+        # try to move.. wait filter finish movement
 
-        self.cam.expose({"exp_time": 1000,
-                         "shutter" : "close"})
+        print "Moving to blue filter",
+        self.wheel.setFilter ("blue")
 
-    def exposeComplete (self):
-        print "tada!!!.. acabou de expor"
+        while self.wheel.getFilterStatus () == self.wheel.busy:
+            print ".",
+            sys.stdout.flush()
+            time.sleep (0.1)
+            
+        print " done."
 
-    def readoutComplete (self):
-        print "tada!!!.. acabou de gravar"
+        time.sleep (1.0)
+
+        print "Moving to rgb filter",
+        self.wheel.setFilter ("rgb")
+
+        while self.wheel.getFilterStatus () == self.wheel.busy:
+            print ".",
+            sys.stdout.flush()
+            time.sleep (0.1)
+
+            
+        print " done."
+
+    def filterChanged (self, newFilter, oldFilter):
+        logging.debug("newFilter: %s lastFilter: %s" %  (newFilter, oldFilter))
 
     def shutdown(self):
         pass
