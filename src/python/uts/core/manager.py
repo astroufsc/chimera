@@ -150,16 +150,14 @@ class Manager(object):
         if type(location) == StringType:
             location = Location(location)
 
-        if location not in register:
-            self._init (location, register) 
-
         obj = register.get(location)
 
         if not obj:
-            logging.debug("Could't found %s." %  location)
-            return None
-
-        obj = register[location]
+            # not found on register, try to add
+            if not self._init (location, register):
+                logging.debug("Could't found %s." %  location)
+            else:
+                obj = register.get(location)
 
         if proxy:
             return Proxy(obj, self._pool)
@@ -219,6 +217,8 @@ class Manager(object):
             logging.exception("Error running %s %s main method. Exception follows..." %
                               (register.kind, location))
             return False
+
+        return True
 
     def _shutdown(self, location, register):
 

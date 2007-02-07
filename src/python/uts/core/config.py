@@ -44,10 +44,8 @@ class Option (object):
             self._value = self._checker.check(value)
 
         except OptionConversionException, e:
-            self._value = self._default
-            
             logging.debug ("Error setting %s: %s." % (self._name, str (e)))
-
+            raise e
 
     def get (self):
         return self._value

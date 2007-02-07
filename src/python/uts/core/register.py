@@ -111,8 +111,7 @@ class Register(object):
 
         if insts:
             try:
-                ret = self.get(insts[index])
-                return ret
+                return self[insts.pop(index)]
             except IndexError:
                 return False
         else:
