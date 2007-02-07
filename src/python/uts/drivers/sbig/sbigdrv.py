@@ -18,8 +18,12 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-import sbigudrv as udrv
+
+import math
+
 import numpy
+
+import sbigudrv as udrv
 
 class ReadoutMode(object):
 
@@ -50,6 +54,66 @@ class ReadoutMode(object):
         return self.__str__()
 
 
+class TemperatureSetpoint(object):
+
+    t0 = 25.0
+    r0 = 3.0
+    max_ad = 4096
+
+    r_ratio = {"ccd": 2.57,
+               "amb": 7.791}
+
+    r_bridge = {"ccd": 10.0,
+                "amb": 3.0}
+
+    dt = {"ccd": 25.0,
+          "amb": 45.0}
+
+    @classmethod
+    def toAD (cls, temp, sensor = "ccd"):
+
+        if sensor not in ["ccd", "amb"]:
+            sensor = "ccd"
+
+        temp = float(temp)
+
+        # limits from CSBIGCam
+        if temp < -50.0:
+            temp = -50.0
+        elif temp > 35.0:
+            temp = 35.0
+        
+        r = cls.r0 * math.exp ( (math.log (cls.r_ratio[sensor]) * (cls.t0 - temp)) / cls.dt[sensor])
+
+        setpoint = (cls.max_ad / ( (cls.r_bridge[sensor] / r) + 1.0 )) + 0.5
+
+        #print "from %f to %d" % (temp, int(setpoint))
+
+        return int(setpoint)
+
+    @classmethod
+    def toDegrees (cls, setpoint, sensor = "ccd"):
+
+        if sensor not in ["ccd", "amb"]:
+            sensor = "ccd"
+
+        setpoint = int (setpoint)
+
+        # limits from CSBIGCam
+        if setpoint < 1:
+            setpoint = 1
+        elif setpoint >= (cls.max_ad - 1):
+            setpoint = cls.max_ad - 1
+
+        r = cls.r_bridge[sensor] / ( (float(cls.max_ad) / setpoint) - 1.0 )
+
+        temp = cls.t0 - ( cls.dt[sensor] * ( math.log (r/cls.r0) / math.log (cls.r_ratio[sensor]) ) )
+
+        #print "from %f to %f" % (setpoint, temp)
+
+        return temp
+ 
+
 class SBIGDrv(object):
 
     lpt1 = udrv.DEV_LPT1
@@ -70,6 +134,12 @@ class SBIGDrv(object):
 
     readoutModes = {imaging: {},
                     tracking: {}}
+
+    filter_1 = udrv.CFWP_1
+    filter_2 = udrv.CFWP_2
+    filter_3 = udrv.CFWP_3
+    filter_4 = udrv.CFWP_4
+    filter_5 = udrv.CFWP_5
 
     # private
     _imgIdle       = 0x0
@@ -260,6 +330,82 @@ class SBIGDrv(object):
             self.readoutModes[self.tracking][mode.mode] = ReadoutMode(mode)
 
         return True
+
+
+    # temperature
+    def setTemperature (self, regulation, setpoint, autofreeze = True):
+
+        strp = udrv.SetTemperatureRegulationParams()
+
+        if regulation == True:
+            strp.regulation = udrv.REGULATION_ON
+        else:
+            strp.regulation = udrv.REGULATION_OFF
+        
+        strp.ccdSetpoint = TemperatureSetpoint.toAD (setpoint)
+
+        ret = self._cmd(udrv.CC_SET_TEMPERATURE_REGULATION, strp, None)
+
+        if not ret:
+            return False
+
+        # activate autofreeze if enabled
+        if autofreeze == True:
+            strp = udrv.SetTemperatureRegulationParams()
+            strp.regulation = udrv.REGULATION_ENABLE_AUTOFREEZE
+            strp.ccdSetpoint = 0 # irrelevant
+            
+            return self._cmd(udrv.CC_SET_TEMPERATURE_REGULATION, strp, None)
+
+        return True
+
+    def getTemperature (self, ccd = True):
+
+        # USB based cameras have only one thermistor on the top of the CCD
+        # Ambient thermistor value will be always 25.0 oC
+
+        # ccdSetpoint value will be always equal to ambient thermistor when regulation not enabled (not documented)
+
+        qtsr = udrv.QueryTemperatureStatusResults()
+
+        ret = self._cmd (udrv.CC_QUERY_TEMPERATURE_STATUS, None, qtsr)
+
+        if not ret:
+            return False
+
+        return (qtsr.enabled,
+                (qtsr.power / 255.0) * 100.0,
+                TemperatureSetpoint.toDegrees(qtsr.ccdSetpoint, "ccd"),
+                TemperatureSetpoint.toDegrees(qtsr.ccdThermistor, "ccd"))
+
+    # filter wheel
+    def getFilterPosition (self):
+        pass
+
+    def setFilterPosition (self, position):
+        
+        cfwp = udrv.CFWParams()
+        cfwp.cfwModel = udrv.CFWSEL_CFW8
+        cfwp.cfwCommand = udrv.CFWC_GOTO
+        cfwp.cfwParam1 = position
+
+        cfwr = udrv.CFWResults()
+
+        return self._cmd (udrv.CC_CFW, cfwp, cfwr)
+
+    def getFilterStatus (self):
+        cfwp = udrv.CFWParams()
+        cfwp.cfwModel = udrv.CFWSEL_CFW8
+        cfwp.cfwCommand = udrv.CFWC_QUERY
+
+        cfwr = udrv.CFWResults()
+
+        ret = self._cmd (udrv.CC_CFW, cfwp, cfwr)
+
+        if not ret:
+            return False
+
+        return cfwr.cfwStatus
 
     # low-level commands
 

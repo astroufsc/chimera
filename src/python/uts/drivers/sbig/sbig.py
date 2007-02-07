@@ -25,6 +25,7 @@ import pwd
 import threading
 import string
 import random
+import tempfile
 
 # ask to use numpy
 os.environ["NUMERIX"] = "numpy"
@@ -34,14 +35,18 @@ from sbigdrv import *
 
 from uts.core.lifecycle import BasicLifeCycle
 from uts.interfaces.camera import ICameraDriver
+from uts.interfaces.filterwheel import IFilterWheelDriver
         
-class SBIG(BasicLifeCycle, ICameraDriver):
+class SBIG(BasicLifeCycle, ICameraDriver, IFilterWheelDriver):
 
     def __init__(self, manager):
         BasicLifeCycle.__init__(self, manager)
 
         self.drv = SBIGDrv()
         self.ccd = SBIGDrv.imaging
+
+        self.lastTemp = 0
+        self.lastFilter = None
 
         self.term = threading.Event()
 
@@ -65,7 +70,18 @@ class SBIG(BasicLifeCycle, ICameraDriver):
         self.close ()
 
     def control(self):
-        pass
+
+        temp = self.drv.getTemperature ()
+
+        if temp:
+
+            newTemp = temp[3]
+
+            if (newTemp - self.lastTemp) >= self.config.temp_delta:
+                self.temperatureChanged (newTemp, self.lastTemp)
+                self.lastTemp = newTemp
+        else:
+            logging.debug ("Couldn't get CCD temperature (%d %s)" % self.drv.getError ())
 
     def open(self, device):
 
@@ -104,8 +120,8 @@ class SBIG(BasicLifeCycle, ICameraDriver):
         if self._expose():
             self._readout()
             return True
-                
-        return False
+        else:
+            return False
 
     def abortExposure(self, config):
 
@@ -120,6 +136,58 @@ class SBIG(BasicLifeCycle, ICameraDriver):
         logging.debug("Aborting exposure...")
 
         return True
+
+    # methods
+    def setTemperature(self, config):
+
+        self.config += config
+
+        if not self.drv.setTemperature (self.config.temp_regulation,
+                                        self.config.temp_setpoint,
+                                        self.config.auto_freeze):
+            logging.error("Couldn't set temperature.")
+            return False
+
+        return True
+
+    def getTemperature(self):
+
+        ret = self.drv.getTemperature ()
+
+        if not ret:
+            logging.error("Couldn't get temperature.")
+            return False
+
+        return ret
+
+    def getFilter (self):
+        return self.drv.getFilterPosition ()
+
+    def setFilter (self, _filter):
+
+        try:
+            position = eval ('self.drv.filter_%d' % _filter)
+        except NameError:
+            logging.error ("Selected filter not defined on SBIG driver.")
+            return False
+
+        ret = self.drv.setFilterPosition (position)
+
+        if not ret:
+            logging.error ("Error while changing filter (%d %s)." % self.drv.getError ())
+            return False
+
+        # first filter change, so last equals new
+        if not self.lastFilter:
+            self.lastFilter = _filter
+
+        self.filterChanged (_filter, self.lastFilter)
+        self.lastFilter = _filter
+
+        return True
+        
+    def getFilterStatus (self):
+        return self.drv.getFilterStatus ()
 
     def _expose(self):
 
@@ -154,9 +222,7 @@ class SBIG(BasicLifeCycle, ICameraDriver):
                 return False
 
         # end exposure and returns
-        self._endExposure()
-
-        return True
+        return self._endExposure()
 
     def _endExposure(self):
 
@@ -190,14 +256,13 @@ class SBIG(BasicLifeCycle, ICameraDriver):
             if self.term.isSet():
                 self._endReadout()
                 self._saveFITS(img)
-                                
                 return True
 
-            # end readout and save
-            self._endReadout()
-            self._saveFITS(img)
+        # end readout and save
+        self._endReadout()
+        self._saveFITS(img)
                 
-            return True
+        return True
 
     def _saveFITS(self, img):
         
@@ -210,29 +275,41 @@ class SBIG(BasicLifeCycle, ICameraDriver):
         dest = os.path.expanduser(dest)
         dest = os.path.expandvars(dest)
         dest = os.path.realpath(dest)
-        
+
         # existence of the directory
         if not os.path.exists(dest):
+
             # directory doesn't exist, check config to know what to do
             if not self.config.save_on_temp:
                 logging.warning("The direcotry specified (%s) doesn't exist "
-                                "and save_on_temp was not active, the current"
+                                "and save_on_temp was not active, the current "
                                 "exposure will be lost." % (dest))
                 
                 return False
-                        
+
+            else:
+                logging.warning("The direcotry specified (%s) doesn't exist. "
+                                "save_on_temp is active, the current will be saved on /tmp" % (dest))
+
+                dest = tempfile.gettempdir ()
+                       
         # permission
         if not os.access(dest, os.W_OK):
             # user doesn't have permission to write on dest, check config to know what to do
-            if not self.config.save_on_temp:
+            uid = os.getuid()
+            user = pwd.getpwuid(uid)[0]
 
-                uid = os.getuid()
-                user = pwd.getpwuid(uid)[0]
-                logging.warning("User %s (%d) doesn't have permission to write"
-                                "on %s and save_on_temp was not active, the current"
+            if not self.config.save_on_temp:
+                logging.warning("User %s (%d) doesn't have permission to write "
+                                "on %s and save_on_temp was not active, the current "
                                 "exposure will be lost." % (user, uid, dest))
                 
                 return False
+            else:
+                logging.warning("User %s (%d) doesn't have permission to write on %s. "
+                                "save_on_temp is active, the current exposure will be saved on /tmp" % (user, uid, dest))
+                dest = tempfile.gettempdir ()
+
 
         # create filename
         # FIXME: UTC or not UTC?
@@ -254,31 +331,31 @@ class SBIG(BasicLifeCycle, ICameraDriver):
             logging.debug ("Image %s already exists. Saving to %s instead." %  (tmp, finalname))
             
             
-            try:
-                hdu  = pyfits.PrimaryHDU(img)
+        try:
+            hdu  = pyfits.PrimaryHDU(img)
 
-                # add basic header (DATE, DATE-OBS) ad this information can get lost
-                # any other header should be added later by the controller
-                fits_date_format = "%Y-%m-%dT%H:%M:%S"
-                date = time.strftime(fits_date_format, time.gmtime())
-                dateobs = time.strftime(fits_date_format, time.gmtime(self.config.start_time))
-                
-                hdu.header.update("DATE", date, "date of file creation")
-                hdu.header.update("DATE-OBS", dateobs, "date of the observation")
-                
-                fits = pyfits.HDUList([hdu])
-                fits.writeto(finalname)
-                
-            except IOError, e:
-                logging.error("An error ocurred trying to save on %s."
-                              "The current image will be lost."
-                              "Exception follow" %  finalname)
-                
-                logging.exception(e)
-                
-                return False
+            # add basic header (DATE, DATE-OBS) ad this information can get lost
+            # any other header should be added later by the controller
+            fits_date_format = "%Y-%m-%dT%H:%M:%S"
+            date = time.strftime(fits_date_format, time.gmtime())
+            dateobs = time.strftime(fits_date_format, time.gmtime(self.config.start_time))
             
-            return finalname
+            hdu.header.update("DATE", date, "date of file creation")
+            hdu.header.update("DATE-OBS", dateobs, "date of the observation")
+            
+            fits = pyfits.HDUList([hdu])
+            fits.writeto(finalname)
+            
+        except IOError, e:
+            logging.error("An error ocurred trying to save on %s. "
+                          "The current image will be lost. "
+                          "Exception follow" %  finalname)
+            
+            logging.exception(e)
+                
+            return False
+            
+        return finalname
 
     def _endReadout(self):
         
@@ -287,7 +364,7 @@ class SBIG(BasicLifeCycle, ICameraDriver):
             logging.error("Error ending readout: %d %s" % err)
             return False
         
-        # fire exposeComplete event
+        # fire readoutComplete event
         self.readoutComplete()
         
         return True
