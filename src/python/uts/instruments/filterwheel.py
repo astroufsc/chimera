@@ -20,12 +20,13 @@
 
 from uts.core.lifecycle import BasicLifeCycle
 from uts.core.event import event
+from uts.core.config import OptionConversionException
 
-from uts.interfaces.camera import ICameraExpose, ICameraTemperature
+from uts.interfaces.filterwheel import IFilterWheel
 
 import logging
 
-class Camera(BasicLifeCycle, ICameraExpose, ICameraTemperature):
+class FilterWheel (BasicLifeCycle, IFilterWheel):
 
     def __init__(self, manager):
         BasicLifeCycle.__init__(self, manager)
@@ -38,42 +39,27 @@ class Camera(BasicLifeCycle, ICameraExpose, ICameraTemperature):
 
         if not self.drv:
             logging.debug("Couldn't load selected driver (%ss). Will use the default (Fake)" %  self.config.driver)
-            self.drv = self.manager.getDriver("/Fake/camera")
-
+            self.drv = self.manager.getDriver("/Fake/filter")
 
         # connect events
-        self.drv.exposeComplete += self.expose_cb
-        self.drv.readoutComplete += self.readout_cb
-        self.drv.exposeAborted += self.abort_cb
-        self.drv.temperatureChanged += self.temp_cb
+        self.drv.filterChanged += self.filter_cb
 
     # callbacks
-    def expose_cb (self):
-        self.exposeComplete ()
+    def filter_cb (self, new, old):
+        self.filterChanged (new, old)
 
-    def readout_cb (self):
-        self.readoutComplete ()
+    def getFilter (self):
+        return self.drv.getFilter ()
 
-    def abort_cb (self):
-        self.exposeAborted ()
+    def setFilter (self, _filter):
 
-    def temp_cb (self, new, old):
-        self.temperatureChanged (new, old)
-
-    # methods
-    def expose (self, config):
-        self.drv.expose(config)
-        return True
-
-    def abortExposure (self, config):
-        return self.drv.abortExposure(config)
-
-    def exposing (self):
-        return self.drv.exposing ()
-
-    def setTemperature(self, config):
-        return self.drv.setTemperature (config)
-
-    def getTemperature(self):
-        return self.drv.getTemperature ()
-    
+        try:
+            self.config.filters = _filter
+        except OptionConversionException:
+            logging.error ("Filter '%s' not defined." %  _filter)
+            return False
+        
+        return self.drv.setFilter (eval ("self.config.%s" % _filter))
+        
+    def getFilterStatus (self):
+        return self.drv.getFilterStatus ()

@@ -1,6 +1,11 @@
 2007-02-07  P. Henrique Silva  <henrique@astro.ufsc.br>
 
+	* src/python/uts/instruments/camera.py: Add temperature support.
+
+	* src/python/uts/instruments/filterwheel.py: New.
+
 	* src/python/uts/controllers/sample.py: Better testing.
+
 	* src/python/uts/controllers/samplet.py:
 	* src/python/uts/controllers/samplef.py:
 
