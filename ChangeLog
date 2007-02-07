@@ -1,5 +1,17 @@
 2007-02-07  P. Henrique Silva  <henrique@astro.ufsc.br>
 
+	* src/python/uts/interfaces/filterwheel.py:
+
+	Cleanup IFilterWheel interface.
+
+	Add IFilterWheelDriver interface.
+
+	* src/python/uts/interfaces/camera.py:
+
+	Cleanup ICameraTemperature. Fix somes typos.
+
+	Add temperature support to ICameraDriver.
+
 	* src/python/uts/core/register.py (Register.getByIndex): Fix behavior.
 
 	* src/python/uts/core/config.py (Option.set): Remove default value

@@ -48,25 +48,25 @@ class ICameraExpose(Interface):
         pass
 
 
-class ICameraTemperture(Interface):
+class ICameraTemperature(Interface):
 
     # methods
-    def setTemperture(self, double):
+    def setTemperature(self, config):
         pass
 
-    def setCooler(self, on, power):
+    def getTemperature(self):
         pass
 
     # events
     @event
-    def temperture(self, threshold):
+    def temperatureChanged(self, newTemp, oldTemp):
         pass
 
 
 class ICameraDriver(Interface):
 
     # config
-    __options__ = {"device"	         : "/dev/ttyS0",
+    __options__ = {"device"	         : "usb",
                    "ccd"                 : ["imaging", "tracking"],
                    "exp_time"	         : (10, 600000),
                    "shutter" 	         : ["open", "close", "leave"],
@@ -80,8 +80,11 @@ class ICameraDriver(Interface):
                    "seq_num"	         : 1,
                    "start_time"          : 0,
                    "observer"	         : "observer name",
-                   "obj_name"	         : "object name"}
-
+                   "obj_name"	         : "object name",
+                   "temp_regulation"     : True,
+                   "temp_setpoint"       : 20.0,
+                   "temp_delta"          : 1.0,
+                   "auto_freeze"         : False}
     
     # methods
 
@@ -97,10 +100,16 @@ class ICameraDriver(Interface):
     def exposing(self):
         pass
 
-    def espose(self, config):
+    def expose(self, config):
         pass
 
     def abortExposure(self, config):
+        pass
+
+    def setTemperature(self, config):
+        pass
+
+    def getTemperature(self):
         pass
 
     # events
@@ -115,3 +124,8 @@ class ICameraDriver(Interface):
     @event
     def readoutComplete (self):
         pass
+
+    @event
+    def temperatureChanged(self, newTemp, oldTemp):
+        pass
+    

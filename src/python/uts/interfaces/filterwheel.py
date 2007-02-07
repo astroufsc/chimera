@@ -23,15 +23,46 @@ from uts.core.event import event
 
 class IFilterWheel(Interface):
 
-    # properties
-    position = 0
+    __options__ = {"driver" : "/SBIG/sbig",
+                   "filters": ["red", "green", "blue", "rgb", "clear"],
+                   "red"    : 1,
+                   "green"  : 2,
+                   "blue"   : 3,
+                   "rgb"    : 4,
+                   "clear"  : 5}
+
+    # filter status
+    unknown = 0
+    idle    = 1
+    busy    = 2
 
     # methods
-    def setFilter(self, filter):
+    def getFilter (self):
+        pass
+
+    def setFilter (self, _filter):
+        pass
+        
+    def getFilterStatus (self):
         pass
 
     # events
     @event
-    def filterChanged(self, newFilter, lastFilter):
+    def filterChanged(self, newFilter, oldFilter):
+        pass
+
+class IFilterWheelDriver(Interface):
+
+    def getFilter (self):
+        pass
+
+    def setFilter (self, _filter):
+        pass
+        
+    def getFilterStatus (self):
+        pass
+
+    @event
+    def filterChanged(self, newFilter, oldFilter):
         pass
 
