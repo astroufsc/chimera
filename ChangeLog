@@ -1,5 +1,16 @@
 2007-02-08  P. Henrique Silva  <henrique@astro.ufsc.br>
 
+	* rc/scripts/chimera:
+	* rc/scripts/uts:
+
+	End of UTS (final). Rename uts script to chimera.
+
+	* rc/chimera/core/site.py:
+
+	Fix a typo.
+
+2007-02-08  P. Henrique Silva  <henrique@astro.ufsc.br>
+
 	* src/scripts/uts:
 	* src/chimera/interfaces/camera.py:
 	* src/chimera/interfaces/filterwheel.py:

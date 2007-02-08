@@ -206,7 +206,7 @@ class Site(object):
     def parseArgs(self, args):
 
         parser = OptionParser(prog="chimera", version=_chimera_version,
-                              description="chimera - Observatory Automation System")
+                              description="Chimera - Observatory Automation System")
 
         parser.add_option("-i", "--instrument", action="append", dest="instruments",
                           help="Load the instrument defined by LOCATION."
