@@ -1,5 +1,43 @@
 2007-02-08  P. Henrique Silva  <henrique@astro.ufsc.br>
 
+	* tests:
+	* tests/lint:
+	* tests/lint/lint.html:
+	* tests/lint/uts.pylint:
+	* tests/lint.html:
+	* tests/uts.pylint:
+	* setup.py:
+	* src/python/test:
+	* src/python/doc:
+	* src/python/setup.py:
+	* src/python/bin:
+	* src/python/uts/core/register.py:
+	* src/python/uts/drivers/sbig/lib/sbigudrv:
+	* src/python/uts/drivers/sbig/lib/sbigudrv/numpy.i:
+	* src/python/uts/drivers/sbig/lib/sbigudrv/sbigudrv.h:
+	* src/python/uts/drivers/sbig/lib/sbigudrv/sbigudrv.i:
+	* src/python/uts/drivers/sbig/lib/sbigudrv/sbigudrv.py:
+	* src/python/uts/drivers/sbig/lib/sbigudrv/libsbigudrv.so:
+	* src/python/uts/drivers/sbig/lib/sbigudrv/make:
+	* src/scripts:
+	* ChangeLog:
+	* docs:
+
+	End of UTS. File layout change. (part 1)
+
+	Old UTS package still on uts-pre-chimera branch
+
+
+2007-02-08  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* src/www/:
+
+	End of UTS. Files removed from Chimera.
+
+	Old UTS package still on uts-pre-chimera branch
+
+2007-02-08  P. Henrique Silva  <henrique@astro.ufsc.br>
+
 	* acinclude.m4:
 	* autogen.sh:
 	* configure.ac:

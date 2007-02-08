@@ -18,12 +18,14 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+from uts.core.location import Location
+
 class Register(object):
 
     def __init__(self, kind = None):
 
         self.objects = {}
-        self.kind = kind
+        self.kind = kind or "object"
 
     def register(self, location, instance):
 
@@ -50,6 +52,13 @@ class Register(object):
         return _str
 
     def __contains__(self, item):
+
+        if not isinstance (item, Location):
+            item = Location (item)
+
+        if not item.isValid():
+            return None
+
         _ret = filter(lambda x: x == item, self.objects.keys())
 
         if _ret:
@@ -82,6 +91,9 @@ class Register(object):
             return r
 
     def get(self, item):
+
+        if not isinstance (item, Location):
+            item = Location (item)
 
         if not item.isValid():
             return None
