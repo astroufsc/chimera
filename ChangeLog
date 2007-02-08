@@ -1,3 +1,24 @@
+2007-02-08  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* acinclude.m4:
+	* autogen.sh:
+	* configure.ac:
+	* Makefile.am:
+	* rules.make:
+	* SConstruct:
+	* contrib/:
+	* doc/:
+	* src/Makefile.am:
+	* src/tools/*:
+	* src/drivers/:
+	* src/config/Makefile.am:
+	* src/config/initscripts/:
+
+	End of UTS. Files removed from Chimera.
+
+	Old UTS package still on uts-pre-chimera branch
+
+
 2007-02-07  P. Henrique Silva  <henrique@astro.ufsc.br>
 
 	* src/python/uts/drivers/sbig/sbigdrv.py: Add Filter and
