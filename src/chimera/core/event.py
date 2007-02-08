@@ -76,7 +76,7 @@ class _EventSlot:
 
 if __name__ == '__main__':
 
-    from uts.core.lifecycle import BasicLifeCycle
+    from chimera.core.lifecycle import BasicLifeCycle
 
     class ExampleDefinition(BasicLifeCycle):
 

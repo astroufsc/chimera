@@ -18,16 +18,16 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-from uts.core.location import Location
-from uts.core.manager import Manager
+from chimera.core.location import Location
+from chimera.core.manager import Manager
 
-from uts.core.version import _uts_version
+from chimera.core.version import _chimera_version
 
 import os.path
 import logging
 
 from optparse import OptionParser
-import uts.util.etree.ElementTree as ET
+import chimera.util.etree.ElementTree as ET
 from xml.parsers.expat import ExpatError, ErrorString
 
 
@@ -205,8 +205,8 @@ class Site(object):
 
     def parseArgs(self, args):
 
-        parser = OptionParser(prog="UTS", version=_uts_version,
-                              description="UTS - Unified Telescope System")
+        parser = OptionParser(prog="chimera", version=_chimera_version,
+                              description="chimera - Observatory Automation System")
 
         parser.add_option("-i", "--instrument", action="append", dest="instruments",
                           help="Load the instrument defined by LOCATION."

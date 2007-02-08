@@ -18,11 +18,11 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-from uts.core.lifecycle import BasicLifeCycle
-from uts.core.event import event
-from uts.core.config import OptionConversionException
+from chimera.core.lifecycle import BasicLifeCycle
+from chimera.core.event import event
+from chimera.core.config import OptionConversionException
 
-from uts.interfaces.filterwheel import IFilterWheel
+from chimera.interfaces.filterwheel import IFilterWheel
 
 import logging
 

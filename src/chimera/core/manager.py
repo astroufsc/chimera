@@ -24,10 +24,10 @@ import traceback
 import logging
 from types import StringType
 
-from uts.core.register import Register
-from uts.core.proxy import Proxy
-from uts.core.location import Location
-from uts.core.threads import getThreadPool
+from chimera.core.register import Register
+from chimera.core.proxy import Proxy
+from chimera.core.location import Location
+from chimera.core.threads import getThreadPool
 
 class Manager(object):
 

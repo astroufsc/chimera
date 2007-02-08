@@ -21,7 +21,7 @@
 import time
 import logging
 
-from uts.core.lifecycle import BasicLifeCycle
+from chimera.core.lifecycle import BasicLifeCycle
         
 class Sample (BasicLifeCycle):
 

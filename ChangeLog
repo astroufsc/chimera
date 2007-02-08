@@ -1,5 +1,42 @@
 2007-02-08  P. Henrique Silva  <henrique@astro.ufsc.br>
 
+	* src/scripts/uts:
+	* src/chimera/interfaces/camera.py:
+	* src/chimera/interfaces/filterwheel.py:
+	* src/chimera/interfaces/lifecycle.py:
+	* src/chimera/interfaces/weatherstation.py:
+	* src/chimera/interfaces/telescope.py:
+	* src/chimera/interfaces/dome.py:
+	* src/chimera/interfaces/focuser.py:
+	* src/chimera/controllers/sample.py:
+	* src/chimera/controllers/samplet.py:
+	* src/chimera/controllers/samplef.py:
+	* src/chimera/core/lifecycle.py:
+	* src/chimera/core/interface.py:
+	* src/chimera/core/site.py:
+	* src/chimera/core/manager.py:
+	* src/chimera/core/async.py:
+	* src/chimera/core/event.py:
+	* src/chimera/core/proxy.py:
+	* src/chimera/core/register.py:
+	* src/chimera/core/version.py:
+	* src/chimera/instruments/camera.py:
+	* src/chimera/instruments/filterwheel.py:
+	* src/chimera/instruments/sample.py:
+	* src/chimera/instruments/telescope.py:
+	* src/chimera/drivers/remoteclient.py:
+	* src/chimera/drivers/meade.py:
+	* src/chimera/drivers/sbig/sbig.py:
+	* src/chimera/drivers/sample.py:
+	* src/chimera/drivers/remoteserver.py:
+
+	End of UTS. Rename import package name to chimera.
+
+	Old UTS package still on uts-pre-chimera branch
+
+	
+2007-02-08  P. Henrique Silva  <henrique@astro.ufsc.br>
+
 	* src/python:
 	* src/chimera:
 

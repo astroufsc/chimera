@@ -21,9 +21,9 @@
 import time
 import threading
 
-from uts.interfaces.lifecycle import ILifeCycle
-from uts.core.event import EventsProxy
-from uts.core.config import Config
+from chimera.interfaces.lifecycle import ILifeCycle
+from chimera.core.event import EventsProxy
+from chimera.core.config import Config
 
 class BasicLifeCycle(ILifeCycle):
 

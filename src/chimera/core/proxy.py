@@ -21,7 +21,7 @@
 import logging
 import threading
 
-from uts.core.async import AsyncResult
+from chimera.core.async import AsyncResult
 
 class Proxy(object):
 
@@ -68,7 +68,7 @@ if __name__ == '__main__':
     import time
     import threading
     
-    from uts.core.threads import ThreadPool
+    from chimera.core.threads import ThreadPool
 
     class Simples(object):
 

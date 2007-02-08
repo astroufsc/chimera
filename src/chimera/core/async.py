@@ -21,7 +21,7 @@
 import logging
 import time
 
-from uts.core.threads import getThreadPool
+from chimera.core.threads import getThreadPool
 
 # FIXME: exception handling
 

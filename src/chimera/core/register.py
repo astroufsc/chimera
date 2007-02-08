@@ -18,7 +18,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-from uts.core.location import Location
+from chimera.core.location import Location
 
 class Register(object):
 
@@ -140,7 +140,7 @@ class Register(object):
 
 if __name__ == '__main__':
 
-    from uts.core.location import Location
+    from chimera.core.location import Location
     a = object()
     l = Location("/Telescope/meade?opt1=val1,opt2=val2")
 

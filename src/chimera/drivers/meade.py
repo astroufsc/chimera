@@ -22,7 +22,7 @@ import time
 import serial
 import signal
 
-from uts.util.coord import Coord, Ra, Dec, Lat, Long, Point
+from chimera.util.coord import Coord, Ra, Dec, Lat, Long, Point
 
 class Meade(object):
 

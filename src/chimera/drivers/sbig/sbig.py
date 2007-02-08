@@ -33,9 +33,9 @@ import pyfits
         
 from sbigdrv import *
 
-from uts.core.lifecycle import BasicLifeCycle
-from uts.interfaces.camera import ICameraDriver
-from uts.interfaces.filterwheel import IFilterWheelDriver
+from chimera.core.lifecycle import BasicLifeCycle
+from chimera.interfaces.camera import ICameraDriver
+from chimera.interfaces.filterwheel import IFilterWheelDriver
         
 class SBIG(BasicLifeCycle, ICameraDriver, IFilterWheelDriver):
 

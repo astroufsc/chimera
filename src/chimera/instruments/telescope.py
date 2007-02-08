@@ -21,9 +21,9 @@
 import logging
 import time
 
-from uts.core.lifecycle import BasicLifeCycle
+from chimera.core.lifecycle import BasicLifeCycle
 
-from uts.interfaces.telescope import ITelescopeSlew
+from chimera.interfaces.telescope import ITelescopeSlew
 
 class Telescope(BasicLifeCycle, ITelescopeSlew):
 

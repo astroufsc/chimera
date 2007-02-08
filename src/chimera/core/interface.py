@@ -66,7 +66,7 @@ class Interface(object):
 
 if __name__ == '__main__':
 
-    from uts.core.event import event, EventsProxy
+    from chimera.core.event import event, EventsProxy
 
     class IInstrument(Interface):
     

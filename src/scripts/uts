@@ -22,8 +22,8 @@ if __name__ == '__main__':
 
     import sys
 
-    from uts.core.runner import Runner
-    from uts.core.site import Site
+    from chimera.core.runner import Runner
+    from chimera.core.site import Site
 
     s = Site (sys.argv)
 
