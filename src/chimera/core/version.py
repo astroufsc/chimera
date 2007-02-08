@@ -18,5 +18,27 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-_chimera_author = "P. Henrique Silva"
-_chimera_version = "0.1"
+
+# metadata definition used by setup.py and onthers
+
+_chimera_version_          = "0.1"
+_chimera_name_             = "chimera"
+_chimera_description_      = "Chimera - Observatory Automation System"
+_chimera_long_description_ = "Chimera - Observatory Automation System"
+_chimera_author            = "P. Henrique Silva <henrique@astro.ufsc.br>"
+_chimera_author_email_     = "P. Henrique Silva <henrique@astro.ufsc.br>"
+_chimera_license_          = "GPLv2"
+_chimera_url_              = "http://www.astro.ufsc.br/~henrique/chimera"
+_chimera_download_url_     = "http://www.astro.ufsc.br/~henrique/chimera/download/latest"
+_chimera_platform_         = "GNU/Linux"
+_chimera_classifiers_      = [ 'Development Status :: 2 - Pre-Alpha',
+                               'Environment :: Console',
+                               'Intended Audience :: Science/Research',
+                               'Intended Audience :: End Users/Desktop',
+                               'Intended Audience :: Developers',
+                               'License :: OSI Approved :: GNU General Public License (GPL)',
+                               'Natural Language :: English',
+                               'Natural Language :: Portuguese (Brazilian)',                               
+                               'Operating System :: POSIX :: Linux',
+                               'Programming Language :: Python',
+                               'Topic :: Scientific/Engineering :: Astronomy']

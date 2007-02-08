@@ -1,0 +1,4 @@
+include AUTHORS TODO COPYING INSTALL NEWS README ChangeLog docs/docs.sh 
+
+recursive-include tests *.*
+recursive-include src/config *.xml

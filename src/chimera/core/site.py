@@ -21,7 +21,7 @@
 from chimera.core.location import Location
 from chimera.core.manager import Manager
 
-from chimera.core.version import _chimera_version
+from chimera.core.version import _chimera_version_, _chimera_description_
 
 import os.path
 import logging
@@ -205,8 +205,8 @@ class Site(object):
 
     def parseArgs(self, args):
 
-        parser = OptionParser(prog="chimera", version=_chimera_version,
-                              description="Chimera - Observatory Automation System")
+        parser = OptionParser(prog="chimera", version=_chimera_version_,
+                              description=_chimera_description_)
 
         parser.add_option("-i", "--instrument", action="append", dest="instruments",
                           help="Load the instrument defined by LOCATION."

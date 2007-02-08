@@ -1,5 +1,18 @@
 2007-02-08  P. Henrique Silva  <henrique@astro.ufsc.br>
 
+	* src/chimera/core/site.py:
+	* src/chimera/core/version.py:
+
+	Added metadata based on PEP 0314 and PEP 0301.
+
+	* setup.py: Updated to reflect new layout. Almsot working (except
+	for /etc installation of site.xml
+	
+	* MANIFEST.in: New.
+
+	
+2007-02-08  P. Henrique Silva  <henrique@astro.ufsc.br>
+
 	* rc/scripts/chimera:
 	* rc/scripts/uts:
 
