@@ -1,48 +1,44 @@
-
 chimera
 ===
 
-Tasks to be done, in random order:
+Core
+====
 
-- implements IFilterWheel to SBIG CFW8
-
-- implements ITelescopeAxis
-
-- filtro e foco: ao trocar o filtro, o controlador deve procurar qual a configuracao de foco adequado, focar, testar (configuravel), e se nao houver configuracao de foco, deve preparar uma e salvar no banco de configuracoes
-
-- configuracoes: necessÃ¡rio.. e muito...
+        * melhorar mapeamento entre posicoes e nomes dos filtros
+        * log: mostrar quem originou o problema e não onde o log foi criado
+        * permitir adicao de objetos no SiteConfiguration
+        * salvar SiteConfiguration para arquivo
 
 
-- FITS headers
 
+Controladores
+=============
 
-- controle de temperatura
-- controle de eixos individuais
-- NSEW control
+        * filtro e foco: ao trocar o filtro, o controlador deve
+        procurar qual a configuracao de foco adequado, focar, testar
+        (configuravel), e se nao houver configuracao de foco, deve preparar
+        uma e salvar no banco de configuracoes
 
-* finalizar interfaces: camera e telescopio(instrumento e driver)
+        * FITS headers
 
-* finalizar driver meade e sbig
+        * adicionar controlador de configuração e acionamento remoto, para permitir configuração
 
-* documentar config's
+                ex.: dado um sistema rodando, o controlador admin
+                permite obter a instancia da classe Manager responsavel, assim o
+                cliente poderá controlar o sistema , adicionar objetos e modificar os
+                existentes.
 
-* manager: getDriver
+Scripts
+=======
 
-* site config 
+        * checar argumentos do Site (-c -i -d)
+        * script de inicializacao: baseado no Site       
 
-* log: mostrar quem originou o problema e não onde o log foi criado
+Drivers
+=======
 
-* melhorar detecçao e seleção dos modos de leitura
-
-* adicionar controlador de configuração e acionamento remoto, para permitir configuração
-
-  ex.: dado um sistema rodando, o controlador admin permite obter a instancia da classe Manager
-       responsavel, assim o cliente poderá controlar o sistema , adicionar objetos e modificar os 
-       existentes.
-
-* script de inicializacao: baseado no Site       
-
-* permitir adicao de objetos no SiteConfiguration
-
-* salvar SiteConfiguration para arquivo
+        * controle de eixos individuais
+        * finalizar driver meade
+        * documentar config's
+        * melhorar detecçao e seleção dos modos de leitura
 

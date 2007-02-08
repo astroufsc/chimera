@@ -10,6 +10,7 @@ Requirements:
 
         SBIG drivers:
 
+	- libusb v. xxx
         - Numpy v. xxx or numarray v. xxx (Numpy is recomended)
         - pyfits v. xxx
 
