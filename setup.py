@@ -56,6 +56,7 @@ chimera_modules = ['chimera',
 
 chimera_scripts = ['src/scripts/chimera']
 
+chimera_data    = [ ("/etc/chimera", ["src/config/site.xml"]) ]
 
 # setup
 
@@ -64,6 +65,7 @@ setup(name='chimera',
       
       packages         = chimera_modules,
       scripts          = chimera_scripts,
+      data_files       = chimera_data,
       
       version          = _chimera_version_,
       description      = _chimera_description_,

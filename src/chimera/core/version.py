@@ -23,10 +23,13 @@
 
 _chimera_version_          = "0.1"
 _chimera_name_             = "chimera"
+_chimera_requires_         = ""
+_chimera_provides_         = "chimera-core"
+
 _chimera_description_      = "Chimera - Observatory Automation System"
-_chimera_long_description_ = "Chimera - Observatory Automation System"
-_chimera_author            = "P. Henrique Silva <henrique@astro.ufsc.br>"
-_chimera_author_email_     = "P. Henrique Silva <henrique@astro.ufsc.br>"
+_chimera_long_description_ = "Observatory Automation System"
+_chimera_author            = "P. Henrique Silva"
+_chimera_author_email_     = "henrique@astro.ufsc.br"
 _chimera_license_          = "GPLv2"
 _chimera_url_              = "http://www.astro.ufsc.br/~henrique/chimera"
 _chimera_download_url_     = "http://www.astro.ufsc.br/~henrique/chimera/download/latest"
