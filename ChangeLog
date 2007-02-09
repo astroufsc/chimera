@@ -1,5 +1,11 @@
 2007-02-09  P. Henrique Silva  <henrique@astro.ufsc.br>
 
+	* chimera/uts: End of UTS :)
+	* chimera/util/coord.py: New.
+
+
+2007-02-09  P. Henrique Silva  <henrique@astro.ufsc.br>
+
 	* src/chimera/core/version.py: Added more metadata.
 	* setup.py: Added data_files options.
 	* setup.cfg: New (to handle bdist_rpm options)
