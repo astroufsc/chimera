@@ -73,7 +73,7 @@ class ICameraDriver(Interface):
                    "readout_aborted"     : True,
                    "readout_mode"	 : 1,
                    "date_format"	 : "%d%m%y",
-                   "file_format"	 : "$num-$observer-$date-%objname",
+                   "file_format"	 : "$num-$observer-$date-$objname",
                    "file_extension"  	 : "fits",
                    "directory"	         : "/home/someuser/images",
                    "save_on_temp"	 : False,
