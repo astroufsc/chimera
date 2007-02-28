@@ -21,6 +21,7 @@
 import time
 import serial
 import signal
+import threading
 
 from chimera.util.coord import Coord, Ra, Dec, Lat, Long, Point
 
@@ -41,7 +42,15 @@ class Meade(object):
         self._errorNo = 0
         self._errorString = ""
 
+        self._slew_idle_time = 0.1
+        self._max_slew_time = 60.0
+        self._stabilization_time = 0.5
+
         self.alignMode = Meade.altazAlign
+
+        self.abort = threading.Event ()
+
+        self.slewing = False
 
     def open(self, device, timeout = 10):
         self.tty.port = device
@@ -90,49 +99,68 @@ class Meade(object):
 
     def _slew(self):
 
-        # try to slew to previously selected coord
-
-        # test procedure
-        # 1. set coords
-        # 2. wait 5 seconds (printing coords)
-        # 3. slew (and wait the bip)
-        # 4. wait 5 seconds after the bip
-
-
-        # pre slew
-        t0 = time.time()
-        t5 = t0+5
-
-        while t5 > time.time():
-            position = self.getPosition()
-            print "p %.6f %s" % (time.time(), position)
+        self.slewing = True
+        self.abort.clear ()
 
         # slew
         self._write(':MS#')
 
-        ret = self._readbool()
+        # to handle timeout
+        start_time = time.time()
 
-        if not ret:
-            # slew possible
-            target = self.getTarget()
-
-            while True:
-                position = self.getPosition()
-                print "s %.6f %s" % (time.time(), position)
-
-            return True
-                    
-        else:
+        err = self._readbool()
+        
+        if err:
             # check error message
             msg = self._readline()
             self.setError(-1, msg[:-1])
+            self.slewing = False
             return False
+
+        # slew possible
+        target = self.getTarget()
+
+        while True:
+
+            # check slew abort event
+            if self.abort.isSet ():
+                self.setError (-1, "Slew aborted")
+                self.slewing = False                
+                return False
+
+            # check timeout
+            if time.time () >= (start_time + self._max_slew_time):
+                self.abortSlew ()
+                self.setError (-1, "Slew aborted. Max slew time reached.")
+                self.slewing = False
+                return False
+
+            position = self.getPosition()
+
+            if target.near (position, "00 01 00"):
+                # position near (1') target, sleep for scope stabilization and returns
+                time.sleep (self._stabilization_time)
+                self.slewing = False
+                return True
+            
+            time.sleep (self._slew_idle_time)
+
 
     def slewToAltAz(self, alt, az):
         pass
 
     def abortSlew(self):
-        pass
+
+        if not self.slewing:
+            return False
+
+        err = self._write (":MQ")
+
+        if err:
+            self.setError (-1, "Error aborting.")
+            return False
+
+        self.abort.set()
 
     def moveEast(self, duration):
         pass

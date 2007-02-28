@@ -1,5 +1,11 @@
 2007-02-28  P. Henrique Silva  <henrique@astro.ufsc.br>
 
+	* src/chimera/drivers/meade.py:
+
+	Implement slew (not test yet)
+
+2007-02-28  P. Henrique Silva  <henrique@astro.ufsc.br>
+
 	* src/chimera/drivers/paramount.py:
 
 	New.
