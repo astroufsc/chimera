@@ -60,7 +60,7 @@ class Paramount (BasicLifeCycle, ITelescopeDriver):
 
     def shutdown (self):
         
-        if (self.config.park_on_exit):
+        if (self.config.park_on_shutdown):
             self.com_tel.Park()
 
         self.com_tel.Connected = False

@@ -1,3 +1,9 @@
+2007-02-28  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* src/chimera/drivers/paramount.py:
+
+	New.
+
 2007-02-27  P. Henrique Silva  <henrique@astro.ufsc.br>
 
 	* src/chimera/interfaces/camera.py:
