@@ -4,6 +4,7 @@ chimera
 Core
 ====
 
+	* checar se objeto implementa ILifeCycle ao tentar adicionar ao manager
         * melhorar mapeamento entre posicoes e nomes dos filtros
         * log: mostrar quem originou o problema e não onde o log foi criado
         * permitir adicao de objetos no SiteConfiguration

@@ -6,46 +6,37 @@
 
 <drivers>
 
-   <driver name="meade" class="Meade">
-      <option name="device" value="/dev/ttyS0"/>
-   </driver>
-
    <driver name="sbig" class="SBIG">
-	<option name="device"		value="/dev/ttyS0"/>
-	<option name="ccd"		value="imaging">
-	<option name="exptime"		value=0>
-	<option name="shutter"		value="open">
-	<option name="start_time"	value="">
-	<option name="readoutAborted"	value="1"
-	<option name="readout_mode"	value="1">
-	<option name="dateformat"	value="%d%m%y">
-	<option name="fileformat"	value="$num-$observer-$date-%objname">
-	<option name="directory"	value="">
-	<option name="save_on_temp"	value="">
-	<option name="seq_num"		value="">
-	<option name="observer"		value="">
-	<option name="objname"		value="">
+	<option name="device"		value="usb"/>
+	<option name="ccd"		value="imaging"/>
+	<option name="exp_time"		value="10"/>
+	<option name="shutter"		value="open"/>
+	<option name="readout_aborted"	value="1"/>
+	<option name="readout_mode"	value="1"/>
+	<option name="date_format"	value="%d%m%y"/>
+	<option name="file_format"	value="$num-$observer-$date-$objname"/>
+	<option name="file_extension"	value="fits"/>
+	<option name="directory"	value="/home/someuser/images"/>
+	<option name="save_on_temp"	value="1"/>
+	<option name="seq_num"		value="1"/>
+	<option name="observer"		value="Observer"/>
+	<option name="obj_name"		value="obj"/>
+	<option name="start_time"	value="0"/>
+	<option name="start_time"	value="0"/>
+	<option name="temp_regulation"	value="0"/>
+	<option name="temp_setpoint"	value="20.0"/>
+	<option name="temp_delta"	value="1.0"/>
+	<option name="auto_freeze"	value="0"/>
    </driver>
-
 
 </drivers>
 
 <instruments>
 
-   <instrument name="lx200gps" class="Telescope">
-      <option name="driver" value="/Meade/meade" />
-      <option name="limits" value="some magic number"/>
-      <option name="pointintModel" value="more magic"/>
+   <instrument name="st8" class="Camera">
+      <option name="driver" value="/SBIG/sbig"/>
    </instrument>
 
 </instruments>
-
-<controllers>
-
-   <controller name="sample" class="Sample">
-       <option name="max-queue" value="100"/>
-   </controller>	
-
-</controllers>
 
 </uts>

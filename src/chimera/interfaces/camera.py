@@ -68,10 +68,10 @@ class ICameraDriver(Interface):
     # config
     __options__ = {"device"	         : "usb",
                    "ccd"                 : ["imaging", "tracking"],
-                   "exp_time"	         : (10, 600000),
+                   "exp_time"	         : (10, 600000), # 1/100 s
                    "shutter" 	         : ["open", "close", "leave"],
                    "readout_aborted"     : True,
-                   "readout_mode"	 : 1,
+                   "readout_mode"	 : 0,
                    "date_format"	 : "%d%m%y",
                    "file_format"	 : "$num-$observer-$date-$objname",
                    "file_extension"  	 : "fits",
