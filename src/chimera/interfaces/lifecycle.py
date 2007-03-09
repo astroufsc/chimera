@@ -19,7 +19,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 from chimera.core.interface import Interface
-from chimera.core.event import event
+
 
 class ILifeCycle (Interface):
 
@@ -28,6 +28,9 @@ class ILifeCycle (Interface):
     interface provides basic life-cycle management and main loop control.
 
     """
+
+    __options__ = {"config": "some-magic-default-config.xml"}
+    
 
     def __init__(self, manager):
         """
@@ -76,12 +79,3 @@ class ILifeCycle (Interface):
         @note: This method runs on their own thread.
         """
 
-    @event
-    def initComplete(self):
-        """
-        """
-     
-    @event    
-    def shutdownComplete(self):
-        """
-        """

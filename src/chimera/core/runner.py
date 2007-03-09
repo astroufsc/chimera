@@ -19,6 +19,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 import os
+import sys
 import signal
 import threading
 
@@ -30,14 +31,23 @@ import threading
 # FIXME run shutdown on exit
 # FIXME log
 
-class Runner (object):
+class RunnerWin32 (object):
+
+    def __init__ (self, obj):
+        self.obj = obj
+
+    def main (self):
+        self.obj.init ()
+
+
+class RunnerPosix (object):
 
     def __init__ (self, obj):
         self.obj = obj
 
         self.mainPID = os.getpid()
 
-    
+
     def main(self):
 
         # FIXME: shutdown = threading.Event ()
@@ -45,7 +55,7 @@ class Runner (object):
         # from here we will have 2 process. Child process will return from splitAndWatch,
         # while the main process will watch for signals and will kill the child
         # process.
-    
+
         self.splitAndWatch()
 
         pid = os.getpid ()
@@ -70,7 +80,7 @@ class Runner (object):
         try:
             os.wait()
             self.kill()
-            
+
         except OSError:
             pass
 
@@ -80,3 +90,9 @@ class Runner (object):
     def sighandler(self, sig, frame):
         self.kill()
 
+# win32 doesn't support POSIX fork (arghh!)
+
+if sys.platform == "win32":
+    Runner = RunnerWin32
+else:
+    Runner = RunnerPosix

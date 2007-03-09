@@ -21,113 +21,189 @@
 from chimera.core.interface import Interface
 from chimera.core.event import event
 
-class ITelescopeSlew(Interface):
+class ITelescope (Interface):
 
-    # properties
+    __options__ = {"driver": "/Fake/telescope"}
     
-    currRA = 0
-    currDec = 0
-    currEphoc = 2000
-    currAz = 0
-    currAlt = 0
-    cmdRA = 0
-    cmdDec = 0
-    cmdEphoc = 2000
-    cmdAz = 0
-    cmdAlt = 0
-    axis = []
-    slewRates = []
-    slewRate = 0
-    slewing = False
+
+class ITelescopeSlew (ITelescope):
 
     # methods
+    def slewToRaDec (self, ra, dec):
+        pass
+
+    def slewToAzAlt (self, az, alt):
+        pass
+
+    def moveEast (self, offset):
+        pass
+
+    def moveWest (self, offset):
+        pass
+
+    def moveNorth (self, offset):
+        pass
+
+    def moveSouth (self, offset):
+        pass
+
+    def abortSlew (self):
+        pass
+
+    def getRa (self):
+        pass
     
-    def slew(self, coord):
+    def getDec (self):
+        pass
+
+    def getAz (self):
+        pass
+
+    def getAlt (self):
+        pass
+
+    def getPosition (self):
+        pass
+
+    def getTarget (self):
+        pass
+
+    # events
+
+    @event
+    def slewComplete (self, position):
+        pass
+
+    @event
+    def abortComplete (self, position):
+        pass
+
+
+class ITelescopeDriver (Interface):
+
+    __options__ = {"device": "/dev/ttyS0",
+                   "timeout": 10,
+                   "auto_align": True,
+                   "slew_idle_time": 0.1,
+                   "max_slew_time": 60.0,
+                   "stabilization_time": 0.5,
+                   "position_sigma_delta": 60.0}
+
+    # methods
+
+    def open(self):
+        pass
+
+    def close(self):
+        pass
+
+    def slewToRaDec(self, ra, dec):
+        pass
+
+    def slewToAltAz(self, alt, az):
         pass
 
     def abortSlew(self):
         pass
 
-    def moveAxis(self, axis, offset):
+    def moveEast(self, offset):
+        pass
+
+    def moveWest(self, offset):
+        pass
+
+    def moveNorth(self, offset):
+        pass
+
+    def moveSouth(self, offset):
+        pass
+
+    def getRa(self):
+        pass
+
+    def getDec(self):
+        pass
+
+    def getAz(self):
+        pass
+
+    def getAlt(self):
+        pass
+
+    def getPosition(self):
+        pass
+
+    def getTarget(self):
         pass
 
     # events
-
+    
     @event
-    def slewComplete(self, position, tracking, trackingRate):
-        pass
-
-    @event
-    def abortComplete(self, position):
+    def slewComplete (self, position):
         pass
 
     @event
-    def targetChanged(self, position):
+    def abortComplete (self, position):
         pass
+    
+ 
 
-class ITelescopeTracking(Interface):
+# class ITelescopeTracking(Interface):
 
-    # properties
-    trackingRates = []
-    trackingRate = 0
-    tracking = False
+#     # properties
+#     trackingRates = []
+#     trackingRate = 0
+#     tracking = False
 
-    # methods
-    def setTracking(self, track, trackingRate):
-        pass
+#     # methods
+#     def setTracking(self, track, trackingRate):
+#         pass
 
-    # events
-    @event
-    def trackingRateChanged(self, trackingRate):
-        pass
+#     # events
+#     @event
+#     def trackingRateChanged(self, trackingRate):
+#         pass
          
-class ITelescopeSync(Interface):
+# class ITelescopeSync(Interface):
 
-    # properties
-    syncRa = 0
-    syncDec = 0
-    syncAz = 0
-    syncAlt = 0
+#     # properties
+#     syncRa = 0
+#     syncDec = 0
+#     syncAz = 0
+#     syncAlt = 0
 
-    # methods
-    def sync(self, coord):
-        pass
+#     # methods
+#     def sync(self, coord):
+#         pass
     
-    # events
-    @event
-    def syncComplete(self, position):
-        pass
+#     # events
+#     @event
+#     def syncComplete(self, position):
+#         pass
 
-class ITelescopePark(Interface):
+# class ITelescopePark (Interface):
 
-    # properties
-    parkRa = 0
-    parkDec = 0
-    parkAz = 0
-    parkAlt = 0
-    parking = 0
+#     # methods
+#     def park(self, coord = None):
+#         pass
+
+#     def unpark(self):
+#         pass
+
+#     # events
+#     @event
+#     def parkComplete(self, position):
+#         pass
+
+# class ITelescopeHome (Interface):
+
+#     # methods
+#     def findHome(self):
+#         pass
     
-    # methods
-    def park(self, coord = None):
-        pass
-
-    def unpark(self):
-        pass
-
-    # events
-    @event
-    def parkComplete(self, position):
-        pass
-
-class ITelescopeHome(Interface):
-
-    # methods
-    def findHome(self):
-        pass
-    
-    # events
-    @event
-    def homeComplete(self, position):
-        pass
+#     # events
+#     @event
+#     def homeComplete(self, position):
+#         pass
 
 

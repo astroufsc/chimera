@@ -19,6 +19,8 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 import xmlrpclib
+import socket
+import logging
 
 from chimera.core.lifecycle import BasicLifeCycle
 
@@ -33,16 +35,29 @@ class RemoteClient(BasicLifeCycle):
         self.proxy = None
 
     def init(self, config):
-        
         self.config += config
 
         url = "http://%s:%d/RPC2" % (self.config.host, self.config.port)
 
         self.proxy = xmlrpclib.ServerProxy(url)
-        # test!
 
     def __getattr__ (self, attr):
+        return RemoteMethodWrapper (self.proxy.__request, attr)
 
-        print "aqui"
 
-        return self.proxy.__getattr__ (attr)
+class RemoteMethodWrapper(object):
+
+    def __init__(self, send, name):
+        self.__send = send
+        self.__name = name
+        
+    def __call__(self, *args, **kwargs):
+        try:
+            return self.__send(self.__name, args)
+        except socket.error, e:
+            logging.error ("Error while calling remote method (%s). %s" % (self.__name, e))
+            return False
+
+    def __repr__ (self):
+        return "<RPC Wrapper for method %s>" % self.__name
+    

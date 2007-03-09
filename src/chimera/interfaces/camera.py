@@ -21,13 +21,15 @@
 from chimera.core.interface import Interface
 from chimera.core.event import event
 
-
-class ICameraExpose(Interface):
+class ICamera (Interface):
 
     # config
     __options__ = {"driver" : "/Fake/camera"}
     
-    # methods
+
+class ICameraExpose(ICamera):
+
+   # methods
     def expose (self, config):
         pass
     
@@ -48,7 +50,7 @@ class ICameraExpose(Interface):
         pass
 
 
-class ICameraTemperature(Interface):
+class ICameraTemperature(ICamera):
 
     # methods
     def setTemperature(self, config):

@@ -62,8 +62,7 @@ class Camera(BasicLifeCycle, ICameraExpose, ICameraTemperature):
 
     # methods
     def expose (self, config):
-        self.drv.expose(config)
-        return True
+        return self.drv.expose(config)
 
     def abortExposure (self, config):
         return self.drv.abortExposure(config)

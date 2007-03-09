@@ -20,10 +20,16 @@
 
 import logging
 import time
+import threading
 
 from chimera.core.threads import getThreadPool
 
 # FIXME: exception handling
+
+def lock(func):
+        func.lock = threading.Lock()
+        return func
+
 
 class AsyncResult(object):
 
@@ -39,8 +45,9 @@ class AsyncResult(object):
         self.pool = pool or getThreadPool(10)
 
     def __call__(self, *args, **kwargs):
-        logging.debug("calling synchronously %s with %s %s" % (self.func,
-                                                               args, kwargs))
+        logging.debug("calling synchronously %s with %s %s on thread %s" % (self.func,
+									    args, kwargs,
+									    threading.currentThread().getName()))
 
         if(hasattr(self.func, "lock")):
             self.func.lock.acquire()
@@ -53,8 +60,9 @@ class AsyncResult(object):
         return result
 
     def begin(self, *args, **kwargs):
-        logging.debug("calling asynchronously %s with %s %s" % (self.func,
-                                                                args, kwargs))
+        logging.debug("calling asynchronously %s with %s %s on thread %s" % (self.func,
+									     args, kwargs,
+									      threading.currentThread().getName()))
 
         if(not self.pool):
             logging.error("Cannot run async calls, pool is not seted")

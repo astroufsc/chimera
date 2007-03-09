@@ -230,6 +230,20 @@ class Dec(Coord):
     def __str__(self):
         return self.sexagesimal()
 
+class Az(Coord):
+    def __init__(self, coord):
+        Coord.__init__(self, coord)
+
+    def __str__(self):
+        return self.decimal()
+
+class Alt(Coord):
+    def __init__(self, coord):
+        Coord.__init__(self, coord)
+
+    def __str__(self):
+        return self.decimal()
+
 class Lat(Coord):
     def __init__(self, coord):
         Coord.__init__(self, coord)

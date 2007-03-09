@@ -123,7 +123,7 @@ class Register(object):
 
         if insts:
             try:
-                return self[insts.pop(index)]
+                return self.objects[insts.pop(index)]
             except IndexError:
                 return False
         else:

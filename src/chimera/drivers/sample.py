@@ -31,6 +31,16 @@ class Sample (BasicLifeCycle):
     def init(self, config):
         self.config += config
 
-    def dooFoo (self):
-        print "tada! doing!!!"
-        return True
+	self.drv = SampleLowLevel ()
+
+    def doFooHigh (self, a, b, c):
+        print a
+        print b
+        print c
+        return self.drv.doFooLow ()
+
+class SampleLowLevel (object):
+
+    def doFooLow (self):
+	return True
+

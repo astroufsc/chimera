@@ -1,4 +1,92 @@
-2007-03-01  P. Henrique SIlva  <henrique@tycho.observatorio.ufsc.br>
+2007-03-09  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* src/chimera/interfaces/camera.py:
+
+	Added new root interface ICamera. ICameraExpose and
+	ICameraTemperature now inheritis from them.
+
+	* src/chimera/interfaces/lifecycle.py:
+
+	New __options__ (base from an auto-config feature).
+	Removed unneeded events.
+	
+	* src/chimera/interfaces/telescope.py:
+
+	Added new root interface ITelescope. Make all other interfaced to
+	inheritis from them.
+
+	New ITelescopeDriver interface.
+
+	ITelescopeSlew refactored (no field definitions on interfaces).
+
+	* src/chimera/core/threads.py: 
+	* src/chimera/core/async.py:
+
+	More information on logging (current thread).
+
+	lock decorator moved to async.py.
+	
+	* src/chimera/core/lifecycle.py: Removed finished TODO mark.
+
+	* src/chimera/core/site.py: Imports reorganized.
+
+	* src/chimera/core/runner.py:
+
+	Added Runner version for win32. Use sys.platform to define the
+	actual Runner class to use.
+	
+	* src/chimera/core/manager.py:
+
+	Fix some bugs on getLocation and _get.
+
+	* src/chimera/core/proxy.py:
+
+	Improved Proxy. Check __getattr__ and __getattribute__ when
+	looking for members.
+	
+	* src/chimera/core/register.py: Fix getByIndex.
+
+	* src/chimera/instruments/camera.py: Fix expose return value.
+	
+	* src/chimera/instruments/telescope.py:
+
+	Finished implementation of ITelescopeSlew. Now working.
+
+	* src/chimera/util/coord.py: New Az and Alt classes.
+
+	* src/chimera/drivers/remoteclient.py:
+
+	Added custom method wrapper to call a XML-RPC method on remote
+	server.
+
+	* src/chimera/drivers/remoteserver.py:
+
+	Added a new multi-thread version of SimpleXMLRPCServer.
+	Fixed __options__ list.
+	New _dispatch method to handle XML-RPC calls on every object.
+
+	* src/chimera/drivers/meade.py:
+
+	Converted Meade to BasicLifeCycle pattern.
+	New _autoAlign and _checkMeade methods.
+	Fixed slewToRaDec.
+
+	* src/chimera/drivers/paramount.py:
+
+	New Paramount driver using TheSky6.
+	Lot of COM things added.
+
+	* src/chimera/drivers/sample.py:
+
+	Added more boilerplate code to Sample.
+
+	* setup.py: Windows support added.
+
+	* MANIFEST.in: Removed docs from sdist.
+
+	* setup.cfg: Added default sdist formats.
+	
+2007-03-01  P. Henrique Silva  <henrique@astro.ufsc.br>
 
 	* TODO:
 	* src/config/site.xml:

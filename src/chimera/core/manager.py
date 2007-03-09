@@ -92,7 +92,6 @@ class Manager(object):
         """
 
         # TODO: - add a reload method
-        # TODO: - use separate include path for different objects
 
         if name in self._cache:
             return self._cache[name]
@@ -139,7 +138,6 @@ class Manager(object):
                 logging.error("Couldn't found module %s." % name)
             else:
                 logging.error("Module %s found but couldn't be loaded. Exception follows..." % name)
-                
                 logging.exception("")
 
             return False
@@ -155,14 +153,17 @@ class Manager(object):
         if not obj:
             # not found on register, try to add
             if not self._init (location, register):
-                logging.debug("Could't found %s." %  location)
+                obj = None
             else:
                 obj = register.get(location)
 
-        if proxy:
-            return Proxy(obj, self._pool)
+        if obj != None:
+            if proxy:
+                return Proxy(obj, self._pool)
+            else:
+                return obj
         else:
-            return obj
+            return None
 
     def _add(self, location, register):
 
@@ -242,7 +243,20 @@ class Manager(object):
     # helpers
 
     def getLocation(self, obj):
-        return self._instruments.getLocation(obj)
+        # FIXME: buggy by definition
+        kinds = [self._controllers, self._instruments, self._drivers]
+
+        def _get (kind):
+            return kind.getLocation (obj)
+
+        ret = map(_get, kinds)
+
+        for item in ret:
+            if item != None:
+                return item
+
+        return None
+            
 
     # instruments
 

@@ -22,7 +22,6 @@ import logging
 import time
 
 from chimera.core.lifecycle import BasicLifeCycle
-
 from chimera.interfaces.telescope import ITelescopeSlew
 
 class Telescope(BasicLifeCycle, ITelescopeSlew):
@@ -30,43 +29,68 @@ class Telescope(BasicLifeCycle, ITelescopeSlew):
     def __init__(self, manager):
         BasicLifeCycle.__init__(self, manager)
 
-        #self.timeslice = 0.05 # 20 Hz
-            
     def init(self, config):
-        pass
 
-    def shutdown(self):
-        pass
-        
-    def inst_main(self):
-        self.slewComplete("%.10f" % time.time(), "", "")
+        self.config += config
+
+        self.drv = self.manager.getDriver(self.config.driver)
+
+        if not self.drv:
+            logging.debug("Couldn't load selected driver (%ss). Will use the default (Fake)" %  self.config.driver)
+            self.drv = self.manager.getDriver("/Fake/telescope")
+
+        # connect events
+        self.drv.slewComplete += self._slew_cb
+        self.drv.abortComplete += self._abort_cb
+
+
+    # callbacks
+
+    def _slew_cb (self, position):
+        self.slewComplete (position)
+
+    def _abort_cb (self, position):
+        self.abortComplete (position)
+
+    # -- ITelescopeSlew implementation
     
-    def slew(self, coord):
-        # parse and validate coord
-        res = self.driver.slewToRaDec.begin((coord['ra'], coord['dec']), callback=self._slewComplete)
-        return res.end()
+    def slewToRaDec (self, ra, dec):
+        return self.drv.slewToRaDec (ra, dec)
 
-    def isSlewing(self):
-        res = self.driver.isSlewing.begin()
-        return res.end()
+    def slewToAzAlt (self, az, alt):
+        return self.drv.slewToAzAlt (az, alt)
 
-    def abortSlew(self):
-        res = self.driver.abortSlew.begin(callback=self._abortSlew)
-        return res.end()
+    def moveEast (self, offset):
+        return self.drv.moveEast (offset)        
 
-    def getRa(self):
-        res = self.driver.getRa()
-        return res
+    def moveWest (self, offset):
+        return self.drv.moveWest (offset)        
 
-    def getDec(self):
-        return 1000        
+    def moveNorth (self, offset):
+        return self.drv.moveNorth (offset)        
 
-    def _slewComplete(self, status):
-        # check status
-        #if status = True:
-        #   self.slewComplete(status['position'])
-        logging.info("_slewComplete callback")
+    def moveSouth (self, offset):
+        return self.drv.moveSouth (offset)        
 
-    def _abortSlew(self, status):
-        #self.slewAborted()
-        logging.info("_abortSlew callback")
+    def abortSlew (self):
+        return self.drv.abortSlew ()
+
+    def getRa (self):
+        return self.drv.getRa ()
+    
+    def getDec (self):
+        return self.drv.getDec ()
+    
+    def getAz (self):
+        return self.drv.getAz ()
+    
+    def getAlt (self):
+        return self.drv.getAlt ()
+    
+    def getPosition (self):
+        return self.drv.getPosition ()
+    
+    def getTarget (self):
+        return self.drv.getTarget ()
+    
+    

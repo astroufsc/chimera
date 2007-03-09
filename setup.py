@@ -25,7 +25,7 @@ from distutils.core import setup
 
 # append chimera to sys.path to get current version
 build_dir = os.getcwd ()
-src_dir   = os.path.join (build_dir, 'src/')
+src_dir   = os.path.join (build_dir, 'src')
 
 old_sys_path = sys.path
 sys.path.insert (0, src_dir)
@@ -56,16 +56,13 @@ chimera_modules = ['chimera',
 
 chimera_scripts = ['src/scripts/chimera']
 
-chimera_data    = [ ("/etc/chimera", ["src/config/site.xml"]) ]
-
 # setup
 
 setup(name='chimera',
-      package_dir      = {"chimera": "src/chimera/"},
+      package_dir      = {"chimera": "src/chimera"},
       
       packages         = chimera_modules,
       scripts          = chimera_scripts,
-      data_files       = chimera_data,
       
       version          = _chimera_version_,
       description      = _chimera_description_,

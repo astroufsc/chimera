@@ -18,17 +18,15 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-from chimera.core.location import Location
-from chimera.core.manager import Manager
-
-from chimera.core.version import _chimera_version_, _chimera_description_
-
 import os.path
 import logging
-
 from optparse import OptionParser
-import chimera.util.etree.ElementTree as ET
 from xml.parsers.expat import ExpatError, ErrorString
+
+import chimera.util.etree.ElementTree as ET
+from chimera.core.location import Location
+from chimera.core.manager import Manager
+from chimera.core.version import _chimera_version_, _chimera_description_
 
 
 class SiteConfiguration(object):

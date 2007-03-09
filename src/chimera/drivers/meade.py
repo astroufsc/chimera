@@ -22,10 +22,14 @@ import time
 import serial
 import signal
 import threading
+import logging
+
+from chimera.core.lifecycle import BasicLifeCycle
+from chimera.interfaces.telescope import ITelescopeDriver
 
 from chimera.util.coord import Coord, Ra, Dec, Lat, Long, Point
 
-class Meade(object):
+class Meade (BasicLifeCycle, ITelescopeDriver):
 
     altazAlign = "A"
     polarAlign = "P"
@@ -37,32 +41,105 @@ class Meade(object):
 
 
 
-    def __init__(self):
-        self.tty = serial.Serial()
+    def __init__(self, manager):
+
+        BasicLifeCycle.__init__ (self, manager)
+
+        self.tty = None
+        self.alignMode = Meade.altazAlign
+        self.abort = threading.Event ()
+        self.slewing = False
+
         self._errorNo = 0
         self._errorString = ""
 
-        self._slew_idle_time = 0.1
-        self._max_slew_time = 60.0
-        self._stabilization_time = 0.5
+    # -- IBasicLifeCycle implementation --
+    
+    def init (self, config):
 
-        self.alignMode = Meade.altazAlign
+        self.config += config
 
-        self.abort = threading.Event ()
-
-        self.slewing = False
-
-    def open(self, device, timeout = 10):
-        self.tty.port = device
-        self.tty.timeout = timeout
-
-        try:
-            self.tty.open()
-        except IOError,e:
-            self.setError(e)
+        if not self.open ():
             return False
 
         return True
+
+    def shutdown (self):
+
+        if not self.close ():
+            return False
+
+        return True
+
+    def main (self):
+        pass
+
+
+    # -- ITelescopeDriver implementation
+        
+    def _checkMeade (self):
+
+        tmp = self.tty.timeout
+        self.tty.timeout = 10
+
+        self._write (":GVP#")
+
+        name = self._readline ()
+
+        self.tty.timeout = tmp
+
+        if not name:
+            return False
+      
+        if "LX200" in name:
+            return True
+        else:
+            self.setError (-1, "Couldn't found a Meade telescope on %s." % self.device)
+            return False
+
+    def _autoAlign (self):
+
+        self._write (":Aa#")
+
+        while not self.tty.inWaiting ():
+            time.sleep (1)
+
+        # FIXME: bad LX200 behavious
+        tmp = self._read (1)
+
+        return True
+            
+    def open(self):
+
+        self.tty = serial.Serial()
+        self.device = self.config.device
+
+        self.tty.port = self.device
+        self.tty.timeout = self.config.timeout
+
+        try:
+            self.tty.open()
+
+            if not self._checkMeade():
+                logging.warning ("Couldn't found a Meade telescope on %s." %  self.config.device)
+                return False
+
+            if self.config.auto_align:
+                self._autoAlign ()
+            
+            return True
+
+        except serial.SerialException, e:
+            self.setError (-1, str(e))
+            logging.debug ("Error while opening %s. Exception follows..." % self.config.device)
+            logging.exception ()
+            return False
+            
+        except IOError,e:
+            self.setError(e)
+            logging.debug ("Error while opening %s. Exception follows..." % self.config.device)
+            logging.exception ()
+            return False
 
     def close(self):
         if self.tty.isOpen():
@@ -129,7 +206,7 @@ class Meade(object):
                 return False
 
             # check timeout
-            if time.time () >= (start_time + self._max_slew_time):
+            if time.time () >= (start_time + self.config.max_slew_time):
                 self.abortSlew ()
                 self.setError (-1, "Slew aborted. Max slew time reached.")
                 self.slewing = False
@@ -138,12 +215,11 @@ class Meade(object):
             position = self.getPosition()
 
             if target.near (position, "00 01 00"):
-                # position near (1') target, sleep for scope stabilization and returns
-                time.sleep (self._stabilization_time)
+                time.sleep (self.config.stabilization_time)
                 self.slewing = False
                 return True
             
-            time.sleep (self._slew_idle_time)
+            time.sleep (self.config.slew_idle_time)
 
 
     def slewToAltAz(self, alt, az):
@@ -331,41 +407,51 @@ class Meade(object):
 
         return ret
 
-if __name__ == '__main__':
+# if __name__ == '__main__':
 
-    m = Meade()
-    m.open('/dev/ttyS0')
+#     import sys
 
-    def printInfo():
-        print "align mode:", m.getAlignMode()
+#     m = Meade()
 
-        print "ra :", m.getRa()
-        print "dec:", m.getDec()
+#     if not m.open('/dev/ttyS0'):
+#         print "Error (%s)." % m.getError ()[1]
+#         sys.exit (2)
 
-        print "az :", m.getAz()
-        print "alt:", m.getAlt()
+#     #m._autoAlign ()
+
+#     def printInfo():
+#         print "align mode:", m.getAlignMode()
+
+#         print "ra :", m.getRa()
+#         print "dec:", m.getDec()
+
+#         print "az :", m.getAz()
+#         print "alt:", m.getAlt()
         
-        print "lat :", m.getLat()
-        print "long:", m.getLong()
+#         print "lat :", m.getLat()
+#         print "long:", m.getLong()
         
-        print "date:" , m.getDate()
-        print "time:" , m.getTime()
-        print "to utc:", m.getUTCOffset()
-        print "ts:", m.getSiderealTime()
+#         print "date:" , m.getDate()
+#         print "time:" , m.getTime()
+#         print "to utc:", m.getUTCOffset()
+#         print "ts:", m.getSiderealTime()
 
-    def printCoord():
-        print m.getRa(), m.getDec()
+#     def printCoord():
+#         print m.getRa(), m.getDec()
 
-    #printInfo()
-    #printCoord()
+#     printInfo()
 
-    #if not m.slewToRaDec('20:00:00', '-20:00:00'):
-    #    print m.getError()[1]
+#     if not m.slewToRaDec ("12 00 00", "-40 00 00"):
+#         print m.getError ()
+        
+#     #printInfo()
 
-    t0 = time.time()
-    t10 = t0 + 10
+                   
+#     #m._write (":Aa#")
+#     #print
+#     #printInfo()
 
-    while t10 > time.time():
+#     #if not m.slewToRaDec('20:00:00', '-20:00:00'):
+#     #    print m.getError()[1]
 
-        print "%f\t%f\t%f" % (time.time(), m.getRa().decimal(), m.getDec().decimal())
     

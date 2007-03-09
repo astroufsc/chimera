@@ -44,8 +44,6 @@ class BasicLifeCycle(ILifeCycle):
         # create configuration as necessary
         self.config = Config(self.__options__)
 
-    # TODO: driver loading
-    
     def init(self, config):
         pass
 

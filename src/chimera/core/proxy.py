@@ -30,37 +30,44 @@ class Proxy(object):
         self._obj = obj
         self._pool = threadPool
 
-    def __getattribute__(self, value):
+    def __getattribute__(self, attr):
 
         obj = object.__getattribute__(self, '_obj')
         pool = object.__getattribute__(self, '_pool')
 
         # event handling
-        
         try:
             events = object.__getattribute__(obj, '__eventsProxy__')
-            if value in events:
-                return events[value]
+            if attr in events:
+                return events[attr]
         except AttributeError:
             # no event handling definition, treat as a normal attribute
             pass
 
-        # normal attributes
-        if hasattr(obj, value):
-            
-            prop = object.__getattribute__(obj, value)
 
-            if(callable(prop)):
-                return AsyncResult(prop, pool)
+        # look for methods and return an AsyncResult or just a plain non-callable attribute
+        if hasattr (obj, '__getattr__'):
+            method = object.__getattribute__ (obj, '__getattr__')
+        elif hasattr (obj, '__getattribute__'):
+            method = object.__getattribute__ (obj, '__getattribute__')
+        else:
+            method = lambda attr: object.__getattribute__ (obj, attr)
+
+        try:
+            value = method(attr)
+
+            if callable (value):
+                return AsyncResult(value, pool)
 
             # non callable, just returns
-            return prop
-        else:
-            raise AttributeError
+            return value
 
-def lock(func):
-        func.lock = threading.Lock()
-        return func
+        except AttributeError, e:
+            raise e
+        
+
+    def __repr__ (self):
+        return "<Proxy: %s for object %s>" % (self, self._obj)
 
 
 if __name__ == '__main__':
