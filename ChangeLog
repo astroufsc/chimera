@@ -1,3 +1,7 @@
+2007-03-12  P. Henrique SIlva  <henrique@tycho.observatorio.ufsc.br>
+
+	* src/chimera/drivers/sbig/lib/*: Removed. Moved to their own package.
+
 2007-03-09  P. Henrique Silva  <henrique@astro.ufsc.br>
 
 	* src/chimera/interfaces/camera.py:
