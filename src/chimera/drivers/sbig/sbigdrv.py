@@ -156,7 +156,20 @@ class SBIGDrv(object):
         self._errorString = ""
 
     def openDriver(self):
-        return self._cmd(udrv.CC_OPEN_DRIVER, None, None)
+
+        ret = self._cmd(udrv.CC_OPEN_DRIVER, None, None)
+
+        if not ret:
+            err= self.getError ()
+
+            # driver already open (are you trying to use the tracking ccd?)
+            if err[0] == 21:
+                return True
+            else:
+                self.setError (*err)
+                return False
+
+        return True
 
     def closeDriver(self):
         return self._cmd(udrv.CC_CLOSE_DRIVER, None, None)
@@ -166,7 +179,20 @@ class SBIGDrv(object):
         odp = udrv.OpenDeviceParams()
         odp.deviceType = device
 
-        return self._cmd(udrv.CC_OPEN_DEVICE, odp, None)
+        ret = self._cmd(udrv.CC_OPEN_DEVICE, odp, None)
+
+        if not ret:
+            err= self.getError ()
+
+            # device already open (are you trying to use the tracking ccd?)
+            if err[0] == 29:
+                return True
+            else:
+                self.setError (*err)
+                return False
+
+        return True
+        
 
     def closeDevice(self):
         return self._cmd(udrv.CC_CLOSE_DEVICE, None, None)
@@ -380,7 +406,18 @@ class SBIGDrv(object):
 
     # filter wheel
     def getFilterPosition (self):
-        pass
+        cfwp = udrv.CFWParams()
+        cfwp.cfwModel = udrv.CFWSEL_CFW8
+        cfwp.cfwCommand = udrv.CFWC_QUERY
+
+        cfwr = udrv.CFWResults()
+
+        ret = self._cmd (udrv.CC_CFW, cfwp, cfwr)
+
+        if not ret:
+            return -1
+
+        return cfwr.cfwPosition
 
     def setFilterPosition (self, position):
         

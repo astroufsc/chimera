@@ -38,11 +38,13 @@ class FilterWheel (BasicLifeCycle, IFilterWheel):
         self.drv = self.manager.getDriver(self.config.driver)
 
         if not self.drv:
-            logging.debug("Couldn't load selected driver (%ss). Will use the default (Fake)" %  self.config.driver)
-            self.drv = self.manager.getDriver("/Fake/filter")
+            logging.debug("Couldn't load selected driver (%ss)." %  self.config.driver)
+            return False
 
         # connect events
         self.drv.filterChanged += self.filter_cb
+
+        return True
 
     # callbacks
     def filter_cb (self, new, old):

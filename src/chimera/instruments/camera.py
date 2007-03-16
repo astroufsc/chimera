@@ -37,15 +37,16 @@ class Camera(BasicLifeCycle, ICameraExpose, ICameraTemperature):
         self.drv = self.manager.getDriver(self.config.driver)
 
         if not self.drv:
-            logging.debug("Couldn't load selected driver (%ss). Will use the default (Fake)" %  self.config.driver)
-            self.drv = self.manager.getDriver("/Fake/camera")
-
+            logging.debug("Couldn't load selected driver (%s)." %  self.config.driver)
+            return False
 
         # connect events
         self.drv.exposeComplete += self.expose_cb
         self.drv.readoutComplete += self.readout_cb
         self.drv.exposeAborted += self.abort_cb
         self.drv.temperatureChanged += self.temp_cb
+
+        return True
 
     # callbacks
     def expose_cb (self):
@@ -67,8 +68,8 @@ class Camera(BasicLifeCycle, ICameraExpose, ICameraTemperature):
     def abortExposure (self, config):
         return self.drv.abortExposure(config)
 
-    def exposing (self):
-        return self.drv.exposing ()
+    def isExposing (self):
+        return self.drv.isExposing ()
 
     def setTemperature(self, config):
         return self.drv.setTemperature (config)

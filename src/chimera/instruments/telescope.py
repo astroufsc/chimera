@@ -36,12 +36,13 @@ class Telescope(BasicLifeCycle, ITelescopeSlew):
         self.drv = self.manager.getDriver(self.config.driver)
 
         if not self.drv:
-            logging.debug("Couldn't load selected driver (%ss). Will use the default (Fake)" %  self.config.driver)
-            self.drv = self.manager.getDriver("/Fake/telescope")
+            logging.debug("Couldn't load selected driver (%ss)." %  self.config.driver)
+            return False
 
-        # connect events
-        self.drv.slewComplete += self._slew_cb
-        self.drv.abortComplete += self._abort_cb
+        #self.drv.slewComplete += self._slew_cb
+        #self.drv.abortComplete += self._abort_cb
+
+        return True
 
 
     # callbacks
@@ -60,6 +61,9 @@ class Telescope(BasicLifeCycle, ITelescopeSlew):
     def slewToAzAlt (self, az, alt):
         return self.drv.slewToAzAlt (az, alt)
 
+    def isSlewing (self):
+        return self.drv.isSlewing ()
+    
     def moveEast (self, offset):
         return self.drv.moveEast (offset)        
 

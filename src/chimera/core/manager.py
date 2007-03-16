@@ -120,7 +120,7 @@ class Manager(object):
 
             return self._cache[name]
 
-        except Exception:
+        except Exception, e:
 
             # Python trick: An ImportError exception catched here
             # could came from both the __import__ above or from the
@@ -135,7 +135,14 @@ class Manager(object):
             tb_size = len(traceback.extract_tb(sys.exc_info()[2]))
 
             if tb_size == 1:
-                logging.error("Couldn't found module %s." % name)
+
+                if type (e) == ImportError:
+                    logging.error("Couldn't found module %s." % name)
+
+                else:
+                    logging.error("Module %s found but couldn't be loaded. Exception follows..." % name)
+                    logging.exception("")
+                    
             else:
                 logging.error("Module %s found but couldn't be loaded. Exception follows..." % name)
                 logging.exception("")
@@ -204,7 +211,10 @@ class Manager(object):
         # run object init
         # it runs on the same thread, so be a good boy and don't block manager's thread
         try:
-            register[location].init(location.options)
+            ret = register[location].init(location.options)
+            if not ret:
+                logging.warning ("%s init returned an error. Removing %s from register." % (location, location))
+                return False
         except Exception:
             logging.exception("Error running %s %s init method. Exception follows..." %
                               (register.kind, location))

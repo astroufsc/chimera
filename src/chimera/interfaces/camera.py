@@ -36,6 +36,9 @@ class ICameraExpose(ICamera):
     def abortExposure (self, config):
         pass
 
+    def isExposing (self):
+        pass
+
     # events
     @event
     def exposeComplete (self):
@@ -74,7 +77,7 @@ class ICameraDriver(Interface):
                    "shutter" 	         : ["open", "close", "leave"],
                    "readout_aborted"     : True,
                    "readout_mode"	 : 0,
-                   "date_format"	 : "%d%m%y",
+                   "date_format"	 : "%d%m%y-%H%M%S",
                    "file_format"	 : "$num-$observer-$date-$objname",
                    "file_extension"  	 : "fits",
                    "directory"	         : "/home/someuser/images",
@@ -99,7 +102,7 @@ class ICameraDriver(Interface):
     def ping(self):
         pass
 
-    def exposing(self):
+    def isExposing(self):
         pass
 
     def expose(self, config):

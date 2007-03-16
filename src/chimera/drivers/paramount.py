@@ -108,6 +108,7 @@ class Paramount (BasicLifeCycle):
             self._thesky.Connect ()
             self._telescope.Connect ()
             self._telescope.FindHome ()
+            return True
         except com_error:
             logging.error ("Couldn't connect to TheSky.")
             return False

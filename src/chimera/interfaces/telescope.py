@@ -35,6 +35,9 @@ class ITelescopeSlew (ITelescope):
     def slewToAzAlt (self, az, alt):
         pass
 
+    def isSlewing (self):
+        pass
+
     def moveEast (self, offset):
         pass
 
@@ -101,6 +104,9 @@ class ITelescopeDriver (Interface):
         pass
 
     def slewToAltAz(self, alt, az):
+        pass
+
+    def isSlewing (self):
         pass
 
     def abortSlew(self):

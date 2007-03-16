@@ -41,6 +41,8 @@ class RemoteClient(BasicLifeCycle):
 
         self.proxy = xmlrpclib.ServerProxy(url)
 
+        return True
+
     def __getattr__ (self, attr):
         return RemoteMethodWrapper (self.proxy.__request, attr)
 

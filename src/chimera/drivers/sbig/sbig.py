@@ -64,7 +64,7 @@ class SBIG(BasicLifeCycle, ICameraDriver, IFilterWheelDriver):
         else:
             self.dev = SBIGDrv.lpt1
                         
-        self.open(self.dev)
+        return self.open(self.dev)
 
     def shutdown(self):
         self.close ()
@@ -100,6 +100,8 @@ class SBIG(BasicLifeCycle, ICameraDriver, IFilterWheelDriver):
         if not self.drv.queryCCDInfo():
             logging.error("Error querying ccd: %d %s." % self.drv.getError())
             return False
+
+        return True
         
     def close(self):
         self.drv.closeDevice()
@@ -108,7 +110,7 @@ class SBIG(BasicLifeCycle, ICameraDriver, IFilterWheelDriver):
     def ping(self):
         return self.drv.isLinked()
 
-    def exposing(self):
+    def isExposing(self):
         return self.drv.exposing(self.ccd)
 
     def expose(self, config):
@@ -118,8 +120,7 @@ class SBIG(BasicLifeCycle, ICameraDriver, IFilterWheelDriver):
         self.term.clear()
 
         if self._expose():
-            self._readout()
-            return True
+            return self._readout()
         else:
             return False
 
@@ -260,9 +261,9 @@ class SBIG(BasicLifeCycle, ICameraDriver, IFilterWheelDriver):
 
         # end readout and save
         self._endReadout()
-        self._saveFITS(img)
+        ret = self._saveFITS(img)
                 
-        return True
+        return ret
 
     def _saveFITS(self, img):
         
@@ -289,7 +290,7 @@ class SBIG(BasicLifeCycle, ICameraDriver, IFilterWheelDriver):
 
             else:
                 logging.warning("The direcotry specified (%s) doesn't exist. "
-                                "save_on_temp is active, the current will be saved on /tmp" % (dest))
+                                "save_on_temp is active, the current exposure will be saved on /tmp" % (dest))
 
                 dest = tempfile.gettempdir ()
                        

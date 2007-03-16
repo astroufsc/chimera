@@ -45,29 +45,33 @@ class Proxy(object):
             pass
 
 
+        methods = []
         # look for methods and return an AsyncResult or just a plain non-callable attribute
         if hasattr (obj, '__getattr__'):
-            method = object.__getattribute__ (obj, '__getattr__')
-        elif hasattr (obj, '__getattribute__'):
-            method = object.__getattribute__ (obj, '__getattribute__')
-        else:
-            method = lambda attr: object.__getattribute__ (obj, attr)
+            methods.append (object.__getattribute__ (obj, '__getattr__'))
+            
+        if hasattr (obj, '__getattribute__'):
+            methods.append (object.__getattribute__ (obj, '__getattribute__'))
 
-        try:
-            value = method(attr)
+        methods.append (lambda attr: object.__getattribute__ (obj, attr))
 
-            if callable (value):
-                return AsyncResult(value, pool)
+        for method in methods:
+            try:
+                value = method(attr)
 
-            # non callable, just returns
-            return value
+                if callable (value):
+                    return AsyncResult(value, pool)
 
-        except AttributeError, e:
-            raise e
+                # non callable, just returns
+                return value
+            except AttributeError, e:
+                pass
         
 
+        raise AttributeError
+
     def __repr__ (self):
-        return "<Proxy: %s for object %s>" % (self, self._obj)
+        return "<Proxy: %s for object %s>" % (hash(self), object.__getattribute__(self, '_obj'))
 
 
 if __name__ == '__main__':

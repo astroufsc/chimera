@@ -1,4 +1,64 @@
-2007-03-12  P. Henrique SIlva  <henrique@tycho.observatorio.ufsc.br>
+2007-03-16  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* src/chimera/drivers/paramount.py: Fixed init return value.
+
+	* src/chimera/drivers/sbig/sbig.py:
+
+	Fixed init return value.
+	Fixed expose return value (image filename).
+	Fixed some typos.
+
+	* src/chimera/drivers/sbig/sbigdrv.py:
+
+	Added getFilterPoistion implementarion.
+	Added support for multi-ccd use on openDriver and openDevice.
+
+	* src/chimera/drivers/remoteclient.py: Fixed init return value.
+
+	* src/config/observer.xml: New.
+	* src/chimera/controllers/observer.py: New.
+
+	* src/chimera/instruments/telescope.py:
+	Added isSlewing.
+	Removed default driver loading (no Fakes).
+	Events disabled (RemoteClient doesn't handle events yet).
+
+	* src/chimera/instruments/filterwheel.py:
+	Removed default driver loading (no Fakes).
+	Fixed init return value.
+
+	* src/chimera/instruments/filterwheel.py:
+	Fixed init return value.
+	Removed default driver loading (no Fakes).
+
+	* src/chimera/core/proxy.py:
+	Fixed handle of object's __getattr__ and __getattribute__.
+	Fixed __repr__.
+
+	* src/chimera/core/manager.py:
+	Added support for init method return value checking. If init
+	returns True add the object otherwise remove them.
+
+	Fixed exception handling on _getClass.
+
+	* src/chimera/util/observation.py: Refactored to new Observer.
+
+	* src/chimera/interfaces/camera.py:
+	Added isExposing to ICameraExpose.
+	Fixed date_format option.
+	Renamed ICameraDriver exposing to isExposing.
+
+	* src/chimera/interfaces/telescope.py Added isSlewing.
+	
+	* src/chimera/controllers/sample.py:
+	* src/chimera/controllers/samplet.py:
+	* src/chimera/controllers/samplef.py:
+	* src/chimera/drivers/sample.py:
+	* src/chimera/instruments/sample.py:
+
+	Removed. Better samples to come on chimera documentation.
+
+2007-03-12  P. Henrique Silva  <henrique@astro.ufsc.br>
 
 	* src/chimera/drivers/sbig/lib/*: Removed. Moved to their own package.
 
