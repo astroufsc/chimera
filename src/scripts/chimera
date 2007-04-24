@@ -1,4 +1,4 @@
-#! /usr/bin/python
+#! /usr/bin/env python
 # -*- coding: iso8859-1 -*-
 
 # chimera - observatory automation system

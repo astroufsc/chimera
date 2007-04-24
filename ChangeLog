@@ -1,3 +1,18 @@
+2007-04-24  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* src/scripts/chimera: Use /usr/bin/env to call python (ensure use
+	of default python on the system).
+	
+	* src/chimera/core/site.py:  shutdown fixed (missed sys import)
+
+	* setup.py:	
+	* src/chimera/core/location.py: Python 2.3.x stuff (not full
+	ported yet).
+
+	* src/chimera/core/manager.py: Typos.
+	Fix bug on the order of sys.path (our classes first by now)
+	
+
 2007-03-16  P. Henrique Silva  <henrique@astro.ufsc.br>
 
 	* src/chimera/drivers/paramount.py: Fixed init return value.

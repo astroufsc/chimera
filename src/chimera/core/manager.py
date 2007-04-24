@@ -101,7 +101,7 @@ class Manager(object):
 
             # adjust sys.path accordingly to kind
             tmpSysPath = sys.path
-            sys.path = sys.path + self._includePath[kind]
+            sys.path = self._includePath[kind] + sys.path
 
             module = __import__(name.lower(), globals(), locals(), [name])
 
@@ -237,7 +237,7 @@ class Manager(object):
             return False
 
         try:
-            logging.debug("Shuttind dow %s %." % (register, location))
+            logging.debug("Shutting down %s %s." % (register, location))
 
             # run object shutdown method
             # again: runs on the same thread, so don't block it

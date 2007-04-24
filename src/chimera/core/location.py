@@ -21,8 +21,7 @@
 import re
 import logging
 
-from types import (DictType, ListType,
-                   TupleType, StringType)
+from types import DictType, ListType, TupleType, StringType
 
 
 class Location(object):

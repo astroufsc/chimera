@@ -31,16 +31,16 @@ old_sys_path = sys.path
 sys.path.insert (0, src_dir)
 
 
-from chimera.core.version import ( _chimera_version_,
-                                   _chimera_description_,
-                                   _chimera_long_description_,
-                                   _chimera_author,
-                                   _chimera_author_email_,
-                                   _chimera_license_,
-                                   _chimera_url_,
-                                   _chimera_download_url_,
-                                   _chimera_classifiers_,
-                                   _chimera_platform_)
+from chimera.core.version import  _chimera_version_,		\
+                                  _chimera_description_,	\
+                                  _chimera_long_description_,	\
+                                  _chimera_author,		\
+                                  _chimera_author_email_,	\
+                                  _chimera_license_,		\
+                                  _chimera_url_,		\
+                                  _chimera_download_url_,	\
+                                  _chimera_classifiers_,	\
+                                  _chimera_platform_		
 
 # modules
 
