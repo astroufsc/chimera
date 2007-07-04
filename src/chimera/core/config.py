@@ -230,8 +230,8 @@ class RangeChecker (Checker):
     def __init__ (self, value):
         Checker.__init__ (self)
 
-        self._min = value[0]
-        self._max = value[1]
+        self._min = min (value)
+        self._max = max (value)
 
         if type (value[0]) == FloatType:
             self._checker = FloatChecker ()

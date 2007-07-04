@@ -102,7 +102,7 @@ class Manager(object):
             # adjust sys.path accordingly to kind
             tmpSysPath = sys.path
             sys.path = self._includePath[kind] + sys.path
-
+            
             module = __import__(name.lower(), globals(), locals(), [name])
 
             # turns sys.path back

@@ -170,10 +170,12 @@ class Observer (BasicLifeCycle):
 			       ("AIRMASS", 0, "air mass"),			       
 			       ("RA", target.obj.ra or "-99 99 99", "right ascension of the observed object"),
 			       ("DEC", target.obj.dec or "-99 99 99", "declination of the observed object"),
-			       ("EQUINOX", 2000.0, "equinox of celestial coordinate system"),
 			       ("EXPTIME", float(target.exptime) or -1, "exposure time in seconds"),
+			       ("EQUINOX", 2000.0, "equinox of celestial coordinate system"),
+			       ("EPOCH - OUTDATED", 2000.0, "equinox of celestial coordinate system"),
 			       ("FILTER", target.filtername or "unknown", "name of filter used during the observation"),
 			       ("CREATOR", _chimera_description_, "")]
+			       ("SECPIX", 0.0, "plate scale"),
 
 		    for header in headers:
 			    hdu.header.update (*header)

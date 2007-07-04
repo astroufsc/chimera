@@ -1,5 +1,15 @@
 2007-07-04  P. Henrique Silva  <henrique@astro.ufsc.br>
 
+	* src/chimera/controllers/observer.py: New keywords added (plate
+	scale and equinox).
+	
+	* src/chimera/core/config.py: Fix behaviour of range options when
+	default value is greater than min value.
+	
+	* src/chimera/core/manager.py: Indentation fix.
+
+2007-07-04  P. Henrique Silva  <henrique@astro.ufsc.br>
+
 	* src/chimera/drivers/optectcfs.py:
 	* src/chimera/interfaces/focuser.py:
 
