@@ -3,6 +3,9 @@
 	* src/chimera/drivers/paramount.py: Added support for TheSky
 	version 5 (only 6 was supported).
 
+	Driver renamed to TheSkyTelescope as we use this driver for more
+	than Paramount by now (Meade on LNA).
+
 2007-07-04  P. Henrique Silva  <henrique@astro.ufsc.br>
 
 	* src/chimera/controllers/observer.py: New keywords added (plate
