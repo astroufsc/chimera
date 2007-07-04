@@ -1,5 +1,10 @@
 2007-07-04  P. Henrique Silva  <henrique@astro.ufsc.br>
 
+	* src/chimera/drivers/paramount.py: Added support for TheSky
+	version 5 (only 6 was supported).
+
+2007-07-04  P. Henrique Silva  <henrique@astro.ufsc.br>
+
 	* src/chimera/controllers/observer.py: New keywords added (plate
 	scale and equinox).
 	

@@ -26,6 +26,7 @@ import time
 
 from chimera.util.coord import Ra, Dec
 from chimera.core.lifecycle import BasicLifeCycle
+from chimera.interfaces.telescope import ITelescopeDriver
 
 if sys.platform == "win32":
     # handle COM multithread support
@@ -57,7 +58,9 @@ def com (func):
     return com_wrapper
 
 
-class Paramount (BasicLifeCycle):
+class Paramount (BasicLifeCycle, ITelescopeDriver):
+
+    __options__ = {"thesky": [5, 6]}
 
     def __init__ (self, manager):
 
@@ -98,19 +101,31 @@ class Paramount (BasicLifeCycle):
     def open (self):
 
         try:
-            self._thesky = Dispatch ("TheSky6.RASCOMTheSky")
-            self._telescope = Dispatch ("TheSky6.RASCOMTele")
+            if self.config.thesky == 6:
+                self._thesky = Dispatch ("TheSky6.RASCOMTheSky")
+                self._telescope = Dispatch ("TheSky6.RASCOMTele")
+            else:
+                self._thesky = Dispatch ("TheSky.RASCOMTheSky")
+                self._telescope = Dispatch ("TheSky.RASCOMTele")
+
         except com_error:
-            logging.error ("Couldn't instantiate TheSky COM objects.")
+            logging.error ("Couldn't instantiate TheSky %d COM objects." % self.config.thesky)
             return False
 
         try:
-            self._thesky.Connect ()
-            self._telescope.Connect ()
-            self._telescope.FindHome ()
+
+            if self.config.thesky == 6:
+                self._thesky.Connect ()
+                self._telescope.Connect ()
+                self._telescope.FindHome ()
+            else:
+                self._thesky.Connect ()
+                self._telescope.Connect ()
+                
             return True
-        except com_error:
-            logging.error ("Couldn't connect to TheSky.")
+        
+        except com_error, e:
+            logging.error ("Couldn't connect to TheSky. (%s)" % e)
             return False
 
     @com
