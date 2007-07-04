@@ -1,5 +1,9 @@
 2007-07-04  P. Henrique Silva  <henrique@astro.ufsc.br>
 
+	* docs/chimera.epydoc: New Epydoc (epydoc.sf.net) configuration file.
+
+2007-07-04  P. Henrique Silva  <henrique@astro.ufsc.br>
+
 	* tests/chimera/*: New unit tests starting right now (currently
 	only some modules).
 
