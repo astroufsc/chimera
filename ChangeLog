@@ -1,5 +1,13 @@
 2007-07-04  P. Henrique Silva  <henrique@astro.ufsc.br>
 
+	* src/chimera/drivers/optectcfs.py:
+	* src/chimera/interfaces/focuser.py:
+
+	New Focuser modules (driver still being implemented). Interface
+	well defined.
+
+2007-07-04  P. Henrique Silva  <henrique@astro.ufsc.br>
+
 	* docs/chimera.epydoc: New Epydoc (epydoc.sf.net) configuration file.
 
 2007-07-04  P. Henrique Silva  <henrique@astro.ufsc.br>
