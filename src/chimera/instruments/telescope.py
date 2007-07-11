@@ -36,7 +36,7 @@ class Telescope(BasicLifeCycle, ITelescopeSlew):
         self.drv = self.manager.getDriver(self.config.driver)
 
         if not self.drv:
-            logging.debug("Couldn't load selected driver (%ss)." %  self.config.driver)
+            logging.debug("Couldn't load selected driver (%s)." %  self.config.driver)
             return False
 
         #self.drv.slewComplete += self._slew_cb

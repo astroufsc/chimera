@@ -174,8 +174,8 @@ class Observer (BasicLifeCycle):
 			       ("EQUINOX", 2000.0, "equinox of celestial coordinate system"),
 			       ("EPOCH - OUTDATED", 2000.0, "equinox of celestial coordinate system"),
 			       ("FILTER", target.filtername or "unknown", "name of filter used during the observation"),
-			       ("CREATOR", _chimera_description_, "")]
-			       ("SECPIX", 0.0, "plate scale"),
+			       ("CREATOR", _chimera_description_, ""),
+			       ("SECPIX", 0.0, "plate scale")]
 
 		    for header in headers:
 			    hdu.header.update (*header)
