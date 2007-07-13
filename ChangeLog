@@ -1,5 +1,10 @@
 2007-07-13  P. Henrique Silva  <henrique@astro.ufsc.br>
 
+	* src/chimera/drivers/meade.py: Fix on open and correct log level
+	on the exception handlers.
+
+2007-07-13  P. Henrique Silva  <henrique@astro.ufsc.br>
+
 	* src/chimera/interfaces/telescope.py: More Object
 	orientation design (this interfaces is till unfrozen).
 	

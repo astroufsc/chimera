@@ -26,11 +26,14 @@ import logging
 import datetime
 
 from chimera.core.lifecycle import BasicLifeCycle
-from chimera.interfaces.telescope import ITelescopeDriver, ITelescopeDriverSync, ITelescopeDriverPark
+from chimera.interfaces.telescope import (ITelescopeDriver, ITelescopeDriverSlew,
+                                          ITelescopeDriverSync, ITelescopeDriverPark)
 
 from chimera.util.coord import Coord, Ra, Dec, Lat, Long, Alt, Az, SkyPoint, LocalPoint
 
-class Meade (BasicLifeCycle, ITelescopeDriver, ITelescopeDriverSync):
+class Meade (BasicLifeCycle,
+             ITelescopeDriver, ITelescopeDriverSlew,
+             ITelescopeDriverSync, ITelescopeDriverPark):
 
     ALT_AZ = 0
     POLAR  = 1
@@ -143,14 +146,14 @@ class Meade (BasicLifeCycle, ITelescopeDriver, ITelescopeDriverSync):
 
         except serial.SerialException, e:
             self.setError (-1, str(e))
-            logging.debug ("Error while opening %s. Exception follows..." % self.config.device)
-            logging.exception ()
+            logging.warning ("Error while opening %s. Exception follows..." % self.config.device)
+            logging.exception (e)
             return False
 
         except IOError,e:
             self.setError(e)
-            logging.debug ("Error while opening %s. Exception follows..." % self.config.device)
-            logging.exception ()
+            logging.warning ("Error while opening %s. Exception follows..." % self.config.device)
+            logging.exception (e)
             return False
 
     def close(self):
