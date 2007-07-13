@@ -95,7 +95,12 @@ class IFocuserDriver (Interface):
     between these kind of focusers.
     """
 
-    __options__ = {"pulse_in_multiplier": 100,
+    __options__ = {"device": "/dev/ttyS1",
+                   "open_timeout": 10,
+                   "move_timeout": 60,
+                   "max_position": 7000,
+                   "min_position": 0,
+                   "pulse_in_multiplier": 100,
                    "pulse_out_multiplier": 100}
                  
     def moveIn (self, n):

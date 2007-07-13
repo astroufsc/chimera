@@ -1,3 +1,9 @@
+2007-07-13  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* src/chimera/instruments/focuser.py: New interface.
+	* src/chimera/drivers/optectcfs.py: OPTEC TCF-S support.
+	* src/chimera/interfaces/focuser.py: New focuser implementation.
+
 2007-07-11  P. Henrique Silva  <henrique@astro.ufsc.br>
 
 	* src/chimera/controllers/observer.py: New proposed keywords (fixed).
