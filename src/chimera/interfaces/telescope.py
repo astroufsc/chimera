@@ -81,17 +81,53 @@ class ITelescopeSlew (ITelescope):
     def abortComplete (self, position):
         pass
 
+class ITelescopeSync(Interface):
+
+    # methods
+    def sync(self, coord):
+        pass
+    
+    # events
+    @event
+    def syncComplete(self, position):
+        pass
+
+class ITelescopePark (Interface):
+        
+    # methods
+    def park(self):
+        pass
+
+    def unpark(self):
+        pass
+
+    def setParkPosition (self, coord):
+        pass
+
+    # events
+    @event
+    def parkComplete(self, position):
+        pass
+
+    @event
+    def unparkComplete (self):
+        pass
+
 
 class ITelescopeDriver (Interface):
 
     __options__ = {"device": "/dev/ttyS0",
-                   "timeout": 10,
+                   "align_mode": ["POLAR", "ALT_AZ", "LAND"]}
+ 
+class ITelescopeDriverSlew (Interface):
+
+    __options__ = {"timeout": 10,
                    "auto_align": True,
                    "slew_idle_time": 0.1,
                    "max_slew_time": 60.0,
-                   "stabilization_time": 0.5,
+                   "max_slew_rate": [8, 2],                   
+                   "stabilization_time": 2.0,
                    "position_sigma_delta": 60.0}
-
     # methods
 
     def open(self):
@@ -151,65 +187,38 @@ class ITelescopeDriver (Interface):
     @event
     def abortComplete (self, position):
         pass
+
+class ITelescopeDriverSync(Interface):
+
+    # methods
+    def sync(self, coord):
+        pass
     
- 
+    # events
+    @event
+    def syncComplete(self, position):
+        pass
 
-# class ITelescopeTracking(Interface):
+class ITelescopeDriverPark (Interface):
 
-#     # properties
-#     trackingRates = []
-#     trackingRate = 0
-#     tracking = False
+    __options__ = {"park_position_alt": 90.0,
+                   "park_position_az": 180.0}
+        
+    # methods
+    def park(self):
+        pass
 
-#     # methods
-#     def setTracking(self, track, trackingRate):
-#         pass
+    def unpark(self):
+        pass
 
-#     # events
-#     @event
-#     def trackingRateChanged(self, trackingRate):
-#         pass
-         
-# class ITelescopeSync(Interface):
+    def setParkPosition (self, coord):
+        pass
 
-#     # properties
-#     syncRa = 0
-#     syncDec = 0
-#     syncAz = 0
-#     syncAlt = 0
+    # events
+    @event
+    def parkComplete(self, position):
+        pass
 
-#     # methods
-#     def sync(self, coord):
-#         pass
-    
-#     # events
-#     @event
-#     def syncComplete(self, position):
-#         pass
-
-# class ITelescopePark (Interface):
-
-#     # methods
-#     def park(self, coord = None):
-#         pass
-
-#     def unpark(self):
-#         pass
-
-#     # events
-#     @event
-#     def parkComplete(self, position):
-#         pass
-
-# class ITelescopeHome (Interface):
-
-#     # methods
-#     def findHome(self):
-#         pass
-    
-#     # events
-#     @event
-#     def homeComplete(self, position):
-#         pass
-
-
+    @event
+    def unparkComplete (self):
+        pass

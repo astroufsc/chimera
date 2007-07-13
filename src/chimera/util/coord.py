@@ -23,6 +23,10 @@ from types import FloatType, IntType, StringType
 import re
 import math
 
+from math import cos, sin, tan, acos, asin, atan
+
+#FIXME: add strfcoord
+
 class Coord(object):
 
     """
@@ -34,20 +38,20 @@ class Coord(object):
 
     100		(int ou str)   decimal ou radiano
     100.09	(float ou str) decimal ou radiano
-     10 00 00	(str) horario ou sexagesimal
+    10 00 00	(str) horario ou sexagesimal
     +10 00 00.0	(str) horario ou sexagesimal
-     10:00:00.0	(str) horario ou sexagesimal
-
-     SIMBAD examples:
-      20 54 05.689 +37 01 17.38
-      10:12:45.3-45:17:50
-      15h17m-11d10m
-      15h17+89d15
-      275d11m15.6954s+17d59m59.876s
-      12.34567h-17.87654d
-      350.123456d-17.33333d <=> 350.123456 -17.33333
-
-      (not all supported)
+    10:00:00.0	(str) horario ou sexagesimal
+    
+    SIMBAD examples:
+    20 54 05.689 +37 01 17.38
+    10:12:45.3-45:17:50
+    15h17m-11d10m
+    15h17+89d15
+    275d11m15.6954s+17d59m59.876s
+    12.34567h-17.87654d
+    350.123456d-17.33333d <=> 350.123456 -17.33333
+    
+    (not all supported)
     """
 
     deg2rad = math.pi/180.0
@@ -94,17 +98,17 @@ class Coord(object):
     def get(self):
         return self._coord
 
-    def sexagesimal(self, dsep = " ", msep=""):
+    def sexagesimal(self, dsep = " ", msep="", sign = True):
         msep = msep or dsep
         
-        return self._str(dsep, msep, 1.0)
+        return self._str(dsep, msep, 1.0, sign=sign)
 
-    def hor(self, hsep = " ", msep = ""):
+    def hor(self, hsep = " ", msep = "", sign=True):
         msep = msep or hsep
         
-        return self._str(hsep, msep, 15.0)
+        return self._str(hsep, msep, 15.0, sign=sign)
 
-    def _str(self, sep1 = " ", sep2 = " ", factor = 1.0):
+    def _str(self, sep1 = " ", sep2 = " ", factor = 1.0, sign = True):
 
         coord = abs(self.get())/factor
         
@@ -117,7 +121,14 @@ class Coord(object):
         if self.get() < 0:
             _grau = -(_grau)
 
-        return '%02d%s%02d%s%02.2f' % (_grau, sep1, _min, sep2, _seg)
+        # FIXME: please, do strfcoord and put this out of here!
+        if sign:
+            return '%+02d%s%02d%s%02.2f' % (_grau, sep1, _min, sep2, _seg)
+        else:
+            return '%02d%s%02d%s%02.2f' % (_grau, sep1, _min, sep2, _seg)
+
+    def strfcoord (self, format):
+        pass
 
     def rad(self):
         return self.get() * Coord.deg2rad
@@ -210,7 +221,6 @@ class Coord(object):
 
         return self.get() >= other
 
-                    
 class Ra(Coord):
     def __init__(self, coord):
         
@@ -222,6 +232,7 @@ class Ra(Coord):
     def __str__(self):
         return self.hor()
 
+LST = Ra
 
 class Dec(Coord):
     def __init__(self, coord):
@@ -235,14 +246,14 @@ class Az(Coord):
         Coord.__init__(self, coord)
 
     def __str__(self):
-        return self.decimal()
+        return str(self.decimal())
 
 class Alt(Coord):
     def __init__(self, coord):
         Coord.__init__(self, coord)
 
     def __str__(self):
-        return self.decimal()
+        return str(self.decimal())
 
 class Lat(Coord):
     def __init__(self, coord):
@@ -255,10 +266,7 @@ class Long(Coord):
     def __init__(self, coord):
         Coord.__init__(self, coord)
 
-    def __str__(self):
-        return self.sexagesimal()
-    
-class Point(object):
+class SkyPoint(object):
 
     def __init__(self, ra, dec):
 
@@ -345,6 +353,49 @@ class Point(object):
         dist = Coord(dist)
 
         return d <= dist.arcsec()
+
+# FIXME: bizarre! please don't try to understand it.
+class LocalPoint(SkyPoint):
+
+    def __init__(self, az, alt):
+
+        if isinstance(az, Coord):
+            self.az = az
+            self.ra = self.az
+        else:
+            self.az = Az(az)
+            self.ra = self.az
+
+        if isinstance(alt, Coord):
+            self.alt = alt
+            self.dec = self.alt            
+        else:
+            self.alt = Alt(alt)
+            self.dec = self.alt
+            
+
+def equatorialToLocal (ra, dec, latitude, lst):
+
+    if not isinstance (ra, Ra):
+        ra = Ra(ra)
+
+    if not isinstance (dec, Dec):
+        dec = Dec(dec)
+
+    if not isinstance (latitude, Lat):
+        latitude = Lat(latitude)
+
+    if not isinstance (lst, LST):
+        lst = LST(lst)
+
+    print ra, dec, latitude, lst
+
+    h = lst - ra
+
+    alt = asin ( (sin(dec.rad())*sin(latitude.rad())) + (cos(dec.rad())*cos(latitude.rad())*cos(h.rad())))
+    az = acos ( (sin(dec.rad()) - sin(latitude.rad())*sin(alt)) / (cos(latitude.rad())*cos(alt)))
+
+    return (alt * (180./math.pi), az  * (180./math.pi))
 
 if __name__ == '__main__':
     #     m5 = Point("15 18 33.75", "+02 04 57.7")
