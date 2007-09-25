@@ -1,3 +1,14 @@
+2007-09-25  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* controllers/autofocus.py:
+	First implementation of autofocus routine. Partially testd with
+	fake data.
+	
+	* util/sexcatalog.py:
+	* util/sextractor.py:
+
+	SExtractor wrapper used by autofocus routine.
+
 2007-07-13  P. Henrique Silva  <henrique@astro.ufsc.br>
 
 	* src/chimera/drivers/meade.py: Fix on open and correct log level
