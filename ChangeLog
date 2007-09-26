@@ -1,5 +1,13 @@
 2007-09-26  P. Henrique Silva  <henrique@astro.ufsc.br>
 
+	* src/chimera/controllers/autofocus.py: Fix the way that we get
+	the FWHM (buggy name).
+	
+	* src/chimera/instruments/dome.py: Check if telescope is available
+	when in "track" mode.
+	
+2007-09-26  P. Henrique Silva  <henrique@astro.ufsc.br>
+
 	* src/chimera/drivers/domelna40cm.py:
 	* src/chimera/drivers/optectcfs.py:
 

@@ -102,7 +102,7 @@ class Autofocus (BasicLifeCycle):
         focus_stack = []
         focus_stack.append (self.focuser.getPosition())
 
-        last_fwhm = star_to_focus["FWHM"]
+        last_fwhm = star_to_focus["FWHM_IMAGE"]
 
         for step in range (self.max_iterations):
 
@@ -112,12 +112,12 @@ class Autofocus (BasicLifeCycle):
 
             star = self._findBrighterStar (self._takeImageAndResolveStars())
 
-            if star["FWHM"] < last_fwhm:
+            if star["FWHM_IMAGE"] < last_fwhm:
                 focus_stack.append (self.focuser.getPosition())
-                last_fwhm = star["FWHM"]
+                last_fwhm = star["FWHM_IMAGE"]
                 continue
 
-            if star["FWHM"] > last_fwhm:
+            if star["FWHM_IMAGE"] > last_fwhm:
 
                 # if worse again, give up on last good position
                 if direction_changed:
@@ -178,7 +178,7 @@ class Autofocus (BasicLifeCycle):
         sex.config['VERBOSE_TYPE'] = "QUIET"
 
         # our "star" dict entry will contain all this members
-        sex.config['PARAMETERS_LIST'] = ["NUMBER", "X_IMAGE", "Y_IMAGE", "FLUX_BEST", "FLAGS"]
+        sex.config['PARAMETERS_LIST'] = ["NUMBER", "X_IMAGE", "Y_IMAGE", "FLUX_BEST", "FWHM_IMAGE", "FLAGS"]
 
         # ok, here we go!
         sex.run(fits_file)
@@ -203,7 +203,7 @@ class Autofocus (BasicLifeCycle):
     def _findBestStarToFocus (self, catalog):
 
         # FIXME: better heuristic
-        # simple plan: brigther one
+        # simple plan: brighter star
         return self._findBrigherStar ()
 
     def _findBrighterStar (self, catalog):

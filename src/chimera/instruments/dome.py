@@ -35,6 +35,9 @@ class Dome(BasicLifeCycle, IDome):
           self._lastTelAz = None
           self._newTelAz = None
 
+          self.drv = None
+          self.tel = None
+
      def init(self, config):
 
           self.config += config
@@ -47,10 +50,15 @@ class Dome(BasicLifeCycle, IDome):
                logging.debug("Couldn't load selected driver (%s)." %  self.config.driver)
                return False
 
-          self.tel = self.manager.getInstrument(self.config.telescope)
-          if not self.tel:
-               logging.warn ("Couldn't found a telescope. Dome will stay static.")
-          
+
+          if self.config.mode == "track":
+               self.track ()
+          elif self.config.mode == "stand":
+               self.stand ()
+          else:
+               logging.warning ("Invalid dome mode: %s. Will use stand mode.")
+               self.stand ()
+
           return True
 
      def control (self):
@@ -76,6 +84,13 @@ class Dome(BasicLifeCycle, IDome):
      @lock
      def track(self):
           self.config.mode = "track"
+
+          if self.tel is None:
+               self.tel = self.manager.getInstrument (self.config.telescope)
+
+               if not self.tel:
+                    logging.debug("Couldn't found selected telescope (%s)."
+                                  "Dome will stay static." %  self.config.telescope)
 
      @lock
      def stand(self):
