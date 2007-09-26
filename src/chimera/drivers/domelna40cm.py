@@ -158,12 +158,12 @@ class DomeLNA40cm (BasicLifeCycle, IDomeDriver):
 
         self.tty.setTimeout (self.config.slew_timeout)
 
-        print " slew sent %s" % pstn
+        logging.debug (" slew sent %s" % pstn)
         sys.stdout.flush ()
         self._write(pstn)
         
         ack = self._readline ()
-        print " slew ack: %s" % ack
+        logging.debug (" slew ack: %s" % ack)
         sys.stdout.flush ()
         
         if ack == "INVALIDO":
@@ -174,7 +174,7 @@ class DomeLNA40cm (BasicLifeCycle, IDomeDriver):
         self.slewing = True
 
         fin = self._readline ()
-        print " slew fin: %s" % fin
+        logging.debug (" slew fin: %s" % fin)
         sys.stdout.flush ()
 
         if fin == "ALARME":
@@ -217,13 +217,13 @@ class DomeLNA40cm (BasicLifeCycle, IDomeDriver):
 
         cmd = "POSICAO?"
 
-        print " getAz sent %s" % cmd
+        logging.debug (" getAz sent %s" % cmd)
         sys.stdout.flush ()
         
         self._write(cmd)
         
         ack = self._readline ()
-        print " getAz ack %s" % ack
+        logging.debug (" getAz ack %s" % ack)
         sys.stdout.flush ()        
 
         # check timeout
@@ -255,13 +255,13 @@ class DomeLNA40cm (BasicLifeCycle, IDomeDriver):
 
         cmd = "ABRIR"
         
-        print " slitOpen sent %s" % cmd
+        logging.debug (" slitOpen sent %s" % cmd)
         sys.stdout.flush ()
 
         self._write(cmd)
 
         ack = self._readline()
-        print " slitOpen ack %s" % ack
+        logging.debug (" slitOpen ack %s" % ack)
         sys.stdout.flush ()        
         
         if ack != "ABRINDO":
@@ -271,7 +271,7 @@ class DomeLNA40cm (BasicLifeCycle, IDomeDriver):
         self.tty.setTimeout (self.config.open_timeout)
 
         fin = self._readline ()
-        print " slitOpen fin %s" % fin
+        logging.debug (" slitOpen fin %s" % fin)
         sys.stdout.flush ()        
 
         # check timeout
@@ -290,13 +290,13 @@ class DomeLNA40cm (BasicLifeCycle, IDomeDriver):
 
         cmd = "FECHAR"
 
-        print " slitClose sent %s" % cmd
+        logging.debug (" slitClose sent %s" % cmd)
         sys.stdout.flush ()
 
         self._write(cmd)
 
         ack = self._readline()
-        print " slitClose ack %s" % ack
+        logging.debug (" slitClose ack %s" % ack)
         sys.stdout.flush ()        
         
         if ack != "FECHANDO":
@@ -306,7 +306,7 @@ class DomeLNA40cm (BasicLifeCycle, IDomeDriver):
         self.tty.setTimeout (self.config.close_timeout)
 
         fin = self._readline ()
-        print " slitClose fin %s" % fin
+        logging.debug (" slitClose fin %s" % fin)
         sys.stdout.flush ()        
 
         # check timeout

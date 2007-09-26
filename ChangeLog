@@ -1,5 +1,12 @@
 2007-09-26  P. Henrique Silva  <henrique@astro.ufsc.br>
 
+	* src/chimera/drivers/domelna40cm.py:
+	* src/chimera/drivers/optectcfs.py:
+
+	Move spurious print to logging system.
+
+2007-09-26  P. Henrique Silva  <henrique@astro.ufsc.br>
+
 	* src/chimera/controllers/console: New (wonderful) debug console.
 
 	Initial version. Very first try implemenation, so, more to come

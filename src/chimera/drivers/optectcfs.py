@@ -62,8 +62,8 @@ class OptecTCFS (BasicLifeCycle, IFocuserDriver):
                                  parity=serial.PARITY_NONE,    #enable parity checking
                                  stopbits=serial.STOPBITS_ONE, #number of stopbits
                                  timeout=None,                 #set a timeout value, None for waiting forever
-                                 xonxoff=0,                    #enable software flow control
-                                 rtscts=0,                     #enable RTS/CTS flow control
+                                 xonxoff=False,                    #enable software flow control
+                                 rtscts=False,                     #enable RTS/CTS flow control
                                  )
 
         try:
@@ -141,7 +141,7 @@ class OptecTCFS (BasicLifeCycle, IFocuserDriver):
 
         cmd = "%s%04d" % (self._directions[direction], steps)
 
-        print "  move sent: %s" % cmd
+        logging.debug ("  move sent: %s" % cmd)
         sys.stdout.flush ()
 
         self.tty.timeout = self.config.move_timeout
@@ -150,7 +150,7 @@ class OptecTCFS (BasicLifeCycle, IFocuserDriver):
 
         ack = self._readline (eol="\r")
 
-        print "  move ack: %s " % ack[:-2]
+        logging.debug ("  move ack: %s " % ack[:-2])
         sys.stdout.flush ()
 
         if not ack:
@@ -161,7 +161,7 @@ class OptecTCFS (BasicLifeCycle, IFocuserDriver):
             # boundary problem... when moving to an upper ow lower bound, ER=2 is returned and the usual * ack comes later
             ack = ack = self._readline (eol="\r")
 
-            print "  move ack: %s " % ack[:-2]
+            logging.debug ("  move ack: %s " % ack[:-2])
             sys.stdout.flush ()
             
             if not ack:
@@ -181,14 +181,14 @@ class OptecTCFS (BasicLifeCycle, IFocuserDriver):
         
         self.tty.timeout = self.config.open_timeout
 
-        print "  getPosition sent: %s" % cmd
+        logging.debug ("  getPosition sent: %s" % cmd)
         sys.stdout.flush ()
         
         self._write (cmd)
 
         ack = self._readline (eol="\r")
 
-        print "  getPosition ack: %s" % ack
+        logging.debug ("  getPosition ack: %s" % ack)
         sys.stdout.flush ()
 
         if not ack:
@@ -218,14 +218,14 @@ class OptecTCFS (BasicLifeCycle, IFocuserDriver):
 
         self.tty.timeout = self.config.open_timeout
 
-        print "  setMode sent: %s" % cmd
+        logging.debug ("  setMode sent: %s" % cmd)
         sys.stdout.flush ()
        
         self._write (cmd)
 
         ack = self._readline (eol="\r")
 
-        print "  setMode ack: %s" % ack
+        logging.debug ("  setMode ack: %s" % ack)
         sys.stdout.flush ()
 
         if not ack:
