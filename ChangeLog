@@ -1,3 +1,10 @@
+2007-09-26  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* src/chimera/controllers/console: New (wonderful) debug console.
+
+	Initial version. Very first try implemenation, so, more to come
+	later.
+
 2007-09-25  P. Henrique Silva  <henrique@astro.ufsc.br>
 
 	* controllers/autofocus.py:
