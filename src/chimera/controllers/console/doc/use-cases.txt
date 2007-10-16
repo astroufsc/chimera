@@ -1,0 +1,44 @@
+
+Use cases:
+
+object administrative stuff
+======
+
+site list [instruments|drivers|controllers]
+
+site add [instrument|driver|controller] /Lah/lah using config.xml
+site add [instrument|driver|controller] /Lah/lah using var1=1,var2=2,...,varn=n
+
+site remove [instrument|driver|controller] /Location/lah
+
+object manipulation
+======
+
+set tel /Telescope/name
+
+# operation
+in: tel slewToRaDec '00 00 00' '00 00 00'
+out: True
+err: Too low.
+
+tel slewToRaDec '00 00 00' '00 00 00'
+
+# automatic getters/setters if available
+tel ra
+tel dec
+
+tel maxSlewRate 100
+
+# configuration
+tel config var1=value1,var2=value2
+
+in: tel config var1,var2
+out: var1=value1
+out: var2=value2
+
+in: tel config
+out:
+var1: value1
+var2: value2
+
+unset tel
