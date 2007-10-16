@@ -1,3 +1,28 @@
+2007-10-16  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* console/commands:
+	* console/commands/alias.py:
+	* console/commands/__init__.py:
+	* console/commands/quit.py:
+	* console/commands/site.py:
+	* console/commands/object.py:
+	* console/chimeraconsole.py:
+	* console/namespace.py:
+	* console/command.py:
+	* console/doc:
+	* console/doc/use-cases.txt:
+	* console/__init__.py:
+	* console/console.py:
+	* console/controller.py:
+	* console/message.py:
+	* console/commander.py:
+
+	New directory structure for console. Commands have their own
+	directory.
+
+	Objects are now automaticaly binded. Use alias command to have a
+	nice alias.
+	
 2007-09-26  P. Henrique Silva  <henrique@astro.ufsc.br>
 
 	* src/chimera/controllers/autofocus.py: Fix the way that we get
