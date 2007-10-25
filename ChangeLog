@@ -1,3 +1,8 @@
+2007-10-25  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* src/chimera/interfaces/camera.py: New default filename
+	format. No more seq_num. 
+
 2007-10-16  P. Henrique Silva  <henrique@astro.ufsc.br>
 
 	* src/chimera/drivers/meade.py: Fix typo.
