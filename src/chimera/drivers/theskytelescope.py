@@ -40,7 +40,7 @@ if sys.platform == "win32":
 
 else:
     logging.warning ("Not on win32. TheSky Telescope will not work.")
-    sys.exit ("Not on win32. TheSky Telescope will not work.")    
+    raise RuntimeError ("Not on win32. TheSky Telescope will not work.")    
 
 
 def com (func):

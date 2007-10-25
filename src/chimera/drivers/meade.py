@@ -134,7 +134,7 @@ class Meade (BasicLifeCycle,
             if not self.setAlignMode (eval('Meade.%s' % self.config.align_mode)):
                 return False
 
-            # activate HPP (high precision poiting) we really need this!!
+            # activate HPP (high precision poiting). We really need this!!
             if not self._setHighPrecision ():
                 logging.warning ("This scope doesn't support High Precison pointing. Errors comming :(")
                 return False

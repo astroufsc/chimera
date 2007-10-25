@@ -1,21 +1,36 @@
 2007-10-16  P. Henrique Silva  <henrique@astro.ufsc.br>
 
-	* console/commands:
-	* console/commands/alias.py:
-	* console/commands/__init__.py:
-	* console/commands/quit.py:
-	* console/commands/site.py:
-	* console/commands/object.py:
-	* console/chimeraconsole.py:
-	* console/namespace.py:
-	* console/command.py:
-	* console/doc:
-	* console/doc/use-cases.txt:
-	* console/__init__.py:
-	* console/console.py:
-	* console/controller.py:
-	* console/message.py:
-	* console/commander.py:
+	* src/chimera/drivers/meade.py: Fix typo.
+
+	* src/chimera/drivers/theskytelescope.py: sys.exit is not our
+	friend, raise RuntimeException instead.
+
+	* src/chimera/drivers/sbig/sbig.py: Fix already exposing bugs.
+
+	Add support for automatic/autoincremented exposure number in
+	filenames
+
+	* src/chimera/util/output.py: New faint (works?) function.
+
+	
+2007-10-16  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* src/chimera/controllers/console/commands:
+	* src/chimera/controllers/console/commands/alias.py:
+	* src/chimera/controllers/console/commands/__init__.py:
+	* src/chimera/controllers/console/commands/quit.py:
+	* src/chimera/controllers/console/commands/site.py:
+	* src/chimera/controllers/console/commands/object.py:
+	* src/chimera/controllers/console/chimeraconsole.py:
+	* src/chimera/controllers/console/namespace.py:
+	* src/chimera/controllers/console/command.py:
+	* src/chimera/controllers/console/doc:
+	* src/chimera/controllers/console/doc/use-cases.txt:
+	* src/chimera/controllers/console/__init__.py:
+	* src/chimera/controllers/console/console.py:
+	* src/chimera/controllers/console/controller.py:
+	* src/chimera/controllers/console/message.py:
+	* src/chimera/controllers/console/commander.py:
 
 	New directory structure for console. Commands have their own
 	directory.

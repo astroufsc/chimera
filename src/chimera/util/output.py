@@ -129,6 +129,10 @@ def ctext(color,text):
 
 def bold(text):
     return codes["bold"]+text+codes["reset"]
+
+def faint(text):
+    return codes["faint"]+text+codes["reset"]
+
 def white(text):
     return bold(text)
 

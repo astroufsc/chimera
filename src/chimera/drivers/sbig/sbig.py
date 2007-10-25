@@ -27,6 +27,7 @@ import string
 import random
 import tempfile
 
+
 # ask to use numpy
 os.environ["NUMERIX"] = "numpy"
 import pyfits
@@ -36,6 +37,8 @@ from sbigdrv import *
 from chimera.core.lifecycle import BasicLifeCycle
 from chimera.interfaces.camera import ICameraDriver
 from chimera.interfaces.filterwheel import IFilterWheelDriver
+
+from chimera.controllers.blocks import next_seq
         
 class SBIG(BasicLifeCycle, ICameraDriver, IFilterWheelDriver):
 
@@ -116,6 +119,10 @@ class SBIG(BasicLifeCycle, ICameraDriver, IFilterWheelDriver):
     def expose(self, config):
 
         self.config += config
+
+        if self.isExposing():
+            logging.error ("There is another exposure been taken.")
+            return False
         
         self.term.clear()
 
@@ -128,13 +135,16 @@ class SBIG(BasicLifeCycle, ICameraDriver, IFilterWheelDriver):
 
         self.config += config
 
-        if not self.exposing():
+        if not self.isExposing():
             logging.debug("There are no exposition in course... abort cancelled.")
             return False
                 
         self.term.set()
 
         logging.debug("Aborting exposure...")
+
+        while self.isExposing():
+            time.sleep (0.1)
 
         return True
 
@@ -210,12 +220,14 @@ class SBIG(BasicLifeCycle, ICameraDriver, IFilterWheelDriver):
         # save time exposure started
         self.config.start_time = time.time()
 
-        while self.drv.exposing(self.ccd):
+        while self.isExposing():
                                         
             # check if user asked to abort
             if self.term.isSet():
                 # ok, abort and check if user asked to do a readout anyway
-                self._endExposure()
+
+                if self.isExposing():
+                    self._endExposure()
                 
                 if self.config.readout_aborted:
                     self._readout()
@@ -315,19 +327,22 @@ class SBIG(BasicLifeCycle, ICameraDriver, IFilterWheelDriver):
         # create filename
         # FIXME: UTC or not UTC?
         date = time.strftime(self.config.date_format, time.gmtime(self.config.start_time))
-        subs_dict = {'num': self.config.seq_num,
-                     'observer': self.config.observer,
+        
+        subs_dict = {'observer': self.config.observer,
                      'date': date,
                      'objname': self.config.obj_name}
-        
+
         filename = string.Template(self.config.file_format).safe_substitute(subs_dict)
-        finalname = os.path.join(dest, "%s%s%s" % (filename, os.path.extsep, self.config.file_extension))
+
+        seq_num = next_seq(dest, filename, self.config.file_extension)
+
+        finalname = os.path.join(dest, "%s-%04d%s%s" % (filename, seq_num, os.path.extsep, self.config.file_extension))
 
         # check if the finalname doesn't exist
         if os.path.exists(finalname):
             tmp = finalname
-            finalname = os.path.join(dest, "%s-%d%s%s" % (filename, int (random.random()*1000),
-                                                          os.path.extsep, self.config.file_extension))
+            finalname = os.path.join(dest, "%s-%04d%s%s" % (filename, int (random.random()*1000),
+                                                            os.path.extsep, self.config.file_extension))
             
             logging.debug ("Image %s already exists. Saving to %s instead." %  (tmp, finalname))
             
