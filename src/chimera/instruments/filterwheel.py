@@ -28,6 +28,11 @@ import logging
 
 class FilterWheel (BasicLifeCycle, IFilterWheel):
 
+    # filter status
+    unknown = 0
+    idle    = 1
+    busy    = 2
+
     def __init__(self, manager):
         BasicLifeCycle.__init__(self, manager)
 

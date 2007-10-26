@@ -1,5 +1,8 @@
 2007-10-26  P. Henrique Silva  <henrique@astro.ufsc.br>
 
+	* src/chimera/instruments/filterwheel.py: Add class variables from
+	interface (duh, interfaces should be just.. interfaces!) 
+
 	* src/chimera/interfaces/camera.py:
 	* src/chimera/interfaces/filterwheel.py:
 	* src/chimera/interfaces/telescope.py:
