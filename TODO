@@ -4,6 +4,7 @@ chimera
 Core
 ====
 
+        * Add 3rd party import checks 
 	* checar se objeto implementa ILifeCycle ao tentar adicionar ao manager
         * melhorar mapeamento entre posicoes e nomes dos filtros
         * log: mostrar quem originou o problema e não onde o log foi criado

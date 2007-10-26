@@ -22,10 +22,10 @@ if __name__ == '__main__':
 
     import sys
 
-    from chimera.core.site import Site
+    from chimera.core.main import Chimera
 
     args = "-c /Console/console".split()
 
-    s = Site (args)
-    s.init()
+    chim = Chimera (args)
+    chim.init()
 

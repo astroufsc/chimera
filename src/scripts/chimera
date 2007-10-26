@@ -22,7 +22,7 @@ if __name__ == '__main__':
 
     import sys
 
-    from chimera.core.site import Site
+    from chimera.core.main import Chimera
 
-    Site (sys.argv).init()
+    Chimera (sys.argv).init()
 
