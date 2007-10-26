@@ -1,7 +1,23 @@
 2007-10-26  P. Henrique Silva  <henrique@astro.ufsc.br>
 
-	* src/chimera/core/siteconfig.py: Brand new. Moved from site.py.
+	* src/chimera/controllers/chimeracam.py: New. Future cmdline
+	package.
+
+	* src/chimera/controllers/blocks.py: Very wast of time. Move all
+	this to respective instruments.
 	
+	* src/chimera/core/threads.py: add daemon threads to keep threads
+	in peace. FIXME ASAP.
+	
+	* src/chimera/core/site.py: Removed. Moved to chimera.py
+	* src/chimera/core/chimera.py: New. From site.py
+
+	* src/chimera/core/runner.py: Remove ctrl+c handling.
+	
+	* src/chimera/core/manager.py: Fix bugs when passing string as
+	locations (convert to Lacation first).
+
+	* src/chimera/core/siteconfig.py: Brand new. Moved from site.py.
 
 	* src/chimera/instruments/filterwheel.py: Add class variables from
 	interface (duh, interfaces should be just.. interfaces!) 
