@@ -1,5 +1,7 @@
 
 from chimera.core.lifecycle import BasicLifeCycle
+from chimera.core.main import Chimera
+
 from chimera.controllers.console.commander import Commander
 
 class Console (BasicLifeCycle):
@@ -21,4 +23,4 @@ class Console (BasicLifeCycle):
 
     def main (self):
         self.console.cmdloop ()
-        Site().shutdown()
+        Chimera().shutdown()
