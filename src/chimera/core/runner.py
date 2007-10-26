@@ -88,6 +88,10 @@ class RunnerPosix (object):
         os.kill (self.childPID, signal.SIGKILL)
 
     def sighandler(self, sig, frame):
+
+        if hasattr(self.obj, 'ctrl_c_handler') and callable(gettar(self.obj, 'ctrl_c_handler')):
+            self.obj.ctrl_c_handler()
+            
         self.kill()
 
 # win32 doesn't support POSIX fork (arghh!)

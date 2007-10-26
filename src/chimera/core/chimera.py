@@ -21,170 +21,32 @@
 import sys
 import os.path
 import logging
-from optparse import OptionParser
-from xml.parsers.expat import ExpatError, ErrorString
+import os
+import time
 
-import chimera.util.etree.ElementTree as ET
+# FIXME: support Ctrl+C on Windows (get over signals)
+import signal
+
+from optparse import OptionParser
 from chimera.core.location import Location
 from chimera.core.manager import Manager
 from chimera.core.version import _chimera_version_, _chimera_description_
 
+from chimera.core.siteconfig import SiteConfig
 
-class SiteConfiguration(object):
+#FIXME: better singleton pattern
+_chimera_singleton = None
 
-    def __init__(self):
+def Chimera (args=[]):
 
-        self.__sites = []
-        self.__instruments = []
-        self.__controllers = []
-        self.__drivers     = []
+    global _chimera_singleton
 
-    def getInstruments(self):
+    if not _chimera_singleton:
+        _chimera_singleton = _Chimera (args)
 
-        return self.__instruments
+    return _chimera_singleton
 
-    def getControllers(self):
-
-        return self.__controllers
-
-    def getSites(self):
-
-        return self.__sites
-
-    def getDrivers(self):
-
-        return self.__drivers
-        
-    def read(self, config):
-
-        self._read(config)
-
-    def _read(self, config):
-
-        try:
-
-            root = ET.parse(config)
-            
-        except IOError, e:
-
-            logging.error("Error opening %s (%s)." % (config, e.strerror))
-            return False
-
-        except ExpatError, e:
-            logging.error("Error parsing %s config at line %s column %s (%s)." % (config,
-                                                                                  e.lineno,
-                                                                                  e.offset,
-                                                                                  ErrorString(e.code)))
-            return False
-        
-        # ok, let's go!
-        # FIXME: refactor (tá na cara o que fazer... o código está todo repetido)
-
-        # sites (ok, just one site makes sense by now, but we can expand this later)
-        sites = root.findall("site")
-        
-        for site in sites:
-
-            tmpSite = {}
-            tmpSite["name"]      = site.get("name", "UFSC")
-            tmpSite["latitude"]  = site.get("latitude", "0")
-            tmpSite["longitude"] = site.get("longitude", "0")
-            tmpSite["altitude"]  = site.get("altitude", "0")
-
-            self.__sites.append(tmpSite)
-
-        # get all instruments
-        insts = root.findall("instruments/instrument")
-
-        for inst in insts:
-            tmpInst = {}
-            tmpInst["name"]    = inst.get("name", "inst" + str(len(self.__instruments) + 1))
-            tmpInst["class"]   = inst.get("class", object)
-            tmpInst["options"] = {}
-
-            # get all options
-            opts = inst.findall("option")
-
-            for opt in opts:
-                tmpKey   = opt.get("name")
-                tmpValue =  opt.get("value")
-                tmpInst["options"][tmpKey] = tmpValue
-
-            self.__instruments.append(tmpInst)
-
-        ctrls = root.findall("controllers/controller")
-
-        for ctrl in ctrls:
-
-            tmpCtrl = {}
-            tmpCtrl["name"]    = ctrl.get("name", "ctrl" + str(len(self.__controllers) + 1))
-            tmpCtrl["class"]   = ctrl.get("class", object)
-            tmpCtrl["options"] = {}
-
-            # get all options
-            opts = ctrl.findall("option")
-
-            for opt in opts:
-                tmpKey   = opt.get("name")
-                tmpValue =  opt.get("value")
-                tmpCtrl["options"][tmpKey] = tmpValue
-
-            self.__controllers.append(tmpCtrl)
-
-
-        # get all drivers
-        drvs = root.findall("drivers/driver")
-
-        for drv in drvs:
-            tmpDrv = {}
-            tmpDrv["name"]    = drv.get("name", "drv" + str(len(self.__drivers) + 1))
-            tmpDrv["class"]   = drv.get("class", object)
-            tmpDrv["options"] = {}
-
-            # get all options
-            opts = drv.findall("option")
-
-            for opt in opts:
-                tmpKey   = opt.get("name")
-                tmpValue =  opt.get("value")
-                tmpDrv["options"][tmpKey] = tmpValue
-                
-            self.__drivers.append(tmpDrv)
-
-    def dump(self):
-
-        def printIt(l):
-            s = "%s (%s)\n" % (l["name"], l["class"])
-            print s,"="*len(s)
-            print
-            
-            for k,v in l["options"].items():
-                print "%s = %s" % (k, v)
-
-            print
-
-        def printSite(l):
-            s = "%s (lat. %s, long. %s, alt. %s)\n" % (l["name"],
-                                                      l["latitude"],
-                                                      l["longitude"],
-                                                      l["altitude"])
-            print s,"="*len(s)
-            print
-            
-        for s in self.__sites:
-            printSite(s)
-
-        for i in self.__instruments:
-            printIt(i)
-
-        for c in self.__controllers:
-            printIt(c)
-
-        for d in self.__drivers:
-            printIt(d)
-
-
-class Site(object):
+class _Chimera (object):
 
     def __init__(self, args = []):
 
@@ -199,6 +61,8 @@ class Site(object):
             logging.getLogger().setLevel(logging.DEBUG)
 
         self.manager = None
+
+        self.pid = os.getpid()
 
         logging.debug("Starting system.")
 
@@ -253,13 +117,24 @@ class Site(object):
 
         return parser.parse_args(args)
 
+    def _setupSignals (self):
+
+        signal.signal(signal.SIGTERM, self._sighandler)
+        signal.signal(signal.SIGINT, self._sighandler)
+
+    def _sighandler(self, sig, frame):
+        self._shutdown()
+
     def init(self):
+
+        # setup signal handlers
+        self._setupSignals()
 
         # manager
         self.manager = Manager()
 
         # config file
-        self.config = SiteConfiguration()
+        self.config = SiteConfig()
         
         for config in self.options.config:
             self.config.read(config)
@@ -302,6 +177,16 @@ class Site(object):
             l = Location(ctrl)
             self.manager.initController(l)
 
-    def shutdown(self):
-        self.manager.shutdown()
+        # FIXME: this works!?
+        # HACK: wow, what a uptime!
+        time.sleep (sys.maxint)
+
+    def shutdown (self):
+        os.kill (self.pid, signal.SIGTERM)
+        
+    def _shutdown(self):
+
+        # ok, exit!
         logging.debug("Shutting down system.")
+        self.manager.shutdown()
+        sys.exit (0)

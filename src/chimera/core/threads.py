@@ -153,7 +153,6 @@ class ThreadPool:
         finally:
             self.__resizeLock.release()
 
-
         
 class ThreadPoolThread(threading.Thread):
 
@@ -168,7 +167,9 @@ class ThreadPoolThread(threading.Thread):
         threading.Thread.__init__(self)
         self.__pool = pool
         self.__isDying = False
-        self.setDaemon(False)
+
+        # FIXME
+        self.setDaemon(True)
         
     def run(self):
 
@@ -177,6 +178,7 @@ class ThreadPoolThread(threading.Thread):
         
         while self.__isDying == False:
             cmd, args, kwargs, callback = self.__pool.getNextTask()
+
             # If there's nothing to do, just sleep a bit
             if cmd is None:
                 sleep(ThreadPoolThread.threadSleepTime)

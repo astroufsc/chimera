@@ -19,7 +19,9 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 import sys
+import os
 import os.path
+import signal
 import traceback
 import logging
 from types import StringType
@@ -53,15 +55,14 @@ class Manager(object):
 
         for location in self._controllers.keys():
             self.shutdownController(location)
-            self.removeController(location)
 
         for location in self._instruments.keys():
             self.shutdownInstrument(location)
-            self.removeInstrument(location)
 
         for location in self._drivers.keys():
             self.shutdownDriver(location)
-            self.removeDriver(location)
+
+        self._pool.joinAll()
 
     def _addSystemPath (self):
         
@@ -174,6 +175,9 @@ class Manager(object):
 
     def _add(self, location, register):
 
+        if type(location) == StringType:
+            location = Location(location)
+
         # get the class
         cls = self._getClass(location._class, register.kind)
 
@@ -193,9 +197,16 @@ class Manager(object):
             return False
     
     def _remove(self, location, register):
+
+        if type(location) == StringType:
+            location = Location(location)
+        
         return register.unregister(location)
 
     def _init(self, location, register):
+
+        if type(location) == StringType:
+            location = Location(location)
 
         if(not self._pool):
             logging.debug("There is no thread pool avaiable.")
@@ -237,10 +248,12 @@ class Manager(object):
             return False
 
         try:
+
             logging.debug("Shutting down %s %s." % (register, location))
 
             # run object shutdown method
             # again: runs on the same thread, so don't block it
+
             register[location].shutdown()
             self._remove(location, register)
             return True
