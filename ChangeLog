@@ -1,5 +1,10 @@
 2007-10-26  P. Henrique Silva  <henrique@astro.ufsc.br>
 
+	* src/scripts/chimera-console:
+	* src/scripts/chimera-cam:
+
+	Brand new scripts. Patterns emerging!
+
 	* src/chimera/controllers/chimeracam.py: New. Future cmdline
 	package.
 

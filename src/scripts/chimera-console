@@ -24,5 +24,8 @@ if __name__ == '__main__':
 
     from chimera.core.site import Site
 
-    Site (sys.argv).init()
+    args = "-c /Console/console".split()
+
+    s = Site (args)
+    s.init()
 

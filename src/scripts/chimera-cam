@@ -1,0 +1,79 @@
+#! /usr/bin/env python
+# -*- coding: iso8859-1 -*-
+
+# chimera - observatory automation system
+# Copyright (C) 2006-2007  P. Henrique Silva <henrique@astro.ufsc.br>
+
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+import sys
+import os
+from optparse import OptionParser
+
+from chimera.core.site import Site
+from chimera.core.version import _chimera_version_, _chimera_description_
+
+from chimera.controllers.chimeracam import ChimeraCam
+
+if __name__ == '__main__':
+
+    parser = OptionParser(prog="chimera-cam", version=_chimera_version_,
+                          description=_chimera_description_)
+
+    parser.add_option("-d", "--driver", action="store", type="string", dest="driver",
+                      help="Camera driver to be used. /Class/name?option1=value1,option2=value. [default=%default]")
+
+    parser.add_option("-n", "--nexp", action="store", type="int", dest="nexp",
+                      help="Number of frames to expose [default=%default].")
+
+    parser.add_option("-t", "--texp", action="store", type="float", dest="texp",
+                      help="Number of seconds of exposure in each frame [default=%default].")
+
+    parser.add_option("-i", "--interval", action="store", type="float", dest="interval",
+                      help="Number of seconds to wait between each exposure frame [default=%default].")
+
+    parser.add_option("-f", "--filename", action="store", type="string", dest="filename",
+                      help="Base filename including full path if needed. May contain wildcards on the filename."
+                      "Accepted wildcards: $observer -> observer name, $date -> current date and time, $num -> index"
+                      "[default=%default]")
+    
+    parser.add_option("-s", "--shutter", action="store", type="choice", dest="shutter",
+                      choices=["open", "close", "leave"],
+                      help="What to do with the shutter: open, close, leave [default=%default]")
+
+    parser.add_option("--no-display", action="store_false", dest="display",
+                      help="Don't try to display image on DS9. [default=%default]")
+
+    parser.add_option("-v", "--verbose", action="store_true", dest='verbose',
+                      help="Display more information during the exposures [default=%default].")
+
+    parser.set_defaults(**ChimeraCam.__options__)
+
+    options, args = parser.parse_args(sys.argv)
+
+    site_args = "-v -C . -c /ChimeraCam/chimeracam?"
+    site_args += "driver=%s,"   % options.driver
+    site_args += "nexp=%s,"     % options.nexp
+    site_args += "texp=%s,"     % options.texp
+    site_args += "interval=%s," % options.interval
+    site_args += "filename=%s," % os.path.basename(options.filename)
+    site_args += "dirname=%s,"  % (os.path.dirname(options.filename) or os.getcwd())
+    site_args += "shutter=%s,"  % options.shutter
+    site_args += "display=%s,"  % options.display
+    site_args += "verbose=%s "  % options.verbose
+
+    # run chimera main entry point
+    s = Site (site_args.split())
+    s.init()
