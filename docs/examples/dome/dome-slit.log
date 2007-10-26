@@ -1,0 +1,41 @@
+ getAz sent POSICAO?
+ getAz ack CUPULA=0000
+==================================================
+Dome test
+==================================================
+opening the slit:
+ slitOpen sent ABRIR
+ slitOpen ack ABRINDO
+ slitOpen fin ABERTO
+ dt: 12.528
+done
+closing the slit:
+ slitClose sent FECHAR
+ slitClose ack FECHANDO
+ slitClose fin FECHADO
+ dt: 12.720
+done
+closing the slit:
+ slitClose sent FECHAR
+ slitClose ack FECHANDO
+ slitClose fin FECHADO
+ dt: 12.720
+done
+opening the slit:
+ slitOpen sent ABRIR
+ slitOpen ack ABRINDO
+ slitOpen fin ABERTO
+ dt: 12.720
+done
+opening the slit:
+ slitOpen sent ABRIR
+ slitOpen ack ABRINDO
+ slitOpen fin ABERTO
+ dt: 12.710
+done
+closing the slit:
+ slitClose sent FECHAR
+ slitClose ack FECHANDO
+ slitClose fin FECHADO
+ dt: 12.720
+done

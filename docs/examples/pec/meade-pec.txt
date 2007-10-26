@@ -1,0 +1,21 @@
+Meade 16" PEC programming protocol
+
+- Index varies between 0 and 199
+
+:XR#	Get RA PEC index position
+Returns nnn#
+
+:XD#	Get DEC PEC index position
+Returns nnn#
+
+:VRi#	Get RA PEC value at index i (*)
+Returns n.nnnnnn#
+
+:VDi#	Get DEC PEC value at index i (*)
+Returns n.nnnnnn#
+
+(*) If you ommits i, get PEC at index 0
+
+ TBV
+:Zi#	Set RA PEC index to i (?)
+:YRi#	Set RA PEC value at position #:Zi# to i

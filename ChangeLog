@@ -1,5 +1,13 @@
 2007-10-26  P. Henrique Silva  <henrique@astro.ufsc.br>
 
+	* setup-chimera.sh:
+	* setup-chimera.bat:
+
+	Development scripts to add chiemra to Python PATH (windows and
+	linux versions)
+	
+	* docs/examples: Bunch of new examples (most hardware tests).
+
 	* src/scripts/chimera-console:
 	* src/scripts/chimera-cam:
 
