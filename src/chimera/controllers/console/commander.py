@@ -8,7 +8,7 @@ import readline
 from cmd import Cmd, IDENTCHARS
 from types import ListType, BooleanType, StringType, NoneType, TupleType
 
-from chimera.core.site import Site
+from chimera.core.main import Chimera
 
 from chimera.core.version import _chimera_description_, _chimera_version_
 
@@ -38,7 +38,7 @@ class Commander (Cmd):
         self.intro  = "Welcome to %s - %s\n" % (_chimera_description_, _chimera_version_)
         self.prompt = "chimera> "
 
-        # save our controller and ourself on Site singleton
+        # save our controller and ourself on Chimera singleton
         ConsoleController().setController (controller)
         ConsoleController().setCommander (self)        
 
@@ -53,7 +53,7 @@ class Commander (Cmd):
         readline.write_history_file (os.path.join(os.path.expanduser("~/.chimera_console.history")))
 
         if from_here:
-            Site().shutdown()
+            Chimera().shutdown()
 
     def do_EOF (self, args):
         self.quit(True)

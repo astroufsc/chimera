@@ -89,7 +89,7 @@ class RunnerPosix (object):
 
     def sighandler(self, sig, frame):
 
-        if hasattr(self.obj, 'ctrl_c_handler') and callable(gettar(self.obj, 'ctrl_c_handler')):
+        if hasattr(self.obj, 'ctrl_c_handler') and callable(getattr(self.obj, 'ctrl_c_handler')):
             self.obj.ctrl_c_handler()
             
         self.kill()

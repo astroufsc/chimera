@@ -36,9 +36,9 @@ def slew (tel, target, log=logging):
     slew_start = time.time ()
     log.info ("Slew started at %s" % time.strftime("%d/%m/%Y %H:%M:%S", time.localtime(slew_start)))
 
-    if target.obj.ra and self.obj.dec:
+    if target.obj.ra and target.obj.dec:
         tel.slewToRaDec (target.obj.ra, target.obj.dec)
-    elif target.obj.alt and self.obj.az:
+    elif target.obj.alt and target.obj.az:
         tel.slewToAltAz (target.obj.al, target.obj.az)
 
     tel_position = tel.getPosition ()

@@ -9,6 +9,7 @@ Core
         * log: mostrar quem originou o problema e não onde o log foi criado
         * permitir adicao de objetos no SiteConfiguration
         * salvar SiteConfiguration para arquivo
+	* melhorar log e handling de erros nos drivers (error and logging database)
 
 
 

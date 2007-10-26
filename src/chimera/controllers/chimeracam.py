@@ -1,7 +1,7 @@
 
 from chimera.core.lifecycle import BasicLifeCycle
 
-from chimera.core.chimera import Chimera
+from chimera.core.main import Chimera
 
 from chimera.controllers.blocks import *
 from chimera.util.observation import Observation

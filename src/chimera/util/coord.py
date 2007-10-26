@@ -323,7 +323,7 @@ class SkyPoint(object):
         
         _dec = (obj.dec.decimal() - self.dec.decimal())
 
-        return Point(_ra/15.0, _dec)
+        return SkyPoint(_ra/15.0, _dec)
 
     def _cosdeg(self, angle):
         resid = abs(angle % 360.0)
@@ -398,8 +398,8 @@ def equatorialToLocal (ra, dec, latitude, lst):
     return (alt * (180./math.pi), az  * (180./math.pi))
 
 if __name__ == '__main__':
-    #     m5 = Point("15 18 33.75", "+02 04 57.7")
-    #     m51 = Point("13 29 52.37", "+47 11 40.8")
+    #     m5 = SkyPoint("15 18 33.75", "+02 04 57.7")
+    #     m51 = SkyPoint("13 29 52.37", "+47 11 40.8")
 
     #     print m5
     #     print m51
@@ -421,9 +421,9 @@ if __name__ == '__main__':
     #    print a + v
 
     
-    siriusA = Point("06 45 08.9173", "-16 42 58.017")
-    #siriusB = Point("06 45 09", "-16 43 06")
-    #siriusC = Point("06 45 06", "-16 42 00")
+    siriusA = SkyPoint("06 45 08.9173", "-16 42 58.017")
+    #siriusB = SkyPoint("06 45 09", "-16 43 06")
+    #siriusC = SkyPoint("06 45 06", "-16 42 00")
 
     #print siriusA.dist(siriusB)
     #print siriusA.dist(siriusC)

@@ -6,14 +6,15 @@ url: http://chimera.ufsc.br/
 # The list of modules to document.  Modules can be named using
 # dotted names, module filenames, or package directory names.
 # This option may be repeated.
-#modules: chimera
+modules: chimera
 
 # Don't examine in any way the modules whose dotted name match this
 # regular expression pattern.
-#exclude
+exclude: chimera.util.etree
+exclude: chimera.util.output
 
 # Write html output to the directory "api"
-#output: html
+output: html
 target: api
 
 # Include all automatically generated graphs.  These graphs are
@@ -39,8 +40,8 @@ imports: yes
 
 # Whether or not to include syntax highlighted source code in
 # the output (HTML only).
-#sourcecode: yes
+sourcecode: yes
 
 # Whether or not to includea a page with Epydoc log, containing
 # effective option at the time of generation and the reported logs.
-#include-log: no
+include-log: no

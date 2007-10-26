@@ -1,5 +1,5 @@
 
-CHIMERA_ROOT=$HOME/dev/chimera-stable
+CHIMERA_ROOT=$HOME/chimera/chimera-stable
 CHIMERA_PYTHON_PATH=$CHIMERA_ROOT/src
 CHIMERA_BIN=$CHIMERA_ROOT/src/scripts
 

@@ -574,7 +574,7 @@ class Meade (BasicLifeCycle,
 
     def getTargetAz(self):
         return self._target_az
-    
+
     def setTargetAz(self, az):
 
         if not isinstance (az, Az):

@@ -58,14 +58,14 @@ class Autofocus (BasicLifeCycle):
 
         self.config += config
 
-        #self.tel     = self.manager.getInstrument (self.config.telescope)
-        #self.filter  = self.manager.getInstrument (self.config.filter)
-        #self.cam     = self.manager.getInstrument (self.config.camera)
-        #self.focuser = self.manager.getInstrument (self.config.focuser)
+        self.tel     = self.manager.getInstrument (self.config.telescope)
+        self.filter  = self.manager.getInstrument (self.config.filter)
+        self.cam     = self.manager.getInstrument (self.config.camera)
+        self.focuser = self.manager.getInstrument (self.config.focuser)
 
-        #if None in [self.tel, self.filter, self.cam, self.focuser]:
-        #    logging.warning ("something wrong with your setup.")
-        #    return False
+        if None in [self.tel, self.filter, self.cam, self.focuser]:
+            logging.warning ("something wrong with your setup.")
+            return False
 
         return True
         
