@@ -23,16 +23,13 @@ from chimera.core.event import event
 
 class IDome (Interface):
 
-    __options__ = {"driver": "/DomeLNA40cm/dome",
+    __options__ = {"driver"   : "/DomeLNA40cm/dome",
                    "telescope": "/Telescope/0",
-                   "time_res": 2, # time resolution - how often we check telescope position
-                   "az_res": 2, # move the dome when telescope moves more than position_res degress
-                   "mode": "stand"} # operation mode = track / stand
-    
-    # AK - ver classes location -
-    # /A/B
-    # A nome do driver precisa ser informado por quem criar a cupula
-    # B nome default, se eu nao der um nome ele poe esse
+                   "mode"     : ["stand", "track"],
+
+                   "model"    : "Fake Domes Inc.",
+                   "type"     : ["Rolloff", "Classic", "Othter"],
+                   }
     
     # methods
     def isSlewing (self):
@@ -58,7 +55,6 @@ class IDome (Interface):
         pass
 
 
-# AK - quem fala com isso eh o instrumento
 class IDomeDriver (Interface):
 
     __options__ = {"device": "/dev/ttyS1",

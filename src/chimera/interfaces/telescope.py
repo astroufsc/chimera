@@ -23,8 +23,15 @@ from chimera.core.event import event
 
 class ITelescope (Interface):
 
-    __options__ = {"driver": "/Fake/telescope"}
-    
+    __options__ = {"driver": "/Fake/telescope",
+                   
+                   "model"           : "Fake Telescopes Inc.",
+                   "optics"          : ["Newtonian", "SCT", "RCT"],
+                   "aperture"        : 100.0,  # mm
+                   "focal_length"    : 1000.0, # mm
+                   "resolution"      : 0.10,   # arc sec
+                   "focal_reduction" : 1.0,    # unit (ex., 0.5 for a half length focal reducer)
+                   }
 
 class ITelescopeSlew (ITelescope):
 

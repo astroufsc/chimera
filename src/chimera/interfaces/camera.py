@@ -24,8 +24,14 @@ from chimera.core.event import event
 class ICamera (Interface):
 
     # config
-    __options__ = {"driver" : "/Fake/camera"}
-    
+    __options__ = {"driver" : "/Fake/camera",
+
+                   "camera_model"    : "Fake camera Inc.",
+                   "ccd_model"       : "KAF XYZ 10",
+                   "ccd_dimension_x" : 100, # pixel
+                   "ccd_dimension_y" : 100, # pixel
+                   "ccd_pixel_size"  : 10.0, # micrometer
+                   }
 
 class ICameraExpose(ICamera):
 
@@ -78,11 +84,10 @@ class ICameraDriver(Interface):
                    "readout_aborted"     : True,
                    "readout_mode"	 : 0,
                    "date_format"	 : "%d%m%y-%H%M%S",
-                   "file_format"	 : "$num-$observer-$date-$objname",
+                   "file_format"	 : "$observer-$date-$objname",
                    "file_extension"  	 : "fits",
                    "directory"	         : "/home/someuser/images",
                    "save_on_temp"	 : False,
-                   "seq_num"	         : 1,
                    "start_time"          : 0,
                    "observer"	         : "observer name",
                    "obj_name"	         : "object name",

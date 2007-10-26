@@ -31,7 +31,9 @@ class IFocuser (Interface):
      - DC pulse: just send a DC pulse to a motor and move to selected directions only (no position information).
     """
 
-    __options__ = {"driver": "/Fake/focus"}
+    __options__ = {"driver": "/Fake/focus",
+                   "model": "Fake Focus Inc.",
+                   }
 
     def moveIn (self, n):
         """

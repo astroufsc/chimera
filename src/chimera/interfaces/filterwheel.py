@@ -24,17 +24,16 @@ from chimera.core.event import event
 class IFilterWheel(Interface):
 
     __options__ = {"driver" : "/SBIG/sbig",
-                   "filters": ["red", "green", "blue", "rgb", "clear"],
+
+                   "model"   : "Fake Filters Inc.",
+                   "filters" : ["red", "green", "blue", "rgb", "clear"],
+
+                   # FIXME: get out of here
                    "red"    : 1,
                    "green"  : 2,
                    "blue"   : 3,
                    "rgb"    : 4,
                    "clear"  : 5}
-
-    # filter status
-    unknown = 0
-    idle    = 1
-    busy    = 2
 
     # methods
     def getFilter (self):
