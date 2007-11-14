@@ -1,5 +1,5 @@
-#! /usr/bin/python
-# -*- coding: iso8859-1 -*-
+#! /usr/bin/env python
+# -*- coding: iso-8859-1 -*-
 
 # chimera - observatory automation system
 # Copyright (C) 2006-2007  P. Henrique Silva <henrique@astro.ufsc.br>
@@ -18,175 +18,58 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-import sys
-import os.path
+from chimera.core.location  import Location
+from chimera.core.proxy     import Proxy
+from chimera.core.constants import MANAGER_LOCATION
+
 import logging
-import os
-import time
+import string
 
-# FIXME: support Ctrl+C on Windows (get over signals)
-import signal
 
-from optparse import OptionParser
-from chimera.core.location import Location
-from chimera.core.manager import Manager
-from chimera.core.version import _chimera_version_, _chimera_description_
+__all__ = ['Chimera',
+           'chimera']
 
-from chimera.core.siteconfig import SiteConfig
 
-#FIXME: better singleton pattern
-_chimera_singleton = None
+class Chimera (object):
 
-def Chimera (args=[]):
+    def __getattr__ (self, attr):
 
-    global _chimera_singleton
+        if attr[0] not in string.ascii_uppercase:
+            raise AttributeError()
 
-    if not _chimera_singleton:
-        _chimera_singleton = _Chimera (args)
+        return Locator (attr)
 
-    return _chimera_singleton
 
-class _Chimera (object):
+# provide default object
+chimera = Chimera()
 
-    def __init__(self, args = []):
 
-        self.options, self.args = self.parseArgs(args)
+class Locator (object):
 
-        # verbosity level
-        logging.basicConfig(level=logging.WARNING,
-                            format='%(asctime)s %(levelname)s %(module)s:%(lineno)d %(message)s',
-                            datefmt='%d-%m-%Y %H:%M:%S (%j)')
+    def __init__ (self, cls):
+        self.cls = cls
 
-        if self.options.verbose:
-            logging.getLogger().setLevel(logging.DEBUG)
+    def __call__ (self, name = None, **options):
 
-        self.manager = None
+        name   = name or options.get ('name', '0')
+        host   = options.get ('host', None)
+        port   = options.get ('port', None)
+        config = options.get ('config', {})
 
-        self.pid = os.getpid()
+        # contact 'cls' manager (could be ourself)
+        manager = Proxy(location=MANAGER_LOCATION, host=host, port=port)
 
-        logging.debug("Starting system.")
-
-    def parseArgs(self, args):
-
-        parser = OptionParser(prog="chimera", version=_chimera_version_,
-                              description=_chimera_description_)
-
-        parser.add_option("-i", "--instrument", action="append", dest="instruments",
-                          help="Load the instrument defined by LOCATION."
-                               "This option could be setted many times to load multiple instruments.",
-                          metavar="LOCATION")
-
-        parser.add_option("-c", "--controller", action="append", dest="controllers",
-                          help="Load the controller defined by LOCATION."
-                               "This option could be setted many times to load multiple controllers.",
-                          metavar="LOCATION")
-
-        parser.add_option("-d", "--driver", action="append", dest="drivers",
-                          help="Load the driver defined by LOCATION."
-                               "This option could be setted many times to load multiple drivers.",
-                          metavar="LOCATION")
-
-        parser.add_option("-f", "--file", action="append", dest="config",
-                          help="Load instruments and controllers defined on FILE."
-                               "This option could be setted many times to load inst/controllers from multiple files.",
-                          metavar="FILE")
-
-        parser.add_option("-I", "--instruments-dir", action="append", dest="inst_dir",
-                          help="Append PATH to instruments load path.",
-                          metavar="PATH")
-
-        parser.add_option("-C", "--controllers-dir", action="append", dest="ctrl_dir",
-                          help="Append PATH to controllers load path.",
-                          metavar="PATH")
-
-        parser.add_option("-D", "--drivers-dir", action="append", dest="drv_dir",
-                          help="Append PATH to drivers load path.",
-                          metavar="PATH")
-
-        parser.add_option("-v", "--verbose", action="store_true", dest='verbose',
-                          help="Increase screen log level.")
-
-        parser.set_defaults(instruments = [],
-                        controllers = [],
-                        drivers     = [],
-                        config = [],
-                        inst_dir = [],
-                        ctrl_dir = [],
-                        drv_dir = [],
-                        verbose=False)
-
-        return parser.parse_args(args)
-
-    def _setupSignals (self):
-
-        signal.signal(signal.SIGTERM, self._sighandler)
-        signal.signal(signal.SIGINT, self._sighandler)
-
-    def _sighandler(self, sig, frame):
-        self._shutdown()
-
-    def init(self):
-
-        # setup signal handlers
-        self._setupSignals()
-
-        # manager
-        self.manager = Manager()
-
-        # config file
-        self.config = SiteConfig()
+        loc = Location(cls = self.cls, name = name, config = config)
+       
+        if not manager.ping():
+            logging.warning ("Can't contact '%s' manager at '%s'." % (loc, manager.URI.address))
+            return False
         
-        for config in self.options.config:
-            self.config.read(config)
+        proxy = manager.getProxy(loc)
 
-        # directories
+        if not proxy:
+            logging.warning ("There is no '%s' object at '%s'." % (loc, manager.URI.address))
+            return False
+        else:
+            return proxy
 
-        for _dir in self.options.inst_dir:
-            self.manager.appendPath("instrument", _dir)
-    
-        for _dir in self.options.ctrl_dir:
-            self.manager.appendPath("controller", _dir)
-        
-        for _dir in self.options.drv_dir:
-            self.manager.appendPath("driver", _dir)
-
-        # init from config
-
-        for drv in self.config.getDrivers():
-            l = Location(drv)
-            self.manager.initDriver(l)
-
-        for inst in self.config.getInstruments():
-            l = Location(inst)
-            self.manager.initInstrument(l)
-
-        for ctrl in self.config.getControllers():
-            l = Location(ctrl)
-            self.manager.initController(l)
-            
-        # init from cmd line
-        for drv in self.options.drivers:
-            l = Location(drv)
-            self.manager.initDriver(l)
-
-        for inst in self.options.instruments:
-            l = Location(inst)
-            self.manager.initInstrument(l)
-
-        for ctrl in self.options.controllers:
-            l = Location(ctrl)
-            self.manager.initController(l)
-
-        # FIXME: this works!?
-        # HACK: wow, what a uptime!
-        time.sleep (sys.maxint)
-
-    def shutdown (self):
-        os.kill (self.pid, signal.SIGTERM)
-        
-    def _shutdown(self):
-
-        # ok, exit!
-        logging.debug("Shutting down system.")
-        self.manager.shutdown()
-        sys.exit (0)

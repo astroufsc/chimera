@@ -1,5 +1,5 @@
-#! /usr/bin/python
-# -*- coding: iso8859-1 -*-
+#! /usr/bin/env python
+# -*- coding: iso-8859-1 -*-
 
 # chimera - observatory automation system
 # Copyright (C) 2006-2007  P. Henrique Silva <henrique@astro.ufsc.br>
@@ -18,8 +18,16 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-##
-## drivers packaged (as this one) should import the corresponding driver on __init__
-##
 
-from chimera.drivers.sbig.sbig import SBIG
+import socket
+
+MANAGER_DEFAULT_HOST = socket.gethostname()
+MANAGER_DEFAULT_PORT = 7666
+
+MANAGER_LOCATION = '/Manager/manager'
+
+EVENT_ATTRIBUTE_NAME  = '__event__'
+CONFIG_ATTRIBUTE_NAME = '__config__'
+
+EVENTS_PROXY_NAME = '__events_proxy__'
+CONFIG_PROXY_NAME = '__config_proxy__'

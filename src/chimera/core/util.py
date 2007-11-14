@@ -1,5 +1,5 @@
-#! /usr/bin/python
-# -*- coding: iso8859-1 -*-
+#! /usr/bin/env python
+# -*- coding: iso-8859-1 -*-
 
 # chimera - observatory automation system
 # Copyright (C) 2006-2007  P. Henrique Silva <henrique@astro.ufsc.br>
@@ -18,8 +18,19 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-##
-## drivers packaged (as this one) should import the corresponding driver on __init__
-##
 
-from chimera.drivers.sbig.sbig import SBIG
+from chimera.core.constants import MANAGER_DEFAULT_HOST, MANAGER_DEFAULT_PORT, MANAGER_LOCATION
+
+try:
+    import Pyro.core
+except ImportError, e:
+    raise RuntimeError ("You must have Pyro version >= 3.6 installed.")
+
+def getManagerURI (host = None, port = None):
+
+    host = host or MANAGER_DEFAULT_HOST
+    port = port or MANAGER_DEFAULT_PORT
+    
+    return Pyro.core.PyroURI(host, MANAGER_LOCATION, port)
+
+

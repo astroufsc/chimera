@@ -1,5 +1,5 @@
-#! /usr/bin/python
-# -*- coding: iso8859-1 -*-
+#! /usr/bin/env python
+# -*- coding: iso-8859-1 -*-
 
 # chimera - observatory automation system
 # Copyright (C) 2006-2007  P. Henrique Silva <henrique@astro.ufsc.br>
@@ -18,316 +18,410 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-import sys
-import os
-import os.path
-import signal
-import traceback
+
+from chimera.core.classloader import ClassLoader, ClassLoaderException
+from chimera.core.resources   import ResourcesManager
+from chimera.core.threads     import ThreadPool
+from chimera.core.location    import Location
+
+from chimera.core.chimeraobject import ChimeraObject
+from chimera.core.remoteobject  import RemoteObject
+from chimera.core.proxy         import Proxy
+from chimera.core.util          import getManagerURI
+from chimera.core.state         import State
+
+
+from chimera.core.constants import MANAGER_DEFAULT_HOST, MANAGER_DEFAULT_PORT, MANAGER_LOCATION
+
+try:
+    import Pyro.core
+    import Pyro.util
+except ImportError, e:
+    raise RuntimeError ("You must have Pyro version >= 3.6 installed.")
+
 import logging
-from types import StringType
+import socket
+import threading
+import signal
+import time
+import atexit
 
-from chimera.core.register import Register
-from chimera.core.proxy import Proxy
-from chimera.core.location import Location
-from chimera.core.threads import getThreadPool
 
-class Manager(object):
+__all__ = ['Manager']
 
-    def __init__(self, pool = None, add_system_path = True):
-        logging.debug("Starting manager.")
 
-        self._includePath = {"instrument": [],
-                             "controller": [],
-                             "driver"    : []}
+class ManagerServer (Pyro.core.Daemon):
 
-        self._instruments = Register("instrument")
-        self._controllers = Register("controller")
-        self._drivers     = Register("driver")
+    def __init__ (self, manager, host = None, port = None):
 
-        self._pool = pool or getThreadPool ()
-
-        self._cache = { }
-
-        if add_system_path:
-            self._addSystemPath ()
-
-    def shutdown(self):
-
-        for location in self._controllers.keys():
-            self.shutdownController(location)
-
-        for location in self._instruments.keys():
-            self.shutdownInstrument(location)
-
-        for location in self._drivers.keys():
-            self.shutdownDriver(location)
-
-        self._pool.joinAll()
-
-    def _addSystemPath (self):
+        Pyro.core.initServer(banner=False)
         
-        prefix = os.path.realpath(os.path.join(os.path.abspath(__file__),
-                                               '../../'))
+        Pyro.core.Daemon.__init__ (self,
+                                   host=host or MANAGER_DEFAULT_HOST,
+                                   port=port or MANAGER_DEFAULT_PORT)
+
+        self.useNameServer(None)
+        self.connect (manager)
+
+        # saved here to give objects a manager when they ask
+        self.manager = manager
+
+    def getManager (self):
+        return self.manager
+
+    def getProxyForObj(self, obj):
+        return Proxy(uri=Pyro.core.PyroURI(self.hostname,
+                                           obj.GUID(), prtcol=self.protocol, port=self.port))
+
+    def connect(self, object, name=None, index=None):
+
+        URI = Pyro.core.PyroURI(self.hostname, object.GUID(), prtcol=self.protocol, port=self.port)
+
+        # enter the (object,name) in the known implementations dictionary
+        if index:
+            self.implementations[index]=(object,name)
+        else:
+            self.implementations[object.GUID()]=(object,name)            
         
-        self.appendPath ("instrument", os.path.join(prefix, 'instruments'))
-        self.appendPath ("controller", os.path.join(prefix, 'controllers'))
-        self.appendPath ("driver", os.path.join(prefix, 'drivers'))
+        object.setPyroDaemon(self)
+        return URI
 
-    def appendPath(self, kind, path):
 
-        if not os.path.isabs(path):
-            path = os.path.abspath(path)
-            
-        logging.debug("Adding %s to %s include path." % (path, kind))
+class Manager (RemoteObject):
 
-        self._includePath[kind].append(path)
+    """
+    This is the main class of Chimera.
 
-    def setPool(self, pool):
-        self._pool = pool
+    Use this class to get Proxies, add objects to the system, and so on.
 
-    def _getClass(self, name, kind):
-        """
-        Based on this recipe
-        http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/52241
-        by Jorgen Hermann
-        """
+    This class handles objetcs lifecicle as descrbibed in L{ILifecycle}.
 
-        # TODO: - add a reload method
+    @group Add/Remove: add*, remove
+    @group Start/Stop: start, stop
+    @group Proxy: getProxy
+    @group Shutdown: wait, shutdown
 
-        if name in self._cache:
-            return self._cache[name]
+    """
+    
+    def __init__(self, host = None, port = None):
+        RemoteObject.__init__ (self)
 
-        try:
-            logging.debug("Looking for module %s." % name.lower())
+        logging.warning("Starting manager.")
 
-            # adjust sys.path accordingly to kind
-            tmpSysPath = sys.path
-            sys.path = self._includePath[kind] + sys.path
-            
-            module = __import__(name.lower(), globals(), locals(), [name])
+        self.resources = ResourcesManager ()
+        self.classLoader = ClassLoader ()
+        self.pool = ThreadPool ()
 
-            # turns sys.path back
-            sys.path = tmpSysPath
+        # identity
+        self.setGUID(MANAGER_LOCATION)
 
-            if not name in vars(module).keys():
-                logging.error("Module found but there are no class named %s on module %s (%s)." %
-                              (name, name.lower(), module.__file__))
-                return False
+        # our daemon server
+        self.daemon = ManagerServer (self, host, port)
+        self.pool.queueTask (self.daemon.requestLoop)
 
-            self._cache[name] = vars(module)[name]
+        # register ourself
+        self.resources.add(MANAGER_LOCATION, self, getManagerURI())
 
-            logging.debug("Module %s found (%s)" % (name.lower(),
-                                                    module.__file__))
+        # signals
+        signal.signal(signal.SIGTERM, self._sighandler)
+        signal.signal(signal.SIGINT, self._sighandler)
+        atexit.register (self._sighandler)
 
-            return self._cache[name]
+        # shutdown event
+        self.died = threading.Event()
 
-        except Exception, e:
 
-            # Python trick: An ImportError exception catched here
-            # could came from both the __import__ above or from the
-            # module imported by the __import__ above... So, we need a
-            # way to know the difference between those exceptions.  A
-            # simple (reliable?) way is to use the lenght of the
-            # exception traceback as a indicator If the traceback had
-            # only 1 entry, the exceptions comes from the __import__
-            # above, more than one the exception comes from the
-            # imported module
+    # private
+    def __repr__ (self):
+        return "<Manager for '%s:%d' at %s>" % (self.daemon.hostname, self.daemon.port, hex(id(self)))
 
-            tb_size = len(traceback.extract_tb(sys.exc_info()[2]))
-
-            if tb_size == 1:
-
-                if type (e) == ImportError:
-                    logging.error("Couldn't found module %s." % name)
-
-                else:
-                    logging.error("Module %s found but couldn't be loaded. Exception follows..." % name)
-                    logging.exception("")
-                    
-            else:
-                logging.error("Module %s found but couldn't be loaded. Exception follows..." % name)
-                logging.exception("")
-
-            return False
+    def _sighandler(self, sig = None, frame = None):
+        self.shutdown()
 
     
-    def _get(self, location, register, proxy = True):
+    # helpers
+    
+    def getDaemon (self):
+        return self.daemon
 
-        if type(location) == StringType:
-            location = Location(location)
+    def getPool (self):
+        return self.pool
 
-        obj = register.get(location)
+    def getProxy (self, location):
+        """
+        Get a proxy for the object pointed by 'location'. The given location can contain index
+        instead of names, e.g. '/Object/0' to get objects when you don't know their names.
 
-        if not obj:
-            # not found on register, try to add
-            if not self._init (location, register):
-                obj = None
-            else:
-                obj = register.get(location)
+        @param location: Object location.
+        @type location: Location or str
 
-        if obj != None:
-            if proxy:
-                return Proxy(obj, self._pool)
-            else:
-                return obj
-        else:
-            return None
+        @return: Proxy for 'location'
+        @rtype: Proxy
+        """
 
-    def _add(self, location, register):
+        ret = self.resources.get (location)
 
-        if type(location) == StringType:
-            location = Location(location)
-
-        # get the class
-        cls = self._getClass(location._class, register.kind)
-
-        if not cls:
+        if not ret:
             return False
 
-        # run object constructor
+        return Proxy (uri=ret.uri)
+
+
+    # shutdown management
+
+    def shutdown(self):
+        """
+        Ask the system to shutdown. Closing all sockets and stopping all threads.
+
+        @return: Nothing
+        @rtype: None
+        """
+
+        # die, but only if we are alive ;)
+        if not self.died.isSet():
+
+            logging.warning("Shuting down manager.")
+
+            # stop objects
+            for location in self.resources:
+                # except ourself
+                if location == MANAGER_LOCATION: continue
+                
+                self.stop(location)
+
+            self.daemon.shutdown(disconnect=True)
+            del self.daemon
+        
+            self.pool.joinAll()
+            self.died.set()
+        
+            logging.warning("Manager finished.")
+
+    def wait (self):
+        """
+        Ask the system to wait until anyone calls L{shutdown}.
+
+        If nobody calls L{shutdown}, you can stop the system using Ctrl+C.
+
+        @return: Nothing
+        @rtype: None
+        """
+
+        while not self.died.isSet():
+            time.sleep (1)
+
+
+    # objects lifecycle
+
+    def addLocation (self, location, config = {}, path = [], start = True):
+        """
+        Add the class pointed by 'location' to the system configuring it using 'config'.
+
+        Manager will look for the class in 'path' plus sys.path.
+
+        @param location: The object location.
+        @type location: Location or str
+
+        @param config: The configuration dictionary for the object.
+        @type config: dict
+
+        @param path: The class search path.
+        @type path: list
+
+        @param start: start the object after initialization.
+        @type start: bool
+
+        @return: retuns a proxy for the object if sucessuful, False otherwise.
+        @rtype: Proxy or bool
+        """
+
+        if type(location) != Location:
+            location = Location(location)
+
+        if not location.isValid():
+            logging.warning ("Invalid location: %s" % location)
+            return False
+
+        # get the class
+        cls = None
+        
+        try:
+            cls = self.classLoader.loadClass(location.cls, path)
+        except ClassLoaderException, e:
+            logging.warning ("Error while looking for '%s' class." % location.cls)
+            logging.exception (e)
+            return False
+            
+        return self.addClass (cls, location.name, config, start)
+
+
+    def addClass (self, cls, name, config = {}, start = True):
+        """
+        Add the class 'cls' to the system configuring it using 'config'.
+
+        @param cls: The class to add to the system.
+        @type cls: ChimeraObject
+
+        @param name: The name of the new class instance.
+        @type name: str
+
+        @param config: The configuration dictionary for the object.
+        @type config: dict
+
+        @param start: start the object after initialization.
+        @type start: bool
+
+        @return: retuns a proxy for the object if sucessuful, False otherwise.
+        @rtype: Proxy or bool
+        """
+
+        location = Location(cls = cls.__name__, name = name)
+
+        if not location.isValid():
+            logging.warning ("Invalid location: %s" % location)
+            return False
+
+        if location in self.resources:
+            logging.warning ("Location '%s' already in the system. Only one allowed (Tip. change the name!)." % location)
+            return False
+
+        # check if it's a valid ChimeraObject
+        if not issubclass(cls, ChimeraObject):
+            logging.warning("Cannot add the class '%s'. It doesn't descend from ChimeraObject." % cls.__name__)
+            return False
+        
+        # run object __init__
         # it runs on the same thread, so be a good boy
         # and don't block manager's thread
         try:
-            obj = cls(self)
-            return register.register(location, obj)
-                        
-        except Exception:
-            logging.exception("Error in %s %s constructor. Exception follows..." %
-                              (register.kind, location))
+            obj = cls()
+        except Exception, e:
+            logging.warning("Error in %s __init__." % location)
+            logging.exception(e)            
             return False
-    
-    def _remove(self, location, register):
 
-        if type(location) == StringType:
-            location = Location(location)
+        # connect with URI
+        obj.__setlocation__(location)
+        uri = self.daemon.connect(obj)
+        index = self.resources.add(location, obj, uri)
         
-        return register.unregister(location)
+        # connect with index (to handle numbered locations)
+        self.daemon.connect(obj, index=str(Location((location.cls, index, location.config))))
+        
+        if start:
+            if not self.start (location):
+                return False
+                
+        return Proxy(uri=uri)
+       
 
-    def _init(self, location, register):
+    def remove (self, location):
+        """
+        Remove the object pointed by 'location' from the system.
 
-        if type(location) == StringType:
-            location = Location(location)
+        @param location: The object to remove.
+        @type: Location or str
 
-        if(not self._pool):
-            logging.debug("There is no thread pool avaiable.")
-            logging.debug("You should create one and set with setPool.")
+        @return: retuns True if sucessfull. False otherwise.
+        @rtype: bool
+        """
+
+        if location not in self.resources:
+            logging.warning ("Location not available: %s." % location)
             return False
 
-        if location not in register:
-            if not self._add(location, register):
-                return False
+        if not self.stop (location):
+            logging.warning ("Couldn't stop resource %s." % location)
+            return False
 
-        logging.debug("Initializing %s %s." % (register.kind, location))
+        resource = self.resources.get(location)
+        self.daemon.disconnect (resource.instance)
+        self.resources.remove (location)        
 
-        # run object init
-        # it runs on the same thread, so be a good boy and don't block manager's thread
+        return True
+      
+
+    def start (self, location):
+        """
+        Start the object pointed by 'location'.
+
+        @param location: The object to start.
+        @type: Location or str
+
+        @return: retuns True if sucessfull. False otherwise.
+        @rtype: bool
+        """
+
+        if location not in self.resources:
+            logging.warning ("Location '%s' was not found." % location)
+            return False
+            
+        logging.warning("Starting %s." % location)            
+
+        resource = self.resources.get(location)
+
+        if resource.instance.getState() == State.RUNNING:
+            return True
+
         try:
-            ret = register[location].init(location.options)
+            ret = resource.instance.__start__()
             if not ret:
-                logging.warning ("%s init returned an error. Removing %s from register." % (location, location))
+                logging.warning ("%s __start__ returned an error. Removing %s from register." % (location, location))
                 return False
-        except Exception:
-            logging.exception("Error running %s %s init method. Exception follows..." %
-                              (register.kind, location))
+            
+        except Exception, e:
+            logging.warning ("Error running %s __start__ method. Exception follows..." % location)
+            logging.exception(e)
             return False
 
         try:
             # FIXME: thread exception handling
             # ok, now schedule object main in a new thread
-            self._pool.queueTask(register[location].main)
-        except Exception:
-            logging.exception("Error running %s %s main method. Exception follows..." %
-                              (register.kind, location))
+            logging.warning("Running %s. __main___." % location)                        
+
+            self.pool.queueTask(resource.instance.__main__)
+
+            resource.instance.__setstate__(State.RUNNING)            
+
+            return True
+
+        except Exception, e:
+            logging.info("Error running %s __main__ method. Exception follows..." % location)
+            logging.exception (e)
+            
+            resource.instance.__setstate__(State.STOPPED)
+            
             return False
 
-        return True
 
-    def _shutdown(self, location, register):
+    def stop (self, location):
+        """
+        Stop the object pointed by 'location'.
 
-        if location not in register:
+        @param location: The object to stop.
+        @type: Location or str
+
+        @return: retuns True if sucessfull. False otherwise.
+        @rtype: bool
+        """
+    
+        if location not in self.resources:
+            logging.warning ("Location not available: %s." % location)
             return False
+
+        logging.warning("Stopping %s." % location)
+            
+        resource = self.resources.get(location)
 
         try:
 
-            logging.debug("Shutting down %s %s." % (register, location))
+            if resource.instance.getState() != State.STOPPED:
+                resource.instance.__stop__ ()
 
-            # run object shutdown method
-            # again: runs on the same thread, so don't block it
-
-            register[location].shutdown()
-            self._remove(location, register)
             return True
 
-        except Exception:
-            logging.exception("Error running %s %s shutdown method. Exception follows..." %
-                              (register.kind, location))
+        except Exception, e:
+            logging.info("Error running %s __stop__ method. Exception follows..." % location)
+            logging.exception (e)
             return False
 
-    # helpers
-
-    def getLocation(self, obj):
-        # FIXME: buggy by definition
-        kinds = [self._controllers, self._instruments, self._drivers]
-
-        def _get (kind):
-            return kind.getLocation (obj)
-
-        ret = map(_get, kinds)
-
-        for item in ret:
-            if item != None:
-                return item
-
-        return None
-            
-
-    # instruments
-
-    def getInstrument(self, location, proxy = True):
-        return self._get(location, self._instruments, proxy)
-    
-    def addInstrument(self, location):
-        return self._add(location, self._instruments)
-
-    def removeInstrument(self, location):
-        return self._remove(location, self._instruments)
-
-    def initInstrument(self, location):
-        return self._init(location, self._instruments)
-
-    def shutdownInstrument(self, location):
-        return self._shutdown(location, self._instruments)
-
-    # controllers
-    
-    def getController(self, location, proxy = True):
-        return self._get(location, self._controllers, proxy)
-
-    def addController(self, location):
-        return self._add(location, self._controllers)
-
-    def removeController(self, location):
-        return self._remove(location, self._controllers)
-
-    def initController(self, location):
-        return self._init(location, self._controllers)
-
-    def shutdownController(self, location):
-        return self._shutdown(location, self._controllers)
-
-    # drivers
-
-    def getDriver(self, location, proxy = True):
-        return self._get(location, self._drivers, proxy)
-
-    def addDriver(self, location):
-        return self._add(location, self._drivers)
-
-    def removeDriver(self, location):
-        return self._remove(location, self._drivers)
-
-    def initDriver(self, location):
-        return self._init(location, self._drivers)
-
-    def shutdownDriver(self, location):
-        return self._shutdown(location, self._drivers)

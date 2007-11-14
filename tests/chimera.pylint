@@ -58,6 +58,7 @@ disable-checker=
 #enable-msg=
 
 # Disable the message(s) with the given id(s).
+# no docstring (someday)
 disable-msg=C0111
 
 

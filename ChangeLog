@@ -1,3 +1,129 @@
+2007-11-14  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* src/chimera/interfaces/lifecycle.py: New state methods
+	names. new methods to get Location, Manager and Proxy.
+
+	* src/chimera/controllers/siteconfig.py:
+	* src/chimera/controllers/chimeramain.py:
+
+	Moved from core. It's not core, it's a normal controller.
+
+	* src/chimera/instruments/tests
+	* src/chimera/instruments/tests/test_telescope.py: New test suite
+	(not complete yet).
+
+	* src/chimera/util/enum.py: New enum class. (PyPI enum)
+
+	* src/chimera/drivers/sbig/__init__.py: Fix relative import use.
+
+	* docs/examples/client.py:
+	* docs/examples/proxy.py:
+	* docs/examples/server.py: New examples.
+
+	* TODO: Added todo's from chimera-ng branch.
+
+2007-11-14  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* core/classloader.py: New classloader. Contains code moved from
+	manager.py and improved exception handling.
+
+	* core/chimeraobject.py: New base class of the system. Implements
+	the ILifecycle interface and inherites from RemoteObject to
+	provide support for RPC and state management.
+
+	* core/remoteobject.py: New class to wrap Pyro's base class.
+
+	* core/resources.py: Replace register.py with a more simple
+	resources management.
+
+	* core/constants.py: Runtime constants needed by the new system.
+
+	* core/util.py: Simple core utilities (used only internally)
+
+	* core/state.py: State management enumeration.
+
+	* core/eventsproxy.py: New event proxy used by ChimeraObject to
+	dispatch events.
+
+	* core/metaobject.py:
+	* core/methodwrapper.py:
+	* core/eventwrapper.py: New metaclass based object system. The
+	Methodwrapper implements a funcionality to add "pseudo" methods as
+	attributes of a given class, this allow use of things like
+	obj.method.begin(), with begin being and method wrapper which will
+	act just like a normal method of obj. EventWrapper use this base
+	to implement operators needed by the event handling.
+
+	* core/register.py: Replaced by resources.py
+	* core/siteconfig.py: Moved to controllers.
+	* core/lifecycle.py: Replaced by ChimeraObject.
+
+	* core/__init__.py:
+	* core/threads.py:
+	* core/log.py
+	* core/version.py
+	Headers fixed.
+
+	* core/interface.py: New MetaObject based interface class.
+
+	* core/config.py:
+	Allow boolean to be converted to integer and float configs.
+	Returns old configuration when setting a new one.
+	Correct default handling on Range options.
+	Accept dict in Config constructor (only objects allowed before)
+	Implemented __iadd__ (dict).
+	Tests moved to the test suite.
+
+	* core/location.py: New constructor, accepting keywords instead of
+	a dict. Lot of small fixes from the test suite alerts.
+
+	* core/manager.py: New implementation using Resources.
+	Manager acts as daemon (wrapping Pyro's Daemon).
+	Complete state management support.
+	No more distictions between objects types.
+	Classloader was moved to a proper class.
+	Full documentation of public methods.
+
+	* core/async.py: New async based on MethodWrapper (not used yet)
+
+
+	* core/proxy.py: New proxy based on Pyro's Dynamic Proxy. Much
+	less magic used.
+
+	* core/event.py: Moved event handling to eventsproxy.py, only the
+	decorator still lives here.
+
+	* core/main.py: New chimera main class used to get proxies. It's
+	basically a helper class to get proxies for objects not manager by
+	our own manager.
+
+
+
+2007-11-14  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* tests
+	* tests/managerhelperwithmainexception.py
+	* tests/test_classloader.py
+	* tests/managerhelperwithstopexception.py
+	* tests/classloaderhelperfoundnotworking1.py
+	* tests/classloaderhelperfoundnotworking2.py
+	* tests/classloaderhelperworking.py
+	* tests/test_chimera_object.py
+	* tests/classloaderhelperfoundwithoutclass.py
+	* tests/test_events.py
+	* tests/managerhelperwithstartexception.py
+	* tests/test_config.py
+	* tests/test_location.py
+	* tests/test_manager.py
+	* tests/test_resources.py
+	* tests/managerhelperwithinitexception.py
+	* tests/managerhelper.py
+	* tests/managerhelperwitherror.py
+	* tests/test_main.py
+	* tests/test_version.py
+
+	New core test suite using nosetests.
+
 2007-10-26  P. Henrique Silva  <henrique@astro.ufsc.br>
 
 	* setup-chimera.sh:

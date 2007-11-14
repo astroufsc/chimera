@@ -1,5 +1,5 @@
-#! /usr/bin/python
-# -*- coding: iso8859-1 -*-
+#! /usr/bin/env python
+# -*- coding: iso-8859-1 -*-
 
 # chimera - observatory automation system
 # Copyright (C) 2006-2007  P. Henrique Silva <henrique@astro.ufsc.br>
@@ -18,74 +18,29 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-import logging
-import time
-import threading
 
-from chimera.core.threads import getThreadPool
+from chimera.core.methodwrapper import MethodWrapperDispatcher
 
-# FIXME: exception handling
-
-def lock(func):
-        func.lock = threading.Lock()
-        return func
+__all__ = ['BeginDispatcher',
+           'EndDispatcher']
 
 
-class AsyncResult(object):
+class BeginDispatcher (MethodWrapperDispatcher):
 
-    def __init__(self, func, pool = None):
+    def __init__ (self, cls, instance, func):
+        MethodWrapperDispatcher.__init__(self, cls, instance, func)
 
-        self.func = func
-        self.result = None
-        self.userCallback = False
+    def special (self, *args, **kwargs):
+        print "[begin]"
+        return self.func(*args, **kwargs)
 
-        self.waiting = False
-        self.sleepTime = 0.1
+    
+class EndDispatcher (MethodWrapperDispatcher):
 
-        self.pool = pool or getThreadPool(10)
+    def __init__ (self, cls, instance, func):
+        MethodWrapperDispatcher.__init__(self, cls, instance, func)
 
-    def __call__(self, *args, **kwargs):
-        logging.debug("calling synchronously %s with %s %s on thread %s" % (self.func,
-									    args, kwargs,
-									    threading.currentThread().getName()))
-
-        if(hasattr(self.func, "lock")):
-            self.func.lock.acquire()
-            
-        result = self.func(*args, **kwargs)
-
-        if(hasattr(self.func, "lock")):
-            self.func.lock.release()
-
-        return result
-
-    def begin(self, *args, **kwargs):
-        logging.debug("calling asynchronously %s with %s %s on thread %s" % (self.func,
-									     args, kwargs,
-									      threading.currentThread().getName()))
-
-        if(not self.pool):
-            logging.error("Cannot run async calls, pool is not seted")
-            return False
-
-        self.userCallback = kwargs.pop('callback', None)
-        self.waiting = True
-
-        self.pool.queueTask(self.func, args, kwargs, self.resultCallback)
-
-        return self
-
-    def end(self):
-        while (self.waiting):
-            #wait
-            time.sleep(self.sleepTime)
-
-        return self.result
-
-    def resultCallback(self, result):
-        self.result = result
-        self.waiting = False
-
-        if(self.userCallback):
-            self.userCallback(self.result)
+    def special (self, *args, **kwargs):
+        print "[end]"
+        return self.func(*args, **kwargs)
 

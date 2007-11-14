@@ -1,0 +1,183 @@
+
+
+from chimera.core.chimeraobject import ChimeraObject
+from chimera.core.methodwrapper import MethodWrapper
+from chimera.core.event         import event
+from chimera.core.state         import State
+from chimera.core.config        import OptionConversionException
+
+from nose.tools import assert_raises
+
+class TestChimeraObject (object):
+
+    # FIXME: use fixtures to put each test on their own method (unit tests in small units!)
+    def test_class_creation (self):
+
+        # 1. simple class (no inheritance)
+        class BaseClass (ChimeraObject):
+
+            __config__ = {"baseConfig": True}
+            
+            @event
+            def baseEvent (self):
+                pass
+            def baseMethod (self):
+                pass
+            def _basePrivateMethod (self):
+                pass
+
+        # NOTE: we don't use getattr to avoid descriptor protocol,
+        #       which will bind the method when we call getattr
+
+        assert isinstance(BaseClass.__dict__['baseMethod'], MethodWrapper)
+        assert isinstance(BaseClass.__dict__['baseEvent'], MethodWrapper)
+
+        assert not isinstance(BaseClass.__dict__['_basePrivateMethod'], MethodWrapper)
+
+        assert BaseClass.__dict__['__config__']['baseConfig'] == True
+
+        # 2. single inheritance
+        class SingleClass (BaseClass):
+
+            __config__ = {"singleConfig": True}
+            
+            @event
+            def singleEvent (self):
+                pass
+            def singleMethod (self):
+                pass
+
+        assert isinstance(SingleClass.__bases__[0].__dict__['baseMethod'], MethodWrapper)
+        assert isinstance(SingleClass.__dict__['singleMethod'], MethodWrapper)
+        assert isinstance(SingleClass.__dict__['singleEvent'], MethodWrapper)        
+
+        assert not isinstance(SingleClass.__bases__[0].__dict__['_basePrivateMethod'], MethodWrapper)
+
+        assert SingleClass.__dict__['__config__']['baseConfig'] == True
+        assert SingleClass.__dict__['__config__']['singleConfig'] == True
+
+        # 3. multiple inheritance
+        class AnotherBase (ChimeraObject):
+            __config__ = {"anotherBaseConfig": True}
+            def anotherBaseMethod (self):
+                pass
+
+        class NonChimeraClass (object):
+            __config__ = {}
+            def nonChimeraMethod (self):
+                pass
+
+        class MultipleClass (SingleClass, AnotherBase, NonChimeraClass):
+            __config__ = {"multipleConfig": True,
+                          "baseConfig": "overriden"}
+
+            def multipleMethod (self):
+                pass
+
+        assert isinstance(MultipleClass.__dict__['multipleMethod'], MethodWrapper)
+        assert isinstance(MultipleClass.__bases__[0].__dict__['singleMethod'], MethodWrapper)
+        assert isinstance(MultipleClass.__bases__[1].__dict__['anotherBaseMethod'], MethodWrapper)
+
+        assert not isinstance(MultipleClass.__bases__[2].__dict__['nonChimeraMethod'], MethodWrapper)        
+
+        assert MultipleClass.__dict__['__config__']['baseConfig'] == "overriden"
+        assert MultipleClass.__dict__['__config__']['singleConfig'] == True
+        assert MultipleClass.__dict__['__config__']['anotherBaseConfig'] == True
+        assert MultipleClass.__dict__['__config__']['multipleConfig'] == True
+
+    def test_method_wrapper (self):
+
+        class Test (ChimeraObject):
+            def doFoo (self, a, b, c = None):
+                assert type(self) == Test
+
+                return True
+
+        t = Test()
+
+        assert t.doFoo(1, 2, 3) == True
+
+
+    def test_config (self):
+
+        class ConfigTest (ChimeraObject):
+
+            __config__ = {"key1": True,
+                          "key2": False}
+
+
+        c = ConfigTest()
+
+        # get
+        assert c["key1"] == True
+        assert c["key2"] == False
+
+        assert c.__getitem__("key1") == True
+        assert c.__getitem__("key2") == False
+
+        # set
+
+        # setitem returns the old item
+        assert c.__setitem__ ("key1", False) == True
+
+        c["key1"] = False        
+        assert c["key1"] == False
+
+        # oops, only bools
+        c["key1"] = True
+        
+        assert_raises(OptionConversionException, c.__setitem__, "key1", "Am I a bool?")
+
+        assert c["key1"] == True
+
+        # oops, what?
+        assert_raises (KeyError, c.__getitem__, "frog")
+        assert_raises (TypeError, c.__getitem__, 100)        
+
+    def test_main (self):
+
+        class MainTest (ChimeraObject):
+
+            def __init__ (self):
+                ChimeraObject.__init__(self)
+
+                self.counter = 0
+
+            def control (self):
+                """
+                Execute ten times a second (10Hz) and stop after 1 s,
+                in other words, when counter = frequency
+                """
+                
+                self.counter += 1
+                return self.counter < self.controlFrequency
+
+        m = MainTest()
+        m.controlFrequency = 10
+
+        assert m.__main__() == True
+        assert m.counter == m.controlFrequency
+
+    def test_location (self):
+
+        class Foo (ChimeraObject): pass
+
+        f = Foo()
+
+        assert f.__setlocation__ ('/Foo/bar') == True
+        assert f.__setlocation__ ('Siberian Lakes') == False
+        assert f.getLocation () == '/Foo/bar'
+
+    def test_state (self):
+        
+        class Foo (ChimeraObject): pass
+
+        f = Foo()
+
+        assert f.getState() == State.STOPPED, "Initial object state MUST be STOPPED"
+
+        # setstate returns oldstate
+        assert f.__setstate__ (State.RUNNING) == State.STOPPED
+        assert f.getState() == State.RUNNING
+        
+        

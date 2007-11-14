@@ -1,5 +1,5 @@
-#! /usr/bin/python
-# -*- coding: iso8859-1 -*-
+#! /usr/bin/env python
+# -*- coding: iso-8859-1 -*-
 
 # chimera - observatory automation system
 # Copyright (C) 2006-2007  P. Henrique Silva <henrique@astro.ufsc.br>
@@ -18,8 +18,9 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-##
-## drivers packaged (as this one) should import the corresponding driver on __init__
-##
 
-from chimera.drivers.sbig.sbig import SBIG
+from chimera.util.enum import Enum
+
+State = Enum ('RUNNING',
+              'STOPPED')
+

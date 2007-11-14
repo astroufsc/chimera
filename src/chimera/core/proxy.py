@@ -1,5 +1,5 @@
-#! /usr/bin/python
-# -*- coding: iso8859-1 -*-
+#! /usr/bin/env python
+# -*- coding: iso-8859-1 -*-
 
 # chimera - observatory automation system
 # Copyright (C) 2006-2007  P. Henrique Silva <henrique@astro.ufsc.br>
@@ -18,109 +18,120 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+
+try:
+    import Pyro.core
+except ImportError, e:
+    raise RuntimeError ("You must have Pyro version >= 3.6 installed.")
+
+from chimera.core.remoteobject        import RemoteObject
+from chimera.core.constants           import (MANAGER_DEFAULT_HOST, MANAGER_DEFAULT_PORT,
+                                              EVENTS_PROXY_NAME)
+
 import logging
-import threading
-
-from chimera.core.async import AsyncResult
-
-class Proxy(object):
-
-    def __init__(self, obj, threadPool = None):
-
-        self._obj = obj
-        self._pool = threadPool
-
-    def __getattribute__(self, attr):
-
-        obj = object.__getattribute__(self, '_obj')
-        pool = object.__getattribute__(self, '_pool')
-
-        # event handling
-        try:
-            events = object.__getattribute__(obj, '__eventsProxy__')
-            if attr in events:
-                return events[attr]
-        except AttributeError:
-            # no event handling definition, treat as a normal attribute
-            pass
 
 
-        methods = []
-        # look for methods and return an AsyncResult or just a plain non-callable attribute
-        if hasattr (obj, '__getattr__'):
-            methods.append (object.__getattribute__ (obj, '__getattr__'))
+__all__ = ['Proxy',
+           'ProxyMethod']
+
+           
+class Proxy (Pyro.core.DynamicProxy):
+
+    def __init__ (self, location = None, host = None, port = None, uri = None):
+        Pyro.core.initClient (banner=0)
+
+        if location:
+            host = host or MANAGER_DEFAULT_HOST
+            port = port or MANAGER_DEFAULT_PORT
             
-        if hasattr (obj, '__getattribute__'):
-            methods.append (object.__getattribute__ (obj, '__getattribute__'))
+            uri = Pyro.core.PyroURI(host=host, objectID=str(location), port=port)
 
-        methods.append (lambda attr: object.__getattribute__ (obj, attr))
-
-        for method in methods:
-            try:
-                value = method(attr)
-
-                if callable (value):
-                    return AsyncResult(value, pool)
-
-                # non callable, just returns
-                return value
-            except AttributeError, e:
-                pass
+        Pyro.core.DynamicProxy.__init__ (self, uri)
         
+    def ping (self):
 
-        raise AttributeError
+        try:
+            return self.__ping__ ()
+        except Pyro.errors.ProtocolError, e:
+            return 0
+
+    def __getattr__ (self, attr):
+        if attr == "__getinitargs__":
+            raise AttributeError()
+            
+        return ProxyMethod(self, attr)
 
     def __repr__ (self):
-        return "<Proxy: %s for object %s>" % (hash(self), object.__getattribute__(self, '_obj'))
+        return "<%s proxy at %s>" % (self.URI, hex(id(self)))
+
+    def __str__ (self):
+        return "[proxy for %s]" % self.URI
 
 
-if __name__ == '__main__':
+class ProxyMethod (object):
 
-    import time
-    import threading
-    
-    from chimera.core.threads import ThreadPool
+    def __init__ (self, proxy, method):
 
-    class Simples(object):
+        self.proxy  = proxy
+        self.method = method
+        self.sender = self.proxy._invokePYRO
 
-        def __init__(self):
-            self.coisa = "haha"
+        self.__name__ = method
 
-        def nome(self):
-            print "nome:", threading.currentThread().getName()
-            return "nome: result (" + threading.currentThread().getName() + ")"
+    def __repr__ (self):
+        return "<%s.%s method proxy at %s>" % (self.proxy.URI,
+                                               self.method,
+                                               hex(hash(self)))
 
-        def outroNome(self):
-            time.sleep(5)
-            print "outroNome:", threading.currentThread().getName()
-            return "outroNome: result("+threading.currentThread().getName()+")"
+    def __str__ (self):
+        return "[method proxy for %s %s method]" % (self.proxy.URI,
+                                                    self.method)
 
-        def nomeCallback(self, result):
-            print "callback:", result
+    # synchronous call, just call method using our sender adapter
+    def __call__ (self, *args, **kwargs):
+        return self.sender (self.method, args, kwargs)
 
+    # async pattern
+    def begin (self, *args, **kwargs):
+        return self.sender ("%s.begin" % self.method, args, kwargs)
 
-    try:
+    def end (self, *args, **kwargs):
+        return self.sender ("%s.end" % self.method, args, kwargs)
 
-        pool = ThreadPool(5)
+    # event handling
 
-        p1 = Proxy(Simples(), pool)
+    def __do (self, other, action):
 
-        # calls nome synchronously in the main thread
-        r1 = p1.nome()
-        print r1
+        handler = {"topic"    : self.method,
+                   "handler"  : {"proxy" : "",
+                                "method": ""}
+                   }
 
-        # calls nome asynchronously in a new thread, will
-                # call p1.nomeCallback when nome finishes
-        r2 = p1.nome.begin(callback=p1.nomeCallback)
+        # REMEBER: Return a copy of this wrapper as we are using +=
+        
+        # Can't add itself as a subscriber
+        if other == self:
+            return self
+        
+        # passing a proxy method?
+        if not isinstance (other, ProxyMethod):
+            return self
 
-        # calls outroNome asynchronously in a new thread
-        r3 = p1.outroNome.begin()
+        handler["handler"]["proxy"] = other.proxy.URI
+        handler["handler"]["method"] = str(other.__name__)
+   
+        try:
+            self.sender ("%s.%s" % (EVENTS_PROXY_NAME, action), (handler,), {})
+        except Exception, e:
+            logging.debug ("Cannot %s to topic '%s' using proxy '%s'."
+                           "No event proxy on the object." % (action, self.method, self.proxy))
 
-        # block until r3 (nome) ends
-        print r3.end()
+        return self
 
-        print p1.coisa
+    def __iadd__ (self, other):
+        return self.__do (other, "subscribe")
 
-    finally:
-        pool.joinAll()
+    def __isub__ (self, other):
+        return self.__do (other, "unsubscribe")
+
 

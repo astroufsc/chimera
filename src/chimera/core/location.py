@@ -1,5 +1,5 @@
-#! /usr/bin/python
-# -*- coding: iso8859-1 -*-
+#! /usr/bin/env python
+# -*- coding: iso-8859-1 -*-
 
 # chimera - observatory automation system
 # Copyright (C) 2006-2007  P. Henrique Silva <henrique@astro.ufsc.br>
@@ -18,92 +18,108 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+
 import re
 import logging
 
-from types import DictType, ListType, TupleType, StringType
+from types import DictType, StringType
 
 
 class Location(object):
+    """
+    Location represents an specific resource available on the system.
+    This location is the resource address onthe system.
 
-    def __init__(self, location):
+    Location objects are immutable, so please, respect this or hash operations
+    will fail.
+    """
 
-        self._re =  re.compile('/+(?P<class>[\w]*)/+(?P<name>[\w]*)\??(?P<options>[\w\S\s=,]*)')
+    _re = re.compile('/+(?P<class>[\w]*)/+(?P<name>[\w]*)\??(?P<config>[\w\S\s=,]*)')   
 
-        self._class = "class"
-        self._name = "name"
-        self._options = {}
+    def __init__(self, location = None, **options):
 
-        self._valid = True
+        self._class  = None
+        self._name   = None
+        self._config = None
+        self._valid = False
 
-        try:
-            if type(location) == DictType:
-                self._class         = location["class"]
-                self._name          = location["name"]
-                self._options       = location["options"]
-                
-            elif type(location) in [ListType, TupleType]:
-                self._class         = location[1]
-                self._name          = location[2]
-                self._options       = location[3]
+        # simple string
+        if isinstance(location, StringType):
+            (self._class, self._name, self._config) = self.parse(location)
 
-            elif type(location) == StringType:
+            if self._class and self._name and type(self._config) == DictType:
+                self._valid = True
 
-                (self._class, self._name, self._options) = matches = self.parse(location)
+        # copy constructor
+        elif isinstance(location, Location):
+            self._class  = location.cls
+            self._name   = location.name
+            self._config = location.config
+            self._valid  = location.isValid()
 
-        except (KeyError, IndexError), e:
-            self._valid = False
+        # from dict
+        else:
+            # get from options dict (cls, name, config)
+            l = "/%s/%s" % (options.get('cls', ''), options.get('name', ''))
+
+            self._class, self._name, _ = self.parse(l)
+            self._config = options.get('config', {})
+            
+            if self._class and self._name and type(self._config) == DictType:
+                self._valid = True
 
     cls     = property(lambda self: self._class)
     name    = property(lambda self: self._name)
-    options = property(lambda self: self._options)
+    config  = property(lambda self: self._config)
                 
     def isValid(self):
-
         return self._valid
 
     def parse(self, location):
 
         matches = self._re.search(location)
 
-        if matches:
+        if not matches:
+            logging.warning ("Cannot parse '%s' as a valid location." % location)
+            return (None, None, None)
 
-            cls, name, tmpOpts = matches.groups()
+        cls, name, tmpConfig = matches.groups()
 
-            opts = {}
+        conf = {}
 
-            if tmpOpts:
-                for opt in tmpOpts.split(","):
+        if tmpConfig:
+
+            for opt in tmpConfig.split(","):
+                try:
                     k, v = opt.split("=")
-                    opts[k.strip()] = v.strip()
-
-        else :
-            self._valid = False
-            cls  = "class"
-            name = "name"
-            opts = {}
-
-            logging.debug("Invalid location %s." % location)
-
-        return (cls, name, opts)
+                    conf[k.strip()] = v.strip()
+                except ValueError:
+                    # split returned less/more than 2 srings
+                    logging.warning ("Cannot parse '%s' as a valid location. "
+                                     "Invalid config dict: '%s'" % (location, tmpConfig))
+                    
+                    return (None, None, None)
+                
+        return (cls, name, conf)
 
     def __eq__(self, loc):
 
-        return (loc._class == self._class) and \
-               (loc._name == self._name)
-    
-    def __repr__(self):
-        _str = "/%s/%s" % (self._class,
-                           self._name)
+        if not isinstance (loc, Location):
+            loc = Location (loc)
 
+            if not loc.isValid ():
+                return False
+
+        return (loc.cls == self.cls) and \
+               (loc.name == self.name)
+
+    def __ne__ (self, loc):
+        return not self.__eq__ (loc)
+
+    def __hash__ (self):
+        return (hash(self.cls) ^ hash(self.name))
+
+    def __repr__(self):
+        _str = "/%s/%s" % (self._class, self._name)
         return _str
 
-    def get(self):
-        return self.__repr__(self)
-
-if __name__ == '__main__':
-
-    l = Location('/Sample/s?device=/dev/ttyS0,model=25.txt')
-    print l.cls
-    print l.name
-    print l.options

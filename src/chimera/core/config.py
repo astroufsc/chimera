@@ -1,5 +1,5 @@
-#! /usr/bin/python
-# -*- coding: iso8859-1 -*-
+#! /usr/bin/env python
+# -*- coding: iso-8859-1 -*-
 
 # chimera - observatory automation system
 # Copyright (C) 2006-2007  P. Henrique Silva <henrique@astro.ufsc.br>
@@ -41,8 +41,11 @@ class Option (object):
     def set (self, value):
         
         try:
+            oldvalue = self._value
+            
             self._value = self._checker.check(value)
-
+            
+            return oldvalue
         except OptionConversionException, e:
             logging.debug ("Error setting %s: %s." % (self._name, str (e)))
             raise e
@@ -76,21 +79,21 @@ class IntChecker (Checker):
         # if we can't get one from "value"
 
         # simple case
-        if type (value) in (IntType, LongType, FloatType):
+        if type (value) in (IntType, LongType, FloatType, BooleanType):
             return int (value)
 
         if type (value) == StringType:
-
-            # try to convert to int
+            # try to convert to int (use float first and then cast (loosely)
             try:
-                tmp = int (value)
+                tmp = float (value)
+                tmp = int(tmp)
                 return tmp
             except ValueError:
                 # couldn't convert, nothing to do
                 raise OptionConversionException ("couldn't convert '%s' to int value." % value)
 
         # any other type are sillently ignored
-        raise OptionConversionException ("couldn't convert %s to int." % str (type (value)))
+        raise OptionConversionException ("couldn't convert '%s' to int." % str (type (value)))
 
 
 class FloatChecker (Checker):
@@ -103,7 +106,7 @@ class FloatChecker (Checker):
         # if we can't get one from "value"
 
         # simple case
-        if type (value) in (FloatType, IntType, LongType):
+        if type (value) in (FloatType, IntType, LongType, BooleanType):
             return float (value)
 
         if type (value) == StringType:
@@ -230,8 +233,8 @@ class RangeChecker (Checker):
     def __init__ (self, value):
         Checker.__init__ (self)
 
-        self._min = min (value)
-        self._max = max (value)
+        self._min = value[0]
+        self._max = value[1]
 
         if type (value[0]) == FloatType:
             self._checker = FloatChecker ()
@@ -251,6 +254,7 @@ class RangeChecker (Checker):
 
         else:
 
+            # inclusive
             if (tmp >= self._min) and (tmp <= self._max):
                 return tmp
             else:
@@ -261,9 +265,13 @@ class RangeChecker (Checker):
 
 class Config (object):
 
-    def __init__ (self, options):
-        object.__setattr__ (self, '_options', self._readOptions (options))
+    def __init__ (self, obj):
 
+        if type(obj) == DictType:
+            self._options = self._readOptions (obj)
+        else:
+            self._options = self._readOptions (obj.__config__)
+            
     def _readOptions (self, opt):
 
         options = {}
@@ -320,7 +328,7 @@ class Config (object):
 
         # if value exists, run template checker and set _config
         if name in self:
-            self._options[name].set (value)
+            return self._options[name].set (value)
 
         # rant about invalid option
         else:
@@ -329,22 +337,18 @@ class Config (object):
        
 
     def __iter__ (self):
-
         return self.iterkeys()
 
     def iterkeys (self):
-
         return self._options.__iter__()
 
     def itervalues (self):
-
         for name in self._options:
             yield self._options[name].get ()
 
     def iteritems (self):
-
         for name in self._options:
-            yield (name, self._options[name].get ())
+            yield (name, self._options[name].get())
 
     def keys (self):
         return [key for key in self.iterkeys()]
@@ -358,46 +362,12 @@ class Config (object):
     def __iadd__ (self, other):
 
         if type (other) not in (Config, DictType):
-            return
+            return self
 
-        for name, value in other.items():
-            self[name] = value
+        if type(other) == DictType:
+            other = Config(other)
+
+        for name, value in other._options.items():
+            self._options[name] = value
 
         return self
-
-    def __getattr__ (self, name):
-
-        if name in self:
-            return self[name]
-
-        else:
-            logging.debug ("invalid option ('%s')." % name)
-            raise AttributeError
-
-    def __setattr__ (self, name, value):
-
-        if name in self:
-            self[name] = value
-        else:
-            logging.debug ("invalid option ('%s')." % name)
-            raise AttributeError
-
-    
-if __name__ == '__main__':
-
-    test_options = {
-        "device"	: "/dev/ttyS0",
-        "ccd"		: ["imaging", "tracking"],
-        "exp_time"	: (0.1, 6000.0),
-        "shutter"	: ["open", "close", "leave"],
-        "readout_aborted": True,
-        "readout_mode"	: 1,
-        "date_format"	: "%d%m%y",
-        "file_format"	: "$num-$observer-$date-%objname",
-        "directory"	: "/home/someuser/images",
-        "save_on_temp"	: False,
-        "seq_num"	: 1,
-        "observer"	: "observer name",
-        "obj_name"	: "object name"}
-
-    c = Config (test_options)

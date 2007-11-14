@@ -1,5 +1,5 @@
-#! /usr/bin/python
-# -*- coding: iso8859-1 -*-
+#! /usr/bin/env python
+# -*- coding: iso-8859-1 -*-
 
 # chimera - observatory automation system
 # Copyright (C) 2006-2007  P. Henrique Silva <henrique@astro.ufsc.br>
@@ -17,6 +17,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
 
 import threading
 import logging
@@ -38,7 +39,7 @@ class ThreadPool:
     accepts tasks that will be dispatched to the next available
     thread."""
     
-    def __init__(self, numThreads):
+    def __init__(self, numThreads = 10):
 
         """Initialize the thread pool with numThreads workers."""
         
@@ -188,6 +189,7 @@ class ThreadPoolThread(threading.Thread):
                     logging.debug("Locking %s" % cmd)
 
                 logging.debug("Running %s on thread %s" % (cmd, self.getName()))
+
                 if callback is None:
                     cmd(*args, **kwargs)
                 else:
@@ -203,15 +205,4 @@ class ThreadPoolThread(threading.Thread):
         
         self.__isDying = True
 
-
-__tp = None
-
-def getThreadPool(n = 10):
-
-    global __tp
-
-    if not __tp:
-        __tp = ThreadPool(n)
-
-    return __tp
 
