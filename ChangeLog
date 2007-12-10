@@ -1,3 +1,17 @@
+2007-12-10  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* core/threads.py
+	* core/classloader.py
+	* core/chimeraobject.py
+	* core/config.py
+	* core/eventsproxy.py
+	* core/location.py
+	* core/manager.py
+	* core/async.py
+	* core/proxy.py
+	* core/log.py
+	* core/main.py: Updated to the new log idiom.
+
 2007-11-14  P. Henrique Silva  <henrique@astro.ufsc.br>
 
 	* src/chimera/interfaces/lifecycle.py: New state methods

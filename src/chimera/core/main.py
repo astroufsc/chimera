@@ -22,12 +22,17 @@ from chimera.core.location  import Location
 from chimera.core.proxy     import Proxy
 from chimera.core.constants import MANAGER_LOCATION
 
+import chimera.core.log
+
 import logging
 import string
 
 
 __all__ = ['Chimera',
            'chimera']
+
+
+log = logging.getLogger(__name__)
 
 
 class Chimera (object):
@@ -62,13 +67,13 @@ class Locator (object):
         loc = Location(cls = self.cls, name = name, config = config)
        
         if not manager.ping():
-            logging.warning ("Can't contact '%s' manager at '%s'." % (loc, manager.URI.address))
+            log.warning ("Can't contact '%s' manager at '%s'." % (loc, manager.URI.address))
             return False
         
         proxy = manager.getProxy(loc)
 
         if not proxy:
-            logging.warning ("There is no '%s' object at '%s'." % (loc, manager.URI.address))
+            log.warning ("There is no '%s' object at '%s'." % (loc, manager.URI.address))
             return False
         else:
             return proxy

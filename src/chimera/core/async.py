@@ -31,7 +31,6 @@ class BeginDispatcher (MethodWrapperDispatcher):
         MethodWrapperDispatcher.__init__(self, cls, instance, func)
 
     def special (self, *args, **kwargs):
-        print "[begin]"
         return self.func(*args, **kwargs)
 
     
@@ -41,6 +40,5 @@ class EndDispatcher (MethodWrapperDispatcher):
         MethodWrapperDispatcher.__init__(self, cls, instance, func)
 
     def special (self, *args, **kwargs):
-        print "[end]"
         return self.func(*args, **kwargs)
 

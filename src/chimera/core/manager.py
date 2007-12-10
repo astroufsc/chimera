@@ -31,6 +31,8 @@ from chimera.core.util          import getManagerURI
 from chimera.core.state         import State
 
 
+import chimera.core.log
+
 from chimera.core.constants import MANAGER_DEFAULT_HOST, MANAGER_DEFAULT_PORT, MANAGER_LOCATION
 
 try:
@@ -47,7 +49,11 @@ import time
 import atexit
 
 
+
 __all__ = ['Manager']
+
+
+log = logging.getLogger(__name__)
 
 
 class ManagerServer (Pyro.core.Daemon):
@@ -105,8 +111,8 @@ class Manager (RemoteObject):
     
     def __init__(self, host = None, port = None):
         RemoteObject.__init__ (self)
-
-        logging.warning("Starting manager.")
+        
+        log.info("Starting manager.")
 
         self.resources = ResourcesManager ()
         self.classLoader = ClassLoader ()
@@ -180,7 +186,7 @@ class Manager (RemoteObject):
         # die, but only if we are alive ;)
         if not self.died.isSet():
 
-            logging.warning("Shuting down manager.")
+            log.info("Shuting down manager.")
 
             # stop objects
             for location in self.resources:
@@ -195,7 +201,7 @@ class Manager (RemoteObject):
             self.pool.joinAll()
             self.died.set()
         
-            logging.warning("Manager finished.")
+            log.info("Manager finished.")
 
     def wait (self):
         """
@@ -239,7 +245,7 @@ class Manager (RemoteObject):
             location = Location(location)
 
         if not location.isValid():
-            logging.warning ("Invalid location: %s" % location)
+            log.warning ("Invalid location: %s" % location)
             return False
 
         # get the class
@@ -248,8 +254,8 @@ class Manager (RemoteObject):
         try:
             cls = self.classLoader.loadClass(location.cls, path)
         except ClassLoaderException, e:
-            logging.warning ("Error while looking for '%s' class." % location.cls)
-            logging.exception (e)
+            log.warning ("Error while looking for '%s' class." % location.cls)
+            log.exception (e)
             return False
             
         return self.addClass (cls, location.name, config, start)
@@ -278,16 +284,16 @@ class Manager (RemoteObject):
         location = Location(cls = cls.__name__, name = name)
 
         if not location.isValid():
-            logging.warning ("Invalid location: %s" % location)
+            log.warning ("Invalid location: %s" % location)
             return False
 
         if location in self.resources:
-            logging.warning ("Location '%s' already in the system. Only one allowed (Tip. change the name!)." % location)
+            log.warning ("Location '%s' already in the system. Only one allowed (Tip. change the name!)." % location)
             return False
 
         # check if it's a valid ChimeraObject
         if not issubclass(cls, ChimeraObject):
-            logging.warning("Cannot add the class '%s'. It doesn't descend from ChimeraObject." % cls.__name__)
+            log.warning("Cannot add the class '%s'. It doesn't descend from ChimeraObject." % cls.__name__)
             return False
         
         # run object __init__
@@ -296,8 +302,8 @@ class Manager (RemoteObject):
         try:
             obj = cls()
         except Exception, e:
-            logging.warning("Error in %s __init__." % location)
-            logging.exception(e)            
+            log.warning("Error in %s __init__." % location)
+            log.exception(e)            
             return False
 
         # connect with URI
@@ -327,11 +333,11 @@ class Manager (RemoteObject):
         """
 
         if location not in self.resources:
-            logging.warning ("Location not available: %s." % location)
+            log.warning ("Location not available: %s." % location)
             return False
 
         if not self.stop (location):
-            logging.warning ("Couldn't stop resource %s." % location)
+            log.warning ("Couldn't stop resource %s." % location)
             return False
 
         resource = self.resources.get(location)
@@ -353,10 +359,10 @@ class Manager (RemoteObject):
         """
 
         if location not in self.resources:
-            logging.warning ("Location '%s' was not found." % location)
+            log.warning ("Location '%s' was not found." % location)
             return False
             
-        logging.warning("Starting %s." % location)            
+        log.info("Starting %s." % location)            
 
         resource = self.resources.get(location)
 
@@ -366,18 +372,18 @@ class Manager (RemoteObject):
         try:
             ret = resource.instance.__start__()
             if not ret:
-                logging.warning ("%s __start__ returned an error. Removing %s from register." % (location, location))
+                log.warning ("%s __start__ returned an error. Removing %s from register." % (location, location))
                 return False
             
         except Exception, e:
-            logging.warning ("Error running %s __start__ method. Exception follows..." % location)
-            logging.exception(e)
+            log.warning ("Error running %s __start__ method. Exception follows..." % location)
+            log.exception(e)
             return False
 
         try:
             # FIXME: thread exception handling
             # ok, now schedule object main in a new thread
-            logging.warning("Running %s. __main___." % location)                        
+            log.info("Running %s. __main___." % location)                        
 
             self.pool.queueTask(resource.instance.__main__)
 
@@ -386,8 +392,8 @@ class Manager (RemoteObject):
             return True
 
         except Exception, e:
-            logging.info("Error running %s __main__ method. Exception follows..." % location)
-            logging.exception (e)
+            log.info("Error running %s __main__ method. Exception follows..." % location)
+            log.exception (e)
             
             resource.instance.__setstate__(State.STOPPED)
             
@@ -406,10 +412,10 @@ class Manager (RemoteObject):
         """
     
         if location not in self.resources:
-            logging.warning ("Location not available: %s." % location)
+            log.warning ("Location not available: %s." % location)
             return False
 
-        logging.warning("Stopping %s." % location)
+        log.info("Stopping %s." % location)
             
         resource = self.resources.get(location)
 
@@ -421,7 +427,7 @@ class Manager (RemoteObject):
             return True
 
         except Exception, e:
-            logging.info("Error running %s __stop__ method. Exception follows..." % location)
-            logging.exception (e)
+            log.info("Error running %s __stop__ method. Exception follows..." % location)
+            log.exception (e)
             return False
 

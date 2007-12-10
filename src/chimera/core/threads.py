@@ -19,8 +19,11 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 
+import chimera.core.log
+
 import threading
 import logging
+
 
 from time import sleep, time
 
@@ -32,6 +35,9 @@ except NameError:
     True = not False
 
 #threading._VERBOSE = True
+
+log = logging.getLogger(__name__)
+
 
 class ThreadPool:
 
@@ -186,9 +192,9 @@ class ThreadPoolThread(threading.Thread):
             else:
                 if(hasattr(cmd, "lock")):
                     cmd.lock.acquire()
-                    logging.debug("Locking %s" % cmd)
+                    log.debug("Locking %s" % cmd)
 
-                logging.debug("Running %s on thread %s" % (cmd, self.getName()))
+                log.debug("Running %s on thread %s" % (cmd, self.getName()))
 
                 if callback is None:
                     cmd(*args, **kwargs)
@@ -197,7 +203,7 @@ class ThreadPoolThread(threading.Thread):
 
                 if(hasattr(cmd, "Lock")):
                     cmd.lock.release()
-                    logging.debug("unlocking %s" % cmd)
+                    log.debug("unlocking %s" % cmd)
 
     def goAway(self):
 

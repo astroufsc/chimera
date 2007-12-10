@@ -18,10 +18,12 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-
-from chimera.core.proxy               import Proxy
+from chimera.core.proxy import Proxy
 
 import logging
+import chimera.core.log
+
+log = logging.getLogger(__name__)
 
 
 __all__ = ['EventsProxy']
@@ -73,12 +75,12 @@ class EventsProxy:
                 #proxy._setOneway ([handler["method"]]) should be faster but results say no!
                 dispatcher (*args, **kwargs)
             except AttributeError, e:
-                logging.debug("Invalid proxy method ('%s %s') for '%s' handler." % \
+                log.debug("Invalid proxy method ('%s %s') for '%s' handler." % \
                               (handler["proxy"], handler["method"], topic))
                 continue
             except Exception, e:
                 # FIXME: handle Pyro's errors
-                logging.exception (e)
+                log.exception (e)
                 continue
 
         return True

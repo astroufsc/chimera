@@ -30,6 +30,9 @@ from chimera.core.location import Location
 
 from chimera.interfaces.lifecycle import ILifeCycle
 
+import chimera.core.log
+
+import logging
 import time
 from types import StringType
 
@@ -53,6 +56,9 @@ class ChimeraObject (RemoteObject, ILifeCycle):
         self.__state__ = State.STOPPED
 
         self.__location__ = ""
+
+        # logging
+        self.log = logging.getLogger(self.__module__)
 
         # Hz
         self.controlFrequency = 2

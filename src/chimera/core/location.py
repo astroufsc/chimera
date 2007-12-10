@@ -20,7 +20,10 @@
 
 
 import re
+
 import logging
+import chimera.core.log
+log = logging.getLogger(__name__)
 
 from types import DictType, StringType
 
@@ -80,7 +83,7 @@ class Location(object):
         matches = self._re.search(location)
 
         if not matches:
-            logging.warning ("Cannot parse '%s' as a valid location." % location)
+            log.warning ("Cannot parse '%s' as a valid location." % location)
             return (None, None, None)
 
         cls, name, tmpConfig = matches.groups()
@@ -95,8 +98,8 @@ class Location(object):
                     conf[k.strip()] = v.strip()
                 except ValueError:
                     # split returned less/more than 2 srings
-                    logging.warning ("Cannot parse '%s' as a valid location. "
-                                     "Invalid config dict: '%s'" % (location, tmpConfig))
+                    log.warning ("Cannot parse '%s' as a valid location. "
+                                 "Invalid config dict: '%s'" % (location, tmpConfig))
                     
                     return (None, None, None)
                 

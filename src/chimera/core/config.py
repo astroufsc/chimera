@@ -19,10 +19,12 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 
-import logging
-
 from types import (IntType, FloatType, StringType, LongType,
                    DictType, TupleType, ListType, BooleanType)
+
+import logging
+import chimera.core.log
+log = logging.getLogger(__name__)
 
 
 class OptionConversionException (Exception):
@@ -47,7 +49,7 @@ class Option (object):
             
             return oldvalue
         except OptionConversionException, e:
-            logging.debug ("Error setting %s: %s." % (self._name, str (e)))
+            log.debug ("Error setting %s: %s." % (self._name, str (e)))
             raise e
 
     def get (self):
@@ -321,7 +323,7 @@ class Config (object):
             return self._options[name].get ()
 
         else:
-            logging.debug ("invalid option ('%s')." % name)
+            log.debug ("invalid option ('%s')." % name)
             raise KeyError
 
     def __setitem__ (self, name, value):
@@ -332,7 +334,7 @@ class Config (object):
 
         # rant about invalid option
         else:
-            logging.debug ("invalid option ('%s')." % name)
+            log.debug ("invalid option ('%s')." % name)
             raise KeyError
        
 

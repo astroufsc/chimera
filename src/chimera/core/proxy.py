@@ -28,11 +28,15 @@ from chimera.core.remoteobject        import RemoteObject
 from chimera.core.constants           import (MANAGER_DEFAULT_HOST, MANAGER_DEFAULT_PORT,
                                               EVENTS_PROXY_NAME)
 
+import chimera.core.log
 import logging
 
 
 __all__ = ['Proxy',
            'ProxyMethod']
+
+
+log = logging.getLogger(__name__)
 
            
 class Proxy (Pyro.core.DynamicProxy):
@@ -123,8 +127,8 @@ class ProxyMethod (object):
         try:
             self.sender ("%s.%s" % (EVENTS_PROXY_NAME, action), (handler,), {})
         except Exception, e:
-            logging.debug ("Cannot %s to topic '%s' using proxy '%s'."
-                           "No event proxy on the object." % (action, self.method, self.proxy))
+            log.debug ("Cannot %s to topic '%s' using proxy '%s'."
+                       "No event proxy on the object." % (action, self.method, self.proxy))
 
         return self
 
