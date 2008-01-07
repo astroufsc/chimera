@@ -1,5 +1,15 @@
 2008-01-07  P. Henrique Silva  <henrique@astro.ufsc.br>
 
+	* src/chimera/util/coord.py: New coord class.
+	* src/chimera/util/tests
+	* src/chimera/util/tests/test_coord.py
+	* src/chimera/util/tests/bsc.dat: Coord class tests with a copy of
+	BSC catalog.
+
+	* src/chimera/util/position.py: Future Position class (a pair of Coords).
+
+2008-01-07  P. Henrique Silva  <henrique@astro.ufsc.br>
+
 	* src/chimera/controllers/siteconfig.py Moved.
 	* src/chimera/controllers/chimeramain.py: Moved.
 

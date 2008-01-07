@@ -1,5 +1,5 @@
-#! /usr/bin/python
-# -*- coding: iso8859-1 -*-
+#! /usr/bin/end python
+# -*- coding: iso-8859-1 -*-
 
 # chimera - observatory automation system
 # Copyright (C) 2006-2007  P. Henrique Silva <henrique@astro.ufsc.br>
@@ -18,418 +18,414 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-from types import FloatType, IntType, StringType
 
-import re
 import math
+import re
+from types import StringType, LongType, IntType, FloatType
 
-from math import cos, sin, tan, acos, asin, atan
+from chimera.util.enum import Enum
 
-#FIXME: add strfcoord
 
-class Coord(object):
+__all__ = ['Coord']
 
-    """
-    Coordenada angular
 
-    A coordenada e armazenada em um float. Metdos convertem a coordenada para as diferentes representacoes.
+State = Enum("HMS", "DMS", "D", "H", "R", "AS")
 
-    O construtor utiliza um parser que e capaz de identificar os seguintes formatos de coordenadas:
 
-    100		(int ou str)   decimal ou radiano
-    100.09	(float ou str) decimal ou radiano
-    10 00 00	(str) horario ou sexagesimal
-    +10 00 00.0	(str) horario ou sexagesimal
-    10:00:00.0	(str) horario ou sexagesimal
-    
-    SIMBAD examples:
-    20 54 05.689 +37 01 17.38
-    10:12:45.3-45:17:50
-    15h17m-11d10m
-    15h17+89d15
-    275d11m15.6954s+17d59m59.876s
-    12.34567h-17.87654d
-    350.123456d-17.33333d <=> 350.123456 -17.33333
-    
-    (not all supported)
-    """
+class CoordUtil (object):
 
-    deg2rad = math.pi/180.0
-    rad2deg = 180.0/math.pi
+    COORD_RE = re.compile('((?P<dd>(?P<sign>[+-]?)[\s]*\d+)[dh]?[\s:]*)?((?P<mm>\d+)[m]?[\s:]*)?((?P<ss>\d+)(?P<msec>\.\d*)?([\ss]*))?')
 
-    def __init__(self, coord):
-
-        self._coord = self._parse(coord)
-
-    def _parse(self, coord):
-
-        _re = re.compile('(?P<grau>[+-]?[ ]*\d+)[: ]+(?P<min>\d+)[: ]+(?P<seg>\d+\.?\d*)')
-
-        if isinstance(coord, Coord):
-            return coord.get()
+    @staticmethod
+    def d2hms (d):
+        hhs = d/15.0
+        hh = int(hhs)
+        mms = (hhs - hh)*60
+        mm = int(mms)
+        ss = (mms - mm)*60
         
-	if type(coord) in [FloatType, IntType]:
-		return float(coord)
+        return (hh, mm, ss)
 
-	if type(coord) == StringType:
+    @staticmethod
+    def d2dms (d):
+        dd  = int(d)
+        mms = (d-dd) * 60
+        mm  = int(mms)
+        ss  = (mms - mm) * 60
+
+        sign = 1
+        if d < 0: sign *= -1
+
+        return (sign, dd, abs(mm), abs(ss))
+
+    @staticmethod
+    def dms2d (dms):
+
+        # float/int case
+        if type(dms) in [FloatType, IntType, LongType]:
+            return float(dms)
+
+        if type(dms) == StringType:
 
             # try to match the regular expression
-            matches = _re.search(coord)
-
+            matches = CoordUtil.COORD_RE.search(dms)
+            
             if matches:
-                grau, min, seg = matches.groups()
+                m_dict = matches.groupdict()
+                sign=m_dict["sign"] or '+'                
+                dd = m_dict["dd"] or 0
+                mm = m_dict["mm"] or 0
+                ss = m_dict["ss"] or 0
+                msec = m_dict["msec"] or 0
 
-                _coord = abs(float(grau)) + float(min)/60.0 + float(seg)/3600.0
+                try:
+                    dd = int(dd)
+                    mm = int(mm)
+                    ss = int(ss)
+                    msec = float(msec)
+                except ValueError:
+                    raise ValueError("Invalid coordinate: '%s'" % dms)
 
-                if float(grau) < 0:
-                    _coord = -(_coord)
+                d = abs(dd) + mm/60.0 + (ss+msec)/3600.0
 
-                return _coord
+                if sign == '-':
+                    d *= -1
 
-            # try to convert right to float
-            try:
-                return float(coord)
-            except ValueError:
-                return False
+                return d
+                
+            else:
+                # brute force float conversion
+                try:
+                    return float(dms)
+                except ValueError:
+                    raise ValueError("Invalid coordinate: '%s'" % dms)
 
-        # when everithing fails, returns 0.0
-        return 0.0
+    @staticmethod
+    def hms2d (hms):
+        d = CoordUtil.dms2d(hms)
+        return d*15.0
 
-    def get(self):
-        return self._coord
+    @staticmethod
+    def hms2str (c, format=""):
+        return '%02d:%02d:%.2f' % c.HMS
 
-    def sexagesimal(self, dsep = " ", msep="", sign = True):
-        msep = msep or dsep
-        
-        return self._str(dsep, msep, 1.0, sign=sign)
+    @staticmethod
+    def dms2str (c, format=""):
+        sign, dd, mm, ss = c.DMS
 
-    def hor(self, hsep = " ", msep = "", sign=True):
-        msep = msep or hsep
-        
-        return self._str(hsep, msep, 15.0, sign=sign)
+        s = ''
+        if sign > 0: s = '+'
 
-    def _str(self, sep1 = " ", sep2 = " ", factor = 1.0, sign = True):
+        return '%s%02d:%02d:%.2f' % (s, dd, mm, ss)
 
-        coord = abs(self.get())/factor
-        
-        _grau = int(coord)
-        _min  = (coord - _grau) * 60
-        _seg  = (_min - int(_min)) * 60
+    @staticmethod
+    def strfcoord (c, format=None):
+        """strfcoord acts like sprintf family, allowing arbitrary
+        coordinate conversion to str following the given template
+        format.
 
-        _min = int(_min)
+        Components (conversion specifiers, in sprintf language, like
+        d, f, an so on):
 
-        if self.get() < 0:
-            _grau = -(_grau)
+        d: decimal degrees (always with sign)
+        m: minutes
+        s: seconds (can be float)
+        h: hours
 
-        # FIXME: please, do strfcoord and put this out of here!
-        if sign:
-            return '%+02d%s%02d%s%02.2f' % (_grau, sep1, _min, sep2, _seg)
-        else:
-            return '%02d%s%02d%s%02.2f' % (_grau, sep1, _min, sep2, _seg)
+        Examples:
 
-    def strfcoord (self, format):
+        'normal' dms string: format='%02d:%02m:%.2s'
+        'normal' hms string: format='%02h:%02m:%.2s'
+        """
         pass
 
-    def rad(self):
-        return self.get() * Coord.deg2rad
 
-    def arcsec(self):
-        return self.get() * 3600.0
+class Coord (object):
+    """L{Coord} represents a single component coordinate.
 
-    def decimal(self):
-        return self.get()
+    It support all the common angle representations found in
+    astronomy. This class is intended to be used as part of low level
+    manipulations (like in drivers). User wanting high level support
+    (like distance computations, reference frames conversions) should
+    use L{Position}.
 
-    def __str__(self):
-        return self.sexagesimal()
+    Supported representations and their associated data types.
 
-    def __repr__(self):
-        return str(self.get())
+    r (radian): float
+    h (decimal hours): float
+    d (decimal degrees): float
+    dms (sexagesimal degrees) -> (sign: int, degrees: int, minutes: int, seconds: float) tuple
+    hms (sexagesimal hours) -> (hours: int, minutes: int, seconds: float) -> tuple
+    as (arc seconds): float
 
-    def __add__(self, other):
-        # other could be int, float, str or another Coord
-        # we use _parse to transform whatever __add__ gets to a float and then we do our work
+    This class have very particular semantics:
 
-        other = self._parse(other)
+    0) This class is immutable, in other words, every operation that
+    need to change this object will return a new one.
 
-        return Coord(self.get() + other)
+    1) object creation: As there is six different representations,
+    instead of remember how parameters should be passed to __init__
+    constructor, use Coord.from* forms to leave your code away of
+    low-level code when creating Coord objects. from* acts like
+    factories of Coords.
 
-    def __sub__(self, other):
-        other = self._parse(other)
+    2) primitive conversions: to get primitive data (like int, long,
+    float or tuples) from Coord use the attribute access (D, HMS, DMS,
+    and so on). This returns a primitive value, that can't be
+    converted back to another representation (at least not directly as
+    when using to* forms).
 
-        return Coord(self.get() - other)
+    2.1) Another way to get a primitive value is using Python's
+    standard factories (int, float, tuple). Coord convert itself to
+    required factory type.
 
-    def __mul__(self, other):
-        return Coord(self.get()*other)
+    3) object conversions: To get a copy of the Coord using another
+    representation, use to* factories. This will return a new instance
+    of Coord, using the given representation. This is useful if you
+    need to store different representations of the same coordinate
+    independently of each other.
 
-    def __radd__(self, other):
+
+    Internals
+    ====
+
+    Coord use a simple state machine to present coordinates in the
+    desired representation. Internaly, Coord store coordinates in
+    decimal degrees no mather which is the state of the object. States
+    matter only when using one of primitive getters, string
+    representations or when doing math with Coord objects.
+
+    As Coord use a single internal representation, only conversion
+    from/to this one are required. No matter which representation you
+    want, its just one pass to get there. To speed-up most time
+    consuming conversions (dms->d, hms-d, and vice versa), and using
+    the fact that Coord is immutable, Coord store recent computations
+    in a cache and return this version when asked for that
+    representation again.
+
+    Only math operations (apart of factories, of course) return new
+    Coord objects.
+    """
+
+    deg2rad = 180/math.pi
+    rad2deg = math.pi/180
+
+    # internal state conversions from/to internal
+    # representation (decimal degrees)
+    from_state = {State.HMS: CoordUtil.hms2d,
+                  State.DMS: CoordUtil.dms2d,
+                  State.D  : lambda d  : float(d),
+                  State.H  : lambda h  : h*15.0,
+                  State.R  : lambda r  : r * Coord.rad2deg,
+                  State.AS : lambda as : as/3600.0}
+    
+    to_state = {State.HMS: CoordUtil.d2hms, 
+                State.DMS: CoordUtil.d2dms,
+                State.D  : lambda d: float(d),
+                State.H  : lambda d: d/15.0,
+                State.R  : lambda d: d*Coord.deg2rad,
+                State.AS : lambda d: d*3600.0}
+
+
+    # DON'T CALL THIS CONSTRUCTOR DIRECTLY, USE from* FORMS
+    def __init__ (self, v, state):
+        self.v = v
+        self.state = state
+        self.cache = {}
+
+    #
+    # factories
+    #
+    
+    @staticmethod
+    def fromHMS (c):
+        v = Coord.from_state[State.HMS](c)
+        return Coord(v, State.HMS)
+    
+    @staticmethod
+    def fromDMS (c):
+        v = Coord.from_state[State.DMS](c)
+        return Coord(v, State.DMS)
+
+    @staticmethod
+    def fromD (c):
+        return Coord._from_float_to(c, State.D)
+
+    @staticmethod
+    def fromH (c):
+        return Coord._from_float_to(c, State.H)
+
+    @staticmethod
+    def fromR (c):
+        return Coord._from_float_to(c, State.R)
+
+    @staticmethod
+    def fromAS (c):
+        return Coord._from_float_to(c, State.AS)
+
+    @staticmethod
+    def fromState (c, state):
+        ctr = getattr(Coord, 'from%s' % state)
+        if hasattr(ctr, '__call__'):
+            return ctr(c)
+        else:
+            raise ValueError("Trying to create Coord "
+                             "from unknown state %s" % state)
+
+    @staticmethod
+    def _from_float_to (c, state):
+        
+        if type(c) == StringType:
+            try:
+                c = float(c)
+            except ValueError:
+                raise ValueError("Invalid coordinate: '%s'" % str(c))
+
+        c = Coord.from_state[state](c)
+        return Coord(c, state)
+
+
+    #
+    # conversion factories
+    #
+    
+    def toHMS (self):
+        return Coord(self.D, State.HMS)
+
+    def toDMS (self):
+        return Coord(self.D, State.DMS)
+    
+    def toD (self):
+        return Coord(self.D, State.D)
+
+    def toH (self):
+        return Coord(self.D, State.H)
+
+    def toR (self):
+        return Coord(self.D, State.R)
+
+    def toAS (self):
+        return Coord(self.D, State.AS)
+
+
+    #
+    # primitive getters (properties, actually)
+    #
+
+    HMS = property(lambda self: self.get(State.HMS))
+    DMS = property(lambda self: self.get(State.DMS))
+    D   = property(lambda self: self.get(State.D))
+    H   = property(lambda self: self.get(State.H))
+    R   = property(lambda self: self.get(State.R))
+    AS  = property(lambda self: self.get(State.AS))
+
+    def get (self, state=None):
+
+        state = state or self.state
+
+        if state in self.cache:
+            return self.cache[state]
+
+        v = Coord.to_state[state](self.v)
+
+        # save to cache
+        self.cache[state] = v
+        
+        return v
+
+    #
+    # string conversions
+    #
+
+    def __repr__ (self):
+        return '<%s object %s (%s) at %s>' % (Coord.__name__, str(self),
+                                              self.state, hex(id(self))[:-1])
+    
+    def __str__ (self):
+        if self.state == State.DMS:
+            return CoordUtil.dms2str(self)
+        elif self.state == State.HMS:
+            return CoordUtil.hms2str(self)
+        else:
+            return '%.2f' % self.get()
+
+    #
+    # primitive conversion
+    #
+
+    def __int__ (self):
+        if self.state in [State.DMS, State.HMS]:
+            return int(self.get(State.D))
+        else:
+            return int(self.get())
+
+    def __float__ (self):
+        if self.state in [State.DMS, State.HMS]:
+            return float(self.get(State.D))
+        else:
+            return float(self.get())
+
+    def __iter__ (self):
+        if self.state in [State.DMS, State.HMS]:
+            for v in self.get():
+                yield v
+        else:
+            yield self.get()
+
+    #
+    # math
+    #
+    
+    def __neg__ (self):
+        return Coord(-self.D, self.state)
+
+    def __pos__ (self):
+        return Coord(+self.D, self.state)
+
+    def __abs__ (self):
+        return Coord(abs(self.D), self.state)
+
+    def __add__ (self, other):
+        if not isinstance(other, Coord):
+            other = Coord.fromState(other, self.state)
+        return Coord(self.D + other.D, self.state)
+
+    def __radd__ (self, other):
         return self.__add__(other)
 
-    def __rsub__(self, other):
-        return self.__sub__(other)
+    def __sub__ (self, other):
+        if not isinstance(other, Coord):
+            other = Coord.fromState(other, self.state)
+        return Coord(self.D - other.D, self.state)
 
-    def __rmul__(self, other):
+    def __rsub__ (self, other):
+        if not isinstance(other, Coord):
+            other = Coord.fromState(other, self.state)
+        return Coord(other.D - self.D, self.state)
+
+    def __mul__ (self, other):
+        if not isinstance(other, Coord):
+            other = Coord.fromState(other, self.state)
+        return Coord(self.D * other.D, self.state)
+
+    def __rmul__ (self, other):
         return self.__mul__(other)
 
-    def __iadd__(self, other):
+    def __div__ (self, other):
+        if not isinstance(other, Coord):
+            other = Coord.fromState(other, self.state)
+        return Coord(self.D / other.D, self.state)
 
-        other = self._parse(other)
+    def __rdiv__ (self, other):
+        if not isinstance(other, Coord):
+            other = Coord.fromState(other, self.state)
+        return Coord(other.D / self.D, self.state)
 
-        self._coord = self.get() + other
+    def __truediv__ (self, other):
+        return self.__div__(other)
 
-        return self
+    def __rtruediv__ (self, other):
+        return self.__rdiv__(other)
 
-    def __isub__(self, other):
 
-        other = self._parse(other)
-
-        self._coord = self.get() - other
-
-        return self
-
-    def __imul__(self, other):
-        self._coord = self.get() * other
         
-        return self
-
-    def __lt__(self, other):
-        other = self._parse(other)
-
-        return self.get() < other
-
-    def __le__(self, other):
-        other = self._parse(other)
-        
-        return self.get() <= other
-                    
-    def __eq__(self, other):
-        other = self._parse(other)
-
-        return self.get() == other
-
-    def __ne__(self, other):
-        other = self._parse(other)
-        
-        return self.get() != other
-
-    def __gt__(self, other):
-        other = self._parse(other)
-        
-        return self.get() > other
-
-    def __ge__(self, other):
-        other = self._parse(other)
-
-        return self.get() >= other
-
-class Ra(Coord):
-    def __init__(self, coord):
-        
-        Coord.__init__(self, coord)
-
-        # convert from hours to degrees
-        self._coord = self.get() * 15.0
-
-    def __str__(self):
-        return self.hor()
-
-LST = Ra
-
-class Dec(Coord):
-    def __init__(self, coord):
-        Coord.__init__(self, coord)
-
-    def __str__(self):
-        return self.sexagesimal()
-
-class Az(Coord):
-    def __init__(self, coord):
-        Coord.__init__(self, coord)
-
-    def __str__(self):
-        return str(self.decimal())
-
-class Alt(Coord):
-    def __init__(self, coord):
-        Coord.__init__(self, coord)
-
-    def __str__(self):
-        return str(self.decimal())
-
-class Lat(Coord):
-    def __init__(self, coord):
-        Coord.__init__(self, coord)
-
-    def __str__(self):
-        return self.sexagesimal()
-
-class Long(Coord):
-    def __init__(self, coord):
-        Coord.__init__(self, coord)
-
-class SkyPoint(object):
-
-    def __init__(self, ra, dec):
-
-        if isinstance(ra, Coord):
-            self.ra = ra
-        else:
-            self.ra = Ra(ra)
-
-        if isinstance(dec, Coord):
-            self.dec = dec
-        else:
-            self.dec = Dec(dec)
-
-    def __str__(self):
-        return "%s %s" % (self.ra, self.dec)
-
-    def _dist(self, obj, r = False):
-
-        xr1 = self.ra.rad()
-        yr1 = self.dec.rad()
-
-        cosb = math.cos (yr1)
-        pos10 = math.cos (xr1) * cosb
-        pos11 = math.sin (xr1) * cosb
-        pos12 = math.sin (yr1)
-
-        xr2 = obj.ra.rad()
-        yr2 = obj.dec.rad()
-        
-        cosb = math.cos (yr2)
-        pos20 = math.cos (xr2) * cosb
-        pos21 = math.sin (xr2) * cosb
-        pos22 = math.sin (yr2)
-
-        # /* Modulus squared of half the difference vector */
-        w = 0.0
-        w = w + (pos10 - pos20) * (pos10 - pos20)
-        w = w + (pos11 - pos21) * (pos11 - pos21)
-        w = w + (pos12 - pos22) * (pos12 - pos22)
-        
-        w = w / 4.0
-        if (w > 1.0): w = 1.0
-
-        # /* Angle beween the vectors */
-        diff = 2.0 * math.atan2 (math.sqrt (w), math.sqrt (1.0 - w))
-        diff = diff * Coord.rad2deg
-
-        return diff*3600
-
-    def _distp(self, obj):
-
-        _ra  = (obj.ra.decimal() - self.ra.decimal())
-        _ra *= self._cosdeg(0.5*(obj.dec.decimal() - self.dec.decimal()))
-        
-        _dec = (obj.dec.decimal() - self.dec.decimal())
-
-        return SkyPoint(_ra/15.0, _dec)
-
-    def _cosdeg(self, angle):
-        resid = abs(angle % 360.0)
-
-        if resid == 0.0:
-            return 1.0
-        elif resid == 90.0:
-            return 0.0
-        elif resid == 180.0:
-            return -1.0
-        elif resid == 270.0:
-            return 0.0
-
-        return math.cos(angle*Coord.deg2rad)
-            
-    def dist(self, obj):
-        return self._dist(obj)
-
-    def distp(self, obj):
-	return self._distp(obj)
-
-    def near(self, other, dist):
-
-        d = self.dist(other)
-
-        # distance could be in simple float/int arcsec or another Coord object
-        dist = Coord(dist)
-
-        return d <= dist.arcsec()
-
-# FIXME: bizarre! please don't try to understand it.
-class LocalPoint(SkyPoint):
-
-    def __init__(self, az, alt):
-
-        if isinstance(az, Coord):
-            self.az = az
-            self.ra = self.az
-        else:
-            self.az = Az(az)
-            self.ra = self.az
-
-        if isinstance(alt, Coord):
-            self.alt = alt
-            self.dec = self.alt            
-        else:
-            self.alt = Alt(alt)
-            self.dec = self.alt
-            
-
-def equatorialToLocal (ra, dec, latitude, lst):
-
-    if not isinstance (ra, Ra):
-        ra = Ra(ra)
-
-    if not isinstance (dec, Dec):
-        dec = Dec(dec)
-
-    if not isinstance (latitude, Lat):
-        latitude = Lat(latitude)
-
-    if not isinstance (lst, LST):
-        lst = LST(lst)
-
-    print ra, dec, latitude, lst
-
-    h = lst - ra
-
-    alt = asin ( (sin(dec.rad())*sin(latitude.rad())) + (cos(dec.rad())*cos(latitude.rad())*cos(h.rad())))
-    az = acos ( (sin(dec.rad()) - sin(latitude.rad())*sin(alt)) / (cos(latitude.rad())*cos(alt)))
-
-    return (alt * (180./math.pi), az  * (180./math.pi))
-
-if __name__ == '__main__':
-    #     m5 = SkyPoint("15 18 33.75", "+02 04 57.7")
-    #     m51 = SkyPoint("13 29 52.37", "+47 11 40.8")
-
-    #     print m5
-    #     print m51
-
-    #     print m5.dist(m51)
-    #     print m5.distp(m51)
-
-    #a = Point("00:00:00", "00:00:00")
-    #b = Point("12:00:00", "45:00:00")
-
-    #print a.dist(b)
-
-    #    v = a.distp(b)
-    #print v.ra.arcsec(), v.dec.arcsec()
-
-    #    print a
-    #    print b
-    
-    #    print a + v
-
-    
-    siriusA = SkyPoint("06 45 08.9173", "-16 42 58.017")
-    #siriusB = SkyPoint("06 45 09", "-16 43 06")
-    #siriusC = SkyPoint("06 45 06", "-16 42 00")
-
-    #print siriusA.dist(siriusB)
-    #print siriusA.dist(siriusC)
-
-    #print siriusA.near(siriusB, '00 00 08.1')
-    #print siriusA.near(siriusB, '00 01 30') 
-
-    print siriusA.ra.hor("h ", "m ")
-    print siriusA.dec.sexagesimal("* ","' ") 
