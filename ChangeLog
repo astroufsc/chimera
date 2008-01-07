@@ -1,4 +1,16 @@
 2008-01-07  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* src/chimera/controllers/siteconfig.py Moved.
+	* src/chimera/controllers/chimeramain.py: Moved.
+
+	* src/chimera/controllers/site
+	* src/chimera/controllers/site/__init__.py
+	* src/chimera/controllers/site/main.py
+	* src/chimera/controllers/site/config.py: Updated to new Manager
+	model and moved to better place. Config now is Controller specific
+	(moved from core).
+
+2008-01-07  P. Henrique Silva  <henrique@astro.ufsc.br>
 	* src/chimera/interfaces/camera.py
 	* src/chimera/interfaces/filterwheel.py
 	* src/chimera/interfaces/__init__.py

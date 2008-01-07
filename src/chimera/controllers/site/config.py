@@ -20,49 +20,44 @@
 
 
 import logging
+import random
 
 from xml.parsers.expat import ExpatError, ErrorString
 
 import chimera.util.etree.ElementTree as ET
 
+from chimera.core.location import Location
 
-class SiteConfig(object):
+
+class SiteConfig (object):
 
     def __init__(self):
-
         self.__sites = []
         self.__instruments = []
         self.__controllers = []
         self.__drivers     = []
 
     def getInstruments(self):
-
         return self.__instruments
 
     def getControllers(self):
-
         return self.__controllers
 
     def getSites(self):
-
         return self.__sites
 
     def getDrivers(self):
-
         return self.__drivers
         
     def read(self, config):
-
         self._read(config)
 
     def _read(self, config):
 
         try:
-
             root = ET.parse(config)
             
         except IOError, e:
-
             logging.error("Error opening %s (%s)." % (config, e.strerror))
             return False
 
@@ -73,9 +68,6 @@ class SiteConfig(object):
                                                                                   ErrorString(e.code)))
             return False
         
-        # ok, let's go!
-        # FIXME: refactor (tá na cara o que fazer... o código está todo repetido)
-
         # sites (ok, just one site makes sense by now, but we can expand this later)
         sites = root.findall("site")
         
@@ -89,68 +81,48 @@ class SiteConfig(object):
 
             self.__sites.append(tmpSite)
 
-        # get all instruments
+        # instruments
         insts = root.findall("instruments/instrument")
+        self.__instruments = self._parseSection (insts)
 
-        for inst in insts:
-            tmpInst = {}
-            tmpInst["name"]    = inst.get("name", "inst" + str(len(self.__instruments) + 1))
-            tmpInst["class"]   = inst.get("class", object)
-            tmpInst["options"] = {}
-
-            # get all options
-            opts = inst.findall("option")
-
-            for opt in opts:
-                tmpKey   = opt.get("name")
-                tmpValue =  opt.get("value")
-                tmpInst["options"][tmpKey] = tmpValue
-
-            self.__instruments.append(tmpInst)
-
-        ctrls = root.findall("controllers/controller")
-
-        for ctrl in ctrls:
-
-            tmpCtrl = {}
-            tmpCtrl["name"]    = ctrl.get("name", "ctrl" + str(len(self.__controllers) + 1))
-            tmpCtrl["class"]   = ctrl.get("class", object)
-            tmpCtrl["options"] = {}
-
-            # get all options
-            opts = ctrl.findall("option")
-
-            for opt in opts:
-                tmpKey   = opt.get("name")
-                tmpValue =  opt.get("value")
-                tmpCtrl["options"][tmpKey] = tmpValue
-
-            self.__controllers.append(tmpCtrl)
-
+        # controllers
+        ctrls = root.findall("controllers/controller")        
+        self.__controllers = self._parseSection (ctrls)
 
         # get all drivers
         drvs = root.findall("drivers/driver")
+        self.__drivers = self._parseSection (drvs)
 
-        for drv in drvs:
-            tmpDrv = {}
-            tmpDrv["name"]    = drv.get("name", "drv" + str(len(self.__drivers) + 1))
-            tmpDrv["class"]   = drv.get("class", object)
-            tmpDrv["options"] = {}
+    def _parseSection (self, entries):
+
+        ret = []
+
+        for entry in entries:
+            tmpEntry = {}
+            tmpEntry["host"]   = entry.get("host", None)
+            tmpEntry["port"]   = entry.get("port", None)
+            tmpEntry["cls"]    = entry.get("class", None)
+            tmpEntry["name"]   = entry.get("name", "%s-%d" % (tmpEntry["cls"], random.randint(1, 1e9)))
+            tmpEntry["options"] = {}
 
             # get all options
-            opts = drv.findall("option")
+            opts = entry.findall("option")
 
             for opt in opts:
                 tmpKey   = opt.get("name")
                 tmpValue =  opt.get("value")
-                tmpDrv["options"][tmpKey] = tmpValue
-                
-            self.__drivers.append(tmpDrv)
+                tmpEntry["options"][tmpKey] = tmpValue
+
+            loc = Location(**tmpEntry)
+            if loc.isValid():
+                ret.append(loc)
+
+        return ret
 
     def dump(self):
 
         def printIt(l):
-            s = "%s (%s)\n" % (l["name"], l["class"])
+            s = "%s (%s)\n" % (l["name"], l["cls"])
             print s,"="*len(s)
             print
             
