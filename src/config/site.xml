@@ -6,7 +6,7 @@
 
 <drivers>
 
-   <driver name="sbig" class="SBIG">
+   <driver name="sbig" class="SBIG" host='200.100.50.25' port='1000'>
 	<option name="device"		value="usb"/>
 	<option name="ccd"		value="imaging"/>
 	<option name="exp_time"		value="10"/>
@@ -34,7 +34,7 @@
 <instruments>
 
    <instrument name="st8" class="Camera">
-      <option name="driver" value="/SBIG/sbig"/>
+      <option name="driver" value="host:1000/SBIG/sbig"/>
    </instrument>
 
 </instruments>

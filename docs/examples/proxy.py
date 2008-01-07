@@ -1,45 +1,53 @@
 
-from chimera.core.chimera  import chimera
+from chimera.core.main     import chimera
 from chimera.core.proxy    import Proxy
-from chimera.core.cmanager import Manager
+from chimera.core.manager  import Manager
 
-# create a new manager (this is a singleton, so only one
-# copy will be created even if you call Manager() again)
+# our example object
+from minimo import Minimo
 
+
+# create a new manager (default host (localhost), defaulr port 7666 or try next 4 from default)
 manager = Manager()
 
 #
 # 1. Adding objects and getting a proxy
 # 
 
-# just add a fake Telescope class (returns a valid proxy)
-tel = manager.start ("/Telescope/fake")
+# just add a min Minimoescope class (returns a valid proxy)
+minimo = manager.addClass(Minimo, "min", start=True)
 
-# synchronous "slew" (this will trigger slewComplete and our slew_cb will be called
-tel.slew ("ra", "dec")
-
-# asynchronous "slew"
-tel.slew.begin ("ra", "dec")
-
-# get remote configuration
-print "[config] slew_rate:", tel["slew_rate"]
-
+# synchronous "doFoo"
+minimo.doFoo ("ra dec")
 
 #
 # 2. There are other ways to get proxy
 #
 
 # from manager (this ensure that the object exists on the manager, see ChimeraProxy below)
-tel = manager.getProxy ("/Telescope/fake")
-tel.slew ("ra", "dec")
+minimo = manager.getProxy ("/Minimo/min")
+minimo.doFoo ("ra dec")
 
 # if you don't know the name of the instance no problem, pass an index starting with 0
-tel = manager.getProxy ("/Telescope/0")
-tel.slew ("ra", "dec")
+minimo = manager.getProxy ("/Minimo/0")
+minimo.doFoo ("ra dec")
+
+minimo = manager.getProxy (Minimo, "min")
+minimo.doFoo ("ra dec")
+
+# if you don't know the name of the instance no problem, pass an index starting with 0
+minimo = manager.getProxy (Minimo)
+minimo.doFoo ("ra dec")
+
+minimo = manager.getProxy (Minimo, host="localhost", port=9090)
+minimo.doFoo ("ra dec")
+
+minimo = manager.getProxy ("localhost:9090/Minimo/0")
+minimo.doFoo ("ra dec")
 
 #
 # 3. Proxies for remote objects
-# now, if you want a proxy for an object running on ther server?
+# now, if you want a proxy for an object running on other server?
 # manager are local bounded objects, and manages only local objects,
 # to get Proxy for another objects, there are 2 options:
 #
@@ -50,12 +58,12 @@ tel.slew ("ra", "dec")
 # that the object exists on the manager side (again, see ChimeraProxy below)
 #
 
-tel = chimera.Telescope("fake", host='localhost')
-tel.slew ("ra", "dec")
+minimo = chimera.Minimo("min", host='localhost')
+minimo.doFoo ("ra dec")
 
 # this will use index as no name was passed
-tel = chimera.Telescope(host='localhost')
-tel.slew ("ra", "dec")
+minimo = chimera.Minimo(host='localhost')
+minimo.doFoo ("ra dec")
 
 #
 # 3. 2. ChimeraProxy objects.
@@ -65,18 +73,19 @@ tel.slew ("ra", "dec")
 #
 
 # proxy without manager interface (fastest, don't ask manager about it)
-tel = Proxy ("/Telescope/fake")
-tel.slew ("ra", "dec")
+minimo = Proxy ("/Minimo/min")
+minimo.doFoo ("ra dec")
 
-tel = Proxy ("/Telescope/0")
-tel.slew ("ra", "dec")
+minimo = Proxy ("/Minimo/0")
+minimo.doFoo ("ra dec")
 
-tel = Proxy ("/Telescope/fake", host = 'localhost')
-tel.slew ("ra", "dec")
+minimo = Proxy ("/Minimo/min", host = 'localhost')
+minimo.doFoo ("ra dec")
 
-tel = Proxy ("/Telescope/0",    host = 'localhost')
-tel.slew ("ra", "dec")
+minimo = Proxy ("/Minimo/0", host = 'localhost')
+minimo.doFoo ("ra dec")
 
-# OK, enough proxies, but they are REALLY important, its the ONLY way to get an object,
+# OK, enough proxies, they are REALLY important, its the ONLY way to get an object,
 # so you really need to know how to get them.
 
+manager.shutdown()

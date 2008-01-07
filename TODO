@@ -2,54 +2,29 @@
 Core
 ====
 
-* adicionar coding a todos os scripts - DONE
-* adicionar #! /usr/bin/env python a todos os scripts - DONE
-* fazer manager LOCAL! - DONE
-* melhorar API do manager - DONE
-* suporte de lifecyle. - DONE
-* permitir adicao de objetos por classe (callbacks) - DONE
-* melhorar object creator e suportar herança (interface based) como no antigo. - DONE
-* melhorar handling de eventos - DONE
 * asynchronous tasks
-* refazer Site/Chimera e site config
-* definir API do logger
-* PEP 8
+* criar simuladores de drivers
 
 * Add 3rd party import checks 
-* checar se objeto implementa ILifeCycle ao tentar adicionar ao manager
 * log: mostrar quem originou o problema e não onde o log foi criado
-* permitir adicao de objetos no SiteConfiguration
-* salvar SiteConfiguration para arquivo
 * melhorar log e handling de erros nos drivers (error and logging database)
-
-
 
 Controladores
 =============
 
 * filtro e foco: ao trocar o filtro, o controlador deve procurar qual
    a configuracao de foco adequado, focar, testar (configuravel), e se
-   nao houver configuracao de foco, deve preparar  uma e salvar no
-   banco de configuracoes 
-
+   nao houver configuracao de foco, deve preparar uma e salvar no
+   banco de configuracoes
 * FITS headers
 * adicionar controlador de configuração e acionamento remoto, para permitir configuração
  ex.: dado um sistema rodando, o controlador admin permite obter a
    instancia da classe Manager responsavel, assim o cliente poderá
    controlar o sistema , adicionar objetos e modificar os existentes.
 
-
-Scripts
-=======
-
-* checar argumentos do Site (-c -i -d)
-* script de inicializacao: baseado no Site       
-
 Drivers
 =======
 
-* controle de eixos individuais
-* finalizar driver meade
 * documentar config's
 * melhorar detecçao e seleção dos modos de leitura
 * melhorar mapeamento entre posicoes e nomes dos filtros

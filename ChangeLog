@@ -1,5 +1,29 @@
 2008-01-07  P. Henrique Silva  <henrique@astro.ufsc.br>
 
+	* tests/run-pychecker.sh
+	* tests/run-pylint.sh
+	* tests/run-tests.sh: Updated runners.
+
+	* TODO
+	* TODO.SPRINTS
+	* TODO.DONE: Updated TODO's.
+
+	* docs/chimera.epydoc
+	* docs/examples/minimo.py
+	* docs/examples/client.py
+	* docs/examples/proxy.py
+	* docs/examples/example.xml
+	* docs/examples/server.py: More examples.
+
+	* src/scripts/chimera: Main chimera script updated to new Manager
+	model.
+
+	* setup-chimera.sh: Improved to allow source use.
+
+	* src/config/site.xml: Added new host/port example.
+
+2008-01-07  P. Henrique Silva  <henrique@astro.ufsc.br>
+
 	* src/chimera/util/coord.py: New coord class.
 	* src/chimera/util/tests
 	* src/chimera/util/tests/test_coord.py

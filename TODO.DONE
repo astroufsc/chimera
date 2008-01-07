@@ -1,0 +1,30 @@
+Core
+====
+
+* adicionar coding a todos os scripts - DONE
+* adicionar #! /usr/bin/env python a todos os scripts - DONE
+* fazer manager LOCAL! - DONE
+* melhorar API do manager - DONE
+* suporte de lifecyle. - DONE
+* permitir adicao de objetos por classe (callbacks) - DONE
+* melhorar object creator e suportar herança (interface based) como no antigo. - DONE
+* melhorar handling de eventos - DONE
+* refazer Site/Chimera e site config - DONE
+* definir API do logger - DONE
+* adicionar suporte à host/porta nos Locations na forma: host:porta/Class/instance - DONE
+* adicionar suporte às novas Locations no site.xml - DONE
+* adicionar suporte à objetos remotos no getProxy do Manager (migrar de main:Locator). - DONE
+* suportar lazy binding no getProxy - DONE
+* checar se objeto implementa ILifeCycle ao tentar adicionar ao manager - DONE
+
+
+Scripts
+=======
+
+* checar argumentos do Site (-c -i -d) - DONE
+
+Drivers
+=======
+
+* controle de eixos individuais - DONE
+* finalizar driver meade - DONE

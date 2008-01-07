@@ -2,6 +2,11 @@
 
 TESTS_DIR=`dirname $0`
 
-export PYTHONPATH=$TESTS_DIR/../src/:$TESTS_DIR/../../Pyro-3.7/
+export PYTHONPATH=$TESTS_DIR/../src/:$PYTHONPATH
 
-pylint --rcfile=$TESTS_DIR/chimera.pylint chimera >| $TESTS_DIR/pylint.html
+if [[ ! `which pylint` ]]; then
+    echo "You don't have pylint on the PATH."
+    exit 1
+fi
+
+pylint --rcfile=$TESTS_DIR/chimera.pylint $@ chimera >| $TESTS_DIR/chimera.pylint.html

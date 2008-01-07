@@ -1,0 +1,46 @@
+Cronograma - 2008
+=================
+
+sprint 0 - [07 - 17/01/2008] [10-2 dias]
+
+instrumentos suportados:
+
+telescopio      - Meade
+camera          - SBIG (ST7 USB, ST8 LPT, STL-6303 USB)
+roda de filtros - SBIG (CFW8/ST-L)
+focalizador     - Optec NGF-S
+cúpula          - LNA
+
+* converter BasicLifeCycle para ChimeraObject
+* usar exceções nos driver
+* modificar uso das configurações
+* adicionar suporte a eventos usando proxy
+* implementar novas interfaces
+
+sprint 1 - [17 - 25/01/2008] [8-2 dias]
+
+tarefas:
+
+* Catálogos
+* Coordenadas
+* Astrometria
+* Tempo
+* Extração de objetos
+* Matching/WCS
+
+sub-tarefas (demonstrações de conceitos/POC's):
+
+* Auto-mapeamento do céu (gerar tabelas de erros em funcao de az/alt)
+* Treinador de PE[C] (gerar tabelas de erro em x/y (arcsec) em função da fase do sem-fim)
+* Auto-focus (focar telescópio usando alguma métrica e fitando uma parábola)
+* Auto-guiagem (gerar pulsos ra/dec em função dos erros x/y, talvez usando informações de wcs ou calibração para lidar com a orientação).
+* Apontador (máquina de apontamento, entra ra, dec, epoca, sai coordenada corrigida)
+
+sprint 2 - [25/01 - 04/02/2008] [11-4 dias]
+
+* Interface web!
+
+sprint 3 - [02/2008-04/2008] [3 meses]
+
+* mais interface!
+* ordenador/agendador/observador

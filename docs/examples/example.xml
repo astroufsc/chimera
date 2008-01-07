@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+
+<chimera>
+
+   <site name="UFSC" latitude="-22.0" longitude="-40.0" altitude="1000"/>
+
+   <instruments>
+
+      <instrument name="minimo" class="Minimo">
+         <option name="option1" value="test value"/>
+      </instrument>
+
+   </instruments>
+
+</chimera>
