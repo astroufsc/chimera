@@ -19,7 +19,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 
-from chimera.core.classloader import ClassLoader, ClassLoaderException
+from chimera.core.classloader import ClassLoader
 from chimera.core.resources   import ResourcesManager
 from chimera.core.threads     import ThreadPool
 from chimera.core.location    import Location
@@ -29,6 +29,13 @@ from chimera.core.remoteobject  import RemoteObject
 from chimera.core.proxy         import Proxy
 from chimera.core.util          import getManagerURI
 from chimera.core.state         import State
+
+from chimera.core.exceptions   import InvalidLocationException, \
+                                      ObjectNotFoundException,  \
+                                      NotValidChimeraObjectException, \
+                                      ChimeraObjectException, \
+                                      ClassLoaderException, \
+                                      ChimeraException
 
 
 import chimera.core.log
@@ -47,7 +54,8 @@ import threading
 import signal
 import time
 import atexit
-
+import sys
+from types import StringType
 
 
 __all__ = ['Manager']
@@ -56,7 +64,7 @@ __all__ = ['Manager']
 log = logging.getLogger(__name__)
 
 
-class ManagerServer (Pyro.core.Daemon):
+class ManagerAdapter (Pyro.core.Daemon):
 
     def __init__ (self, manager, host = None, port = None):
 
@@ -64,7 +72,8 @@ class ManagerServer (Pyro.core.Daemon):
         
         Pyro.core.Daemon.__init__ (self,
                                    host=host or MANAGER_DEFAULT_HOST,
-                                   port=port or MANAGER_DEFAULT_PORT)
+                                   port=port or MANAGER_DEFAULT_PORT,
+                                   norange=0)
 
         self.useNameServer(None)
         self.connect (manager)
@@ -79,17 +88,16 @@ class ManagerServer (Pyro.core.Daemon):
         return Proxy(uri=Pyro.core.PyroURI(self.hostname,
                                            obj.GUID(), prtcol=self.protocol, port=self.port))
 
-    def connect(self, object, name=None, index=None):
+    def connect(self, obj, name=None, index=None):
 
-        URI = Pyro.core.PyroURI(self.hostname, object.GUID(), prtcol=self.protocol, port=self.port)
+        URI = Pyro.core.PyroURI(self.hostname, obj.GUID(), prtcol=self.protocol, port=self.port)
 
-        # enter the (object,name) in the known implementations dictionary
-        if index:
-            self.implementations[index]=(object,name)
-        else:
-            self.implementations[object.GUID()]=(object,name)            
+        self.implementations[obj.GUID()] = (obj, name)            
         
-        object.setPyroDaemon(self)
+        if index:
+            self.implementations[index] = (obj, name)
+
+        obj.setPyroDaemon(self)
         return URI
 
 
@@ -100,7 +108,7 @@ class Manager (RemoteObject):
 
     Use this class to get Proxies, add objects to the system, and so on.
 
-    This class handles objetcs lifecicle as descrbibed in L{ILifecycle}.
+    This class handles objetcs lifecicle as descrbibed in ILifecycle.
 
     @group Add/Remove: add*, remove
     @group Start/Stop: start, stop
@@ -122,8 +130,8 @@ class Manager (RemoteObject):
         self.setGUID(MANAGER_LOCATION)
 
         # our daemon server
-        self.daemon = ManagerServer (self, host, port)
-        self.pool.queueTask (self.daemon.requestLoop)
+        self.adapter = ManagerAdapter (self, host, port)
+        self.pool.queueTask (self.adapter.requestLoop)
 
         # register ourself
         self.resources.add(MANAGER_LOCATION, self, getManagerURI())
@@ -139,39 +147,117 @@ class Manager (RemoteObject):
 
     # private
     def __repr__ (self):
-        return "<Manager for '%s:%d' at %s>" % (self.daemon.hostname, self.daemon.port, hex(id(self)))
+        if self.adapter:
+            return "<Manager for %s:%d at %s>" % (self.adapter.hostname, self.adapter.port, hex(id(self)))
+        else:
+            return "<Manager at %s>" % hex(id(self))
 
     def _sighandler(self, sig = None, frame = None):
         self.shutdown()
 
+    # adapter host/port
+    def getHostname (self):
+        if self.adapter:
+            return self.adapter.hostname
+        else:
+            return None
+
+    def getPort (self):
+        if self.adapter:
+            return self.adapter.port
+        else:
+            return None
     
     # helpers
     
     def getDaemon (self):
-        return self.daemon
+        return self.adapter
 
     def getPool (self):
         return self.pool
 
-    def getProxy (self, location):
+    def getProxy (self, location, name='0', host=None, port=None, lazy=False):
         """
-        Get a proxy for the object pointed by 'location'. The given location can contain index
+        Get a proxy for the object pointed by location. The given location can contain index
         instead of names, e.g. '/Object/0' to get objects when you don't know their names.
 
-        @param location: Object location.
-        @type location: Location or str
+        location can also be a class. getProxy will return an instance
+        named 'name' at the given host/port (or on the current
+        manager, if None given).
 
-        @return: Proxy for 'location'
+        host and port parameters determines which Manager we will
+        lookup for location/instance. If None, look at this
+        Manager. host/port is only used when location is a
+        class, otherwise, host and port are determined by location
+        itself.
+
+        lazy parameter determines if Manager will try to locate the
+        selected Manager at host/port and ask them for a valid
+        object/instance. If False, Manager just return an proxy for
+        the selected parameters but can't guarantee that the returned
+        Proxy have an active object bounded.
+
+        For objects managed by this own Manager, lazy is always False.
+
+        @param location: Object location or class.
+        @type location: Location or class
+
+        @param name: Instance name.
+        @type name: str
+
+        @param host: Manager's hostname.
+        @type host: str
+
+        @param port: Manager's port.
+        @type port: int
+
+        @param lazy: Manager's laziness (check for already bound objects on host/port Manager)
+        @type lazy: bool
+
+        @raises NotValidChimeraObjectException: When a object which doesn't inherites from ChimeraObject is given in location.
+        @raises ObjectNotFoundException: When te request object or the Manager was not found.
+        @raises InvalidLocationException: When the requested location s invalid.
+
+        @return: Proxy for selected object.
         @rtype: Proxy
         """
 
-        ret = self.resources.get (location)
+        if type(location) not in [StringType, Location]:
+            if issubclass(location, ChimeraObject):
+                location = Location(cls=location.__name__, name=name, host=host, port=port)
+            else:
+                raise NotValidChimeraObjectException ("Can't get a proxy from non ChimeraObject's descendent object (%s)." % location)
 
-        if not ret:
-            return False
+        else:
+            location = Location(location)
 
-        return Proxy (uri=ret.uri)
+        # this manager?
+        if (location.host == None and location.port == None) or \
+            (location.host == self.getHostname() and location.port == self.getPort()):
 
+            ret = self.resources.get (location)
+            if not ret:
+                raise ObjectNotFoundException ("Couldn't found an object at the given location %s" % location)
+
+            return Proxy (uri=ret.uri)
+            
+        else:
+        
+            if lazy:
+                return Proxy(location)
+            else:
+                # contact other manager
+                other = Proxy(location=MANAGER_LOCATION, host=host, port=port)
+
+                if not other.ping():
+                    raise ObjectNotFoundException ("Can't contact %s manager at %s." % (location, other.URI.address))
+
+                proxy = other.getProxy(location)
+
+                if not proxy:
+                    raise ObjectNotFoundException ("Couldn't found an object at the given location %s" % location)
+                else:
+                    return proxy
 
     # shutdown management
 
@@ -189,19 +275,20 @@ class Manager (RemoteObject):
             log.info("Shuting down manager.")
 
             # stop objects
-            for location in self.resources:
-                # except ourself
-                if location == MANAGER_LOCATION: continue
-                
-                self.stop(location)
+            try:
+                for location in self.resources:
+                    # except ourself
+                    if location == MANAGER_LOCATION: continue
+                    self.stop(location)
+            except ChimeraException:
+                pass
 
-            self.daemon.shutdown(disconnect=True)
-            del self.daemon
-        
-            self.pool.joinAll()
-            self.died.set()
-        
-            log.info("Manager finished.")
+            finally:
+                self.adapter.shutdown(disconnect=True)
+                del self.adapter
+                self.pool.joinAll()
+                self.died.set()
+                log.info("Manager finished.")
 
     def wait (self):
         """
@@ -219,23 +306,22 @@ class Manager (RemoteObject):
 
     # objects lifecycle
 
-    def addLocation (self, location, config = {}, path = [], start = True):
+    def addLocation (self, location, path = [], start = True):
         """
         Add the class pointed by 'location' to the system configuring it using 'config'.
 
         Manager will look for the class in 'path' plus sys.path.
-
-        @param location: The object location.
-        @type location: Location or str
-
-        @param config: The configuration dictionary for the object.
-        @type config: dict
 
         @param path: The class search path.
         @type path: list
 
         @param start: start the object after initialization.
         @type start: bool
+
+        @raises ChimeraObjectException: Internal error on managed (user) object.
+        @raises ClassLoaderException: Class not found.
+        @raises NotValidChimeraObjectException: When a object which doesn't inherites from ChimeraObject is given in location.
+        @raises InvalidLocationException: When the requested location s invalid.              
 
         @return: retuns a proxy for the object if sucessuful, False otherwise.
         @rtype: Proxy or bool
@@ -244,21 +330,12 @@ class Manager (RemoteObject):
         if type(location) != Location:
             location = Location(location)
 
-        if not location.isValid():
-            log.warning ("Invalid location: %s" % location)
-            return False
-
         # get the class
         cls = None
-        
-        try:
-            cls = self.classLoader.loadClass(location.cls, path)
-        except ClassLoaderException, e:
-            log.warning ("Error while looking for '%s' class." % location.cls)
-            log.exception (e)
-            return False
+
+        cls = self.classLoader.loadClass(location.cls, path)
             
-        return self.addClass (cls, location.name, config, start)
+        return self.addClass (cls, location.name, location.config, start)
 
 
     def addClass (self, cls, name, config = {}, start = True):
@@ -277,46 +354,47 @@ class Manager (RemoteObject):
         @param start: start the object after initialization.
         @type start: bool
 
+        @raises ChimeraObjectException: Internal error on managed (user) object.
+        @raises NotValidChimeraObjectException: When a object which doesn't inherites from ChimeraObject is given in location.
+        @raises InvalidLocationException: When the requested location s invalid.              
+
         @return: retuns a proxy for the object if sucessuful, False otherwise.
         @rtype: Proxy or bool
         """
 
-        location = Location(cls = cls.__name__, name = name)
+        location = Location(cls=cls.__name__, name=name, config=config)
 
-        if not location.isValid():
-            log.warning ("Invalid location: %s" % location)
-            return False
+        # names must not start with a digit
+        if location.name[0] in "0123456789":
+            raise InvalidLocationException ("Invalid instance name: %s (must start with a letter)" % location)
 
         if location in self.resources:
-            log.warning ("Location '%s' already in the system. Only one allowed (Tip. change the name!)." % location)
-            return False
+            raise InvalidLocationException ("Location %s is already in the system. Only one allowed (Tip. change the name!)." % location)
 
         # check if it's a valid ChimeraObject
         if not issubclass(cls, ChimeraObject):
-            log.warning("Cannot add the class '%s'. It doesn't descend from ChimeraObject." % cls.__name__)
-            return False
+            raise NotValidChimeraObjectException ("Cannot add the class %s. It doesn't descend from ChimeraObject." % cls.__name__)
         
-        # run object __init__
+        # run object __init__ and configure using location configuration
         # it runs on the same thread, so be a good boy
         # and don't block manager's thread
         try:
             obj = cls()
+            for k, v in location.config.items():
+                obj[k] = v
         except Exception, e:
             log.warning("Error in %s __init__." % location)
             log.exception(e)            
-            return False
+            raise ChimeraObjectException("Error in %s __init__" % location), None, sys.exc_info()[2]
 
-        # connect with URI
+        # connect
         obj.__setlocation__(location)
-        uri = self.daemon.connect(obj)
-        index = self.resources.add(location, obj, uri)
-        
-        # connect with index (to handle numbered locations)
-        self.daemon.connect(obj, index=str(Location((location.cls, index, location.config))))
+        next = len(self.resources.getByClass(location.cls))
+        uri  = self.adapter.connect(obj, index=str(Location(cls=location.cls, name=next)))
+        self.resources.add(location, obj, uri)
         
         if start:
-            if not self.start (location):
-                return False
+            self.start(location)
                 
         return Proxy(uri=uri)
        
@@ -326,22 +404,21 @@ class Manager (RemoteObject):
         Remove the object pointed by 'location' from the system.
 
         @param location: The object to remove.
-        @type: Location or str
+        @type location: Location,str
+
+        @raises ObjectNotFoundException: When te request object or the Manager was not found.
 
         @return: retuns True if sucessfull. False otherwise.
         @rtype: bool
         """
 
         if location not in self.resources:
-            log.warning ("Location not available: %s." % location)
-            return False
+            raise ObjectNotFoundException ("Location %s was not found." % location)
 
-        if not self.stop (location):
-            log.warning ("Couldn't stop resource %s." % location)
-            return False
+        self.stop(location)
 
         resource = self.resources.get(location)
-        self.daemon.disconnect (resource.instance)
+        self.adapter.disconnect (resource.instance)
         self.resources.remove (location)        
 
         return True
@@ -352,15 +429,17 @@ class Manager (RemoteObject):
         Start the object pointed by 'location'.
 
         @param location: The object to start.
-        @type: Location or str
+        @type location: Location or str
 
+        @raises ObjectNotFoundException: When te request object or the Manager was not found.
+        @raises ChimeraObjectException: Internal error on managed (user) object.
+        
         @return: retuns True if sucessfull. False otherwise.
         @rtype: bool
         """
 
         if location not in self.resources:
-            log.warning ("Location '%s' was not found." % location)
-            return False
+            raise ObjectNotFoundException ("Location %s was not found." % location)
             
         log.info("Starting %s." % location)            
 
@@ -372,13 +451,12 @@ class Manager (RemoteObject):
         try:
             ret = resource.instance.__start__()
             if not ret:
-                log.warning ("%s __start__ returned an error. Removing %s from register." % (location, location))
-                return False
+                raise ChimeraObjectException("%s __start__ returned an error. Removing %s from register." % (location, location))
             
         except Exception, e:
             log.warning ("Error running %s __start__ method. Exception follows..." % location)
             log.exception(e)
-            return False
+            raise ChimeraObjectException("Error running %s __start__ method" % location), None, sys.exc_info()[2]
 
         try:
             # FIXME: thread exception handling
@@ -393,11 +471,9 @@ class Manager (RemoteObject):
 
         except Exception, e:
             log.info("Error running %s __main__ method. Exception follows..." % location)
-            log.exception (e)
-            
+            log.exception (e)            
             resource.instance.__setstate__(State.STOPPED)
-            
-            return False
+            raise ChimeraObjectException("Error running %s __main__ method" % location), None, sys.exc_info()[2]            
 
 
     def stop (self, location):
@@ -405,15 +481,17 @@ class Manager (RemoteObject):
         Stop the object pointed by 'location'.
 
         @param location: The object to stop.
-        @type: Location or str
+        @type location: Location or str
+
+        @raises ObjectNotFoundException: When te request object or the Manager was not found.
+        @raises ChimeraObjectException: Internal error on managed (user) object.
 
         @return: retuns True if sucessfull. False otherwise.
         @rtype: bool
         """
     
         if location not in self.resources:
-            log.warning ("Location not available: %s." % location)
-            return False
+            raise ObjectNotFoundException ("Location %s was not found." % location)
 
         log.info("Stopping %s." % location)
             
@@ -429,5 +507,5 @@ class Manager (RemoteObject):
         except Exception, e:
             log.info("Error running %s __stop__ method. Exception follows..." % location)
             log.exception (e)
-            return False
+            raise ChimeraObjectException("Error running %s __stop__ method" % location), None, sys.exc_info()[2]
 

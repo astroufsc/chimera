@@ -5,6 +5,7 @@ from chimera.core.methodwrapper import MethodWrapper
 from chimera.core.event         import event
 from chimera.core.state         import State
 from chimera.core.config        import OptionConversionException
+from chimera.core.exceptions    import InvalidLocationException
 
 from nose.tools import assert_raises
 
@@ -145,18 +146,18 @@ class TestChimeraObject (object):
 
             def control (self):
                 """
-                Execute ten times a second (10Hz) and stop after 1 s,
+                Execute ten times per second (10Hz) and stop after 1 s,
                 in other words, when counter = frequency
                 """
                 
                 self.counter += 1
-                return self.counter < self.controlFrequency
+                return self.counter < self.getHz()
 
         m = MainTest()
-        m.controlFrequency = 10
+        m.setHz(10)
 
         assert m.__main__() == True
-        assert m.counter == m.controlFrequency
+        assert m.counter == m.getHz()
 
     def test_location (self):
 
@@ -165,7 +166,7 @@ class TestChimeraObject (object):
         f = Foo()
 
         assert f.__setlocation__ ('/Foo/bar') == True
-        assert f.__setlocation__ ('Siberian Lakes') == False
+        assert_raises(InvalidLocationException, f.__setlocation__, 'Siberian Lakes')
         assert f.getLocation () == '/Foo/bar'
 
     def test_state (self):

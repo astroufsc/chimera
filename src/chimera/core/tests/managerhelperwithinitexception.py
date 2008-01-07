@@ -7,7 +7,7 @@ class ManagerHelperWithInitException (ChimeraObject):
     def __init__ (self):
         ChimeraObject.__init__(self)
 
-        raise RuntimeError("oops in __init__")
+        raise Exception("oops in __init__")
     
     def __start__ (self):
         return True

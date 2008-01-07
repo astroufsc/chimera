@@ -11,7 +11,7 @@ class ManagerHelperWithStopException (ChimeraObject):
         return True
 
     def __stop__ (self):
-        raise RuntimeError("oops in __stop__")
+        raise Exception("oops in __stop__")
 
     def __main__ (self):
         return True

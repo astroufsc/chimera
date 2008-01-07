@@ -57,11 +57,17 @@ class ChimeraObject (RemoteObject, ILifeCycle):
 
         self.__location__ = ""
 
-        # logging
-        self.log = logging.getLogger(self.__module__)
+        # logging.
+        # put every logger on behalf of chimera's logger so
+        # we can easily setup levels on all our parts
+        logName = self.__module__
+        if not logName.startswith("chimera."):
+            logName = "chimera."+logName+" (%s)" % logName
+
+        self.log = logging.getLogger(logName)
 
         # Hz
-        self.controlFrequency = 2
+        self._Hz = 2
 
     # config implementation
     def __getitem__ (self, item):
@@ -77,13 +83,21 @@ class ChimeraObject (RemoteObject, ILifeCycle):
     def __stop__ (self):
         return True
 
+    def getHz (self):
+        return self._Hz
+
+    def setHz (self, freq):
+        tmpHz = self.getHz()
+        self._Hz = freq
+        return tmpHz
+
     def __main__ (self):
 
         runCondition = True
 
         while runCondition:
             runCondition = self.control()               
-            time.sleep(1.0/self.controlFrequency)
+            time.sleep(1.0/self.getHz())
 
         return True
 
@@ -105,16 +119,13 @@ class ChimeraObject (RemoteObject, ILifeCycle):
 
         l = Location(location)
 
-        if not l.isValid():
-            return False
-        
         self.__location__ = location
         self.setGUID(str(location))
         return True
 
     def getManager (self):
         if self.getDaemon():
-            return self.getDaemon().getManager()
+            return self.getDaemon().getProxyForObj(self.getDaemon().getManager())
 
     def getProxy (self):
         # just to put everthing together (no need to change the base implementation)

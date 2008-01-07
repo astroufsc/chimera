@@ -24,9 +24,10 @@ try:
 except ImportError, e:
     raise RuntimeError ("You must have Pyro version >= 3.6 installed.")
 
-from chimera.core.remoteobject        import RemoteObject
-from chimera.core.constants           import (MANAGER_DEFAULT_HOST, MANAGER_DEFAULT_PORT,
-                                              EVENTS_PROXY_NAME)
+from chimera.core.remoteobject import RemoteObject
+from chimera.core.constants    import (MANAGER_DEFAULT_HOST, MANAGER_DEFAULT_PORT,
+                                       EVENTS_PROXY_NAME)
+from chimera.core.location     import Location
 
 import chimera.core.log
 import logging
@@ -41,15 +42,17 @@ log = logging.getLogger(__name__)
            
 class Proxy (Pyro.core.DynamicProxy):
 
-    def __init__ (self, location = None, host = None, port = None, uri = None):
+    def __init__ (self, location = None, host=None, port=None, uri = None):
         Pyro.core.initClient (banner=0)
 
-        if location:
-            host = host or MANAGER_DEFAULT_HOST
-            port = port or MANAGER_DEFAULT_PORT
+        if not uri:
+            location = Location(location)
+
+            host = (host or location.host) or MANAGER_DEFAULT_HOST
+            port = (port or location.port) or MANAGER_DEFAULT_PORT
             
             uri = Pyro.core.PyroURI(host=host, objectID=str(location), port=port)
-
+        
         Pyro.core.DynamicProxy.__init__ (self, uri)
         
     def ping (self):
@@ -119,6 +122,7 @@ class ProxyMethod (object):
         
         # passing a proxy method?
         if not isinstance (other, ProxyMethod):
+            log.debug("Invalid parameter: %s" % other)
             return self
 
         handler["handler"]["proxy"] = other.proxy.URI

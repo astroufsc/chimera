@@ -19,9 +19,14 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 
-from chimera.core.location import Location
+from chimera.core.location   import Location
+from chimera.core.exceptions import InvalidLocationException, \
+                                    ObjectNotFoundException, \
+                                    ChimeraException
 
 import time
+import sys
+
 
 class Resource (object):
 
@@ -49,11 +54,8 @@ class ResourcesManager (object):
 
         location = self._validLocation (location)
 
-        if not location:
-            return False
-
-        if location in self._res:
-            return False
+        if location in self:
+            raise InvalidLocationException("Location already on the resource pool.")
 
         entry = Resource ()
         entry.location = location
@@ -66,26 +68,14 @@ class ResourcesManager (object):
         return len(self.getByClass(location.cls)) - 1
 
     def remove (self, location):
-
-        location = self._validLocation (location)
-
-        if not location:
-            return False
-
-        if location not in self._res:
-            return False
-
-        del self._res[location]
-
+        entry = self.get(location)
+        del self._res[entry.location]
         return True
 
 
     def get (self, item):
 
         location = self._validLocation(item)
-
-        if not location:
-            return False
 
         try:
             index = int(location.name)
@@ -113,22 +103,16 @@ class ResourcesManager (object):
 
         location = self._validLocation (item)
 
-        if not location:
-            return False
-
         if location in self:
             ret = filter(lambda x: x == location, self.keys())
             return self._res[ret[0]]
         else:
-            return False
+            raise ObjectNotFoundException("Couldn't found %s." % location)
 
 
     def _getByIndex(self, item, index):
 
         location = self._validLocation (item)
-
-        if not location:
-            return False
 
         insts = self.getByClass(location.cls)
 
@@ -136,9 +120,9 @@ class ResourcesManager (object):
             try:
                 return self._res[insts[index].location]
             except IndexError:
-                return False
+                raise ObjectNotFoundException("Couldn't found %s instance #%d." % (location, index))
         else:
-            return False
+            raise ObjectNotFoundException("Couldn't found %s." % location)
 
 
     def _validLocation (self, item):
@@ -148,33 +132,24 @@ class ResourcesManager (object):
         if not isinstance (item, Location):
             ret = Location (item)
 
-        if not ret.isValid():
-            ret = False
-
         return ret
 
     def __getitem__(self, item):
 
-        ret = self.get(item)
-
-        if not ret:
-            raise KeyError
-        else:
-            return ret
+        try:
+            return self.get(item)
+        except ChimeraException:
+            raise KeyError("Couldn't found %s" % item), None, sys.exc_info()[2]
 
     def __contains__ (self, item):
 
-        # note that our in not in tests are for keys (locations) and
+        # note that our 'in'/'not in' tests are for keys (locations) and
         # not for values
 
         item = self._validLocation (item)
 
-        if not item:
-            return False
-
         if item in self.keys():
             return True
-
         else:
             # is this a numbered instance?
             try:
@@ -182,6 +157,9 @@ class ResourcesManager (object):
                 return bool(self._getByIndex(item, index))
             except ValueError:
                 # not a numbered instance
+                return False
+            except ObjectNotFoundException:
+                # nor a valid object
                 return False
 
 

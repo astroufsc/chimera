@@ -9,7 +9,7 @@ class ManagerHelperWithStartException (ChimeraObject):
 
     def __start__ (self):
 
-        raise RuntimeError("oops in __start__")
+        raise Exception("oops in __start__")
     
         return True
     

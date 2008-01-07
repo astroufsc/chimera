@@ -60,6 +60,8 @@ class TestConfig (object):
     def test_options (self):
 
         c = Config({"key_opt_int": [1, 2, 3],
+                    "key_opt_float": [1, 2.0, 4.0],
+                    "key_opt_bool": [1, False],
                     "key_opt_str": ["one", "two", "three"]})
 
         # valid

@@ -19,9 +19,34 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 
-import logging
 
-# verbosity level
-logging.basicConfig(level=logging.WARNING,
-                    format='%(asctime)s.%(msecs)d %(levelname)s %(name)s %(filename)s:%(lineno)d %(message)s',
-                    datefmt='%d-%m-%Y %H:%M:%S')
+from chimera.core.chimeraobject import ChimeraObject
+
+
+__all__ = ['Site']
+
+
+class Site (ChimeraObject):
+
+    def __init__ (self):
+        ChimeraObject.__init__(self)
+        
+        self._name      = None
+
+        self._latitude  = None
+        self._longitude = None
+        self._altitude  = None
+
+        self._timezone  = None
+        self._dst       = False
+
+    def ut (self): pass
+    def local (self): pass
+    def lst (self): pass
+    def jd (self): pass
+    def mjd (self): pass
+
+    
+        
+        
+    

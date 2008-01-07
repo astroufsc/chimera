@@ -22,9 +22,7 @@
 import sys
 import traceback
 
-
-class ClassLoaderException (Exception):
-    pass
+from chimera.core.exceptions import ClassLoaderException
 
 class ClassLoader (object):
     

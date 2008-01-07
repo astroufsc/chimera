@@ -11,7 +11,7 @@ class ManagerHelperWithMainException (ChimeraObject):
         return True
 
     def __main__ (self):
-        raise RuntimeError("oops in __main__")
+        raise Exception("oops in __main__")
     
     def foo (self):
         return 42

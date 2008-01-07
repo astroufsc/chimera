@@ -23,6 +23,8 @@ from chimera.core.proxy import Proxy
 import logging
 import chimera.core.log
 
+import Pyro.errors
+
 log = logging.getLogger(__name__)
 
 
@@ -65,6 +67,8 @@ class EventsProxy:
         if topic not in self.handlers:
             return True
 
+        excluded = []
+
         for handler in self.handlers[topic]:
 
             # FIXME: reuse connections? if not, TIME_WAIT sockets start to slow down things
@@ -76,11 +80,21 @@ class EventsProxy:
                 dispatcher (*args, **kwargs)
             except AttributeError, e:
                 log.debug("Invalid proxy method ('%s %s') for '%s' handler." % \
-                              (handler["proxy"], handler["method"], topic))
+                          (handler["proxy"], handler["method"], topic))
+                continue
+            except Pyro.errors.ProtocolError, e:
+                log.debug ("Unreachable handler (%s). Removing from subscribers list." % proxy)
+                excluded.append(handler)
                 continue
             except Exception, e:
-                # FIXME: handle Pyro's errors
-                log.exception (e)
+                log.debug ("Handler (%s) raised an exception. Removing from subscribers list." % proxy)
+                log.exception(e)
+                excluded.append(handler)
                 continue
+
+
+        # remove unreacheable
+        for handler in excluded:
+            self.handlers[topic].remove(handler)
 
         return True

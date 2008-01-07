@@ -1,16 +1,66 @@
+2008-01-07  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* src/chimera/core/log.config: Not needed anymore, all log
+	configuration done at log.py.
+
+	* src/chimera/core/site.py: New.
+	* src/chimera/core/callback.py: New.
+	* src/chimera/core/exceptions.py: New.
+
+	* src/chimera/core/classloader.py: ClassLoaderException moved to
+	exceptions.py.
+
+	* src/chimera/core/chimeraobject.py: Fixes.
+	Added log to non-chimera packages.
+	Changed signatures of loop control methods (new getHz/setHz).
+	Fixed getManager method to return a Proxy.
+
+	* src/chimera/core/eventsproxy.py: Better exception handling on
+	publish.  Unreachable proxy removal added.
+
+	* src/chimera/core/location.py: Host/port support.
+	Added host/port to Location.
+	Location doesn't use isValid anymore, exception is raised when
+	Location isn't valid.
+
+	* src/chimera/core/manager.py: Lot of fixes and new features.
+	Added support for remote objects on getProxy.
+	Fixed indexed instances connections.
+	Exception support added to all methods. No more "return False"
+	means error.
+
+	* src/chimera/core/resources.py: Exception support added.
+
+	* src/chimera/core/proxy.py: Fix getProxy when port/host is used.
+
+	* src/chimera/core/log.py: Add milliseconds to log format.
+
+	* src/chimera/core/tests/test_main.py: Removed.
+	* src/chimera/core/tests/managerhelperwithmainexception.py
+	* src/chimera/core/tests/managerhelperwithstopexception.py
+	* src/chimera/core/tests/test_chimera_object.py
+	* src/chimera/core/tests/managerhelperwithstartexception.py
+	* src/chimera/core/tests/test_events.py
+	* src/chimera/core/tests/test_config.py
+	* src/chimera/core/tests/test_location.py
+	* src/chimera/core/tests/test_resources.py
+	* src/chimera/core/tests/test_manager.py
+	* src/chimera/core/tests/managerhelperwithinitexception.py:
+	Fixed tests to support all the above modifications.
+
 2007-12-10  P. Henrique Silva  <henrique@astro.ufsc.br>
 
-	* core/threads.py
-	* core/classloader.py
-	* core/chimeraobject.py
-	* core/config.py
-	* core/eventsproxy.py
-	* core/location.py
-	* core/manager.py
-	* core/async.py
-	* core/proxy.py
-	* core/log.py
-	* core/main.py: Updated to the new log idiom.
+	* src/chimera/core/threads.py
+	* src/chimera/core/classloader.py
+	* src/chimera/core/chimeraobject.py
+	* src/chimera/core/config.py
+	* src/chimera/core/eventsproxy.py
+	* src/chimera/core/location.py
+	* src/chimera/core/manager.py
+	* src/chimera/core/async.py
+	* src/chimera/core/proxy.py
+	* src/chimera/core/log.py
+	* src/chimera/core/main.py: Updated to the new log idiom.
 
 2007-11-14  P. Henrique Silva  <henrique@astro.ufsc.br>
 
@@ -38,78 +88,82 @@
 
 2007-11-14  P. Henrique Silva  <henrique@astro.ufsc.br>
 
-	* core/classloader.py: New classloader. Contains code moved from
-	manager.py and improved exception handling.
+	* src/chimera/core/classloader.py: New classloader. Contains code
+	moved from manager.py and improved exception handling.
 
-	* core/chimeraobject.py: New base class of the system. Implements
-	the ILifecycle interface and inherites from RemoteObject to
-	provide support for RPC and state management.
+	* src/chimera/core/chimeraobject.py: New base class of the
+	system. Implements the ILifecycle interface and inherites from
+	RemoteObject to provide support for RPC and state management.
 
-	* core/remoteobject.py: New class to wrap Pyro's base class.
+	* src/chimera/core/remoteobject.py: New class to wrap Pyro's base
+	class.
 
-	* core/resources.py: Replace register.py with a more simple
-	resources management.
+	* src/chimera/core/resources.py: Replace register.py with a more
+	simple resources management.
 
-	* core/constants.py: Runtime constants needed by the new system.
+	* src/chimera/core/constants.py: Runtime constants needed by the
+	new system.
 
-	* core/util.py: Simple core utilities (used only internally)
+	* src/chimera/core/util.py: Simple core utilities (used only
+	internally)
 
-	* core/state.py: State management enumeration.
+	* src/chimera/core/state.py: State management enumeration.
 
-	* core/eventsproxy.py: New event proxy used by ChimeraObject to
-	dispatch events.
+	* src/chimera/core/eventsproxy.py: New event proxy used by
+	ChimeraObject to dispatch events.
 
-	* core/metaobject.py:
-	* core/methodwrapper.py:
-	* core/eventwrapper.py: New metaclass based object system. The
-	Methodwrapper implements a funcionality to add "pseudo" methods as
-	attributes of a given class, this allow use of things like
-	obj.method.begin(), with begin being and method wrapper which will
-	act just like a normal method of obj. EventWrapper use this base
-	to implement operators needed by the event handling.
+	* src/chimera/core/metaobject.py:
+	* src/chimera/core/methodwrapper.py:
+	* src/chimera/core/eventwrapper.py: New metaclass based object
+	system. The Methodwrapper implements a funcionality to add
+	"pseudo" methods as attributes of a given class, this allow use of
+	things like obj.method.begin(), with begin being and method
+	wrapper which will act just like a normal method of
+	obj. EventWrapper use this base to implement operators needed by
+	the event handling.
 
-	* core/register.py: Replaced by resources.py
-	* core/siteconfig.py: Moved to controllers.
-	* core/lifecycle.py: Replaced by ChimeraObject.
+	* src/chimera/core/register.py: Replaced by resources.py
+	* src/chimera/core/siteconfig.py: Moved to controllers.
+	* src/chimera/core/lifecycle.py: Replaced by ChimeraObject.
 
-	* core/__init__.py:
-	* core/threads.py:
-	* core/log.py
-	* core/version.py
+	* src/chimera/core/__init__.py:
+	* src/chimera/core/threads.py:
+	* src/chimera/core/log.py
+	* src/chimera/core/version.py
 	Headers fixed.
 
-	* core/interface.py: New MetaObject based interface class.
+	* src/chimera/core/interface.py: New MetaObject based interface
+	class.
 
-	* core/config.py:
-	Allow boolean to be converted to integer and float configs.
-	Returns old configuration when setting a new one.
-	Correct default handling on Range options.
-	Accept dict in Config constructor (only objects allowed before)
-	Implemented __iadd__ (dict).
-	Tests moved to the test suite.
+	* src/chimera/core/config.py: Allow boolean to be converted to
+	integer and float configs.  Returns old configuration when setting
+	a new one.  Correct default handling on Range options.  Accept
+	dict in Config constructor (only objects allowed before)
+	Implemented __iadd__ (dict).  Tests moved to the test suite.
 
-	* core/location.py: New constructor, accepting keywords instead of
-	a dict. Lot of small fixes from the test suite alerts.
+	* src/chimera/core/location.py: New constructor, accepting
+	keywords instead of a dict. Lot of small fixes from the test suite
+	alerts.
 
-	* core/manager.py: New implementation using Resources.
-	Manager acts as daemon (wrapping Pyro's Daemon).
-	Complete state management support.
-	No more distictions between objects types.
-	Classloader was moved to a proper class.
-	Full documentation of public methods.
+	* src/chimera/core/manager.py: New implementation using Resources.
+	Manager acts as daemon (wrapping Pyro's Daemon).  Complete state
+	management support.  No more distictions between objects types.
+	Classloader was moved to a proper class.  Full documentation of
+	public methods.
 
-	* core/async.py: New async based on MethodWrapper (not used yet)
+	* src/chimera/core/async.py: New async based on MethodWrapper (not
+	used yet)
 
 
-	* core/proxy.py: New proxy based on Pyro's Dynamic Proxy. Much
-	less magic used.
+	* src/chimera/core/proxy.py: New proxy based on Pyro's Dynamic
+	Proxy. Much less magic used.
 
-	* core/event.py: Moved event handling to eventsproxy.py, only the
-	decorator still lives here.
+	* src/chimera/core/event.py: Moved event handling to
+	eventsproxy.py, only the decorator still lives here.
 
-	* core/main.py: New chimera main class used to get proxies. It's
-	basically a helper class to get proxies for objects not manager by
-	our own manager.
+	* src/chimera/core/main.py: New chimera main class used to get
+	proxies. It's basically a helper class to get proxies for objects
+	not manager by our own manager.
 
 
 
@@ -145,7 +199,7 @@
 
 	Development scripts to add chiemra to Python PATH (windows and
 	linux versions)
-	
+
 	* docs/examples: Bunch of new examples (most hardware tests).
 
 	* src/scripts/chimera-console:
@@ -158,22 +212,22 @@
 
 	* src/chimera/controllers/blocks.py: Very wast of time. Move all
 	this to respective instruments.
-	
+
 	* src/chimera/core/threads.py: add daemon threads to keep threads
 	in peace. FIXME ASAP.
-	
+
 	* src/chimera/core/site.py: Removed. Moved to chimera.py
 	* src/chimera/core/chimera.py: New. From site.py
 
 	* src/chimera/core/runner.py: Remove ctrl+c handling.
-	
+
 	* src/chimera/core/manager.py: Fix bugs when passing string as
 	locations (convert to Lacation first).
 
 	* src/chimera/core/siteconfig.py: Brand new. Moved from site.py.
 
 	* src/chimera/instruments/filterwheel.py: Add class variables from
-	interface (duh, interfaces should be just.. interfaces!) 
+	interface (duh, interfaces should be just.. interfaces!)
 
 	* src/chimera/interfaces/camera.py:
 	* src/chimera/interfaces/filterwheel.py:
@@ -188,7 +242,7 @@
 2007-10-25  P. Henrique Silva  <henrique@astro.ufsc.br>
 
 	* src/chimera/interfaces/camera.py: New default filename
-	format. No more seq_num. 
+	format. No more seq_num.
 
 2007-10-16  P. Henrique Silva  <henrique@astro.ufsc.br>
 
@@ -204,7 +258,7 @@
 
 	* src/chimera/util/output.py: New faint (works?) function.
 
-	
+
 2007-10-16  P. Henrique Silva  <henrique@astro.ufsc.br>
 
 	* src/chimera/controllers/console/commands:
@@ -229,15 +283,15 @@
 
 	Objects are now automaticaly binded. Use alias command to have a
 	nice alias.
-	
+
 2007-09-26  P. Henrique Silva  <henrique@astro.ufsc.br>
 
 	* src/chimera/controllers/autofocus.py: Fix the way that we get
 	the FWHM (buggy name).
-	
+
 	* src/chimera/instruments/dome.py: Check if telescope is available
 	when in "track" mode.
-	
+
 2007-09-26  P. Henrique Silva  <henrique@astro.ufsc.br>
 
 	* src/chimera/drivers/domelna40cm.py:
@@ -257,7 +311,7 @@
 	* controllers/autofocus.py:
 	First implementation of autofocus routine. Partially testd with
 	fake data.
-	
+
 	* util/sexcatalog.py:
 	* util/sextractor.py:
 
@@ -272,9 +326,9 @@
 
 	* src/chimera/interfaces/telescope.py: More Object
 	orientation design (this interfaces is till unfrozen).
-	
+
 	* src/chimera/util/coord.py: Fixes and add SkyPoint class.
-	
+
 	* src/chimera/drivers/meade.py: Add support for park/unpark,
 	date/time/latitude/longitude settings and synchronization.
 
@@ -310,10 +364,10 @@
 
 	* src/chimera/controllers/observer.py: New keywords added (plate
 	scale and equinox).
-	
+
 	* src/chimera/core/config.py: Fix behaviour of range options when
 	default value is greater than min value.
-	
+
 	* src/chimera/core/manager.py: Indentation fix.
 
 2007-07-04  P. Henrique Silva  <henrique@astro.ufsc.br>
@@ -337,16 +391,16 @@
 
 	* src/scripts/chimera: Use /usr/bin/env to call python (ensure use
 	of default python on the system).
-	
+
 	* src/chimera/core/site.py:  shutdown fixed (missed sys import)
 
-	* setup.py:	
+	* setup.py:
 	* src/chimera/core/location.py: Python 2.3.x stuff (not full
 	ported yet).
 
 	* src/chimera/core/manager.py: Typos.
 	Fix bug on the order of sys.path (our classes first by now)
-	
+
 
 2007-03-16  P. Henrique Silva  <henrique@astro.ufsc.br>
 
@@ -399,7 +453,7 @@
 	Renamed ICameraDriver exposing to isExposing.
 
 	* src/chimera/interfaces/telescope.py Added isSlewing.
-	
+
 	* src/chimera/controllers/sample.py:
 	* src/chimera/controllers/samplet.py:
 	* src/chimera/controllers/samplef.py:
@@ -423,7 +477,7 @@
 
 	New __options__ (base from an auto-config feature).
 	Removed unneeded events.
-	
+
 	* src/chimera/interfaces/telescope.py:
 
 	Added new root interface ITelescope. Make all other interfaced to
@@ -433,13 +487,13 @@
 
 	ITelescopeSlew refactored (no field definitions on interfaces).
 
-	* src/chimera/core/threads.py: 
+	* src/chimera/core/threads.py:
 	* src/chimera/core/async.py:
 
 	More information on logging (current thread).
 
 	lock decorator moved to async.py.
-	
+
 	* src/chimera/core/lifecycle.py: Removed finished TODO mark.
 
 	* src/chimera/core/site.py: Imports reorganized.
@@ -448,7 +502,7 @@
 
 	Added Runner version for win32. Use sys.platform to define the
 	actual Runner class to use.
-	
+
 	* src/chimera/core/manager.py:
 
 	Fix some bugs on getLocation and _get.
@@ -457,11 +511,11 @@
 
 	Improved Proxy. Check __getattr__ and __getattribute__ when
 	looking for members.
-	
+
 	* src/chimera/core/register.py: Fix getByIndex.
 
 	* src/chimera/instruments/camera.py: Fix expose return value.
-	
+
 	* src/chimera/instruments/telescope.py:
 
 	Finished implementation of ITelescopeSlew. Now working.
@@ -499,7 +553,7 @@
 	* MANIFEST.in: Removed docs from sdist.
 
 	* setup.cfg: Added default sdist formats.
-	
+
 2007-03-01  P. Henrique Silva  <henrique@astro.ufsc.br>
 
 	* TODO:
@@ -561,10 +615,10 @@
 
 	* setup.py: Updated to reflect new layout. Almsot working (except
 	for /etc installation of site.xml
-	
+
 	* MANIFEST.in: New.
 
-	
+
 2007-02-08  P. Henrique Silva  <henrique@astro.ufsc.br>
 
 	* rc/scripts/chimera:
@@ -612,7 +666,7 @@
 
 	Old UTS package still on uts-pre-chimera branch
 
-	
+
 2007-02-08  P. Henrique Silva  <henrique@astro.ufsc.br>
 
 	* src/python:
@@ -621,7 +675,7 @@
 	End of UTS. File layout change. (part 2)
 
 	Old UTS package still on uts-pre-chimera branch
-	
+
 2007-02-08  P. Henrique Silva  <henrique@astro.ufsc.br>
 
 	* tests:
@@ -691,7 +745,7 @@
 
 	Fix a lot of indentation bugs that was preventing images to be
 	correctly saved.
-	
+
 	* src/python/uts/instruments/camera.py: Add temperature support.
 
 	* src/python/uts/instruments/filterwheel.py: New.
