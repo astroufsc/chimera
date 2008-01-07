@@ -1,4 +1,19 @@
 2008-01-07  P. Henrique Silva  <henrique@astro.ufsc.br>
+	* src/chimera/interfaces/camera.py
+	* src/chimera/interfaces/filterwheel.py
+	* src/chimera/interfaces/__init__.py
+	* src/chimera/interfaces/lifecycle.py
+	* src/chimera/interfaces/telescopedriver.py
+	* src/chimera/interfaces/domedriver.py
+	* src/chimera/interfaces/weatherstation.py
+	* src/chimera/interfaces/focuserdriver.py
+	* src/chimera/interfaces/telescope.py
+	* src/chimera/interfaces/dome.py
+	* src/chimera/interfaces/cameradriver.py
+	* src/chimera/interfaces/focuser.py: Improved interfaces with full
+	documentation (need to be implemented yet).
+
+2008-01-07  P. Henrique Silva  <henrique@astro.ufsc.br>
 
 	* src/chimera/core/log.config: Not needed anymore, all log
 	configuration done at log.py.

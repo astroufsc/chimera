@@ -1,5 +1,5 @@
-#! /usr/bin/python
-# -*- coding: iso8859-1 -*-
+#! /usr/bin/env python
+# -*- coding: iso-8859-1 -*-
 
 # chimera - observatory automation system
 # Copyright (C) 2006-2007  P. Henrique Silva <henrique@astro.ufsc.br>
@@ -18,10 +18,14 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+
 from chimera.core.interface import Interface
 from chimera.core.event import event
 
+
 class IDome (Interface):
+    """A Roll-off or classic dome.
+    """
 
     __options__ = {"driver"   : "/DomeLNA40cm/dome",
                    "telescope": "/Telescope/0",
@@ -30,69 +34,51 @@ class IDome (Interface):
                    "model"    : "Fake Domes Inc.",
                    "type"     : ["Rolloff", "Classic", "Othter"],
                    }
+
     
-    # methods
+    def sletToAz (self, az):
+        """Slew to the given Azimuth.
+
+        @param az: Azimuth in degrees.
+        @type  az: int or float
+
+        @return: False if slew failed, True otherwise
+        @rtype: bool
+        """
+
     def isSlewing (self):
-        pass
+        """Ask if the dome is slewing right now.
+
+        @return: True if the dome is slewing, False otherwise.
+        @rtype: bool
+        """
 
     def abortSlew (self):
-        pass
+        """Try to abort the current slew.
+
+        @return: False if slew couldn't be aborted, True otherwise.
+        @rtype: bool
+        """
 
     def getAz (self):
-        pass
+        """Get the current dome Azimuth (Az)
 
-    def sletToAz (self):
-        pass
-    
-    # events
+        @return: Dome's current Az (decimal degrees)
+        @rtype: float
+        """
 
     @event
     def slewComplete (self, position):
-        pass
+        """Indicates that the last slew operation finished (with or without success).
+
+        @param position: The dome current position when the slew finished in decimal degrees.
+        @type  position: float
+        """
 
     @event
     def abortComplete (self, position):
-        pass
+        """Indicates that the last slew operation was aborted.
 
-
-class IDomeDriver (Interface):
-
-    __options__ = {"device": "/dev/ttyS1",
-                   "az_res": 2,  # dome position resolution
-                   "slew_timeout" : 120,
-                   "abort_timeout": 60,                   
-                   "open_timeout" : 20,
-                   "close_timeout": 20,
-                   } 
-  
-    # methods
-
-    def open(self):
-        pass
-
-    def close(self):
-        pass
-
-    def isSlewing (self):
-        pass
-
-    def abortSlew(self):
-        pass
-
-    def getAz(self):
-        pass
-
-    def slewToAz(self):
-        pass
-
-
-    # events
-    
-    @event
-    def slewComplete (self, position):
-        pass
-
-    @event
-    def abortComplete (self, position):
-        pass
-    
+        @param position: The dome position when the slew aborted in decimal degrees).
+        @type  position: float
+        """

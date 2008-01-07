@@ -1,5 +1,5 @@
-#! /usr/bin/python
-# -*- coding: iso8859-1 -*-
+#! /usr/bin/env python
+# -*- coding: iso-8859-1 -*-
 
 # chimera - observatory automation system
 # Copyright (C) 2006-2007  P. Henrique Silva <henrique@astro.ufsc.br>
@@ -18,33 +18,97 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+
 from chimera.core.interface import Interface
+from chimera.core.event     import event
+from chimera.util.enum      import Enum
 
-class IWeatherStation(Interface):
 
-    # properties
-    _humididy = 0.0
-    _temperature = 0.0
-    _wind = [0.0, 1]
-    _dewPoint = 0.0
-    _pressure = 0.0
-    _rain = [0.0, 0.0]
+Unit = Enum ("PERCENTUAL", # Humidity
+             
+             "CELSIUS",    # Temperature, Dew point
+             "KELVIN",
+             "FAHRENHEIT",
 
-    # events
-    def humididy(self, humidity):
-        pass
-    
-    def temperature(self, temp):
-        pass
-    
-    def wind(self, wind):
-        pass
-    
-    def dewPoint(self, dew):
+             "M_PER_S",    # Wind
+             "KM_PER_H",
+             "MILES_PER_H",
+             "FT_PER_S",
+             "MS",
+             "KMH",
+             "FTS",
+             "MPH",
+
+             "M_BAR",      # Pressure
+             "MM_HG",
+             "TORR",
+             "ATM",
+             "PA",
+             "PSI",
+
+             "MM",       # Rain
+             "CM",
+             "FT"
+             )
+
+
+class IWeatherStation (Interface):
+
+    __options__ = {"driver": "/Fake/weather",
+
+                   "humidity_unit"   :,
+                   "temperature_unit":,
+                   "wind_unit"       :,
+                   "dew_point_unit"  :,
+                   "pressure_unit"   :,
+                   "rain_unit"       :,
+
+                   "humidity_delta"   :,
+                   "temperature_delta":,
+                   "wind_delta"       :,
+                   "dew_point_delta"  :,
+                   "pressure_delta"   :,
+                   "rain_delta"       :,
+                   }
+
+    def humididy (self, deltaT=0, unit=Unit.PERCENTUAL):
         pass
 
-    def pressure(self, pressure):
+    def temperature (self, deltaT=0, unit=Unit.CELSIUS):
         pass
-    
-    def rain(self, rain):
+
+    def wind (self, deltaT=0, unit=Unit.M_PER_S):
+        pass
+
+    def dewPoint (self, deltaT=0, unit=Unit.CELSIUS):
+        pass
+
+    def pressure (self, deltaT=0, unit=Unit.MM_HG):
+        pass
+
+    def rain (self, deltaT=0, unit=Unit.MM):
+        pass
+
+    @event
+    def humidiyChange (self, humidity, unit, delta):
+        pass
+
+    @event
+    def temperatureChange (self, temperature, unit, delta):
+        pass
+
+    @event
+    def windChange (self, wind, unit, delta):
+        pass
+
+    @event
+    def dewPointChange (self, dewPoint, unit, delta):
+        pass
+
+    @event
+    def pressureChange (self, pressure, unit, delta):
+        pass
+
+    @event
+    def rain (self, rain, unit, delta):
         pass

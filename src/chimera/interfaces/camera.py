@@ -1,5 +1,5 @@
-#! /usr/bin/python
-# -*- coding: iso8859-1 -*-
+#! /usr/bin/env python
+# -*- coding: iso-8859-1 -*-
 
 # chimera - observatory automation system
 # Copyright (C) 2006-2007  P. Henrique Silva <henrique@astro.ufsc.br>
@@ -18,124 +18,185 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+
 from chimera.core.interface import Interface
 from chimera.core.event import event
+from chimera.util.enum  import Enum
+
+
+Shutter = Enum ("OPEN",
+                "CLOSE",
+                "LEAVE_AS_IS")
+
+Binning = Enum ("1x1",
+                "2x2",
+                "3x3",
+                "9x9",
+                "1x2",
+                "1x3",
+                "1x9",
+                "2x1",
+                "3x1",
+                "9x1")
+
 
 class ICamera (Interface):
+    """Base camera interface.
+    """
 
     # config
     __options__ = {"driver" : "/Fake/camera",
 
                    "camera_model"    : "Fake camera Inc.",
                    "ccd_model"       : "KAF XYZ 10",
-                   "ccd_dimension_x" : 100, # pixel
-                   "ccd_dimension_y" : 100, # pixel
-                   "ccd_pixel_size"  : 10.0, # micrometer
+                   "ccd_dimension_x" : 100,  # pixel
+                   "ccd_dimension_y" : 100,  # pixel
+                   "ccd_pixel_size_x": 10.0, # micrometer
+                   "ccd_pixel_size_y": 10.0  # micrometer
                    }
 
-class ICameraExpose(ICamera):
 
-   # methods
-    def expose (self, config):
-        pass
-    
-    def abortExposure (self, config):
-        pass
+class ICameraExpose (ICamera):
+    """Basic camera that can expose and abort exposures.
+    """
+
+    __options__ = {"date_format": "dd-mm-yyyy-hh-mm-ss"}
+
+
+    def expose (self, exptime,
+                repeat=1, interval=0.0,
+                shutter=Shutter.OPEN,
+                binning=Binning.1x1,
+                window="FULL_FRAME",
+                filename="$date-$sequence.fits"):
+        
+        """Start an exposure of exptime seconds of integration time,
+        using the parameters given.
+
+        @param exptime: Integration time in seconds.
+        @type  exptime: float or int
+
+        @param repeat: Number of time to repeat this exposure frame. Default 1.
+        @type  repeat: int
+        
+        @param interval: Number of seconds to wait between each exposure. Default 0.
+        @type  interval: float or int
+
+        @param shutter: The shutter state desired for this exposure. See L{Shutter} for values. Default is Shutter.OPEN.
+        @type  shutter: Shutter
+
+        @param binning: The desired binning. See L{Binning} for values. Default is Binning.1x1.
+                        You can also pass a tuple of (x,y) binning if Binning doesn't have your desired one.
+        
+        @type  binning: Binning or tuple
+        
+        @param window: The desired CCD window to expose in a tuple like (x_center, y_center, width, height) in pixels, anything
+                       different that a tuple implies full frame. Default is 'FULL_FRAME'.
+        
+        @type  window: tuple
+
+        @param filename: The filename where the frames will saved. Directory is specified here also,
+                         like '/directory/image-filename.fits'. The filename can have environment variables and
+                         keywords as defined below:
+
+                          - $date: current date in the format define in date_format configuration
+                          - $sequence: a sequential number (nnnn) (used in repeat mode).
+                      
+        @return: The filenames (tuple if more than one) of the frames taken, False if fail.
+        @rtype: bool or tuple
+        """
+
+    def abortExposure (self, readout=True):
+        """Try abort the current exposure, reading out the current frame if asked to.
+
+        @param readout: Wether to readout the current frame after abort, otherwise the
+                        current photons will be lost forever. Default is True
+        @type  readout: bool
+
+        @return: True if successfull, False otherwise.
+        @rtype: bool
+        """
 
     def isExposing (self):
-        pass
+        """Ask if camera is exposing right now.
 
-    # events
-    @event
-    def exposeComplete (self):
-        pass
-
-    @event
-    def exposeAborted (self):
-        pass
+        @return: True if the camera is exposing, False otherwise.
+        @rtype: bool
+        """
 
     @event
-    def readoutComplete (self):
-        pass
+    def exposeComplete (self, framesLeft):
+        """Indicates that new exposure frame was taken.
+
+        When multiple frames are taken in a single shot, multiple exposeComplete events will be fired.
+
+        @param framesLeft: How many frames more this expose call will take.
+        @type  framesLeft: int
+        """
+
+    @event
+    def readoutComplete (self, filename):
+        """Indicates that a new frame was exposed and saved.
+
+        @param filename: Where this new frame was put in the filesystem.
+        @type  filename: str
+        """
+
+    @event
+    def abortComplete (self):
+        """Indicates that a frame exposure was aborted.
+        """
 
 
-class ICameraTemperature(ICamera):
+class ICameraTemperature (ICamera):
+    """A camera that supports temperature monitoring and control.
+    """
 
-    # methods
-    def setTemperature(self, config):
-        pass
+    __options__ = {"temperature_monitor_delta": 2.0}
+    
+
+    def startCooling (self, tempC):
+        """Start cooling the camera with setpoint setted to tempC.
+
+        @param tempC: Setpoint temperature in degrees Celsius.
+        @type  tempC: float or int
+
+        @return: True if successfull, False otherwise.
+        @rtype: bool
+        """
+
+    def stopCooling (self):
+        """Stop cooling the camera
+
+        @return: True if successfull, False otherwise.
+        @rtype: bool
+        """
+    
+    def setTemperature(self, tempC):
+        """Set new setpoint temperature (if cooling is disabled, this will turn it on).
+
+        @param tempC: New setpoint temperature in degrees Celsius.
+        @type  tempC: float or int
+
+        @return: True if successfull, False otherwise.
+        @rtype: bool
+        """
 
     def getTemperature(self):
-        pass
+        """Get the current camera temperature.
 
-    # events
-    @event
-    def temperatureChanged(self, newTemp, oldTemp):
-        pass
-
-
-class ICameraDriver(Interface):
-
-    # config
-    __options__ = {"device"	         : "usb",
-                   "ccd"                 : ["imaging", "tracking"],
-                   "exp_time"	         : (10, 600000), # 1/100 s
-                   "shutter" 	         : ["open", "close", "leave"],
-                   "readout_aborted"     : True,
-                   "readout_mode"	 : 0,
-                   "date_format"	 : "%d%m%y-%H%M%S",
-                   "file_format"	 : "$observer-$date-$objname",
-                   "file_extension"  	 : "fits",
-                   "directory"	         : "/home/someuser/images",
-                   "save_on_temp"	 : False,
-                   "start_time"          : 0,
-                   "observer"	         : "observer name",
-                   "obj_name"	         : "object name",
-                   "temp_regulation"     : True,
-                   "temp_setpoint"       : 20.0,
-                   "temp_delta"          : 1.0,
-                   "auto_freeze"         : False}
-    
-    # methods
-
-    def open(self, device):
-        pass
-
-    def close(self):
-        pass
-
-    def ping(self):
-        pass
-
-    def isExposing(self):
-        pass
-
-    def expose(self, config):
-        pass
-
-    def abortExposure(self, config):
-        pass
-
-    def setTemperature(self, config):
-        pass
-
-    def getTemperature(self):
-        pass
-
-    # events
-    @event
-    def exposeComplete (self):
-        pass
+        @return: The current camera temperature in degrees Celsius.
+        @rtype: float
+        """
 
     @event
-    def exposeAborted (self):
-        pass
+    def temperatureChange (self, newTempC, delta):
+        """Camera temperature probe. Will be fired eveytime that the camera temperatude changes more than
+        temperature_monitor_delta degrees Celsius.
 
-    @event
-    def readoutComplete (self):
-        pass
+        @param newTempC: The current camera temperature in degrees Celsius.
+        @type newTempC: float
 
-    @event
-    def temperatureChanged(self, newTemp, oldTemp):
-        pass
-    
+        @param delta: How much the temperatude has changed in degrees Celsius.
+        @type  delta: float
+        """

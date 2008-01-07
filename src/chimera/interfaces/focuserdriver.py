@@ -23,27 +23,29 @@ from chimera.core.interface import Interface
 from chimera.core.event import event
 
 
-class IFocuser (Interface):
-    """Instrument interface for an electromechanical focuser for astronomical telescopes.
-    
-    Two kinds of focuser are support (dependind of the driver):
+class IFocuserDriver (Interface):
+    """
+    Driver for an Electromechanical focuser.
 
-     - Absolute encoder: use optical encoder to move to exact positions.
-     - DC pulse: just send a DC pulse to a motor and move to selected directions only (no position information).
+    Both DC pulse and absolute encoder focuser could be used. Implementation takes care of the diferences
+    between these kind of focusers.
     """
 
-    __options__ = {"driver": "/Fake/focus",
-                   "model": "Fake Focus Inc.",
-                   }
-
-
+    __options__ = {"device": "/dev/ttyS1",
+                   "open_timeout": 10,
+                   "move_timeout": 60,
+                   "max_position": 7000,
+                   "min_position": 0,
+                   "pulse_in_multiplier": 100,
+                   "pulse_out_multiplier": 100}
+                 
     def moveIn (self, n):
         """
-        Move the focuser IN by n steps. Steps could be absolute units (for focuser with absolute
-        encoders) or just a pulse of time. Drivers use internal parameters to define the amount of
-        movement depending of the type of the encoder.
+        Move the focuser IN by n steps.
 
-        Use L{moveTo} to move to exact positions (If the focuser support it).
+        Driver should interpret n as whatever it support (time pulse or absolute encoder positions).
+        if only time pulse is available, driver must use pulse_in_multiplier as a multiple to determine
+        how much time the focuser will move IN. pulse_in_multiplier and n will be in miliseconds.
 
         @type  n: int
         @param n: Number of steps to move IN.
@@ -55,11 +57,11 @@ class IFocuser (Interface):
 
     def moveOut (self, n):
         """
-        Move the focuser OUT by n steps. Steps could be absolute units (for focuser with absolute
-        encoders) or just a pulse of time. Drivers use internal parameters to define the amount of
-        movement depending of the type of the encoder.
+        Move the focuser OUT by n steps.
 
-        Use L{moveTo} to move to exact positions (If the focuser support it).
+        Driver should interpret n as whatever it support (time pulse or absolute encoder positions).
+        if only time pulse is available, driver must use pulse_out_multiplier as a multiple to determine
+        how much time the focuser will move OUT. pulse_out_multiplier and n will be in miliseconds.
 
         @type  n: int
         @param n: Number of steps to move OUT.
@@ -70,10 +72,9 @@ class IFocuser (Interface):
 
     def moveTo (self, position):
         """
-        Move the focuser to the select position (if the driver support it).
+        Move the focuser to the select position.
 
-        If the focuser doesn't support absolute position movement, use L{moveIn}
-        and L{moveOut} to command the focuser.
+        If the focuser doesn't support absolute position movement, it MUST return False.
 
         @type  position: int
         @param position: Position to move the focuser.
@@ -84,10 +85,12 @@ class IFocuser (Interface):
 
     def getPosition (self):
         """
-        Gets the current focuser position (if the driver support it).
+        Gets the current focuser position.
+
+        If the driver doesn't support position readout it MUST return -1.
 
         @rtype   : int
         @return  : Current focuser position or -1 if the driver don't support position readout.
         """
-
         
+    

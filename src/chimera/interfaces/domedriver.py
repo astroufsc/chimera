@@ -17,3 +17,50 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+
+from chimera.core.interface import Interface
+from chimera.core.event import event
+
+
+class IDomeDriver (Interface):
+
+    __options__ = {"device": "/dev/ttyS1",
+                   "az_res": 2,  # dome position resolution
+                   "slew_timeout" : 120,
+                   "abort_timeout": 60,                   
+                   "open_timeout" : 20,
+                   "close_timeout": 20,
+                   } 
+  
+    # methods
+
+    def open(self):
+        pass
+
+    def close(self):
+        pass
+
+    def isSlewing (self):
+        pass
+
+    def abortSlew(self):
+        pass
+
+    def getAz(self):
+        pass
+
+    def slewToAz(self):
+        pass
+
+
+    # events
+    
+    @event
+    def slewComplete (self, position):
+        pass
+
+    @event
+    def abortComplete (self, position):
+        pass
+    

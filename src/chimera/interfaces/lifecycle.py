@@ -59,7 +59,7 @@ class ILifeCycle (Interface):
         """
         Cleanup {__start__} actions.
 
-        {shutdown} it's called by Manager when Manager is diying or
+        {__stop__} it's called by Manager when Manager is diying or
         programatically at any time (to remove an Instrument during
         system lifetime).
 
@@ -70,7 +70,7 @@ class ILifeCycle (Interface):
     def __main__ (self):
         """
         Main control method. Implementeers could use this method to
-        implement control loop functions. See L{BasicLifeCycle}.
+        implement control loop functions.
 
         @note: This method runs on their own thread.
         """
@@ -79,19 +79,19 @@ class ILifeCycle (Interface):
         """
         Get the current state of the object as a L{State} enum.
 
-        See L{State} for possible values.
+        @see: L{State} for possible values.
         """
 
     def __setstate__ (self, state):
         """
         Internally used function to set the current state of the object.
 
-        See L{State} for possible values.
+        @see: L{State} for possible values.
         """
 
     def getLocation (self):
         """
-        Get the current L{Location} that the object is deployed.
+        Get the current L{Location} where the object is deployed.
         """
 
     def __setlocation__ (self, location):
