@@ -1,5 +1,5 @@
-#! /usr/bin/python
-# -*- coding: iso8859-1 -*-
+#! /usr/bin/env python
+# -*- coding: iso-8859-1 -*-
 
 # chimera - observatory automation system
 # Copyright (C) 2006-2007  P. Henrique Silva <henrique@astro.ufsc.br>
@@ -18,62 +18,67 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-from chimera.core.lifecycle import BasicLifeCycle
-from chimera.core.event import event
+from chimera.core.chimeraobject import ChimeraObject
 
 from chimera.interfaces.camera import ICameraExpose, ICameraTemperature
 
 import logging
 
-class Camera(BasicLifeCycle, ICameraExpose, ICameraTemperature):
+class Camera(ChimeraObject, ICameraExpose, ICameraTemperature):
 
-    def __init__(self, manager):
-        BasicLifeCycle.__init__(self, manager)
+    def __init__(self):
+        ChimeraObject.__init__(self)
 
-    def init(self, config):
-
-        self.config += config
-
-        self.drv = self.manager.getDriver(self.config.driver)
-
-        if not self.drv:
-            logging.debug("Couldn't load selected driver (%s)." %  self.config.driver)
-            return False
-
-        # connect events
-        self.drv.exposeComplete += self.expose_cb
-        self.drv.readoutComplete += self.readout_cb
-        self.drv.exposeAborted += self.abort_cb
-        self.drv.temperatureChanged += self.temp_cb
-
+    def __init__ (self):
+        self.drv = None
         return True
 
-    # callbacks
-    def expose_cb (self):
-        self.exposeComplete ()
+    def __start__ (self):
 
-    def readout_cb (self):
-        self.readoutComplete ()
+        self.drv = self.getProxy(self['driver'])
 
-    def abort_cb (self):
-        self.exposeAborted ()
+        try:
+            self.drv.ping()
 
-    def temp_cb (self, new, old):
-        self.temperatureChanged (new, old)
+            # connect our callbacks
+            
+            
+            
+        except ObjectNotFoundException, e:
+            
+            return False
+            
 
-    # methods
-    def expose (self, config):
-        return self.drv.expose(config)
+            
+    def __stop__ (self):
 
-    def abortExposure (self, config):
-        return self.drv.abortExposure(config)
+        # disconnect our callbacks
 
+        pass
+
+    def expose (self, exptime,
+                repeat=1, interval=0.0,
+                shutter=Shutter.OPEN,
+                binning=Binning.1x1,
+                window="FULL_FRAME",
+                filename="$date-$sequence.fits"):
+
+        pass
+
+    def abortExposure (self, readout=True):
+        pass
+    
     def isExposing (self):
-        return self.drv.isExposing ()
+        pass
+    
+    def startCooling (self, tempC):
+        pass
 
-    def setTemperature(self, config):
-        return self.drv.setTemperature (config)
+    def stopCooling (self):
+        pass
+    
+    def setTemperature(self, tempC):
+        pass
 
     def getTemperature(self):
-        return self.drv.getTemperature ()
-    
+        pass

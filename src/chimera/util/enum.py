@@ -58,7 +58,7 @@ __license__ = "Choice of GPL or Python license"
 __url__ = "http://cheeseshop.python.org/pypi/enum/"
 __version__ = "0.4.3"
 
-
+
 class EnumException(Exception):
     """ Base class for all exceptions in this module """
     def __init__(self):
@@ -90,7 +90,7 @@ class EnumImmutableError(TypeError, EnumException):
     def __str__(self):
         return "Enumeration does not allow modification"
 
-
+
 class EnumValue(object):
     """ A specific value of an enumerated type """
 
@@ -139,7 +139,7 @@ class EnumValue(object):
 
         return result
 
-
+
 class Enum(object):
     """ Enumerated type """
 

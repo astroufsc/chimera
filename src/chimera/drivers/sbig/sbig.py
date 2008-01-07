@@ -350,7 +350,7 @@ class SBIG(BasicLifeCycle, ICameraDriver, IFilterWheelDriver):
         try:
             hdu  = pyfits.PrimaryHDU(img)
 
-            # add basic header (DATE, DATE-OBS) ad this information can get lost
+            # add basic header (DATE, DATE-OBS) as this information can get lost
             # any other header should be added later by the controller
             fits_date_format = "%Y-%m-%dT%H:%M:%S"
             date = time.strftime(fits_date_format, time.gmtime())
