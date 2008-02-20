@@ -1,3 +1,16 @@
+2008-02-06  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* src/chimera/core/log.py: Better log formatting with separate
+	logger for console and file.
+
+	New function to set Console log level.
+
+	Logging of exceptions using printException facility using custom
+	formatter.
+
+	* src/chimera/core/tests/test_log.py: Simple test to confirm log
+	capabilities.
+
 2008-01-07  P. Henrique Silva  <henrique@astro.ufsc.br>
 
 	* tests/run-pychecker.sh

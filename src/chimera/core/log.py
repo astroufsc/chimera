@@ -20,8 +20,57 @@
 
 
 import logging
+import logging.handlers
+import sys
+import os.path
 
-# verbosity level
-logging.basicConfig(level=logging.WARNING,
-                    format='%(asctime)s.%(msecs)d %(levelname)s %(name)s %(filename)s:%(lineno)d %(message)s',
-                    datefmt='%d-%m-%Y %H:%M:%S')
+# try to use fatser (C)StringIO, use slower one if not available
+try:
+    import cStringIO as StringIO
+except ImportError:
+    import StringIO
+
+
+from chimera.core.exceptions import printException
+
+
+__all__ = ['setConsoleLevel']
+
+
+class ChimeraFormatter (logging.Formatter):
+
+    def __init__ (self, fmt, datefmt):
+        logging.Formatter.__init__(self, fmt, datefmt)
+
+    def formatException (self, exc_info):
+        stream = StringIO.StringIO()
+        printException(exc_info[1], stream=stream)
+
+        try:
+            return stream.getvalue()
+        finally:
+            stream.close()
+
+        
+fmt = ChimeraFormatter(fmt='%(asctime)s.%(msecs)d %(levelname)s %(name)s %(filename)s:%(lineno)d %(message)s',
+                       datefmt='%d-%m-%Y %H:%M:%S')
+
+fileHandler    = logging.handlers.RotatingFileHandler(os.path.join(os.path.dirname(__file__), "../", "chimera.log"),
+                                                      maxBytes=2*1024*1024, backupCount=10)
+
+consoleHandler = logging.StreamHandler(sys.stderr)
+
+fileHandler.setFormatter(fmt)
+fileHandler.setLevel(logging.DEBUG)
+
+consoleHandler.setFormatter(fmt)
+consoleHandler.setLevel(logging.WARNING)
+
+root = logging.getLogger("chimera")
+root.setLevel(logging.DEBUG)
+root.addHandler(fileHandler)
+root.addHandler(consoleHandler)
+
+
+def setConsoleLevel (level):
+    consoleHandler.setLevel(level)
