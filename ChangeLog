@@ -1,5 +1,12 @@
 2008-03-12  P. Henrique Silva  <henrique@astro.ufsc.br>
 
+	* src/chimera/drivers/optectcfspy:
+	Converted to new MetaObject framework.
+	Converted to use exceptions.
+	Converted to use full event-driven system.
+
+2008-03-12  P. Henrique Silva  <henrique@astro.ufsc.br>
+
 	* src/chimera/drivers/domelna40cm.py:
 	Converted to new MetaObject framework.
 	Converted to use exceptions.
