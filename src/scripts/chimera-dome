@@ -1,0 +1,219 @@
+#! /usr/bin/env python
+# -*- coding: iso-8859-1 -*-
+
+# chimera - observatory automation system
+# Copyright (C) 2006-2007  P. Henrique Silva <henrique@astro.ufsc.br>
+
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+import sys
+import os
+import time
+import logging
+
+from optparse import OptionParser
+
+from chimera.core.manager import Manager
+from chimera.core.version import _chimera_version_, _chimera_description_
+
+from chimera.instruments.dome import Dome
+
+from chimera.util.enum import Enum
+from chimera.util.coord  import Coord
+
+from chimera.core.exceptions import ObjectNotFoundException
+from chimera.core.exceptions import ChimeraObjectException
+from chimera.core.exceptions import InvalidLocationException
+
+from chimera.core.location import Location
+
+from chimera.core.callback import callback
+
+from chimera.core.log import setConsoleLevel
+#setConsoleLevel(logging.DEBUG)
+setConsoleLevel(1e9)
+
+if __name__ == '__main__':
+
+    chimera_dome_description = " - Dome controller"
+
+    def check_includepath (option, opt_str, value, parser):
+        if not value or not os.path.isdir (os.path.abspath(value)):
+            raise optparse.OptionValueError ("Couldn't found %s include path." % value)
+        eval ('parser.values.%s.append ("%s")' % (option.dest, value))
+
+    def check_location (option, opt_str, value, parser):
+        try:
+            l = Location (value)
+        except InvalidLocationException:
+            raise optparse.OptionValueError ("%s isnt't a valid location." % value)
+
+        eval ('parser.values.%s.append ("%s")' % (option.dest, value))
+
+
+    parser = OptionParser(prog="chimera-dome", version=_chimera_version_,
+                          description=_chimera_description_+chimera_dome_description)
+
+    parser.add_option("--dome", action="callback", type="string", dest="dome",
+                      help="Dome instrument to be used. If blank, create a new"
+                      " dome instance, using the the driver selected with --driver."
+                      " format: [host:port]/Class/name. [default=\"\"]",
+                      callback=check_location)
+
+    parser.add_option("-d", "--driver", action="callback", type="string", dest="driver",
+                      help="Dome driver to be used."
+                      " /Class/name?option1=value1,option2=value. [default=%default]",
+                      callback=check_location)
+
+    parser.add_option("-D", "--drivers-dir", action="callback", callback=check_includepath,
+                      dest="drv_dir", type="string",
+                      help="Append PATH to drivers load path.",
+                      metavar="PATH")
+
+    parser.add_option("-i", "--info", action="store_true", dest="info",
+                      help="Print dome information and exit")
+
+    parser.add_option("--to", action="store", type="string", dest="move_to",
+                      help="Move dome to AZIMUTH", metavar="AZIMUTH")
+
+    parser.add_option("--open", action="store_true", dest="open",
+                      help="Open dome slit")
+
+    parser.add_option("--close", action="store_true", dest="close",
+                      help="Close dome slit")
+
+    parser.add_option("-q", "--quiet", action="store_true", dest='quiet',
+                      help="Don't display informations while working [default=%default].")
+
+
+    prefix = os.path.realpath(os.path.join(os.path.abspath(__file__), '../../chimera/'))
+    drivers_path = [os.path.join(prefix, 'drivers')]
+
+    parser.set_defaults(dome     = [],
+                        driver   = ["/DomeLNA40cm/lna?device=/dev/ttyS5"],
+                        drv_dir  = [],
+                        quiet    = False,
+                        info     = False,
+
+                        open     = None,
+                        close    = None,
+                        move_to  = None)
+
+
+    options, args = parser.parse_args(sys.argv)
+
+    Action = Enum("OPEN", "CLOSE", "MOVE_TO")
+
+    action = None
+    target = None
+
+    # some validations
+    if options.open != None:
+
+        action = Action.OPEN
+        
+        if (options.close != None) or (options.move_to != None):
+            print >> sys.stderr, "Cannot use --open with --close/--to"
+            sys.exit(1)
+
+    if options.close != None:
+        action = Action.CLOSE
+
+        if (options.open != None) or (options.move_to != None):
+            print >> sys.stderr, "Cannot use --close with --open/--to"
+            sys.exit(1)
+
+    if options.move_to != None:
+        action = Action.MOVE_TO
+
+        try:
+            target = Coord.fromDMS(options.move_to)
+        except Exception, e:
+            print >> sys.stderr, "Invalid azimuth (s)" % e
+            sys.exit(1)
+        
+        if (options.open != None) or (options.close != None):
+            print >> sys.stderr, "Cannot use --to with --open/--close"
+            sys.exit(1)
+
+    if not action and not options.info:
+        print >> sys.stderr, "Please, ask me anything to do. Try --open/--close/--to."
+        sys.exit(1)
+ 
+    # 
+    # start
+    #
+
+    manager = Manager(port=13000)
+
+    dome = None
+
+    # use an already running dome
+    if options.dome:
+        try:
+            dome = manager.getProxy(options.dome[0])
+        except (ObjectNotFoundException, ChimeraObjectException), e:
+            print >> sys.stderr, "Cannot find dome %s. (%s)" % (options.dome[0], e)
+            manager.shutdown()
+            sys.exit(1)
+
+    # create a new dome using selected driver
+    else:
+        try:
+            driver = manager.addLocation(options.driver[-1], path=drivers_path)
+            dome = manager.addClass(Dome, "dome", {"driver": options.driver[-1]})
+        except (ObjectNotFoundException, ChimeraObjectException), e:
+            print >> sys.stderr, "Cannot find dome driver %s. (%s)" % (options.driver[-1],e)
+            manager.shutdown()
+            sys.exit(1)
+    
+    # move
+    start = time.time()
+
+    try:
+
+        if options.info:
+            print "Current dome azimuth:", dome.getAz(),
+            slit = "CLOSED"
+            if dome.isSlitOpen():
+                slit = "OPEN"
+            print " Slit: %s" % slit
+
+        else:
+            
+            try:
+                if action == Action.OPEN:
+                    print "Opening dome slit ... ",
+                    sys.stdout.flush()
+                    dome.openSlit()
+                elif action == Action.CLOSE:
+                    print "Closing dome slit ... ",
+                    sys.stdout.flush()
+                    dome.closeSlit()
+                else:
+                    print "Moving dome to %s ... " % target,
+                    sys.stdout.flush()
+                    dome.slewToAz(target)
+                    
+                print "OK (took %.3fs)" % (time.time()-start)
+
+            except Exception, e:
+                print >> sys.stderr, "Error trying to move dome. (%s)" % e
+
+    finally:
+
+        manager.shutdown()
+        time.sleep(1)
+        sys.exit(0)

@@ -1,3 +1,13 @@
+2008-03-10  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* scripts/chimera: Fix changes on Site controller.
+	* scripts/chimera-cam: Ported to new infrastructure and improved.
+	* scripts/chimera-console: Ported but not working yet.
+
+	* scripts/chimera-focus:
+	* scripts/chimera-tel:
+	* scripts/chimera-dome: New scripts.
+
 2008-02-06  P. Henrique Silva  <henrique@astro.ufsc.br>
 
 	* src/chimera/core/log.py: Better log formatting with separate

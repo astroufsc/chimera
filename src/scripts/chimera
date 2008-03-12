@@ -22,7 +22,7 @@ if __name__ == '__main__':
 
     import sys
 
-    from chimera.controllers.site.main import Site
+    from chimera.controllers.site.main import SiteController
 
-    Site (sys.argv).init()
+    SiteController (sys.argv).init()
 
