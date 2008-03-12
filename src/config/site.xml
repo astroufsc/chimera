@@ -1,32 +1,21 @@
 <?xml version="1.0"?>
 
-<uts>
+<chimera host="localhost" port="9000">
 
-<site name="UFSC" latitude="-22.0" longitude="-40.0" altitude="1000"/>
+<site>
+ <name>UFSC</name>
+ <latitude>-22.0</latitude>
+ <longitude>-40.0</longitude>
+ <altitude>1000</altitude>
+ <timezone>-3</timezone>
+ <dst/>
+</site>
 
 <drivers>
 
    <driver name="sbig" class="SBIG" host='200.100.50.25' port='1000'>
-	<option name="device"		value="usb"/>
-	<option name="ccd"		value="imaging"/>
-	<option name="exp_time"		value="10"/>
-	<option name="shutter"		value="open"/>
-	<option name="readout_aborted"	value="1"/>
-	<option name="readout_mode"	value="1"/>
-	<option name="date_format"	value="%d%m%y"/>
-	<option name="file_format"	value="$num-$observer-$date-$objname"/>
-	<option name="file_extension"	value="fits"/>
-	<option name="directory"	value="/home/someuser/images"/>
-	<option name="save_on_temp"	value="1"/>
-	<option name="seq_num"		value="1"/>
-	<option name="observer"		value="Observer"/>
-	<option name="obj_name"		value="obj"/>
-	<option name="start_time"	value="0"/>
-	<option name="start_time"	value="0"/>
-	<option name="temp_regulation"	value="0"/>
-	<option name="temp_setpoint"	value="20.0"/>
-	<option name="temp_delta"	value="1.0"/>
-	<option name="auto_freeze"	value="0"/>
+	<option name="device" value="usb"/>
+	<option name="ccd"    value="imaging"/>
    </driver>
 
 </drivers>
@@ -39,4 +28,16 @@
 
 </instruments>
 
-</uts>
+<controllers>
+
+   <controller name="observer" class="Observer">
+      <option name="camera" value="/Camera/st7?driver=/SBIG/st7"/>
+      <option name="telescope" value="/Telescope/paramount?driver=/RemoteClient/paramount"/>
+      <option name="filterwheel" value="/FilterWheel/fw?driver=/SBIG/st7"/>
+      <option name="plan" value="plan-ph"/>
+      <option name="verbose" value="1"/>
+   </controller>
+
+</controllers>
+
+</chimera>

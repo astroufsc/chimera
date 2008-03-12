@@ -38,6 +38,13 @@ print m.doClass()
 
 # configuration
 print "option1 =>", m['option1']
+print "option2 =>", m['option2']
+
+m += {"option1": "new value 1",
+      "option2": "new value 2"}
+
+print "option1 =>", m['option1']
+print "option2 =>", m['option2']
 
 # bye
 manager.shutdown()

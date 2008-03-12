@@ -47,6 +47,7 @@ from chimera.core.version import  _chimera_version_,		\
 chimera_modules = ['chimera',
                    'chimera.core',
                    'chimera.controllers',
+                   'chimera.controllers.site',
                    'chimera.drivers',
                    'chimera.drivers.sbig',
                    'chimera.interfaces',

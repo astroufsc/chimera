@@ -9,4 +9,4 @@ if [[ ! `which pychecker` ]]; then
     exit 1
 fi
 
-pychecker -F $TESTS_DIR/chimera.pychecker $TESTS_DIR/../src/chimera
+find $TESTS_DIR/../src/chimera/ -name '*.py' | xargs pychecker -F $TESTS_DIR/chimera.pychecker | tee chimera.pychecker.log

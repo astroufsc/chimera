@@ -9,4 +9,4 @@ if [[ ! `which epydoc` ]]; then
     exit 1
 fi
 
-epydoc --html -o $DOCS_DIR/api --config=$DOCS_DIR/chimera.epydoc $@
+epydoc --html -o $DOCS_DIR/api --config=$DOCS_DIR/chimera.epydoc -v $@

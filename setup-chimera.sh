@@ -8,12 +8,19 @@
 #          This script modifies environment variables (PATH and PYTHONPATH)
 #
 
-CHIMERA_ROOT=$(python - `dirname $BASH_SOURCE` <<EOF
+# older bashs doesn't have $BASH_SOURCE
+if [ ! -z $BASH_SOURCE ]; then
+
+ CHIMERA_ROOT=$(python - `dirname $BASH_SOURCE` <<EOF
 import os.path
 import sys
 print os.path.abspath(sys.argv[1])
 EOF
 )
+
+else
+ CHIMERA_ROOT=`pwd`
+fi
 
 CHIMERA_PYTHON_PATH=$CHIMERA_ROOT/src
 CHIMERA_BIN=$CHIMERA_ROOT/src/scripts
@@ -48,7 +55,7 @@ fi
 
 # export PATH if needed
 
-if [[ ! `which chimera` ]]; then
+if [[ ! `which chimera &> /dev/null` ]]; then
     export PATH=$PATH:$CHIMERA_BIN
 fi
 

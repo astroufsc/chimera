@@ -9,4 +9,4 @@ if [[ ! `which nosetests` ]]; then
     exit 1
 fi
 
-nosetests --with-coverage --cover-erase --cover-package=chimera $TESTS_DIR/../src/chimera -v $@ | tee $TESTS_DIR/tests.log
+nosetests --with-coverage --cover-erase --cover-package=chimera $TESTS_DIR/../src/chimera -v $@ 2>&1 | tee $TESTS_DIR/tests.log

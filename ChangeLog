@@ -1,5 +1,23 @@
 2008-03-12  P. Henrique Silva  <henrique@astro.ufsc.br>
 
+	* setup.py: Updated.
+	* setup-chimera.sh: Compatible with older bash's and which's.
+	* .pydevproject: Updated.
+
+	* src/config/site.xml: Expanded example with host/port and
+	separeted site tag.
+
+	* docs/examples/client.py: Bulk configuration example added.
+	* docs/chimera.epydoc: Expand documentation to every chimera
+	package.
+
+	* docs/run-epydoc.sh: More verbose:
+
+	* tests/run-pychecker.sh: First working version.
+	* tests/run-tests.sh: Log support added.
+
+2008-03-12  P. Henrique Silva  <henrique@astro.ufsc.br>
+
 	* src/chimera/__init__.py: Documentation added (epydoc).
 
 2008-03-12  P. Henrique Silva  <henrique@astro.ufsc.br>
