@@ -1,5 +1,5 @@
-#! /usr/bin/python
-# -*- coding: iso8859-1 -*-
+#! /usr/bin/env python
+# -*- coding: iso-8859-1 -*-
 
 # chimera - observatory automation system
 # Copyright (C) 2006-2007  P. Henrique Silva <henrique@astro.ufsc.br>
@@ -21,94 +21,93 @@
 import os
 import time
 import logging
-import pwd
 import threading
-import string
-import random
-import tempfile
 
-
-# ask to use numpy
-os.environ["NUMERIX"] = "numpy"
-import pyfits
+import numpy as N
         
 from sbigdrv import *
 
-from chimera.core.lifecycle import BasicLifeCycle
-from chimera.interfaces.camera import ICameraDriver
-from chimera.interfaces.filterwheel import IFilterWheelDriver
+from chimera.core.chimeraobject            import ChimeraObject
+from chimera.interfaces.cameradriver       import ICameraDriver, CCD, Device, Bitpix
+from chimera.interfaces.camera             import Shutter, Binning
+from chimera.interfaces.filterwheeldriver  import IFilterWheelDriver
 
-from chimera.controllers.blocks import next_seq
-        
-class SBIG(BasicLifeCycle, ICameraDriver, IFilterWheelDriver):
+from chimera.core.lock import lock
 
-    def __init__(self, manager):
-        BasicLifeCycle.__init__(self, manager)
+from chimera.util.imagesave import ImageSave
+
+
+class SBIG(ChimeraObject, ICameraDriver, IFilterWheelDriver):  
+
+    def __init__(self):
+        ChimeraObject.__init__ (self)
 
         self.drv = SBIGDrv()
         self.ccd = SBIGDrv.imaging
+        self.dev = SBIGDrv.usb
 
         self.lastTemp = 0
         self.lastFilter = None
 
+        self.lastFrameStartTime = 0
+        self.lastFrameFilename = ""
+
         self.term = threading.Event()
 
-    def init(self, config):
+        self.setHz(1.0/5)
 
-        self.config += config
+    def __start__ (self):
 
-        if self.config.ccd == "imaging":
+        if self['ccd'] == CCD.IMAGING:
             self.ccd = SBIGDrv.imaging
         else:
             self.ccd = SBIGDrv.tracking
-            
-        if self.config.device == "usb":
+           
+        if self['device'] == Device.USB:
             self.dev = SBIGDrv.usb
         else:
             self.dev = SBIGDrv.lpt1
                         
         return self.open(self.dev)
 
-    def shutdown(self):
+    def __stop__ (self):
         self.close ()
 
-    def control(self):
+    def control (self):
 
-        temp = self.drv.getTemperature ()
+        #FIXME disabled to get more tests
+        return False
 
-        if temp:
+        try:
+            temp = self.drv.getTemperature ()
 
             newTemp = temp[3]
 
-            if (newTemp - self.lastTemp) >= self.config.temp_delta:
-                self.temperatureChanged (newTemp, self.lastTemp)
+            if (newTemp - self.lastTemp) >= self['temp_delta']:
+                self.temperatureChange (newTemp, self.lastTemp-newTemp)
                 self.lastTemp = newTemp
-        else:
-            logging.debug ("Couldn't get CCD temperature (%d %s)" % self.drv.getError ())
+            
+        except SBIGException, e:
+            self.log.exception("something wrong, will try again on the next loop.")
 
+        return True # to continue pooling
+
+    @lock
     def open(self, device):
-
-        if not self.drv.openDriver():
-            logging.error("Error opening driver: %d %s." % self.drv.getError())
-            return False
-
-        if not self.drv.openDevice(device):
-            logging.error("Error opening device: %d %s." % self.drv.getError())
-            return False
-
-        if not self.drv.establishLink():
-            logging.error("Error establishing link: %d %s." % self.drv.getError())
-            return False
-
-        if not self.drv.queryCCDInfo():
-            logging.error("Error querying ccd: %d %s." % self.drv.getError())
-            return False
+        self.drv.openDriver()
+        self.drv.openDevice(device)
+        self.drv.establishLink()
+        self.drv.queryCCDInfo()
 
         return True
-        
+
+    @lock
     def close(self):
-        self.drv.closeDevice()
-        self.drv.closeDriver()
+        try:
+            self.drv.closeDevice()
+            self.drv.closeDriver()
+        except SBIGException:
+            pass
 
     def ping(self):
         return self.drv.isLinked()
@@ -116,14 +115,9 @@ class SBIG(BasicLifeCycle, ICameraDriver, IFilterWheelDriver):
     def isExposing(self):
         return self.drv.exposing(self.ccd)
 
-    def expose(self, config):
+    @lock
+    def expose(self):
 
-        self.config += config
-
-        if self.isExposing():
-            logging.error ("There is another exposure been taken.")
-            return False
-        
         self.term.clear()
 
         if self._expose():
@@ -131,94 +125,87 @@ class SBIG(BasicLifeCycle, ICameraDriver, IFilterWheelDriver):
         else:
             return False
 
-    def abortExposure(self, config):
-
-        self.config += config
+    @lock
+    def abortExposure(self):
 
         if not self.isExposing():
-            logging.debug("There are no exposition in course... abort cancelled.")
             return False
-                
-        self.term.set()
 
-        logging.debug("Aborting exposure...")
+        # set our event, so current exposure know that it must abort
+        self.term.set()
 
         while self.isExposing():
             time.sleep (0.1)
 
+        self.abortComplete()
+
         return True
 
     # methods
-    def setTemperature(self, config):
+    @lock
+    def startCooling(self):
+        self.drv.setTemperature (True,
+                                 self["temp_setpoint"])
+        return True
 
-        self.config += config
-
-        if not self.drv.setTemperature (self.config.temp_regulation,
-                                        self.config.temp_setpoint,
-                                        self.config.auto_freeze):
-            logging.error("Couldn't set temperature.")
-            return False
+    def stopCooling(self):
+        self.drv.setTemperature (False,
+                                 self["temp_setpoint"])
 
         return True
+
+    def isCooling(self):
+        return bool(self.drv.getTemperature()[0])
 
     def getTemperature(self):
+        return self.drv.getTemperature()[-1]
 
-        ret = self.drv.getTemperature ()
-
-        if not ret:
-            logging.error("Couldn't get temperature.")
-            return False
-
-        return ret
+    def getSetpoint(self):
+        return self.drv.getTemperature()[-2]
 
     def getFilter (self):
-        return self.drv.getFilterPosition ()
+        # Chimera uses filter starting with 0
+        position = self.drv.getFilterPosition()
+        if position == 0: return -1 # unknown
+        return position-1
 
-    def setFilter (self, _filter):
+    @lock
+    def setFilter (self, filter):
+        # Chimera uses filter starting with 0
+        position = self.drv.filters.get(filter+1, None)
 
-        try:
-            position = eval ('self.drv.filter_%d' % _filter)
-        except NameError:
-            logging.error ("Selected filter not defined on SBIG driver.")
-            return False
+        if not position:
+            raise ValueError("Selected filter not defined on SBIG driver.")
 
-        ret = self.drv.setFilterPosition (position)
+        if self.lastFilter == None:
+            self.lastFilter = self.getFilter()
 
-        if not ret:
-            logging.error ("Error while changing filter (%d %s)." % self.drv.getError ())
-            return False
+        self.drv.setFilterPosition (position)
 
-        # first filter change, so last equals new
-        if not self.lastFilter:
-            self.lastFilter = _filter
-
-        self.filterChanged (_filter, self.lastFilter)
-        self.lastFilter = _filter
+        self.filterChange(filter, self.lastFilter)
+        self.lastFilter = filter
 
         return True
         
-    def getFilterStatus (self):
-        return self.drv.getFilterStatus ()
-
     def _expose(self):
 
-        if self.config.shutter == "open":
+        if self["shutter"] == Shutter.OPEN:
             shutter = SBIGDrv.openShutter
-        elif self.config.shutter == "close":
+        elif self["shutter"] == Shutter.CLOSE:
             shutter = SBIGDrv.closeShutter
-        elif self.config.shutter == "leave":
+        elif self["shutter"] == Shutter.LEAVE:
             shutter = SBIGDrv.leaveShutter
         else:
-            logging.error("Incorrect shutter option (%s). Leaving shutter intact" % self.config.shutter)
+            raise ValueError("Incorrect shutter option (%s). Leaving shutter intact" % self["shutter"])
             shutter = SBIGDrv.leaveShutter
 
-        if not self.drv.startExposure(self.ccd, self.config.exp_time, shutter):
-            err = self.drv.getError()
-            logging.error("Error starting exposure: %d %s" %  (err))
-            return False
+        # ok, start it
+        self.exposeBegin(self["exp_time"])
+        
+        self.drv.startExposure(self.ccd, int(self["exp_time"]*100), shutter)
         
         # save time exposure started
-        self.config.start_time = time.time()
+        self.lastFrameStartTime = time.time()
 
         while self.isExposing():
                                         
@@ -229,7 +216,7 @@ class SBIG(BasicLifeCycle, ICameraDriver, IFilterWheelDriver):
                 if self.isExposing():
                     self._endExposure()
                 
-                if self.config.readout_aborted:
+                if self["readout_aborted"]:
                     self._readout()
                     
                 return False
@@ -238,11 +225,7 @@ class SBIG(BasicLifeCycle, ICameraDriver, IFilterWheelDriver):
         return self._endExposure()
 
     def _endExposure(self):
-
-        if not self.drv.endExposure(self.ccd):
-            err = self.drv.getError()
-            logging.error("Error ending exposure: %d %s" % err)
-            return False
+        self.drv.endExposure(self.ccd)
 
         # fire exposeComplete event
         self.exposeComplete()
@@ -251,136 +234,86 @@ class SBIG(BasicLifeCycle, ICameraDriver, IFilterWheelDriver):
 
     def _readout(self):
 
+        #readoutMode = self._getReadoutMode(self["window_width"],
+        #                                   self["window_height"], self["binning"])
+        
+        readoutMode = self.drv.readoutModes[self.ccd][0]
+        
+        img = N.zeros(readoutMode.getSize(), N.int32)
+        
         # start readout
-        # FIXME: bitpix selection
-        img = numpy.zeros(self.drv.readoutModes[self.ccd][self.config.readout_mode].getSize(), numpy.int16)
+        #img = ImageSave.getPixels(readoutMode,
+        #                          self["window_width"], self["window_height"],
+        #                          self["bitpix"])
 
-        if not self.drv.startReadout(self.ccd, 0):
-            err = self.drv.getError()
-            logging.error("Error starting readout: %d %s" % err)
-            return False
+        # convert the matrix to SBIG specific window and line specification
+        #window, line = self._getWindowAndLine(img)
 
-        i = 0
-        for line in range(self.drv.readoutModes[self.ccd][self.config.readout_mode].height):
-            img[i] = self.drv.readoutLine(self.ccd, 0)
-            i = i + 1
+        try:
+            next_filename = ImageSave.save(None, 
+                                           self["directory"],
+                                           self["file_format"],
+                                           self["file_extension"],
+                                           self["date_format"],
+                                           self.lastFrameStartTime,
+                                           self["bitpix"],
+                                           self["save_on_temp"],
+                                           dry=True)
+        except Exception, e:
+            print e
+
+        self.readoutBegin(next_filename)
+
+        self.drv.startReadout(self.ccd, 0)
+        
+	for line in range(readoutMode.height):
+	
+            img[line] = self.drv.readoutLine(self.ccd, 0)
 
             # check if user asked to abort
             if self.term.isSet():
                 self._endReadout()
-                self._saveFITS(img)
-                return True
+                return self._saveFITS(img)
 
         # end readout and save
-        self._endReadout()
-        ret = self._saveFITS(img)
-                
-        return ret
+        self._endReadout(next_filename)
+        return self._saveFITS(img)
+
+    # TODO
+    def _getWindowAndLine(self, img):
+        shape = img.shape()
+        return ()
+
+    def _getReadoutMode(self, width, height, binning):
+        """
+        Given width, height and binning get a
+        """
+
+        for i, mode in self.drv.readoutModes[self.ccd].items():
+            print i, mode
+
+        return None
 
     def _saveFITS(self, img):
-        
-        # check if config.directory exists
-        # also check write permissions. If user don't have permission, try to write on /tmp
-        # and log this so user can try to copy this later
 
-        dest = self.config.directory
-
-        dest = os.path.expanduser(dest)
-        dest = os.path.expandvars(dest)
-        dest = os.path.realpath(dest)
-
-        # existence of the directory
-        if not os.path.exists(dest):
-
-            # directory doesn't exist, check config to know what to do
-            if not self.config.save_on_temp:
-                logging.warning("The direcotry specified (%s) doesn't exist "
-                                "and save_on_temp was not active, the current "
-                                "exposure will be lost." % (dest))
-                
-                return False
-
-            else:
-                logging.warning("The direcotry specified (%s) doesn't exist. "
-                                "save_on_temp is active, the current exposure will be saved on /tmp" % (dest))
-
-                dest = tempfile.gettempdir ()
-                       
-        # permission
-        if not os.access(dest, os.W_OK):
-            # user doesn't have permission to write on dest, check config to know what to do
-            uid = os.getuid()
-            user = pwd.getpwuid(uid)[0]
-
-            if not self.config.save_on_temp:
-                logging.warning("User %s (%d) doesn't have permission to write "
-                                "on %s and save_on_temp was not active, the current "
-                                "exposure will be lost." % (user, uid, dest))
-                
-                return False
-            else:
-                logging.warning("User %s (%d) doesn't have permission to write on %s. "
-                                "save_on_temp is active, the current exposure will be saved on /tmp" % (user, uid, dest))
-                dest = tempfile.gettempdir ()
-
-
-        # create filename
-        # FIXME: UTC or not UTC?
-        date = time.strftime(self.config.date_format, time.gmtime(self.config.start_time))
-        
-        subs_dict = {'observer': self.config.observer,
-                     'date': date,
-                     'objname': self.config.obj_name}
-
-        filename = string.Template(self.config.file_format).safe_substitute(subs_dict)
-
-        seq_num = next_seq(dest, filename, self.config.file_extension)
-
-        finalname = os.path.join(dest, "%s-%04d%s%s" % (filename, seq_num, os.path.extsep, self.config.file_extension))
-
-        # check if the finalname doesn't exist
-        if os.path.exists(finalname):
-            tmp = finalname
-            finalname = os.path.join(dest, "%s-%04d%s%s" % (filename, int (random.random()*1000),
-                                                            os.path.extsep, self.config.file_extension))
-            
-            logging.debug ("Image %s already exists. Saving to %s instead." %  (tmp, finalname))
-            
-            
         try:
-            hdu  = pyfits.PrimaryHDU(img)
+            self.lastFrameFilename = ImageSave.save(img,
+                                                    self["directory"],
+                                                    self["file_format"],
+                                                    self["file_extension"],
+                                                    self["date_format"],
+                                                    self.lastFrameStartTime,
+                                                    self["bitpix"],
+                                                    self["save_on_temp"])
+        except Exception, e:
+            print e
+            
+        return self.lastFrameFilename
 
-            # add basic header (DATE, DATE-OBS) as this information can get lost
-            # any other header should be added later by the controller
-            fits_date_format = "%Y-%m-%dT%H:%M:%S"
-            date = time.strftime(fits_date_format, time.gmtime())
-            dateobs = time.strftime(fits_date_format, time.gmtime(self.config.start_time))
-            
-            hdu.header.update("DATE", date, "date of file creation")
-            hdu.header.update("DATE-OBS", dateobs, "date of the observation")
-            
-            fits = pyfits.HDUList([hdu])
-            fits.writeto(finalname)
-            
-        except IOError, e:
-            logging.error("An error ocurred trying to save on %s. "
-                          "The current image will be lost. "
-                          "Exception follow" %  finalname)
-            
-            logging.exception(e)
-                
-            return False
-            
-        return finalname
 
-    def _endReadout(self):
+    def _endReadout(self, filename=None):
         
-        if not self.drv.endReadout(self.ccd):
-            err = self.drv.getError()
-            logging.error("Error ending readout: %d %s" % err)
-            return False
-        
-        # fire readoutComplete event
-        self.readoutComplete()
+        self.drv.endReadout(self.ccd)
+        self.readoutComplete(filename)
         
         return True

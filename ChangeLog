@@ -1,5 +1,19 @@
 2008-03-12  P. Henrique Silva  <henrique@astro.ufsc.br>
 
+	* src/chimera/drivers/sbigdrv.py: Converted to use Exceptions.
+
+	* src/chimera/drivers/sbig.py:
+	Converted to new MetaObject framework.
+	Converted to use exceptions.
+	Converted to use full event-driven system.
+	Converted to use Coord and Position.
+	Converted to use Enum.
+	Converted to use ImageSave.
+
+	A few other fixes.
+
+2008-03-12  P. Henrique Silva  <henrique@astro.ufsc.br>
+
 	* src/chimera/drivers/meade.py:
 	Converted to new MetaObject framework.
 	Converted to use exceptions.

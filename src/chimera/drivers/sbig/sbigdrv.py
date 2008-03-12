@@ -1,5 +1,5 @@
-#! /usr/bin/python
-# -*- coding: iso8859-1 -*-
+#! /usr/bin/env python
+# -*- coding: iso-8859-1 -*-
 
 # chimera - observatory automation system
 # Copyright (C) 2006-2007  P. Henrique Silva <henrique@astro.ufsc.br>
@@ -22,8 +22,20 @@
 import math
 
 import numpy
-
 import sbigudrv as udrv
+
+from chimera.core.exceptions import ChimeraException
+
+
+class SBIGException (ChimeraException):
+
+    def __init__ (self, code, msg=""):
+        ChimeraException.__init__(self, msg)
+        self.code = code
+
+    def __str__ (self):
+        return "%s (%d)" % (self.message, self.code)
+
 
 class ReadoutMode(object):
 
@@ -135,11 +147,11 @@ class SBIGDrv(object):
     readoutModes = {imaging: {},
                     tracking: {}}
 
-    filter_1 = udrv.CFWP_1
-    filter_2 = udrv.CFWP_2
-    filter_3 = udrv.CFWP_3
-    filter_4 = udrv.CFWP_4
-    filter_5 = udrv.CFWP_5
+    filters = {1: udrv.CFWP_1,
+               2: udrv.CFWP_2,
+               3: udrv.CFWP_3,
+               4: udrv.CFWP_4,
+               5: udrv.CFWP_5}
 
     # private
     _imgIdle       = 0x0
@@ -151,25 +163,18 @@ class SBIGDrv(object):
 
     def __init__(self):
         #FIXME: check device permissions and module status
-
-        self._errorNo = 0
-        self._errorString = ""
+        pass
 
     def openDriver(self):
 
-        ret = self._cmd(udrv.CC_OPEN_DRIVER, None, None)
-
-        if not ret:
-            err= self.getError ()
-
-            # driver already open (are you trying to use the tracking ccd?)
-            if err[0] == 21:
+        try:
+            return self._cmd(udrv.CC_OPEN_DRIVER, None, None)
+        except SBIGException, e:
+            if e.code == udrv.CE_DRIVER_NOT_CLOSED:
+                # driver already open (are you trying to use the tracking ccd?)
                 return True
             else:
-                self.setError (*err)
-                return False
-
-        return True
+                raise
 
     def closeDriver(self):
         return self._cmd(udrv.CC_CLOSE_DRIVER, None, None)
@@ -179,20 +184,14 @@ class SBIGDrv(object):
         odp = udrv.OpenDeviceParams()
         odp.deviceType = device
 
-        ret = self._cmd(udrv.CC_OPEN_DEVICE, odp, None)
-
-        if not ret:
-            err= self.getError ()
-
-            # device already open (are you trying to use the tracking ccd?)
-            if err[0] == 29:
+        try:
+            return self._cmd(udrv.CC_OPEN_DEVICE, odp, None)
+        except SBIGException, e:
+            if e.code == udrv.CE_DEVICE_NOT_CLOSED:
+                # device already open (are you trying to use the tracking ccd?)
                 return True
             else:
-                self.setError (*err)
-                return False
-
-        return True
-        
+                raise
 
     def closeDevice(self):
         return self._cmd(udrv.CC_CLOSE_DEVICE, None, None)
@@ -206,9 +205,7 @@ class SBIGDrv(object):
     def isLinked(self):
         # FIXME: ask SBIG to get a better CC_GET_LINK_STATUS.. this one it too bogus
         glsr = udrv.GetLinkStatusResults()
-
         self._cmd(udrv.CC_GET_LINK_STATUS, None, glsr)
-
         return bool(glsr.linkEstablished)
 
     def startExposure(self, ccd, exp_time, shutter):
@@ -237,29 +234,24 @@ class SBIGDrv(object):
     def startReadout(self, ccd, mode = 0, window = None):
 
         if mode not in self.readoutModes[ccd].keys():
-            self.setError(-1, "Invalid readout mode")
-            return False
+            raise ValueError("Invalid readout mode")
 
         # geometry checking
         readoutMode = self.readoutModes[ccd][mode]
 
-        window = window or readoutMode.getWindow()
+        window = (window or []) or readoutMode.getWindow()
         
         if (window[0] < 0 or window[0] > readoutMode.height):
-            self.setError(-1, "Invalid window top point")
-            return False
+            raise ValueError("Invalid window top point")
 
         if (window[1] < 0 or window[1] > readoutMode.width):
-            self.setError(-1, "Invalid window left point")
-            return False
+            raise ValueError("Invalid window left point")
 
         if (window[2] < 0 or window[2] > readoutMode.width):
-            self.setError(-1, "Invalid window width")
-            return False
+            raise ValueError("Invalid window width")
 
         if (window[3] < 0 or window[3] > readoutMode.height):
-            self.setError(-1, "Invalid window height")
-            return False
+            raise ValueError("Invalid window height")
 
         srp = udrv.StartReadoutParams()
         srp.ccd = ccd
@@ -273,16 +265,13 @@ class SBIGDrv(object):
 
     def endReadout(self, ccd):
         erp = udrv.EndReadoutParams()
-
         erp.ccd = ccd
-
         return self._cmd(udrv.CC_END_READOUT, erp, None)
     
     def readoutLine(self, ccd, mode = 0, line = None):
-
-        if mode not in self.readoutModes[ccd].keys():
-            self.setError(-1, "Invalid readout mode")
-            return False
+        
+	if mode not in self.readoutModes[ccd].keys():
+            raise ValueError("Invalid readout mode")
 
         # geometry check
         readoutMode = self.readoutModes[ccd][mode]
@@ -290,12 +279,10 @@ class SBIGDrv(object):
         line = line or readoutMode.getLine()
 
         if (line[0] < 0 or line[0] > readoutMode.width):
-            self.setError(-1, "Invalid pixel start")
-            return False
+            raise ValueError("Invalid pixel start")
             
         if (line[1] < 0 or line[1] > readoutMode.width):
-            self.setError(-1, "Invalid pixel lenght")
-            return False
+            raise ValueError("Invalid pixel lenght")
 
         rolp = udrv.ReadoutLineParams()
         rolp.ccd = ccd
@@ -306,8 +293,7 @@ class SBIGDrv(object):
         # create a numpy array to hold the line
         buff = numpy.zeros(line[1], numpy.ushort)
 
-        if not self._cmd(udrv.CC_READOUT_LINE, rolp, buff):
-            return False
+        self._cmd(udrv.CC_READOUT_LINE, rolp, buff)
 
         return buff
 
@@ -317,8 +303,7 @@ class SBIGDrv(object):
 
         usb = udrv.QueryUSBResults()
 
-        if not self._cmd(udrv.CC_QUERY_USB, None, usb):
-            return False
+        self._cmd(udrv.CC_QUERY_USB, None, usb)
 
         cams = []
 
@@ -339,12 +324,10 @@ class SBIGDrv(object):
         gcip = udrv.GetCCDInfoParams()
 
         gcip.request = udrv.CCD_INFO_IMAGING
-        if not self._cmd(udrv.CC_GET_CCD_INFO, gcip, infoImg):
-            return False
+        self._cmd(udrv.CC_GET_CCD_INFO, gcip, infoImg)
 
         gcip.request = udrv.CCD_INFO_TRACKING
-        if not self._cmd(udrv.CC_GET_CCD_INFO, gcip, infoTrk):
-            return False
+        self._cmd(udrv.CC_GET_CCD_INFO, gcip, infoTrk)
 
         # imaging ccd readout modes
         for i in range(infoImg.readoutModes):
@@ -370,17 +353,13 @@ class SBIGDrv(object):
         
         strp.ccdSetpoint = TemperatureSetpoint.toAD (setpoint)
 
-        ret = self._cmd(udrv.CC_SET_TEMPERATURE_REGULATION, strp, None)
-
-        if not ret:
-            return False
+        self._cmd(udrv.CC_SET_TEMPERATURE_REGULATION, strp, None)
 
         # activate autofreeze if enabled
         if autofreeze == True:
             strp = udrv.SetTemperatureRegulationParams()
             strp.regulation = udrv.REGULATION_ENABLE_AUTOFREEZE
             strp.ccdSetpoint = 0 # irrelevant
-            
             return self._cmd(udrv.CC_SET_TEMPERATURE_REGULATION, strp, None)
 
         return True
@@ -390,14 +369,12 @@ class SBIGDrv(object):
         # USB based cameras have only one thermistor on the top of the CCD
         # Ambient thermistor value will be always 25.0 oC
 
-        # ccdSetpoint value will be always equal to ambient thermistor when regulation not enabled (not documented)
+        # ccdSetpoint value will be always equal to ambient thermistor
+        # when regulation not enabled (not documented)
 
         qtsr = udrv.QueryTemperatureStatusResults()
 
-        ret = self._cmd (udrv.CC_QUERY_TEMPERATURE_STATUS, None, qtsr)
-
-        if not ret:
-            return False
+        self._cmd (udrv.CC_QUERY_TEMPERATURE_STATUS, None, qtsr)
 
         return (qtsr.enabled,
                 (qtsr.power / 255.0) * 100.0,
@@ -407,20 +384,16 @@ class SBIGDrv(object):
     # filter wheel
     def getFilterPosition (self):
         cfwp = udrv.CFWParams()
-        cfwp.cfwModel = udrv.CFWSEL_CFW8
+        cfwp.cfwModel   = udrv.CFWSEL_CFW8
         cfwp.cfwCommand = udrv.CFWC_QUERY
 
         cfwr = udrv.CFWResults()
 
-        ret = self._cmd (udrv.CC_CFW, cfwp, cfwr)
-
-        if not ret:
-            return -1
+        self._cmd (udrv.CC_CFW, cfwp, cfwr)
 
         return cfwr.cfwPosition
 
     def setFilterPosition (self, position):
-        
         cfwp = udrv.CFWParams()
         cfwp.cfwModel = udrv.CFWSEL_CFW8
         cfwp.cfwCommand = udrv.CFWC_GOTO
@@ -437,31 +410,14 @@ class SBIGDrv(object):
 
         cfwr = udrv.CFWResults()
 
-        ret = self._cmd (udrv.CC_CFW, cfwp, cfwr)
-
-        if not ret:
-            return False
+        self._cmd (udrv.CC_CFW, cfwp, cfwr)
 
         return cfwr.cfwStatus
 
     # low-level commands
 
-    def setError(self, errorNo, errorString):
-        self._errorNo = errorNo
-        self._errorString = errorString
-
-    def getError(self):
-        if self._errorNo:
-            ret = (self._errorNo, self._errorString)
-        else:
-            ret = 0
-
-        self._errorNo = 0
-        self._errorString = ""
-
-        return ret
-
     def _cmd(self, cmd, cin, cout):
+
         err = udrv.SBIGUnivDrvCommand(cmd, cin, cout)
 
         if err == udrv.CE_NO_ERROR:
@@ -474,9 +430,7 @@ class SBIGDrv(object):
             
             udrv.SBIGUnivDrvCommand(udrv.CC_GET_ERROR_STRING, gesp, gesr)
 
-            self.setError(err, gesr.errorString)
-
-            return False
+            raise SBIGException(err, gesr.errorString)
 
     def _status(self, cmd):
 
@@ -488,19 +442,3 @@ class SBIGDrv(object):
             return False
 
         return qcsr.status
-
-if __name__ == '__main__':
-
-    import time
-
-    s = SBIGDrv()
-    t1 = time.time()
-    s.openDriver()
-    s.openDevice(SBIGDrv.usb)
-    s.establishLink()
-    t2 = time.time()
-
-    print t2 - t1
-
-    
-    
