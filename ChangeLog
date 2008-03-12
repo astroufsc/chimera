@@ -1,5 +1,12 @@
 2008-03-12  P. Henrique Silva  <henrique@astro.ufsc.br>
 
+	* src/chimera/core/methodwrapper.py: Fix bug on emulating static
+	calls without arguments.
+	Remove self.special call (old behaviour). Subclasses should
+	override call and not special anymore.
+
+2008-03-12  P. Henrique Silva  <henrique@astro.ufsc.br>
+
 	* src/chimera/core/manager.py:
 	Change exception raising to new log framework (no more
 	sys.exc_info).

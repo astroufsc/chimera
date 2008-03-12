@@ -87,12 +87,16 @@ class MethodWrapperDispatcher (object):
 
         # handle unbound cases (with or without instance as first argument)
         if not self.instance:
+
+            if not args:
+                args = [None, None]
+                
             if not isinstance(args[0], self.cls):
                 raise TypeError("unbound method %s object must be called with %s instance "
                                 "as first argument (got %s instance instead)" % (self.func.func_name, self.cls.__name__,
-                                                                                 type(args[0]).__name__))
+                                                                                 args[0].__class__.__name__))
             else:
-                return self.special(args[0], *args[1:], **kwargs)
+                return self.call(args[0], *args[1:], **kwargs)
 
         return self.call(self.instance, *args, **kwargs)
 
