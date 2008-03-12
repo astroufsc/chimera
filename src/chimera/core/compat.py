@@ -18,23 +18,18 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+import sys
 
-import socket
+# Python 2.4 compatibility
+if sys.version_info[:2] < (2,5):
 
-MANAGER_DEFAULT_HOST = socket.gethostname()
-MANAGER_DEFAULT_PORT = 7666
+    def any (iterable):
+        for element in iterable:
+            if element: return True
+        return False
 
-MANAGER_LOCATION = '/Manager/manager'
+    def all (iterable):
+        for element in iterable:
+            if not element: return False
+        return True
 
-# annotations
-EVENT_ATTRIBUTE_NAME  = '__event__'
-LOCK_ATTRIBUTE_NAME   = '__lock__'
-
-# special propxies
-EVENTS_PROXY_NAME = '__events_proxy__'
-CONFIG_PROXY_NAME = '__config_proxy__'
-
-# reflection
-CONFIG_ATTRIBUTE_NAME  = '__config__'
-EVENTS_ATTRIBUTE_NAME  = '__events__'
-METHODS_ATTRIBUTE_NAME = '__methods__'

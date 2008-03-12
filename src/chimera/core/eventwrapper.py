@@ -20,7 +20,7 @@
 
 
 from chimera.core.proxy          import ProxyMethod
-from chimera.core.methodwrapper  import MethodWrapper, MethodWrapperDispatcher
+from chimera.core.methodwrapper  import MethodWrapperDispatcher
 
 from chimera.core.constants import EVENTS_PROXY_NAME
 

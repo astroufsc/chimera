@@ -1,5 +1,28 @@
 2008-03-12  P. Henrique Silva  <henrique@astro.ufsc.br>
 
+	* src/chimera/core/compat.py: Add few functions to make Chimera
+	2.4 compatible (any, all are only defined on Py2.5)
+
+	* src/chimera/core/threads.py: Remove auto-locking support as this
+	is handled in MetaObject level now (see below).
+
+	* src/chimera/core/classloader.py: Improved and cleaned expection
+	raising (no need to hack with sys.exc_info, thanks to log.py
+	work).
+
+	* src/chimera/core/callback.py: Fix documentation and PEP-8 80
+	column limit where reasonable.
+
+	* src/chimera/core/eventsproxy.py: Remove unreachable handlers
+	when publishing.
+
+	* src/chimera/core/eventwrapper.py: NameError fix.
+
+	* src/chimera/core/constants.py: Lock and reflection constants
+	added.
+
+2008-03-12  P. Henrique Silva  <henrique@astro.ufsc.br>
+
 	* src/chimera/core/lock.py:
 	* src/chimera/core/lockwrapper.py:
 	* src/chimera/core/test/test_locks: New files to add support for

@@ -24,6 +24,7 @@ import chimera.core.log
 import threading
 import logging
 
+from chimera.core.constants import LOCK_ATTRIBUTE_NAME
 
 from time import sleep, time
 
@@ -175,7 +176,6 @@ class ThreadPoolThread(threading.Thread):
         self.__pool = pool
         self.__isDying = False
 
-        # FIXME
         self.setDaemon(True)
         
     def run(self):
@@ -190,9 +190,6 @@ class ThreadPoolThread(threading.Thread):
             if cmd is None:
                 sleep(ThreadPoolThread.threadSleepTime)
             else:
-                if(hasattr(cmd, "lock")):
-                    cmd.lock.acquire()
-                    log.debug("Locking %s" % cmd)
 
                 log.debug("Running %s on thread %s" % (cmd, self.getName()))
 
@@ -200,10 +197,6 @@ class ThreadPoolThread(threading.Thread):
                     cmd(*args, **kwargs)
                 else:
                     callback(cmd(*args, **kwargs))
-
-                if(hasattr(cmd, "Lock")):
-                    cmd.lock.release()
-                    log.debug("unlocking %s" % cmd)
 
     def goAway(self):
 

@@ -33,7 +33,7 @@ __all__ = ['EventsProxy']
 
 class EventsProxy:
 
-    def __init__(self, obj):
+    def __init__(self):
         self.handlers = {}
 
     def subscribe (self, handler):
@@ -81,6 +81,7 @@ class EventsProxy:
             except AttributeError, e:
                 log.debug("Invalid proxy method ('%s %s') for '%s' handler." % \
                           (handler["proxy"], handler["method"], topic))
+                excluded.append(handler)
                 continue
             except Pyro.errors.ProtocolError, e:
                 log.debug ("Unreachable handler (%s). Removing from subscribers list." % proxy)

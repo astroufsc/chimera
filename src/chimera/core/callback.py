@@ -34,11 +34,11 @@ def callback (manager):
     Use this decorator to add an callback object to an active Manager.
     This decorator returns a ProxyMethod that you use to subscribe to an event (using += operator)
 
-    @callback(managerInstance)
-    def clbk ():
-        print 'foo'
+    >>> @callback(managerInstance)
+    >>> def clbk ():
+    ...    print 'foo'
 
-    obj.fooComplete += clbk
+    >>> obj.fooComplete += clbk
 
     @param manager: Manager instance.
     @type manager: Manager
@@ -53,6 +53,8 @@ def callback (manager):
 
     def clbk_deco (f):
         setattr(Callback, 'handler', staticmethod(f))
-        return manager.addClass(Callback, 'h'+sha.sha(str(time.time())+str(random.random())).hexdigest(), start=False).handler
+        return manager.addClass(Callback, 
+                                'h'+sha.sha(str(time.time())+str(random.random())).hexdigest(),
+                                start=False).handler
 
     return clbk_deco

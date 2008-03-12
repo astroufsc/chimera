@@ -52,7 +52,7 @@ class ClassLoader (object):
 
             module = __import__(clsname.lower(), globals(), locals(), [clsname])
 
-        except ImportError, e:
+        except ImportError:
 
             # Python trick: An ImportError exception catched here
             # could came from both the __import__ above or from the
@@ -68,25 +68,20 @@ class ClassLoader (object):
 
             # ImportError above
             if tb_size == 1:
-                raise ClassLoaderException ("Couldn't found module '%s'." % clsname)
+                raise ClassLoaderException ("Couldn't found module %s (%s)." % (clsname, path))
 
             # ImportError on loaded module
             else:
-                raise ClassLoaderException ("Module '%s' found but couldn't be loaded.\n%s: %s" % (clsname, type(e).__name__, str(e))), \
-                      None, sys.exc_info()[2]
-            
+                raise ClassLoaderException ("Module %s found but couldn't be loaded." % clsname)
 
         except:
-                raise ClassLoaderException ("Module '%s' found but couldn't be loaded.\n%s: %s" % (clsname, sys.exc_info()[0].__name__,
-                                                                                                   str(sys.exc_info()[1]))), \
-                      None, sys.exc_info()[2]
-
+            raise ClassLoaderException ("Module %s found but couldn't be loaded." % clsname)
 
         # turns sys.path back
         [sys.path.remove (p) for p in path]
         
         if not clsname in vars(module).keys():
-            raise ClassLoaderException ("Module found but there are no class named '%s' on module '%s' (%s)." %
+            raise ClassLoaderException ("Module found but there are no class named %s on module '%s' (%s)." %
                                         (clsname, clsname.lower(), module.__file__))
 
         self._cache[clsname] = vars(module)[clsname]
