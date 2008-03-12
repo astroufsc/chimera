@@ -1,3 +1,14 @@
+2008-03-12  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* src/chimera/core/lock.py:
+	* src/chimera/core/lockwrapper.py:
+	* src/chimera/core/test/test_locks: New files to add support for
+	coarse-grained automatic locks (much like synchronized methods in
+	Java).
+
+	* src/chimera/core/metaobject.py: Add lock support and use
+	constants to hide hard-coded values.
+
 2008-03-10  P. Henrique Silva  <henrique@astro.ufsc.br>
 
 	* scripts/chimera: Fix changes on Site controller.
