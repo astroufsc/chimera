@@ -20,11 +20,16 @@
 
 
 
-from chimera.core.methodwrapper import MethodWrapper
+from chimera.core.methodwrapper import MethodWrapper, MethodWrapperDispatcher
 from chimera.core.eventwrapper  import EventWrapperDispatcher
+from chimera.core.lockwrapper   import LockWrapper, LockWrapperDispatcher
 from chimera.core.async         import BeginDispatcher, EndDispatcher
 
-from chimera.core.constants     import EVENT_ATTRIBUTE_NAME, CONFIG_ATTRIBUTE_NAME
+from chimera.core.constants     import EVENT_ATTRIBUTE_NAME, \
+                                       CONFIG_ATTRIBUTE_NAME, \
+                                       LOCK_ATTRIBUTE_NAME, \
+                                       EVENTS_ATTRIBUTE_NAME, \
+                                       METHODS_ATTRIBUTE_NAME
 
 from types import DictType
 
@@ -47,15 +52,33 @@ class MetaObject (type):
         _dict[CONFIG_ATTRIBUTE_NAME] = dict(config, **_dict.get(CONFIG_ATTRIBUTE_NAME, {}))
 
         # callables and events
+        events  = []
+        methods = []
+        
         for name, obj in _dict.iteritems():
             
             if hasattr(obj, '__call__') and not name.startswith('_'):
+                
                 # events
                 if hasattr(obj, EVENT_ATTRIBUTE_NAME):
                     _dict[name] = MethodWrapper(obj, dispatcher=EventWrapperDispatcher)
+                    events.append(name)
+
+                # auto-locked methods
+                elif hasattr(obj, LOCK_ATTRIBUTE_NAME):
+                    _dict[name] = LockWrapper(obj, dispatcher=LockWrapperDispatcher,
+                                              specials = {"begin": BeginDispatcher, "end": EndDispatcher})
+                    methods.append(name)
+
+                # normal objects
                 else:
-                    # normal objects
-                    _dict[name] = MethodWrapper(obj, specials = {"begin": BeginDispatcher, "end": EndDispatcher})
+                    _dict[name] = MethodWrapper(obj, dispatcher=MethodWrapperDispatcher,
+                                                specials = {"begin": BeginDispatcher, "end": EndDispatcher})
+                    methods.append(name)
+
+        # save our helper atributes to allow better remote reflection (mainly to Console)
+        _dict[EVENTS_ATTRIBUTE_NAME] = events
+        _dict[METHODS_ATTRIBUTE_NAME] = methods
 
         return super(MetaObject, meta).__new__(meta, clsname, bases, _dict)
 
