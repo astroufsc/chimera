@@ -26,17 +26,24 @@ from xml.parsers.expat import ExpatError, ErrorString
 
 import chimera.util.etree.ElementTree as ET
 
+import chimera.core.log
 from chimera.core.location import Location
+
+log = logging.getLogger(__name__)
 
 
 class SiteConfig (object):
 
     def __init__(self):
         self.__sites = []
+        self.__chimera = {"host": None, "port": None}
         self.__instruments = []
         self.__controllers = []
         self.__drivers     = []
 
+    def getChimera (self):
+        return self.__chimera
+    
     def getInstruments(self):
         return self.__instruments
 
@@ -68,17 +75,39 @@ class SiteConfig (object):
                                                                                   ErrorString(e.code)))
             return False
         
+        # chimera (hostname/port config)
+        chimera = root.getroot()
+        self.__chimera["host"] = chimera.get("host", None)
+        try:
+            self.__chimera["port"] = int(chimera.get("port", None))
+        except ValueError:
+            log.warning("Invalid port configuration. Using default port.")
+        except TypeError:
+            self.__chimera["port"] = None
+        
         # sites (ok, just one site makes sense by now, but we can expand this later)
         sites = root.findall("site")
         
         for site in sites:
-
+            
             tmpSite = {}
-            tmpSite["name"]      = site.get("name", "UFSC")
-            tmpSite["latitude"]  = site.get("latitude", "0")
-            tmpSite["longitude"] = site.get("longitude", "0")
-            tmpSite["altitude"]  = site.get("altitude", "0")
+            
+            tmpSite["name"]      = site.findtext("name", "UFSC")
+            tmpSite["latitude"]  = site.findtext("latitude", "0")
+            tmpSite["longitude"] = site.findtext("longitude", "0")
+            tmpSite["altitude"]  = site.findtext("altitude", "0")
 
+            try:
+                tmpSite["utc_offset"]  = int(site.findtext("utc_offset", 0))
+            except ValueError:
+                tmpSite["utc_offset"]  = 0
+                
+            dst = site.find("dst")
+            if dst and len(dst) > 0:
+                tmpSite["dst"] = True
+            else:
+                tmpSite["dst"] = False
+                
             self.__sites.append(tmpSite)
 
         # instruments
@@ -103,7 +132,7 @@ class SiteConfig (object):
             tmpEntry["port"]   = entry.get("port", None)
             tmpEntry["cls"]    = entry.get("class", None)
             tmpEntry["name"]   = entry.get("name", "%s-%d" % (tmpEntry["cls"], random.randint(1, 1e9)))
-            tmpEntry["options"] = {}
+            tmpEntry["config"] = {}
 
             # get all options
             opts = entry.findall("option")
@@ -111,11 +140,10 @@ class SiteConfig (object):
             for opt in opts:
                 tmpKey   = opt.get("name")
                 tmpValue =  opt.get("value")
-                tmpEntry["options"][tmpKey] = tmpValue
+                tmpEntry["config"][tmpKey] = tmpValue
 
             loc = Location(**tmpEntry)
-            if loc.isValid():
-                ret.append(loc)
+            ret.append(loc)
 
         return ret
 

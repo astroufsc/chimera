@@ -31,6 +31,9 @@ from chimera.core.location import Location
 from chimera.core.manager import Manager
 from chimera.core.version import _chimera_version_, _chimera_description_
 from chimera.controllers.site.config import SiteConfig
+from chimera.core.exceptions import ChimeraException, printException, InvalidLocationException
+
+from chimera.core.site import Site
 
 import chimera.core.log
 
@@ -38,17 +41,17 @@ import chimera.core.log
 log = logging.getLogger(__name__)
 
 
-class Site (object):
+class SiteController (object):
 
     def __init__(self, args = []):
 
         self.options, self.args = self.parseArgs(args)
 
         if self.options.verbose == 1:
-            logging.getLogger().setLevel(logging.INFO)
+            chimera.core.log.setConsoleLevel(logging.INFO)
             
         if self.options.verbose > 1:
-            logging.getLogger().setLevel(logging.DEBUG)
+            chimera.core.log.setConsoleLevel(logging.DEBUG)
 
         self.manager = None
 
@@ -57,7 +60,7 @@ class Site (object):
                       "drivers": []}
 
         # add system path
-        prefix = os.path.realpath(os.path.join(os.path.abspath(__file__), '../../'))
+        prefix = os.path.realpath(os.path.join(os.path.abspath(__file__), '../../../'))
         self.paths["instruments"].append(os.path.join(prefix, 'instruments'))
         self.paths["controllers"].append(os.path.join(prefix, 'controllers'))
         self.paths["drivers"].append(os.path.join(prefix, 'drivers'))
@@ -65,9 +68,9 @@ class Site (object):
     def parseArgs(self, args):
 
         def check_location (option, opt_str, value, parser):
-            l = Location (value)
-            
-            if not value or not l.isValid ():
+            try:
+                l = Location (value)
+            except InvalidLocationException:
                 raise optparse.OptionValueError ("%s isnt't a valid location." % value)
 
             eval ('parser.values.%s.append ("%s")' % (option.dest, value))
@@ -151,10 +154,6 @@ class Site (object):
 
     def init(self):
 
-        # manager
-        if not self.options.dry:
-            log.info("Starting system.")        
-            self.manager = Manager()
 
         # config file
         self.config = SiteConfig()
@@ -162,7 +161,21 @@ class Site (object):
         for config in self.options.config:
             self.config.read(config)
 
+        # manager
+        if not self.options.dry:
+            log.info("Starting system.")
+            self.manager = Manager(**self.config.getChimera())
+
+        # add site object
+        if not self.options.dry:
+            
+            sites = self.config.getSites()
+            
+            for site in sites:
+                self.manager.addClass(Site, site["name"], site, True)
+            
         # search paths
+        log.info("Setting objects include path from command line parameters...")
         for _dir in self.options.inst_dir:
             self.paths["instruments"].append(_dir)
     
@@ -173,28 +186,42 @@ class Site (object):
             self.paths["drivers"].append(_dir)
 
         # init from config
+        log.info("Trying to start drivers...")
         for drv in self.config.getDrivers() + self.options.drivers:
+
             if self.options.dry:
                 print drv
             else:
-                self.manager.addLocation(drv, path=self.paths["drivers"], start=True)
+                self._add(drv, path=self.paths["drivers"], start=True)
 
+        log.info("Trying to start instruments...")
         for inst in self.config.getInstruments()+self.options.instruments:
+            
             if self.options.dry:
                 print inst
             else:
-                self.manager.addLocation(inst, path=self.paths["instruments"], start=True)
+                self._add(inst, path=self.paths["instruments"], start=True)
 
+        log.info("Trying to start controllers...")                
         for ctrl in self.config.getControllers()+self.options.controllers:
+            
             if self.options.dry:
                 print ctrl
             else:
-                self.manager.addLocation(ctrl, path=self.paths["controllers"], start=True)
+                self._add(ctrl, path=self.paths["controllers"], start=True)
+
+        log.info("System up and running.")
 
         # ok, let's wait manager work
         if not self.options.dry:
             self.manager.wait()
 
+    def _add (self, location, path, start):
+        try:
+            self.manager.addLocation(location, path, start)
+        except ChimeraException, e:
+            printException(e)
+            
     def shutdown(self):
         log.info("Shutting down system.")
         self.manager.shutdown()

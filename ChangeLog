@@ -1,5 +1,18 @@
 2008-03-12  P. Henrique Silva  <henrique@astro.ufsc.br>
 
+	* src/chimera/controllers/site/config.py:
+	Added Manager host/port configuration.
+
+	Added Site support (moved from attributes of chimera to indidual
+	tag with normal subtags).
+
+	* src/chimera/controllers/site/main.py:
+	Fix prefix bug.
+	Added dry-run mode.
+	Added support for Site object creation based on config.py parsing.
+
+2008-03-12  P. Henrique Silva  <henrique@astro.ufsc.br>
+
 	* src/chimera/util/coord.py:
 	Much more documentation.
 
