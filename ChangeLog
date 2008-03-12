@@ -1,5 +1,16 @@
 2008-03-12  P. Henrique Silva  <henrique@astro.ufsc.br>
 
+	* src/chimera/drivers/fakecamera.py:
+	* src/chimera/drivers/fakedome.py:
+	* src/chimera/drivers/fakefilterwheel.py:
+	* src/chimera/drivers/fakefocuser.py:
+	* src/chimera/drivers/faketelescope.py: New babies! Fake drivers
+	allow test units to be developed without real hardware
+	access. Must be more complete (in API and behaviour) in the
+	future.
+
+2008-03-12  P. Henrique Silva  <henrique@astro.ufsc.br>
+
 	* src/chimera/instruments/camera.py:
 	* src/chimera/instruments/filterwheel.py:
 	* src/chimera/instruments/telescope.py:
