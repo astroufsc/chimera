@@ -1,5 +1,5 @@
 #! /usr/bin/python
-# -*- coding: iso8859-1 -*-
+# -*- coding: iso-8859-1 -*-
 
 # chimera - observatory automation system
 # Copyright (C) 2006-2007  P. Henrique Silva <henrique@astro.ufsc.br>
@@ -19,43 +19,42 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 import time
-import serial
-import signal
 import threading
-import logging
-import datetime
+import datetime as dt
+from types import FloatType
 
-from chimera.core.lifecycle import BasicLifeCycle
-from chimera.interfaces.telescope import (ITelescopeDriver, ITelescopeDriverSlew,
-                                          ITelescopeDriverSync, ITelescopeDriverPark)
+import serial
 
-from chimera.util.coord import Coord, Ra, Dec, Lat, Long, Alt, Az, SkyPoint, LocalPoint
+from chimera.core.chimeraobject         import ChimeraObject
 
-class Meade (BasicLifeCycle,
-             ITelescopeDriver, ITelescopeDriverSlew,
+from chimera.interfaces.telescopedriver import ITelescopeDriverSlew
+from chimera.interfaces.telescopedriver import ITelescopeDriverSync
+from chimera.interfaces.telescopedriver import ITelescopeDriverPark
+from chimera.interfaces.telescopedriver import SlewRate, AlignMode
+
+from chimera.util.coord    import Coord
+from chimera.util.position import Position
+from chimera.util.enum     import Enum
+
+from chimera.core.lock  import lock
+
+from chimera.core.exceptions import ChimeraException, ObjectNotFoundException
+
+
+class MeadeException(ChimeraException):
+    pass
+
+
+Direction = Enum("E", "W", "N", "S")
+
+
+class Meade (ChimeraObject,
+             ITelescopeDriverSlew,
              ITelescopeDriverSync, ITelescopeDriverPark):
 
-    ALT_AZ = 0
-    POLAR  = 1
-    LAND   = 2
+    def __init__(self):
 
-    alignModes = {ALT_AZ: "ALT_AZ",
-                  POLAR : "POLAR",
-                  LAND  : "LAND"}
-
-    GUIDE  = 0
-    CENTER = 1
-    FIND   = 2
-    MAX    = 3
-
-    slewRates = {GUIDE : "GUIDE",
-                 CENTER: "CENTER",
-                 FIND  : "FIND",
-                 MAX   : "MAX"}
-
-    def __init__(self, manager):
-
-        BasicLifeCycle.__init__ (self, manager)
+        ChimeraObject.__init__ (self)
 
         self._tty = None
         self._slewRate = None
@@ -69,30 +68,35 @@ class Meade (BasicLifeCycle,
         self._parked = False
 
         self._target_az = None
-        self._target_alt = None        
+        self._target_alt = None
+
+        # how much arcseconds / second for every slew rate
+        # and direction
+        self._calibration = {}
+        self._calibration_time = 2.0
         
+        for rate in SlewRate:
+            self._calibration[rate] = {}
+            for direction in Direction:
+                self._calibration[rate][direction] = 1
 
-    # -- IBasicLifeCycle implementation --
+        self._calibrated = False
 
-    def init (self, config):
 
-        self.config += config
+    # -- ILifeCycle implementation --
 
-        if not self.open ():
-            return False
+    def __start__ (self):
+        self.open()
 
-        return True
+    def __stop__ (self):
 
-    def shutdown (self):
+        if self.isSlewing():
+            self.abortSlew()
 
-        if not self.close ():
-            return False
+        self.close()
 
-        return True
-
-    def main (self):
+    def __main__ (self):
         pass
-
 
     # -- ITelescopeDriver implementation
 
@@ -105,63 +109,66 @@ class Meade (BasicLifeCycle,
 
         self._tty.timeout = tmp
 
-
         if align < 0:
-            self.setError (-1, "Couldn't found a Meade telescope on '%s'." % self.device)
-            return False
+            raise MeadeException ("Couldn't found a Meade telescope on '%s'." % self["device"])
 
         return True
 
+    def _initTelescope (self):
+
+        self.setAlignMode(self["align_mode"])
+
+        # activate HPP (high precision poiting). We really need this!!
+        self._setHighPrecision()
+
+        # set default slew rate
+        self.setSlewRate(self["slew_rate"])
+
+        try:
+            site = self.getManager().getProxy("/Site/0")
+
+            self.setLat(site["latitude"])
+            self.setLong(site["longitude"])
+            self.setDate(dt.date.today())
+            self.setLocalTime(dt.datetime.now().time())
+            self.setUTCOffset(site["utc_offset"])
+        except ObjectNotFoundException:
+            self.log.warning("Cannot initialize telescope. "
+                             "Site object not available. Telescope"
+                             " attitude cannot be determined.")
+
+
     def open(self):
 
-        self._tty = serial.Serial()
-        self.device = self.config.device
-
-        self._tty.port = self.device
-        self._tty.timeout = self.config.timeout
+        self._tty = serial.Serial(self["device"],
+                                  baudrate=9600,
+                                  bytesize=serial.EIGHTBITS,
+                                  parity=serial.PARITY_NONE,
+                                  stopbits=serial.STOPBITS_ONE,
+                                  timeout=self["timeout"],
+                                  xonxoff=False, rtscts=False)
 
         try:
             self._tty.open()
 
-            if not self._checkMeade():
-                logging.warning ("Couldn't found a Meade telescope on %s." %  self.config.device)
-                return False
+            self._checkMeade()
 
-            #if self.config.auto_align:
+            #if self["auto_align"]:
             #    self.autoAlign ()
 
-            # FIMXE: set alignment mode, date, time, lat, long
-            if not self.setAlignMode (eval('Meade.%s' % self.config.align_mode)):
-                return False
-
-            # activate HPP (high precision poiting). We really need this!!
-            if not self._setHighPrecision ():
-                logging.warning ("This scope doesn't support High Precison pointing. Errors comming :(")
-                return False
-
-            # set default slew rate
-            self.setSlewRate (Meade.MAX)
+            # manualy initialize scope
+            self._initTelescope()
 
             return True
 
-        except serial.SerialException, e:
-            self.setError (-1, str(e))
-            logging.warning ("Error while opening %s. Exception follows..." % self.config.device)
-            logging.exception (e)
-            return False
-
-        except IOError,e:
-            self.setError(e)
-            logging.warning ("Error while opening %s. Exception follows..." % self.config.device)
-            logging.exception (e)
-            return False
+        except (serial.SerialException, IOError), e:
+            raise MeadeException("Error while opening %s." % self["device"])
 
     def close(self):
         if self._tty.isOpen():
             self._tty.close()
             return True
         else:
-            self.setError(-1, "Device not open")
             return False
 
     # --
@@ -178,9 +185,6 @@ class Meade (BasicLifeCycle,
 
         return True
 
-    def getAlignModes(self):
-        return Meade.alignModes
-
     def getAlignMode(self):
 
         self._write('\x06') # ACK
@@ -191,60 +195,47 @@ class Meade (BasicLifeCycle,
         if ret == '0':
             ret = self._read (1, flush=False)
 
-        if not ret:
-            self.setError (-1, "Couldn't get the alignment mode. Is this a Meade??")
-            return False
+        if not ret or ret not in "APL":
+            raise MeadeException("Couldn't get the alignment mode. Is this a Meade??")
 
         if ret == "A":
-            return Meade.ALT_AZ
+            return AlignMode.ALT_AZ
         elif ret == "P":
-            return Meade.POLAR
+            return AlignMode.POLAR
         elif ret == "L":
-            return Meade.LAND
-        else:
-            self.setError (-1, "Couldn't get the alignment mode. Is this a Meade??")
-            return False
+            return AlignMode.LAND
 
     def setAlignMode(self, mode):
-
-        if mode not in self.getAlignModes().keys():
-            self.setError (-1, "Invalid alignment mode '%s'." % mode)
-            return False
 
         if mode == self.getAlignMode():
             return True
 
-        if mode == Meade.ALT_AZ:
+        if mode == AlignMode.ALT_AZ:
             self._write (":AA#")
-        elif mode == Meade.POLAR:
+        elif mode == AlignMode.POLAR:
             self._write (":AP#")
-        elif mode == Meade.LAND:
+        elif mode == AlignMode.LAND:
             self._write (":AL#")
-        else:
-            self.setError (-1, "Invalid alignment mode '%s'." % mode)
-            return False
 
         return True
 
 
     def isSlewing(self):
         return self._slewing
-    
-    def slewToRaDec(self, ra, dec):
 
-        # FIXME: validate limits?
+    @lock
+    def slewToRaDec(self, position):
 
-        if self.isSlewing ():
-            self.setError (-1, "Telescope already slewing.")
-            return False
+        if self.isSlewing():
+            raise MeadeException("Telescope already slewing.")
 
-        if not self.setTargetRaDec(ra, dec):
-            return False
+        self.setTargetRaDec(position.ra, position.dec)
+        self._slewToRaDec()
 
-        if not self._slewToRaDec():
-            return False
+        self.slewComplete(self.getPositionRaDec())
 
         return True
+
 
     def _slewToRaDec(self):
 
@@ -262,49 +253,55 @@ class Meade (BasicLifeCycle,
         if err:
             # check error message
             msg = self._readline()
-            self.setError(-1, msg[:-1])
             self._slewing = False
-            return False
+            raise MeadeException(msg[:-1])
 
         # slew possible
         target = self.getTargetRaDec()
+
+        self._waitSlew(start_time, target)
+
+    def _waitSlew (self, start_time, target, local=False):
+
+        self.slewBegin(target)
 
         while True:
 
             # check slew abort event
             if self._abort.isSet ():
-                self.setError (-1, "Slew aborted")
                 self._slewing = False
                 return False
 
             # check timeout
-            if time.time () >= (start_time + self.config.max_slew_time):
-                self._abortSlew ()
-                self.setError (-1, "Slew aborted. Max slew time reached.")
+            if time.time () >= (start_time + self["max_slew_time"]):
+                self.abortSlew ()
                 self._slewing = False
-                return False
+                raise MeadeException("Slew aborted. Max slew time reached.")
 
-            position = self.getPositionRaDec()
+            if local:
+                position = self.getPositionAzAlt()
+            else:
+                position = self.getPositionRaDec()
 
-            if target.near (position, "00 01 00"):
-                time.sleep (self.config.stabilization_time)
+            if target.within (position, 60, units='arcsec'):
+                time.sleep (self["stabilization_time"])
                 self._slewing = False
                 return True
 
-            time.sleep (self.config.slew_idle_time)
+            time.sleep (self["slew_idle_time"])
 
+        return True
 
-    def slewToAzAlt(self, az, alt):
+    @lock
+    def slewToAzAlt(self, position):
 
         if self.isSlewing ():
-            self.setError (-1, "Telescope already slewing.")
-            return False
+            raise MeadeException("Telescope already slewing.")
 
-        if not self.setTargetAzAlt (az, alt):
-            return False
+        self.setTargetAzAlt (position.az, position.alt)
+        self._slewToAzAlt()
 
-        if not self._slewToAzAlt():
-            return False
+        self.slewComplete(self.getPositionRaDec())
 
         return True
 
@@ -323,63 +320,47 @@ class Meade (BasicLifeCycle,
 
         if err:
             # check error message
-            self.setError(-1, "Couldn't slew to AZ: '%s' ALT: '%s'." % self.getTargetAzAlt())
             self._slewing = False
-            return False
+            raise MeadeException("Couldn't slew to AZ/ALT: '%s'." % self.getTargetAzAlt())
 
         # slew possible
         target = self.getTargetAzAlt()
 
-        while True:
+        #print target, "target"
 
-            # check slew abort event
-            if self._abort.isSet ():
-                self.setError (-1, "Slew aborted")
-                self._slewing = False
-                return False
+        self._waitSlew(start_time, target, local=True)
 
-            # check timeout
-            if time.time () >= (start_time + self.config.max_slew_time):
-                self._abortSlew ()
-                self.setError (-1, "Slew aborted. Max slew time reached.")
-                self._slewing = False
-                return False
-
-            position = self.getPositionAzAlt()
-
-            #if target.near (position, "00 01 00"):
-            #    time.sleep (self.config.stabilization_time)
-            #    self._slewing = False
-            #    return True
-
-            time.sleep (self.config.slew_idle_time)
-
-
+    @lock
     def abortSlew(self):
 
         if not self.isSlewing():
-            return False
+            raise MeadeException("Telescope not slewing.")
 
         err = self._write (":Q#")
 
         if err:
-            self.setError (-1, "Error aborting slew.")
-            return False
+            raise MeadeException("Error aborting slew.")
 
         self._abort.set()
+        time.sleep (self["stabilization_time"])
 
-    def _move (self, direction, duration=0.0, slewRate = None):
+        self.abortComplete(self.getPositionRaDec())
+
+    def _move (self, direction, duration=1.0, slewRate = None):
+
+        if duration <= 0:
+            raise ValueError ("Slew duration cannot be less than 0.")
 
         # FIXME: concurrent slew commands? YES.. it should works!
         if self.isSlewing():
-            self.setError (-1, "Telescope is slewing. Cannot move.") # REALLY? no.
-            return False
+            raise MeadeException("Telescope is slewing. Cannot move.") # REALLY? no.
 
         if slewRate:
             self.setSlewRate (slewRate)
 
+        self._slewing = True
         start = time.time ()
-        self._write (":M%s#" % direction)
+        self._write (":M%s#" % str(direction).lower())
 
         finish = start + duration
 
@@ -387,103 +368,159 @@ class Meade (BasicLifeCycle,
             time.sleep (0.01) # 0.15' resolution
 
         # FIXME: slew limits
-        if duration:
-            self._stopMove (direction)
+        self._stopMove (direction)
+        self._slewing = False
 
         return True
 
     def _stopMove (self, direction):
-        self._write (":Q%s#" % direction)
+        self._write (":Q%s#" % str(direction).lower())
 
+        rate = self.getSlewRate()
         # FIXME: stabilization time depends on the slewRate!!!
-        if self.getSlewRate() == Meade.GUIDE:
+        if rate == SlewRate.GUIDE:
             time.sleep (0.1)
             return True
 
-        elif self.getSlewRate() == Meade.CENTER:
+        elif rate == SlewRate.CENTER:
             time.sleep (0.2)
             return True
 
-        elif self.getSlewRate() == Meade.FIND:
+        elif rate == SlewRate.FIND:
             time.sleep (0.3)
             return True
 
-        elif self.getSlewRate() == Meade.MAX:
+        elif rate == SlewRate.MAX:
             time.sleep (0.4)
             return True
 
-    def moveEast (self, duration=0.0, slewRate = None):
-        return self._move ("e", duration, slewRate)
+    def isMoveCalibrated (self):
+        return self._calibrated
 
-    def moveWest (self, duration=0.0, slewRate = None):
-        return self._move ("w", duration, slewRate)
+    def calibrateMove (self):
 
-    def moveNorth (self, duration=0.0, slewRate = None):
-        return self._move ("n", duration, slewRate)
+        # FIXME: move to a safe zone to do calibrations.
+        # FIXME: save calibration data to database to not need to do it
+        # every time
 
-    def moveSouth (self, duration=0.0, slewRate = None):
-        return self._move ("s", duration, slewRate)
+        def calcDelta(start, end):
+            return end.angsep(start)
+
+        def calibrate(direction, rate):
+            start = self.getPositionRaDec()
+            self._move(direction, self._calibration_time, rate)
+            end = self.getPositionRaDec()
+
+            return calcDelta(start, end)
+            
+        for rate in SlewRate:
+            for direction in Direction:
+
+                total = 0
+
+                for i in range(3):
+                    total += calibrate(direction, rate).arcsec()
+                
+                self._calibration[rate][direction] = total/3.0
+
+        #for rate in self._calibration.keys():
+        #    for direction in self._calibration[rate].keys():
+        #        print rate, direction, self._calibration[rate][direction]
+
+    def _calcDuration (self, arc, direction, rate):
+        return arc*(self._calibration_time/self._calibration[rate][direction])
+
+    @lock
+    def moveEast (self, offset, slewRate = None):
+        #print slewRate, "E", self._calcDuration(offset, Direction.E, slewRate)
+        return self._move (Direction.E,
+                           self._calcDuration(offset, Direction.E, slewRate),
+                           slewRate)
+
+    @lock
+    def moveWest (self, offset, slewRate = None):
+        #print slewRate, "W", self._calcDuration(offset, Direction.W, slewRate)
+        return self._move (Direction.W,
+                           self._calcDuration(offset, Direction.W, slewRate),
+                           slewRate)
+
+    @lock
+    def moveNorth (self, offset, slewRate = None):
+        #print slewRate, "N", self._calcDuration(offset, Direction.N, slewRate)
+        return self._move (Direction.N,
+                           self._calcDuration(offset, Direction.N, slewRate),
+                           slewRate)
+
+    @lock
+    def moveSouth (self, offset, slewRate = None):
+        #print slewRate, "S", self._calcDuration(offset, Direction.S, slewRate)
+        return self._move (Direction.S,
+                           self._calcDuration(offset, Direction.S, slewRate),
+                           slewRate)
 
     def stopMoveEast (self):
-        return self._stopMove ("e")
+        return self._stopMove (Direction.E)
 
     def stopMoveWest (self):
-        return self._stopMove ("w")
+        return self._stopMove (Direction.W)
 
     def stopMoveNorth (self):
-        return self._stopMove ("n")
+        return self._stopMove (Direction.N)
 
     def stopMoveSouth (self):
-        return self._stopMove ("s")
+        return self._stopMove (Direction.S)
 
     def stopMoveAll (self):
         self._write (":Q#")
         return True
 
     def getRa(self):
-
         self._write(":GR#")
         ret = self._readline()
 
-        return Ra(ret[:-1])
+        # meade bugs: sometimes, after use Move commands, getRa
+        # returns a 1 before the RA, so we just check this and discard
+        # it here
+        if len(ret) > 9:
+            ret = ret[1:]
+        
+        return Coord.fromHMS(ret[:-1])
 
     def getDec(self):
         self._write(":GD#")
         ret = self._readline()
 
+        # meade bugs: same as getRa
+        if len(ret) > 10:
+            ret = ret[1:]
+
         ret = ret.replace('\xdf', ':')
 
-        return Dec(ret[:-1])
+        return Coord.fromDMS(ret[:-1])
 
     def getPositionRaDec(self):
-        return SkyPoint(self.getRa(), self.getDec())
+        return Position.fromRaDec(self.getRa(), self.getDec())
 
     def getPositionAzAlt(self):
-        return LocalPoint(self.getAz(), self.getAlt())
+        return Position.fromAzAlt(self.getAz(), self.getAlt())
 
     def getTargetRaDec(self):
-        return SkyPoint(self.getTargetRa(), self.getTargetDec())
+        return Position.fromRaDec(self.getTargetRa(), self.getTargetDec())
 
     def getTargetAzAlt(self):
-        return LocalPoint(self.getTargetAz(), self.getTargetAlt())
+        return Position.fromAzAlt(self.getTargetAz(), self.getTargetAlt())
 
     def setTargetRaDec(self, ra, dec):
 
-        if not self.setTargetRa (ra):
-            return False
-
-        if not self.setTargetDec (dec):
-            return False
+        self.setTargetRa (ra)
+        self.setTargetDec (dec)
 
         return True
 
     def setTargetAzAlt(self, az, alt):
 
-        if not self.setTargetAz (az):
-            return False
-
-        if not self.setTargetAlt (alt):
-            return False
+        self.setTargetAz (az)
+        self.setTargetAlt (alt)
 
         return True
 
@@ -492,35 +529,33 @@ class Meade (BasicLifeCycle,
         self._write(":Gr#")
         ret = self._readline()
 
-        return Ra(ret[:-1])
+        return Coord.fromHMS(ret[:-1])
 
     def setTargetRa(self, ra):
 
-        if not isinstance (ra, Ra):
-            ra = Ra (ra)
+        if not isinstance (ra, Coord):
+            ra = Coord.fromHMS(ra)
 
-        self._write(":Sr%s#" % ra.hor(hsep="\xdf", msep=":", sign=True))
+        self._write(":Sr%s#" % ra.strfcoord("%(h)02d\xdf%(m)02d:%(s)02d"))
 
         ret = self._readbool()
 
         if not ret:
-            self.setError(-1, "Invalid RA '%s'" % ra)
-            return False
+            raise MeadeException("Invalid RA '%s'" % ra)
 
         return True
 
     def setTargetDec(self, dec):
 
-        if not isinstance (dec, Dec):
-            dec = Dec (dec)
+        if not isinstance (dec, Coord):
+            dec = Coord.fromDMS(dec)
 
-        self._write(":Sd%s#" % dec.sexagesimal(dsep="\xdf", msep=":", sign=True))
+        self._write(":Sd%s#" % dec.strfcoord("%(d)+02d\xdf%(m)02d:%(s)02d"))
 
         ret = self._readbool()
 
         if not ret:
-            self.setError(-1, "Invalid DEC '%s'" % dec)
-            return False
+            raise MeadeException("Invalid DEC '%s'" % dec)
 
         return True
 
@@ -530,46 +565,39 @@ class Meade (BasicLifeCycle,
 
         ret = ret.replace('\xdf', ':')
 
-        return Dec(ret[:-1])
+        return Coord.fromDMS(ret[:-1])
 
     def getAz(self):
         self._write(":GZ#")
         ret = self._readline()
         ret = ret.replace('\xdf', ':')
 
-        return Coord(ret[:-1])
+        return Coord.fromDMS(ret[:-1])
 
     def getAlt(self):
         self._write(":GA#")
         ret = self._readline()
         ret = ret.replace('\xdf', ':')
 
-        return Coord(ret[:-1])
+        return Coord.fromDMS(ret[:-1])
 
     def getTargetAlt(self):
         return self._target_alt
-    
+
     def setTargetAlt(self, alt):
 
-        if not isinstance (alt, Alt):
-            alt = Alt (alt)
+        if not isinstance (alt, Coord):
+            alt = Coord.fromD (alt)
 
-        s = alt.sexagesimal(dsep="\xdf", msep=":", sign=True)
-        s = s[:s.rfind('.')]
-
-        if float(s[s.find(":")+1:]) == 0.0:
-            s = s[:s.find(":")] + ":00"
-
-        self._write(":Sa%s#" % s)
+        self._write(":Sa%s#" % alt.strfcoord("%(d)+02d\xdf%(m)02d:%(s)02d"))
 
         ret = self._readbool()
 
         if not ret:
-            self.setError(-1, "Invalid Altitude '%s'" % alt)
-            return False
+            raise MeadeException("Invalid Altitude '%s'" % alt)
 
         self._target_alt = alt
-        
+
         return True
 
     def getTargetAz(self):
@@ -577,54 +605,40 @@ class Meade (BasicLifeCycle,
 
     def setTargetAz(self, az):
 
-        if not isinstance (az, Az):
-            az = Az (az)
+        if not isinstance (az, Coord):
+            az = Coord.fromDMS (az)
 
-        # strange conversion to get Meade happy
-        s = az.sexagesimal(dsep="\xdf", msep=":", sign=False)
-        s = s[:s.rfind(".")]
-
-        if len(s) == 8:
-            s = "0" + s
-
-        self._write (":Sz%s#" % s)
+        self._write (":Sz%s#" % az.strfcoord("%(d)03d\xdf%(m)02d:%(s)02d"))
 
         ret = self._readbool()
 
         if not ret:
-            self.setError(-1, "Invalid Azimuth '%s'" % s)
-            return False
+            raise MeadeException("Invalid Azimuth '%s'" % az.strfcoord("%(d)03d\xdf%(m)02d"))
 
         self._target_az = az
 
         return True
-
 
     def getLat(self):
         self._write(":Gt#")
         ret = self._readline()
         ret = ret.replace('\xdf', ':')[:-1]
 
-        # FIXME bug on parsing 22:32
-        ret += ":00"
+        return Coord.fromDMS(ret)
 
-        return Lat(ret)
+    def setLat (self, lat):
 
-    def setLat (self, coord):
+        if not isinstance (lat, Coord):
+            lat = Coord.fromDMS (lat)
 
-        if not isinstance (coord, Lat):
-            coord = Lat (coord)
+        lat_str = lat.strfcoord("%(d)02d\xdf%(m)02d")
 
-        lat = coord.sexagesimal(dsep="\xdf", msep="#", sign=True)
-        lat = lat[:lat.rfind("#")]
-
-        self._write (":St%s#" % lat)
+        self._write (":St%s#" % lat_str)
 
         ret = self._readbool ()
 
         if not ret:
-            self.setError(-1, "Invalid Latitude '%s'" % lat)
-            return False
+            raise MeadeException("Invalid Latitude '%s' ('%s')" % (lat, lat_str))
 
         return True
 
@@ -633,104 +647,84 @@ class Meade (BasicLifeCycle,
         ret = self._readline()
         ret = ret.replace('\xdf', ':')[:-1]
 
-        # FIXME bug on parsing 22:32
-        ret += ":00"
-
-        return Long(ret)
+        return Coord.fromDMS(ret)
 
     def setLong (self, coord):
 
-        if not isinstance (coord, Long):
-            coord = Long (coord)
+        if not isinstance (coord, Coord):
+            coord = Coord.fromDMS (coord)
 
-        # strange conversion to get Meade happy
-        long = abs(coord.decimal())
-        long = Long (long)
-        long = long.sexagesimal(dsep="\xdf", msep="#")
-        long = long[:long.find("#")]
-
-        if len(long) == 5:
-            long = "0"+long
-
-        self._write (":Sg%s#" % long)
+        self._write (":Sg%s#" % coord.strfcoord("%(d)03d\xdf%(m)02d"))
 
         ret = self._readbool ()
+
         if not ret:
-            self.setError(-1, "Invalid Longitude '%s'" % long)
-            return False
+            raise MeadeException("Invalid Longitude '%s'" % long)
 
         return True
 
     def getDate(self):
         self._write(":GC#")
         ret = self._readline()
+        return dt.datetime.strptime(ret[:-1], "%m/%d/%y").date()
 
-        # FIXME: better date representation
-        #ret = ret.split ("/")
-        #date = datetime.date (year=int(ret[2]), month=int(ret[0]), day=int(ret[1]))
+    def setDate (self, date):
 
-        return ret[:-1]
+        if type(date) == FloatType:
+            date = dt.date.fromtimestamp(date)
 
-    def setDate (self, time):
-
-        now = datetime.date.fromtimestamp(time)
-
-        date = now.strftime ("%m/%d/%y")
-        self._write (":SC%s#" % date)
+        self._write (":SC%s#" % date.strftime ("%m/%d/%y"))
 
         ret = self._read (1)
 
         if ret == "0":
-            self.setError (-1, "Couldn't set date, invalid format '%s'" % date)
-
             # discard junk null byte
             self._read (1)
-
-            return False
+            raise MeadeException("Couldn't set date, invalid format '%s'" % date)
 
         elif ret == "1":
             # discard junk message and wait Meade finish update of internal databases
+            tmpTimeout = self._tty.timeout
             self._tty.timeout = 60
             self._readline () # junk message
 
             self._readline ()
 
+            self._tty.timeout = tmpTimeout
             return True
 
     def getLocalTime(self):
         self._write(":GL#")
         ret = self._readline()
-        return ret[:-1]
+        return dt.datetime.strptime(ret[:-1], "%H:%M:%S").time()
 
     def setLocalTime (self, local):
 
-        local = datetime.datetime.fromtimestamp (local)
-        local = local.strftime ("%H:%M:%S")
+        if type(local) == FloatType:
+            local = dt.datetime.fromtimestamp(local).time()
 
-        self._write (":SL%s#" % local)
+        self._write (":SL%s#" % local.strftime ("%H:%M:%S"))
 
         ret = self._readbool ()
+
         if not ret:
-            self.setError (-1, "Invalid local time '%s'." % local)
-            return False
+            raise MeadeException("Invalid local time '%s'." % local)
 
         return True
 
     def getLocalSiderealTime(self):
         self._write(":GS#")
         ret = self._readline()
-        return ret[:-1]
+        return dt.datetime.strptime(ret[:-1], "%H:%M:%S").time()
 
     def setLocalSiderealTime (self, local):
-        local = datetime.datetime.fromtimestamp (local)
-        local = local.strftime ("%H:%M:%S")
 
-        self._write (":SS%s#" % local)
+        self._write (":SS%s#" % local.strftime ("%H:%M:%S"))
 
         ret = self._readbool ()
+
         if not ret:
-            self.setError (-1, "Invalid Local sidereal time '%s'." % local)
-            return False
+            raise MeadeException("Invalid Local sidereal time '%s'." % local)
 
         return True
 
@@ -746,12 +740,11 @@ class Meade (BasicLifeCycle,
         self._write (":SG%s#" % offset)
 
         ret = self._readbool ()
+
         if not ret:
-            self.setError (-1, "Invalid UTC offset '%s'." % offset)
-            return False
+            raise MeadeException("Invalid UTC offset '%s'." % offset)
 
         return True
-
 
     def getCurrentTrackingRate (self):
 
@@ -760,7 +753,7 @@ class Meade (BasicLifeCycle,
         ret = self._readline()
 
         if not ret:
-            return False
+            raise MeadeException("Couldn't get the tracking rate")
 
         ret = float (ret[:-1])
 
@@ -778,8 +771,7 @@ class Meade (BasicLifeCycle,
         ret = self._readbool()
 
         if not ret:
-            self.setError (-1, "Invalid tracking rate '%s'." % trk)
-            return False
+            raise MeadeException("Invalid tracking rate '%s'." % trk)
 
         self._write(":TM#")
 
@@ -787,25 +779,19 @@ class Meade (BasicLifeCycle,
 
     def startTracking (self):
 
-        if self.getAlignMode() in (Meade.POLAR, Meade.ALT_AZ):
+        if self.getAlignMode() in (AlignMode.POLAR, AlignMode.ALT_AZ):
             return True
 
-        if not self.setAlignMode (self._lastAlignMode):
-            return False
-
+        self.setAlignMode (self._lastAlignMode)
         return True
 
     def stopTracking (self):
 
-
-        if self.getAlignMode() == Meade.LAND:
+        if self.getAlignMode() == AlignMode.LAND:
             return True
 
-        self._lastAlignMode = self.getAlignMode ()        
-
-        if not self.setAlignMode (Meade.LAND):
-            return False
-
+        self._lastAlignMode = self.getAlignMode ()
+        self.setAlignMode (AlignMode.LAND)
         return True
 
     def _setHighPrecision (self):
@@ -820,43 +806,34 @@ class Meade (BasicLifeCycle,
 
     # -- ITelescopeDriverSync implementation --
 
-    def sync(self, ra, dec):
+    def syncRaDec(self, position):
 
-        if not self.setTargetRaDec (ra, dec):
-            return False
+        self.setTargetRaDec (position.ra, position.dec)
 
         self._write(":CM#")
 
         ret = self._readline ()
 
         if not ret:
-            self.setError (-1, "Error syncing on '%s' '%s'." % (ra, dec))
+            raise MeadeException("Error syncing on '%s' '%s'." % (ra, dec))
 
-        #self.syncComplete (self.getPosition)
+        self.syncComplete (self.getPositionRaDec())
 
         return True
 
-    def getSlewRates (self):
-        return Meade.slewRates
-
     def setSlewRate (self, rate):
 
-        if rate not in self.getSlewRates().keys():
-            self.setError ("Invalid slew rate '%s'." % rate)
-            return False
-
-        if rate == Meade.GUIDE:
+        if rate == SlewRate.GUIDE:
             self._write (":RG#")
-        elif rate == Meade.CENTER:
+        elif rate == SlewRate.CENTER:
             self._write (":RC#")
-        elif rate == Meade.FIND:
+        elif rate == SlewRate.FIND:
             self._write (":RM#")
-        elif rate == Meade.MAX:
-            self._write (":Sw%d#" % self.config.max_slew_rate)
+        elif rate == SlewRate.MAX:
+            self._write (":Sw%d#" % 4)
             self._write (":RS#")
         else:
-            self.setError ("Invalid slew rate '%s'." % rate)
-            return False
+            raise ValueError("Invalid slew rate '%s'." % rate)
 
         self._slewRate = rate
 
@@ -868,86 +845,65 @@ class Meade (BasicLifeCycle,
     # -- park
 
     def getParkPosition (self):
-        return (self.config.park_position_alt, self.config.park_position_az)
+        return Position.fromAzAlt(self["park_position_alt"], self["park_position_az"])
 
-    def setParkPosition (self, alt, az):
+    @lock
+    def setParkPosition (self, position):
+
+        self["park_position_az"], self["park_position_alt"] = position.D
 
         return True
-
-        #if not isinstance(alt, Alt):
-        #    alt = Alt (alt)
-
-        #if not isinstance(az, Az):
-        #    az = Az (az)
-                
-        #self.config.park_position_alt = alt.decimal()
-        #self.config.park_position_az  = az.decimal()        
-
-        #return True
 
     def isParked (self):
         return self._parked
-                
+
+    @lock
     def park (self):
 
         if self.isParked ():
-            self.setError (-1, "Telescope already parked.")
-            return False
+            raise MeadeException("Telescope already parked.")
 
         # 1. slew to park position
-        if not self.slewToRaDec(self.getLocalSiderealTime(), "00:00:00"):
-            return False
+        # FIXME: allow different park positions and conversions from ra/dec -> az/alt
+        self.slewToRaDec(Position.fromRaDec(str(self.getLocalSiderealTime()),
+                                            "00:00:00"))
 
         # 2. stop tracking
-        if not self.stopTracking ():
-            return False
+        self.stopTracking ()
 
         # 3. power off
-        #if not self.powerOff ():
-        #    return False
+        #self.powerOff ()
 
         self._parked = True
 
+        self.parkComplete()
+
         return True
 
+    @lock
     def unpark (self):
 
         if not self.isParked():
-            self.setError (-1, "Telescope is not parked.")
-            return False
+            raise MeadeException("Telescope is not parked.")
 
         # 1. power on
-        #if not self.powerOn ():
-        #    return False
+        #self.powerOn ()
 
         # 2. start tracking
-        if not self.startTracking ():
-            return False
+        self.startTracking()
 
         # 3. set location, date and time
-        # FIXME: global config for site data
-        if not self.setLat("-22 32 03"):
-            return False
-
-        if not self.setLong("-45 34 57"):
-            return False
-       
-        if not self.setDate(time.time ()):
-            return False
-
-        if not self.setLocalTime(time.time ()):
-            return False
-            
-        if not self.setUTCOffset(3):
-            return False
+        self._initTelescope()
 
         # 4. sync on park position (not really necessary when parking on DEC=0, RA=LST
         # convert from park position to RA/DEC using the last LST set on 2.
         #ra = 0
         #dec = 0
-        
+
         #if not self.sync (ra, dec):
         #    return False
+
+        self.unparkComplete()
 
         self._parked = False
 
@@ -957,9 +913,9 @@ class Meade (BasicLifeCycle,
     # low-level
 
     def _read(self, n = 1, flush = True):
+
         if not self._tty.isOpen():
-            self.setError(-1, "Device not open")
-            return ""
+            raise IOError("Device not open")
 
         if flush:
             self._tty.flushInput()
@@ -968,12 +924,11 @@ class Meade (BasicLifeCycle,
 
     def _readline(self, eol='#'):
         if not self._tty.isOpen():
-            self.setError(-1, "Device not open")
-            return ""
+            raise IOError("Device not open")
 
         return self._tty.readline(None, eol)
 
-    def _readbool(self, n = 1):
+    def _readbool(self):
         ret = int(self._read(1))
 
         if not ret:
@@ -983,26 +938,10 @@ class Meade (BasicLifeCycle,
 
     def _write(self, data, flush = True):
         if not self._tty.isOpen():
-            self.setError(-1, "Device not open")
-            return ""
+            raise IOError("Device not open")
 
         if flush:
             self._tty.flushOutput()
 
         return self._tty.write(data)
 
-
-    def setError(self, errorNo, errorString):
-        self._errorNo = errorNo
-        self._errorString = errorString
-
-    def getError(self):
-        if self._errorNo:
-            ret = (self._errorNo, self._errorString)
-        else:
-            ret = 0
-
-        self._errorNo = 0
-        self._errorString = ""
-
-        return ret

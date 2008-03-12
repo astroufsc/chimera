@@ -1,6 +1,29 @@
 2008-03-12  P. Henrique Silva  <henrique@astro.ufsc.br>
 
-	* src/chimera/drivers/theskytelescope:
+	* src/chimera/drivers/meade.py:
+	Converted to new MetaObject framework.
+	Converted to use exceptions.
+	Converted to use full event-driven system.
+	Converted to use Coord and Position.
+	Converted to use Enum.
+
+	Fix bug on serial port parameters settings (I was leaving
+	parameters blank to use default, but defaults are not valid
+	anymore for some strange reasons).
+
+	Added NSWE movement support with self-calibration. Meade use time
+	based movements, but Telescope API receives arcseconds, so we
+	calibrate time->arcseconds to follow the API (which make a lot of
+	sense in every reasonable application, who cares about time?!).
+
+	Lot of small bug fixes.
+
+	* src/chimera/drivers/test/test_meade.py: New. Includes
+	calibration test.
+
+2008-03-12  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* src/chimera/drivers/theskytelescope.py:
 	Converted to new MetaObject framework.
 	Converted to use exceptions.
 	Converted to use full event-driven system.
