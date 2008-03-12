@@ -98,6 +98,7 @@ class ManagerAdapter (Pyro.core.Daemon):
             self.implementations[index] = (obj, name)
 
         obj.setPyroDaemon(self)
+
         return URI
 
 
@@ -134,7 +135,7 @@ class Manager (RemoteObject):
         self.pool.queueTask (self.adapter.requestLoop)
 
         # register ourself
-        self.resources.add(MANAGER_LOCATION, self, getManagerURI())
+        self.resources.add(MANAGER_LOCATION, self, getManagerURI(host, port))
 
         # signals
         signal.signal(signal.SIGTERM, self._sighandler)
@@ -147,7 +148,7 @@ class Manager (RemoteObject):
 
     # private
     def __repr__ (self):
-        if self.adapter:
+        if hasattr(self, 'adapter') and self.adapter:
             return "<Manager for %s:%d at %s>" % (self.adapter.hostname, self.adapter.port, hex(id(self)))
         else:
             return "<Manager at %s>" % hex(id(self))
@@ -167,7 +168,14 @@ class Manager (RemoteObject):
             return self.adapter.port
         else:
             return None
-    
+
+    # reflection (console)
+    def getResources (self):
+        """
+        Returns a list with the Location of all the available resources
+        """
+        return self.resources.keys()
+        
     # helpers
     
     def getDaemon (self):
@@ -231,39 +239,53 @@ class Manager (RemoteObject):
         else:
             location = Location(location)
 
-        # this manager?
-        if (location.host == None and location.port == None) or \
-            (location.host == self.getHostname() and location.port == self.getPort()):
+        # who manages this location?
+        if self._belongsToMe(location):
 
             ret = self.resources.get (location)
             if not ret:
-                raise ObjectNotFoundException ("Couldn't found an object at the given location %s" % location)
+                raise ObjectNotFoundException ("Couldn't found an object at the"
+                                               " given location %s" % location)
 
             return Proxy (uri=ret.uri)
             
         else:
-        
+
             if lazy:
                 return Proxy(location)
             else:
-                # contact other manager
-                other = Proxy(location=MANAGER_LOCATION, host=host, port=port)
 
+                # contact other manager
+                other = Proxy(location=MANAGER_LOCATION,
+                              host=location.host or host,
+                              port=location.port or port)
+                
                 if not other.ping():
                     raise ObjectNotFoundException ("Can't contact %s manager at %s." % (location, other.URI.address))
 
                 proxy = other.getProxy(location)
 
                 if not proxy:
-                    raise ObjectNotFoundException ("Couldn't found an object at the given location %s" % location)
+                    raise ObjectNotFoundException ("Couldn't found an object at the"
+                                                   " given location %s" % location)
                 else:
                     return proxy
+
+    def _belongsToMe (self, location):
+
+        meHost = self.getHostname()
+        meName = socket.gethostbyname(meHost)
+        mePort = self.getPort()
+
+        return (location.host == None or location.host in (meHost, meName)) and \
+               (location.port == None or location.port == self.getPort())
 
     # shutdown management
 
     def shutdown(self):
         """
-        Ask the system to shutdown. Closing all sockets and stopping all threads.
+        Ask the system to shutdown. Closing all sockets and stopping
+        all threads.
 
         @return: Nothing
         @rtype: None
@@ -275,14 +297,15 @@ class Manager (RemoteObject):
             log.info("Shuting down manager.")
 
             # stop objects
+            # damm 2.4, on 2.5 try/except/finally works
             try:
-                for location in self.resources:
-                    # except ourself
-                    if location == MANAGER_LOCATION: continue
-                    self.stop(location)
-            except ChimeraException:
-                pass
-
+                try:
+                    for location in self.resources:
+                        # except ourself
+                        if location == MANAGER_LOCATION: continue
+                        self.stop(location)
+                except ChimeraException:
+                    pass
             finally:
                 self.adapter.shutdown(disconnect=True)
                 del self.adapter
@@ -294,14 +317,20 @@ class Manager (RemoteObject):
         """
         Ask the system to wait until anyone calls L{shutdown}.
 
-        If nobody calls L{shutdown}, you can stop the system using Ctrl+C.
+        If nobody calls L{shutdown}, you can stop the system using
+        Ctrl+C.
 
         @return: Nothing
         @rtype: None
         """
 
-        while not self.died.isSet():
-            time.sleep (1)
+        try:
+            while not self.died.isSet():
+                time.sleep (1)
+        except IOError:
+            # On Windows, Ctrl+C on a sleep call raise IOError 'cause
+            # of the interrupted syscall
+            pass
 
 
     # objects lifecycle
@@ -382,10 +411,9 @@ class Manager (RemoteObject):
             obj = cls()
             for k, v in location.config.items():
                 obj[k] = v
-        except Exception, e:
-            log.warning("Error in %s __init__." % location)
-            log.exception(e)            
-            raise ChimeraObjectException("Error in %s __init__" % location), None, sys.exc_info()[2]
+        except Exception:
+            log.exception("Error in %s __init__." % location)
+            raise ChimeraObjectException("Error in %s __init__." % location)
 
         # connect
         obj.__setlocation__(location)
@@ -449,14 +477,11 @@ class Manager (RemoteObject):
             return True
 
         try:
-            ret = resource.instance.__start__()
-            if not ret:
-                raise ChimeraObjectException("%s __start__ returned an error. Removing %s from register." % (location, location))
+            resource.instance.__start__()
             
-        except Exception, e:
-            log.warning ("Error running %s __start__ method. Exception follows..." % location)
-            log.exception(e)
-            raise ChimeraObjectException("Error running %s __start__ method" % location), None, sys.exc_info()[2]
+        except Exception:
+            log.exception ("Error running %s __start__ method." % location)
+            raise ChimeraObjectException("Error running %s __start__ method." % location)
 
         try:
             # FIXME: thread exception handling
@@ -470,10 +495,9 @@ class Manager (RemoteObject):
             return True
 
         except Exception, e:
-            log.info("Error running %s __main__ method. Exception follows..." % location)
-            log.exception (e)            
+            log.exception("Error running %s __main__ method." % location)
             resource.instance.__setstate__(State.STOPPED)
-            raise ChimeraObjectException("Error running %s __main__ method" % location), None, sys.exc_info()[2]            
+            raise ChimeraObjectException("Error running %s __main__ method." % location)
 
 
     def stop (self, location):
@@ -505,7 +529,6 @@ class Manager (RemoteObject):
             return True
 
         except Exception, e:
-            log.info("Error running %s __stop__ method. Exception follows..." % location)
-            log.exception (e)
-            raise ChimeraObjectException("Error running %s __stop__ method" % location), None, sys.exc_info()[2]
+            log.exception("Error running %s __stop__ method. Exception follows..." % location)
+            raise ChimeraObjectException("Error running %s __stop__ method." % location)
 

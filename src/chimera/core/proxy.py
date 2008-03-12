@@ -25,8 +25,9 @@ except ImportError, e:
     raise RuntimeError ("You must have Pyro version >= 3.6 installed.")
 
 from chimera.core.remoteobject import RemoteObject
-from chimera.core.constants    import (MANAGER_DEFAULT_HOST, MANAGER_DEFAULT_PORT,
-                                       EVENTS_PROXY_NAME)
+from chimera.core.constants    import MANAGER_DEFAULT_HOST, MANAGER_DEFAULT_PORT
+from chimera.core.constants    import EVENTS_PROXY_NAME, EVENTS_ATTRIBUTE_NAME
+from chimera.core.constants    import METHODS_ATTRIBUTE_NAME
 from chimera.core.location     import Location
 
 import chimera.core.log
@@ -51,7 +52,9 @@ class Proxy (Pyro.core.DynamicProxy):
             host = (host or location.host) or MANAGER_DEFAULT_HOST
             port = (port or location.port) or MANAGER_DEFAULT_PORT
             
-            uri = Pyro.core.PyroURI(host=host, objectID=str(location), port=port)
+            uri = Pyro.core.PyroURI(host=host,
+                                    port=port,
+                                    objectID="/%s/%s" % (location.cls, location.name))
         
         Pyro.core.DynamicProxy.__init__ (self, uri)
         
@@ -67,6 +70,10 @@ class Proxy (Pyro.core.DynamicProxy):
             raise AttributeError()
             
         return ProxyMethod(self, attr)
+
+    def __iadd__ (self, configDict):
+        ProxyMethod(self, "__iadd__")(configDict)
+        return self
 
     def __repr__ (self):
         return "<%s proxy at %s>" % (self.URI, hex(id(self)))
@@ -123,7 +130,7 @@ class ProxyMethod (object):
         # passing a proxy method?
         if not isinstance (other, ProxyMethod):
             log.debug("Invalid parameter: %s" % other)
-            return self
+            raise TypeError("Invalid parameter: %s" % other)
 
         handler["handler"]["proxy"] = other.proxy.URI
         handler["handler"]["method"] = str(other.__name__)
@@ -131,8 +138,9 @@ class ProxyMethod (object):
         try:
             self.sender ("%s.%s" % (EVENTS_PROXY_NAME, action), (handler,), {})
         except Exception, e:
-            log.debug ("Cannot %s to topic '%s' using proxy '%s'."
-                       "No event proxy on the object." % (action, self.method, self.proxy))
+            log.exception("Cannot %s to topic '%s' using proxy '%s'." % (action,
+                                                                         self.method,
+                                                                         self.proxy))
 
         return self
 

@@ -1,5 +1,21 @@
 2008-03-12  P. Henrique Silva  <henrique@astro.ufsc.br>
 
+	* src/chimera/core/manager.py:
+	Change exception raising to new log framework (no more
+	sys.exc_info).
+	Reflection support (resources).
+	Small bug fix on Window platform when shuting down.
+	Manager's identity (host/port) fixes (still with some bugs, but
+	improving).
+
+	* src/chimera/core/proxy.py: Identity fixes for URI only Proxies.
+	Better error messages when Proxy fails.
+	Configuration support using += (OMG, how this was not implemented
+	yet!?).
+	Better method type checking when subscribing to events.
+
+2008-03-12  P. Henrique Silva  <henrique@astro.ufsc.br>
+
 	* src/chimera/core/config.py:
 	Add Enum checker.
 	Add Coord option and checker (option added to save Coord state
