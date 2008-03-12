@@ -1,5 +1,5 @@
-#! /usr/bin/python
-# -*- coding: iso8859-1 -*-
+#! /usr/bin/env python
+# -*- coding: iso-8859-1 -*-
 
 # chimera - observatory automation system
 # Copyright (C) 2006-2007  P. Henrique Silva <henrique@astro.ufsc.br>
@@ -18,5 +18,27 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-# TODO: checar versao do python antes de iniciar
-# (python 2.4.x necess√rio (usamos decorators))
+"""
+
+Chimera - Observatory Automation System
+=======================================
+
+ Chimera is...
+
+
+G{packagetree chimera}
+
+@group Core: core
+@group Interfaces: interfaces
+@group Instruments: instruments
+@group Controllers: controllers
+@group Drivers: drivers
+@group Utilitary: util
+
+@author: P. Henrique Silva
+@copyright: 2006-2008
+@version: 0.1
+@license: GPL v.2
+@contact: ph.silva@gmail.com
+
+"""

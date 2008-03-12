@@ -1,5 +1,9 @@
 2008-03-12  P. Henrique Silva  <henrique@astro.ufsc.br>
 
+	* src/chimera/__init__.py: Documentation added (epydoc).
+
+2008-03-12  P. Henrique Silva  <henrique@astro.ufsc.br>
+
 	* src/chimera/controllers/test/test_auto_focus.py: New. Tentative
 	autofocus support testing.
 
