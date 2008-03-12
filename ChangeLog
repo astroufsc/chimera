@@ -1,5 +1,17 @@
 2008-03-12  P. Henrique Silva  <henrique@astro.ufsc.br>
 
+	* src/chimera/core/exceptions.py:
+	Add exception cause system allowing new ChimeraExceptions raised
+	in the context of another exception to carry information about the
+	original exception.
+
+	Add new exceptions.
+
+	ChimeraException now support BaseException parameters and are
+	properly de/serialized.
+
+2008-03-12  P. Henrique Silva  <henrique@astro.ufsc.br>
+
 	* src/chimera/core/methodwrapper.py: Fix bug on emulating static
 	calls without arguments.
 	Remove self.special call (old behaviour). Subclasses should
