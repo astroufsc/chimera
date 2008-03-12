@@ -1,5 +1,5 @@
-#! /usr/bin/python
-# -*- coding: iso8859-1 -*-
+#! /usr/bin/env python
+# -*- coding: iso-8859-1 -*-
 
 # chimera - observatory automation system
 # Copyright (C) 2007  P. Henrique Silva <henrique@astro.ufsc.br>
@@ -24,9 +24,17 @@ import subprocess
 import logging
 import time
 
-from chimera.util.coord import Ra, Dec
-from chimera.core.lifecycle import BasicLifeCycle
-from chimera.interfaces.telescope import ITelescopeDriver
+from chimera.util.coord    import Coord
+from chimera.util.position import Position
+
+from chimera.core.chimeraobject import ChimeraObject
+from chimera.core.exceptions    import ChimeraException
+
+from chimera.interfaces.telescope       import PositionOutsideLimitsException
+from chimera.interfaces.telescopedriver import ITelescopeDriverSlew
+
+log = logging.getLogger(__name__)
+
 
 if sys.platform == "win32":
     # handle COM multithread support
@@ -39,8 +47,8 @@ if sys.platform == "win32":
     from pywintypes import com_error
 
 else:
-    logging.warning ("Not on win32. TheSky Telescope will not work.")
-    raise RuntimeError ("Not on win32. TheSky Telescope will not work.")    
+    log.warning("Not on win32. TheSky Telescope will not work.")
+    #raise ChimeraException("Not on win32. TheSky Telescope will not work.")    
 
 
 def com (func):
@@ -58,50 +66,34 @@ def com (func):
     return com_wrapper
 
 
-class TheSkyTelescope (BasicLifeCycle, ITelescopeDriver):
+class TheSkyTelescope (ChimeraObject, ITelescopeDriverSlew):
 
-    __options__ = {"thesky": [5, 6]}
+    __config__ = {"thesky": [5, 6]}
 
-    def __init__ (self, manager):
-
-        BasicLifeCycle.__init__ (self, manager)
+    def __init__ (self):
+        ChimeraObject.__init__ (self)
 
         self._thesky = None
         self._telescope = None
         self._term = threading.Event ()
         self._idle_time = 0.2
-        self._target = (0,0)
-
-    # -- IBasicLifeCycle implementation --
+        self._target = None
 
     @com
-    def init (self, config):
-
-        self.config += config
-
-        if not self.open ():
-            return False
-
+    def __start__ (self):
+        self.open()
         return True
 
     @com
-    def shutdown (self):
-
-        if not self.close ():
-            return False
-
+    def __stop__ (self):
+        self.close()
         return True
-
-    def main (self):
-        pass
-
-    # -- ITelescopeDriver implementation -- 
 
     @com
     def open (self):
 
         try:
-            if self.config.thesky == 6:
+            if self["thesky"] == 6:
                 self._thesky = Dispatch ("TheSky6.RASCOMTheSky")
                 self._telescope = Dispatch ("TheSky6.RASCOMTele")
             else:
@@ -109,12 +101,12 @@ class TheSkyTelescope (BasicLifeCycle, ITelescopeDriver):
                 self._telescope = Dispatch ("TheSky.RASCOMTele")
 
         except com_error:
-            logging.error ("Couldn't instantiate TheSky %d COM objects." % self.config.thesky)
+            self.log.error ("Couldn't instantiate TheSky %d COM objects." % self["thesky"])
             return False
 
         try:
 
-            if self.config.thesky == 6:
+            if self["thesky"] == 6:
                 self._thesky.Connect ()
                 self._telescope.Connect ()
                 self._telescope.FindHome ()
@@ -125,7 +117,7 @@ class TheSkyTelescope (BasicLifeCycle, ITelescopeDriver):
             return True
         
         except com_error, e:
-            logging.error ("Couldn't connect to TheSky. (%s)" % e)
+            self.log.error ("Couldn't connect to TheSky. (%s)" % e)
             return False
 
     @com
@@ -136,61 +128,73 @@ class TheSkyTelescope (BasicLifeCycle, ITelescopeDriver):
             self._telescope.Disconnect ()
             self._thesky.Quit ()
         except com_error:
-            logging.error ("Couldn't disconnect to TheSky.")
+            self.log.error ("Couldn't disconnect to TheSky.")
             return False
+
+        if self["thesky"] == 5:
+            # kill -9 on Windows
+            subprocess.call("TASKKILL /IM Sky.exe /F")
+        
+            
 
     @com
     def getRa (self):
         self._telescope.GetRaDec()
-        return self._telescope.dRa
+        return Coord.fromHMS(self._telescope.dRa)
 
     @com
     def getDec (self):
         self._telescope.GetRaDec()
-        return self._telescope.dDec
+        return Coord.fromDMS(self._telescope.dDec)
 
     @com
     def getAz (self):
         self._telescope.GetAzAlt()
-        return self._telescope.dAz
+        return Coord.fromDMS(self._telescope.dAz)
 
     @com
     def getAlt (self):
         self._telescope.GetAzAlt()
-        return self._telescope.dAlt
+        return Coord.fromDMS(self._telescope.dAlt)
 
     @com
-    def getPosition (self):
+    def getPositionRaDec (self):
         self._telescope.GetRaDec ()
-        return (self._telescope.dRa, self._telescope.dDec)
+        # FIXME: returns Position (pickle error)
+        return (Coord.fromHMS(self._telescope.dRa),
+                Coord.fromDMS(self._telescope.dDec))
 
     @com
-    def getTarget (self):
-        return self._target
+    def getTargetRaDec (self):
+        if not self._target: return (0, 0)
+
+        return (self._target.ra, self._target.dec)
 
     @com
-    def slewToRaDec (self, ra, dec):
+    def slewToRaDec (self, position):
 
         if self.isSlewing ():
             return False
 
-        ra = Ra(ra)
-        dec = Dec(dec)
-
-        self._target = (ra, dec)
-
+        self._target = position
         self._term.clear ()
 
-        self._telescope.Asynchronous = 1
+        try:
+            self._telescope.Asynchronous = 1
+            self.slewBegin((position.ra, position.dec))
+            self._telescope.SlewToRaDec (position.ra.H, position.dec.D, "chimera")
 
-        self._telescope.SlewToRaDec (ra.decimal()/15.0, dec.decimal(), "chimera")
+            while not self._telescope.IsSlewComplete:
 
-        while not self._telescope.IsSlewComplete:
+                if self._term.isSet ():
+                    return True
 
-            if self._term.isSet ():
-                return True
+                time.sleep (self._idle_time)
 
-            time.sleep (self._idle_time)
+            self.slewComplete(self.getPositionRaDec())
+
+        except com_error:
+            raise PositionOutsideLimitsException("Position outside limits.")
 
         return True
 

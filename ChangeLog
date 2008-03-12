@@ -1,5 +1,19 @@
 2008-03-12  P. Henrique Silva  <henrique@astro.ufsc.br>
 
+	* src/chimera/drivers/theskytelescope:
+	Converted to new MetaObject framework.
+	Converted to use exceptions.
+	Converted to use full event-driven system.
+
+	Add support for process kill with TheSky 5 which doesn't do it by
+	itself when asked to Disconnect.
+
+	Current support required changes on instrument implementation
+	'cause of Position serialization issues on Windows. Current API's
+	are imposed anyway, but these "hacks" must go someway soon.
+
+2008-03-12  P. Henrique Silva  <henrique@astro.ufsc.br>
+
 	* src/chimera/drivers/optectcfspy:
 	Converted to new MetaObject framework.
 	Converted to use exceptions.
