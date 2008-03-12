@@ -1,4 +1,4 @@
-#! /usr/bin/end python
+#! /usr/bin/env python
 # -*- coding: iso-8859-1 -*-
 
 # chimera - observatory automation system
@@ -21,12 +21,15 @@
 
 import math
 import re
+import sys
 from types import StringType, LongType, IntType, FloatType
 
 from chimera.util.enum import Enum
+from chimera.core.compat import *
 
 
-__all__ = ['Coord']
+__all__ = ['Coord',
+           'CoordUtil']
 
 
 State = Enum("HMS", "DMS", "D", "H", "R", "AS")
@@ -37,12 +40,23 @@ class CoordUtil (object):
     COORD_RE = re.compile('((?P<dd>(?P<sign>[+-]?)[\s]*\d+)[dh]?[\s:]*)?((?P<mm>\d+)[m]?[\s:]*)?((?P<ss>\d+)(?P<msec>\.\d*)?([\ss]*))?')
 
     @staticmethod
+    def epsEqual (a, b, eps=1e-6):
+        if (a-b) < eps:
+            return True
+        else:
+            return False
+
+    @staticmethod
     def d2hms (d):
         hhs = d/15.0
         hh = int(hhs)
         mms = (hhs - hh)*60
         mm = int(mms)
         ss = (mms - mm)*60
+
+        if CoordUtil.epsEqual(ss, 60):
+            ss = 0
+            mm+=1
         
         return (hh, mm, ss)
 
@@ -56,7 +70,7 @@ class CoordUtil (object):
         sign = 1
         if d < 0: sign *= -1
 
-        return (sign, dd, abs(mm), abs(ss))
+        return (sign, dd, mm, ss)
 
     @staticmethod
     def dms2d (dms):
@@ -68,9 +82,11 @@ class CoordUtil (object):
         if type(dms) == StringType:
 
             # try to match the regular expression
-            matches = CoordUtil.COORD_RE.search(dms)
-            
-            if matches:
+            matches = CoordUtil.COORD_RE.match(dms)
+
+            # our regular expression is tooo general, we need to make sure that things
+            # like "xyz" (which is valid) but is a zero-lenght match wont pass silently
+            if any(matches.groups()):
                 m_dict = matches.groupdict()
                 sign=m_dict["sign"] or '+'                
                 dd = m_dict["dd"] or 0
@@ -83,8 +99,8 @@ class CoordUtil (object):
                     mm = int(mm)
                     ss = int(ss)
                     msec = float(msec)
-                except ValueError:
-                    raise ValueError("Invalid coordinate: '%s'" % dms)
+                except ValueError, e:
+                    raise ValueError("Invalid coordinate: '%s' (%s)." % (dms, e))
 
                 d = abs(dd) + mm/60.0 + (ss+msec)/3600.0
 
@@ -97,8 +113,10 @@ class CoordUtil (object):
                 # brute force float conversion
                 try:
                     return float(dms)
-                except ValueError:
-                    raise ValueError("Invalid coordinate: '%s'" % dms)
+                except ValueError, e:
+                    raise ValueError("Invalid coordinate: '%s' (%s)." % (dms, e))
+
+        raise ValueError("Invalid coordinate type: '%s'. Expecting string or numbers." % str(type(dms)))
 
     @staticmethod
     def hms2d (hms):
@@ -106,17 +124,12 @@ class CoordUtil (object):
         return d*15.0
 
     @staticmethod
-    def hms2str (c, format=""):
-        return '%02d:%02d:%.2f' % c.HMS
+    def hms2str (c):
+        return c.strfcoord('%(h)02d:%(m)02d:%(s).2f')
 
     @staticmethod
-    def dms2str (c, format=""):
-        sign, dd, mm, ss = c.DMS
-
-        s = ''
-        if sign > 0: s = '+'
-
-        return '%s%02d:%02d:%.2f' % (s, dd, mm, ss)
+    def dms2str (c):
+        return c.strfcoord('%(d)02d:%(m)02d:%(s).2f')
 
     @staticmethod
     def strfcoord (c, format=None):
@@ -124,24 +137,52 @@ class CoordUtil (object):
         coordinate conversion to str following the given template
         format.
 
-        Components (conversion specifiers, in sprintf language, like
-        d, f, an so on):
+        String template follow standard python % mapping. The
+        available components are:
 
-        d: decimal degrees (always with sign)
-        m: minutes
-        s: seconds (can be float)
-        h: hours
+        d[d]: decimal degrees (always with sign)
+        m[m]: minutes
+        s[s]: seconds (can be float)
+        s[h]: hours (always with sign)
 
         Examples:
 
-        'normal' dms string: format='%02d:%02m:%.2s'
-        'normal' hms string: format='%02h:%02m:%.2s'
+        'normal' dms string: format='%(d)02d:%(m)02d:%(s).2f'
+        'normal' hms string: format='%(h)02d:%(m)02d:%(s).2f'
         """
-        pass
+
+        default = None
+
+        if c.state == State.HMS:
+            default = '%(h)02d:%(m)02d:%(s).2f'
+        else:
+            default = '%(d)02d:%(m)02d:%(s).2f'
+            
+        format = format or default
+
+        sign, d, dm, ds = CoordUtil.d2dms(c.D)
+        h, hm, hs = CoordUtil.d2hms(c.D)
+
+        # decide which m/s to use
+        m = s = 0
+        
+        if '(h)' in format or '(hh)' in format:
+            m = hm
+            s = hs
+        else:
+            m = dm
+            s = ds
+
+        subs = dict(d=d, dd=d,
+                    m=abs(m), mm=abs(m),
+                    s=abs(s), ss=abs(s),
+                    h=h, hh=h)
+
+        return format % subs
 
 
 class Coord (object):
-    """L{Coord} represents a single component coordinate.
+    """L{Coord} represents a single angular coordinate.
 
     It support all the common angle representations found in
     astronomy. This class is intended to be used as part of low level
@@ -149,66 +190,68 @@ class Coord (object):
     (like distance computations, reference frames conversions) should
     use L{Position}.
 
-    Supported representations and their associated data types.
-
-    r (radian): float
-    h (decimal hours): float
-    d (decimal degrees): float
-    dms (sexagesimal degrees) -> (sign: int, degrees: int, minutes: int, seconds: float) tuple
-    hms (sexagesimal hours) -> (hours: int, minutes: int, seconds: float) -> tuple
-    as (arc seconds): float
+    Supported representations and their associated data types::
+    
+     r (radian): float
+     h (decimal hours): float
+     d (decimal degrees): float
+     dms (sexagesimal degrees) -> (sign: int, degrees: int, minutes: int, seconds: float) tuple
+     hms (sexagesimal hours) -> (hours: int, minutes: int, seconds: float) -> tuple
+     as (arc seconds): float
+    
 
     This class have very particular semantics:
 
-    0) This class is immutable, in other words, every operation that
-    need to change this object will return a new one.
+     0. This class is immutable, in other words, every operation that
+     need to change this object will return a new one.
 
-    1) object creation: As there is six different representations,
-    instead of remember how parameters should be passed to __init__
-    constructor, use Coord.from* forms to leave your code away of
-    low-level code when creating Coord objects. from* acts like
-    factories of Coords.
+     1. object creation: As there is six different representations,
+     instead of remember how parameters should be passed to __init__
+     constructor, use Coord.from* forms to leave your code away of
+     low-level code when creating Coord objects. from* acts like
+     factories of Coords.
 
-    2) primitive conversions: to get primitive data (like int, long,
-    float or tuples) from Coord use the attribute access (D, HMS, DMS,
-    and so on). This returns a primitive value, that can't be
-    converted back to another representation (at least not directly as
-    when using to* forms).
+     2. primitive conversions: to get primitive data (like int, long,
+     float or tuples) from Coord use the attribute access (D, HMS,
+     DMS, and so on). This returns a primitive value, that can't be
+     converted back to another representation (at least not directly
+     as when using to* forms).
 
-    2.1) Another way to get a primitive value is using Python's
-    standard factories (int, float, tuple). Coord convert itself to
-    required factory type.
+      2.1. Another way to get a primitive value is using Python's
+      standard factories (int, float, tuple). Coord convert itself to
+      required factory type.
 
-    3) object conversions: To get a copy of the Coord using another
-    representation, use to* factories. This will return a new instance
-    of Coord, using the given representation. This is useful if you
-    need to store different representations of the same coordinate
-    independently of each other.
-
+     3. object conversions: To get a copy of the Coord using another
+     representation, use to* factories. This will return a new
+     instance of Coord, using the given representation. This is useful
+     if you need to store different representations of the same
+     coordinate independently of each other and express this intent
+     explicitly.
 
     Internals
-    ====
+    =========
 
-    Coord use a simple state machine to present coordinates in the
-    desired representation. Internaly, Coord store coordinates in
-    decimal degrees no mather which is the state of the object. States
-    matter only when using one of primitive getters, string
-    representations or when doing math with Coord objects.
+     Coord use a simple state machine to present coordinates in the
+     desired representation. Internaly, Coord store coordinates in
+     decimal degrees no mather which is the state of the
+     object. States matter only when using one of primitive getters,
+     string representations or when doing math with Coord objects.
 
-    As Coord use a single internal representation, only conversion
-    from/to this one are required. No matter which representation you
-    want, its just one pass to get there. To speed-up most time
-    consuming conversions (dms->d, hms-d, and vice versa), and using
-    the fact that Coord is immutable, Coord store recent computations
-    in a cache and return this version when asked for that
-    representation again.
+     As Coord use a single internal representation, only conversion
+     from/to this one are required. No matter which representation you
+     want, its just one pass to get there. To speed-up most time
+     consuming conversions (dms->d, hms-d, and vice versa), and using
+     the fact that Coord is immutable, Coord store recent computations
+     in a cache and return this version when asked for that
+     representation again.
 
-    Only math operations (apart of factories, of course) return new
-    Coord objects.
+     Only math operations (apart of factories, of course) return new
+     Coord objects.
+    
     """
 
-    deg2rad = 180/math.pi
-    rad2deg = math.pi/180
+    deg2rad = math.pi/180.0
+    rad2deg = 180.0/math.pi
 
     # internal state conversions from/to internal
     # representation (decimal degrees)
@@ -349,6 +392,9 @@ class Coord (object):
         else:
             return '%.2f' % self.get()
 
+    def strfcoord (self, format=None):
+        return CoordUtil.strfcoord(self, format)
+
     #
     # primitive conversion
     #
@@ -373,6 +419,13 @@ class Coord (object):
             yield self.get()
 
     #
+    # hash
+    #
+
+    def __hash__ (self):
+        return hash(self.D)
+
+    #
     # math
     #
     
@@ -384,6 +437,16 @@ class Coord (object):
 
     def __abs__ (self):
         return Coord(abs(self.D), self.state)
+
+    def __mod__ (self, other):
+        if not isinstance(other, Coord):
+            other = Coord.fromState(other, self.state)
+        return Coord(self.D % other.D, self.state)
+
+    def __rmod__ (self, other):
+        if not isinstance(other, Coord):
+            other = Coord.fromState(other, self.state)
+        return Coord(other.D % self.D, self.state)
 
     def __add__ (self, other):
         if not isinstance(other, Coord):
@@ -426,6 +489,41 @@ class Coord (object):
 
     def __rtruediv__ (self, other):
         return self.__rdiv__(other)
+
+    # logic
+    def __lt__ (self, other):
+        if not isinstance(other, Coord):
+            other = Coord.fromState(other, self.state)
+        return self.D < other.D
+        
+    def __le__ (self, other):
+        if not isinstance(other, Coord):
+            other = Coord.fromState(other, self.state)
+        return self.D <= other.D
+        
+    def __eq__ (self, other):
+        if not isinstance(other, Coord):
+            other = Coord.fromState(other, self.state)
+        return self.D == other.D
+        
+    def __ne__ (self, other):
+        if not isinstance(other, Coord):
+            other = Coord.fromState(other, self.state)
+        return self.D != other.D
+        
+    def __gt__ (self, other):
+        if not isinstance(other, Coord):
+            other = Coord.fromState(other, self.state)
+        return self.D > other.D
+        
+    def __ge__ (self, other):
+        if not isinstance(other, Coord):
+            other = Coord.fromState(other, self.state)
+        return self.D >= other.D
+
+        
+
+        
 
 
         

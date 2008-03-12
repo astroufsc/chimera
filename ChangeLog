@@ -1,5 +1,28 @@
 2008-03-12  P. Henrique Silva  <henrique@astro.ufsc.br>
 
+	* src/chimera/util/coord.py:
+	Much more documentation.
+
+	Add support for rich operators (<, <=, >, >=, ==, != and mod).
+
+	Add the much needed strfcoord function on CoordUtil and method on
+	Coord. hms2str and dms2str are now based on this function.
+
+	Fix "excess of generality" on Coord RE. Our RE are too general
+	that some strange string was being accepted as valid Coord (see
+	test_coord.py for examples)
+
+	* src/chimera/util/position.py: New class. A simple Position (a
+	tuple of Coords) class. It used astrolib Position as base to
+	inherites angsep and some other usefull things and the amazing TPM
+	library support. Hope to expand this class and make more use of
+	TPM in the future.
+
+	* src/chimera/util/tests/test_position.py: Test Position basic
+	functionality.
+
+2008-03-12  P. Henrique Silva  <henrique@astro.ufsc.br>
+
 	* src/chimera/util/filenamesequence.py: New. Very useful class to
 	implement automatic sequence number generation. Mostly used to
 	generate new index to image filenames (used in ImageSave).
