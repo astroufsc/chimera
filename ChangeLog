@@ -1,5 +1,10 @@
 2008-03-12  P. Henrique Silva  <henrique@astro.ufsc.br>
 
+	* src/chimera/controllers/test/test_auto_focus.py: New. Tentative
+	autofocus support testing.
+
+2008-03-12  P. Henrique Silva  <henrique@astro.ufsc.br>
+
 	* src/chimera/controllers/site/config.py:
 	Added Manager host/port configuration.
 
