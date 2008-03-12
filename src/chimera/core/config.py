@@ -22,13 +22,20 @@
 from types import (IntType, FloatType, StringType, LongType,
                    DictType, TupleType, ListType, BooleanType)
 
+try:
+    import cPickle as pickle
+except ImportError:
+    import pickle
+    
+
 import logging
 import chimera.core.log
 log = logging.getLogger(__name__)
 
+from chimera.util.enum import Enum, EnumValue
+from chimera.core.exceptions import OptionConversionException
 
-class OptionConversionException (Exception):
-    pass
+from chimera.util.coord import Coord
 
 
 class Option (object):
@@ -94,7 +101,6 @@ class IntChecker (Checker):
                 # couldn't convert, nothing to do
                 raise OptionConversionException ("couldn't convert '%s' to int value." % value)
 
-        # any other type are sillently ignored
         raise OptionConversionException ("couldn't convert '%s' to int." % str (type (value)))
 
 
@@ -121,7 +127,6 @@ class FloatChecker (Checker):
                 # couldn't convert, nothing to do
                 raise OptionConversionException ("couldn't convert '%s' to float value." % value)
 
-        # any other type are sillently ignored
         raise OptionConversionException ("couldn't convert %s to float." % str (type (value)))
 
 
@@ -265,6 +270,59 @@ class RangeChecker (Checker):
                                                                                                      self._max))
 
 
+class EnumChecker (Checker):
+
+    def __init__ (self, value):
+        Checker.__init__ (self)
+
+        self.enumtype = value.enumtype
+
+    def check (self, value):
+
+        if type(value) == EnumValue:
+            if value in self.enumtype:
+                return value
+
+        if type(value) == StringType:
+            if value in self.enumtype:
+                return [v for v in self.enumtype if str(v) == value][0] # get the EnumValue equivalent of the given str
+
+        raise OptionConversionException ('invalid enum value %s. not a %s enum.' % (value, str(self.enumtype)))
+
+
+class CoordOption (Option):
+
+    def __init__ (self, name, value, checker):
+        Option.__init__(self, name, value, checker)
+
+        self._state = value.state
+
+    def set (self, value):
+        try:
+            oldvalue = self._value
+            self._value = self._checker.check(value, self._state)
+            return oldvalue
+        except OptionConversionException, e:
+            log.debug ("Error setting %s: %s." % (self._name, str (e)))
+            raise e
+
+class CoordChecker (Checker):
+
+    def __init__ (self, value):
+        Checker.__init__ (self)
+
+    def check (self, value, state=None):
+
+        if not isinstance(value, Coord):
+            try:
+                return Coord.fromState(value, state)
+            except ValueError:
+                pass
+
+        # any other type is ignored
+        raise OptionConversionException ('invalid coord value %s.' % value)
+
+
 class Config (object):
 
     def __init__ (self, obj):
@@ -306,6 +364,19 @@ class Config (object):
                 options[name] = Option (name, value[0], RangeChecker (value))
                 continue
 
+            if type (value) == EnumValue:
+                options[name] = Option (name, value, EnumChecker (value))
+                continue
+
+            # special Coord type, remember which state create the
+            # option to allow the use of the right constructor when
+            # checking new values
+            if type (value) == Coord:
+                options[name] = CoordOption (name, value, CoordChecker (value))
+                continue
+                
+            raise ValueError("Invalid option type: %s." % type(value))
+
         return options
 
     def __contains__ (self, name):
@@ -323,8 +394,7 @@ class Config (object):
             return self._options[name].get ()
 
         else:
-            log.debug ("invalid option ('%s')." % name)
-            raise KeyError
+            raise KeyError("invalid option: %s." % name)
 
     def __setitem__ (self, name, value):
 
@@ -334,8 +404,7 @@ class Config (object):
 
         # rant about invalid option
         else:
-            log.debug ("invalid option ('%s')." % name)
-            raise KeyError
+            raise KeyError("invalid option: %s." % name)
        
 
     def __iter__ (self):
@@ -370,6 +439,9 @@ class Config (object):
             other = Config(other)
 
         for name, value in other._options.items():
+            if not name in self._options:
+                raise KeyError("invalid option: %s" % name)
+            
             self._options[name] = value
 
         return self

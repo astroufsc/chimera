@@ -1,5 +1,6 @@
 
 from chimera.core.config import Config, OptionConversionException
+from chimera.util.enum import Enum, EnumValue
 
 from nose.tools import assert_raises
 
@@ -127,10 +128,36 @@ class TestConfig (object):
         assert c.values() == c.values()        
         assert c.items() == c.items()
 
-        # add
+        # config using +=
         dd = {"new": 10}
-        c += dd
-        assert "new" in c
+        assert_raises(KeyError, c.__iadd__, dd)
+
+        assert not "new" in c
+
+        c += {"device":"foo"}
+        assert c["device"] == "foo"
         assert isinstance (c, Config) # __iadd__ protocol, return self to allow daisy chaining
+
+    def test_enum (self):
+
+        Values = Enum("A_VALUE", "OTHER_VALUE")
+
+        c = Config({"key_enum": Values.A_VALUE})
+
+        # default
+        assert c["key_enum"] == Values.A_VALUE
+
+        # valid
+        for i in Values:
+            assert c.__setitem__("key_enum", i) != False, "%s (%s) is a valid enum configuration" % (i, type(i))
+            assert type(c.__getitem__("key_enum")) == EnumValue, "should return EnumValue object"
+
+        for i in ["A_VALUE", "OTHER_VALUE"]:
+            assert c.__setitem__("key_enum", i) != False, "%s (%s) is a valid enum configuration" % (i, type(i))
+            assert type(c.__getitem__("key_enum")) == EnumValue, "should return EnumValue object"
+
+        # invalid
+        assert_raises(KeyError, c.__getitem__, "WHATERVER")
+        
 
         

@@ -1,5 +1,15 @@
 2008-03-12  P. Henrique Silva  <henrique@astro.ufsc.br>
 
+	* src/chimera/core/config.py:
+	Add Enum checker.
+	Add Coord option and checker (option added to save Coord state
+	when creating the option.
+	Small fixes on Config.
+
+	* src/chimera/core/test/test_config.py: Test those new features.
+
+2008-03-12  P. Henrique Silva  <henrique@astro.ufsc.br>
+
 	* src/chimera/core/site.py: New object. Used as a data container
 	with site specific information. Date/time functions will be
 	implemented in the future.
