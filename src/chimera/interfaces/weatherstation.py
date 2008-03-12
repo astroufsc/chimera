@@ -46,30 +46,30 @@ Unit = Enum ("PERCENTUAL", # Humidity
              "PA",
              "PSI",
 
-             "MM",       # Rain
-             "CM",
-             "FT"
+             "MM_PER_H",       # Rain
+             "CM_PER_H",
+             "FT_PER_H",
              )
 
 
 class IWeatherStation (Interface):
 
-    __options__ = {"driver": "/Fake/weather",
-
-                   "humidity_unit"   :,
-                   "temperature_unit":,
-                   "wind_unit"       :,
-                   "dew_point_unit"  :,
-                   "pressure_unit"   :,
-                   "rain_unit"       :,
-
-                   "humidity_delta"   :,
-                   "temperature_delta":,
-                   "wind_delta"       :,
-                   "dew_point_delta"  :,
-                   "pressure_delta"   :,
-                   "rain_delta"       :,
-                   }
+    __config__ = {"driver": "/Fake/weather",
+                  
+                  "humidity_unit"   : Unit.MM_HG,
+                  "temperature_unit": Unit.CELSIUS,
+                  "wind_unit"       : Unit.KM_PER_H,
+                  "dew_point_unit"  : Unit.CELSIUS,
+                  "pressure_unit"   : Unit.PERCENTUAL,
+                  "rain_unit"       : Unit.MM_PER_H,
+                  
+                  "humidity_delta"   : 1,
+                  "temperature_delta": 1,
+                  "wind_delta"       : 1,
+                  "dew_point_delta"  : 1,
+                  "pressure_delta"   : 1,
+                  "rain_delta"       : 1,
+                  }
 
     def humididy (self, deltaT=0, unit=Unit.PERCENTUAL):
         pass
@@ -86,7 +86,7 @@ class IWeatherStation (Interface):
     def pressure (self, deltaT=0, unit=Unit.MM_HG):
         pass
 
-    def rain (self, deltaT=0, unit=Unit.MM):
+    def rain (self, deltaT=0, unit=Unit.MM_PER_H):
         pass
 
     @event

@@ -22,72 +22,95 @@
 from chimera.core.interface import Interface
 from chimera.core.event import event
 
+from chimera.core.exceptions import ChimeraException
 
-class IFocuser (Interface):
-    """Instrument interface for an electromechanical focuser for astronomical telescopes.
-    
-    Two kinds of focuser are support (dependind of the driver):
 
-     - Absolute encoder: use optical encoder to move to exact positions.
-     - DC pulse: just send a DC pulse to a motor and move to selected directions only (no position information).
+class InvalidFocusPositionException (ChimeraException):
+    """
+    Represents an outside of boundaries Focuser error.
     """
 
-    __options__ = {"driver": "/Fake/focus",
-                   "model": "Fake Focus Inc.",
-                   }
+
+class IFocuser (Interface):
+    """Instrument interface for an electromechanical focuser for
+       astronomical telescopes.
+       
+       Two kinds of focuser are support (dependind of the driver):
+
+       - Absolute encoder: use optical encoder to move to exact
+         positions.
+       - DC pulse: just send a DC pulse to a motor and move
+         to selected directions only (no position information).
+    """
+
+    __config__ = {"driver": "/Fake/focus",
+                  "model": "Fake Focus Inc.",}
 
 
     def moveIn (self, n):
         """
-        Move the focuser IN by n steps. Steps could be absolute units (for focuser with absolute
-        encoders) or just a pulse of time. Drivers use internal parameters to define the amount of
+        Move the focuser IN by n steps. Steps could be absolute units
+        (for focuser with absolute encoders) or just a pulse of
+        time. Drivers use internal parameters to define the amount of
         movement depending of the type of the encoder.
 
-        Use L{moveTo} to move to exact positions (If the focuser support it).
+        Use L{moveTo} to move to exact positions (If the focuser
+        support it).
 
         @type  n: int
         @param n: Number of steps to move IN.
 
-        @rtype   : bool
-        @return  : True if the focuser could move the select number of steps. False otherwise.
+        @raises InvalidFocusPositionException: When the request
+        movement couldn't be executed.
+
+        @rtype   : None
         """
 
 
     def moveOut (self, n):
         """
-        Move the focuser OUT by n steps. Steps could be absolute units (for focuser with absolute
-        encoders) or just a pulse of time. Drivers use internal parameters to define the amount of
+        Move the focuser OUT by n steps. Steps could be absolute units
+        (for focuser with absolute encoders) or just a pulse of
+        time. Drivers use internal parameters to define the amount of
         movement depending of the type of the encoder.
 
-        Use L{moveTo} to move to exact positions (If the focuser support it).
+        Use L{moveTo} to move to exact positions (If the focuser
+        support it).
 
         @type  n: int
         @param n: Number of steps to move OUT.
 
-        @rtype   : bool
-        @return  : True if the focuser could move the select number of steps. False otherwise.
+        @raises InvalidFocusPositionException: When the request
+        movement couldn't be executed.
+
+        @rtype   : None
         """
 
     def moveTo (self, position):
         """
-        Move the focuser to the select position (if the driver support it).
+        Move the focuser to the select position (if the driver support
+        it).
 
-        If the focuser doesn't support absolute position movement, use L{moveIn}
-        and L{moveOut} to command the focuser.
+        If the focuser doesn't support absolute position movement, use
+        L{moveIn} and L{moveOut} to command the focuser.
 
         @type  position: int
         @param position: Position to move the focuser.
 
-        @rtype   : bool
-        @return  : True if the focuser could move the select position. False otherwise.
+        @raises InvalidFocusPositionException: When the request
+        movement couldn't be executed.
+
+        @rtype   : None
         """
 
     def getPosition (self):
         """
         Gets the current focuser position (if the driver support it).
 
+        @raises NotImplementedError: When the focuser doesn't support
+        position readout.
+
         @rtype   : int
-        @return  : Current focuser position or -1 if the driver don't support position readout.
+        @return  : Current focuser position.
         """
 
-        

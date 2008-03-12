@@ -1,4 +1,4 @@
-#! /usr/bin/python
+#! /usr/bin/env python
 # -*- coding: iso-8859-1 -*-
 
 # chimera - observatory automation system
@@ -21,23 +21,28 @@
 
 from chimera.core.interface import Interface
 from chimera.core.event import event
+from chimera.util.enum import Enum
+
+
+AlignMode = Enum("ALT_AZ", "POLAR", "LAND")
+SlewRate  = Enum("GUIDE", "CENTER", "FIND", "MAX")
 
 
 class ITelescopeDriver (Interface):
 
-    __options__ = {"device": "/dev/ttyS0",
-                   "align_mode": ["POLAR", "ALT_AZ", "LAND"]}
+    __config__ = {"device"    : "/dev/ttyS0",
+                  "align_mode": AlignMode.POLAR}
     
  
 class ITelescopeDriverSlew (ITelescopeDriver):
 
-    __options__ = {"timeout": 10,
-                   "auto_align": True,
-                   "slew_idle_time": 0.1,
-                   "max_slew_time": 60.0,
-                   "max_slew_rate": [8, 2],                   
-                   "stabilization_time": 2.0,
-                   "position_sigma_delta": 60.0}
+    __config__ = {"timeout"             : 30, # s
+                  "slew_rate"           : SlewRate.MAX,
+                  "auto_align"          : True,
+                  "slew_idle_time"      : 0.1, # s
+                  "max_slew_time"       : 90.0, # s
+                  "stabilization_time"  : 2.0, # s
+                  "position_sigma_delta": 60.0} # arcseconds
     # methods
 
     def open(self):
@@ -46,10 +51,13 @@ class ITelescopeDriverSlew (ITelescopeDriver):
     def close(self):
         pass
 
-    def slewToRaDec(self, ra, dec):
+    def ping(self):
         pass
 
-    def slewToAltAz(self, alt, az):
+    def slewToRaDec(self, position):
+        pass
+
+    def slewToAltAz(self, position):
         pass
 
     def isSlewing (self):
@@ -58,16 +66,19 @@ class ITelescopeDriverSlew (ITelescopeDriver):
     def abortSlew(self):
         pass
 
-    def moveEast(self, offset):
+    def calibrateMove (self):
         pass
 
-    def moveWest(self, offset):
+    def moveEast(self, offset, rate=SlewRate.MAX):
         pass
 
-    def moveNorth(self, offset):
+    def moveWest(self, offset, rate=SlewRate.MAX):
         pass
 
-    def moveSouth(self, offset):
+    def moveNorth(self, offset, rate=SlewRate.MAX):
+        pass
+
+    def moveSouth(self, offset, rate=SlewRate.MAX):
         pass
 
     def getRa(self):
@@ -82,14 +93,24 @@ class ITelescopeDriverSlew (ITelescopeDriver):
     def getAlt(self):
         pass
 
-    def getPosition(self):
+    def getPositionRaDec(self):
         pass
 
-    def getTarget(self):
+    def getPositionAzAlt(self):
         pass
+
+    def getTargetRaDec(self):
+        pass
+
+    def getTargetAzAlt(self):
+        pass 
 
     # events
     
+    @event
+    def slewBegin (self, target):
+        pass
+
     @event
     def slewComplete (self, position):
         pass
@@ -101,11 +122,15 @@ class ITelescopeDriverSlew (ITelescopeDriver):
 
 class ITelescopeDriverSync(ITelescopeDriver):
 
-    # methods
-    def sync(self, coord):
+    def syncObject (self, name):
         pass
-    
-    # events
+
+    def syncRaDec (self, position):
+        pass
+
+    def syncAzAlt (self, position):
+        pass
+
     @event
     def syncComplete(self, position):
         pass
@@ -113,8 +138,8 @@ class ITelescopeDriverSync(ITelescopeDriver):
 
 class ITelescopeDriverPark (ITelescopeDriver):
 
-    __options__ = {"park_position_alt": 90.0,
-                   "park_position_az": 180.0}
+    __config__ = {"park_position_alt": 90.0,
+                  "park_position_az": 180.0}
         
     # methods
     def park(self):
@@ -123,7 +148,10 @@ class ITelescopeDriverPark (ITelescopeDriver):
     def unpark(self):
         pass
 
-    def setParkPosition (self, coord):
+    def isParked(self):
+        pass
+
+    def setParkPosition (self, position):
         pass
 
     # events
@@ -132,5 +160,5 @@ class ITelescopeDriverPark (ITelescopeDriver):
         pass
 
     @event
-    def unparkComplete (self):
+    def unparkComplete (self, position):
         pass

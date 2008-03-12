@@ -27,31 +27,36 @@ class IFocuserDriver (Interface):
     """
     Driver for an Electromechanical focuser.
 
-    Both DC pulse and absolute encoder focuser could be used. Implementation takes care of the diferences
-    between these kind of focusers.
+    Both DC pulse and absolute encoder focuser could be
+    used. Implementation takes care of the diferences between these
+    kind of focusers.
     """
 
-    __options__ = {"device": "/dev/ttyS1",
-                   "open_timeout": 10,
-                   "move_timeout": 60,
-                   "max_position": 7000,
-                   "min_position": 0,
-                   "pulse_in_multiplier": 100,
-                   "pulse_out_multiplier": 100}
+    __config__ = {"device": "/dev/ttyS1",
+                  "open_timeout": 10,
+                  "move_timeout": 60,
+                  "max_position": 7000,
+                  "min_position": 0,
+                  "pulse_in_multiplier": 100,
+                  "pulse_out_multiplier": 100}
                  
     def moveIn (self, n):
         """
         Move the focuser IN by n steps.
 
-        Driver should interpret n as whatever it support (time pulse or absolute encoder positions).
-        if only time pulse is available, driver must use pulse_in_multiplier as a multiple to determine
-        how much time the focuser will move IN. pulse_in_multiplier and n will be in miliseconds.
+        Driver should interpret n as whatever it support (time pulse
+        or absolute encoder positions).  if only time pulse is
+        available, driver must use pulse_in_multiplier as a multiple
+        to determine how much time the focuser will move
+        IN. pulse_in_multiplier and n will be in miliseconds.
+
+        @note: Drivers must raise InvalidFocusPositionException if the
+        request position couldn't be achived.
 
         @type  n: int
         @param n: Number of steps to move IN.
 
-        @rtype   : bool
-        @return  : True if the focuser could move the select number of steps. False otherwise.
+        @rtype   : None
         """
 
 
@@ -59,38 +64,46 @@ class IFocuserDriver (Interface):
         """
         Move the focuser OUT by n steps.
 
-        Driver should interpret n as whatever it support (time pulse or absolute encoder positions).
-        if only time pulse is available, driver must use pulse_out_multiplier as a multiple to determine
-        how much time the focuser will move OUT. pulse_out_multiplier and n will be in miliseconds.
+        Driver should interpret n as whatever it support (time pulse
+        or absolute encoder positions).  if only time pulse is
+        available, driver must use pulse_out_multiplier as a multiple
+        to determine how much time the focuser will move
+        OUT. pulse_out_multiplier and n will be in miliseconds.
+
+        @note: Drivers must raise InvalidFocusPositionException if the
+        request position couldn't be achived.
 
         @type  n: int
         @param n: Number of steps to move OUT.
 
-        @rtype   : bool
-        @return  : True if the focuser could move the select number of steps. False otherwise.
+        @rtype   : None
         """
 
     def moveTo (self, position):
         """
         Move the focuser to the select position.
 
-        If the focuser doesn't support absolute position movement, it MUST return False.
+        If the focuser doesn't support absolute position movement, it
+        MUST return False.
+
+        @note: Drivers must raise InvalidFocusPositionException if the
+        request position couldn't be achived.
 
         @type  position: int
         @param position: Position to move the focuser.
 
-        @rtype   : bool
-        @return  : True if the focuser could move the select position. False otherwise.
+        @rtype   : None
         """
 
     def getPosition (self):
         """
         Gets the current focuser position.
 
-        If the driver doesn't support position readout it MUST return -1.
+        @note: If the driver doesn't support position readout it MUST
+        raise NotImplementedError.
 
         @rtype   : int
-        @return  : Current focuser position or -1 if the driver don't support position readout.
+        @return  : Current focuser position.
         """
         
     

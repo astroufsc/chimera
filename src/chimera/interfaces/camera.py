@@ -28,16 +28,21 @@ Shutter = Enum ("OPEN",
                 "CLOSE",
                 "LEAVE_AS_IS")
 
-Binning = Enum ("1x1",
-                "2x2",
-                "3x3",
-                "9x9",
-                "1x2",
-                "1x3",
-                "1x9",
-                "2x1",
-                "3x1",
-                "9x1")
+# _ needed because identifier cannot begin with a number
+Binning = Enum ("_1x1",
+                "_2x2",
+                "_3x3",
+                "_9x9",
+                "_1x2",
+                "_1x3",
+                "_1x9",
+                "_2x1",
+                "_3x1",
+                "_9x1")
+
+Window = Enum ("FULL_FRAME",
+               "TOP_HALF",
+               "BOTTOM_HALF")
 
 
 class ICamera (Interface):
@@ -45,53 +50,55 @@ class ICamera (Interface):
     """
 
     # config
-    __options__ = {"driver" : "/Fake/camera",
+    __config__ = {"driver" : "/Fake/camera",
 
-                   "camera_model"    : "Fake camera Inc.",
-                   "ccd_model"       : "KAF XYZ 10",
-                   "ccd_dimension_x" : 100,  # pixel
-                   "ccd_dimension_y" : 100,  # pixel
-                   "ccd_pixel_size_x": 10.0, # micrometer
-                   "ccd_pixel_size_y": 10.0  # micrometer
-                   }
+                  "camera_model"    : "Fake camera Inc.",
+                  "ccd_model"       : "KAF XYZ 10",
+                  "ccd_dimension_x" : 100,  # pixel
+                  "ccd_dimension_y" : 100,  # pixel
+                  "ccd_pixel_size_x": 10.0, # micrometer (without binning factors)
+                  "ccd_pixel_size_y": 10.0  # micrometer (without binning factors)
+                  }
 
 
 class ICameraExpose (ICamera):
     """Basic camera that can expose and abort exposures.
     """
 
-    __options__ = {"date_format": "dd-mm-yyyy-hh-mm-ss"}
+    __config__ = {"date_format": "dd-mm-yyyy-hh-mm-ss"}
 
 
-    def expose (self, exptime,
-                repeat=1, interval=0.0,
+    def expose (self,
+                exp_time,
+                frames=1, interval=0.0,
                 shutter=Shutter.OPEN,
-                binning=Binning.1x1,
-                window="FULL_FRAME",
+                binning=Binning._1x1,
+                window=Window.FULL_FRAME,
                 filename="$date-$sequence.fits"):
         
-        """Start an exposure of exptime seconds of integration time,
+        """Start an exposure of exp_time seconds of integration time,
         using the parameters given.
 
-        @param exptime: Integration time in seconds.
-        @type  exptime: float or int
+        @param exp_time: Integration time in seconds.
+        @type  exp_time: float or int
 
-        @param repeat: Number of time to repeat this exposure frame. Default 1.
-        @type  repeat: int
+        @param frames: Number of frames to take using this exposure frame. Default 1 (single shot).
+        @type  frames: int
         
-        @param interval: Number of seconds to wait between each exposure. Default 0.
+        @param interval: Number of seconds to wait between each frame exposure. Default 0.
         @type  interval: float or int
 
         @param shutter: The shutter state desired for this exposure. See L{Shutter} for values. Default is Shutter.OPEN.
         @type  shutter: Shutter
 
-        @param binning: The desired binning. See L{Binning} for values. Default is Binning.1x1.
+        @param binning: The desired binning. See L{Binning} for values. Default is Binning._1x1.
                         You can also pass a tuple of (x,y) binning if Binning doesn't have your desired one.
         
         @type  binning: Binning or tuple
         
-        @param window: The desired CCD window to expose in a tuple like (x_center, y_center, width, height) in pixels, anything
-                       different that a tuple implies full frame. Default is 'FULL_FRAME'.
+        @param window: The desired CCD window to expose in a tuple like (x_center, y_center, width, height) in pixels or a Window constant.
+                       Default is Window.FULL_FRAME. If any tuple value was given as float, they will be interpreted as a percentage of the
+                       maximum allowed value. So, a full frame would be like (0.5, 0.5, 1.0, 1.0).
         
         @type  window: tuple
 
@@ -102,8 +109,8 @@ class ICameraExpose (ICamera):
                           - $date: current date in the format define in date_format configuration
                           - $sequence: a sequential number (nnnn) (used in repeat mode).
                       
-        @return: The filenames (tuple if more than one) of the frames taken, False if fail.
-        @rtype: bool or tuple
+        @return: The filenames (tuple if more than one) of the frames taken, empty tuple if fail.
+        @rtype: tuple
         """
 
     def abortExposure (self, readout=True):
@@ -124,14 +131,32 @@ class ICameraExpose (ICamera):
         @rtype: bool
         """
 
+
     @event
-    def exposeComplete (self, framesLeft):
+    def exposeBegin (self, exp_time):
+        """Indicates that new exposure is starting.
+
+        When multiple frames are taken in a single shot, multiple exposeBegin events will be fired.
+
+        @param exp_time: How long the exposure will long.
+        @type  exp_time: float
+        """
+        
+    @event
+    def exposeComplete (self):
         """Indicates that new exposure frame was taken.
 
         When multiple frames are taken in a single shot, multiple exposeComplete events will be fired.
+        """
 
-        @param framesLeft: How many frames more this expose call will take.
-        @type  framesLeft: int
+    @event
+    def readoutBegin (self, filename):
+        """Indicates that new readout is starting.
+
+        When multiple frames are taken in a single shot, multiple readoutBegin events will be fired.
+
+        @param filename: Where this new frame was put in the filesystem.
+        @type  filename: str
         """
 
     @event
@@ -152,7 +177,7 @@ class ICameraTemperature (ICamera):
     """A camera that supports temperature monitoring and control.
     """
 
-    __options__ = {"temperature_monitor_delta": 2.0}
+    __config__ = {"temperature_monitor_delta": 2.0}
     
 
     def startCooling (self, tempC):
@@ -186,6 +211,13 @@ class ICameraTemperature (ICamera):
         """Get the current camera temperature.
 
         @return: The current camera temperature in degrees Celsius.
+        @rtype: float
+        """
+
+    def getSetpoint(self):
+        """Get the current camera temperature setpoint.
+
+        @return: The current camera temperature setpoint in degrees Celsius.
         @rtype: float
         """
 

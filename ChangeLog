@@ -1,5 +1,28 @@
 2008-03-12  P. Henrique Silva  <henrique@astro.ufsc.br>
 
+	* src/chimera/interfaces/camera.py:
+	* src/chimera/interfaces/filterwheel.py:
+	* src/chimera/interfaces/telescopedriver.py:
+	* src/chimera/interfaces/domedriver.py:
+	* src/chimera/interfaces/weatherstation.py:
+	* src/chimera/interfaces/focuserdriver.py:
+	* src/chimera/interfaces/telescope.py:
+	* src/chimera/interfaces/dome.py:
+	* src/chimera/interfaces/cameradriver.py:
+	* src/chimera/interfaces/focuser.py:
+	* src/chimera/interfaces/filterwheeldriver.py:
+
+	All Chimera interfaces (with some exceptions on driver interfaces)
+	have been improved a LOT. These interfaces should be much more
+	complete right now. An better validation scheme must be added
+	(zope.interface maybe).
+
+	Documentation was improved with exceptions on camera and telescope
+	drivers (mostly because these interfaces grew up together with the
+	respective implementations).
+
+2008-03-12  P. Henrique Silva  <henrique@astro.ufsc.br>
+
 	* src/chimera/core/exceptions.py:
 	Add exception cause system allowing new ChimeraExceptions raised
 	in the context of another exception to carry information about the

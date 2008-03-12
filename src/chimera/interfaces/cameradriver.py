@@ -22,29 +22,58 @@
 from chimera.core.interface import Interface
 from chimera.core.event import event
 
+from chimera.interfaces.camera import Shutter, Binning, Window
+
+from chimera.util.enum import Enum
+
+
+Bitpix = Enum("int16", "int32", "float32", "float64")
+
+Device = Enum ("USB",
+               "USB1",
+               "USB2",
+               "LPT"
+               "LPT1",
+               "LPT2")
+
+CCD = Enum ("IMAGING",
+            "TRACKING")
+
 
 class ICameraDriver(Interface):
 
     # config
-    __options__ = {"device"	         : "usb",
-                   "ccd"                 : ["imaging", "tracking"],
-                   "exp_time"	         : (10, 600000), # 1/100 s
-                   "shutter" 	         : ["open", "close", "leave"],
-                   "readout_aborted"     : True,
-                   "readout_mode"	 : 0,
-                   "date_format"	 : "%d%m%y-%H%M%S",
-                   "file_format"	 : "$observer-$date-$objname",
-                   "file_extension"  	 : "fits",
-                   "directory"	         : "/home/someuser/images",
-                   "save_on_temp"	 : False,
-                   "start_time"          : 0,
-                   "observer"	         : "observer name",
-                   "obj_name"	         : "object name",
-                   "temp_regulation"     : True,
-                   "temp_setpoint"       : 20.0,
-                   "temp_delta"          : 1.0,
-                   "auto_freeze"         : False}
-    
+    __config__ = {"device"	     : Device.USB,
+                  "ccd"              : CCD.IMAGING,
+                  
+                  "exp_time"         : (0.0, 216000.0), # seconds
+                  "shutter" 	     : Shutter.OPEN,
+
+                  "readout_aborted"  : True,
+
+                  "temp_setpoint"    : 20.0,
+                  "temp_delta"       : 1.0,
+                  
+                  # drivers should use SaveImage utility class to
+                  # handles this values according to the semantics
+                  # defined in ICameta spec.
+                  "window_x"         : 0.5,
+                  "window_y"         : 0.5,
+                  "window_width"     : 1.0,
+                  "window_height"    : 1.0,
+
+                  "binning"	         :  Binning._1x1,
+                  #"gain"            : 1.0,
+                  
+                  # FITS generation parameters
+                  "date_format"	     : "%d%m%y-%H%M%S",
+                  "file_format"	     : "$date",
+                  "file_extension"   : "fits",
+                  "directory"	     : "$HOME/images", # environment variables allowed
+                  "save_on_temp"	 : True,
+                  "bitpix"           : Bitpix.int16,
+                  }
+                  
     # methods
 
     def open(self, device):
@@ -59,32 +88,49 @@ class ICameraDriver(Interface):
     def isExposing(self):
         pass
 
-    def expose(self, config):
+    def expose(self):
         pass
 
-    def abortExposure(self, config):
+    def abortExposure(self):
         pass
 
-    def setTemperature(self, config):
+    def startCooling(self):
+        pass
+
+    def stopCooling(self):
+        pass
+
+    def isCooling(self):
         pass
 
     def getTemperature(self):
         pass
 
+    def getSetpoint(self):
+        pass
+
     # events
+    @event
+    def exposeBegin (self, exp_time):
+        pass
+    
     @event
     def exposeComplete (self):
         pass
 
     @event
-    def exposeAborted (self):
+    def readoutBegin (self, filename):
         pass
 
     @event
-    def readoutComplete (self):
+    def readoutComplete (self, filename):
         pass
 
     @event
-    def temperatureChanged(self, newTemp, oldTemp):
+    def abortComplete (self):
+        pass
+
+    @event
+    def temperatureChange(self, newTemp, delta):
         pass
     

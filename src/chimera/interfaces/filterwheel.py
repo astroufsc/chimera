@@ -23,6 +23,8 @@ from chimera.core.interface import Interface
 from chimera.core.event import event
 from chimera.util.enum  import Enum
 
+from chimera.core.exceptions import ChimeraException
+
 
 Filter = Enum ("U", "B", "V", "R", "I",  # Johnson-Cousins
                "C", "M", "T1", "T2",     # Washington
@@ -36,6 +38,9 @@ Filter = Enum ("U", "B", "V", "R", "I",  # Johnson-Cousins
                "CLEAR", "LUNAR",
                )
 
+class InvalidFilterPositionException (ChimeraException):
+    pass
+
 
 class IFilterWheel (Interface):
     """ An interface for electromechanical filter wheels.
@@ -43,18 +48,20 @@ class IFilterWheel (Interface):
     Allow simple control and monitor filter changes    
     """
 
-    __options__ = {"driver" : "/SBIG/sbig",
-                   "model"   : "Fake Filters Inc.",
-                   }
+    __config__ = {"driver"  : "/SBIG/sbig",
+                  "model"   : "Fake Filters Inc.",
+                  "filters" : "R G B CLEAR LUNAR" # space or comma separated
+                                                  # filter names (in position order)
+                  }
+    
 
     def setFilter (self, filter):
         """Set the current filter.
 
         @param filter: The filter to use.
-        @type  filter: L{Filter}
+        @type  filter: L{Filter} or str
 
-        @return: True if succesfull, False otherwise
-        @rtype: bool
+        @rtype: None
         """
 
     def getFilter (self):

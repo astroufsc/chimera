@@ -22,17 +22,27 @@
 from chimera.core.interface import Interface
 from chimera.core.event import event
 
+from chimera.interfaces.cameradriver import Device
+
 
 class IFilterWheelDriver(Interface):
 
-    def getFilter (self):
-        pass
+    __config__ = {"device": Device.USB}
 
-    def setFilter (self, _filter):
-        pass
+    def getFilter (self):
+        """
+        Returns the current filter position starting with 0.
         
-    def getFilterStatus (self):
-        pass
+        @rtype: int
+        """
+
+    def setFilter (self, filter):
+        """
+        Set current filter.
+
+        @param filter: Filter position starting in 0.
+        @type  filter: int
+        """
 
     @event
     def filterChange (self, newFilter, oldFilter):

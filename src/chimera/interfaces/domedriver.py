@@ -25,37 +25,43 @@ from chimera.core.event import event
 
 class IDomeDriver (Interface):
 
-    __options__ = {"device": "/dev/ttyS1",
-                   "az_res": 2,  # dome position resolution
-                   "slew_timeout" : 120,
-                   "abort_timeout": 60,                   
-                   "open_timeout" : 20,
-                   "close_timeout": 20,
-                   } 
+    __config__ = {"device": "/dev/ttyS1",
+                  "az_resolution": 2,  # dome position resolution in degrees
+                  "slew_timeout" : 120,
+                  "abort_timeout": 60,                   
+                  "open_timeout" : 20,
+                  "close_timeout": 20,
+                  } 
   
     # methods
 
-    def open(self):
-        pass
-
-    def close(self):
+    def slewToAz (self, az):
         pass
 
     def isSlewing (self):
         pass
 
-    def abortSlew(self):
+    def abortSlew (self):
+        pass
+
+    def openSlit (self):
+        pass
+
+    def closeSlit (self):
+        pass
+
+    def isSlitOpen (self):
         pass
 
     def getAz(self):
         pass
 
-    def slewToAz(self):
-        pass
-
-
     # events
     
+    @event
+    def slewBegin (self, position):
+        pass
+
     @event
     def slewComplete (self, position):
         pass
@@ -64,3 +70,10 @@ class IDomeDriver (Interface):
     def abortComplete (self, position):
         pass
     
+    @event
+    def slitOpened (self, az):
+        pass
+
+    @event
+    def slitClosed (self, az):
+        pass
