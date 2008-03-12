@@ -6,6 +6,7 @@ from chimera.core.event         import event
 from chimera.core.state         import State
 from chimera.core.config        import OptionConversionException
 from chimera.core.exceptions    import InvalidLocationException
+from chimera.core.constants     import CONFIG_ATTRIBUTE_NAME
 
 from nose.tools import assert_raises
 
@@ -35,7 +36,7 @@ class TestChimeraObject (object):
 
         assert not isinstance(BaseClass.__dict__['_basePrivateMethod'], MethodWrapper)
 
-        assert BaseClass.__dict__['__config__']['baseConfig'] == True
+        assert BaseClass.__dict__[CONFIG_ATTRIBUTE_NAME]['baseConfig'] == True
 
         # 2. single inheritance
         class SingleClass (BaseClass):
@@ -54,8 +55,8 @@ class TestChimeraObject (object):
 
         assert not isinstance(SingleClass.__bases__[0].__dict__['_basePrivateMethod'], MethodWrapper)
 
-        assert SingleClass.__dict__['__config__']['baseConfig'] == True
-        assert SingleClass.__dict__['__config__']['singleConfig'] == True
+        assert SingleClass.__dict__[CONFIG_ATTRIBUTE_NAME]['baseConfig'] == True
+        assert SingleClass.__dict__[CONFIG_ATTRIBUTE_NAME]['singleConfig'] == True
 
         # 3. multiple inheritance
         class AnotherBase (ChimeraObject):
@@ -81,10 +82,10 @@ class TestChimeraObject (object):
 
         assert not isinstance(MultipleClass.__bases__[2].__dict__['nonChimeraMethod'], MethodWrapper)        
 
-        assert MultipleClass.__dict__['__config__']['baseConfig'] == "overriden"
-        assert MultipleClass.__dict__['__config__']['singleConfig'] == True
-        assert MultipleClass.__dict__['__config__']['anotherBaseConfig'] == True
-        assert MultipleClass.__dict__['__config__']['multipleConfig'] == True
+        assert MultipleClass.__dict__[CONFIG_ATTRIBUTE_NAME]['baseConfig'] == "overriden"
+        assert MultipleClass.__dict__[CONFIG_ATTRIBUTE_NAME]['singleConfig'] == True
+        assert MultipleClass.__dict__[CONFIG_ATTRIBUTE_NAME]['anotherBaseConfig'] == True
+        assert MultipleClass.__dict__[CONFIG_ATTRIBUTE_NAME]['multipleConfig'] == True
 
     def test_method_wrapper (self):
 
@@ -180,5 +181,61 @@ class TestChimeraObject (object):
         # setstate returns oldstate
         assert f.__setstate__ (State.RUNNING) == State.STOPPED
         assert f.getState() == State.RUNNING
-        
-        
+
+    
+
+    def test_methods (self):
+
+        class Minimo (ChimeraObject):
+
+            CONST = 42
+
+            def __init__(self):
+                ChimeraObject.__init__ (self)
+                self.answer = 42
+
+            def __start__ (self):
+                return True
+
+            def __stop__ (self):
+                return True
+
+            def doMethod (self):
+                return self.answer
+
+            #def doEvent (self):
+            #    self.eventDone("Event works!")
+
+            def doRaise (self):
+                raise Exception(str(self.answer))
+
+            @staticmethod
+            def doStatic ():
+                return 42
+
+            @classmethod
+            def doClass (cls):
+                return cls.CONST
+
+        m = Minimo()
+
+        # normal bounded methods
+        assert m.doMethod() == 42
+
+        # unbounded methods (our wrapper is a real duck ;)
+        assert Minimo.doMethod(m) == 42
+
+        # unbound must pass instance of the class as first parameter
+        assert_raises(TypeError, Minimo.doMethod, ())
+
+        # static methods
+        assert m.doStatic() == 42
+        assert Minimo.doStatic() == 42
+
+        # class methods
+        assert m.doClass() == 42
+        assert Minimo.doClass() == 42
+
+        # exceptions
+        assert_raises(Exception, m.doRaise, ())
+

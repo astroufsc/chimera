@@ -28,6 +28,10 @@ from chimera.core.eventsproxy import EventsProxy
 from chimera.core.state    import State
 from chimera.core.location import Location
 
+from chimera.core.constants import EVENTS_ATTRIBUTE_NAME
+from chimera.core.constants import METHODS_ATTRIBUTE_NAME
+from chimera.core.constants import CONFIG_PROXY_NAME
+
 from chimera.interfaces.lifecycle import ILifeCycle
 
 import chimera.core.log
@@ -48,7 +52,7 @@ class ChimeraObject (RemoteObject, ILifeCycle):
         RemoteObject.__init__(self)
     
         # event handling
-        self.__events_proxy__ = EventsProxy (self)
+        self.__events_proxy__ = EventsProxy ()
 
         # configuration handling
         self.__config_proxy__ = Config (self)
@@ -76,6 +80,21 @@ class ChimeraObject (RemoteObject, ILifeCycle):
     def __setitem__ (self, item, value):
         return self.__config_proxy__.__setitem__ (item, value)
 
+    # bulk configuration (pass a dict to config multiple values)
+    def __iadd__ (self, configDict):
+        self.__config_proxy__.__iadd__ (configDict)
+        return self.getProxy()
+
+    # reflection
+    def __get_events__ (self):
+        return getattr(self, EVENTS_ATTRIBUTE_NAME)
+
+    def __get_methods__ (self):
+        return getattr(self, METHODS_ATTRIBUTE_NAME)
+
+    def __get_config__ (self):
+        return getattr(self, CONFIG_PROXY_NAME).items()
+    
     # ILifeCycle implementation
     def __start__ (self):
         return True
@@ -96,7 +115,7 @@ class ChimeraObject (RemoteObject, ILifeCycle):
         runCondition = True
 
         while runCondition:
-            runCondition = self.control()               
+            runCondition = self.control()
             time.sleep(1.0/self.getHz())
 
         return True
@@ -117,10 +136,10 @@ class ChimeraObject (RemoteObject, ILifeCycle):
 
     def __setlocation__ (self, location):
 
-        l = Location(location)
+        location = Location(location)
 
         self.__location__ = location
-        self.setGUID(str(location))
+        self.setGUID("/%s/%s" % (location.cls, location.name))
         return True
 
     def getManager (self):

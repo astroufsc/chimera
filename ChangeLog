@@ -1,5 +1,16 @@
 2008-03-12  P. Henrique Silva  <henrique@astro.ufsc.br>
 
+	* src/chimera/core/tests/test_chimera_object.py: Improved tests
+	with exception testing.
+
+	* src/chimera/core/chimeraobject.py:
+	Add bulk configuration support.
+	Add Very simple reflection.
+
+	Small fix on identity of objects (new locations with hosts/port).
+
+2008-03-12  P. Henrique Silva  <henrique@astro.ufsc.br>
+
 	* src/chimera/core/compat.py: Add few functions to make Chimera
 	2.4 compatible (any, all are only defined on Py2.5)
 
