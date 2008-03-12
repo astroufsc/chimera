@@ -196,3 +196,14 @@ class Enum(object):
             except EnumValueCompareError, e:
                 is_member = False
         return is_member
+    def __cmp__ (self, other):
+        """
+        Rationale here is: if, for whatever reason, our Enum get
+        copied, normal equality test used in EnumValue.__cmp__ would
+        fail, so this ensure that two Enum's are equals even if
+        different (id) objects, given that they accepts the same
+        values (keys).
+        """
+        
+        assert type(other) == type(self)
+        return cmp(getattr(self, '_keys'), getattr(other, '_keys'))

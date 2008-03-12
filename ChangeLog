@@ -1,5 +1,21 @@
 2008-03-12  P. Henrique Silva  <henrique@astro.ufsc.br>
 
+	* src/chimera/util/filenamesequence.py: New. Very useful class to
+	implement automatic sequence number generation. Mostly used to
+	generate new index to image filenames (used in ImageSave).
+
+	* src/chimera/util/imagesave.py: New. All image saving blocks from
+	sbig.py was moved to a self contained class to allow reuse. Use
+	it!
+
+	* src/chimera/util/imagesave.py: New. Mostly a stub for future
+	telescope software limits support.
+
+	* src/chimera/util/enum.py: Add support for equality tests on
+	different Enum objects (copied for whatever reasons).
+
+2008-03-12  P. Henrique Silva  <henrique@astro.ufsc.br>
+
 	* src/chimera/drivers/sbigdrv.py: Converted to use Exceptions.
 
 	* src/chimera/drivers/sbig.py:
