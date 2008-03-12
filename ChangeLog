@@ -1,5 +1,20 @@
 2008-03-12  P. Henrique Silva  <henrique@astro.ufsc.br>
 
+	* src/chimera/drivers/domelna40cm.py:
+	Converted to new MetaObject framework.
+	Converted to use exceptions.
+	Converted to use full event-driven system.
+
+	Remove old documentation.
+	Remove unneeded debug of protocol.
+
+	IMPORTANT: Add phase difference between dome and scope (180
+	deg). So, dome receive a coord and convert to its own reference
+	frame and do vice-versa when returning on getAz. Azimuth is ALWAYS
+	in telescope reference frame.
+
+2008-03-12  P. Henrique Silva  <henrique@astro.ufsc.br>
+
 	* src/chimera/drivers/fakecamera.py:
 	* src/chimera/drivers/fakedome.py:
 	* src/chimera/drivers/fakefilterwheel.py:
