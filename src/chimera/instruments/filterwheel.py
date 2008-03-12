@@ -1,5 +1,5 @@
-#! /usr/bin/python
-# -*- coding: iso8859-1 -*-
+#! /usr/bin/env python
+# -*- coding: iso-8859-1 -*-
 
 # chimera - observatory automation system
 # Copyright (C) 2006-2007  P. Henrique Silva <henrique@astro.ufsc.br>
@@ -18,55 +18,67 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-from chimera.core.lifecycle import BasicLifeCycle
-from chimera.core.event import event
-from chimera.core.config import OptionConversionException
+
+from chimera.core.chimeraobject import ChimeraObject
 
 from chimera.interfaces.filterwheel import IFilterWheel
+from chimera.interfaces.filterwheel import Filter
+from chimera.interfaces.filterwheel import InvalidFilterPositionException
 
-import logging
+from chimera.core.lock import lock
 
-class FilterWheel (BasicLifeCycle, IFilterWheel):
 
-    # filter status
-    unknown = 0
-    idle    = 1
-    busy    = 2
+class FilterWheel (ChimeraObject, IFilterWheel):
 
-    def __init__(self, manager):
-        BasicLifeCycle.__init__(self, manager)
+    def __init__ (self):
+        ChimeraObject.__init__(self)
 
-    def init(self, config):
-
-        self.config += config
-
-        self.drv = self.manager.getDriver(self.config.driver)
-
-        if not self.drv:
-            logging.debug("Couldn't load selected driver (%s)." %  self.config.driver)
-            return False
-
-        # connect events
-        self.drv.filterChanged += self.filter_cb
-
+    def __start__ (self):
+        drv = self.getDriver()
+        drv.filterChange += self.getProxy()._filterChangeClbk
         return True
 
-    # callbacks
-    def filter_cb (self, new, old):
-        self.filterChanged (new, old)
+    def __stop__ (self):
+        drv = self.getDriver()
+        drv.filterChange -= self.getProxy()._filterChangeClbk
+        return True
 
+    def _filterChangeClbk (self, new, old):
+        self.filterChange (self._getFilterName(new),
+                           self._getFilterName(old))
+
+    @lock
     def getFilter (self):
-        return self.drv.getFilter ()
+        drv = self.getDriver()
+        return self._getFilterName(drv.getFilter())
 
-    def setFilter (self, _filter):
+    def getFilters (self):
+        return self["filters"].upper().split()
 
+    def _getFilterName (self, index):
         try:
-            self.config.filters = _filter
-        except OptionConversionException:
-            logging.error ("Filter '%s' not defined." %  _filter)
-            return False
+            return self.getFilters()[index]
+        except ValueError:
+            self.log.warning("Driver returned an filter that I don't knwo the name.")
+            return filter
+
+    def _getFilterPosition (self, name):
+        return self.getFilters().index(name)
+
+    @lock
+    def setFilter (self, filter):
         
-        return self.drv.setFilter (eval ("self.config.%s" % _filter))
+        drv = self.getDriver()
+        filterName = str(filter).upper()
+
+        if filterName not in self.getFilters() :
+            raise InvalidFilterPositionException("Invalid filter %s" % filterName)      
+
+        return drv.setFilter(self._getFilterPosition(filterName))
+
+    @lock
+    def getDriver(self, lazy=True):
+        return self.getManager().getProxy(self['driver'], lazy=lazy)        
         
-    def getFilterStatus (self):
-        return self.drv.getFilterStatus ()
+
+

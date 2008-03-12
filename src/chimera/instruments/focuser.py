@@ -1,5 +1,5 @@
-#! /usr/bin/python
-# -*- coding: iso8859-1 -*-
+#! /usr/bin/env python
+# -*- coding: iso-8859-1 -*-
 
 # chimera - observatory automation system
 # Copyright (C) 2006-2007  P. Henrique Silva <henrique@astro.ufsc.br>
@@ -18,54 +18,49 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-from chimera.core.lifecycle import BasicLifeCycle
+from chimera.core.chimeraobject import ChimeraObject
 from chimera.interfaces.focuser import IFocuser
 
-import logging
+from chimera.core.lock import lock
 
-class Focuser (BasicLifeCycle, IFocuser):
 
-    def __init__(self, manager):
-        BasicLifeCycle.__init__(self, manager)
+class Focuser (ChimeraObject, IFocuser):
 
-    def init(self, config):
-        self.config += config
+    def __init__ (self):
+        ChimeraObject.__init__(self)
 
-        self.drv = self.manager.getDriver(self.config.driver)
+    def __start__ (self):
 
-        if not self.drv:
-            logging.debug("Couldn't load selected driver (%s)." %  self.config.driver)
-            return False
+        drv = self.getDriver()
+        drv.ping()
 
         return True
 
+    @lock
+    def getDriver(self):
+        """
+        Get a Proxy to the instrument driver. This function is necessary '
+        cause Proxies cannot be shared among different threads.
+        So, every time you need a driver Proxy you need to call this to
+        get a Proxy to the current thread.
+        """
+        return self.getManager().getProxy(self['driver'], lazy=True)        
+
+    @lock
     def moveIn (self, n):
-        if not self.drv.moveIn (n):
-            logging.warning (self.drv.getError()[1])
-            return False
+        drv = self.getDriver()
+        drv.moveIn (n)
 
-        return True
-
+    @lock
     def moveOut (self, n):
-        if not self.drv.moveOut (n):
-            logging.warning (self.drv.getError()[1])
-            return False
+        drv = self.getDriver()
+        drv.moveOut (n)
 
-        return True
-
+    @lock
     def moveTo (self, position):
-        if not self.drv.moveTo (position):
-            logging.warning (self.drv.getError()[1])
-            return False
-
-        return True
-
-    def getPosition (self):
-        ret = self.drv.getPosition ()
-
-        if ret == -1:
-            logging.warning (self.drv.getError()[1])
-            return ret
+        drv = self.getDriver()
+        drv.moveTo (position)
     
-        return ret
-            
+    def getPosition (self):
+        drv = self.getDriver()
+        return drv.getPosition ()

@@ -20,138 +20,206 @@
 
 
 from chimera.core.chimeraobject import ChimeraObject
-from chimera.interfaces.telescope import ITelescopeSlew, ITelescopePark, ITelescopeSync
 
-class Telescope(ChimeraObject, ITelescopeSlew, ITelescopePark, ITelescopeSync):
+from chimera.interfaces.telescope       import ITelescopeSlew, ITelescopeSync, ITelescopePark
+from chimera.interfaces.telescopedriver import SlewRate
+
+from chimera.core.lock import lock
+
+from chimera.util.position import Position
+
+
+__all__ = ["Telescope"]
+
+
+class Telescope(ChimeraObject, ITelescopeSlew, ITelescopeSync, ITelescopePark):
 
     def __init__(self):
         ChimeraObject.__init__(self)
         
-        self.drv = None
-
-    def __init__(self):
-        
-        self.drv = self.getManager().getProxy(self['driver'])
-        
-        if not self.drv:
-            self.log.warning("Couldn't found a driver. '%s' is not valid." % self['driver'])
-            return False
-    
-        return True
-    
     def __start__(self):
-        try:
-            self.drv.open();
-        except TelescopeNotFoundException, e:
-            self.log.exception(e)
+
+        drv = self.getDriver()
+
+        drv.parkComplete   += self.getProxy()._parkCompleteClbk
+        drv.unparkComplete += self.getProxy()._unparkCompleteClbk
+        drv.slewBegin      += self.getProxy()._slewBeginClbk
+        drv.slewComplete   += self.getProxy()._slewCompleteClbk
+        drv.syncComplete   += self.getProxy()._syncCompleteClbk
+        drv.abortComplete  += self.getProxy()._abortCompleteClbk
 
     def __stop__(self):
-        try:
-            self.drv.close()
-        except TelescopeNotFoundException, e:
-            self.log.exception(e)
 
-    def slewToObject(self, name):
-        return ITelescopeSlew.slewToObject(self, name)
+        drv = self.getDriver()
+        
+        drv.parkComplete   -= self.getProxy()._parkCompleteClbk
+        drv.unparkComplete -= self.getProxy()._unparkCompleteClbk
+        drv.slewBegin      -= self.getProxy()._slewBeginClbk
+        drv.slewComplete   -= self.getProxy()._slewCompleteClbk
+        drv.syncComplete   -= self.getProxy()._syncCompleteClbk
+        drv.abortComplete  -= self.getProxy()._abortCompleteClbk
 
+    def _parkCompleteClbk (self):
+        self.parkComplete()
 
-    def slewToRaDec(self, ra, dec, epoch="J2000"):
-        return ITelescopeSlew.slewToRaDec(self, ra, dec, epoch)
+    def _unparkCompleteClbk (self):
+        self.unparkComplete()
 
+    def _slewBeginClbk (self, target):
+        if isinstance(target, tuple):
+            target = Position.fromRaDec(*target)
+        self.slewBegin(target)
 
-    def slewToAzAlt(self, az, alt):
-        return ITelescopeSlew.slewToAzAlt(self, az, alt)
+    def _slewCompleteClbk (self, position):
+        if isinstance(position, tuple):
+            position = Position.fromRaDec(*position)
+        self.slewComplete(position)
 
+    def _abortCompleteClbk (self, position):
+        if isinstance(position, tuple):
+            position = Position.fromRaDec(*position)
+        self.abortComplete()
 
-    def abortSlew(self):
-        return ITelescopeSlew.abortSlew(self)
+    def _syncCompleteClbk (self, position):
+        if isinstance(position, tuple):
+            position = Position.fromRaDec(*position)
+        self.syncComplete(position)
 
-
-    def isSlewing(self):
-        return ITelescopeSlew.isSlewing(self)
-
-
-    def moveEast(self, offset, rate=SlewRate.MAX):
-        return ITelescopeSlew.moveEast(self, offset, rate)
-
-
-    def moveWest(self, offset, rate=SlewRate.MAX):
-        return ITelescopeSlew.moveWest(self, offset, rate)
-
-
-    def moveNorth(self, offset, rate=SlewRate.MAX):
-        return ITelescopeSlew.moveNorth(self, offset, rate)
-
-
-    def moveSouth(self, offset, rate=SlewRate.MAX):
-        return ITelescopeSlew.moveSouth(self, offset, rate)
-
-
-    def getRa(self):
-        return ITelescopeSlew.getRa(self)
-
-
-    def getDec(self):
-        return ITelescopeSlew.getDec(self)
-
-
-    def getAz(self):
-        return ITelescopeSlew.getAz(self)
-
-
-    def getAlt(self):
-        return ITelescopeSlew.getAlt(self)
-
-
-    def getPosition(self):
-        return ITelescopeSlew.getPosition(self)
-
-
-    def getTarget(self):
-        return ITelescopeSlew.getTarget(self)
-
-
-    def slewStart(self, target):
-        return ITelescopeSlew.slewStart(self, target)
-
-
-    def slewComplete(self, position):
-        return ITelescopeSlew.slewComplete(self, position)
-
-
-    def abortComplete(self, position):
-        return ITelescopeSlew.abortComplete(self, position)
-
-
-    def syncRaDec(self, ra, dec):
-        return ITelescopeSync.syncRaDec(self, ra, dec)
-
+    @lock
+    def getDriver(self, lazy=True):
+        """
+        Get a Proxy to the instrument driver. This function is necessary '
+        cause Proxies cannot be shared among different threads.
+        So, every time you need a driver Proxy you need to call this to
+        get a Proxy to the current thread.
+        """
+        return self.getManager().getProxy(self['driver'], lazy=lazy)        
+        
 
     def syncObject(self, name):
         return ITelescopeSync.syncObject(self, name)
 
+    def syncRaDec(self, position):
+         if not isinstance(position, Position):
+             position = Position.fromRaDec(*position)
+        
+         drv = self.getDriver()
+         drv.syncRaDec(position)
+       
+    def syncAzAlt(self, position):
+        return ITelescopeSync.syncAzAlt(self, position)
 
-    def syncComplete(self, position):
-        return ITelescopeSync.syncComplete(self, position)
+    def slewToObject(self, name):
+        return ITelescopeSlew.slewToObject(self, name)
 
+    def slewToRaDec(self, position):
+        # FIXME: validate limits?
+
+        if not isinstance(position, Position):
+            position = Position.fromRaDec(*position)
+        
+        drv = self.getDriver()
+        drv.slewToRaDec(position)
+       
+        
+    def slewToAzAlt(self, position):
+        # FIXME: validate limits?        
+
+        if not isinstance(position, Position):
+            position = Position.fromAzAlt(*position)
+
+        drv = self.getDriver()
+
+        try:
+            drv.slewToAzAlt(position)
+        except Exception,e:
+            self.log.exception("Houston")
+
+    def abortSlew(self):
+        drv = self.getDriver()
+        if not self.isSlewing(): return
+        return drv.abortSlew()
+
+    def isSlewing(self):
+        drv = self.getDriver()
+        return drv.isSlewing()
+
+    def moveEast(self, offset, rate=SlewRate.MAX):
+        drv = self.getDriver()
+        return drv.moveEast(offset, rate)
+
+    def moveWest(self, offset, rate=SlewRate.MAX):
+        drv = self.getDriver()
+        return drv.moveWest(offset, rate)
+
+    def moveNorth(self, offset, rate=SlewRate.MAX):
+        drv = self.getDriver()
+        return drv.moveNorth(offset, rate)
+
+    def moveSouth(self, offset, rate=SlewRate.MAX):
+        drv = self.getDriver()
+        return drv.moveSouth(offset, rate)
+
+    def getRa(self):
+        drv = self.getDriver()
+        return drv.getRa()
+
+    def getDec(self):
+        drv = self.getDriver()
+        return drv.getDec()
+
+    def getAz(self):
+        drv = self.getDriver()
+        return drv.getAz()
+
+    def getAlt(self):
+        drv = self.getDriver()
+        return drv.getAlt()
+
+    def getPositionRaDec(self):
+        drv = self.getDriver()
+
+        ret = drv.getPositionRaDec()
+
+        if not isinstance(ret, Position):
+            ret = Position.fromRaDec(*ret)
+        return ret
+
+    def getPositionAzAlt(self):
+        drv = self.getDriver()
+
+        ret = drv.getPositionAzAlt()
+
+        if not isinstance(ret, Position):
+            ret = Position.fromAzAlt(*ret)
+        return ret
+
+    def getTargetRaDec(self):
+        drv = self.getDriver()
+
+        ret = drv.getTargetRaDec()
+
+        if not isinstance(ret, Position):
+            ret = Position.fromRaDec(*ret)
+        return ret
+
+    def getTargetAzAlt(self):
+        drv = self.getDriver()
+        
+        ret =  drv.getTargetAzAlt()
+
+        if not isinstance(ret, Position):
+            ret = Position.fromAzAlt(*ret)
+        return ret
 
     def park(self):
-        return ITelescopePark.park(self)
-
+        drv = self.getDriver()
+        return drv.park()
 
     def unpark(self):
-        return ITelescopePark.unpark(self)
+        drv = self.getDriver()
+        return drv.unpark()
 
-
-    def setParkPosition(self, az, alt):
-        return ITelescopePark.setParkPosition(self, az, alt)
-
-
-    def parkComplete(self):
-        return ITelescopePark.parkComplete(self)
-
-
-    def unparkComplete(self):
-        return ITelescopePark.unparkComplete(self)
-
-
+    def setParkPosition(self, position):
+        drv = self.getDriver()
+        return drv.setParkPosition(position)

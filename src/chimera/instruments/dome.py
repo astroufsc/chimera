@@ -1,7 +1,8 @@
-#! /usr/bin/python
-# -*- coding: iso8859-1 -*-
+#! /usr/bin/env python
+# -*- coding: iso-8859-1 -*-
 
 # chimera - observatory automation system
+# Copyright (C) 2006-2007  P. Henrique Silva <henrique@astro.ufsc.br>
 # Copyright (C) 2006-2007  Antonio Kanaan <kanaan@astro.ufsc.br>
 
 # This program is free software; you can redistribute it and/or
@@ -21,111 +22,238 @@
 import logging
 import time
 import sys
+import Queue
 
-from chimera.core.lifecycle import BasicLifeCycle
+from chimera.core.chimeraobject import ChimeraObject
+
 from chimera.interfaces.dome import IDome
-from chimera.core.event import event
-from chimera.core.async import lock
+from chimera.interfaces.dome import Mode
 
-class Dome(BasicLifeCycle, IDome):
+from chimera.core.event    import event
+from chimera.core.lock     import lock
+from chimera.core.callback import callback
 
-     def __init__(self, manager):
-          BasicLifeCycle.__init__(self, manager)
+from chimera.core.exceptions import ObjectNotFoundException
+from chimera.core.exceptions import ChimeraException
 
-          self._lastTelAz = None
-          self._newTelAz = None
-
-          self.drv = None
-          self.tel = None
-
-     def init(self, config):
-
-          self.config += config
-
-          # adjust timeslice
-          self.timeslice = 1./self.config.time_res
-
-          self.drv = self.manager.getDriver(self.config.driver)
-          if not self.drv:
-               logging.debug("Couldn't load selected driver (%s)." %  self.config.driver)
-               return False
+from chimera.util.coord import Coord
 
 
-          if self.config.mode == "track":
+__all__ = ['Dome']
+
+
+class Dome(ChimeraObject, IDome):
+
+     def __init__(self):
+          ChimeraObject.__init__(self)
+
+          self.queue = Queue.Queue()
+
+          self._lastTelAz = 0
+          self._newTelAz  = 0
+
+          self._mode = None
+
+     def __start__(self):
+
+          # connect events with driver
+          drv = self.getDriver()
+          drv.ping()
+         
+          drv.slewBegin     += self.getProxy()._slewBeginClbk
+          drv.slewComplete  += self.getProxy()._slewCompleteClbk
+          drv.abortComplete += self.getProxy()._abortCompleteClbk
+          drv.slitOpened    += self.getProxy()._slitOpenedClbk
+          drv.slitClosed    += self.getProxy()._slitClosedClbk
+
+          self.setHz(0.5)
+
+          if self["mode"] == Mode.Track:
                self.track ()
-          elif self.config.mode == "stand":
+          elif self["mode"] == Mode.Stand:
                self.stand ()
           else:
-               logging.warning ("Invalid dome mode: %s. Will use stand mode.")
+               self.log.warning ("Invalid dome mode: %s. Will use Stand mode instead.")
                self.stand ()
+
+          # telescope events
+          try:
+               tel = self.getTelescope()
+
+               tel.slewBegin     += self.getProxy()._telSlewBeginClbk
+               tel.slewComplete  += self.getProxy()._telSlewCompleteClbk
+               tel.abortComplete += self.getProxy()._telAbortCompleteClbk
+
+          except ObjectNotFoundException:
+               self.log.warning("Couldn't found telescope."
+                                "Telescope events would not be monitored.")
 
           return True
 
+     def __stop__ (self):
+          # disconnect events
+          drv = self.getDriver()
+         
+          drv.slewBegin     -= self.getProxy()._slewBeginClbk
+          drv.slewComplete  -= self.getProxy()._slewCompleteClbk
+          drv.abortComplete -= self.getProxy()._abortCompleteClbk
+          drv.slitOpened    -= self.getProxy()._slitOpenedClbk
+          drv.slitClosed    -= self.getProxy()._slitClosedClbk
+
+          try:
+               tel = self.getTelescope()
+               
+               tel.slewBegin     -= self.getProxy()._telSlewBeginClbk
+               tel.slewComplete  -= self.getProxy()._telSlewCompleteClbk
+               tel.abortComplete -= self.getProxy()._telAbortCompleteClbk
+
+          except ObjectNotFoundException:
+               pass
+
+          return True
+
+     # callbacks
+     def _slewBeginClbk(self, position):
+          if not isinstance(position, Coord):
+               position = Coord.fromDMS(position)
+
+          self.slewBegin(position)
+          
+     def _slewCompleteClbk(self, position):
+          if not isinstance(position, Coord):
+               position = Coord.fromDMS(position)
+
+          self.slewComplete(position)
+
+     def _abortCompleteClbk(self, position):
+          if not isinstance(position, Coord):
+               position = Coord.fromDMS(position)
+
+          self.abortComplete(position)
+
+     def _slitOpenedClbk(self, position):
+          if not isinstance(position, Coord):
+               position = Coord.fromDMS(position)
+
+          self.slitOpened(position)
+
+     def _slitClosedClbk(self, position):
+          if not isinstance(position, Coord):
+               position = Coord.fromDMS(position)
+
+          self.slitClosed(position)
+
+     # telescope callbacks
+     def _telSlewBeginClbk (self, target):
+          if self.getMode() != Mode.Track: return
+
+          # FIXME: conversao equatorial-local
+          #self.queue.put(target.asAzAlt(site.longitude(), site.lst()))
+
+     def _telSlewCompleteClbk (self, target):
+          if self.getMode() != Mode.Track: return
+
+          tel = self.getTelescope()
+          self.queue.put(tel.getAz())
+
+     def _telAbortCompleteClbk (self, position):
+          if self.getMode() != Mode.Track: return
+
+          tel = self.getTelescope()
+          self.queue.put(tel.getAz())
+
+     @lock
+     def getDriver(self):
+          return self.getManager().getProxy(self['driver'], lazy=True)        
+        
+     @lock
+     def getTelescope(self):
+          return self.getManager().getProxy(self['telescope'], lazy=True)        
+
      def control (self):
 
-          if not self.tel:
-               return
+          drv = self.getDriver()
 
-          if (self.config.mode == "track"):
+          if self.getMode() != Mode.Track:
+               return True
 
-               self._newTelAz = self.tel.getAz()
+          if not self.queue.empty():
+               self._processQueue()
+               return True
 
-               if not self._lastTelAz or (abs(self._newTelAz - self._lastTelAz) > self.config.az_res):
-                    print "Moving dome to %s" % self._newTelAz
-                    sys.stdout.flush ()
+          return True
+
+          try:
+               tel = self.getTelescope()
+
+               self._newTelAz = tel.getAz()
+
+               if (abs(self._newTelAz - self._lastTelAz) >= drv["az_resolution"]):
                     self.slewToAz(self._newTelAz)
-                    print "Dome stopped"
-                    sys.stdout.flush ()
 
                self._lastTelAz = self._newTelAz
 
+          except ObjectNotFoundException:
+               raise ChimeraException("Couldn't found the selected telescope."
+                                      " Dome cannnot track.")
 
-     # -- IDomeSlew implementation
+          return True
+     
+     def _processQueue (self):
+          
+          if self.queue.empty(): return
+
+          target = self.queue.get()
+
+          self.slewToAz(target)
+          self.queue.task_done()
+          
      @lock
      def track(self):
-          self.config.mode = "track"
+          self._mode = Mode.Track
 
-          if self.tel is None:
-               self.tel = self.manager.getInstrument (self.config.telescope)
-
-               if not self.tel:
-                    logging.debug("Couldn't found selected telescope (%s)."
-                                  "Dome will stay static." %  self.config.telescope)
+          tel = self.getTelescope()
+          self.queue.put(tel.getAz())
 
      @lock
      def stand(self):
-          self.config.mode = "stand"
+          self._mode = Mode.Stand          
+
+     def getMode(self):
+          return self._mode
 
      def slewToAz (self, az):
 
-        az = int (az)
-          
-        if az > 360:
-             az = az % 360
+          if not isinstance(az, Coord):
+               az = Coord.fromDMS(az)
 
-        return self.drv.slewToAz (az)
+          if int(az) >= 360:
+               az = az % 360
+          
+          drv = self.getDriver()
+          drv.slewToAz (az)
 
      def isSlewing (self):
           return self.drv.isSlewing ()
     
-     #def abortSlew (self):
-     #     return self.drv.abortSlew ()
+     def abortSlew (self):
+          # FIXME
+          drv = self.getDriver()
+          drv.abortSlew ()
 
      def getAz (self):
-          return self.drv.getAz ()
+          drv = self.getDriver()
+          return drv.getAz ()
 
-     def slitOpen (self):
-          return self.drv.slitOpen ()
+     def openSlit (self):
+          drv = self.getDriver()
+          drv.openSlit()
 
-     def slitClose (self):
-          return self.drv.slitClose ()
+     def closeSlit (self):
+          drv = self.getDriver()
+          drv.closeSlit()
 
-     # the variable domeFlatAzimuth needs to be globally defined
-     # or it could be defined for the telescope and the dome could get it
-     # from the telescope
-     #def domeFlat (self):
-     #     domeFlatAzimuth = 45
-     #     slewToAz (self, domeFlatAzimuth)
-
-
+     def isSlitOpen (self):
+          drv = self.getDriver()
+          return drv.isSlitOpen()
 

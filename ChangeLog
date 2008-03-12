@@ -1,5 +1,24 @@
 2008-03-12  P. Henrique Silva  <henrique@astro.ufsc.br>
 
+	* src/chimera/instruments/camera.py:
+	* src/chimera/instruments/filterwheel.py:
+	* src/chimera/instruments/telescope.py:
+	* src/chimera/instruments/dome.py:
+	* src/chimera/instruments/focuser.py: Every iinstrument
+	implementation have been improved, with full exception handling
+	support and new interfaces implemented. Test it, please!
+
+	* src/chimera/instruments/tests/test_telescope.py: More tests
+	added.
+
+	* src/chimera/instruments/tests/test_filterwheel.py:
+	* src/chimera/instruments/tests/test_dome.py:
+	* src/chimera/instruments/tests/test_focuser.py:
+	* src/chimera/instruments/tests/test_camera.py: New unit tests for
+	instruments.
+
+2008-03-12  P. Henrique Silva  <henrique@astro.ufsc.br>
+
 	* src/chimera/interfaces/camera.py:
 	* src/chimera/interfaces/filterwheel.py:
 	* src/chimera/interfaces/telescopedriver.py:
