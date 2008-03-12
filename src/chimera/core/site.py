@@ -19,34 +19,25 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 
-
 from chimera.core.chimeraobject import ChimeraObject
+
+from chimera.util.coord import Coord
 
 
 __all__ = ['Site']
 
 
 class Site (ChimeraObject):
+    
+    __config__ = dict(name       = "UFSC",
+                      latitude   = Coord.fromDMS("-23 00 00"),
+                      longitude  = Coord.fromDMS(-48.5),
+                      altitude   = 20,
+                      utc_offset = -3,
+                      dst        = False)
 
     def __init__ (self):
         ChimeraObject.__init__(self)
-        
-        self._name      = None
 
-        self._latitude  = None
-        self._longitude = None
-        self._altitude  = None
-
-        self._timezone  = None
-        self._dst       = False
-
-    def ut (self): pass
-    def local (self): pass
-    def lst (self): pass
-    def jd (self): pass
-    def mjd (self): pass
-
-    
-        
-        
-    
+    def __main__ (self):
+        pass

@@ -1,5 +1,11 @@
 2008-03-12  P. Henrique Silva  <henrique@astro.ufsc.br>
 
+	* src/chimera/core/site.py: New object. Used as a data container
+	with site specific information. Date/time functions will be
+	implemented in the future.
+
+2008-03-12  P. Henrique Silva  <henrique@astro.ufsc.br>
+
 	* src/chimera/core/tests/test_chimera_object.py: Improved tests
 	with exception testing.
 
