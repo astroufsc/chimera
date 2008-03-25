@@ -16,6 +16,9 @@ Core
 * adicionar suporte à objetos remotos no getProxy do Manager (migrar de main:Locator). - DONE
 * suportar lazy binding no getProxy - DONE
 * checar se objeto implementa ILifeCycle ao tentar adicionar ao manager - DONE
+* criar simuladores de drivers - done
+* log: mostrar quem originou o problema e não onde o log foi criado -  exception cause - done
+* melhorar log e handling de erros nos drivers (error and logging  database) -> exceções! - done
 
 
 Scripts
@@ -28,3 +31,4 @@ Drivers
 
 * controle de eixos individuais - DONE
 * finalizar driver meade - DONE
+* melhorar mapeamento entre posicoes e nomes dos filtros - enum! - done
