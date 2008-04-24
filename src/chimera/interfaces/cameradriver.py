@@ -27,7 +27,7 @@ from chimera.interfaces.camera import Shutter, Binning, Window
 from chimera.util.enum import Enum
 
 
-Bitpix = Enum("int16", "int32", "float32", "float64")
+Bitpix = Enum("char8", "uint16", "int16", "int32", "int64", "float32", "float64")
 
 Device = Enum ("USB",
                "USB1",

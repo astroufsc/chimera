@@ -117,6 +117,9 @@ class ImageSave (object):
             
         try:
             hdu  = pyfits.PrimaryHDU(img)
+            
+            if bitpix == Bitpix.uint16:
+                hdu.scale('int16', '', bzero=32768)
 
             # add basic header (DATE, DATE-OBS) as this information can get lost
             # any other header should be added later by the controller

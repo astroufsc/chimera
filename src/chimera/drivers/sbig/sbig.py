@@ -67,6 +67,8 @@ class SBIG(ChimeraObject, ICameraDriver, IFilterWheelDriver):
             self.dev = SBIGDrv.usb
         else:
             self.dev = SBIGDrv.lpt1
+
+	self["bitpix"] = Bitpix.uint16
                         
         return self.open(self.dev)
 

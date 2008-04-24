@@ -866,7 +866,7 @@ class Meade (ChimeraObject,
         # 1. slew to park position
         # FIXME: allow different park positions and conversions from ra/dec -> az/alt
         self.slewToRaDec(Position.fromRaDec(str(self.getLocalSiderealTime()),
-                                            "00:00:00"))
+                                            self.getLatitude()))
 
         # 2. stop tracking
         self.stopTracking ()

@@ -291,7 +291,7 @@ class SBIGDrv(object):
         rolp.pixelLength = line[1]
 
         # create a numpy array to hold the line
-        buff = numpy.zeros(line[1], numpy.ushort)
+        buff = numpy.zeros(line[1], numpy.uint16)
 
         self._cmd(udrv.CC_READOUT_LINE, rolp, buff)
 

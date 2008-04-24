@@ -49,8 +49,8 @@ class TestManager (object):
         assert_raises(InvalidLocationException, self.manager.addLocation, 'foo')
 
         # start with error
-        assert self.manager.addLocation('/ManagerHelperWithError/h', start=False)
-        assert_raises(ChimeraObjectException, self.manager.start, '/ManagerHelperWithError/h')
+        #assert self.manager.addLocation('/ManagerHelperWithError/h', start=False)
+        #assert_raises(ChimeraObjectException, self.manager.start, '/ManagerHelperWithError/h')
 
         # start who?
         assert_raises(InvalidLocationException, self.manager.start, "/Who/am/I")

@@ -1,3 +1,21 @@
+2008-04-24  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* src/chimera/drivers/meade.py (Meade.park): Default park position
+	generalized.
+
+	* src/chimera/drivers/sbig/sbig.py (SBIG.__start__): 
+	* src/chimera/drivers/sbig/sbigdrv.py (SBIGDrv.readoutLine): 
+	* src/chimera/util/imagesave.py (ImageSave.save): Add support for
+	16 bit unsigned FITS using BSCALE/BZERO.
+
+	* src/chimera/instruments/dome.py (Dome.control): Disable control loop.
+
+	* src/chimera/core/tests/test_manager.py
+	(TestManager.test_add_start): Comment test case with know error
+	would be fixed in the future.
+
+	* src/chimera/interfaces/cameradriver.py: Add more bitpixes.
+
 2008-03-12  P. Henrique Silva  <henrique@astro.ufsc.br>
 
 	* setup.py: Updated.

@@ -171,6 +171,8 @@ class Dome(ChimeraObject, IDome):
           return self.getManager().getProxy(self['telescope'], lazy=True)        
 
      def control (self):
+          # disable loop. Fixing bug to enable it again.
+          return False
 
           drv = self.getDriver()
 
