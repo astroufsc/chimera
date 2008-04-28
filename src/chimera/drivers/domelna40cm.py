@@ -78,7 +78,7 @@ class DomeLNA40cm (ChimeraObject, IDomeDriver):
                                  bytesize=serial.EIGHTBITS,
                                  parity=serial.PARITY_NONE,
                                  stopbits=serial.STOPBITS_ONE,
-                                 timeout=None, xonxoff=0, rtscts=0)
+                                 timeout=self["init_timeout"], xonxoff=0, rtscts=0)
 
 
         self.tty.open()

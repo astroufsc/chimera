@@ -22,13 +22,17 @@ import time
 import random
 import threading
 
-from chimera.interfaces.cameradriver import ICameraDriver
+from chimera.interfaces.cameradriver      import ICameraDriver
+from chimera.interfaces.filterwheeldriver import IFilterWheelDriver
+
 from chimera.core.chimeraobject      import ChimeraObject
+
+from chimera.util.imagesave import ImageSave
 
 from chimera.core.lock import lock
 
 
-class FakeCamera (ChimeraObject, ICameraDriver):
+class FakeCamera (ChimeraObject, ICameraDriver, IFilterWheelDriver):
 
     def __init__ (self):
         ChimeraObject.__init__(self)
@@ -37,6 +41,8 @@ class FakeCamera (ChimeraObject, ICameraDriver):
         self.__cooling  = False
 
         self.__abort = threading.Event()
+
+        self._lastFilter = 0
 
     def __start__ (self):
         self.setHz(1.0/10)
@@ -75,7 +81,18 @@ class FakeCamera (ChimeraObject, ICameraDriver):
 
         self.exposeComplete()
 
-        self.readoutBegin(self["file_format"])
+        next_filename = ImageSave.save(None, 
+                                       self["directory"],
+                                       self["file_format"],
+                                       self["file_extension"],
+                                       self["date_format"],
+                                       None,
+                                       self["bitpix"],
+                                       self["save_on_temp"],
+                                       dry=True)
+
+
+        self.readoutBegin(next_filename)
         
         t=0
         while t < 1: # really fast CCD :)
@@ -86,7 +103,7 @@ class FakeCamera (ChimeraObject, ICameraDriver):
             time.sleep (0.1)            
             t+=0.1
 
-        self.readoutComplete(self["file_format"])
+        self.readoutComplete(next_filename)
         
         self.__exposing = False
         return self["file_format"]
@@ -123,3 +140,12 @@ class FakeCamera (ChimeraObject, ICameraDriver):
 
     def getTemperature(self):
         return 20 * random.random()
+
+    @lock
+    def getFilter (self):
+        return self._lastFilter
+
+    @lock
+    def setFilter (self, filter):
+        self.filterChange(filter, self._lastFilter)
+        self._lastFilter = filter

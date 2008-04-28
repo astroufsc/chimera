@@ -183,6 +183,9 @@ class SBIG(ChimeraObject, ICameraDriver, IFilterWheelDriver):
             self.lastFilter = self.getFilter()
 
         self.drv.setFilterPosition (position)
+        
+        while self.drv.getFilterStatus() != 1: # while not idle
+            time.sleep(.5)
 
         self.filterChange(filter, self.lastFilter)
         self.lastFilter = filter

@@ -25,8 +25,7 @@ from chimera.core.exceptions import ChimeraException
 from chimera.util.enum       import Enum
 
 
-SlewRate = Enum ("MAX", "GUIDE")
-"""Available slew rates."""
+from chimera.interfaces.telescopedriver import SlewRate
 
 
 class PositionOutsideLimitsException (ChimeraException):
@@ -359,4 +358,34 @@ class ITelescopePark (ITelescope):
     def unparkComplete (self):
         """Indicates that the scope has unparked (waked up)
         successfuly.
+        """
+
+class ITelescopeTracking (ITelescope):
+    """
+    Telescope with support to start/stop tracking.
+    """
+
+    def startTracking (self):
+        """
+        Start telescope tracking.
+
+        @return: Nothing
+        @rtype: None
+        """
+
+    def stopTracking (self):
+        """
+        Stop telescope tracking.
+
+        @return: Nothing
+        @rtype: None
+        """
+
+    def isTracking (self):
+        """
+        Ask if the telescope is tracking.
+
+        @return: True if the telescope is tracking, False otherwise.
+        @rtype: bool
+        
         """

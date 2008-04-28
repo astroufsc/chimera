@@ -30,6 +30,7 @@ from chimera.core.chimeraobject         import ChimeraObject
 from chimera.interfaces.telescopedriver import ITelescopeDriverSlew
 from chimera.interfaces.telescopedriver import ITelescopeDriverSync
 from chimera.interfaces.telescopedriver import ITelescopeDriverPark
+from chimera.interfaces.telescopedriver import ITelescopeDriverTracking
 from chimera.interfaces.telescopedriver import SlewRate, AlignMode
 
 from chimera.util.coord    import Coord
@@ -50,7 +51,9 @@ Direction = Enum("E", "W", "N", "S")
 
 class Meade (ChimeraObject,
              ITelescopeDriverSlew,
-             ITelescopeDriverSync, ITelescopeDriverPark):
+             ITelescopeDriverSync,
+             ITelescopeDriverPark,
+             ITelescopeDriverTracking):
 
     def __init__(self):
 
@@ -157,7 +160,10 @@ class Meade (ChimeraObject,
             #    self.autoAlign ()
 
             # manualy initialize scope
-            self._initTelescope()
+            if self["skip_init"]:
+                self.log.info("Skipping init as requested.")
+            else:
+                self._initTelescope()
 
             return True
 
@@ -793,6 +799,12 @@ class Meade (ChimeraObject,
         self._lastAlignMode = self.getAlignMode ()
         self.setAlignMode (AlignMode.LAND)
         return True
+
+    def isTracking (self):
+        if self.getAlignMode() != AlignMode.LAND:
+            return True
+
+        return False
 
     def _setHighPrecision (self):
 

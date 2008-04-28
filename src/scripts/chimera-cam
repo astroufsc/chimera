@@ -23,17 +23,21 @@ import os
 import time
 import logging
 
-from optparse import OptionParser
+from optparse import OptionParser, OptionGroup
 
 from chimera.core.manager import Manager
 from chimera.core.version import _chimera_version_, _chimera_description_
 
 from chimera.instruments.camera import Camera
+from chimera.instruments.filterwheel import FilterWheel
 from chimera.interfaces.camera import Shutter
 
 from chimera.core.exceptions import ObjectNotFoundException
 from chimera.core.exceptions import ChimeraObjectException
 from chimera.core.exceptions import InvalidLocationException
+from chimera.core.exceptions import ClassLoaderException
+
+from chimera.interfaces.filterwheel import InvalidFilterPositionException
 
 from chimera.core.location import Location
 
@@ -65,61 +69,81 @@ if __name__ == '__main__':
     parser = OptionParser(prog="chimera-cam", version=_chimera_version_,
                           description=_chimera_description_+chimera_cam_description)
 
-    parser.add_option("-c", "--camera", action="callback", type="string", dest="camera",
+    config = OptionGroup(parser, "Camera and driver configuration")
+
+    config.add_option("-c", "--camera", action="callback", type="string", dest="camera",
                       help="Camera instrument to be used. If blank, create a new"
                       " camera instance, using the the driver selected with --driver."
-                      " format: [host:port]/Class/name.[default=\"\"]",
+                      " format: [host:port]/Class/name.",
                       callback=check_location)
 
-    parser.add_option("-d", "--driver", action="callback", type="string", dest="driver",
+    config.add_option("-d", "--driver", action="callback", type="string", dest="driver",
                       help="Camera driver to be used."
                       " /Class/name?option1=value1,option2=value. [default=%default]",
                       callback=check_location)
 
-    parser.add_option("-D", "--drivers-dir", action="callback", callback=check_includepath,
+    config.add_option("-D", "--drivers-dir", action="callback", callback=check_includepath,
                       dest="drv_dir", type="string",
                       help="Append PATH to drivers load path.",
                       metavar="PATH")
 
-    parser.add_option("-n", "--nexp", action="store", type="int", dest="nexp",
-                      help="Number of frames to expose [default=%default].")
+    info = OptionGroup(parser, "Information")
+    
+    info.add_option("--info", action="store_true", dest="info",
+                      help="Print camera information and exit")
 
-    parser.add_option("-t", "--texp", action="store", type="float", dest="texp",
-                      help="Number of seconds of exposure in each frame [default=%default].")
+    info.add_option("-F", "--filters", action="store_true", dest="filters",
+                      help="Print available filter names and positions.")
 
-    parser.add_option("-i", "--interval", action="store", type="float", dest="interval",
-                      help="Number of seconds to wait between each exposure frame "
+    expose = OptionGroup(parser, "Exposure control")
+    
+    expose.add_option("-n", "--nexp", action="store", type="int", dest="nexp",
+                      help="Number of frames [default=%default].")
+
+    expose.add_option("-t", "--texp", action="store", type="float", dest="texp",
+                      help="Integration time in seconds for each frame [default=%default].")
+
+    expose.add_option("-i", "--interval", action="store", type="float", dest="interval",
+                      help="Number of seconds to wait between each frame "
                       "[default=%default].")
 
-    parser.add_option("-f", "--filename", action="store", type="string", dest="filename",
-                      help="Base filename including full path if needed."
-                      "May contain wildcards on the filename."
+    expose.add_option("-o", "--output", action="store", type="string", dest="output",
+                      help="Base filename including full path if needed. "
                       "[default=%default]")
-
-    parser.add_option("--filter", action="store", type="string", dest="filter",
-                      help="Filter to be used.")
-
-    parser.add_option("-s", "--shutter", action="store", type="choice", dest="shutter",
+    
+    expose.add_option("-f", "--filter", action="store", type="string", dest="filter",
+                      help="Filter to be used. Use filter name. "
+                      "Use --filters to get a list of available filters")
+    
+    expose.add_option("-s", "--shutter", action="store", type="choice", dest="shutter",
                       choices=["open", "OPEN", "close", "CLOSE", "leave", "LEAVE"],
-                      help="What to do with the shutter: open, close, leave [default=%default]")
+                      help="What to do with the shutter: open, close, leave (case insensitive) [default=%default]")
 
-    parser.add_option("--disable-cooling", action="store_true",
-                      dest="disable_cooling",
-                      help="Disable camera cooling. [default=%default].")
+    temp = OptionGroup(parser, "Temperature control")
+    
+    temp.add_option("-T", "--setpoint", action="store", type="float", dest="setpoint",
+                      help="Enable CCD cooling with TEMP as setpoint.", metavar="TEMP")
 
-    parser.add_option("-T", "--setpoint", action="store", type="float", dest="setpoint",
-                      help="Enable CCD cooling with TEMP as setpoint.")
-
-    parser.add_option("-w", "--wait", action="store_true", dest="wait",
+    temp.add_option("-w", "--wait", action="store_true", dest="wait",
                       help="Wait until the selected CCD setpoint is achived."
                       "[default=%default].")
 
-    parser.add_option("--no-display", action="store_true", dest="no_display",
+    temp.add_option("--disable-cooling", action="store_true",
+                      dest="disable_cooling",
+                      help="Disable camera cooling. [default=%default].")
+
+    display = OptionGroup(parser, "Display configuration")
+    display.add_option("--no-display", action="store_true", dest="no_display",
                       help="Don't try to display image on DS9. [default=%default]")
 
     parser.add_option("-q", "--quiet", action="store_true", dest='quiet',
                       help="Don't display information during the exposures [default=%default].")
 
+    parser.add_option_group(config)
+    parser.add_option_group(info)
+    parser.add_option_group(expose)
+    parser.add_option_group(display)    
+    parser.add_option_group(temp)
 
     prefix = os.path.realpath(os.path.join(os.path.abspath(__file__), '../../chimera/'))
     drivers_path = [os.path.join(prefix, 'drivers')]
@@ -130,14 +154,16 @@ if __name__ == '__main__':
                         nexp     = 1,
                         texp     = 1,
                         interval = 0,
-                        filename = "$date.fits",
+                        output   = "$date.fits",
                         shutter  = "open",
                         no_display  = False,
                         quiet    = False,
                         disable_cooling  = False ,
                         setpoint = -500, # magic number
-                        wait=False,
-                        filter=None)
+                        wait     = False,
+                        filter   = None,
+                        filters  = False,
+                        info     = False)
 
     options, args = parser.parse_args(sys.argv)
 
@@ -151,11 +177,11 @@ if __name__ == '__main__':
         print >> sys.stderr, "--texp must be a positive number."
         sys.exit(1)
 
-    if options.shutter == "open":
+    if options.shutter.lower() == "open":
         options.shutter = Shutter.OPEN
-    elif options.shutter == "close":
+    elif options.shutter.lower() == "close":
         options.shutter = Shutter.CLOSE
-    elif options.shutter == "leave":
+    elif options.shutter.lower() == "leave":
         options.shutter = Shutter.LEAVE_AS_IS
     else:
         options.shutter = Shutter.OPEN
@@ -206,23 +232,38 @@ if __name__ == '__main__':
     manager = Manager(port=10000)
 
     camera = None
+    driver = None
+    
+    filter = None
 
     # use an already running camera
     if options.camera:
         try:
             camera = manager.getProxy(options.camera[0])
-        except (ObjectNotFoundException, ChimeraObjectException), e:
+            filter = manager.getProxy(options.camera[0])
+        except (ObjectNotFoundException, ClassLoaderException), e:
             print >> sys.stderr, "Cannot find camera %s. (%s)" % (options.camera[0], e)
             manager.shutdown()
             sys.exit(1)
+        except (ChimeraObjectException), e:
+            print >> sys.stderr, "Problems starting camera %s. (%s)" % (options.camera[0],e)
+            manager.shutdown()
+            sys.exit(1)
+
 
     # create a new camera using selected driver
     else:
         try:
             driver = manager.addLocation(options.driver[-1], path=drivers_path)
             camera = manager.addClass(Camera, "cam", {"driver": options.driver[-1]})
-        except (ObjectNotFoundException, ChimeraObjectException), e:
+
+            filter = manager.addClass(FilterWheel, "filter", {"driver": options.driver[-1]} )
+        except (ObjectNotFoundException, ClassLoaderException), e:
             print >> sys.stderr, "Cannot find camera driver %s. (%s)" % (options.driver[-1],e)
+            manager.shutdown()
+            sys.exit(1)
+        except (ChimeraObjectException), e:
+            print >> sys.stderr, "Problems starting camera driver %s. (%s)" % (options.driver[-1],e)
             manager.shutdown()
             sys.exit(1)
 
@@ -239,7 +280,7 @@ if __name__ == '__main__':
         currentFrame += 1
         if not options.quiet:
             print 40*"="
-            print "[%03d/%03d]" % (currentFrame, options.nexp)
+            print "[%03d/%03d] [%s]" % (currentFrame, options.nexp, time.strftime("%c"))
             print "exposing (%.3fs) ..." % exptime,
             sys.stdout.flush()
     
@@ -282,6 +323,26 @@ if __name__ == '__main__':
     camera.readoutBegin    += readoutBegin
     camera.readoutComplete += readoutComplete
 
+    if options.info and not options.quiet:
+        print "Camera:", options.driver[-1], "(%s)" % driver["device"]
+
+        if camera.isCooling() == True:
+            print "Cooling enabled, setpoint: %.3f oC" % setpoint
+        else:
+            print "Cooling disabled."
+
+        print "Current CCD temperature:", camera.getTemperature(), "oC"
+
+        manager.shutdown()
+        sys.exit(1)
+    
+    if options.filters and not options.quiet:
+        print "Available filters:",
+        for i,f in enumerate(filter.getFilters()):
+            print f,
+        manager.shutdown()
+        sys.exit(1)
+
     if not options.quiet:
 
         print 40*"="
@@ -300,9 +361,11 @@ if __name__ == '__main__':
         else:
             print "Leaving cooling as is."
 
+        print "Current CCD temperature:", camera.getTemperature(), "oC"
+
         if options.filter != None:
-            print 
-                
+            print "Filter: %s" % options.filter
+
         sys.stdout.flush()
 
     # cooling
@@ -337,7 +400,18 @@ if __name__ == '__main__':
         sys.stdout.flush()
 
     # filter
-        
+    if options.filter != None:
+        print 40*"="
+
+        try:
+            print "Changing to filter %s... " % options.filter,
+            sys.stdout.flush()
+            filter.setFilter(options.filter)
+            print "OK"
+            sys.stdout.flush()
+        except InvalidFilterPositionException, e:
+            print "ERROR. Couldn't move filter wheel to %s. (%s)" % (options.filter, e)
+            time.sleep(5)
 
     # finally, expose
     start = time.time()
@@ -348,7 +422,7 @@ if __name__ == '__main__':
             camera.expose(exp_time=options.texp,
                           frames=options.nexp,
                           interval=options.interval,
-                          filename=options.filename,
+                          filename=options.output,
                           shutter=options.shutter)
         except Exception, e:
             print >> sys.stderr, "Error trying to take exposures. (%s)" % e
@@ -364,6 +438,8 @@ if __name__ == '__main__':
         if not options.quiet:
             print 40*"="
             print "Total time: %.3fs" % (time.time()-start)
+            print 40*"="
+            print "%s" % time.strftime("%c")            
             print 40*"="
 
         sys.exit(0)

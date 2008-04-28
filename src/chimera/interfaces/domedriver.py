@@ -28,7 +28,8 @@ class IDomeDriver (Interface):
     __config__ = {"device": "/dev/ttyS1",
                   "az_resolution": 2,  # dome position resolution in degrees
                   "slew_timeout" : 120,
-                  "abort_timeout": 60,                   
+                  "abort_timeout": 60,
+                  "init_timeout" : 5,
                   "open_timeout" : 20,
                   "close_timeout": 20,
                   } 

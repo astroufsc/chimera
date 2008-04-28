@@ -23,7 +23,7 @@ import os
 import time
 import logging
 
-from optparse import OptionParser
+from optparse import OptionParser, OptionGroup
 
 from chimera.core.manager import Manager
 from chimera.core.version import _chimera_version_, _chimera_description_
@@ -35,12 +35,16 @@ from chimera.util.position import Position
 from chimera.core.exceptions import ObjectNotFoundException
 from chimera.core.exceptions import ChimeraObjectException
 from chimera.core.exceptions import InvalidLocationException
+from chimera.core.exceptions import ClassLoaderException
 
 from chimera.core.site import Site
-
 from chimera.core.location import Location
-
 from chimera.core.callback import callback
+
+from chimera.core.compat import *
+from chimera.util.enum import Enum
+
+from chimera.util.coord import Coord
 
 from chimera.core.log import setConsoleLevel
 #setConsoleLevel(logging.DEBUG)
@@ -67,49 +71,97 @@ if __name__ == '__main__':
     parser = OptionParser(prog="chimera-tel", version=_chimera_version_,
                           description=_chimera_description_+chimera_tel_description)
 
-    parser.add_option("-t", "--telescope", action="callback", type="string", dest="telescope",
+    config = OptionGroup(parser, "Telescope and driver configuration")
+
+    config.add_option("-t", "--telescope", action="callback", type="string", dest="telescope",
                       help="Telescope instrument to be used. If blank, create a new"
                       " telescope instance, using the the driver selected with --driver."
                       " format: [host:port]/Class/name. [default=\"\"]",
                       callback=check_location)
 
-    parser.add_option("-d", "--driver", action="callback", type="string", dest="driver",
+    config.add_option("-d", "--driver", action="callback", type="string", dest="driver",
                       help="Telescope driver to be used."
                       " /Class/name?option1=value1,option2=value. [default=%default]",
                       callback=check_location)
 
-    parser.add_option("-D", "--drivers-dir", action="callback", callback=check_includepath,
+    config.add_option("-D", "--drivers-dir", action="callback", callback=check_includepath,
                       dest="drv_dir", type="string",
                       help="Append PATH to drivers load path.",
                       metavar="PATH")
 
-    parser.add_option("-s", "--slew", action="store_true", dest="slew",
-                      help="Slew [default=%default]")
+    actions = OptionGroup(parser, "Actions", "Most actions require a parameter, see Action parameters below.")
+    
+    actions.add_option("--init", action="store_true", dest="init",
+                      help="Initialize the telescope (Lat/long/Date/Time)")
 
-    parser.add_option("-S", "--sync", action="store_true", dest="sync",
-                      help="Sync [default=%default]")
+    actions.add_option("-s", "--slew", action="store_true", dest="slew",
+                      help="Slew to given --ra --dec or --az --alt")
 
-    parser.add_option("-i", "--info", action="store_true", dest="info",
-                      help="Print telescope information and exit [default=%default]")
+    actions.add_option("--sync", action="store_true", dest="sync",
+                      help="Sync on the given --ra --dec")
 
-    parser.add_option("--ra", action="store", type="string", dest="ra",
+    actions.add_option("--park", action="store_true", dest="park",
+                      help="Park")
+
+    actions.add_option("--unpark", action="store_true", dest="unpark",
+                      help="Unpark")
+
+    actions.add_option("--stop-tracking", action="store_true", dest="stop",
+                      help="Stop telescope tracking")
+
+    actions.add_option("--start-tracking", action="store_true", dest="start",
+                      help="Start telescope tracking")
+
+    actions.add_option("-i", "--info", action="store_true", dest="info",
+                      help="Print telescope information and exit")
+
+    handle = OptionGroup(parser, "Virtual Handle",
+                         "You can pass a int/float with number of arcseconds or use d:m:s notation. Remember that this is an offset relative to the current position.")
+
+    handle.add_option("-E", "--move-east", action="store", type="string", dest="move_east",
+                      help="Move telescope ARCSEC arcseconds to East.",
+                      metavar="ARCSEC")
+
+    handle.add_option("-W", "--move-west", action="store", type="string", dest="move_west",
+                      help="Move telescope ARCSEC arcseconds to West.",
+                      metavar="ARCSEC")
+
+    handle.add_option("-N", "--move-north", action="store", type="string", dest="move_north",
+                      help="Move telescope ARCSEC arcseconds to North.",
+                      metavar="ARCSEC")
+
+    handle.add_option("-S", "--move-south", action="store", type="string", dest="move_south",
+                      help="Move telescope ARCSEC arcseconds to South.",
+                      metavar="ARCSEC")
+
+    params = OptionGroup(parser, "Action parameters")
+
+    params.add_option("--ra", action="store", type="string", dest="ra",
                       help="Right Ascension.")
 
-    parser.add_option("--dec", action="store", type="string", dest="dec",
+    params.add_option("--dec", action="store", type="string", dest="dec",
                       help="Declination.")
 
-    parser.add_option("--epoch", action="store", type="string", dest="epoch",
+    params.add_option("--epoch", action="store", type="string", dest="epoch",
                       help="Epoch [default=%default]")
 
-    parser.add_option("--az", action="store", type="string", dest="az",
+    params.add_option("--az", action="store", type="string", dest="az",
                       help="Local Azimuth.")
 
-    parser.add_option("--alt", action="store", type="string", dest="alt",
+    params.add_option("--alt", action="store", type="string", dest="alt",
                       help="Local Altitude.")
+    
+    params.add_option("--rate", action="store", type="choice", dest="rate",
+                      choices=["max", "MAX", "guide", "GUIDE", "center", "CENTER", "find", "FIND"],
+                      help="Slew rate to be used for --move-* commands. GUIDE, CENTER, FIND or MAX [default=%default]")
 
     parser.add_option("-q", "--quiet", action="store_true", dest='quiet',
                       help="Don't display informations while working [default=%default].")
 
+    parser.add_option_group(config)
+    parser.add_option_group(actions)
+    parser.add_option_group(params)
+    parser.add_option_group(handle)    
 
     prefix = os.path.realpath(os.path.join(os.path.abspath(__file__), '../../chimera/'))
     drivers_path = [os.path.join(prefix, 'drivers')]
@@ -118,14 +170,27 @@ if __name__ == '__main__':
                         driver   = ["/Meade/meade?device=/dev/ttyS6"],
                         drv_dir  = [],
                         quiet    = False,
+
+                        init     = False,
                         slew     = False,
+                        sync     = False,                        
+                        park     = False,
+                        unpark   = False,
+			stop     = False,
+                        start    = False,
                         info     = False,
-                        sync     = False,
+
+                        move_east = None,
+                        move_west = None,
+                        move_north = None,
+                        move_south = None,
+                        
                         ra = None,
                         dec = None,
                         epoch="J2000",
                         az = None,
-                        alt = None)
+                        alt = None,
+                        rate = "MAX")
 
 
     options, args = parser.parse_args(sys.argv)
@@ -134,6 +199,23 @@ if __name__ == '__main__':
 
     target = None
     local  = False
+
+    Direction = Enum("E", "W", "N", "S")
+    move_strs = {Direction.E: "East",
+                 Direction.W: "Wast",
+                 Direction.N: "North",
+                 Direction.S: "South"}
+    
+    handle_move = {}
+
+    if options.move_east:
+        handle_move[Direction.E] = (options.move_east, "moveEast")
+    if options.move_west:
+        handle_move[Direction.W] = (options.move_west, "moveWest")
+    if options.move_north:
+        handle_move[Direction.N] = (options.move_north, "moveNorth")
+    if options.move_south:
+        handle_move[Direction.S] = (options.move_south, "moveSouth")
 
     if (options.slew or options.sync) and not options.info:
     
@@ -160,13 +242,27 @@ if __name__ == '__main__':
             print >> sys.stderr, "Invalid coordinates, try --ra --dec or --az --alt."
             sys.exit(1)
 
-    if not options.slew and not options.sync and not options.info:
-        print >> sys.stderr, "Please, ask me anything to do."
+    if not options.info and not options.slew and not options.sync and \
+       not options.park and not options.unpark and not options.stop and \
+       not options.start and not options.init and not len(handle_move):
+        print >> sys.stderr, "Please, ask me anything to do. See Actions on --help."
         sys.exit(1)
 
-    if options.slew and options.sync:
-        print >> sys.stderr, "Cannot slew and sync at the same time."
-        sys.exit(1)
+    actions = ("init", "slew", "sync",                        
+               "park","unpark", "stop",
+               "start","info")
+
+    # if not using the handle, check if multiple actions was selected
+    if len(handle_move):
+        actionToRun = False
+        for action in actions:
+            if getattr(options, action) and actionToRun:
+                print >> sys.stderr, "More than one action selected.",
+                print >> sys.stderr, "See --help and choose only one. Or do it in seperated steps."
+                sys.exit(1)
+
+            if getattr(options, action):
+                actionToRun = getattr(options, action)
 
     # 
     # start
@@ -175,13 +271,18 @@ if __name__ == '__main__':
     manager = Manager(port=11000)
 
     telescope = None
+    driver = None
 
     # use an already running telescope
     if options.telescope:
         try:
             telescope = manager.getProxy(options.telescope[0])
-        except (ObjectNotFoundException, ChimeraObjectException), e:
+        except (ObjectNotFoundException, ClassLoaderException), e:
             print >> sys.stderr, "Cannot find telescope %s. (%s)" % (options.telescope[0], e)
+            manager.shutdown()
+            sys.exit(1)
+        except (ChimeraObjectException), e:
+            print >> sys.stderr, "Problems starting telescope %s. (%s)" % (options.telescope[0], e)
             manager.shutdown()
             sys.exit(1)
 
@@ -194,12 +295,26 @@ if __name__ == '__main__':
                                            "longitude": "-45 34 57",
                                            "altitude": "1896",
                                            "utc_offset": "-3"})
-        
-            driver = manager.addLocation(options.driver[-1], path=drivers_path)
+
+            config = {}
+            if options.init:
+                config["skip_init"] = False
+            else:
+                config["skip_init"] = True
+
+            driverloc = Location(options.driver[-1])
+            newloc = Location(cls=driverloc.cls, name=driverloc.name, config=dict(driverloc.config, **config),
+                              host=driverloc.host, port=driverloc.port)
+
+            driver = manager.addLocation(newloc, path=drivers_path)
             telescope = manager.addClass(Telescope, "tel", {"driver": options.driver[-1]})
 
-        except (ObjectNotFoundException, ChimeraObjectException), e:
+        except (ObjectNotFoundException, ClassLoaderException), e:
             print >> sys.stderr, "Cannot find telescope driver %s. (%s)" % (options.driver[-1],e)
+            manager.shutdown()
+            sys.exit(1)
+        except (ChimeraObjectException), e:
+            print >> sys.stderr, "Problems starting telescope driver %s. (%s)" % (options.driver[-1], e)
             manager.shutdown()
             sys.exit(1)
     
@@ -209,7 +324,7 @@ if __name__ == '__main__':
         global options
         if not options.quiet:
             print 40*"="
-            print "Slewing to %s ... " % target,
+            print "slewing to %s ... " % target,
             sys.stdout.flush()
     
     @callback(manager)
@@ -218,50 +333,156 @@ if __name__ == '__main__':
         if not options.quiet:
             print "OK."
             print 40*"="
-            print "Current position ra/dec", position
             
             sys.stdout.flush()
 
     telescope.slewBegin    += slewBegin
     telescope.slewComplete += slewComplete
 
-    if not options.quiet:
-        pass
-
-    # slew
+    # action
     start = time.time()
 
     try:
 
-        if options.info:
-            try:
-                print "current position ra/dec: %s" % telescope.getPositionRaDec()
-                print "current position:az/alt: %s" % telescope.getPositionAzAlt()
-            except Exception, e:
-                print >> sys.stderr, "Error getting telescope coordinates. (%s)" % e
+        if len(handle_move) > 0:
 
-        elif options.sync:
+            for direction, move in handle_move.items():
 
-            try:
-                print "current position ra/dec: %s" % telescope.getPositionRaDec()
+                try:
+                    offset = int(move[0])
+                    offset = Coord.fromAS(offset)
+                except ValueError:
+                    offset = Coord.fromDMS(move[0])
+
+                print 40*"="
+                print "moving %s arcseconds (%s) %s at %s rate... " % (offset.AS,
+                                                                       offset.strfcoord(),
+                                                                       move_strs[direction],
+                                                                       options.rate),
                 sys.stdout.flush()
-                print "syncing on ... ", target,
-                sys.stdout.flush()
-                telescope.syncRaDec(target)
-                print "OK"
-                sys.stdout.flush()
-            except Exception, e:
-                print >> sys.stderr, "Error trying to sync. (%s)" % e
+
+                try:
+                    cmd = getattr(telescope, move[1])
+                    cmd(offset.AS, options.rate)
+                    print "OK"
+                    sys.stdout.flush()                
+                except Exception, e:
+                    print "ERROR. (%s)" % e
+                    sys.stdout.flush()
+
+        elif options.init:
+            print 40*"="
+            print "init... OK"
 
         elif options.slew:
             try:
+                print 40*"="
+                print "current position ra/dec: %s" % telescope.getPositionRaDec()
+                print "current position:az/alt: %s" % telescope.getPositionAzAlt()
+
                 if local:
                     telescope.slewToAzAlt(target)
                 else:
                     telescope.slewToRaDec(target)
 
+                print "new position ra/dec: %s" % telescope.getPositionRaDec()
+                print "new position:az/alt: %s" % telescope.getPositionAzAlt()
+
             except Exception, e:
                 print >> sys.stderr, "Error trying to slew. (%s)" % e
+
+
+        elif options.sync:
+
+            try:
+                print 40*"="
+                print "current position ra/dec: %s" % telescope.getPositionRaDec()
+                print "current position:az/alt: %s" % telescope.getPositionAzAlt()
+                print 40*"="
+
+                sys.stdout.flush()
+                print "syncing on ... ", target,
+                sys.stdout.flush()
+                
+                telescope.syncRaDec(target)
+
+                print "OK"
+                sys.stdout.flush()
+
+                print 40*"="
+                print "new position ra/dec: %s" % telescope.getPositionRaDec()
+                print "new position:az/alt: %s" % telescope.getPositionAzAlt()
+                
+            except Exception, e:
+                print >> sys.stderr, "Error trying to sync. (%s)" % e
+
+        elif options.park:
+            try:
+                print 40*"="                
+                print "parking... ",
+                sys.stdout.flush()
+
+		telescope.park()
+
+                print "OK"
+                sys.stdout.flush()                
+		
+            except Exception, e:
+                print >> sys.stderr, "Error trying to park. (%s)" % e
+
+        elif options.unpark:
+            try:
+                print 40*"="
+                print "unparking... ",
+                sys.stdout.flush()
+
+		telescope.unpark()
+
+                print "OK"
+                sys.stdout.flush()                
+
+            except Exception, e:
+                print >> sys.stderr, "Error trying to unpark. (%s)" % e
+
+	elif options.start:
+	    try:
+                print 40*"="
+		print "starting telescope tracking... ",
+		sys.stdout.flush()
+                
+                driver.startTracking()
+
+		print "OK"
+                sys.stdout.flush()                
+            except Exception, e:
+                print >> sys.stderr, "Error trying to stop tracking. (%s)" % e
+
+	elif options.stop:
+	    try:
+                print 40*"="
+		print "stopping telescope tracking... ",
+		sys.stdout.flush()
+                
+                driver.stopTracking()
+
+		print "OK"
+                sys.stdout.flush()                
+            except Exception, e:
+                print >> sys.stderr, "Error trying to stop tracking. (%s)" % e
+
+        elif options.info:
+            try:
+                print 40*"="
+                print "telescope:", options.driver[-1], "(%s)" % driver["device"]
+                print "current position ra/dec: %s" % telescope.getPositionRaDec()
+                print "current position:az/alt: %s" % telescope.getPositionAzAlt()
+                if telescope.isTracking():
+                    print "tracking: enabled."
+                else:
+                    print "tracking: disabled."
+                    
+            except Exception, e:
+                print >> sys.stderr, "Error getting telescope coordinates. (%s)" % e
 
     finally:
         telescope.slewBegin     -= slewBegin

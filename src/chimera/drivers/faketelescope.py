@@ -20,26 +20,42 @@
 
 import time
 import random
+import threading
 
 from chimera.interfaces.telescopedriver import ITelescopeDriverSlew
 from chimera.interfaces.telescopedriver import ITelescopeDriverSync
 from chimera.interfaces.telescopedriver import ITelescopeDriverPark
+from chimera.interfaces.telescopedriver import ITelescopeDriverTracking
 from chimera.interfaces.telescopedriver import SlewRate
 
 from chimera.core.chimeraobject         import ChimeraObject
 
 from chimera.core.lock import lock
 
+from chimera.util.coord    import Coord
+from chimera.util.position import Position
+
 
 class FakeTelescope (ChimeraObject,
                      ITelescopeDriverSlew,
                      ITelescopeDriverSync,
-                     ITelescopeDriverPark):
+                     ITelescopeDriverPark,
+                     ITelescopeDriverTracking):
 
     def __init__ (self):
         ChimeraObject.__init__(self)
 
         self.__slewing = False
+        self._ra  = Coord.fromHMS("10:10:10")
+        self._dec = Coord.fromDMS("20:20:20")
+        self._az  = Coord.fromDMS(0)
+        self._alt = Coord.fromDMS(10)
+
+        self._slewing  = False
+        self._tracking = True
+        self._parked   = False
+        
+        self._abort = threading.Event()
 
     def __start__ (self):
         self.setHz(1.0/10)
@@ -56,19 +72,36 @@ class FakeTelescope (ChimeraObject,
     @lock
     def slewToRaDec(self, position):
         self.slewBegin(position)
-        time.sleep(2)
+        self._ra = position.ra
+        self._dec = position.dec
+        self._slewing = True
+        self._abort.clear()
+
+        t0 = time.time()
+        while t0+5 < time.time():
+            if self._abort.isSet(): return
+            time.sleep(0.2)
+            
         self.slewComplete(position)
 
     @lock
     def slewToAltAz(self, position):
-        pass
+        self.slewBegin(position)
+        self._az = position.az
+        self._alt = position.alt
+        self._slewing = True
+        time.sleep(3)
+        self.slewComplete(position)
 
     def isSlewing (self):
-        pass
+        return self._slewing
 
-    @lock
     def abortSlew(self):
-        pass
+        self._abort.set()
+        while self.isSlewing():
+            time.sleep(0.1)
+
+        self.abortComplete()
 
     @lock
     def moveEast(self, offset, rate=SlewRate.MAX):
@@ -87,40 +120,50 @@ class FakeTelescope (ChimeraObject,
         pass
 
     def getRa(self):
-        pass
+        return self._ra
 
     def getDec(self):
-        pass
+        return self._dec
 
     def getAz(self):
-        pass
+        return self._az
 
     def getAlt(self):
-        pass
+        return self._alt
 
     def getPositionRaDec(self):
-        pass
+        return Position.fromRaDec(self.getRa(), self.getAz())
 
     def getPositionAzAlt(self):
-        pass
+        return Position.fromRaDec(self.getAz(), self.getAlt())
 
     def getTargetRaDec(self):
-        pass
+        return Position.fromRaDec(self.getRa(), self.getAz())
 
     def getTargetAzAlt(self):
-        pass 
+        return Position.fromRaDec(self.getAz(), self.getAlt())
 
     def sync(self, position):
-        pass
+        self._ra  = position.ra
+        self._dec = position.dec
 
     def park(self):
-        pass
+        self._parked = True
 
     def unpark(self):
-        pass
+        self._parked = False
 
     def isParked(self):
-        pass
+        return self._parked
 
     def setParkPosition (self, position):
         pass
+
+    def startTracking (self):
+        self._tracking = True
+    
+    def stopTracking (self):
+        self._tracking = False
+
+    def isTracking (self):
+        return self._tracking

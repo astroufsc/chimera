@@ -42,7 +42,8 @@ class ITelescopeDriverSlew (ITelescopeDriver):
                   "slew_idle_time"      : 0.1, # s
                   "max_slew_time"       : 90.0, # s
                   "stabilization_time"  : 2.0, # s
-                  "position_sigma_delta": 60.0} # arcseconds
+                  "position_sigma_delta": 60.0, # arcseconds
+                  "skip_init"           : True} 
     # methods
 
     def open(self):
@@ -161,4 +162,16 @@ class ITelescopeDriverPark (ITelescopeDriver):
 
     @event
     def unparkComplete (self, position):
+        pass
+
+
+class ITelescopeDriverTracking (ITelescopeDriver):
+
+    def startTracking (self):
+        pass
+
+    def stopTracking (self):
+        pass
+
+    def isTracking (self):
         pass

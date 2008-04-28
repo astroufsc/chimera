@@ -21,7 +21,8 @@
 
 from chimera.core.chimeraobject import ChimeraObject
 
-from chimera.interfaces.telescope       import ITelescopeSlew, ITelescopeSync, ITelescopePark
+from chimera.interfaces.telescope       import ITelescopeSlew, ITelescopeSync
+from chimera.interfaces.telescope       import ITelescopePark, ITelescopeTracking
 from chimera.interfaces.telescopedriver import SlewRate
 
 from chimera.core.lock import lock
@@ -32,7 +33,9 @@ from chimera.util.position import Position
 __all__ = ["Telescope"]
 
 
-class Telescope(ChimeraObject, ITelescopeSlew, ITelescopeSync, ITelescopePark):
+class Telescope(ChimeraObject,
+                ITelescopeSlew, ITelescopeSync,
+                ITelescopePark, ITelescopeTracking):
 
     def __init__(self):
         ChimeraObject.__init__(self)
@@ -97,6 +100,7 @@ class Telescope(ChimeraObject, ITelescopeSlew, ITelescopeSync, ITelescopePark):
         
 
     def syncObject(self, name):
+        # FIXME
         return ITelescopeSync.syncObject(self, name)
 
     def syncRaDec(self, position):
@@ -107,9 +111,11 @@ class Telescope(ChimeraObject, ITelescopeSlew, ITelescopeSync, ITelescopePark):
          drv.syncRaDec(position)
        
     def syncAzAlt(self, position):
+        # FIXME
         return ITelescopeSync.syncAzAlt(self, position)
 
     def slewToObject(self, name):
+        # FIXME
         return ITelescopeSlew.slewToObject(self, name)
 
     def slewToRaDec(self, position):
@@ -223,3 +229,16 @@ class Telescope(ChimeraObject, ITelescopeSlew, ITelescopeSync, ITelescopePark):
     def setParkPosition(self, position):
         drv = self.getDriver()
         return drv.setParkPosition(position)
+
+    def startTracking (self):
+        drv = self.getDriver()
+        drv.startTracking()
+
+    def stopTracking (self):
+        drv = self.getDriver()
+        drv.stopTracking()
+
+    def isTracking (self):
+        drv = self.getDriver()
+        return drv.isTracking()
+        

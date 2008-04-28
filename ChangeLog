@@ -1,3 +1,52 @@
+2008-04-28  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* src/chimera/drivers/fakecamera.py (FakeCamera.expose): Use
+	ImageSave to get fake name.
+	Implements IFilterWheelDriver.
+
+	* src/chimera/drivers/sbig/sbig.py (SBIG.setFilter): Make it
+	synchronous (wait until filter finishes movement).
+
+	* src/chimera/drivers/meade.py (Meade.open): Support skip_init
+	option.
+	Implements ITelescopeDriverTracking.
+
+	* src/chimera/drivers/faketelescope.py: Implement more fake methods.
+
+	* src/chimera/instruments/telescope.py Implements ITelescopeTracking.
+
+	* src/chimera/instruments/tests/test_telescope.py
+	(TestTelescope.setup): Test use Fake by default.
+
+	* src/chimera/interfaces/telescope.py: Fix SlewRate enum
+	duplication.
+	(ITelescopeTracking): New interface.
+
+	* src/chimera/interfaces/domedriver.py (IDomeDriver.__config__):
+	Add init timeout.
+
+	* src/chimera/drivers/domelna40cm.py (DomeLNA40cm.open): Use init_timeout.
+
+	* src/chimera/interfaces/telescopedriver.py
+	(ITelescopeDriverSlew.__config__): Add skip_init option to don't
+	reinitialize Meade when using chimera-tel standalone
+	mode. Specially when using park/unpark.
+	(ITelescopeDriverTracking): New interface.
+
+	* src/scripts/chimera-cam:
+	Add support to change filter.
+	Add --info option.
+	Fix problem with --shutter options case sensitivity.
+	Change --filename to --output (camfits compatible).
+
+	* src/scripts/chimera-tel:
+	Add park/unpark, start/stop tracking, handle to move NSWE.
+
+	* src/scripts/chimera-dome:
+	* src/scripts/chimera-focus:
+	Add groups to --help.
+	Better exception handling when looking for driver.
+
 2008-04-24  P. Henrique Silva  <henrique@astro.ufsc.br>
 
 	* src/chimera/drivers/meade.py (Meade.park): Default park position

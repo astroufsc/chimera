@@ -33,7 +33,7 @@ from chimera.drivers.faketelescope import FakeTelescope
 from chimera.drivers.meade import Meade
 
 import chimera.core.log
-#chimera.core.log.setConsoleLevel(logging.DEBUG)
+chimera.core.log.setConsoleLevel(logging.DEBUG)
 
 from chimera.util.coord    import Coord
 from chimera.util.position import Position
@@ -50,8 +50,11 @@ class TestTelescope (object):
                                             "altitude": "1896",
                                             "utc_offset": "-3"})
 
-        self.manager.addClass(Meade, "meade", {"device": "/dev/ttyS6"})
-        self.manager.addClass(Telescope, "meade", {"driver": "/Meade/meade"})
+        #self.manager.addClass(Meade, "meade", {"device": "/dev/ttyS6"})
+        #self.manager.addClass(Telescope, "meade", {"driver": "/Meade/meade"})
+
+        self.manager.addClass(FakeTelescope, "fake")
+        self.manager.addClass(Telescope, "fake", {"driver": "/FakeTelescope/fake"})
 
         #self.manager.addClass(Telescope, "meade",
         #                      {"driver": "200.131.64.134:7666/TheSkyTelescope/0"})

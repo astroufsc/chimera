@@ -23,7 +23,7 @@ import os
 import time
 import logging
 
-from optparse import OptionParser
+from optparse import OptionParser, OptionGroup
 
 from chimera.core.manager import Manager
 from chimera.core.version import _chimera_version_, _chimera_description_
@@ -34,6 +34,7 @@ from chimera.util.enum import Enum
 from chimera.core.exceptions import ObjectNotFoundException
 from chimera.core.exceptions import ChimeraObjectException
 from chimera.core.exceptions import InvalidLocationException
+from chimera.core.exceptions import ClassLoaderException
 
 from chimera.core.location import Location
 
@@ -64,36 +65,43 @@ if __name__ == '__main__':
     parser = OptionParser(prog="chimera-focus", version=_chimera_version_,
                           description=_chimera_description_+chimera_focus_description)
 
-    parser.add_option("-f", "--focuser", action="callback", type="string", dest="focuser",
+    config = OptionGroup(parser, "Focuser and driver configuration")
+
+    config.add_option("-f", "--focuser", action="callback", type="string", dest="focuser",
                       help="Focuser instrument to be used. If blank, create a new"
                       " focuser instance, using the the driver selected with --driver."
                       " format: [host:port]/Class/name. [default=\"\"]",
                       callback=check_location)
 
-    parser.add_option("-d", "--driver", action="callback", type="string", dest="driver",
+    config.add_option("-d", "--driver", action="callback", type="string", dest="driver",
                       help="Focuser driver to be used."
                       " /Class/name?option1=value1,option2=value. [default=%default]",
                       callback=check_location)
 
-    parser.add_option("-D", "--drivers-dir", action="callback", callback=check_includepath,
+    config.add_option("-D", "--drivers-dir", action="callback", callback=check_includepath,
                       dest="drv_dir", type="string",
                       help="Append PATH to drivers load path.",
                       metavar="PATH")
 
-    parser.add_option("--in", action="store", type="int", dest="move_in",
+    actions = OptionGroup(parser, "Actions")
+    
+    actions.add_option("--in", action="store", type="int", dest="move_in",
                       help="Move N steps IN", metavar="N")
 
-    parser.add_option("--out", action="store", type="int", dest="move_out",
+    actions.add_option("--out", action="store", type="int", dest="move_out",
                       help="Move N steps OUT", metavar="N")
 
-    parser.add_option("--to", action="store", type="int", dest="move_to",
+    actions.add_option("--to", action="store", type="int", dest="move_to",
                       help="Move to POSITION", metavar="POSITION")
 
-    parser.add_option("-i", "--info", action="store_true", dest="info",
+    actions.add_option("-i", "--info", action="store_true", dest="info",
                       help="Print focuser information and exit")
 
     parser.add_option("-q", "--quiet", action="store_true", dest='quiet',
                       help="Don't display informations while working [default=%default].")
+
+    parser.add_option_group(config)
+    parser.add_option_group(actions)    
 
 
     prefix = os.path.realpath(os.path.join(os.path.abspath(__file__), '../../chimera/'))
@@ -157,8 +165,12 @@ if __name__ == '__main__':
     if options.focuser:
         try:
             focuser = manager.getProxy(options.focuser[0])
-        except (ObjectNotFoundException, ChimeraObjectException), e:
+        except (ObjectNotFoundException, ClassLoaderException), e:
             print >> sys.stderr, "Cannot find focuser %s. (%s)" % (options.focuser[0], e)
+            manager.shutdown()
+            sys.exit(1)
+        except (ChimeraObjectException), e:
+            print >> sys.stderr, "Problems starting focuser %s. (%s)" % (options.focuser[0], e)
             manager.shutdown()
             sys.exit(1)
 
@@ -167,8 +179,12 @@ if __name__ == '__main__':
         try:
             driver = manager.addLocation(options.driver[-1], path=drivers_path)
             focuser = manager.addClass(Focuser, "tel", {"driver": options.driver[-1]})
-        except (ObjectNotFoundException, ChimeraObjectException), e:
+        except (ObjectNotFoundException, ClassLoaderException), e:
             print >> sys.stderr, "Cannot find focuser driver %s. (%s)" % (options.driver[-1],e)
+            manager.shutdown()
+            sys.exit(1)
+        except (ChimeraObjectException), e:
+            print >> sys.stderr, "Problems starting focuser driver %s. (%s)" % (options.driver[-1], e)
             manager.shutdown()
             sys.exit(1)
     
@@ -178,6 +194,7 @@ if __name__ == '__main__':
     try:
 
         if options.info:
+            print "Focuser: %s (%s)" % (options.driver[-1], driver["device"])
             print "Current focuser position:", focuser.getPosition()
 
         else:
