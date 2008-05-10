@@ -8,10 +8,12 @@
 #          This script modifies environment variables (PATH and PYTHONPATH)
 #
 
+PYTHON="/usr/bin/env python"
+
 # older bashs doesn't have $BASH_SOURCE
 if [ ! -z $BASH_SOURCE ]; then
 
- CHIMERA_ROOT=$(python - `dirname $BASH_SOURCE` <<EOF
+ CHIMERA_ROOT=$($PYTHON - `dirname $BASH_SOURCE` <<EOF
 import os.path
 import sys
 print os.path.abspath(sys.argv[1])
@@ -39,7 +41,7 @@ fi
 
 # export PYTHONPATH if needed
 
-if ( ! $(python - <<EOF
+if ( ! $($PYTHON - <<EOF
 import sys
 try:
  import chimera
