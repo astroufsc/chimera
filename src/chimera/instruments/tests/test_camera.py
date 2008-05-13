@@ -21,9 +21,11 @@
 
 import time
 import logging
+import sys
 
 from chimera.core.manager  import Manager
 from chimera.core.callback import callback
+from chimera.core.threads  import ThreadPool
 
 from chimera.instruments.camera import Camera
 from chimera.drivers.fakecamera import FakeCamera
@@ -36,6 +38,7 @@ import chimera.core.log
 #chimera.core.log.setConsoleLevel(logging.INFO)
 log = logging.getLogger("chimera.tests")
 
+
 from nose.tools import assert_raises
 
 
@@ -44,8 +47,12 @@ class TestCamera (object):
     def setup (self):
 
         self.manager = Manager(port=8000)
+
         self.manager.addClass(SBIG, "sbig", {"device": Device.USB})
         self.manager.addClass(Camera, "cam", {"driver": "/SBIG/sbig"})
+
+        #self.manager.addClass(FakeCamera, "fake", {"device": Device.USB})
+        #self.manager.addClass(Camera, "cam", {"driver": "/FakeCamera/fake"})
 
         @callback(self.manager)
         def exposeBeginClbk(exp_time):
@@ -78,14 +85,16 @@ class TestCamera (object):
         self.manager.shutdown()
         del self.manager
 
-    def test_simplest (self):
+    def test_simple (self):
 
         cam = self.manager.getProxy(Camera)
 
         assert cam.isExposing() == False
 
-    def test_normal_expose (self):
+    def test_expose (self):
 
+        print
+        
         cam = self.manager.getProxy(Camera)
 
         frames = 0
@@ -120,6 +129,8 @@ class TestCamera (object):
         begin_times = []
         end_times = []
 
+        print
+        
         @callback(self.manager)
         def exposeBeginClbk(exp_time):
             begin_times.append(time.time())
@@ -135,14 +146,15 @@ class TestCamera (object):
             # need to get another Proxy as Proxies cannot be shared among threads
             cam = self.manager.getProxy(Camera)
             cam.expose(exp_time=2, filename="test_expose_lock.fits")
-        
-        self.manager.getPool().queueTask(doExpose)
-        self.manager.getPool().queueTask(doExpose)
+
+        pool = ThreadPool()
+        pool.queueTask(doExpose)
+        pool.queueTask(doExpose)
 
         # wait doExpose to be scheduled
         time.sleep(1)        
 
-        while cam.isExposing(): time.sleep(0.1)
+        while len(end_times) < 2: time.sleep(1)
 
         # rationale: first exposure will start and the next will wait,
         # so we can never get the second exposure beginning before exposure one readout finishes.
@@ -154,37 +166,51 @@ class TestCamera (object):
 
         cam = self.manager.getProxy(Camera)
 
+        print
+        
         def doExpose():
             # need to get another Proxy as Proxies cannot be shared among threads
             cam = self.manager.getProxy(Camera)
-            cam.expose(exp_time=600, filename="test_expose_abort.fits")
-        
-        self.manager.getPool().queueTask(doExpose)
+            cam.expose(exp_time=10, filename="test_expose_abort.fits")
 
+        #
+        # abort exposure while exposing
+        #
+
+        pool = ThreadPool()
+        pool.queueTask(doExpose)
+
+        # thread scheduling
         time.sleep(2)
 
         assert cam.isExposing() == True
-
         cam.abortExposure()
-
         assert cam.isExposing() == False
 
     def test_cooling (self):
 
         cam = self.manager.getProxy(Camera)
 
+        def eps_equal(a, b, eps):
+            return abs(a-b) <= eps
+
         cam.stopCooling()
         assert cam.isCooling() == False
 
+        print
         for i in range(10):
-            print cam.getTemperature()
+            print "\rcurrent temp:", cam.getTemperature(),
+            sys.stdout.flush()
             time.sleep(0.5)
+        print
 
-        cam.startCooling(0)
+        cool=10
+        cam.startCooling(cool)
         assert cam.isCooling() == True
 
-        while cam.getTemperature() > 0:
-            print cam.getTemperature()
+        while not eps_equal(cam.getTemperature(), cool, 0.25):
+            print "\rwaiting to cool to %d oC:" % cool, cam.getTemperature(),
+            sys.stdout.flush()
             time.sleep(1)
 
         cam.stopCooling()

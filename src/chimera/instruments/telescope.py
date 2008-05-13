@@ -81,14 +81,13 @@ class Telescope(ChimeraObject,
     def _abortCompleteClbk (self, position):
         if isinstance(position, tuple):
             position = Position.fromRaDec(*position)
-        self.abortComplete()
+        self.abortComplete(position)
 
     def _syncCompleteClbk (self, position):
         if isinstance(position, tuple):
             position = Position.fromRaDec(*position)
         self.syncComplete(position)
 
-    @lock
     def getDriver(self, lazy=True):
         """
         Get a Proxy to the instrument driver. This function is necessary '
@@ -98,26 +97,30 @@ class Telescope(ChimeraObject,
         """
         return self.getManager().getProxy(self['driver'], lazy=lazy)        
         
-
+    @lock
     def syncObject(self, name):
         # FIXME
         return ITelescopeSync.syncObject(self, name)
 
+    @lock
     def syncRaDec(self, position):
          if not isinstance(position, Position):
              position = Position.fromRaDec(*position)
         
          drv = self.getDriver()
          drv.syncRaDec(position)
-       
+
+    @lock
     def syncAzAlt(self, position):
         # FIXME
         return ITelescopeSync.syncAzAlt(self, position)
 
+    @lock
     def slewToObject(self, name):
         # FIXME
         return ITelescopeSlew.slewToObject(self, name)
 
+    @lock
     def slewToRaDec(self, position):
         # FIXME: validate limits?
 
@@ -127,7 +130,7 @@ class Telescope(ChimeraObject,
         drv = self.getDriver()
         drv.slewToRaDec(position)
        
-        
+    @lock
     def slewToAzAlt(self, position):
         # FIXME: validate limits?        
 
@@ -150,18 +153,22 @@ class Telescope(ChimeraObject,
         drv = self.getDriver()
         return drv.isSlewing()
 
+    @lock
     def moveEast(self, offset, rate=SlewRate.MAX):
         drv = self.getDriver()
         return drv.moveEast(offset, rate)
 
+    @lock
     def moveWest(self, offset, rate=SlewRate.MAX):
         drv = self.getDriver()
         return drv.moveWest(offset, rate)
 
+    @lock
     def moveNorth(self, offset, rate=SlewRate.MAX):
         drv = self.getDriver()
         return drv.moveNorth(offset, rate)
 
+    @lock
     def moveSouth(self, offset, rate=SlewRate.MAX):
         drv = self.getDriver()
         return drv.moveSouth(offset, rate)
@@ -218,14 +225,17 @@ class Telescope(ChimeraObject,
             ret = Position.fromAzAlt(*ret)
         return ret
 
+    @lock
     def park(self):
         drv = self.getDriver()
         return drv.park()
 
+    @lock
     def unpark(self):
         drv = self.getDriver()
         return drv.unpark()
 
+    @lock
     def setParkPosition(self, position):
         drv = self.getDriver()
         return drv.setParkPosition(position)

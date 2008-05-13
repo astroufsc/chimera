@@ -28,6 +28,7 @@ from chimera.core.chimeraobject import ChimeraObject
 from chimera.interfaces.focuser       import InvalidFocusPositionException
 from chimera.interfaces.focuserdriver import IFocuserDriver
 
+from chimera.core.lock import lock
 
 from chimera.util.enum import Enum
 
@@ -62,6 +63,7 @@ class OptecTCFS (ChimeraObject, IFocuserDriver):
         self.close()
         return True
 
+    @lock
     def open(self):
 
         self.tty = serial.Serial(self["device"],
@@ -82,18 +84,22 @@ class OptecTCFS (ChimeraObject, IFocuserDriver):
 
         return True
 
+    @lock
     def close(self):
 
         if self.tty.isOpen():
             self.tty.close()
             return True
 
+    @lock
     def moveIn (self, n):
         return self._move (Direction.IN, n)
 
+    @lock
     def moveOut (self, n):
         return self._move (Direction.OUT, n)
 
+    @lock
     def moveTo (self, position):
 
         current = self.getPosition ()
@@ -154,7 +160,7 @@ class OptecTCFS (ChimeraObject, IFocuserDriver):
 
         return True
 
-
+    @lock
     def getPosition (self):
 
         cmd = "FPOSRO"

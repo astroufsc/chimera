@@ -48,10 +48,6 @@ class Dome(ChimeraObject, IDome):
           ChimeraObject.__init__(self)
 
           self.queue = Queue.Queue()
-
-          self._lastTelAz = 0
-          self._newTelAz  = 0
-
           self._mode = None
 
      def __start__(self):
@@ -147,83 +143,108 @@ class Dome(ChimeraObject, IDome):
      def _telSlewBeginClbk (self, target):
           if self.getMode() != Mode.Track: return
 
+          self.log.debug("[event] telescope slewing to %s." % target)
           # FIXME: conversao equatorial-local
-          #self.queue.put(target.asAzAlt(site.longitude(), site.lst()))
-
+          #self._telescopeChanged(target.asAzAlt(site.longitude(), site.lst()))
+          return
+          
      def _telSlewCompleteClbk (self, target):
           if self.getMode() != Mode.Track: return
 
           tel = self.getTelescope()
-          self.queue.put(tel.getAz())
+          self.log.debug("[event] telescope slew complete, new position=%s." % target)
+          self._telescopeChanged(tel.getAz())
 
      def _telAbortCompleteClbk (self, position):
           if self.getMode() != Mode.Track: return
 
           tel = self.getTelescope()
-          self.queue.put(tel.getAz())
+          self.log.debug("[event] telescope aborted last slew, new position=%s." % position)
+          self._telescopeChanged(tel.getAz())
 
-     @lock
+     # utilitaries
      def getDriver(self):
           return self.getManager().getProxy(self['driver'], lazy=True)        
         
-     @lock
      def getTelescope(self):
           return self.getManager().getProxy(self['telescope'], lazy=True)        
 
+     # main control loop
+     @lock
      def control (self):
-          # disable loop. Fixing bug to enable it again.
-          return False
 
           drv = self.getDriver()
 
           if self.getMode() != Mode.Track:
+               self.log.debug("[control] standing...")
                return True
 
           if not self.queue.empty():
+               self.log.debug("[control] processing queue... %d item(s)." % self.queue.qsize())
                self._processQueue()
                return True
-
-          return True
 
           try:
                tel = self.getTelescope()
 
-               self._newTelAz = tel.getAz()
+               if tel.isSlewing():
+                    self.log.debug("[control] telescope slewing... not checking az.")
+                    return True
 
-               if (abs(self._newTelAz - self._lastTelAz) >= drv["az_resolution"]):
-                    self.slewToAz(self._newTelAz)
-
-               self._lastTelAz = self._newTelAz
+               self._telescopeChanged(tel.getAz())
 
           except ObjectNotFoundException:
                raise ChimeraException("Couldn't found the selected telescope."
                                       " Dome cannnot track.")
 
           return True
-     
+
+     def _telescopeChanged (self, az):
+
+          if not isinstance(az, Coord):
+               az = Coord.fromDMS(az)
+
+          if self._needToMove(az):
+               self.log.debug("[control] adding %s to the queue." % az)
+               self.queue.put(az)
+          else:
+               self.log.debug("[control] telescope still in the slit, standing"
+                              " (dome az=%.2f, tel az=%.2f, delta=%.2f.)" % (self.getAz(), az, abs(self.getAz()-az)))
+
+     def _needToMove (self, az):
+          drv = self.getDriver()
+          return abs(az - self.getAz()) >= drv["az_resolution"]
+
      def _processQueue (self):
           
           if self.queue.empty(): return
 
-          target = self.queue.get()
+          while not self.queue.empty():
 
-          self.slewToAz(target)
-          self.queue.task_done()
+               target = self.queue.get()
+               self.log.debug("[queue] slewing to %s" % target)
+               self.slewToAz(target)
+               self.queue.task_done()
           
      @lock
      def track(self):
+          if self.getMode() == Mode.Track: return
+          
           self._mode = Mode.Track
-
           tel = self.getTelescope()
-          self.queue.put(tel.getAz())
+          self.log.debug("[mode] tracking...")
+          self._telescopeChanged(tel.getAz())
 
      @lock
      def stand(self):
+          self._processQueue()
+          self.log.debug("[mode] standing...")
           self._mode = Mode.Stand          
 
      def getMode(self):
           return self._mode
 
+     @lock
      def slewToAz (self, az):
 
           if not isinstance(az, Coord):
@@ -236,21 +257,24 @@ class Dome(ChimeraObject, IDome):
           drv.slewToAz (az)
 
      def isSlewing (self):
-          return self.drv.isSlewing ()
+          drv = self.getDriver()
+          return drv.isSlewing ()
     
      def abortSlew (self):
-          # FIXME
           drv = self.getDriver()
           drv.abortSlew ()
 
+     @lock
      def getAz (self):
           drv = self.getDriver()
           return drv.getAz ()
 
+     @lock
      def openSlit (self):
           drv = self.getDriver()
           drv.openSlit()
 
+     @lock
      def closeSlit (self):
           drv = self.getDriver()
           drv.closeSlit()

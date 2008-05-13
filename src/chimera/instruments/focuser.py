@@ -36,7 +36,6 @@ class Focuser (ChimeraObject, IFocuser):
 
         return True
 
-    @lock
     def getDriver(self):
         """
         Get a Proxy to the instrument driver. This function is necessary '

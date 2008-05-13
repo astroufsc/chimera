@@ -28,18 +28,19 @@ from chimera.core.callback import callback
 from chimera.core.site     import Site
 
 from chimera.instruments.dome  import Dome
-from chimera.interfaces.dome   import InvalidDomePositionException
+from chimera.interfaces.dome   import InvalidDomePositionException, Mode
 
 from chimera.drivers.fakedome     import FakeDome
-from chimera.drivers.domelna40cm  import DomeLNA40cm
+#from chimera.drivers.domelna40cm  import DomeLNA40cm
 
-from chimera.drivers.meade        import Meade
+#from chimera.drivers.meade        import Meade
+from chimera.drivers.faketelescope import FakeTelescope
 from chimera.instruments.telescope import Telescope
 
 from chimera.util.position import Position
 
 import chimera.core.log
-#chimera.core.log.setConsoleLevel(logging.DEBUG)
+chimera.core.log.setConsoleLevel(logging.DEBUG)
 
 from nose.tools import assert_raises
 
@@ -48,7 +49,7 @@ class TestDome (object):
 
     def setup (self):
 
-        self.manager = Manager(host="200.131.64.203", port=8000)
+        self.manager = Manager()
 
         self.manager.addClass(Site, "lna", {"name": "LNA",
                                             "latitude": "-22 32 03",
@@ -56,19 +57,23 @@ class TestDome (object):
                                             "altitude": "1896",
                                             "utc_offset": "-3"})
         
-        #self.manager.addClass(FakeDome, "fake", {"device": "/dev/ttyS0"})
-        #self.manager.addClass(Dome, "dome", {"driver": "/FakeDome/0"})
+        #self.manager.addClass(Meade, "meade", {"device": "/dev/ttyUSB0"})
+        #self.manager.addClass(Telescope, "tel", {"driver": "/Meade/meade"})
 
+        #self.manager.addClass(DomeLNA40cm, "lna40", {"device": "/dev/ttyS0"})
+        #self.manager.addClass(Dome, "dome", {"driver": "/DomeLNA40cm/0",
+        #                                     "telescope": "/Telescope/0"})
 
-        self.manager.addClass(Meade, "meade", {"device": "/dev/ttyUSB0"})
-        self.manager.addClass(Telescope, "tel", {"driver": "/Meade/meade"})
+        self.manager.addClass(FakeTelescope, "fake")
+        self.manager.addClass(Telescope, "tel", {"driver": "/FakeTelescope/0"})
 
-        self.manager.addClass(DomeLNA40cm, "lna40", {"device": "/dev/ttyS0"})
-        self.manager.addClass(Dome, "dome", {"driver": "/DomeLNA40cm/0",
+        self.manager.addClass(FakeDome, "fake")
+        self.manager.addClass(Dome, "dome", {"driver": "/FakeDome/0",
                                              "telescope": "/Telescope/0"})
 
         @callback(self.manager)
         def slewBeginClbk(target):
+            print
             print time.time(), "[dome] Slew begin. target=%s" % str(target)
 
         @callback(self.manager)
@@ -81,10 +86,12 @@ class TestDome (object):
 
         @callback(self.manager)
         def slitOpenedClbk(position):
+            print
             print time.time(), "[dome] Slit opened with dome at at position=%s" % str(position)
 
         @callback(self.manager)
         def slitClosedClbk(position):
+            print
             print time.time(), "[dome] Slit closed with dome at at position=%s" % str(position)
 
         dome = self.manager.getProxy(Dome)
@@ -118,24 +125,25 @@ class TestDome (object):
         dome.closeSlit()
         assert dome.isSlitOpen() == False
 
-    def test_dome_track (self):
+    def test_track (self):
 
         dome = self.manager.getProxy(Dome)
-        tel  = self.manager.getProxy(Meade)
+        tel  = self.manager.getProxy(Telescope)
 
-        print
-        print "dome @", dome.getAz()
-        print "tel  @", tel.getAz()
-        
         dome.track()
+        assert dome.getMode() == Mode.Track
 
-        #tel.slewToRaDec(Position.fromRaDec(tel.getRa(),
-        #"00 00 00"))
+        p = tel.getPositionRaDec()
 
-        #print "dome @", dome.getAz()
-        #print "tel  @", tel.getAz()
+        time.sleep(30)
+        
+        tel.slewToRaDec((p.ra-10, p.dec-10))
 
-        self.manager.wait()
+        time.sleep(30)
+
+        dome.stand()
+
+        time.sleep(30)
 
 
         

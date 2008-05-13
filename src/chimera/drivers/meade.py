@@ -140,7 +140,7 @@ class Meade (ChimeraObject,
                              "Site object not available. Telescope"
                              " attitude cannot be determined.")
 
-
+    @lock
     def open(self):
 
         self._tty = serial.Serial(self["device"],
@@ -170,6 +170,7 @@ class Meade (ChimeraObject,
         except (serial.SerialException, IOError), e:
             raise MeadeException("Error while opening %s." % self["device"])
 
+    @lock
     def close(self):
         if self._tty.isOpen():
             self._tty.close()
@@ -179,6 +180,7 @@ class Meade (ChimeraObject,
 
     # --
 
+    @lock
     def autoAlign (self):
 
         self._write (":Aa#")
@@ -191,6 +193,7 @@ class Meade (ChimeraObject,
 
         return True
 
+    @lock
     def getAlignMode(self):
 
         self._write('\x06') # ACK
@@ -211,6 +214,7 @@ class Meade (ChimeraObject,
         elif ret == "L":
             return AlignMode.LAND
 
+    @lock
     def setAlignMode(self, mode):
 
         if mode == self.getAlignMode():
@@ -233,14 +237,16 @@ class Meade (ChimeraObject,
     def slewToRaDec(self, position):
 
         if self.isSlewing():
+            # never should happens 'cause @lock
             raise MeadeException("Telescope already slewing.")
 
         self.setTargetRaDec(position.ra, position.dec)
-        self._slewToRaDec()
 
-        self.slewComplete(self.getPositionRaDec())
+        if self._slewToRaDec():
+            self.slewComplete(self.getPositionRaDec())
+            return True
 
-        return True
+        return False
 
 
     def _slewToRaDec(self):
@@ -265,7 +271,45 @@ class Meade (ChimeraObject,
         # slew possible
         target = self.getTargetRaDec()
 
-        self._waitSlew(start_time, target)
+        return self._waitSlew(start_time, target)
+
+    @lock
+    def slewToAzAlt(self, position):
+
+        if self.isSlewing ():
+            # never should happens 'cause @lock
+            raise MeadeException("Telescope already slewing.")
+
+        self.setTargetAzAlt (position.az, position.alt)
+
+        if self._slewToAzAlt():
+            self.slewComplete(self.getPositionRaDec())
+            return True
+
+        return False
+
+    def _slewToAzAlt(self):
+
+        self._slewing = True
+        self._abort.clear ()
+
+        # slew
+        self._write(':MA#')
+
+        # to handle timeout
+        start_time = time.time()
+
+        err = self._readbool()
+
+        if err:
+            # check error message
+            self._slewing = False
+            raise MeadeException("Couldn't slew to AZ/ALT: '%s'." % self.getTargetAzAlt())
+
+        # slew possible
+        target = self.getTargetAzAlt()
+
+        return self._waitSlew(start_time, target, local=True)
 
     def _waitSlew (self, start_time, target, local=False):
 
@@ -298,56 +342,15 @@ class Meade (ChimeraObject,
 
         return True
 
-    @lock
-    def slewToAzAlt(self, position):
-
-        if self.isSlewing ():
-            raise MeadeException("Telescope already slewing.")
-
-        self.setTargetAzAlt (position.az, position.alt)
-        self._slewToAzAlt()
-
-        self.slewComplete(self.getPositionRaDec())
-
-        return True
-
-    def _slewToAzAlt(self):
-
-        self._slewing = True
-        self._abort.clear ()
-
-        # slew
-        self._write(':MA#')
-
-        # to handle timeout
-        start_time = time.time()
-
-        err = self._readbool()
-
-        if err:
-            # check error message
-            self._slewing = False
-            raise MeadeException("Couldn't slew to AZ/ALT: '%s'." % self.getTargetAzAlt())
-
-        # slew possible
-        target = self.getTargetAzAlt()
-
-        #print target, "target"
-
-        self._waitSlew(start_time, target, local=True)
-
-    @lock
     def abortSlew(self):
 
         if not self.isSlewing():
-            raise MeadeException("Telescope not slewing.")
-
-        err = self._write (":Q#")
-
-        if err:
-            raise MeadeException("Error aborting slew.")
+            return True
 
         self._abort.set()
+
+        self.stopMoveAll()
+
         time.sleep (self["stabilization_time"])
 
         self.abortComplete(self.getPositionRaDec())
@@ -403,6 +406,7 @@ class Meade (ChimeraObject,
     def isMoveCalibrated (self):
         return self._calibrated
 
+    @lock
     def calibrateMove (self):
 
         # FIXME: move to a safe zone to do calibrations.
@@ -429,57 +433,55 @@ class Meade (ChimeraObject,
                 
                 self._calibration[rate][direction] = total/3.0
 
-        #for rate in self._calibration.keys():
-        #    for direction in self._calibration[rate].keys():
-        #        print rate, direction, self._calibration[rate][direction]
-
     def _calcDuration (self, arc, direction, rate):
         return arc*(self._calibration_time/self._calibration[rate][direction])
 
     @lock
     def moveEast (self, offset, slewRate = None):
-        #print slewRate, "E", self._calcDuration(offset, Direction.E, slewRate)
         return self._move (Direction.E,
                            self._calcDuration(offset, Direction.E, slewRate),
                            slewRate)
 
     @lock
     def moveWest (self, offset, slewRate = None):
-        #print slewRate, "W", self._calcDuration(offset, Direction.W, slewRate)
         return self._move (Direction.W,
                            self._calcDuration(offset, Direction.W, slewRate),
                            slewRate)
 
     @lock
     def moveNorth (self, offset, slewRate = None):
-        #print slewRate, "N", self._calcDuration(offset, Direction.N, slewRate)
         return self._move (Direction.N,
                            self._calcDuration(offset, Direction.N, slewRate),
                            slewRate)
 
     @lock
     def moveSouth (self, offset, slewRate = None):
-        #print slewRate, "S", self._calcDuration(offset, Direction.S, slewRate)
         return self._move (Direction.S,
                            self._calcDuration(offset, Direction.S, slewRate),
                            slewRate)
 
+    @lock
     def stopMoveEast (self):
         return self._stopMove (Direction.E)
 
+    @lock
     def stopMoveWest (self):
         return self._stopMove (Direction.W)
 
+    @lock
     def stopMoveNorth (self):
         return self._stopMove (Direction.N)
 
+    @lock
     def stopMoveSouth (self):
         return self._stopMove (Direction.S)
 
+    @lock
     def stopMoveAll (self):
         self._write (":Q#")
         return True
 
+    @lock
     def getRa(self):
         self._write(":GR#")
         ret = self._readline()
@@ -492,6 +494,7 @@ class Meade (ChimeraObject,
         
         return Coord.fromHMS(ret[:-1])
 
+    @lock
     def getDec(self):
         self._write(":GD#")
         ret = self._readline()
@@ -504,18 +507,23 @@ class Meade (ChimeraObject,
 
         return Coord.fromDMS(ret[:-1])
 
+    @lock
     def getPositionRaDec(self):
         return Position.fromRaDec(self.getRa(), self.getDec())
 
+    @lock
     def getPositionAzAlt(self):
         return Position.fromAzAlt(self.getAz(), self.getAlt())
 
+    @lock
     def getTargetRaDec(self):
         return Position.fromRaDec(self.getTargetRa(), self.getTargetDec())
 
+    @lock
     def getTargetAzAlt(self):
         return Position.fromAzAlt(self.getTargetAz(), self.getTargetAlt())
 
+    @lock
     def setTargetRaDec(self, ra, dec):
 
         self.setTargetRa (ra)
@@ -523,6 +531,7 @@ class Meade (ChimeraObject,
 
         return True
 
+    @lock
     def setTargetAzAlt(self, az, alt):
 
         self.setTargetAz (az)
@@ -530,6 +539,7 @@ class Meade (ChimeraObject,
 
         return True
 
+    @lock
     def getTargetRa(self):
 
         self._write(":Gr#")
@@ -537,6 +547,7 @@ class Meade (ChimeraObject,
 
         return Coord.fromHMS(ret[:-1])
 
+    @lock
     def setTargetRa(self, ra):
 
         if not isinstance (ra, Coord):
@@ -551,6 +562,7 @@ class Meade (ChimeraObject,
 
         return True
 
+    @lock
     def setTargetDec(self, dec):
 
         if not isinstance (dec, Coord):
@@ -565,6 +577,7 @@ class Meade (ChimeraObject,
 
         return True
 
+    @lock
     def getTargetDec(self):
         self._write(":Gd#")
         ret = self._readline()
@@ -573,6 +586,7 @@ class Meade (ChimeraObject,
 
         return Coord.fromDMS(ret[:-1])
 
+    @lock
     def getAz(self):
         self._write(":GZ#")
         ret = self._readline()
@@ -580,6 +594,7 @@ class Meade (ChimeraObject,
 
         return Coord.fromDMS(ret[:-1])
 
+    @lock
     def getAlt(self):
         self._write(":GA#")
         ret = self._readline()
@@ -590,6 +605,7 @@ class Meade (ChimeraObject,
     def getTargetAlt(self):
         return self._target_alt
 
+    @lock
     def setTargetAlt(self, alt):
 
         if not isinstance (alt, Coord):
@@ -609,6 +625,7 @@ class Meade (ChimeraObject,
     def getTargetAz(self):
         return self._target_az
 
+    @lock
     def setTargetAz(self, az):
 
         if not isinstance (az, Coord):
@@ -625,6 +642,7 @@ class Meade (ChimeraObject,
 
         return True
 
+    @lock
     def getLat(self):
         self._write(":Gt#")
         ret = self._readline()
@@ -632,6 +650,7 @@ class Meade (ChimeraObject,
 
         return Coord.fromDMS(ret)
 
+    @lock
     def setLat (self, lat):
 
         if not isinstance (lat, Coord):
@@ -648,6 +667,7 @@ class Meade (ChimeraObject,
 
         return True
 
+    @lock
     def getLong(self):
         self._write(":Gg#")
         ret = self._readline()
@@ -655,6 +675,7 @@ class Meade (ChimeraObject,
 
         return Coord.fromDMS(ret)
 
+    @lock
     def setLong (self, coord):
 
         if not isinstance (coord, Coord):
@@ -669,11 +690,13 @@ class Meade (ChimeraObject,
 
         return True
 
+    @lock
     def getDate(self):
         self._write(":GC#")
         ret = self._readline()
         return dt.datetime.strptime(ret[:-1], "%m/%d/%y").date()
 
+    @lock
     def setDate (self, date):
 
         if type(date) == FloatType:
@@ -699,11 +722,13 @@ class Meade (ChimeraObject,
             self._tty.timeout = tmpTimeout
             return True
 
+    @lock
     def getLocalTime(self):
         self._write(":GL#")
         ret = self._readline()
         return dt.datetime.strptime(ret[:-1], "%H:%M:%S").time()
 
+    @lock
     def setLocalTime (self, local):
 
         if type(local) == FloatType:
@@ -718,11 +743,13 @@ class Meade (ChimeraObject,
 
         return True
 
+    @lock
     def getLocalSiderealTime(self):
         self._write(":GS#")
         ret = self._readline()
         return dt.datetime.strptime(ret[:-1], "%H:%M:%S").time()
 
+    @lock
     def setLocalSiderealTime (self, local):
 
         self._write (":SS%s#" % local.strftime ("%H:%M:%S"))
@@ -734,11 +761,13 @@ class Meade (ChimeraObject,
 
         return True
 
+    @lock
     def getUTCOffset(self):
         self._write(":GG#")
         ret = self._readline()
         return ret[:-1]
 
+    @lock
     def setUTCOffset (self, offset):
 
         offset = "%+02.1f" % offset
@@ -752,6 +781,7 @@ class Meade (ChimeraObject,
 
         return True
 
+    @lock
     def getCurrentTrackingRate (self):
 
         self._write(":GT#")
@@ -765,6 +795,7 @@ class Meade (ChimeraObject,
 
         return ret
 
+    @lock
     def setCurrentTrackingRate (self, trk):
 
         trk = "%02.1f" % trk
@@ -783,6 +814,7 @@ class Meade (ChimeraObject,
 
         return ret
 
+    @lock
     def startTracking (self):
 
         if self.getAlignMode() in (AlignMode.POLAR, AlignMode.ALT_AZ):
@@ -791,6 +823,7 @@ class Meade (ChimeraObject,
         self.setAlignMode (self._lastAlignMode)
         return True
 
+    @lock
     def stopTracking (self):
 
         if self.getAlignMode() == AlignMode.LAND:
@@ -818,6 +851,7 @@ class Meade (ChimeraObject,
 
     # -- ITelescopeDriverSync implementation --
 
+    @lock
     def syncRaDec(self, position):
 
         self.setTargetRaDec (position.ra, position.dec)
@@ -833,6 +867,7 @@ class Meade (ChimeraObject,
 
         return True
 
+    @lock
     def setSlewRate (self, rate):
 
         if rate == SlewRate.GUIDE:
@@ -873,7 +908,7 @@ class Meade (ChimeraObject,
     def park (self):
 
         if self.isParked ():
-            raise MeadeException("Telescope already parked.")
+            return True
 
         # 1. slew to park position
         # FIXME: allow different park positions and conversions from ra/dec -> az/alt
@@ -896,8 +931,8 @@ class Meade (ChimeraObject,
     def unpark (self):
 
         if not self.isParked():
-            raise MeadeException("Telescope is not parked.")
-
+            return True
+        
         # 1. power on
         #self.powerOn ()
 

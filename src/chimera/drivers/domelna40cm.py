@@ -44,7 +44,7 @@ class DomeLNA40cm (ChimeraObject, IDomeDriver):
         self.abort = threading.Event ()
 
         self._slewing  = False
-        self._slitOpen = False # FIXME: how to get this information?
+        self._slitOpen = False
 
         self._az_shift = 180
 
@@ -72,6 +72,7 @@ class DomeLNA40cm (ChimeraObject, IDomeDriver):
 
         return True
 
+    @lock
     def open (self):
 
         self.tty = serial.Serial(self["device"], baudrate=9600,
@@ -87,6 +88,7 @@ class DomeLNA40cm (ChimeraObject, IDomeDriver):
 
         self._checkDome()
 
+    @lock
     def close(self):
         if self.tty.isOpen():
             self.tty.close()
@@ -118,6 +120,7 @@ class DomeLNA40cm (ChimeraObject, IDomeDriver):
         self._slewing = True
         self.slewBegin(az)
 
+        # FIXME: add abort option here
         fin = self._readline ()
 
         if fin == "ALARME":
@@ -137,8 +140,8 @@ class DomeLNA40cm (ChimeraObject, IDomeDriver):
     def isSlewing (self):
         return self._slewing
 
-    @lock
     def abortSlew(self):
+        # FIXME: make abort work
 
         if not self.isSlewing(): return
 

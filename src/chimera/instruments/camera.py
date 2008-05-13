@@ -43,7 +43,6 @@ class Camera (ChimeraObject, ICameraExpose, ICameraTemperature):
         self.abort = threading.Event()
         self.abort.clear()
 
-    @lock
     def getDriver(self):
         """
         Get a Proxy to the instrument driver. This function is necessary '
@@ -184,10 +183,8 @@ class Camera (ChimeraObject, ICameraExpose, ICameraTemperature):
         finally:
             return tuple(filenames)
 
-    @lock
     def abortExposure (self, readout=True):
-        self.abort.set()
-
+        self.abort.set() # stop expose loop
         drv = self.getDriver()
         drv += {"readout_aborted": readout}
         drv.abortExposure()

@@ -1,4 +1,27 @@
 2008-05-13  P. Henrique Silva  <henrique@astro.ufsc.br>
+	* src/chimera/util/imagesave.py: Fix BSCALE/BZERO.
+
+	* src/chimera/drivers/sbig/sbig.py:
+	* src/chimera/drivers/optectcfs.py:
+	* src/chimera/drivers/domelna40cm.py
+	* src/chimera/drivers/meade.py:
+	* src/chimera/instruments/focuser.py:
+	* src/chimera/instruments/telescope.py:
+	* src/chimera/instruments/camera.py:
+	Fix abort where available.
+	Port to new lock scheme.
+
+	* src/chimera/instruments/tests/test_telescope.py:
+	* src/chimera/instruments/tests/test_camera.py: Improved test with
+	abort testing.
+
+	* src/chimera/instruments/dome.py: New dome implementation, with
+	fixed tracking telescope support.
+
+	* src/chimera/instruments/tests/test_dome.py: Test new dome
+	implementation.
+
+2008-05-13  P. Henrique Silva  <henrique@astro.ufsc.br>
 
 	* src/chimera/core/rwlock.py:
 	* src/chimera/core/lockwrapper.py
