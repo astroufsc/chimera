@@ -62,7 +62,7 @@ class ICameraDriver(Interface):
                   "window_width"     : 1.0,
                   "window_height"    : 1.0,
 
-                  "binning"	         :  Binning._1x1,
+                  "binning"	     :  Binning._1x1,
                   #"gain"            : 1.0,
                   
                   # FITS generation parameters
@@ -70,7 +70,7 @@ class ICameraDriver(Interface):
                   "file_format"	     : "$date",
                   "file_extension"   : "fits",
                   "directory"	     : "$HOME/images", # environment variables allowed
-                  "save_on_temp"	 : True,
+                  "save_on_temp"     : True,
                   "bitpix"           : Bitpix.int16,
                   }
                   

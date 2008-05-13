@@ -74,7 +74,7 @@ class ICameraExpose (ICamera):
                 shutter=Shutter.OPEN,
                 binning=Binning._1x1,
                 window=Window.FULL_FRAME,
-                filename="$date-$sequence.fits"):
+                filename="$date.fits"):
         
         """Start an exposure of exp_time seconds of integration time,
         using the parameters given.
@@ -107,8 +107,7 @@ class ICameraExpose (ICamera):
                          keywords as defined below:
 
                           - $date: current date in the format define in date_format configuration
-                          - $sequence: a sequential number (nnnn) (used in repeat mode).
-                      
+                       
         @return: The filenames (tuple if more than one) of the frames taken, empty tuple if fail.
         @rtype: tuple
         """
