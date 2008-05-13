@@ -22,7 +22,9 @@
 import logging
 import logging.handlers
 import sys
+import os
 import os.path
+
 
 # try to use fatser (C)StringIO, use slower one if not available
 try:
@@ -55,20 +57,35 @@ class ChimeraFormatter (logging.Formatter):
 fmt = ChimeraFormatter(fmt='%(asctime)s.%(msecs)d %(levelname)s %(name)s %(filename)s:%(lineno)d %(message)s',
                        datefmt='%d-%m-%Y %H:%M:%S')
 
-fileHandler    = logging.handlers.RotatingFileHandler(os.path.join(os.path.dirname(__file__), "../", "chimera.log"),
-                                                      maxBytes=2*1024*1024, backupCount=10)
+try:
+    if not os.path.exists(os.path.expanduser("~/.chimera")):
+        os.mkdir(os.path.expanduser("~/.chimera/"))
+except Exception:
+    pass
+
+fileHandler = None
+
+try:
+    fileHandler = logging.handlers.RotatingFileHandler(os.path.expanduser("~/.chimera/chimera.log"),
+                                                       maxBytes=5*1024*1024, backupCount=10)
+except Exception:
+    pass
 
 consoleHandler = logging.StreamHandler(sys.stderr)
 
-fileHandler.setFormatter(fmt)
-fileHandler.setLevel(logging.DEBUG)
+if fileHandler:
+    fileHandler.setFormatter(fmt)
+    fileHandler.setLevel(logging.DEBUG)
 
 consoleHandler.setFormatter(fmt)
 consoleHandler.setLevel(logging.WARNING)
 
 root = logging.getLogger("chimera")
 root.setLevel(logging.DEBUG)
-root.addHandler(fileHandler)
+
+if fileHandler:
+    root.addHandler(fileHandler)
+    
 root.addHandler(consoleHandler)
 
 
