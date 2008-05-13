@@ -1,0 +1,43 @@
+<?xml version="1.0"?>
+
+<chimera host="localhost" port="9000">
+
+<site>
+ <name>UFSC</name>
+ <latitude>-22.0</latitude>
+ <longitude>-40.0</longitude>
+ <altitude>1000</altitude>
+ <timezone>-3</timezone>
+ <dst/>
+</site>
+
+<drivers>
+
+   <driver name="sbig" class="SBIG" host='200.100.50.25' port='1000'>
+	<option name="device" value="usb"/>
+	<option name="ccd"    value="imaging"/>
+   </driver>
+
+</drivers>
+
+<instruments>
+
+   <instrument name="st8" class="Camera">
+      <option name="driver" value="host:1000/SBIG/sbig"/>
+   </instrument>
+
+</instruments>
+
+<controllers>
+
+   <controller name="observer" class="Observer">
+      <option name="camera" value="/Camera/st7?driver=/SBIG/st7"/>
+      <option name="telescope" value="/Telescope/paramount?driver=/RemoteClient/paramount"/>
+      <option name="filterwheel" value="/FilterWheel/fw?driver=/SBIG/st7"/>
+      <option name="plan" value="plan-ph"/>
+      <option name="verbose" value="1"/>
+   </controller>
+
+</controllers>
+
+</chimera>

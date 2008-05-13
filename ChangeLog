@@ -1,3 +1,17 @@
+2008-05-13  P. Henrique Silva  <henrique@boss>
+
+	* docs/site:
+	* docs/site/sync-sf.net:
+	* docs/site/static:
+	* docs/site/conf.py:
+	* docs/site/Makefile:
+	* docs/site/templates:
+	* docs/site/templates/layout.html:
+	* docs/site/index.rst: New website ReST files and a script to
+	update sf.net.
+
+	* docs/examples/site.xml: Move from scripts directory
+
 2008-04-28  P. Henrique Silva  <henrique@astro.ufsc.br>
 
 	* src/chimera/drivers/fakecamera.py (FakeCamera.expose): Use
