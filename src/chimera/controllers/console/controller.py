@@ -1,5 +1,8 @@
 import sys
 
+from chimera.core.exceptions import ObjectNotFoundException
+
+
 _global_private_controller_singleton = None
 
 def ConsoleController ():
@@ -24,26 +27,19 @@ class _ConsoleControllerSingleton (object):
         self.commander = commander
 
     def quit (self):
-        self.commander.quit ()
-        return True
+        self.commander.quit(True)
 
     def getManager(self):
-        return self.controller.manager
+        return self.controller.getManager()
 
     def getObject (self, name):
 
         if not self.controller:
             return False
 
-        obj = None
-
-        if not obj:
-            obj = self.controller.manager.getInstrument (name, proxy=False)
-
-        if not obj:
-            obj = self.controller.manager.getController (name, proxy=False)
-
-        if not obj:
-            obj = self.controller.manager.getDriver (name, proxy=False)
+        try:
+            obj = self.getManager().getProxy(name)
+        except ObjectNotFoundException:
+            return False
 
         return obj

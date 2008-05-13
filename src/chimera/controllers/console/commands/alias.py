@@ -1,6 +1,5 @@
 
 from chimera.controllers.console.command import Command
-from chimera.controllers.console.controller import ConsoleController
 from chimera.controllers.console.message import Message, Error
 
 class AliasCommand (Command):

@@ -16,39 +16,14 @@ class SiteCommand (HighLevelCommand):
     @command    
     def list (self, args, namespace):
 
-        def insts ():
-            return [Message("=== Instruments ==="), ConsoleController().getManager()._instruments.items()]
+        objs = ""
+        for o in ConsoleController().getManager().getResources():
+            objs += str(o)+'\n'
+        objs = objs[:-1]
+            
+        return [Message("=== Objects ==="),
+                Message(objs)]
 
-        def ctrls ():
-            return [Message("=== Controllers ==="), ConsoleController().getManager()._controllers.items()]
-
-        def drvs ():
-            return [Message("=== Drivers ==="), ConsoleController().getManager()._drivers.items()]
-
-        if not args:
-            return insts()+ctrls()+drvs()
-
-        if args[0] == "instruments":
-            return insts()
-        elif args[0] == "controllers":
-            return ctrls()
-        elif args[0] == "drivers":
-            return drvs()
-        else:
-            return Error ("invalid object type '%s'" % args[0])
-
-    def complete_list (self, prefix, line, prefix_start, prefix_end):
-
-        "[instruments|controllers|drivers]?"
-        
-        # only one argument allowed
-        if prefix_start > 0:
-            return []
-
-        if not prefix:
-            return self._kinds
-        else:
-            return [kind for kind in self._kinds if kind.startswith(prefix)]
 
     @command
     def add (self, args, namespace):

@@ -1,26 +1,22 @@
 
-from chimera.core.lifecycle import BasicLifeCycle
-from chimera.core.main import Chimera
+from chimera.core.chimeraobject import ChimeraObject
 
 from chimera.controllers.console.commander import Commander
 
-class Console (BasicLifeCycle):
+class Console (ChimeraObject):
 
-    def __init__ (self, manager):
-        BasicLifeCycle.__init__(self, manager)
+    def __init__ (self):
+        ChimeraObject.__init__(self)
 
         self.console = None
 
-    def init(self, config):
-        self.config += config
-        
+    def __start__ (self):
         self.console = Commander (self)
         return True
 
-    def shutdown (self):
+    def __stop__ (self):
         self.console.quit()
         return True
 
-    def main (self):
-        self.console.cmdloop ()
-        Chimera().shutdown()
+    def __main__ (self):
+        self.console.cmdloop()

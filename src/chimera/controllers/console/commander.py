@@ -8,8 +8,6 @@ import readline
 from cmd import Cmd, IDENTCHARS
 from types import ListType, BooleanType, StringType, NoneType, TupleType
 
-from chimera.core.main import Chimera
-
 from chimera.core.version import _chimera_description_, _chimera_version_
 
 from chimera.controllers.console.controller import ConsoleController
@@ -49,15 +47,17 @@ class Commander (Cmd):
             self.namespace.append (globals()[command]())
 
     def quit (self, from_here=False):
+
+        if from_here:
+            ConsoleController().getManager().shutdown()
+            return
+
         print Hint("bye :)")
         readline.write_history_file (os.path.join(os.path.expanduser("~/.chimera_console.history")))
 
-        if from_here:
-            Chimera().shutdown()
 
     def do_EOF (self, args):
         self.quit(True)
-        return True
 
     def emptyline (self):
         return False
