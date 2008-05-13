@@ -42,3 +42,6 @@ G{packagetree chimera}
 @contact: ph.silva@gmail.com
 
 """
+
+from chimera.core.version import _chimera_version_ as __version__
+
