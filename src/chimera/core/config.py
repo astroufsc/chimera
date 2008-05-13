@@ -284,8 +284,9 @@ class EnumChecker (Checker):
                 return value
 
         if type(value) == StringType:
-            if value in self.enumtype:
-                return [v for v in self.enumtype if str(v) == value][0] # get the EnumValue equivalent of the given str
+            ret = [v for v in self.enumtype if str(v).upper() == value.upper()]
+            if ret:
+                return ret[0]
 
         raise OptionConversionException ('invalid enum value %s. not a %s enum.' % (value, str(self.enumtype)))
 
