@@ -22,6 +22,9 @@ import sys
 import os
 import time
 import logging
+import signal
+import copy
+import threading
 
 from optparse import OptionParser, OptionGroup
 
@@ -273,6 +276,33 @@ if __name__ == '__main__':
     telescope = None
     driver = None
 
+    # ctrl+c handling
+    aborted = False
+
+    def sighandler(self, sig = None, frame = None):
+
+        global aborted
+        
+        if aborted == False:
+            aborted = True
+        else:
+            return
+            
+        print >> sys.stdout, "aborting... ",
+        sys.stdout.flush()
+
+        def abort():
+            tel = copy.copy(telescope)
+            if tel.isSlewing():
+                tel.abortSlew()
+
+        t = threading.Thread(target=abort)
+        t.start()
+        t.join()
+            
+    signal.signal(signal.SIGTERM, sighandler)
+    signal.signal(signal.SIGINT, sighandler)
+
     # use an already running telescope
     if options.telescope:
         try:
@@ -336,8 +366,17 @@ if __name__ == '__main__':
             
             sys.stdout.flush()
 
-    telescope.slewBegin    += slewBegin
-    telescope.slewComplete += slewComplete
+    @callback(manager)
+    def abortComplete(position):
+        global options, telescope
+        if not options.quiet:
+            print "OK."
+            
+            sys.stdout.flush()
+
+    telescope.slewBegin     += slewBegin
+    telescope.slewComplete  += slewComplete
+    telescope.abortComplete += abortComplete    
 
     # action
     start = time.time()
@@ -388,7 +427,7 @@ if __name__ == '__main__':
                 print "new position ra/dec: %s" % telescope.getPositionRaDec()
                 print "new position:az/alt: %s" % telescope.getPositionAzAlt()
 
-            except Exception, e:
+            except ChimeraException, e:
                 print >> sys.stderr, "Error trying to slew. (%s)" % e
 
 

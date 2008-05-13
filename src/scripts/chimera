@@ -18,7 +18,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-if __name__ == '__main__':
+def main ():
 
     import sys
 
@@ -26,3 +26,6 @@ if __name__ == '__main__':
 
     SiteController (sys.argv).init()
 
+
+if __name__ == '__main__':
+    main()

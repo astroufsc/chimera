@@ -22,6 +22,9 @@ import sys
 import os
 import time
 import logging
+import signal
+import copy
+import threading
 
 from optparse import OptionParser, OptionGroup
 
@@ -36,6 +39,7 @@ from chimera.core.exceptions import ObjectNotFoundException
 from chimera.core.exceptions import ChimeraObjectException
 from chimera.core.exceptions import InvalidLocationException
 from chimera.core.exceptions import ClassLoaderException
+from chimera.core.exceptions import printException
 
 from chimera.interfaces.filterwheel import InvalidFilterPositionException
 
@@ -134,7 +138,7 @@ if __name__ == '__main__':
 
     display = OptionGroup(parser, "Display configuration")
     display.add_option("--no-display", action="store_true", dest="no_display",
-                      help="Don't try to display image on DS9. [default=%default]")
+                      help="Don't try to display image on DS9. default is display for exptime >= 5")
 
     parser.add_option("-q", "--quiet", action="store_true", dest='quiet',
                       help="Don't display information during the exposures [default=%default].")
@@ -235,6 +239,33 @@ if __name__ == '__main__':
     driver = None
     
     filter = None
+
+    # ctrl+c handling
+    aborted = False
+
+    def sighandler(self, sig = None, frame = None):
+
+        global aborted
+        
+        if aborted == False:
+            aborted = True
+        else:
+            return
+            
+        print >> sys.stdout, "aborting... "
+        sys.stdout.flush()
+
+        def abort():
+            cam = copy.copy(camera)
+            if cam.isExposing():
+                cam.abortExposure()
+
+        t = threading.Thread(target=abort)
+        t.start()
+        t.join()
+            
+    signal.signal(signal.SIGTERM, sighandler)
+    signal.signal(signal.SIGINT, sighandler)
 
     # use an already running camera
     if options.camera:
@@ -424,9 +455,8 @@ if __name__ == '__main__':
                           interval=options.interval,
                           filename=options.output,
                           shutter=options.shutter)
-        except Exception, e:
-            print >> sys.stderr, "Error trying to take exposures. (%s)" % e
-            print >> sys.stderr, "Waiting to finish last readout..."
+        except ChimeraException, e:
+            print >> sys.stderr, "Error trying to take exposures. (%s)" % printException(e)
 
     finally:
         camera.exposeBegin     -= exposeBegin
@@ -434,6 +464,10 @@ if __name__ == '__main__':
         camera.readoutBegin    -= readoutBegin
         camera.readoutComplete -= readoutComplete
         manager.shutdown()
+
+        if not options.quiet and aborted:
+            print 40*"="
+            print "Took %03d of %03d frames. Aborted by the user." % (currentFrame, options.nexp)
 
         if not options.quiet:
             print 40*"="

@@ -22,6 +22,9 @@ import sys
 import os
 import time
 import logging
+import signal
+import copy
+import threading
 
 from optparse import OptionParser, OptionGroup
 
@@ -168,6 +171,37 @@ if __name__ == '__main__':
 
     dome = None
 
+    # FIXME: just hide sime know bugs on Pyro-Chimera integration
+    sys.stderr = None
+
+    # ctrl+c handling
+    aborted = False
+
+    def sighandler(self, sig = None, frame = None):
+
+        global aborted
+        
+        if aborted == False:
+            aborted = True
+        else:
+            return
+            
+        print >> sys.stdout, "aborting... ",
+        sys.stdout.flush()
+
+        def abort():
+            d = copy.copy(dome)
+            if d.isSlewing():
+                d.abortSlew()
+                print "OK"
+
+        t = threading.Thread(target=abort)
+        t.start()
+        t.join(10)
+            
+    signal.signal(signal.SIGTERM, sighandler)
+    signal.signal(signal.SIGINT, sighandler)
+
     # use an already running dome
     if options.dome:
         try:
@@ -203,10 +237,6 @@ if __name__ == '__main__':
         if options.info:
             print "Dome: %s (%s)" % (options.driver[-1], driver["device"])
             print "Current dome azimuth:", dome.getAz(),
-            slit = "CLOSED"
-            if dome.isSlitOpen():
-                slit = "OPEN"
-            print " Slit: %s" % slit
 
         else:
             
@@ -215,18 +245,20 @@ if __name__ == '__main__':
                     print "Opening dome slit ... ",
                     sys.stdout.flush()
                     dome.openSlit()
+                    print "OK (took %.3fs)" % (time.time()-start)
+                    
                 elif action == Action.CLOSE:
                     print "Closing dome slit ... ",
                     sys.stdout.flush()
                     dome.closeSlit()
+                    print "OK (took %.3fs)" % (time.time()-start)                    
                 else:
                     print "Moving dome to %s ... " % target,
                     sys.stdout.flush()
                     dome.slewToAz(target)
-                    
-                print "OK (took %.3fs)" % (time.time()-start)
+                    print "OK (took %.3fs)" % (time.time()-start)
 
-            except Exception, e:
+            except ChimeraException, e:
                 print >> sys.stderr, "Error trying to move dome. (%s)" % e
 
     finally:
