@@ -1,10 +1,24 @@
 Chimera - Observatory Automation System
 =======================================
 
-Welcome!
+Chimera is a package to control astronomical observatories aiming the
+creation of remote and even autonomous observatories with just a few
+clicks. Using Chimera you can easily control telescopes, CCD cameras,
+focusers and domes in a very integrated way.
 
-Look at INSTALL to see how to install chimera.
+Chimera uses setuptools/distutils, so to install it use default
+setup.py mechanism.
+
+$ python setup.py install
+
+For more information, look at Chimera's web page at
+http://chimera.sf.net.
+
+Bugs, suggestions, criticisms, please email me at ph.silva@gmail.com.
 
 Thanks,
 
--- P. Henrique
+= Paulo Henrique Silva
+
+
+

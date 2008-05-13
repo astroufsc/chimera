@@ -1,5 +1,5 @@
 #! /usr/bin/python
-# -*- coding: iso8859-1 -*-
+# -*- coding: utf-8 -*-
 
 # chimera - observatory automation system
 # Copyright (C) 2006-2007  P. Henrique Silva <henrique@astro.ufsc.br>
@@ -18,10 +18,13 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+from ez_setup import use_setuptools
+use_setuptools()
+
 import os
 import sys
 
-from distutils.core import setup
+from setuptools import setup, find_packages
 
 # append chimera to sys.path to get current version
 build_dir = os.getcwd ()
@@ -29,7 +32,6 @@ src_dir   = os.path.join (build_dir, 'src')
 
 old_sys_path = sys.path
 sys.path.insert (0, src_dir)
-
 
 from chimera.core.version import  _chimera_version_,		\
                                   _chimera_description_,	\
@@ -44,30 +46,45 @@ from chimera.core.version import  _chimera_version_,		\
 
 # modules
 
-chimera_modules = ['chimera',
-                   'chimera.core',
-                   'chimera.controllers',
-                   'chimera.controllers.site',
-                   'chimera.drivers',
-                   'chimera.drivers.sbig',
-                   'chimera.interfaces',
-                   'chimera.instruments',
-                   'chimera.util',
-                   'chimera.util.etree']
-
-chimera_scripts = ['src/scripts/chimera']
+chimera_scripts = ['src/scripts/chimera',
+                   'src/scripts/chimera-cam',
+                   'src/scripts/chimera-tel',
+                   'src/scripts/chimera-dome',
+                   'src/scripts/chimera-focus',
+                   'src/scripts/chimera-console']
 
 # setup
 
-setup(name='chimera',
-      package_dir      = {"chimera": "src/chimera"},
+win32_deps = []
+if sys.platform == "win32":
+    win32_deps = ['pywin32 == 210']
+    
+setup(name='chimera-python',
+      package_dir      = {"": "src"},
       
-      packages         = chimera_modules,
+      packages         = find_packages("src", exclude=["*.tests"]),
       scripts          = chimera_scripts,
-      
+
+      zip_safe         = True,
+
+      install_requires = ["Pyro >= 3.7",
+                          "numpy >= 1.0.3",
+                          "pyfits >= 1.3",
+                          "pyserial >= 2.2",
+                          "coords",
+                          "python-sbigudrv >= 0.1"] + win32_deps,
+
+      dependency_links = ["http://www.stsci.edu/resources/software_hardware/pyfits/pyfits-1.3.tar.gz",
+                          "http://astropy.scipy.org/svn/astrolib/trunk/coords#egg=coords-trunk",
+                          "http://sourceforge.net/project/showfiles.php?group_id=46487"],
+
+      tests_require    = ["nose"],
+      test_loader      = "nose.loader:TestLoader",
+      test_suite       = "src/chimera",
+            
       version          = _chimera_version_,
       description      = _chimera_description_,
-      long_description = _chimera_long_description_,
+      long_description = open("docs/site/index.rst").read(),
       author           = _chimera_author,
       author_email     = _chimera_author_email_,
       license          = _chimera_license_,

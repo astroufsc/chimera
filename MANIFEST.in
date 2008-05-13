@@ -1,4 +1,0 @@
-include AUTHORS TODO COPYING INSTALL NEWS README ChangeLog 
-
-recursive-include tests *.*
-recursive-include src/config *.xml

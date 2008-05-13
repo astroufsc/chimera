@@ -1,4 +1,19 @@
 2008-05-13  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* setup-chimera.bat:
+	* setup-chimera.sh:
+	* TODO:
+	* MANIFEST.in: Not needed anymore, setuptools handles this for us.
+
+	* README: New text.
+	* setup.py:
+	* setup.cfg:
+	* ez_setup.py: New setuptools script. Much more smart, with
+	automatic dependency handling and PyPI support. See ups at
+	http://pypi.python.org/pypi/chimera-python! Now you can use
+	easy_install with chimera!
+
+2008-05-13  P. Henrique Silva  <henrique@astro.ufsc.br>
 	* src/chimera/util/imagesave.py: Fix BSCALE/BZERO.
 
 	* src/chimera/drivers/sbig/sbig.py:
