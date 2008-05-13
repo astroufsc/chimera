@@ -1,3 +1,11 @@
+2008-05-13  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* tests/chimera.pychecker:
+	* tests/run-tests.sh:
+	* tests/run-pylint.sh: Marked as executables.
+
+	* tests/run-pychecker.sh: New file.
+
 2008-05-13  P. Henrique Silva  <henrique@boss>
 
 	* docs/site:
