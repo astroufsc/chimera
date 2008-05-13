@@ -19,9 +19,14 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 
-import threading
+import logging
 
 from chimera.core.methodwrapper  import MethodWrapper, MethodWrapperDispatcher
+
+from chimera.core.constants      import INSTANCE_MONITOR_ATTRIBUTE_NAME
+
+import chimera.core.log
+log = logging.getLogger(__name__)
 
 
 __all__ = ['LockWrapper',
@@ -33,10 +38,6 @@ class LockWrapper (MethodWrapper):
     def __init__ (self, func, specials = None, dispatcher = None):
         MethodWrapper.__init__(self, func, specials, dispatcher)
 
-        # this lock isn't marshalled as LockWrapper is local only
-        # (remote user use Proxy which doesn't deal with locks, 'cause we do!)
-        self.lock = threading.Lock()
-
 
 class LockWrapperDispatcher (MethodWrapperDispatcher):   
 
@@ -44,14 +45,24 @@ class LockWrapperDispatcher (MethodWrapperDispatcher):
         MethodWrapperDispatcher.__init__ (self, wrapper, instance, cls)
 
     def call (self, *args, **kwargs):
+        """
+        Locked or synchronized methods holds two locks. The object
+        monitor, which gives exclusive right to run locked methods and
+        the object configuration writer lock, which gives exclusive
+        right to read/write config values.
+        """
 
-        self.wrapper.lock.acquire()
+        lock = getattr(self.instance, INSTANCE_MONITOR_ATTRIBUTE_NAME)
+
+        #log.debug("[acquire monitor] %s %s" % (self.instance, self.func.__name__))
+        lock.acquire()
 
         ret = None
         
         try:
             ret = self.func(*args, **kwargs)
         finally:
-            self.wrapper.lock.release()
+            #log.debug("[release monitor] %s %s" % (self.instance, self.func.__name__))
+            lock.release()
 
         return ret

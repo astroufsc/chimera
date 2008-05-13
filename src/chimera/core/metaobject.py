@@ -18,18 +18,22 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-
+import threading
 
 from chimera.core.methodwrapper import MethodWrapper, MethodWrapperDispatcher
 from chimera.core.eventwrapper  import EventWrapperDispatcher
 from chimera.core.lockwrapper   import LockWrapper, LockWrapperDispatcher
 from chimera.core.async         import BeginDispatcher, EndDispatcher
 
+from chimera.core.rwlock        import ReadWriteLock
+
 from chimera.core.constants     import EVENT_ATTRIBUTE_NAME, \
                                        CONFIG_ATTRIBUTE_NAME, \
                                        LOCK_ATTRIBUTE_NAME, \
                                        EVENTS_ATTRIBUTE_NAME, \
-                                       METHODS_ATTRIBUTE_NAME
+                                       METHODS_ATTRIBUTE_NAME, \
+                                       INSTANCE_MONITOR_ATTRIBUTE_NAME, \
+                                       RWLOCK_ATTRIBUTE_NAME
 
 from types import DictType
 
@@ -66,19 +70,21 @@ class MetaObject (type):
 
                 # auto-locked methods
                 elif hasattr(obj, LOCK_ATTRIBUTE_NAME):
-                    _dict[name] = LockWrapper(obj, dispatcher=LockWrapperDispatcher,
-                                              specials = {"begin": BeginDispatcher, "end": EndDispatcher})
+                    _dict[name] = LockWrapper(obj, dispatcher=LockWrapperDispatcher)
                     methods.append(name)
 
                 # normal objects
                 else:
-                    _dict[name] = MethodWrapper(obj, dispatcher=MethodWrapperDispatcher,
-                                                specials = {"begin": BeginDispatcher, "end": EndDispatcher})
+                    _dict[name] = MethodWrapper(obj, dispatcher=MethodWrapperDispatcher)
                     methods.append(name)
 
         # save our helper atributes to allow better remote reflection (mainly to Console)
         _dict[EVENTS_ATTRIBUTE_NAME] = events
         _dict[METHODS_ATTRIBUTE_NAME] = methods
+
+        # our great Monitors (put here to force use of it)
+        _dict[INSTANCE_MONITOR_ATTRIBUTE_NAME] = threading.Condition(threading.RLock())
+        _dict[RWLOCK_ATTRIBUTE_NAME]           = ReadWriteLock()
 
         return super(MetaObject, meta).__new__(meta, clsname, bases, _dict)
 

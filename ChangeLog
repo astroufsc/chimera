@@ -1,5 +1,34 @@
 2008-05-13  P. Henrique Silva  <henrique@astro.ufsc.br>
 
+	* src/chimera/core/rwlock.py:
+	* src/chimera/core/lockwrapper.py
+	* src/chimera/core/constants.py:
+	* src/chimera/core/monitor.py: New locking infrastructure.
+
+	* src/chimera/core/tests/test_locks.py: Update test to new lock
+	infrastructure.
+
+	* src/chimera/core/metaobject.py: Add locking to default base object.
+
+	* src/chimera/core/chimeraobject.py:
+	Add new lock infrastructure wrapper methods.
+	Add support for thread-safe config set/get.
+	New look __control__ algorithm.
+
+	* src/chimera/core/manager.py:
+	Better stop algorithm.
+	Use new loop field in the resources manager.
+	Use new loop aborting scheme.
+
+	Remove thread pool support. Thread pool should be handled by the
+	user.
+
+	* src/chimera/core/resources.py: Add loop thread field.
+	* src/chimera/core/methodwrapper.py: Add logging.
+	* src/chimera/core/tests/test_config.py: Add enum checker test.
+
+2008-05-13  P. Henrique Silva  <henrique@astro.ufsc.br>
+
 	* src/chimera/drivers/fakecamera.py:
 	* src/chimera/drivers/fakedome.py:
 	* src/chimera/drivers/faketelescope.py: More realistic simulation.

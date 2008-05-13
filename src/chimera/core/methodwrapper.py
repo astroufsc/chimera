@@ -18,6 +18,11 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+import logging
+
+import chimera.core.log
+log = logging.getLogger(__name__)
+
 
 __all__ = ['MethodWrapper',
            'MethodWrapperDispatcher']
@@ -97,6 +102,8 @@ class MethodWrapperDispatcher (object):
                                                                                  args[0].__class__.__name__))
             else:
                 return self.call(args[0], *args[1:], **kwargs)
+
+        #log.debug("[calling] %s %s" % (self.instance, self.func.__name__))
 
         return self.call(self.instance, *args, **kwargs)
 

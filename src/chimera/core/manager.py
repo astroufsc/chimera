@@ -21,7 +21,6 @@
 
 from chimera.core.classloader import ClassLoader
 from chimera.core.resources   import ResourcesManager
-from chimera.core.threads     import ThreadPool
 from chimera.core.location    import Location
 
 from chimera.core.chimeraobject import ChimeraObject
@@ -125,14 +124,15 @@ class Manager (RemoteObject):
 
         self.resources = ResourcesManager ()
         self.classLoader = ClassLoader ()
-        self.pool = ThreadPool ()
 
         # identity
         self.setGUID(MANAGER_LOCATION)
 
         # our daemon server
         self.adapter = ManagerAdapter (self, host, port)
-        self.pool.queueTask (self.adapter.requestLoop)
+        self.adapterThread = threading.Thread(target=self.adapter.requestLoop)
+        self.adapterThread.setDaemon(True)
+        self.adapterThread.start()
 
         # register ourself
         self.resources.add(MANAGER_LOCATION, self, getManagerURI(host, port))
@@ -180,9 +180,6 @@ class Manager (RemoteObject):
     
     def getDaemon (self):
         return self.adapter
-
-    def getPool (self):
-        return self.pool
 
     def getProxy (self, location, name='0', host=None, port=None, lazy=False):
         """
@@ -300,16 +297,26 @@ class Manager (RemoteObject):
             # damm 2.4, on 2.5 try/except/finally works
             try:
                 try:
-                    for location in self.resources:
-                        # except ourself
-                        if location == MANAGER_LOCATION: continue
-                        self.stop(location)
+
+                    elderly_first = sorted(list(self.resources.values()),
+                                           cmp=lambda x, y: cmp(x.created, y.created),
+                                           reverse=True)
+
+                    for resource in elderly_first:
+
+                        # except Manager
+                        if resource.location == MANAGER_LOCATION: continue
+
+                        # stop object
+                        self.stop(resource.location)
+                    
                 except ChimeraException:
                     pass
             finally:
+                # kill our adapter
                 self.adapter.shutdown(disconnect=True)
-                del self.adapter
-                self.pool.joinAll()
+
+                # die!
                 self.died.set()
                 log.info("Manager finished.")
 
@@ -429,7 +436,8 @@ class Manager (RemoteObject):
 
     def remove (self, location):
         """
-        Remove the object pointed by 'location' from the system.
+        Remove the object pointed by 'location' from the system
+        stopping it before if needed.
 
         @param location: The object to remove.
         @type location: Location,str
@@ -488,9 +496,13 @@ class Manager (RemoteObject):
             # ok, now schedule object main in a new thread
             log.info("Running %s. __main___." % location)                        
 
-            self.pool.queueTask(resource.instance.__main__)
+            loop = threading.Thread(target=resource.instance.__main__)
+            loop.setDaemon(True)
+            loop.start()
 
-            resource.instance.__setstate__(State.RUNNING)            
+            resource.instance.__setstate__(State.RUNNING)
+            resource.created = time.time()
+            resource.loop = loop
 
             return True
 
@@ -522,6 +534,11 @@ class Manager (RemoteObject):
         resource = self.resources.get(location)
 
         try:
+
+            # stop control loop
+            if resource.loop and resource.loop.isAlive():
+                resource.instance.__abort_loop__()
+                resource.loop.join()
 
             if resource.instance.getState() != State.STOPPED:
                 resource.instance.__stop__ ()

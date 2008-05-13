@@ -152,7 +152,7 @@ class TestConfig (object):
             assert c.__setitem__("key_enum", i) != False, "%s (%s) is a valid enum configuration" % (i, type(i))
             assert type(c.__getitem__("key_enum")) == EnumValue, "should return EnumValue object"
 
-        for i in ["A_VALUE", "OTHER_VALUE"]:
+        for i in ["A_VALUE", "OTHER_VALUE", "a_value", "other_value", "a_vAlUe", "other_value"]:
             assert c.__setitem__("key_enum", i) != False, "%s (%s) is a valid enum configuration" % (i, type(i))
             assert type(c.__getitem__("key_enum")) == EnumValue, "should return EnumValue object"
 

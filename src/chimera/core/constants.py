@@ -34,6 +34,10 @@ LOCK_ATTRIBUTE_NAME   = '__lock__'
 EVENTS_PROXY_NAME = '__events_proxy__'
 CONFIG_PROXY_NAME = '__config_proxy__'
 
+# monitor objects
+INSTANCE_MONITOR_ATTRIBUTE_NAME = '__instance_monitor__'
+RWLOCK_ATTRIBUTE_NAME           = '__rwlock__'
+
 # reflection
 CONFIG_ATTRIBUTE_NAME  = '__config__'
 EVENTS_ATTRIBUTE_NAME  = '__events__'

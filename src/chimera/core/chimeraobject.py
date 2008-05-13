@@ -18,7 +18,6 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-
 from chimera.core.metaobject   import MetaObject
 from chimera.core.remoteobject import RemoteObject
 
@@ -31,6 +30,8 @@ from chimera.core.location import Location
 from chimera.core.constants import EVENTS_ATTRIBUTE_NAME
 from chimera.core.constants import METHODS_ATTRIBUTE_NAME
 from chimera.core.constants import CONFIG_PROXY_NAME
+from chimera.core.constants import INSTANCE_MONITOR_ATTRIBUTE_NAME
+from chimera.core.constants import RWLOCK_ATTRIBUTE_NAME
 
 from chimera.interfaces.lifecycle import ILifeCycle
 
@@ -38,6 +39,7 @@ import chimera.core.log
 
 import logging
 import time
+import threading
 from types import StringType
 
 
@@ -72,18 +74,59 @@ class ChimeraObject (RemoteObject, ILifeCycle):
 
         # Hz
         self._Hz = 2
+        self._loop_abort = threading.Event()
 
     # config implementation
     def __getitem__ (self, item):
-        return self.__config_proxy__.__getitem__ (item)
+        # any thread can read if none writing at the time
+        lock = getattr(self, RWLOCK_ATTRIBUTE_NAME)
+        try:
+            lock.acquireRead()
+            return self.__config_proxy__.__getitem__ (item)
+        finally:
+            lock.release()
     
     def __setitem__ (self, item, value):
-        return self.__config_proxy__.__setitem__ (item, value)
+        # only one thread can write
+        lock = getattr(self, RWLOCK_ATTRIBUTE_NAME)
+        try:
+            lock.acquireWrite()
+            return self.__config_proxy__.__setitem__ (item, value)
+        finally:
+            lock.release()
 
     # bulk configuration (pass a dict to config multiple values)
     def __iadd__ (self, configDict):
-        self.__config_proxy__.__iadd__ (configDict)
-        return self.getProxy()
+        # only one thread can write
+        lock = getattr(self, RWLOCK_ATTRIBUTE_NAME)
+        try:
+            lock.acquireWrite()
+            self.__config_proxy__.__iadd__ (configDict)
+        finally:
+            lock.release()
+            return self.getProxy()
+
+    # locking
+    def __enter__ (self):
+        return getattr(self, INSTANCE_MONITOR_ATTRIBUTE_NAME).__enter__()
+
+    def __exit__ (self, *args):
+        return getattr(self, INSTANCE_MONITOR_ATTRIBUTE_NAME).__exit__(*args)
+
+    def acquire(self, blocking=True):
+        return getattr(self, INSTANCE_MONITOR_ATTRIBUTE_NAME).acquire(blocking)
+
+    def release(self):
+        return getattr(self, INSTANCE_MONITOR_ATTRIBUTE_NAME).release()
+
+    def wait(self, timeout=None):
+        return getattr(self, INSTANCE_MONITOR_ATTRIBUTE_NAME).wait(timeout)
+
+    def notify(self, n=1):
+        return getattr(self, INSTANCE_MONITOR_ATTRIBUTE_NAME).notify(n)
+    
+    def notifyAll(self):
+        return getattr(self, INSTANCE_MONITOR_ATTRIBUTE_NAME).notifyAll()    
 
     # reflection
     def __get_events__ (self):
@@ -112,13 +155,34 @@ class ChimeraObject (RemoteObject, ILifeCycle):
 
     def __main__ (self):
 
+        self._loop_abort.clear()
+        timeslice = 0.5
+
         runCondition = True
 
         while runCondition:
+
             runCondition = self.control()
-            time.sleep(1.0/self.getHz())
+
+            if self._loop_abort.isSet():
+                return True
+
+            # FIXME: better idle loop
+            # we can't sleep for the whole time because
+            # if object set a long sleep time and Manager decides to
+            # shutdown, we must be alseep to receive his message and
+            # return.
+            timeToWakeUp = 1.0/self.getHz()
+            sleeped = 0
+            while sleeped < timeToWakeUp:
+                time.sleep(timeslice)
+                if self._loop_abort.isSet(): return True
+                sleeped += timeslice
 
         return True
+
+    def __abort_loop__ (self):
+        self._loop_abort.set()
 
     def control (self):
         return False

@@ -34,11 +34,13 @@ class Resource (object):
         self._location = None
         self._instance = None        
         self._created  = time.time ()
+        self._loop     = None
         self._uri      = None        
 
     location = property (lambda self: self._location, lambda self, value: setattr (self, '_location', value))
     instance = property (lambda self: self._instance, lambda self, value: setattr (self, '_instance', value))    
-    created  = property (lambda self: self._created)
+    created  = property (lambda self: self._created, lambda self, value: setattr (self, '_created', value))
+    loop     = property (lambda self: self._loop, lambda self, value: setattr (self, '_loop', value))    
     uri      = property (lambda self: self._uri,      lambda self, value: setattr (self, '_uri', value))
     
     def __str__ (self):
@@ -50,7 +52,7 @@ class ResourcesManager (object):
     def __init__ (self):
         self._res = {}
     
-    def add (self, location, instance, uri):
+    def add (self, location, instance, uri, loop=None):
 
         location = self._validLocation (location)
 
@@ -60,6 +62,7 @@ class ResourcesManager (object):
         entry = Resource ()
         entry.location = location
         entry.instance = instance
+        entry.loop     = loop
         entry.uri = uri
 
         self._res[location] = entry
