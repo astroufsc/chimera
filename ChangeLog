@@ -1,5 +1,37 @@
 2008-05-13  P. Henrique Silva  <henrique@astro.ufsc.br>
 
+	* scheduler:
+	* scheduler/programs.py:
+	* scheduler/clock.py:
+	* scheduler/dummy.py:
+	* scheduler/sensors.py:
+	* scheduler/exposures.py:
+	* scheduler/__init__.py:
+	* scheduler/model.py:
+	* scheduler/schedulers.py:
+	* scheduler/machine.py:
+	* scheduler/program.db:
+	* scheduler/database.py:
+	* scheduler/constraints.py:
+	* scheduler/program.py:
+	* scheduler/sequential.py:
+	* scheduler/tests:
+	* scheduler/tests/test_model.py:
+	* scheduler/tests/__init__.py:
+	* scheduler/create-tables.py:
+	* scheduler/scheduler.py:
+	* scheduler/program.xml:
+	* scheduler/seq.log:
+	* scheduler/ischeduler.py: New prototype scheduler. This scheduler
+	will be the main automation controller in the system. It handles a
+	generic program database and will dispatch tasks using pluggable
+	scheduler algorithms. A simple sequential scheduler is implement
+	right now and there are no real instrument handling yet. Anyway,
+	it very impressive how the simple Machine class work and interacts
+	with the scheduler database.
+
+2008-05-13  P. Henrique Silva  <henrique@astro.ufsc.br>
+
 	* tests/chimera.pychecker:
 	* tests/run-tests.sh:
 	* tests/run-pylint.sh: Marked as executables.
