@@ -1,5 +1,11 @@
 2008-05-13  P. Henrique Silva  <henrique@astro.ufsc.br>
 
+	* src/chimera/drivers/fakecamera.py:
+	* src/chimera/drivers/fakedome.py:
+	* src/chimera/drivers/faketelescope.py: More realistic simulation.
+
+2008-05-13  P. Henrique Silva  <henrique@astro.ufsc.br>
+
 	* src/scripts/chimera-focus:
 	* src/scripts/chimera-cam:
 	* src/scripts/chimera:

@@ -58,7 +58,14 @@ class FakeTelescope (ChimeraObject,
         self._abort = threading.Event()
 
     def __start__ (self):
-        self.setHz(1.0/10)
+        self.setHz(1)
+
+    @lock
+    def control (self):
+        self._ra  += Coord.fromAS(15)
+        self._az  += Coord.fromAS(5*60)
+        self._alt += Coord.fromAS(15)
+        return True
 
     def open(self):
         pass
@@ -71,18 +78,36 @@ class FakeTelescope (ChimeraObject,
 
     @lock
     def slewToRaDec(self, position):
+
         self.slewBegin(position)
-        self._ra = position.ra
-        self._dec = position.dec
+
+        ra_steps = position.ra - self.getRa()
+        ra_steps = float(ra_steps/10.0)
+
+        dec_steps = position.dec - self.getDec()
+        dec_steps = float(dec_steps/10.0)
+
         self._slewing = True
         self._abort.clear()
 
-        t0 = time.time()
-        while t0+5 < time.time():
-            if self._abort.isSet(): return
-            time.sleep(0.2)
+        t = 0
+        while t < 5:
+
+            if self._abort.isSet():
+                self._slewing = False
+                return
+
+            self._ra  += ra_steps
+            self._dec += dec_steps
+            self._az  += ra_steps
+            self._alt += dec_steps
             
-        self.slewComplete(position)
+            time.sleep(0.5)
+            t += 0.5
+
+        self._slewing = False
+            
+        self.slewComplete(self.getPositionRaDec())
 
     @lock
     def slewToAltAz(self, position):
@@ -101,7 +126,7 @@ class FakeTelescope (ChimeraObject,
         while self.isSlewing():
             time.sleep(0.1)
 
-        self.abortComplete()
+        self.abortComplete(self.getPositionRaDec())
 
     @lock
     def moveEast(self, offset, rate=SlewRate.MAX):
@@ -132,30 +157,34 @@ class FakeTelescope (ChimeraObject,
         return self._alt
 
     def getPositionRaDec(self):
-        return Position.fromRaDec(self.getRa(), self.getAz())
+        return Position.fromRaDec(self.getRa(), self.getDec())
 
     def getPositionAzAlt(self):
         return Position.fromRaDec(self.getAz(), self.getAlt())
 
     def getTargetRaDec(self):
-        return Position.fromRaDec(self.getRa(), self.getAz())
+        return Position.fromRaDec(self.getRa(), self.getDec())
 
     def getTargetAzAlt(self):
         return Position.fromRaDec(self.getAz(), self.getAlt())
 
+    @lock
     def sync(self, position):
         self._ra  = position.ra
         self._dec = position.dec
 
+    @lock
     def park(self):
         self._parked = True
 
+    @lock
     def unpark(self):
         self._parked = False
 
     def isParked(self):
         return self._parked
 
+    @lock
     def setParkPosition (self, position):
         pass
 

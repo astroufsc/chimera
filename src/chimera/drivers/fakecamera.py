@@ -21,11 +21,13 @@
 import time
 import random
 import threading
+import sys
 
 from chimera.interfaces.cameradriver      import ICameraDriver
 from chimera.interfaces.filterwheeldriver import IFilterWheelDriver
 
 from chimera.core.chimeraobject      import ChimeraObject
+from chimera.core.exceptions import ChimeraException
 
 from chimera.util.imagesave import ImageSave
 
@@ -42,10 +44,12 @@ class FakeCamera (ChimeraObject, ICameraDriver, IFilterWheelDriver):
 
         self.__abort = threading.Event()
 
-        self._lastFilter = 0
+        self.__lastFilter = 0
+
+        self.__temperature = 20.0
 
     def __start__ (self):
-        self.setHz(1.0/10)
+        self.setHz(2)
 
     def open(self, device):
         return True
@@ -54,7 +58,9 @@ class FakeCamera (ChimeraObject, ICameraDriver, IFilterWheelDriver):
         return True
 
     def control (self):
-        self.temperatureChange(20*random.random(), 0.1)
+        if self.isCooling():
+            self.__temperature -= 1.5
+            
         return True
 
     def ping(self):
@@ -68,18 +74,31 @@ class FakeCamera (ChimeraObject, ICameraDriver, IFilterWheelDriver):
         self.__exposing = True
         self.__abort.clear()
 
+        ret = ()
+
+        # normal exposure
+        if self._expose():
+            ret = self._readout()
+
+        self.__exposing = False
+        return ret
+
+    def _expose(self):
+        
         self.exposeBegin(self["exp_time"])
 
         t=0
         while t < self["exp_time"]:
             if self.__abort.isSet():
-                self.__exposing = False
-                return
+                return self["readout_aborted"]
             
             time.sleep (0.1)            
             t+=0.1
 
         self.exposeComplete()
+        return True
+
+    def _readout(self):
 
         next_filename = ImageSave.save(None, 
                                        self["directory"],
@@ -93,34 +112,26 @@ class FakeCamera (ChimeraObject, ICameraDriver, IFilterWheelDriver):
 
 
         self.readoutBegin(next_filename)
-        
-        t=0
-        while t < 1: # really fast CCD :)
-            if self.__abort.isSet():
-                self.__exposing = False
-                return
-            
-            time.sleep (0.1)            
-            t+=0.1
+
+        time.sleep (2)            
+
+        try:
+            fp = open(next_filename, "w")
+            print >> fp, "Nice image! - %s" % next_filename
+        except IOError, e:
+            raise ChimeraException("Couldn't save image %s (%s)" % (next_filename, e.strerror))
 
         self.readoutComplete(next_filename)
         
-        self.__exposing = False
-        return self["file_format"]
+        return next_filename
 
-    @lock
     def abortExposure(self):
 
         if not self.isExposing(): return
 
         self.__abort.set()
 
-        if self["readout_aborted"]:
-            self.readoutBegin(self["file_format"])
-            time.sleep(1)
-            self.readoutComplete(self["file_format"])
-
-        # busy waiting for exposure stops
+        # busy waiting for exposure/readout stops
         while self.isExposing(): time.sleep(0.1)
             
         self.abortComplete()
@@ -138,14 +149,14 @@ class FakeCamera (ChimeraObject, ICameraDriver, IFilterWheelDriver):
     def isCooling(self):
         return self.__cooling
 
-    def getTemperature(self):
-        return 20 * random.random()
-
     @lock
+    def getTemperature(self):
+        return self.__temperature + random.random()
+
     def getFilter (self):
-        return self._lastFilter
+        return self.__lastFilter
 
     @lock
     def setFilter (self, filter):
-        self.filterChange(filter, self._lastFilter)
-        self._lastFilter = filter
+        self.filterChange(filter, self.__lastFilter)
+        self.__lastFilter = filter

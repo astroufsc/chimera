@@ -36,10 +36,11 @@ class FakeDome (ChimeraObject, IDomeDriver):
         ChimeraObject.__init__(self)
 
         self._position  = 0
-        self._isSlewing = False
+        self._slewing = False
         self._slitOpen  = False
         self._abort = threading.Event()
 
+    @lock
     def slewToAz (self, az):
 
         if az > 360:
@@ -47,7 +48,7 @@ class FakeDome (ChimeraObject, IDomeDriver):
                                                "Outise azimute limits." % az)
 
         self._abort.clear()
-        self._isSlewing = True
+        self._slewing = True
         
         self.slewBegin(az)
 
@@ -64,10 +65,12 @@ class FakeDome (ChimeraObject, IDomeDriver):
 
         self._position = az # move :)
 
+        self._slewing = False
+
         self.slewComplete(self.getAz())
 
     def isSlewing (self):
-        return self._isSlewing
+        return self._slewing
 
     def abortSlew (self):
         if not self.isSlewing(): return
@@ -78,14 +81,17 @@ class FakeDome (ChimeraObject, IDomeDriver):
             
         self.abortComplete(self.getAz())
 
+    @lock
     def openSlit (self):
         self._slitOpen = True
-        
+
+    @lock
     def closeSlit (self):
         self._slitOpen = False
 
     def isSlitOpen (self):
         return self._slitOpen
 
+    @lock
     def getAz(self):
         return self._position
