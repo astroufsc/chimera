@@ -12,8 +12,17 @@ except ImportError:
     class CoordsPosition(object): pass
     have_coords = False
 
-from chimera.util.coord import Coord
-from chimera.util.enum  import Enum
+# to allow use outsise chimera
+
+try:
+    from chimera.util.coord import Coord
+except ImportError:
+    from coord import Coord
+
+try:
+    from chimera.util.enum  import Enum
+except ImportError:
+    from enum import Enum
 
 
 __all__ = ['Position']

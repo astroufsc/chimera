@@ -1,34 +1,50 @@
 2008-05-13  P. Henrique Silva  <henrique@astro.ufsc.br>
 
-	* scheduler:
-	* scheduler/programs.py:
-	* scheduler/clock.py:
-	* scheduler/dummy.py:
-	* scheduler/sensors.py:
-	* scheduler/exposures.py:
-	* scheduler/__init__.py:
-	* scheduler/model.py:
-	* scheduler/schedulers.py:
-	* scheduler/machine.py:
-	* scheduler/program.db:
-	* scheduler/database.py:
-	* scheduler/constraints.py:
-	* scheduler/program.py:
-	* scheduler/sequential.py:
-	* scheduler/tests:
-	* scheduler/tests/test_model.py:
-	* scheduler/tests/__init__.py:
-	* scheduler/create-tables.py:
-	* scheduler/scheduler.py:
-	* scheduler/program.xml:
-	* scheduler/seq.log:
-	* scheduler/ischeduler.py: New prototype scheduler. This scheduler
-	will be the main automation controller in the system. It handles a
-	generic program database and will dispatch tasks using pluggable
-	scheduler algorithms. A simple sequential scheduler is implement
-	right now and there are no real instrument handling yet. Anyway,
-	it very impressive how the simple Machine class work and interacts
-	with the scheduler database.
+	* src/chimera/util/coord.py: Lot of changes.
+	Allow use of Coord outise Chimera.
+	Much better d2dms conversion with configurable precision.
+	Improved strfcoord using configurable precision of d2dms.
+	Fix bug when priting 01-09 seconds with only onde digit.
+	New math behavviour: Use other state onçy with strings.
+
+	* src/chimera/util/position.py: Allow position to be used outside
+	Chimera.
+
+	* src/chimera/util/tests/test_coord.py: Improved test suite.
+	* src/chimera/util/tests/hipparcos-tycho.dat: New test suite
+	database.
+
+2008-05-13  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* src/chimera/controllers/scheduler:
+	* src/chimera/controllers/scheduler/programs.py:
+	* src/chimera/controllers/scheduler/clock.py:
+	* src/chimera/controllers/scheduler/dummy.py:
+	* src/chimera/controllers/scheduler/sensors.py:
+	* src/chimera/controllers/scheduler/exposures.py:
+	* src/chimera/controllers/scheduler/__init__.py:
+	* src/chimera/controllers/scheduler/model.py:
+	* src/chimera/controllers/scheduler/schedulers.py:
+	* src/chimera/controllers/scheduler/machine.py:
+	* src/chimera/controllers/scheduler/program.db:
+	* src/chimera/controllers/scheduler/database.py:
+	* src/chimera/controllers/scheduler/constraints.py:
+	* src/chimera/controllers/scheduler/program.py:
+	* src/chimera/controllers/scheduler/sequential.py:
+	* src/chimera/controllers/scheduler/tests:
+	* src/chimera/controllers/scheduler/tests/test_model.py:
+	* src/chimera/controllers/scheduler/tests/__init__.py:
+	* src/chimera/controllers/scheduler/create-tables.py:
+	* src/chimera/controllers/scheduler/scheduler.py:
+	* src/chimera/controllers/scheduler/program.xml:
+	* src/chimera/controllers/scheduler/seq.log:
+	* src/chimera/controllers/scheduler/ischeduler.py: New prototype
+	scheduler. This scheduler will be the main automation controller
+	in the system. It handles a generic program database and will
+	dispatch tasks using pluggable scheduler algorithms. A simple
+	sequential scheduler is implement right now and there are no real
+	instrument handling yet. Anyway, it very impressive how the simple
+	Machine class work and interacts with the scheduler database.
 
 2008-05-13  P. Henrique Silva  <henrique@astro.ufsc.br>
 
