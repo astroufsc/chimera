@@ -50,7 +50,7 @@ class IFilterWheel (Interface):
 
     __config__ = {"driver"  : "/SBIG/sbig",
                   "model"   : "Fake Filters Inc.",
-                  "filters" : "R G B CLEAR LUNAR" # space or comma separated
+                  "filters" : "R G B LUNAR CLEAR" # space or comma separated
                                                   # filter names (in position order)
                   }
     

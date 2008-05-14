@@ -52,7 +52,7 @@ class TestFilterWheel (object):
 
         self.manager.addClass(SBIG, "sbig", {"device": Device.USB})
         self.manager.addClass(FilterWheel, "filter", {"driver": "/SBIG/0",
-                                                      "filters": "U B V R I"})
+                                                      "filters": "R G B LUNAR CLEAR"})
 
 
         @callback(self.manager)
