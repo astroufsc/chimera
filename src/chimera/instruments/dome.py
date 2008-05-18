@@ -62,7 +62,7 @@ class Dome(ChimeraObject, IDome):
           drv.slitOpened    += self.getProxy()._slitOpenedClbk
           drv.slitClosed    += self.getProxy()._slitClosedClbk
 
-          self.setHz(0.5)
+          self.setHz(1/5.0)
 
           if self["mode"] == Mode.Track:
                self.track ()
@@ -73,6 +73,25 @@ class Dome(ChimeraObject, IDome):
                self.stand ()
 
           # telescope events
+          self._connectTelEvents()
+
+          return True
+
+     def __stop__ (self):
+          # disconnect events
+          drv = self.getDriver()
+         
+          drv.slewBegin     -= self.getProxy()._slewBeginClbk
+          drv.slewComplete  -= self.getProxy()._slewCompleteClbk
+          drv.abortComplete -= self.getProxy()._abortCompleteClbk
+          drv.slitOpened    -= self.getProxy()._slitOpenedClbk
+          drv.slitClosed    -= self.getProxy()._slitClosedClbk
+          self._disconnectTelEvents()
+          return True
+
+
+     def _connectTelEvents (self):
+          
           try:
                tel = self.getTelescope()
 
@@ -86,16 +105,7 @@ class Dome(ChimeraObject, IDome):
 
           return True
 
-     def __stop__ (self):
-          # disconnect events
-          drv = self.getDriver()
-         
-          drv.slewBegin     -= self.getProxy()._slewBeginClbk
-          drv.slewComplete  -= self.getProxy()._slewCompleteClbk
-          drv.abortComplete -= self.getProxy()._abortCompleteClbk
-          drv.slitOpened    -= self.getProxy()._slitOpenedClbk
-          drv.slitClosed    -= self.getProxy()._slitClosedClbk
-
+     def _disconnectTelEvents (self):
           try:
                tel = self.getTelescope()
                
@@ -107,6 +117,10 @@ class Dome(ChimeraObject, IDome):
                pass
 
           return True
+
+     def _reconnectTelEvents (self):
+          self._disconnectTelEvents()
+          self._connectTelEvents()
 
      # callbacks
      def _slewBeginClbk(self, position):
@@ -175,7 +189,7 @@ class Dome(ChimeraObject, IDome):
 
           drv = self.getDriver()
 
-          if self.getMode() != Mode.Track:
+          if self.getMode() == Mode.Stand:
                self.log.debug("[control] standing...")
                return True
 
@@ -231,6 +245,9 @@ class Dome(ChimeraObject, IDome):
           if self.getMode() == Mode.Track: return
           
           self._mode = Mode.Track
+
+          self._reconnectTelEvents()
+          
           tel = self.getTelescope()
           self.log.debug("[mode] tracking...")
           self._telescopeChanged(tel.getAz())

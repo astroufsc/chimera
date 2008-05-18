@@ -28,7 +28,8 @@ class Machine (object):
     __wakeUpCall = threading.Condition()    
 
     def __init__ (self):
-        
+
+        self.proxies = {}
         self.clock = Clock(self)
         self.sensors = Sensors()
         self.scheduler = SequentialScheduler()
@@ -103,7 +104,7 @@ class Machine (object):
 
         def process ():
             try:
-                exp.process()
+                exp.process(self.proxies)
             finally:
                 self.scheduler.done(exp)
                 self.state(State.IDLE)
@@ -111,3 +112,4 @@ class Machine (object):
         t = threading.Thread(target=process)
         t.setDaemon(False)
         t.start()
+

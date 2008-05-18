@@ -1,0 +1,61 @@
+<?xml version="1.0"?>
+
+<chimera>
+
+<site>
+ <name>UFSC</name>
+ <latitude>-22.0</latitude>
+ <longitude>-40.0</longitude>
+ <altitude>1000</altitude>
+ <timezone>-3</timezone>
+ <dst/>
+</site>
+
+<drivers>
+
+   <driver name="fake" class="FakeTelescope"/>
+   <driver name="fake" class="FakeCamera"/>
+   <driver name="fake" class="FakeFilterWheel"/>
+   <driver name="fake" class="FakeFocuser"/>
+   <driver name="fake" class="FakeDome"/>
+
+</drivers>
+
+<instruments>
+
+   <instrument name="tel" class="Telescope">
+      <option name="driver" value="/FakeTelescope/0"/>
+   </instrument>
+
+   <instrument name="cam" class="Camera">
+      <option name="driver" value="/FakeCamera/0"/>
+   </instrument>
+
+   <instrument name="wheel" class="FilterWheel">
+      <option name="driver" value="/FakeFilterWheel/0"/>
+   </instrument>
+
+   <instrument name="focuser" class="Focuser">
+      <option name="driver" value="/FakeFocuser/0"/>
+   </instrument>
+
+   <instrument name="dome" class="Dome">
+      <option name="driver" value="/FakeFocuser/0"/>
+      <option name="mode" value="STAND"/>
+   </instrument>
+
+</instruments>
+
+<controllers>
+
+   <controller name="sched" class="Scheduler">
+      <option name="telescope"   value="/Telescope/0"/>
+      <option name="camera"      value="/Camera/0"/>
+      <option name="filterwheel" value="/FilterWheel/0"/>
+      <option name="focuser"     value="/Focuser/0"/>
+      <option name="dome"        value="/Dome/0"/>
+   </controller>
+
+</controllers>
+
+</chimera>
