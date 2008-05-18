@@ -1,6 +1,6 @@
 #
 # ElementTree
-# $Id: ElementPath.py 1858 2004-06-17 21:31:41Z Fredrik $
+# $Id: ElementPath.py 3225 2007-08-27 21:32:08Z fredrik $
 #
 # limited xpath support for element trees
 #
@@ -17,7 +17,7 @@
 # --------------------------------------------------------------------
 # The ElementTree toolkit is
 #
-# Copyright (c) 1999-2004 by Fredrik Lundh
+# Copyright (c) 1999-2007 by Fredrik Lundh
 #
 # By obtaining, using, and/or copying this software and/or its
 # associated documentation, you agree that you have read, understood,
@@ -193,4 +193,3 @@ def findtext(element, path, default=None):
 
 def findall(element, path):
     return _compile(path).findall(element)
-

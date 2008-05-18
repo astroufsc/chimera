@@ -1,6 +1,6 @@
 #
 # ElementTree
-# $Id: ElementTree.py 2326 2005-03-17 07:45:21Z fredrik $
+# $Id: ElementTree.py 3224 2007-08-27 21:23:39Z fredrik $
 #
 # light-weight XML support for Python 1.5.2 and later.
 #
@@ -33,8 +33,10 @@
 # 2004-08-23 fl   take advantage of post-2.1 expat features
 # 2005-02-01 fl   added iterparse implementation
 # 2005-03-02 fl   fixed iterparse support for pre-2.2 versions
+# 2006-11-18 fl   added parser support for IronPython (ElementIron)
+# 2007-08-27 fl   fixed newlines in attributes
 #
-# Copyright (c) 1999-2005 by Fredrik Lundh.  All rights reserved.
+# Copyright (c) 1999-2007 by Fredrik Lundh.  All rights reserved.
 #
 # fredrik@pythonware.com
 # http://www.pythonware.com
@@ -42,7 +44,7 @@
 # --------------------------------------------------------------------
 # The ElementTree toolkit is
 #
-# Copyright (c) 1999-2005 by Fredrik Lundh
+# Copyright (c) 1999-2007 by Fredrik Lundh
 #
 # By obtaining, using, and/or copying this software and/or its
 # associated documentation, you agree that you have read, understood,
@@ -84,6 +86,14 @@ __all__ = [
     "XMLTreeBuilder",
     ]
 
+# parser api override (None = use default)
+parser_api = None
+
+# TODO: add support for custom namespace resolvers/default namespaces
+# TODO: add improved support for incremental parsing
+
+VERSION = "1.2.7"
+
 ##
 # The <b>Element</b> type is a flexible container object, designed to
 # store hierarchical data structures in memory. The type can be
@@ -106,7 +116,22 @@ __all__ = [
 # structure, and convert it from and to XML.
 ##
 
-import string, sys, re
+import sys, re
+
+try:
+    import string
+except:
+    # emulate string module under IronPython
+    class string(object):
+        def join(self, seq, sep):
+            return sep.join(seq)
+        def replace(self, text, *args):
+            return text.replace(*args)
+        def split(self, text, *args):
+            return text.split(*args)
+        def strip(self, text, *args):
+            return text.strip(*args)
+    string = string()
 
 class _SimpleElementPath:
     # emulate pre-1.2 find/findtext/findall behaviour
@@ -135,10 +160,29 @@ except ImportError:
     # FIXME: issue warning in this case?
     ElementPath = _SimpleElementPath()
 
-# TODO: add support for custom namespace resolvers/default namespaces
-# TODO: add improved support for incremental parsing
+class DefaultParserAPI:
 
-VERSION = "1.2.6"
+    def parse(self, source, parser=None):
+        if not hasattr(source, "read"):
+            source = open(source, "rb")
+        if not parser:
+            parser = XMLTreeBuilder()
+        while 1:
+            data = source.read(32768)
+            if not data:
+                break
+            parser.feed(data)
+        return parser.close()
+
+    def iterparse(self, source, events):
+        return _iterparse(source, events)
+
+    def fromstring(self, text):
+        parser = XMLTreeBuilder()
+        parser.feed(text)
+        return parser.close()
+
+parser_api = default_parser_api = DefaultParserAPI()
 
 ##
 # Internal element class.  This class defines the Element interface,
@@ -572,17 +616,12 @@ class ElementTree:
     # @defreturn Element
 
     def parse(self, source, parser=None):
-        if not hasattr(source, "read"):
-            source = open(source, "rb")
-        if not parser:
-            parser = XMLTreeBuilder()
-        while 1:
-            data = source.read(32768)
-            if not data:
-                break
-            parser.feed(data)
-        self._root = parser.close()
-        return self._root
+        if parser:
+            tree = default_parser_api.parse(source, parser)
+        else:
+            tree = parser_api.parse(source)
+        self._root = tree
+        return tree
 
     ##
     # Creates a tree iterator for the root element.  The iterator loops
@@ -802,9 +841,12 @@ def _escape_cdata(text, encoding=None, replace=string.replace):
                 text = _encode(text, encoding)
             except UnicodeError:
                 return _encode_entity(text)
-        text = replace(text, "&", "&amp;")
-        text = replace(text, "<", "&lt;")
-        text = replace(text, ">", "&gt;")
+        if "&" in text:
+            text = replace(text, "&", "&amp;")
+        if "<" in text:
+            text = replace(text, "<", "&lt;")
+        if ">" in text:
+            text = replace(text, ">", "&gt;")
         return text
     except (TypeError, AttributeError):
         _raise_serialization_error(text)
@@ -817,11 +859,16 @@ def _escape_attrib(text, encoding=None, replace=string.replace):
                 text = _encode(text, encoding)
             except UnicodeError:
                 return _encode_entity(text)
-        text = replace(text, "&", "&amp;")
-        text = replace(text, "'", "&apos;") # FIXME: overkill
-        text = replace(text, "\"", "&quot;")
-        text = replace(text, "<", "&lt;")
-        text = replace(text, ">", "&gt;")
+        if "&" in text:
+            text = replace(text, "&", "&amp;")
+        if "\"" in text:
+            text = replace(text, "\"", "&quot;")
+        if "<" in text:
+            text = replace(text, "<", "&lt;")
+        if ">" in text:
+            text = replace(text, ">", "&gt;")
+        if "\n" in text:
+            text = replace(text, "\n", "&#10;")
         return text
     except (TypeError, AttributeError):
         _raise_serialization_error(text)
@@ -855,9 +902,11 @@ def fixtag(tag, namespaces):
 # @return An ElementTree instance
 
 def parse(source, parser=None):
-    tree = ElementTree()
-    tree.parse(source, parser)
-    return tree
+    if parser:
+        tree = default_parser_api.parse(source, parser)
+    else:
+        tree = parser_api.parse(source)
+    return ElementTree(tree)
 
 ##
 # Parses an XML document into an element tree incrementally, and reports
@@ -868,9 +917,12 @@ def parse(source, parser=None):
 #     events are reported.
 # @return A (event, elem) iterator.
 
-class iterparse:
+def iterparse(source, events=None):
+    return parser_api.iterparse(source, events)
 
-    def __init__(self, source, events=None):
+class _iterparse:
+
+    def __init__(self, source, events):
         if not hasattr(source, "read"):
             source = open(source, "rb")
         self._file = source
@@ -956,9 +1008,8 @@ class iterparse:
 # @defreturn Element
 
 def XML(text):
-    parser = XMLTreeBuilder()
-    parser.feed(text)
-    return parser.close()
+    api = parser_api or default_parser_api
+    return api.fromstring(text)
 
 ##
 # Parses an XML document from a string constant, and also returns
@@ -969,9 +1020,8 @@ def XML(text):
 # @defreturn (Element, dictionary)
 
 def XMLID(text):
-    parser = XMLTreeBuilder()
-    parser.feed(text)
-    tree = parser.close()
+    api = parser_api or default_parser_api
+    tree = api.fromstring(text)
     ids = {}
     for elem in tree.getiterator():
         id = elem.get("id")
@@ -1252,3 +1302,23 @@ class XMLTreeBuilder:
         tree = self._target.close()
         del self._target, self._parser # get rid of circular references
         return tree
+
+
+# --------------------------------------------------------------------
+# load platform specific extensions
+
+if sys.platform == "cli":
+    try:
+        import ElementIron
+    except ImportError:
+        pass # fall back on optional pyexpat emulation
+    else:
+        parser_api = ElementIron.ParserAPI(TreeBuilder)
+
+elif sys.platform.startswith("java"):
+    try:
+        import ElementJava
+    except ImportError:
+        pass
+    else:
+        parser_api = ElementJava.ParserAPI(TreeBuilder)
