@@ -228,14 +228,19 @@ class CoordUtil (object):
             need = "%(ss)"
 
         sec_prec = None
-        
-        if need:
-            ss_index = format.index(need)
-            sec_prec = format[ss_index:format.index('f', ss_index)]
-            parts = sec_prec.split(".")
-            if len(parts) == 2:
-                sec_prec = int(parts[1])+1
 
+        if need:
+            try:
+                ss_index = format.index(need)
+                sec_prec = format[ss_index:format.index('f', ss_index)]
+                parts = sec_prec.split(".")
+
+                if len(parts) == 2:
+                    sec_prec = int(parts[1])+1
+            except ValueError:
+                # got a %d or something not like a float
+                pass
+                    
         sign, d, dm, ds = CoordUtil.d2dms(c.D, sec_prec)
         _, h, hm, hs = CoordUtil.d2hms(c.D, sec_prec)
 

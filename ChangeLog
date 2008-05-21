@@ -1,3 +1,9 @@
+2008-05-21  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* src/chimera/util/coord.py: Fix bug on code that find desired
+	precision on strfcoord. This was causing ValueError when trying to
+	format seconds as a integer number.
+
 2008-05-13  P. Henrique Silva  <henrique@astro.ufsc.br>
 
 	* setup-chimera.bat:
