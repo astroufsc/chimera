@@ -1,6 +1,5 @@
-
-Getting Start with Chimera
-==========================
+Getting Started with Chimera
+============================
 
 Introduction
 ============
@@ -15,7 +14,7 @@ must have to be started and stopped. :class:`ChimeraObject` provides a
 basic implementation of a control loop, a common structure in control
 programs.
 
-By itself, a Chimera object it's just a static bunch of code which
+By itself, a Chimera object is just a static bunch of code that 
 inherits from a specific class. To be useful, every
 :class:`ChimeraObject` must have a :class:`Manager` to manage its life
 cycle.
@@ -23,58 +22,58 @@ cycle.
 .. note:: 
  We call it instrument, controller or driver purely from a semantic
  point of view, as they are equal from a code point of view, there is
- no different base class for different kind of objects. Every
+ no different base class for different kinds of objects. Every
  instrument, controller or driver extends :class:`ChimeraObject`. More
  specifically, it must implement :class:`ILifeCycle`, and
- :class:`ChimeraObject` provide us with a basic implementation.
+ :class:`ChimeraObject` provides us with a basic implementation.
 
 :class:`Manager` class is responsible for object initialization, life
 cycle (start, stop) and proxy creation. :class:`Manager` is also our
-server in the client/server model. It's a sever of objects. We can
-think as :class:`Manager` as pool of objects available to be used.
+server in the client/server model. It's a server of objects. We can
+think of :class:`Manager` as a pool of objects available to be used.
 
-As we need RPC support for every object and want to make system easy
+As we need RPC support for every object and want to make the system easy
 to use and write, we use a Proxy class that handles all the networking
 for us. This way, you don't have to write networking code on your
-objects, just the real action, Proxy and friends add networking to
+objects, just the real action, Proxy and friends add networking for 
 you.
 
-Before describe :class:`Manager`'s responsibilities in more detail,
+Before describing :class:`Manager`'s responsibilities in more detail,
 let's describe all features we can have in a Chimera object.
 
 Chimera objects
 ---------------
 
-A Chimera object, as said, is a normal Python class which extend from
+A Chimera object, as already said, is a normal Python class which extends from
 a specific base class, :class:`ChimeraObject`, the simplest
-:class:`ChimeraObject` its the following.
+:class:`ChimeraObject` is the following.
 
 .. literalinclude:: simplest.py
    :language: python
 
-this object have no methods, configuration or events, so it's simples
-and dumbest possible.
+this object has no methods, configuration or events, so it's the simplest
+and dumbest possible object.  
 
 As Python doesn't call base constructors per se, you need to call the
 base constructor from Simplest constructor (:meth:`__init__` method).
 
 Chimera uses the concept of :class:`Location` all over the code. A
 Location is much like an URL, but without a scheme. Locations
-identifies specific class instances running somewhere. The basic
+identify specific class instances running somewhere. The basic
 format is the following:
 
 ::
 
    [host:port]/Classname/instance_name[?param1=value1,...]
 
-`host` and `port`, optional fields, tells Chimera where to look for
+`host` and `port`, optional fields, tell Chimera where to look for
 this particular object. `Classname` is the class name of the object
 and `instance_name` the name given to a specific instance running on
 host:port. When you add objects to :class:`Manager`, you must specify
 a name. Also, you can pass configuration parameters as comma separated
 param=value pairs.
 
-Let's write down a class which use this and see how to actually use
+Let's write down a class that uses this and see how to actually use
 this from Chimera.
 
 .. literalinclude:: example1.py
@@ -82,14 +81,14 @@ this from Chimera.
 
 This example requires some explanations, but before, let's run it
 using :command:`chimera` script. :command:`chimera` script is a script
-to initializes :class:`Manager` and add objects either from Locations
+to initialize :class:`Manager` and add objects either from Locations
 given on command line or from a configuration file.
 
 To follow Chimera conventions, a file with a class named
 :class:`Example1` must be saved to a file name :file:`example1.py` to
-allow Chimera ClassLoader to find it. We may alleviate this in future.
+allow Chimera ClassLoader to find it. We may simplify this in the future.
 
-You can save this file anywhere on you system, let's suppose you saved
+You can save this file anywhere on your system, let's suppose you saved
 it on your $HOME directory.
 
 To run it, call :command:`chimera` this way:
@@ -121,17 +120,17 @@ A few points need explanation on :class:`Example1`:
 
  1. :attr:`__config__` is a class attribute (class field in some
  circles) where you should pass a Python dictionary with any parameter
- you like to add to you object. Chimera uses the value you pass in as
- default value and also use the type of it to do some type checking
+ you like to add to your object. Chimera uses the value you pass in as
+ default value and also uses the type of it to do some type checking
  for you. Look at src/chimera/core/config.py for valid types.
 
  2. :meth:`__start__` method. This method is from :class:`ILifeCycle`
- interface, :class:`ChimeraObject` implementation just do nothing,
+ interface, :class:`ChimeraObject` implementation just does nothing,
  here we use it to call a specific method on object
  initialization. :class:`Manager` first call :meth:`__init__` to
  create an instance, configure this instance passing any parameter you
- gave on command line, then calls :meth:`__start__` and when system is
- shutting down calls :meth:`__stop__`.
+ gave on command line, then call :meth:`__start__` and when system is
+ shutting down call :meth:`__stop__`.
 
  3. :attr:`log`. :class:`ChimeraObject` implementation give a `log`
  attribute (instance field, in other circles) to every class, you can
@@ -148,7 +147,7 @@ A few points need explanation on :class:`Example1`:
  set things, with normal ``self["param1"] = "value1"``.
 
 When you use :command:`chimera` script, a :class:`Manager` is created
-to you, but you can do it by yourself to learn how things work in
+for you, but you can do it by yourself to learn how things work in
 Chimera. The following example is based on :file:`server.py`.
 
 .. literalinclude:: server.py
@@ -200,6 +199,3 @@ access to :class:`Example1` running on other :class:`Manager`
 specifies Location. For all purposes this :class:`Proxy` class acts
 like the original object, so you can call any method just like you
 would with the original object.
-
-
-
