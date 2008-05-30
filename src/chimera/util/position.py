@@ -1,7 +1,4 @@
 
-
-from types import StringType, IntType, FloatType, LongType
-
 have_coords = True
 
 try:
@@ -23,6 +20,9 @@ try:
     from chimera.util.enum  import Enum
 except ImportError:
     from enum import Enum
+
+
+from types import StringType
 
 
 __all__ = ['Position']
@@ -61,7 +61,7 @@ class Position (CoordsPosition):
 
     >>> # assumes ra in hms and declination in dms
     >>> p = Position.fromRaDec('10:00:00', '20:20:20', equinox=Equinox.J2000)
-    >>> p = Position.fromRaDec(10, 20) # assume ra and dec in decimal degress
+    >>> p = Position.fromRaDec(10, 20) # assume ra in hours and dec in decimal degress
     >>> # don't want assumptions? ok, give me a real Coord
     >>> # ok, If you want ra in radians and dec in hours (very strange), use:
     >>> p = Position.fromRaDec(Coord.fromR(pi), Coord.fromH(10))
@@ -101,14 +101,16 @@ class Position (CoordsPosition):
     def fromRaDec (ra, dec, equinox=Equinox.J2000):
 
         try:
-            if type(ra) in [IntType, LongType, FloatType]:
-                ra = Coord.fromD(ra)
-            elif type(ra) == StringType:
+            if type(ra) == StringType:
                 ra = Coord.fromHMS(ra)
             elif isinstance(ra, Coord):
-                pass
+                ra = ra.toHMS()
             else:
-                raise ValueError("Invalid RA coordinate type %s. Expected numbers, strings or Coords." % str(type(ra)))
+                try:
+                    ra = Coord.fromH(float(ra))
+                    ra = ra.toHMS()
+                except ValueError:
+                    raise ValueError("Invalid RA coordinate type %s. Expected numbers, strings or Coords." % str(type(ra)))
 
             Position._checkRange(float(ra), 0, 360)
 
@@ -118,14 +120,16 @@ class Position (CoordsPosition):
             raise ValueError("Invalid RA range %s. Must be between 0-24 hours or 0-360 deg." % str(ra))
 
         try:
-            if type(dec) in [IntType, LongType, FloatType]:
-                dec = Coord.fromD(dec)
-            elif type(dec) == StringType:
+            if type(dec) == StringType:
                 dec = Coord.fromDMS(dec)
             elif isinstance(dec, Coord):
-                pass
+                dec = dec.toDMS()
             else:
-                raise ValueError("Invalid DEC coordinate type %s. Expected numbers, strings or Coords." % str(type(dec)))
+                try:
+                    dec = Coord.fromD(float(dec))
+                    dec = dec.toDMS()
+                except ValueError:
+                    raise ValueError("Invalid DEC coordinate type %s. Expected numbers, strings or Coords." % str(type(dec)))
 
             Position._checkRange(float(dec), -90, 360)
 
@@ -141,6 +145,8 @@ class Position (CoordsPosition):
         try:
             if not isinstance(az, Coord):
                 az = Coord.fromDMS(az)
+            else:
+                az = az.toDMS()
 
             Position._checkRange(float(az), -180, 360)
 
@@ -152,6 +158,8 @@ class Position (CoordsPosition):
         try:
             if not isinstance(alt, Coord):
                 alt = Coord.fromDMS(alt)
+            else:
+                alt = alt.toDMS()
 
             Position._checkRange(float(alt), -90, 180)
 
@@ -179,6 +187,8 @@ class Position (CoordsPosition):
         try:
             if not isinstance(long, Coord):
                 long = Coord.fromDMS(long)
+            else:
+                long = long.toDMS()
 
             Position._checkRange(float(long), -180, 360)
 
@@ -190,6 +200,8 @@ class Position (CoordsPosition):
         try:
             if not isinstance(lat, Coord):
                 lat = Coord.fromDMS(lat)
+            else:
+                lat = lat.toDMS()
 
             Position._checkRange(float(lat), -90, 180)
 

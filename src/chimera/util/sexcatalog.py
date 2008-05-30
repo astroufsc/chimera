@@ -337,6 +337,15 @@ class SExtractorfile:
                                   "format": "%10.3f",
                                   "unit": "pixel"},
               
+              "XWIN_IMAGE"     : {"comment": "Windowed position estimate along x",
+                                  "infunc": float,
+                                  "format": "%10.3f",
+                                  "unit": "pixel"},
+              
+              "YWIN_IMAGE"     : {"comment": "Windowed position estimate along y",
+                                  "infunc": float,
+                                  "format": "%10.3f",
+                                  "unit": "pixel"},
               "X_WORLD"        : {"comment":
                                   "Barycenter position along world x axis",
                                   "infunc": float,

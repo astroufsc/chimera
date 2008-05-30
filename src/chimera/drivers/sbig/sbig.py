@@ -268,6 +268,7 @@ class SBIG(ChimeraObject, ICameraDriver, IFilterWheelDriver):
                                            self["file_extension"],
                                            self["date_format"],
                                            self.lastFrameStartTime,
+                                           self["exp_time"],
                                            self["bitpix"],
                                            self["save_on_temp"],
                                            dry=True)
@@ -315,6 +316,7 @@ class SBIG(ChimeraObject, ICameraDriver, IFilterWheelDriver):
                                                     self["file_extension"],
                                                     self["date_format"],
                                                     self.lastFrameStartTime,
+                                                    self["exp_time"],                                                    
                                                     self["bitpix"],
                                                     self["save_on_temp"])
         except Exception, e:

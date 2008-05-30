@@ -18,7 +18,6 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-
 import time
 import sys
 import logging
@@ -27,61 +26,80 @@ from chimera.core.manager  import Manager
 from chimera.core.callback import callback
 from chimera.core.site     import Site
 
-from chimera.instruments.telescope import Telescope
-from chimera.drivers.faketelescope import FakeTelescope
-
-from chimera.drivers.meade import Meade
-
+from chimera.controllers.autofocus import Autofocus, Target, Mode
 
 from chimera.instruments.camera import Camera
 from chimera.drivers.fakecamera import FakeCamera
+from chimera.drivers.sbig       import SBIG
 
-from chimera.drivers.sbig import SBIG
-
-from chimera.interfaces.cameradriver import Device
+from chimera.instruments.focuser import Focuser
+from chimera.drivers.fakefocuser import FakeFocuser
+from chimera.drivers.optectcfs   import OptecTCFS
 
 import chimera.core.log
-#chimera.core.log.setConsoleLevel(logging.DEBUG)
+chimera.core.log.setConsoleLevel(logging.DEBUG)
 
-from chimera.util.coord    import Coord
-from chimera.util.position import Position
-
-class TestTelescope (object):
+class TestAutofocus (object):
 
     def setup (self):
 
         self.manager = Manager(port=8000)
 
-        self.manager.addClass(Site, "lna", {"name": "LNA",
-                                            "latitude": "-22 32 03",
-                                            "longitude": "-45 34 57",
-                                            "altitude": "1896",
-                                            "utc_offset": "-3"})
+        # fake
+        self.manager.addClass(FakeCamera, "fake")
+        self.manager.addClass(Camera, "cam", {"driver": "/FakeCamera/fake"})
 
-        self.manager.addClass(Meade, "meade", {"device": "/dev/ttyS6"})
-        self.manager.addClass(Telescope, "meade", {"driver": "/Meade/meade"})
+        self.manager.addClass(FakeFocuser, "fake")
+        self.manager.addClass(Focuser, "focus", {"driver": "/FakeFocuser/0"})
 
-        self.manager.addClass(SBIG, "sbig", {"device": Device.USB})
-        self.manager.addClass(Camera, "cam", {"driver": "/SBIG/sbig"})
+        # real
+        #self.manager.addClass(SBIG, "sbig", {"device": "USB"})
+        #self.manager.addClass(Camera, "cam", {"driver": "/SBIG/0"})
 
+        #self.manager.addClass(OptecTCFS, "optec", {"device": "/dev/ttyS0"})
+        #self.manager.addClass(Focuser, "focus", {"driver": "/OptecTCFS/0"})
 
+        self.manager.addClass(Autofocus, "autofocus", {"camera" : "/Camera/0",
+                                                       "focuser": "/Focuser/0"})
 
-        #self.manager.addClass(Telescope, "meade",
-        #                      {"driver": "200.131.64.134:7666/TheSkyTelescope/0"})
+        @callback(self.manager)
+        def exposeBeginClbk(exp_time):
+            print time.time(), "Expose begin for %.3f s." % exp_time
 
+        @callback(self.manager)
+        def exposeCompleteClbk():
+            print time.time(), "Expose complete."
 
-    def test_auto_focus (self):
+        @callback(self.manager)
+        def readoutBeginClbk(frame):
+            print time.time(), "Readout begin for %s." % frame
+
+        @callback(self.manager)
+        def readoutCompleteClbk(frame):
+            print time.time(), "Readout complete for %s." % frame
+
+        @callback(self.manager)
+        def abortCompleteClbk():
+            print time.time(), "Abort complete."
 
         cam = self.manager.getProxy(Camera)
+        cam.exposeBegin     += exposeBeginClbk
+        cam.exposeComplete  += exposeCompleteClbk        
+        cam.readoutBegin    += readoutBeginClbk        
+        cam.readoutComplete += readoutCompleteClbk
+        cam.abortComplete   += abortCompleteClbk
 
-        frames = 0
+    def teardown (self):
+        self.manager.shutdown()
+        del self.manager
 
-        try:
-            frames = cam.expose(exp_time=1, frames=5, interval=0.5, filename="test_expose.fits")
-        except Exception, e:
-            log.exception("problems")
+    def test_focus (self):
 
-        assert len(frames) == 5        
+        autofocus = self.manager.getProxy(Autofocus)
 
+        autofocus += {"debug": True,
+                      "debug_path": "/home/henrique/work/chimera/sprint1/autofocus/run1"}
 
-        
+        best_focus = autofocus.focus(mode=Mode.FIT, target=Target.CURRENT,
+                                     exptime=10, points=25)
+

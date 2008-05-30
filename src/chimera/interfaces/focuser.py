@@ -35,9 +35,9 @@ class IFocuser (Interface):
     """Instrument interface for an electromechanical focuser for
        astronomical telescopes.
        
-       Two kinds of focuser are support (dependind of the driver):
+       Two kinds of focusers are supported (depending of the driver):
 
-       - Absolute encoder: use optical encoder to move to exact
+       - Encoder based: use optical encoder to move to exact
          positions.
        - DC pulse: just send a DC pulse to a motor and move
          to selected directions only (no position information).

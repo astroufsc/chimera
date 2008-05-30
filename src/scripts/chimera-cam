@@ -455,7 +455,7 @@ if __name__ == '__main__':
                           interval=options.interval,
                           filename=options.output,
                           shutter=options.shutter)
-        except ChimeraException, e:
+        except Exception, e:
             print >> sys.stderr, "Error trying to take exposures. (%s)" % printException(e)
 
     finally:

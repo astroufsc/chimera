@@ -177,7 +177,7 @@ class Camera (ChimeraObject, ICameraExpose, ICameraTemperature):
                     if interval > 0 and frames > 1 and frame_num < frames:
                         time.sleep(interval)
                     
-                except (ValueError, IOError):
+                except ValueError:
                     raise ChimeraValueError("An error occurried while trying to setup the exposure.")
 
         finally:

@@ -256,7 +256,11 @@ class Dome(ChimeraObject, IDome):
      def stand(self):
           self._processQueue()
           self.log.debug("[mode] standing...")
-          self._mode = Mode.Stand          
+          self._mode = Mode.Stand
+
+     @lock
+     def sync(self):
+          self._processQueue()
 
      def getMode(self):
           return self._mode

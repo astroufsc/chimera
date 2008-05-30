@@ -48,11 +48,11 @@ class TestCamera (object):
 
         self.manager = Manager(port=8000)
 
-        self.manager.addClass(SBIG, "sbig", {"device": Device.USB})
-        self.manager.addClass(Camera, "cam", {"driver": "/SBIG/sbig"})
+        #self.manager.addClass(SBIG, "sbig", {"device": Device.USB})
+        #self.manager.addClass(Camera, "cam", {"driver": "/SBIG/sbig"})
 
-        #self.manager.addClass(FakeCamera, "fake", {"device": Device.USB})
-        #self.manager.addClass(Camera, "cam", {"driver": "/FakeCamera/fake"})
+        self.manager.addClass(FakeCamera, "fake", {"device": Device.USB})
+        self.manager.addClass(Camera, "cam", {"driver": "/FakeCamera/fake"})
 
         @callback(self.manager)
         def exposeBeginClbk(exp_time):

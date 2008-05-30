@@ -55,10 +55,11 @@ chimera_scripts = ['src/scripts/chimera',
 
 # setup
 
-win32_deps = []
 if sys.platform == "win32":
     win32_deps = ['pywin32 == 210']
-    
+else:
+    win32_deps = []
+
 setup(name='chimera-python',
       package_dir      = {"": "src"},
       
@@ -72,7 +73,12 @@ setup(name='chimera-python',
                           "pyfits >= 1.3",
                           "pyserial >= 2.2",
                           "coords",
-                          "python-sbigudrv >= 0.1"] + win32_deps,
+                          "python-sbigudrv >= 0.1",
+                          "matplotlib > 0.91",
+                          "sqlalchemy >= 0.4.5",
+                          "elixir >= 0.5.2",
+                          "pyephem > 3.7",
+                          "python-dateutil >= 1.4"] + win32_deps,
 
       dependency_links = ["http://www.stsci.edu/resources/software_hardware/pyfits/pyfits-1.3.tar.gz",
                           "http://astropy.scipy.org/svn/astrolib/trunk/coords#egg=coords-trunk",

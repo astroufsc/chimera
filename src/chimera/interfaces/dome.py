@@ -70,6 +70,13 @@ class IDome (Interface):
         @rtype: None
         """
 
+    def sync (self):
+        """
+        If dome was in Track mode, sync dome position with current scope position.
+
+        @rtype: None
+        """
+
     def getMode (self):
         """
         Get the current Dome mode, Stand or Track, currently.

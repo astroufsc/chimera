@@ -1,3 +1,41 @@
+2008-05-30  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* src/scripts/chimera-cam: Expand exception handling.
+
+	* src/chimera/interfaces/dome.py:
+	* src/chimera/instruments/dome.py: Add sync.
+
+	* src/chimera/interfaces/focuser.py: Comment typos.
+
+	* src/chimera/instruments/camera.py
+	* src/chimera/instruments/tests/test_camera.py
+	* src/chimera/drivers/sbig/sbig.py
+	* src/chimera/drivers/fakecamera.py: Upgrade to new ImageSave class.
+
+	* setup.py: Update to new set of dependencies.
+
+	* src/chimera/util/sexcatalog.py: Add catalog params values form
+	sex 2.5.
+
+	* src/chimera/util/imagesave.py: Add support for basic FITS headers.
+
+	* src/chimera/util/position.py: New (betetr) range checking on
+	constructors.
+
+	* src/chimera/util/image.py:
+	* src/chimera/util/tests/test_image.py:
+	* src/chimera/util/tests/teste-sem-wcs.fits:
+	* src/chimera/util/tests/teste-com-wcs.fits: New image
+	class. FITS, WCS and SExtractor support.
+
+	* src/chimera/controllers/autofocus.py:
+	* src/chimera/controllers/tests/test_auto_focus.py: New AutoFocus
+	version.
+
+	* src/chimera/core/site.py:
+	* src/chimera/core/tests/test_site.py: New site functions for
+	date/time with test suite.
+
 2008-05-21  P. Henrique Silva  <henrique@astro.ufsc.br>
 
 	* src/chimera/util/coord.py: Fix bug on code that find desired

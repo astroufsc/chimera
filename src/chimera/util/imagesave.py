@@ -22,6 +22,8 @@ log = logging.getLogger(__name__)
 from chimera.interfaces.cameradriver import Bitpix
 from chimera.util.filenamesequence import FilenameSequence
 
+from chimera.core.version import _chimera_description_
+
 class ImageSave (object):
 
 
@@ -38,13 +40,15 @@ class ImageSave (object):
 
         # start readout
         img = numpy.zeros(self.drv.readoutModes[self.ccd][readoutMode].getSize(), bitpix)
-        
+
 
     @staticmethod
     def save (img,
               directory="$HOME/images", filename="$date", ext="fits",
-              dateFormat="%d%m%y-%H%M%S", obsTime=None,
-              bitpix=Bitpix.int16, saveOnTemp=True, dry=False):
+              dateFormat="%d%m%y-%H%M%S", obsTime=None, exptime=None,
+              bitpix=Bitpix.int16, saveOnTemp=True, dry=False,
+              camHeaders=None):
+
         """
         Save the image matrix given in img. This save is very
         cautious, it checks if the file already exists and if the user
@@ -53,7 +57,7 @@ class ImageSave (object):
         filename(environment variables are allowed on direcotory
         also).
         """
-        
+
         # check if config.directory exists
         # also check write permissions. If user don't have permission, try to write on /tmp
         # and log this so user can try to copy this later
@@ -72,13 +76,13 @@ class ImageSave (object):
                 raise IOError("The direcotry specified (%s) doesn't exist "
                               "and save_on_temp was not active, the current "
                               "exposure will be lost." % (dest))
-                
+
             else:
                 log.warning("The direcotry specified (%s) doesn't exist. "
                             "save_on_temp is active, the current exposure will be saved on /tmp" % (dest))
 
                 dest = tempfile.gettempdir ()
-                       
+
         # permission
         if not os.access(dest, os.W_OK):
             # user doesn't have permission to write on dest, check config to know what to do
@@ -92,7 +96,7 @@ class ImageSave (object):
             else:
                 log.warning("User %s (%d) doesn't have permission to write on %s. "
                             "save_on_temp is active, the current exposure will be saved on /tmp" % (user, uid, dest))
-                
+
 
         # create filename
         # FIXME: UTC or not UTC?
@@ -109,16 +113,16 @@ class ImageSave (object):
             tmp = finalname
             finalname = os.path.join(dest, "%s-%04d%s%s" % (filename, int (random.random()*1000),
                                                             os.path.extsep, ext))
-            
+
             log.debug ("Image %s already exists. Saving to %s instead." %  (tmp, finalname))
 
-	# dry run, just to get next available filename
-	if dry:
-	    return finalname
-            
+        # dry run, just to get next available filename
+        if dry:
+            return finalname
+
         try:
             hdu  = pyfits.PrimaryHDU(img)
-            
+
             if bitpix == Bitpix.uint16:
                 hdu.scale('int16', '', bzero=32768, bscale=1)
 
@@ -129,22 +133,50 @@ class ImageSave (object):
 
             if not obsTime:
                 obsTime = time.gmtime()
-                                     
+
             obs_date = time.strftime(fits_date_format, time.gmtime(obsTime))
-            
-            hdu.header.update("DATE", file_date, "date of file creation")
-            hdu.header.update("DATE-OBS", obs_date, "date of the observation")
+
+            basic_headers =[("EXPTIME", float(exptime) or -1, "exposure time in seconds"),
+                            ("DATE", file_date, "date of file creation"),
+                            ("DATE-OBS", obs_date, "date of the start of observation"),
+                            ("MJD-OBS", 0.0, "date of the start of observation in MJD"),
+                            ("RA", "00:00:00", "right ascension of the observed object"),
+                            ("DEC", "00:00:00", "declination of the observed object"),
+                            ("EQUINOX", 2000.0, "equinox of celestial coordinate system"),
+                            ("RADESYS", "FK5",  "reference frame"),
+                            ("SECPIX", 0.0, "plate scale"),
+                            ("WCSAXES", 2, "wcs dimensionality"),
+                            ("CRPIX1", 0.0, "coordinate system reference pixel"),
+                            ("CRPIX2", 0.0, "coordinate system reference pixel"),
+                            ("CRVAL1", 0.0, "coordinate system value at reference pixel"),
+                            ("CRVAL2", 0.0, "coordinate system value at reference pixel"),
+                            ("CTYPE1", '', "name of the coordinate axis"),
+                            ("CTYPE2", '', "name of the coordinate axis"),
+                            ("CUNIT1", '', "units of coordinate value"),
+                            ("CUNIT2", '', "units of coordinate value"),
+                            ("CD1_1", 1.0, "transformation matrix element (1,1)"),
+                            ("CD1_2", 0.0, "transformation matrix element (1,2)"),
+                            ("CD2_1", 0.0, "transformation matrix element (2,1)"),
+                            ("CD2_2", 1.0, "transformation matrix element (2,2)"),
+                            ("CREATOR", _chimera_description_, "")]
+
+            if not camHeaders:
+                camHeaders = []
+
+            # add headers
+            for header in basic_headers+camHeaders:
+                hdu.header.update(*header)
 
             fits = pyfits.HDUList([hdu])
             fits.writeto(finalname)
-            
+
         except IOError:
             log.error("An error ocurred trying to save on %s. "
                       "The current image will be lost. "
                       "Exception follow" %  finalname)
             raise
 
-            
+
         return finalname
 
 

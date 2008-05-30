@@ -23,6 +23,8 @@ import random
 import threading
 import sys
 
+import numpy as N
+
 from chimera.interfaces.cameradriver      import ICameraDriver
 from chimera.interfaces.filterwheeldriver import IFilterWheelDriver
 
@@ -47,6 +49,8 @@ class FakeCamera (ChimeraObject, ICameraDriver, IFilterWheelDriver):
         self.__lastFilter = 0
 
         self.__temperature = 20.0
+
+        self.__lastFrameStart = 0
 
     def __start__ (self):
         self.setHz(2)
@@ -88,6 +92,7 @@ class FakeCamera (ChimeraObject, ICameraDriver, IFilterWheelDriver):
         self.exposeBegin(self["exp_time"])
 
         t=0
+        self.__lastFrameStart = time.time()
         while t < self["exp_time"]:
             if self.__abort.isSet():
                 return self["readout_aborted"]
@@ -100,26 +105,22 @@ class FakeCamera (ChimeraObject, ICameraDriver, IFilterWheelDriver):
 
     def _readout(self):
 
-        next_filename = ImageSave.save(None, 
+        pix = N.zeros((100,100), dtype=N.int32)
+
+        next_filename = ImageSave.save(pix, 
                                        self["directory"],
                                        self["file_format"],
                                        self["file_extension"],
                                        self["date_format"],
-                                       None,
+                                       self.__lastFrameStart,
+                                       self["exp_time"],                                       
                                        self["bitpix"],
                                        self["save_on_temp"],
-                                       dry=True)
-
+                                       dry=False)
 
         self.readoutBegin(next_filename)
 
         time.sleep (2)            
-
-        try:
-            fp = open(next_filename, "w")
-            print >> fp, "Nice image! - %s" % next_filename
-        except IOError, e:
-            raise ChimeraException("Couldn't save image %s (%s)" % (next_filename, e.strerror))
 
         self.readoutComplete(next_filename)
         
