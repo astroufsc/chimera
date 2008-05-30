@@ -60,6 +60,9 @@ See our `Development <http://code.google.com/p/chimera>`_ page for
 more information, to report a bug or just follow Chimera's development
 closely.
 
+To start coding, look at our `Getting start <http://chimera.sf.net/getting-start>`_ document.
+You can download it in `PDF <http://chimera.sf.net/getting-start/getting-start.pdf>`_ as well.
+
 .. _supported_devices:
 
 Supported Devices

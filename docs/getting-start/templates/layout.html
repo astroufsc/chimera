@@ -1,0 +1,28 @@
+{% extends "!layout.html" %}
+
+{% block sidebarsearch %}
+    {{ super() }}
+
+<div id="sf-logo" style="margin-top: 20px">
+    <a href="http://sourceforge.net"><img
+        src="http://sflogo.sourceforge.net/sflogo.php?group_id=223461&amp;type=3"
+        width="125" height="37" border="0" alt="SourceForge.net Logo"/></a>
+</div>
+
+{% endblock %}
+
+{% block footer %}
+
+{{ super() }}
+
+<script type="text/javascript">
+var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+</script>
+<script type="text/javascript">
+var pageTracker = _gat._getTracker("UA-3062863-3");
+pageTracker._initData();
+pageTracker._trackPageview();
+</script>
+
+{% endblock %}
