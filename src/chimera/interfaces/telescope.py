@@ -79,12 +79,12 @@ class ITelescopeSlew (ITelescope):
         @rtype: None
         """
 
-    def slewToAzAlt (self, position):
+    def slewToAltAz (self, position):
         """Slew the scope to the given local coordinates.
 
         @param position: the local coordinates to slew to. It can be
         given as a Position object or as a tuple with arguments to
-        Position.fromAzAlt factory.
+        Position.fromAltAz factory.
         
         @type position: L{Position} or tuple
         
@@ -201,7 +201,7 @@ class ITelescopeSlew (ITelescope):
         @rtype: L{Position}
         """
 
-    def getPositionAzAlt (self):
+    def getPositionAltAz (self):
         """Get the current position of the telescope in local coordinates.
 
         @return: Telescope's current position (az, alt).
@@ -282,13 +282,13 @@ class ITelescopeSync (ITelescope):
         @rtype: None
         """
 
-    def syncAzAlt (self, position):
+    def syncAltAz (self, position):
         """Synchronizes the telescope on the given local coordinates.
 
         See L{syncRaDec} for more information.
 
         @param position: coordinates to sync on as a Position or a
-        tuple with arguments to Position.fromAzAlt.
+        tuple with arguments to Position.fromAltAz.
         
         @type  position: L{Position} or tuple
 

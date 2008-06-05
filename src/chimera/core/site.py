@@ -149,7 +149,7 @@ class Site (ChimeraObject):
         date = date or self.localtime()
         self._sun.compute(self._getEphem(date))
 
-        return Position.fromAzAlt(Coord.fromR(self._sun.az), Coord.fromR(self._sun.alt))
+        return Position.fromAltAz(Coord.fromR(self._sun.alt), Coord.fromR(self._sun.az))
 
     def moonrise (self, date=None):
         date = date or self.localtime()
@@ -165,7 +165,7 @@ class Site (ChimeraObject):
         date = date or self.localtime()
         self._moon.compute(self._getEphem(date))
 
-        return Position.fromAzAlt(Coord.fromR(self._moon.az), Coord.fromR(self._moon.alt))
+        return Position.fromAltAz(Coord.fromR(self._moon.alt), Coord.fromR(self._moon.az))
 
     def moonphase (self, date=None):
         date = date or self.localtime()

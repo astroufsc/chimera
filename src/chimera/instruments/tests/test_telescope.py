@@ -154,7 +154,7 @@ class TestTelescope (object):
     def test_park (self):
 
         def printPosition():
-            print self.tel.getPositionRaDec(), self.tel.getPositionAzAlt()
+            print self.tel.getPositionRaDec(), self.tel.getPositionAltAz()
             sys.stdout.flush()
             
         print

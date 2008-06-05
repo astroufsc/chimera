@@ -274,21 +274,21 @@ class Meade (ChimeraObject,
         return self._waitSlew(start_time, target)
 
     @lock
-    def slewToAzAlt(self, position):
+    def slewToAltAz(self, position):
 
         if self.isSlewing ():
             # never should happens 'cause @lock
             raise MeadeException("Telescope already slewing.")
 
-        self.setTargetAzAlt (position.az, position.alt)
+        self.setTargetAltAz (position.alt, position.az)
 
-        if self._slewToAzAlt():
+        if self._slewToAltAz():
             self.slewComplete(self.getPositionRaDec())
             return True
 
         return False
 
-    def _slewToAzAlt(self):
+    def _slewToAltAz(self):
 
         self._slewing = True
         self._abort.clear ()
@@ -304,10 +304,10 @@ class Meade (ChimeraObject,
         if err:
             # check error message
             self._slewing = False
-            raise MeadeException("Couldn't slew to AZ/ALT: '%s'." % self.getTargetAzAlt())
+            raise MeadeException("Couldn't slew to ALT/AZ: '%s'." % self.getTargetAltAz())
 
         # slew possible
-        target = self.getTargetAzAlt()
+        target = self.getTargetAltAz()
 
         return self._waitSlew(start_time, target, local=True)
 
@@ -329,7 +329,7 @@ class Meade (ChimeraObject,
                 raise MeadeException("Slew aborted. Max slew time reached.")
 
             if local:
-                position = self.getPositionAzAlt()
+                position = self.getPositionAltAz()
             else:
                 position = self.getPositionRaDec()
 
@@ -512,16 +512,16 @@ class Meade (ChimeraObject,
         return Position.fromRaDec(self.getRa(), self.getDec())
 
     @lock
-    def getPositionAzAlt(self):
-        return Position.fromAzAlt(self.getAz(), self.getAlt())
+    def getPositionAltAz(self):
+        return Position.fromAltAz(self.getAlt(), self.getAz())
 
     @lock
     def getTargetRaDec(self):
         return Position.fromRaDec(self.getTargetRa(), self.getTargetDec())
 
     @lock
-    def getTargetAzAlt(self):
-        return Position.fromAzAlt(self.getTargetAz(), self.getTargetAlt())
+    def getTargetAltAz(self):
+        return Position.fromAltAz(self.getTargetAlt(), self.getTargetAz())
 
     @lock
     def setTargetRaDec(self, ra, dec):
@@ -532,7 +532,7 @@ class Meade (ChimeraObject,
         return True
 
     @lock
-    def setTargetAzAlt(self, az, alt):
+    def setTargetAltAz(self, alt, az):
 
         self.setTargetAz (az)
         self.setTargetAlt (alt)
@@ -892,7 +892,7 @@ class Meade (ChimeraObject,
     # -- park
 
     def getParkPosition (self):
-        return Position.fromAzAlt(self["park_position_alt"], self["park_position_az"])
+        return Position.fromAltAz(self["park_position_alt"], self["park_position_az"])
 
     @lock
     def setParkPosition (self, position):

@@ -159,14 +159,14 @@ class FakeTelescope (ChimeraObject,
     def getPositionRaDec(self):
         return Position.fromRaDec(self.getRa(), self.getDec())
 
-    def getPositionAzAlt(self):
-        return Position.fromRaDec(self.getAz(), self.getAlt())
+    def getPositionAltAz(self):
+        return Position.fromRaDec(self.getAlt(), self.getAz())
 
     def getTargetRaDec(self):
         return Position.fromRaDec(self.getRa(), self.getDec())
 
-    def getTargetAzAlt(self):
-        return Position.fromRaDec(self.getAz(), self.getAlt())
+    def getTargetAltAz(self):
+        return Position.fromRaDec(self.getAlt(), self.getAz())
 
     @lock
     def sync(self, position):

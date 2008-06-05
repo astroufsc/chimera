@@ -141,7 +141,7 @@ class Position (CoordsPosition):
         return Position((ra, dec), system=System.CELESTIAL, equinox=equinox)
 
     @staticmethod
-    def fromAzAlt (az, alt):
+    def fromAltAz (alt, az):
         try:
             if not isinstance(az, Coord):
                 az = Coord.fromDMS(az)

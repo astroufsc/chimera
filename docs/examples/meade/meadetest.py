@@ -261,11 +261,11 @@ class MeadeTest (BasicLifeCycle):
 
             print "="*50
 
-        def slewToAzAlt():
+        def slewToAltAz():
 
             printCoord ()
 
-            if not m.slewToAzAlt ("180:00:00", "40:00:00"):
+            if not m.slewToAltAz ("40:00:00", "180:00:00"):
                 print m.getError ()
 
             printCoord()
@@ -296,7 +296,7 @@ class MeadeTest (BasicLifeCycle):
 
         #park ()
 
-        #slewToAzAlt()
+        #slewToAltAz()
         #slewToRaDec()
 
 

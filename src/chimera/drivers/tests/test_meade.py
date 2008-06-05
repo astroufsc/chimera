@@ -328,7 +328,7 @@ class TestMeade (object):
 
         self.printCoord()
 
-        m.slewToAzAlt(("180:00:00", "40:00:00"))
+        m.slewToAltAz(("40:00:00", "180:00:00"))
 
         self.printCoord()
 

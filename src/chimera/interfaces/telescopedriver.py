@@ -97,13 +97,13 @@ class ITelescopeDriverSlew (ITelescopeDriver):
     def getPositionRaDec(self):
         pass
 
-    def getPositionAzAlt(self):
+    def getPositionAltAz(self):
         pass
 
     def getTargetRaDec(self):
         pass
 
-    def getTargetAzAlt(self):
+    def getTargetAltAz(self):
         pass 
 
     # events
@@ -129,7 +129,7 @@ class ITelescopeDriverSync(ITelescopeDriver):
     def syncRaDec (self, position):
         pass
 
-    def syncAzAlt (self, position):
+    def syncAltAz (self, position):
         pass
 
     @event

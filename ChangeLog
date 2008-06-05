@@ -1,3 +1,26 @@
+2008-06-05  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* src/scripts/chimera-tel:
+	* src/chimera/interfaces/telescopedriver.py:
+	* src/chimera/interfaces/telescope.py:
+	* src/chimera/core/site.py:
+	* src/chimera/instruments/tests/test_telescope.py:
+	* src/chimera/instruments/telescope.py:
+	* src/chimera/instruments/dome.py:
+	* src/chimera/util/position.py:
+	* src/chimera/util/tests/test_position.py:
+	* src/chimera/drivers/faketelescope.py:
+	* src/chimera/drivers/tests/test_meade.py:
+	* src/chimera/drivers/meade.py:
+	* src/chimera/drivers/theskytelescope.py:
+	* src/chimera/drivers/fakedome.py:
+	* docs/examples/meade/meadetest.py:
+
+	Fix issue #4.
+
+	Patch from Isaac Richter.
+
+
 2008-05-30  P. Henrique Silva  <henrique@astro.ufsc.br>
 
 	* src/scripts/chimera-cam: Expand exception handling.

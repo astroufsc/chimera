@@ -159,7 +159,7 @@ class Dome(ChimeraObject, IDome):
 
           self.log.debug("[event] telescope slewing to %s." % target)
           # FIXME: conversao equatorial-local
-          #self._telescopeChanged(target.asAzAlt(site.longitude(), site.lst()))
+          #self._telescopeChanged(target.asAltAz(site.longitude(), site.lst()))
           return
           
      def _telSlewCompleteClbk (self, target):

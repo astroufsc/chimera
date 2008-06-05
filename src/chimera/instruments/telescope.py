@@ -111,9 +111,9 @@ class Telescope(ChimeraObject,
          drv.syncRaDec(position)
 
     @lock
-    def syncAzAlt(self, position):
+    def syncAltAz(self, position):
         # FIXME
-        return ITelescopeSync.syncAzAlt(self, position)
+        return ITelescopeSync.syncAltAz(self, position)
 
     @lock
     def slewToObject(self, name):
@@ -131,16 +131,16 @@ class Telescope(ChimeraObject,
         drv.slewToRaDec(position)
        
     @lock
-    def slewToAzAlt(self, position):
+    def slewToAltAz(self, position):
         # FIXME: validate limits?        
 
         if not isinstance(position, Position):
-            position = Position.fromAzAlt(*position)
+            position = Position.fromAltAz(*position)
 
         drv = self.getDriver()
 
         try:
-            drv.slewToAzAlt(position)
+            drv.slewToAltAz(position)
         except Exception,e:
             self.log.exception("Houston")
 
@@ -198,13 +198,13 @@ class Telescope(ChimeraObject,
             ret = Position.fromRaDec(*ret)
         return ret
 
-    def getPositionAzAlt(self):
+    def getPositionAltAz(self):
         drv = self.getDriver()
 
-        ret = drv.getPositionAzAlt()
+        ret = drv.getPositionAltAz()
 
         if not isinstance(ret, Position):
-            ret = Position.fromAzAlt(*ret)
+            ret = Position.fromAltAz(*ret)
         return ret
 
     def getTargetRaDec(self):
@@ -216,13 +216,13 @@ class Telescope(ChimeraObject,
             ret = Position.fromRaDec(*ret)
         return ret
 
-    def getTargetAzAlt(self):
+    def getTargetAltAz(self):
         drv = self.getDriver()
         
-        ret =  drv.getTargetAzAlt()
+        ret =  drv.getTargetAltAz()
 
         if not isinstance(ret, Position):
-            ret = Position.fromAzAlt(*ret)
+            ret = Position.fromAltAz(*ret)
         return ret
 
     @lock

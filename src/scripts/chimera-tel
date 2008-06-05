@@ -236,13 +236,13 @@ if __name__ == '__main__':
 
         elif (options.az != None) and (options.alt != None):
             try:
-                target = Position.fromAzAlt(options.az, options.alt)
+                target = Position.fromAltAz(options.alt, options.az)
                 local = True
             except Exception, e:
-                print >> sys.stderr, "Invalid AZ/ALT (%s)" % e
+                print >> sys.stderr, "Invalid ALT/AZ (%s)" % e
                 sys.exit(1)
         else:
-            print >> sys.stderr, "Invalid coordinates, try --ra --dec or --az --alt."
+            print >> sys.stderr, "Invalid coordinates, try --ra --dec or --alt --az."
             sys.exit(1)
 
     if not options.info and not options.slew and not options.sync and \
@@ -417,15 +417,15 @@ if __name__ == '__main__':
             try:
                 print 40*"="
                 print "current position ra/dec: %s" % telescope.getPositionRaDec()
-                print "current position:az/alt: %s" % telescope.getPositionAzAlt()
+                print "current position:alt/az: %s" % telescope.getPositionAltAz()
 
                 if local:
-                    telescope.slewToAzAlt(target)
+                    telescope.slewToAltAz(target)
                 else:
                     telescope.slewToRaDec(target)
 
                 print "new position ra/dec: %s" % telescope.getPositionRaDec()
-                print "new position:az/alt: %s" % telescope.getPositionAzAlt()
+                print "new position:alt/az: %s" % telescope.getPositionAltAz()
 
             except ChimeraException, e:
                 print >> sys.stderr, "Error trying to slew. (%s)" % e
@@ -436,7 +436,7 @@ if __name__ == '__main__':
             try:
                 print 40*"="
                 print "current position ra/dec: %s" % telescope.getPositionRaDec()
-                print "current position:az/alt: %s" % telescope.getPositionAzAlt()
+                print "current position:alt/az: %s" % telescope.getPositionAltAz()
                 print 40*"="
 
                 sys.stdout.flush()
@@ -450,7 +450,7 @@ if __name__ == '__main__':
 
                 print 40*"="
                 print "new position ra/dec: %s" % telescope.getPositionRaDec()
-                print "new position:az/alt: %s" % telescope.getPositionAzAlt()
+                print "new position alt/az: %s" % telescope.getPositionAltAz()
                 
             except Exception, e:
                 print >> sys.stderr, "Error trying to sync. (%s)" % e
@@ -514,7 +514,7 @@ if __name__ == '__main__':
                 print 40*"="
                 print "telescope:", options.driver[-1], "(%s)" % driver["device"]
                 print "current position ra/dec: %s" % telescope.getPositionRaDec()
-                print "current position:az/alt: %s" % telescope.getPositionAzAlt()
+                print "current position alt/az: %s" % telescope.getPositionAltAz()
                 if telescope.isTracking():
                     print "tracking: enabled."
                 else:

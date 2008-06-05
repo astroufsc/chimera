@@ -45,7 +45,7 @@ class FakeDome (ChimeraObject, IDomeDriver):
 
         if az > 360:
             raise InvalidDomePositionException("Cannot slew to %s. "
-                                               "Outise azimute limits." % az)
+                                               "Outside azimuth limits." % az)
 
         self._abort.clear()
         self._slewing = True
