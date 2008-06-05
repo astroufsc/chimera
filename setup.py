@@ -55,10 +55,17 @@ chimera_scripts = ['src/scripts/chimera',
 
 # setup
 
+linux_deps = []
+win32_deps = []
+
+# FIXME:
+# coords needs an egg to works on Windows, at least without requiring the user to compile TPM
+# on Windows, requires numpy 1.0.4 'cause newer version still doesn't have an egg
+
 if sys.platform == "win32":
-    win32_deps = ['pywin32 == 210']
+    win32_deps += ["pywin32 == 210", "numpy == 1.0.4"]
 else:
-    win32_deps = []
+    linux_deps += ["python-sbigudrv >= 0.1", "coords", "numpy >= 1.0.3",]
 
 setup(name='chimera-python',
       package_dir      = {"": "src"},
@@ -69,16 +76,13 @@ setup(name='chimera-python',
       zip_safe         = True,
 
       install_requires = ["Pyro >= 3.7",
-                          "numpy >= 1.0.3",
                           "pyfits >= 1.3",
                           "pyserial >= 2.2",
-                          "coords",
-                          "python-sbigudrv >= 0.1",
                           "matplotlib > 0.91",
                           "sqlalchemy >= 0.4.5",
-                          "elixir >= 0.5.2",
+                          "Elixir >= 0.5.2",
                           "pyephem > 3.7",
-                          "python-dateutil >= 1.4"] + win32_deps,
+                          "python-dateutil >= 1.4"] + win32_deps + linux_deps,
 
       dependency_links = ["http://www.stsci.edu/resources/software_hardware/pyfits/pyfits-1.3.tar.gz",
                           "http://astropy.scipy.org/svn/astrolib/trunk/coords#egg=coords-trunk",

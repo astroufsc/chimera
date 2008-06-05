@@ -25,7 +25,18 @@ from chimera.util.coord import Coord
 from chimera.util.position import Position
 
 from dateutil import tz
-from coords import AstroDate
+
+try:
+    from coords import AstroDate
+except ImportError:
+
+    # FIXME: we still doesn`t have coords on Windows, so fake it.
+    class AstroDate:
+        def __init__ (self, t):
+            pass
+        
+        jd = 0
+        mjd = 0
 
 import ephem
 
