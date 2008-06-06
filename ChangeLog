@@ -1,5 +1,11 @@
 2008-06-05  P. Henrique Silva  <henrique@astro.ufsc.br>
 
+	* setup.py: Add RO dependency. (DS9 display)
+	* scripts/chimera-cam:
+	* chimera/drivers/sbig/sbig.py: Fix issue #3.
+
+2008-06-05  P. Henrique Silva  <henrique@astro.ufsc.br>
+
 	* src/scripts/chimera-tel:
 	* src/chimera/interfaces/telescopedriver.py:
 	* src/chimera/interfaces/telescope.py:

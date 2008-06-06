@@ -285,12 +285,13 @@ class SBIG(ChimeraObject, ICameraDriver, IFilterWheelDriver):
 
             # check if user asked to abort
             if not aborted and self.term.isSet():
-                self._endReadout(next_filename)
-                return self._saveFITS(img)
+                self._saveFITS(img)
+                return self._endReadout(next_filename)
 
         # end readout and save
-        self._endReadout(next_filename)
-        return self._saveFITS(img)
+        self._saveFITS(img)
+        return self._endReadout(next_filename)
+
 
     # TODO
     def _getWindowAndLine(self, img):
@@ -322,12 +323,8 @@ class SBIG(ChimeraObject, ICameraDriver, IFilterWheelDriver):
         except Exception, e:
             print e
             
-        return self.lastFrameFilename
-
-
     def _endReadout(self, filename):
         
         self.drv.endReadout(self.ccd)
         self.readoutComplete(filename)
-        
-        return True
+        return self.lastFrameFilename

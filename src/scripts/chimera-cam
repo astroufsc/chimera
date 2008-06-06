@@ -215,7 +215,7 @@ if __name__ == '__main__':
     display = False
     
     # FIXME: display broken
-    options.no_display = True
+    #options.no_display = True
 
     if not options.no_display and options.texp >= 5:
 
@@ -346,7 +346,7 @@ if __name__ == '__main__':
             try:
                 ds9.showFITSFile(filename)
             except RuntimeError, e:
-                print >> sys.stderr, "Can't display image %s." % filename
+                print >> sys.stderr, "Can't display image %s. (%s)" % (filename,e)
         
 
     camera.exposeBegin     += exposeBegin
