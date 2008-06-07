@@ -108,7 +108,7 @@ class Manager (RemoteObject):
 
     Use this class to get Proxies, add objects to the system, and so on.
 
-    This class handles objetcs lifecicle as descrbibed in ILifecycle.
+    This class handles objects life-cycle as described in ILifecycle.
 
     @group Add/Remove: add*, remove
     @group Start/Stop: start, stop

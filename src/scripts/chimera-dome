@@ -88,6 +88,12 @@ if __name__ == '__main__':
                       help="Append PATH to drivers load path.",
                       metavar="PATH")
 
+    config.add_option("-t", "--telescope", action="store", 
+                      dest="telescope", type="string",
+                      help="Tell the dome to follow TELESCOPE when tracking (only "
+                      "utilized when calling --track",
+                      metavar="TELESCOPE")
+
     actions = OptionGroup(parser, "Actions")
     
     actions.add_option("--to", action="store", type="string", dest="move_to",
@@ -98,6 +104,12 @@ if __name__ == '__main__':
 
     actions.add_option("--close", action="store_true", dest="close",
                       help="Close dome slit")
+
+    actions.add_option("--track", action="store_true", dest="track",
+                      help="Track the telescope")
+
+    actions.add_option("--stand", action="store_true", dest="stand",
+                      help="Stop tracking the telescope (stand)")
 
     actions.add_option("-i", "--info", action="store_true", dest="info",
                       help="Print dome information and exit")
@@ -115,9 +127,13 @@ if __name__ == '__main__':
     parser.set_defaults(dome     = [],
                         driver   = ["/DomeLNA40cm/lna?device=/dev/ttyS5"],
                         drv_dir  = [],
+                        telescope= [],
                         quiet    = False,
                         info     = False,
-
+                        
+                        track    = None,
+                        stand    = None,
+                        
                         open     = None,
                         close    = None,
                         move_to  = None)
@@ -125,7 +141,7 @@ if __name__ == '__main__':
 
     options, args = parser.parse_args(sys.argv)
 
-    Action = Enum("OPEN", "CLOSE", "MOVE_TO")
+    Action = Enum("OPEN", "CLOSE", "MOVE_TO", "TRACK", "STAND")
 
     action = None
     target = None
@@ -158,9 +174,23 @@ if __name__ == '__main__':
         if (options.open != None) or (options.close != None):
             print >> sys.stderr, "Cannot use --to with --open/--close"
             sys.exit(1)
+    
+    if options.track != None:
+        action = Action.TRACK
+        
+        if (options.stand != None) or (options.move_to != None):
+            print >> sys.stderr, "Cannot use --track with --stand/--to"
+            sys.exit(1)
+
+    if options.stand != None:
+        action = Action.STAND
+        
+        if (options.track != None) or (options.move_to != None):
+            print >> sys.stderr, "Cannot use --stand with --track/--to"
+            sys.exit(1)
 
     if not action and not options.info:
-        print >> sys.stderr, "Please, ask me anything to do. Try --open/--close/--to."
+        print >> sys.stderr, "Please, ask me anything to do. Try --open/--close/--to/--track/--stand."
         sys.exit(1)
  
     # 
@@ -235,8 +265,12 @@ if __name__ == '__main__':
     try:
 
         if options.info:
-            print "Dome: %s (%s)" % (options.driver[-1], driver["device"])
-            print "Current dome azimuth:", dome.getAz(),
+            print "Dome: %s (%s)" % (dome["driver"], dome.getDriver()["device"])
+            print "Current dome azimuth:", dome.getAz()
+            if dome.isSlitOpen():
+            	print "Dome slit is open"
+            else:
+            	print "Dome slit is closed."
 
         else:
             
@@ -251,7 +285,22 @@ if __name__ == '__main__':
                     print "Closing dome slit ... ",
                     sys.stdout.flush()
                     dome.closeSlit()
-                    print "OK (took %.3fs)" % (time.time()-start)                    
+                    print "OK (took %.3fs)" % (time.time()-start)
+                    
+                elif action == Action.TRACK:
+                    print "Activating tracking ...",
+                    sys.stdout.flush()
+                    if options.telescope:
+                        dome["telescope"]=options.telescope[0]
+                    dome.track()
+                    print "OK (took %.3fs)" % (time.time()-start)
+                                                            
+                elif action == Action.STAND:
+                    print "Deactivating tracking ...",
+                    sys.stdout.flush()
+                    dome.stand()
+                    print "OK (took %.3fs)" % (time.time()-start)
+                                                            
                 else:
                     print "Moving dome to %s ... " % target,
                     sys.stdout.flush()

@@ -1,3 +1,60 @@
+2008-06-06  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* src/scripts/chimera-cam:
+	Add "--force-display" option to force display even if texp<5.
+
+	Fix issue where driver is never set to camera.getDriver() when
+	using a remote camera instrument.
+
+	Fix issue where chimera-cam --info gives incorrect (or no) camera
+	driver.
+
+	* src/scripts/chimera-tel:
+	Fix issue where driver is never set to telescope.getDriver() when
+	using a remote telescope instrument.
+
+	Fix issue where chimera-tel --info gives incorrect (or no)
+	telescope driver
+
+	* src/scripts/chimera-dome:
+
+	Add "-t"/"--telescope" option to tell the dome what telescope to
+	track.
+
+	Add "--track/--stand" commands to tell the dome to start/stop
+	tracking the telescope.
+
+	Fix issue where chimera-dome --info gives incorrect (or no) dome
+	driver.
+
+	* src/chimera/controller/site/main.py:
+
+	Add support for "-H"/"--host" and "-P"/"--port" options from
+	command line of scripts/chimera
+
+	* src/chimera/controllers/site/config.py: Add support for pyro
+	host and port passed in the constructor
+
+	* chimera/core/manager.py: Fix minor spelling errors in comments
+
+	* chimera/drivers/faketelescope.py: Fix slew code to set
+	self._slewing=False when done slewing; otherwise, the dome will
+	refuse to track
+
+	* src/chimera/drivers/fakecamera.py:
+	Add support for making simulated darks, flats, and grabbing DSS
+	images and applying simulated dark and flat to them.
+
+	Use driver paramaters ccd_width and ccd_height to control size of
+	simulated darks and flats.
+
+	Use driver paramater use_dss=True to have images grabbed from
+	DSS (when telescope is aligned with dome and dome is open
+
+	Patch from Isaac Richter, modified slightly to make flat fast with
+	Numpy.
+
+
 2008-06-05  P. Henrique Silva  <henrique@astro.ufsc.br>
 
 	* setup.py: Add RO dependency. (DS9 display)

@@ -307,6 +307,7 @@ if __name__ == '__main__':
     if options.telescope:
         try:
             telescope = manager.getProxy(options.telescope[0])
+            driver = telescope.getDriver()
         except (ObjectNotFoundException, ClassLoaderException), e:
             print >> sys.stderr, "Cannot find telescope %s. (%s)" % (options.telescope[0], e)
             manager.shutdown()
@@ -512,7 +513,7 @@ if __name__ == '__main__':
         elif options.info:
             try:
                 print 40*"="
-                print "telescope:", options.driver[-1], "(%s)" % driver["device"]
+                print "telescope:", telescope["driver"], "(%s)" % driver["device"]
                 print "current position ra/dec: %s" % telescope.getPositionRaDec()
                 print "current position alt/az: %s" % telescope.getPositionAltAz()
                 if telescope.isTracking():

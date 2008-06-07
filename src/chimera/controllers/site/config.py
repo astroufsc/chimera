@@ -34,12 +34,17 @@ log = logging.getLogger(__name__)
 
 class SiteConfig (object):
 
-    def __init__(self):
+    def __init__(self, **kwargs):
         self.__sites = []
         self.__chimera = {"host": None, "port": None}
         self.__instruments = []
         self.__controllers = []
         self.__drivers     = []
+        for key in kwargs:
+            if (key == "pyro_host"):
+                self.__chimera["host"]=kwargs[key];
+            if(key == "pyro_port"):
+                self.__chimera["port"]=int(kwargs[key]);
 
     def getChimera (self):
         return self.__chimera

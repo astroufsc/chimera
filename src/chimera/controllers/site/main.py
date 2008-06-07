@@ -133,6 +133,16 @@ class SiteController (object):
                           help="Append PATH to drivers load path.",
                           metavar="PATH")
 
+        parser.add_option("-H", "--host", action="store", 
+                          dest="pyro_host", type="string",
+                          help="Host name/IP address to run as; [default=%default]",
+                          metavar="HOST")
+
+        parser.add_option("-P", "--port", action="store", 
+                          dest="pyro_port", type="string",
+                          help="Port on which to listen for requests; [default=%default]",
+                          metavar="PORT")
+
         parser.add_option("--dry-run", action="store_true", 
                           dest="dry",
                           help="Only list all configured objects (from command line and configuration files) without starting the system.")
@@ -148,7 +158,9 @@ class SiteController (object):
                             ctrl_dir = [],
                             drv_dir = [],
                             dry=False,
-                            verbose = 0)
+                            verbose = 0,
+                            pyro_host="127.0.0.1",
+                            pyro_port=24463)
 
         return parser.parse_args(args)
 
@@ -156,7 +168,7 @@ class SiteController (object):
 
 
         # config file
-        self.config = SiteConfig()
+        self.config = SiteConfig(pyro_host=self.options.pyro_host, pyro_port=self.options.pyro_port)
         
         for config in self.options.config:
             self.config.read(config)

@@ -116,6 +116,7 @@ class FakeTelescope (ChimeraObject,
         self._alt = position.alt
         self._slewing = True
         time.sleep(3)
+        self._slewing = False
         self.slewComplete(position)
 
     def isSlewing (self):
