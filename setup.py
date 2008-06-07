@@ -88,9 +88,10 @@ setup(name='chimera-python',
       dependency_links = ["http://www.stsci.edu/resources/software_hardware/pyfits/pyfits-1.3.tar.gz",
                           "http://astropy.scipy.org/svn/astrolib/trunk/coords#egg=coords==trunk",
                           "http://sourceforge.net/project/showfiles.php?group_id=46487",
-                          "http://bitten.ufsoft.org/svn/BittenExtraNose/trunk#egg=BittenExtraNode==trunk"],
+                          "http://bitten.ufsoft.org/svn/BittenExtraNose/trunk#egg=BittenExtraNose==trunk",
+                          "http://bitten.ufsoft.org/svn/BittenExtraTrac/trunk#egg=BittenExtraTrac==trunk"],
 
-      tests_require    = ["nose", "BittenExtraNose"],
+      tests_require    = ["nose", "BittenExtraNose", "BittenExtraTrac"],
       test_loader      = "nose.loader:TestLoader",
       test_suite       = "src/chimera/core",
             
