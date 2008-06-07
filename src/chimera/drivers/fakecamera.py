@@ -42,7 +42,7 @@ from chimera.util.imagesave import ImageSave
 from chimera.core.lock import lock
 
 from chimera.core.log import setConsoleLevel
-setConsoleLevel(logging.DEBUG)
+#setConsoleLevel(logging.DEBUG)
 
 
 class FakeCamera (ChimeraObject, ICameraDriver, IFilterWheelDriver):
@@ -128,7 +128,9 @@ class FakeCamera (ChimeraObject, ICameraDriver, IFilterWheelDriver):
                 
     def make_dark(self, shape, dtype):
         ret = N.zeros(shape, dtype=dtype)
-        normtemp= (10 * 2**((self.__temperature-25)/7)) * self["exp_time"]
+        #Taken from specs for KAF-1603ME as found in ST-8XME
+        #normtemp is now in ADU/pix/sec
+        normtemp= ((10 * 2**((self.__temperature-25)/6.3)) * self["exp_time"])/2.3
         ret += normtemp + N.random.random(shape)  # +/- 1 variance in readout
         return ret
 
@@ -149,8 +151,11 @@ class FakeCamera (ChimeraObject, ICameraDriver, IFilterWheelDriver):
         badareai=shape[0]/2
         badareaj=shape[1]/2
 
+        # this array is only to make sure we create our array with the right dtype
         ret  = N.zeros(shape, dtype=dtype)
-        ret += N.fromfunction(lambda i,j: random.gauss(1000, 1) + i*jadd - j*jadd, shape)
+
+        ret += N.random.normal(1000, 1, shape)
+        ret += N.fromfunction(lambda i,j: i*jadd - j*jadd, shape)
 
         ret[badareai:,badareaj:] += badlevel
 
@@ -174,12 +179,22 @@ class FakeCamera (ChimeraObject, ICameraDriver, IFilterWheelDriver):
                                        dry=True)
 
         self.readoutBegin(next_filename)
-
+                
         try:
             telescope = self.getManager().getProxy(self['telescope'], lazy=True)
+        except ObjectNotFoundException:
+            pass
+        try:
             dome = self.getManager().getProxy(self['dome'], lazy=True)
         except ObjectNotFoundException:
-            self.log.debug("FakeCamera could't found telescope/dome.")
+            pass
+        
+        if not (telescope or dome):
+            self.log.debug("FakeCamera couldn't find telescope or dome.")
+        elif telescope and (not dome):
+            self.log.debug("FakeCamera couldn't find dome.")
+        elif (not telescope) and dome:
+            self.log.debug("FakeCamera couldn't find telescope.")
 
 
         if (self["shutter"]==Shutter.CLOSE):
@@ -195,12 +210,12 @@ class FakeCamera (ChimeraObject, ICameraDriver, IFilterWheelDriver):
 
                 if dome.isSlitOpen() and self["use_dss"]:
                     domeAZ=dome.getAz().toD()
-                    if (domeAZ > 358):
-                        domeAZ-=360     #take care of wrap-around
                     telAZ=telescope.getAz().toD()
+                    if (telAZ < 3 and domeAZ > 357):
+                    	domeAZ-=360     #take care of wrap-around
                     self.log.debug("Dome AZ: "+str(domeAZ)+"  Tel AZ: "+str(telAZ))
                     if (abs(domeAZ-telAZ) <= 3):
-                        self.log.debug("Eps equal -- getting DSS")
+                        self.log.debug("Dome & Slit aligned -- getting DSS")
                         #http://archive.eso.org/dss/dss/image?ra=20+03+43&dec=-08+10+21&equinox=J2000&x=5&y=5&Sky-Survey=DSS1&mime-type=application/x-fits
                         #http://stdatu.stsci.edu/cgi-bin/dss_search?v=quickv&r=13+29+52.37&d=%2B47+11+40.8&e=J2000&h=15&w=15&f=fits&c=gz&fov=NONE&v3=
                         url = "http://stdatu.stsci.edu/cgi-bin/dss_search?v=poss1_red&r=" + \
@@ -208,42 +223,39 @@ class FakeCamera (ChimeraObject, ICameraDriver, IFilterWheelDriver):
                               "&d=" + urllib.quote(telescope.getDec().strfcoord().replace(":"," ")) + \
                               "&h=29&w=43.5&f=fits&c=gz&fov=NONE&v3="
                         self.log.debug("Attempting URL: "+url)
-
-                    try:
-                        dssfile=urllib.urlretrieve(url)[0]
-                        self.gunzip(dssfile,'fits')
-                        os.remove(dssfile)
-                        dssfile+='.fits'
-                        hdulist=pyfits.open(dssfile)
-                        pix = hdulist[0].data
-                        hdulist.close()
-                        os.remove(dssfile)
-                    except Exception, e:
-                        self.log.warning("General error getting DSS image: " + str(e))
-                        
-                    self.log.debug("Making flat...")
-                    try:
-                        pix *= (self.make_flat(pix.shape, N.float)/1000)
-                    except Exception, e:
-                        self.log.warning("Pix mult error: " + str(e))
-                        
-                    self.log.debug("Generating dark...")
-                    try:
-                        pix += self.make_dark(pix.shape, N.float)
-                    except Exception, e:
-                        self.log.warning("Pix add error: " + str(e))
-            else:
-                # without telescope/dome, just a flat pattern with dark noise
-                try:
-                    self.log.info("Making flat image: " + str(self["ccd_height"]) + "x" + str(self["ccd_width"]))
-                    self.log.debug("Generating dark...")
-                    pix = self.make_dark((self["ccd_height"],self["ccd_width"]), N.float)
-                    self.log.debug("Making flat...")
-                    pix += self.make_flat((self["ccd_height"],self["ccd_width"]), N.float)
-                except Exception, e:
+                        try:
+                            dssfile=urllib.urlretrieve(url)[0]
+                            self.gunzip(dssfile,'fits')
+                            os.remove(dssfile)
+                            dssfile+='.fits'
+                            hdulist=pyfits.open(dssfile)
+                            pix = hdulist[0].data
+                            hdulist.close()
+                            os.remove(dssfile)
+                        except Exception, e:
+                            self.log.warning("General error getting DSS image: " + str(e))
+                        self.log.debug("Making flat...")
+                        try:
+                            pix *= (self.make_flat(pix.shape, N.float)/1000)
+                        except Exception, e:
+                            self.log.warning("Error generating flat: " + str(e))
+                        self.log.debug("Generating dark...")
+                        try:
+                            pix += self.make_dark(pix.shape, N.float)
+                        except Exception, e:
+                            self.log.warning("Error generating dark: " + str(e))
+            # without telescope/dome, or if dome/telescope aren't aligned, or the dome is closed
+            # or we otherwise failed, just make a flat pattern with dark noise
+            if (pix == None):
+               try:
+                   self.log.info("Making simulated flat image: " + str(self["ccd_height"]) + "x" + str(self["ccd_width"]))
+                   self.log.debug("Generating dark...")
+                   pix = self.make_dark((self["ccd_height"],self["ccd_width"]), N.float)
+                   self.log.debug("Making flat...")
+                   pix += self.make_flat((self["ccd_height"],self["ccd_width"]), N.float)
+               except Exception, e:
                     self.log.warning("MakekFlat error: " + str(e))
-
-
+        
         #Last resort if nothing else could make a picture
         if (pix == None):
             pix = N.zeros((100,100), dtype=N.int32)
@@ -256,7 +268,8 @@ class FakeCamera (ChimeraObject, ICameraDriver, IFilterWheelDriver):
                                        self.__lastFrameStart,
                                        self["exp_time"],                                       
                                        self["bitpix"],
-                                       self["save_on_temp"])
+                                       self["save_on_temp"],
+                                       dry=False)
 
         self.readoutComplete(next_filename)
         

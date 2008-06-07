@@ -1,3 +1,14 @@
+2008-06-07  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* src/chimera/drivers/fakecamera.py: Fixes on random number
+	geeration on flat creation routine. We were using N.fromfunction
+	without actually using the indices, returning a scalar value and
+	to an array.
+
+	Fix issue #7.
+
+	Patch from Isaac Richter.
+
 2008-06-06  P. Henrique Silva  <henrique@astro.ufsc.br>
 
 	* src/scripts/chimera-cam:
