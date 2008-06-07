@@ -86,12 +86,13 @@ setup(name='chimera-python',
                           "RO >= 2.2.7"] + win32_deps + linux_deps,
 
       dependency_links = ["http://www.stsci.edu/resources/software_hardware/pyfits/pyfits-1.3.tar.gz",
-                          "http://astropy.scipy.org/svn/astrolib/trunk/coords#egg=coords-trunk",
-                          "http://sourceforge.net/project/showfiles.php?group_id=46487"],
+                          "http://astropy.scipy.org/svn/astrolib/trunk/coords#egg=coords==trunk",
+                          "http://sourceforge.net/project/showfiles.php?group_id=46487",
+                          "http://bitten.ufsoft.org/svn/BittenExtraNose/trunk#egg=BittenExtraNode==trunk"],
 
-      tests_require    = ["nose"],
+      tests_require    = ["nose", "BittenExtraNose"],
       test_loader      = "nose.loader:TestLoader",
-      test_suite       = "src/chimera",
+      test_suite       = "src/chimera/core",
             
       version          = _chimera_version_,
       description      = _chimera_description_,
