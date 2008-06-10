@@ -231,7 +231,7 @@ class SiteController (object):
     def _add (self, location, path, start):
         try:
             self.manager.addLocation(location, path, start)
-        except ChimeraException, e:
+        except Exception, e:
             printException(e)
             
     def shutdown(self):

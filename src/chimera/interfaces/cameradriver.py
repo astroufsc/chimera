@@ -44,7 +44,7 @@ class ICameraDriver(Interface):
 
     # config
     __config__ = {"device"	     : Device.USB,
-                  "ccd"              : CCD.IMAGING,
+                  "ccd"          : CCD.IMAGING,
                   
                   "exp_time"         : (0.0, 216000.0), # seconds
                   "shutter" 	     : Shutter.OPEN,
@@ -56,7 +56,7 @@ class ICameraDriver(Interface):
                   
                   # drivers should use SaveImage utility class to
                   # handles this values according to the semantics
-                  # defined in ICameta spec.
+                  # defined in ICamera spec.
                   "window_x"         : 0.5,
                   "window_y"         : 0.5,
                   "window_width"     : 1.0,

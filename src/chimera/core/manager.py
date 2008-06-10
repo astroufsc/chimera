@@ -415,12 +415,17 @@ class Manager (RemoteObject):
         # it runs on the same thread, so be a good boy
         # and don't block manager's thread
         try:
-            obj = cls()
-            for k, v in location.config.items():
-                obj[k] = v
+            obj = cls() 
         except Exception:
             log.exception("Error in %s __init__." % location)
             raise ChimeraObjectException("Error in %s __init__." % location)
+
+        try:
+            for k, v in location.config.items():
+                obj[k] = v
+        except (OptionConversionException, KeyError), e:
+            log.exception("Error configuring %s." % location)
+            raise ChimeraObjectException("Error configuring %s. (%s)" % (location, e))
 
         # connect
         obj.__setlocation__(location)
@@ -486,7 +491,6 @@ class Manager (RemoteObject):
 
         try:
             resource.instance.__start__()
-            
         except Exception:
             log.exception ("Error running %s __start__ method." % location)
             raise ChimeraObjectException("Error running %s __start__ method." % location)
@@ -497,6 +501,7 @@ class Manager (RemoteObject):
             log.info("Running %s. __main___." % location)                        
 
             loop = threading.Thread(target=resource.instance.__main__)
+            loop.setName(str(resource.location) + ".__main__")
             loop.setDaemon(True)
             loop.start()
 

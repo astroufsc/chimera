@@ -1,3 +1,18 @@
+2008-06-10  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* src/chimera/interfaces/cameradriver.py: Fix typos.
+
+	* src/chimera/controllers/site/main.py: Broad exception handling.
+
+	* src/chimera/core/manager.py: More exception handling.
+
+	* src/chimera/instruments/camera.py: There was a BIG bug here. In
+	the finally statement, we were returning a tuple, and according to
+	Python's manual, in a finally, if we break or return, we loose the
+	exception!!! The result was that any exception occuring in
+	drv.expose was silently ingored!!!
+
+
 2008-06-07  P. Henrique Silva  <henrique@astro.ufsc.br>
 
 	* src/chimera/drivers/fakecamera.py: Fixes on random number

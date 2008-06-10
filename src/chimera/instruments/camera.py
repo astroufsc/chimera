@@ -161,27 +161,25 @@ class Camera (ChimeraObject, ICameraExpose, ICameraTemperature):
         # ok, here we go!
         filenames = []
 
-        try:
-            for frame_num in range(frames):
+        for frame_num in range(frames):
 
-                # abort set?
-                if self.abort.isSet():
-                    return
+            # abort set?
+            if self.abort.isSet():
+                return
                 
-                try:
-                    filename = drv.expose()
+            try:
+                filename = drv.expose()
 
-                    if filename: # can be None if exposure was aborted and not saved
-                        filenames.append(filename)
+                if filename: # can be None if exposure was aborted and not saved
+                    filenames.append(filename)
 
-                    if interval > 0 and frames > 1 and frame_num < frames:
-                        time.sleep(interval)
+                if interval > 0 and frames > 1 and frame_num < frames:
+                    time.sleep(interval)
                     
-                except ValueError:
-                    raise ChimeraValueError("An error occurried while trying to setup the exposure.")
+            except ValueError:
+                raise ChimeraValueError("An error occurried while trying to setup the exposure.")
 
-        finally:
-            return tuple(filenames)
+        return tuple(filenames)
 
     def abortExposure (self, readout=True):
         self.abort.set() # stop expose loop
