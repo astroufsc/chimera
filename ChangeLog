@@ -1,3 +1,18 @@
+2008-07-10  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* src/chimera/core/path.py: New way to get Chimera paths. Use
+	pkg_resources to get correct installation place or just guess.
+
+	* src/scripts/chimera-focus:
+	* src/scripts/chimera-cam:
+	* src/scripts/chimera-dome:
+	* src/scripts/chimera-tel:
+	* src/chimera/controllers/site/main.py: All modified to use ChimeraPath.
+
+	* setup.cfg:
+	* setup.py: No more zip_safe. Eggs crash classloader. Not
+	installing as egg anymore.
+
 2008-06-10  P. Henrique Silva  <henrique@astro.ufsc.br>
 
 	* src/chimera/interfaces/cameradriver.py: Fix typos.

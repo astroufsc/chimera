@@ -34,6 +34,7 @@ from chimera.controllers.site.config import SiteConfig
 from chimera.core.exceptions import ChimeraException, printException, InvalidLocationException
 
 from chimera.core.site import Site
+from chimera.core.path import ChimeraPath
 
 import chimera.core.log
 
@@ -60,10 +61,9 @@ class SiteController (object):
                       "drivers": []}
 
         # add system path
-        prefix = os.path.realpath(os.path.join(os.path.abspath(__file__), '../../../'))
-        self.paths["instruments"].append(os.path.join(prefix, 'instruments'))
-        self.paths["controllers"].append(os.path.join(prefix, 'controllers'))
-        self.paths["drivers"].append(os.path.join(prefix, 'drivers'))
+        self.paths["instruments"].append(ChimeraPath.instruments())
+        self.paths["controllers"].append(ChimeraPath.controllers())
+        self.paths["drivers"].append(ChimeraPath.drivers())
 
     def parseArgs(self, args):
 
@@ -176,6 +176,8 @@ class SiteController (object):
         # manager
         if not self.options.dry:
             log.info("Starting system.")
+            log.info("Chimera prefix: %s" % ChimeraPath.root())
+                
             self.manager = Manager(**self.config.getChimera())
 
         # add site object

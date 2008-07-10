@@ -45,7 +45,7 @@ from chimera.core.exceptions import printException
 from chimera.interfaces.filterwheel import InvalidFilterPositionException
 
 from chimera.core.location import Location
-
+from chimera.core.path     import ChimeraPath
 from chimera.core.callback import callback
 
 from chimera.core.log import setConsoleLevel
@@ -153,9 +153,6 @@ if __name__ == '__main__':
     parser.add_option_group(display)    
     parser.add_option_group(temp)
 
-    prefix = os.path.realpath(os.path.join(os.path.abspath(__file__), '../../chimera/'))
-    drivers_path = [os.path.join(prefix, 'drivers')]
-
     parser.set_defaults(camera   = [],
                         driver   = ["/SBIG/sbig?device=USB"],
                         drv_dir  = [],
@@ -195,8 +192,11 @@ if __name__ == '__main__':
     else:
         options.shutter = Shutter.OPEN
 
+    drivers_path = []
     for path in options.drv_dir:
         drivers_path.append(path)
+
+    drivers_path.append(ChimeraPath.drivers())
 
     # be cool?
     cooling  = None

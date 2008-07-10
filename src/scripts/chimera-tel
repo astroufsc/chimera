@@ -48,8 +48,8 @@ from chimera.core.compat import *
 from chimera.util.enum import Enum
 
 from chimera.util.coord import Coord
-
-from chimera.core.log import setConsoleLevel
+from chimera.core.path  import ChimeraPath
+from chimera.core.log   import setConsoleLevel
 #setConsoleLevel(logging.DEBUG)
 setConsoleLevel(1e9)
 
@@ -166,9 +166,6 @@ if __name__ == '__main__':
     parser.add_option_group(params)
     parser.add_option_group(handle)    
 
-    prefix = os.path.realpath(os.path.join(os.path.abspath(__file__), '../../chimera/'))
-    drivers_path = [os.path.join(prefix, 'drivers')]
-
     parser.set_defaults(telescope= [],
                         driver   = ["/Meade/meade?device=/dev/ttyS6"],
                         drv_dir  = [],
@@ -266,6 +263,13 @@ if __name__ == '__main__':
 
             if getattr(options, action):
                 actionToRun = getattr(options, action)
+
+
+    drivers_path = []
+    for path in options.drv_dir:
+        drivers_path.append(path)
+
+    drivers_path.append(ChimeraPath.drivers())  
 
     # 
     # start
