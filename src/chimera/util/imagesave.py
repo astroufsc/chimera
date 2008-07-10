@@ -5,10 +5,15 @@ import tempfile
 import string
 import random
 import tempfile
-import pwd
 import logging
 import time
 import sys
+
+try:
+    import pwd
+except ImportError:
+    # welcome to win32!
+    pwd = False
 
 # ask to use numpy
 os.environ["NUMERIX"] = "numpy"
@@ -87,7 +92,11 @@ class ImageSave (object):
         if not os.access(dest, os.W_OK):
             # user doesn't have permission to write on dest, check config to know what to do
             uid = os.getuid()
-            user = pwd.getpwuid(uid)[0]
+
+            if pwd:
+                user = pwd.getpwuid(uid)[0]
+            else:
+                user = "unknown"
 
             if not saveOnTemp:
                 raise IOError("User %s (%d) doesn't have permission to write "
