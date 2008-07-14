@@ -31,6 +31,7 @@ from optparse import OptionParser, OptionGroup
 
 from chimera.core.manager import Manager
 from chimera.core.version import _chimera_version_, _chimera_description_
+from chimera.core.constants import MANAGER_DEFAULT_HOST, MANAGER_DEFAULT_PORT
 
 from chimera.instruments.camera import Camera
 from chimera.instruments.filterwheel import FilterWheel
@@ -144,6 +145,18 @@ if __name__ == '__main__':
     display.add_option("--force-display", action="store_true", dest="force_display",
                       help="Always display image on DS9 regardless of exptime.")
 
+    parser.add_option("-H", "--host", action="store", 
+                      dest="pyro_host", type="string",
+                      help="Host name/IP to connect to when using instrument "
+                      "under remote management); [default=%default]",
+                      metavar="HOST")
+
+    parser.add_option("-P", "--port", action="store", 
+                      dest="pyro_port", type="string",
+                      help="Port on which to connect when using instrument "
+                      "under remote management; [default=%default]",
+                      metavar="PORT")
+
     parser.add_option("-q", "--quiet", action="store_true", dest='quiet',
                       help="Don't display information during the exposures [default=%default].")
 
@@ -169,7 +182,9 @@ if __name__ == '__main__':
                         wait     = False,
                         filter   = None,
                         filters  = False,
-                        info     = False)
+                        info     = False,
+                        pyro_host=MANAGER_DEFAULT_HOST,
+                        pyro_port=MANAGER_DEFAULT_PORT)
 
     options, args = parser.parse_args(sys.argv)
 
@@ -288,9 +303,9 @@ if __name__ == '__main__':
     # use an already running camera
     if options.camera:
         try:
-            camera = manager.getProxy(options.camera[0])
+            camera = manager.getProxy(options.camera[0],host=options.pyro_host,port=options.pyro_port)
             driver = camera.getDriver()
-            filter = manager.getProxy(options.camera[0])
+            filter = manager.getProxy(options.camera[0],host=options.pyro_host,port=options.pyro_port)
         except (ObjectNotFoundException, ClassLoaderException), e:
             print >> sys.stderr, "Cannot find camera %s. (%s)" % (options.camera[0], e)
             manager.shutdown()
@@ -306,7 +321,6 @@ if __name__ == '__main__':
         try:
             driver = manager.addLocation(options.driver[-1], path=drivers_path)
             camera = manager.addClass(Camera, "cam", {"driver": options.driver[-1]})
-
             filter = manager.addClass(FilterWheel, "filter", {"driver": options.driver[-1]} )
         except (ObjectNotFoundException, ClassLoaderException), e:
             print >> sys.stderr, "Cannot find camera driver %s. (%s)" % (options.driver[-1],e)

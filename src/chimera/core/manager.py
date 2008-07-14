@@ -234,7 +234,7 @@ class Manager (RemoteObject):
                 raise NotValidChimeraObjectException ("Can't get a proxy from non ChimeraObject's descendent object (%s)." % location)
 
         else:
-            location = Location(location)
+            location = Location(location,host=host,port=port)
 
         # who manages this location?
         if self._belongsToMe(location):

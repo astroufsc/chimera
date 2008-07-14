@@ -24,7 +24,7 @@ def main ():
 
     from chimera.controllers.site.main import SiteController
 
-    SiteController (sys.argv).init()
+    SiteController(sys.argv).startup()
 
 
 if __name__ == '__main__':

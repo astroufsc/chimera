@@ -30,7 +30,7 @@ from optparse import OptionParser, OptionGroup
 
 from chimera.core.manager import Manager
 from chimera.core.version import _chimera_version_, _chimera_description_
-
+from chimera.core.constants import MANAGER_DEFAULT_HOST, MANAGER_DEFAULT_PORT
 from chimera.instruments.dome import Dome
 
 from chimera.util.enum import Enum
@@ -114,6 +114,17 @@ if __name__ == '__main__':
     actions.add_option("-i", "--info", action="store_true", dest="info",
                       help="Print dome information and exit")
 
+    parser.add_option("-H", "--host", action="store", 
+                      dest="pyro_host", type="string",
+                      help="Host name/IP to connect to when using instrument "
+                      "under remote management); [default=%default]",
+                      metavar="HOST")
+
+    parser.add_option("-P", "--port", action="store", 
+                      dest="pyro_port", type="string",
+                      help="Port on which to connect when using instrument "
+                      "under remote management; [default=%default]",
+                      metavar="PORT")
 
     parser.add_option("-q", "--quiet", action="store_true", dest='quiet',
                       help="Don't display informations while working [default=%default].")
@@ -133,7 +144,9 @@ if __name__ == '__main__':
                         
                         open     = None,
                         close    = None,
-                        move_to  = None)
+                        move_to  = None,
+                        pyro_host=MANAGER_DEFAULT_HOST,
+                        pyro_port=MANAGER_DEFAULT_PORT)
 
 
     options, args = parser.parse_args(sys.argv)
@@ -239,7 +252,7 @@ if __name__ == '__main__':
     # use an already running dome
     if options.dome:
         try:
-            dome = manager.getProxy(options.dome[0])
+            dome = manager.getProxy(options.dome[0],host=options.pyro_host,port=options.pyro_port)
         except (ObjectNotFoundException, ClassLoaderException), e:
             print >> sys.stderr, "Cannot find dome %s. (%s)" % (options.dome[0], e)
             manager.shutdown()

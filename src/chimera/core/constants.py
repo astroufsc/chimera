@@ -21,7 +21,8 @@
 
 import socket
 
-MANAGER_DEFAULT_HOST = socket.gethostname()
+#MANAGER_DEFAULT_HOST = socket.gethostname()
+MANAGER_DEFAULT_HOST = 'localhost'
 MANAGER_DEFAULT_PORT = 7666
 
 MANAGER_LOCATION = '/Manager/manager'

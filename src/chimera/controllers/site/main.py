@@ -32,6 +32,7 @@ from chimera.core.manager import Manager
 from chimera.core.version import _chimera_version_, _chimera_description_
 from chimera.controllers.site.config import SiteConfig
 from chimera.core.exceptions import ChimeraException, printException, InvalidLocationException
+from chimera.core.constants import MANAGER_DEFAULT_HOST, MANAGER_DEFAULT_PORT
 
 from chimera.core.site import Site
 from chimera.core.path import ChimeraPath
@@ -159,12 +160,12 @@ class SiteController (object):
                             drv_dir = [],
                             dry=False,
                             verbose = 0,
-                            pyro_host="127.0.0.1",
-                            pyro_port=24463)
+                            pyro_host=MANAGER_DEFAULT_HOST,
+                            pyro_port=MANAGER_DEFAULT_PORT)
 
         return parser.parse_args(args)
 
-    def init(self):
+    def startup(self):
 
 
         # config file
@@ -179,6 +180,7 @@ class SiteController (object):
             log.info("Chimera prefix: %s" % ChimeraPath.root())
                 
             self.manager = Manager(**self.config.getChimera())
+            log.info("Manager running on "+ self.manager.getHostname() + ":" + str(self.manager.getPort()))
 
         # add site object
         if not self.options.dry:

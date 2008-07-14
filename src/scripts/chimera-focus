@@ -28,6 +28,7 @@ from optparse import OptionParser, OptionGroup
 
 from chimera.core.manager import Manager
 from chimera.core.version import _chimera_version_, _chimera_description_
+from chimera.core.constants import MANAGER_DEFAULT_HOST, MANAGER_DEFAULT_PORT
 
 from chimera.instruments.focuser import Focuser
 from chimera.util.enum import Enum
@@ -98,6 +99,18 @@ if __name__ == '__main__':
     actions.add_option("-i", "--info", action="store_true", dest="info",
                       help="Print focuser information and exit")
 
+    parser.add_option("-H", "--host", action="store", 
+                      dest="pyro_host", type="string",
+                      help="Host name/IP to connect to when using instrument "
+                      "under remote management); [default=%default]",
+                      metavar="HOST")
+
+    parser.add_option("-P", "--port", action="store", 
+                      dest="pyro_port", type="string",
+                      help="Port on which to connect when using instrument "
+                      "under remote management; [default=%default]",
+                      metavar="PORT")
+
     parser.add_option("-q", "--quiet", action="store_true", dest='quiet',
                       help="Don't display informations while working [default=%default].")
 
@@ -112,7 +125,9 @@ if __name__ == '__main__':
                         info     = False,
                         move_in  = None,
                         move_out = None,
-                        move_to  = None)
+                        move_to  = None,
+                        pyro_host=MANAGER_DEFAULT_HOST,
+                        pyro_port=MANAGER_DEFAULT_PORT)
 
 
     options, args = parser.parse_args(sys.argv)
@@ -183,7 +198,8 @@ if __name__ == '__main__':
     # use an already running focuser
     if options.focuser:
         try:
-            focuser = manager.getProxy(options.focuser[0])
+            focuser = manager.getProxy(options.focuser[0],host=options.pyro_host,port=options.pyro_port)
+            driver = focuser.getDriver();
         except (ObjectNotFoundException, ClassLoaderException), e:
             print >> sys.stderr, "Cannot find focuser %s. (%s)" % (options.focuser[0], e)
             manager.shutdown()
@@ -213,7 +229,7 @@ if __name__ == '__main__':
     try:
 
         if options.info:
-            print "Focuser: %s (%s)" % (options.driver[-1], driver["device"])
+            print "Focuser: %s (%s)" % (focuser["driver"], driver["device"])
             print "Current focuser position:", focuser.getPosition()
 
         else:

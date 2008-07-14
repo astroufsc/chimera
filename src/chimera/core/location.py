@@ -52,6 +52,10 @@ class Location(object):
         # simple string
         if isinstance(location, StringType):
             (self._host, self._port, self._class, self._name, self._config) = self.parse(location)
+            if not self._host and options.has_key("host"):
+                if options["host"]: self._host=options["host"]
+            if not self._port and options.has_key("port"):
+                if options["port"]: self._port=options["port"]
 
         # copy constructor
         elif isinstance(location, Location):
