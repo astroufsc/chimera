@@ -133,8 +133,10 @@ class TheSkyTelescope (ChimeraObject, ITelescopeDriverSlew):
 
         if self["thesky"] == 5:
             #kill -9 on Windows
+            time.sleep(2)
             subprocess.call("TASKKILL /IM Sky.exe /F")
         else:
+            time.sleep(2)
             subprocess.call("TASKKILL /IM TheSky6.exe /F")
                     
 
@@ -160,7 +162,7 @@ class TheSkyTelescope (ChimeraObject, ITelescopeDriverSlew):
 
     @com
     def getPositionRaDec (self):
-        self._telescope.GetRaDec ()
+        self._telescope.GetRaDec()
         # FIXME: returns Position (pickle error)
         return (Coord.fromHMS(self._telescope.dRa),
                 Coord.fromDMS(self._telescope.dDec))
@@ -206,6 +208,34 @@ class TheSkyTelescope (ChimeraObject, ITelescopeDriverSlew):
 
         return True
 
+#    @com
+#    def slewToAltAz (self, position):
+#
+#        if self.isSlewing ():
+#            return False
+#
+#        #self._target = position
+#        self._term.clear ()
+#
+#        try:
+#            self._telescope.Asynchronous = 1
+#            self.slewBegin((position.ra, position.dec))
+#            self._telescope.SlewToAltAz (position.alt.D, position.az.D, "chimera")
+#
+#            while not self._telescope.IsSlewComplete:
+#
+#                if self._term.isSet ():
+#                    return True
+#
+#                time.sleep (self._idle_time)
+#
+#            self.slewComplete(self.getPositionRaDec())
+#
+#        except com_error:
+#            raise PositionOutsideLimitsException("Position outside limits.")
+#
+#        return True
+
     @com
     def abortSlew (self):
 
@@ -229,10 +259,10 @@ class TheSkyTelescope (ChimeraObject, ITelescopeDriverSlew):
     @com
     def park (self):
         self._telescope.Park()
-        self._telescope.Connect()
 
     @com
     def unpark (self):
+        self._telescope.Connect()
         self._telescope.FindHome()
 
     @com
@@ -245,7 +275,7 @@ class TheSkyTelescope (ChimeraObject, ITelescopeDriverSlew):
 
     @com
     def stopTracking (self):
-        self._telescope.SetTracking(1,0,0,0)
+        self._telescope.SetTracking(0,0,0,0)
 
     @com
     def isTracking (self):
