@@ -42,12 +42,10 @@ class TestLock (object):
                 return t
 
             def doLockedWith (self):
-
-                with self:
-                    time.sleep(1)
-                    t = time.time()-self.t0
-                    print "[ locked ] - %s - %.3f" % (threading.currentThread().getName(), t)
-                    return t
+                time.sleep(1)
+                t = time.time()-self.t0
+                print "[ locked ] - %s - %.3f" % (threading.currentThread().getName(), t)
+                return t
                     
         def doTest (obj):
 

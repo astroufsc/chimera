@@ -102,7 +102,7 @@ class Image (DictMixin):
     def worldAt (self, *pixel):
 
         if not self._findWCS():
-            return (0,0)
+            return Position.fromRaDec(0,0)
 
         world = self._valueAt(self._wcs.pixel2world_fits, *pixel)
         return Position.fromRaDec(Coord.fromD(world[0]), Coord.fromD(world[1]))
@@ -171,12 +171,10 @@ class Image (DictMixin):
         # ok, here we go!
         try:
             sex.run(self.filename)
+            result = sex.catalog()
+            return result
         finally:
             sex.clean(config=True, catalog=True, check=True)
-            
-        result = sex.catalog()
-
-        return result
 
     #
     # I/O and verification
