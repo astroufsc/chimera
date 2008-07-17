@@ -220,11 +220,11 @@ class TheSkyTelescope (ChimeraObject, ITelescopeDriverSlew):
 
     @com
     def isSlewing (self):
-        return not self._telescope.IsSlewComplete
+        return (self._telescope.IsSlewComplete == 0)
 
     @com
     def isTracking (self):
-        return self._telescope.IsTracking
+        return (self._telescope.IsTracking == 1)
 
     @com
     def park (self):
@@ -238,4 +238,16 @@ class TheSkyTelescope (ChimeraObject, ITelescopeDriverSlew):
     @com
     def isParked (self):
         return False
+
+    @com
+    def startTracking (self):
+        self._telescope.SetTracking(1,0,1,0)
+
+    @com
+    def stopTracking (self):
+        self._telescope.SetTracking(1,0,0,0)
+
+    @com
+    def isTracking (self):
+        return (self._telescope.IsTracking == 1)
 
