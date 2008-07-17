@@ -318,7 +318,7 @@ class Autofocus (ChimeraObject):
     
     def _takeImageAndResolveStars (self):
 
-        frame = self._takeImage()            
+        frame = self._takeImage()
         stars = self._findStars(frame)
 
         return stars
@@ -340,7 +340,8 @@ class Autofocus (ChimeraObject):
         frame = cam.expose(exp_time=self.exptime,
                            frames=1, shutter=Shutter.OPEN,
                            filename=filename)
-        return frame
+
+        return frame[0]
 
     def _findStars (self, fits_file):
 

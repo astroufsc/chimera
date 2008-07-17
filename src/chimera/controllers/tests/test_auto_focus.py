@@ -59,9 +59,11 @@ class TestAutofocus (object):
         #self.manager.addClass(OptecTCFS, "optec", {"device": "/dev/ttyS0"})
         #self.manager.addClass(Focuser, "focus", {"driver": "/OptecTCFS/0"})
 
+        #self.manager.addClass(Autofocus, "autofocus", {"camera" : "200.131.64.203:10000/Camera/0",
+        #                                               "focuser": "200.131.64.203:10000/Focuser/0"})
+
         self.manager.addClass(Autofocus, "autofocus", {"camera" : "/Camera/0",
                                                        "focuser": "/Focuser/0"})
-
         @callback(self.manager)
         def exposeBeginClbk(exp_time):
             print time.time(), "Expose begin for %.3f s." % exp_time
@@ -101,5 +103,8 @@ class TestAutofocus (object):
                       "debug_path": "/home/henrique/work/chimera/sprint1/autofocus/run1"}
 
         best_focus = autofocus.focus(mode=Mode.FIT, target=Target.CURRENT,
-                                     exptime=10, points=25)
+                                     exptime=10, points=10)
+        autofocus.plot("focus-lna.png")
+        autofocus.log("focus-lna.txt")
+
 

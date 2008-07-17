@@ -41,6 +41,7 @@ from chimera.core.exceptions import ObjectNotFoundException
 from chimera.core.exceptions import ChimeraObjectException
 from chimera.core.exceptions import InvalidLocationException
 from chimera.core.exceptions import ClassLoaderException
+from chimera.core.exceptions import ChimeraException
 
 from chimera.core.site import Site
 from chimera.core.location import Location
@@ -556,4 +557,4 @@ if __name__ == '__main__':
             print "Total time: %.3fs" % (time.time()-start)
             print 40*"="
 
-        sys.exit(0)
+    sys.exit(0)

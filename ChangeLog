@@ -1,3 +1,14 @@
+2008-07-17  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* src/chimera/controllers/autofocus.py: Fix bug returning a scalar
+	 when list was required.
+
+	* src/chimera/controllers/test/test_autofocus.py: Ad plot and log by default.
+
+	* src/chimera/drivers/meade.py: Fix bug on strfcoord usage.
+
+	* src/scripts/chimera-tel.py: Fix another ImportError (ChimeraException).
+
 2008-07-10  P. Henrique Silva  <henrique@astro.ufsc.br>
 
 	* src/chimera/core/path.py: New way to get Chimera paths. Use

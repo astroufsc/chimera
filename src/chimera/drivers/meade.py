@@ -568,7 +568,7 @@ class Meade (ChimeraObject,
         if not isinstance (dec, Coord):
             dec = Coord.fromDMS(dec)
 
-        self._write(":Sd%s#" % dec.strfcoord("%(d)+02d\xdf%(m)02d:%(s)02d"))
+        self._write(":Sd%s#" % dec.strfcoord("%(d)02d\xdf%(m)02d:%(s)02d"))
 
         ret = self._readbool()
 
@@ -611,7 +611,7 @@ class Meade (ChimeraObject,
         if not isinstance (alt, Coord):
             alt = Coord.fromD (alt)
 
-        self._write(":Sa%s#" % alt.strfcoord("%(d)+02d\xdf%(m)02d:%(s)02d"))
+        self._write(":Sa%s#" % alt.strfcoord("%(d)02d\xdf%(m)02d:%(s)02d"))
 
         ret = self._readbool()
 
