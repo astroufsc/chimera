@@ -132,10 +132,11 @@ class TheSkyTelescope (ChimeraObject, ITelescopeDriverSlew):
             return False
 
         if self["thesky"] == 5:
-            # kill -9 on Windows
+            #kill -9 on Windows
             subprocess.call("TASKKILL /IM Sky.exe /F")
-        
-            
+        else:
+            subprocess.call("TASKKILL /IM TheSky6.exe /F")
+                    
 
     @com
     def getRa (self):
@@ -166,7 +167,7 @@ class TheSkyTelescope (ChimeraObject, ITelescopeDriverSlew):
 
     @com
     def getPositionAltAz (self):
-        self._telescope.GetAltAz ()
+        self._telescope.GetAzAlt ()
         # FIXME: returns Position (pickle error)
         return (Coord.fromDMS(self._telescope.dAlt),
                 Coord.fromDMS(self._telescope.dAz))
@@ -220,4 +221,21 @@ class TheSkyTelescope (ChimeraObject, ITelescopeDriverSlew):
     @com
     def isSlewing (self):
         return not self._telescope.IsSlewComplete
+
+    @com
+    def isTracking (self):
+        return self._telescope.IsTracking
+
+    @com
+    def park (self):
+        self._telescope.Park()
+        self._telescope.Connect()
+
+    @com
+    def unpark (self):
+        self._telescope.FindHome()
+
+    @com
+    def isParked (self):
+        return False
 
