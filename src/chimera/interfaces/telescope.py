@@ -37,7 +37,7 @@ class ITelescope (Interface):
     Telescope base interface.
     """
 
-    __config__ = {"driver": "/FakeTelescope/telescope",
+    __config__ = {"driver": "/FakeTelescope/0",
 
                   "limits": "limits.filename",
                   

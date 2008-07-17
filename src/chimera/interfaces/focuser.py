@@ -43,7 +43,7 @@ class IFocuser (Interface):
          to selected directions only (no position information).
     """
 
-    __config__ = {"driver": "/Fake/focus",
+    __config__ = {"driver": "/FakeFocuser/0",
                   "model": "Fake Focus Inc.",}
 
 

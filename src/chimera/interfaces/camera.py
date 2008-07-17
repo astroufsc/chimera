@@ -50,7 +50,7 @@ class ICamera (Interface):
     """
 
     # config
-    __config__ = {"driver" : "/Fake/camera",
+    __config__ = {"driver" : "/FakeCamera/0",
 
                   "camera_model"    : "Fake camera Inc.",
                   "ccd_model"       : "KAF XYZ 10",

@@ -147,14 +147,14 @@ if __name__ == '__main__':
 
     parser.add_option("-H", "--host", action="store", 
                       dest="pyro_host", type="string",
-                      help="Host name/IP to connect to when using instrument "
-                      "under remote management); [default=%default]",
+                      help="Host name/IP to run instrument under when using local manager"
+                      "; [default=%default]",
                       metavar="HOST")
 
     parser.add_option("-P", "--port", action="store", 
                       dest="pyro_port", type="string",
-                      help="Port on which to connect when using instrument "
-                      "under remote management; [default=%default]",
+                      help="Port on which to to run instrument under when using local manager"
+                      "; [default=%default]",
                       metavar="PORT")
 
     parser.add_option("-q", "--quiet", action="store_true", dest='quiet',
@@ -167,7 +167,7 @@ if __name__ == '__main__':
     parser.add_option_group(temp)
 
     parser.set_defaults(camera   = [],
-                        driver   = ["/SBIG/sbig?device=USB"],
+                        driver   = ["/FakeCamera/fc"],
                         drv_dir  = [],
                         nexp     = 1,
                         texp     = 1,
@@ -184,7 +184,7 @@ if __name__ == '__main__':
                         filters  = False,
                         info     = False,
                         pyro_host=MANAGER_DEFAULT_HOST,
-                        pyro_port=MANAGER_DEFAULT_PORT)
+                        pyro_port=10000)
 
     options, args = parser.parse_args(sys.argv)
 
@@ -266,7 +266,7 @@ if __name__ == '__main__':
     # start
     #
 
-    manager = Manager(port=10000)
+    manager = Manager(host=options.pyro_host,port=options.pyro_port)
 
     camera = None
     driver = None
@@ -303,9 +303,9 @@ if __name__ == '__main__':
     # use an already running camera
     if options.camera:
         try:
-            camera = manager.getProxy(options.camera[0],host=options.pyro_host,port=options.pyro_port)
+            camera = manager.getProxy(options.camera[0])
             driver = camera.getDriver()
-            filter = manager.getProxy(options.camera[0],host=options.pyro_host,port=options.pyro_port)
+            filter = manager.getProxy(options.camera[0])
         except (ObjectNotFoundException, ClassLoaderException), e:
             print >> sys.stderr, "Cannot find camera %s. (%s)" % (options.camera[0], e)
             manager.shutdown()

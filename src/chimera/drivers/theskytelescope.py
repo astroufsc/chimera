@@ -165,6 +165,13 @@ class TheSkyTelescope (ChimeraObject, ITelescopeDriverSlew):
                 Coord.fromDMS(self._telescope.dDec))
 
     @com
+    def getPositionAltAz (self):
+        self._telescope.GetAltAz ()
+        # FIXME: returns Position (pickle error)
+        return (Coord.fromDMS(self._telescope.dAlt),
+                Coord.fromDMS(self._telescope.dAz))
+
+    @com
     def getTargetRaDec (self):
         if not self._target: return (0, 0)
 

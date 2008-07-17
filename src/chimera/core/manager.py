@@ -229,12 +229,16 @@ class Manager (RemoteObject):
 
         if type(location) not in [StringType, Location]:
             if issubclass(location, ChimeraObject):
+                #TODO: Verify usage of host= and port= for lookup by class type;
+                #        currently, I don't know of any code which sets host=,port= when
+                #        requesting a location by class except for unit tests
                 location = Location(cls=location.__name__, name=name, host=host, port=port)
             else:
                 raise NotValidChimeraObjectException ("Can't get a proxy from non ChimeraObject's descendent object (%s)." % location)
 
         else:
-            location = Location(location,host=host,port=port)
+            #TODO: Verify that no one uses host= or port=
+            location = Location(location, host=host, port=port)
 
         # who manages this location?
         if self._belongsToMe(location):

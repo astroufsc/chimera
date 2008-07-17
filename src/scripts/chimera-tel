@@ -163,14 +163,14 @@ if __name__ == '__main__':
 
     parser.add_option("-H", "--host", action="store", 
                       dest="pyro_host", type="string",
-                      help="Host name/IP to connect to when using instrument "
-                      "under remote management); [default=%default]",
+                      help="Host name/IP to run instrument under when using local manager"
+                      "; [default=%default]",
                       metavar="HOST")
 
     parser.add_option("-P", "--port", action="store", 
                       dest="pyro_port", type="string",
-                      help="Port on which to connect when using instrument "
-                      "under remote management; [default=%default]",
+                      help="Port on which to to run instrument under when using local manager"
+                      "; [default=%default]",
                       metavar="PORT")
 
     parser.add_option("-q", "--quiet", action="store_true", dest='quiet',
@@ -182,7 +182,7 @@ if __name__ == '__main__':
     parser.add_option_group(handle)    
 
     parser.set_defaults(telescope= [],
-                        driver   = ["/Meade/meade?device=/dev/ttyS6"],
+                        driver   = ["/FakeTelescope/ft"],
                         drv_dir  = [],
                         quiet    = False,
 
@@ -208,7 +208,7 @@ if __name__ == '__main__':
                         rate = "MAX",
                         
                         pyro_host=MANAGER_DEFAULT_HOST,
-                        pyro_port=MANAGER_DEFAULT_PORT)
+                        pyro_port=11000)
 
 
     options, args = parser.parse_args(sys.argv)
@@ -293,7 +293,7 @@ if __name__ == '__main__':
     # start
     #
 
-    manager = Manager(port=11000)
+    manager = Manager(host=options.pyro_host,port=options.pyro_port)
 
     telescope = None
     driver = None
@@ -328,7 +328,7 @@ if __name__ == '__main__':
     # use an already running telescope
     if options.telescope:
         try:
-            telescope = manager.getProxy(options.telescope[0],host=options.pyro_host,port=options.pyro_port)
+            telescope = manager.getProxy(options.telescope[0])
             driver = telescope.getDriver()
         except (ObjectNotFoundException, ClassLoaderException), e:
             print >> sys.stderr, "Cannot find telescope %s. (%s)" % (options.telescope[0], e)

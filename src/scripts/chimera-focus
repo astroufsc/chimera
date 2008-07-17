@@ -101,14 +101,14 @@ if __name__ == '__main__':
 
     parser.add_option("-H", "--host", action="store", 
                       dest="pyro_host", type="string",
-                      help="Host name/IP to connect to when using instrument "
-                      "under remote management); [default=%default]",
+                      help="Host name/IP to run instrument under when using local manager"
+                      "; [default=%default]",
                       metavar="HOST")
 
     parser.add_option("-P", "--port", action="store", 
                       dest="pyro_port", type="string",
-                      help="Port on which to connect when using instrument "
-                      "under remote management; [default=%default]",
+                      help="Port on which to to run instrument under when using local manager"
+                      "; [default=%default]",
                       metavar="PORT")
 
     parser.add_option("-q", "--quiet", action="store_true", dest='quiet',
@@ -119,7 +119,7 @@ if __name__ == '__main__':
 
 
     parser.set_defaults(focuser= [],
-                        driver   = ["/OptecTCFS/optec?device=/dev/ttyS4"],
+                        driver   = ["/FakeFocuser/ff"],
                         drv_dir  = [],
                         quiet    = False,
                         info     = False,
@@ -127,7 +127,7 @@ if __name__ == '__main__':
                         move_out = None,
                         move_to  = None,
                         pyro_host=MANAGER_DEFAULT_HOST,
-                        pyro_port=MANAGER_DEFAULT_PORT)
+                        pyro_port=12000)
 
 
     options, args = parser.parse_args(sys.argv)
@@ -176,7 +176,7 @@ if __name__ == '__main__':
     # start
     #
 
-    manager = Manager(port=12000)
+    manager = Manager(host=options.pyro_host,port=options.pyro_port)
 
     focuser = None
 
@@ -198,7 +198,7 @@ if __name__ == '__main__':
     # use an already running focuser
     if options.focuser:
         try:
-            focuser = manager.getProxy(options.focuser[0],host=options.pyro_host,port=options.pyro_port)
+            focuser = manager.getProxy(options.focuser[0])
             driver = focuser.getDriver();
         except (ObjectNotFoundException, ClassLoaderException), e:
             print >> sys.stderr, "Cannot find focuser %s. (%s)" % (options.focuser[0], e)
