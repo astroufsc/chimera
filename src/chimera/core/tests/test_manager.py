@@ -11,6 +11,8 @@ from chimera.core.exceptions   import InvalidLocationException, \
                                       ChimeraObjectException, \
                                       ClassLoaderException
 
+import os.path
+
 
 class Simple (ChimeraObject):
 
@@ -44,7 +46,7 @@ class TestManager (object):
         assert_raises(InvalidLocationException, self.manager.addClass, Simple, "")
 
         # by location
-        assert self.manager.addLocation('/ManagerHelper/h')
+        assert self.manager.addLocation('/ManagerHelper/h', path=[os.path.dirname(__file__)])
         assert_raises(ClassLoaderException, self.manager.addLocation, '/What/h')
         assert_raises(InvalidLocationException, self.manager.addLocation, 'foo')
 
@@ -57,10 +59,14 @@ class TestManager (object):
 
         # exceptional cases
         # __init__
-        assert_raises(ChimeraObjectException, self.manager.addLocation, "/ManagerHelperWithInitException/h")
+        assert_raises(ChimeraObjectException, self.manager.addLocation,
+                                             "/ManagerHelperWithInitException/h",
+                                             [os.path.dirname(__file__)])
 
         # __start__
-        assert_raises(ChimeraObjectException, self.manager.addLocation, "/ManagerHelperWithStartException/h")
+        assert_raises(ChimeraObjectException, self.manager.addLocation,
+                                             "/ManagerHelperWithStartException/h",
+                                             [os.path.dirname(__file__)])
 
         # __main__
         #assert_raises(ChimeraObjectException, self.manager.addLocation, "/ManagerHelperWithMainException/h")
@@ -81,7 +87,7 @@ class TestManager (object):
         assert self.manager.remove('/Simple/simple') == True
 
         # __stop__ error
-        assert self.manager.addLocation("/ManagerHelperWithStopException/h")
+        assert self.manager.addLocation("/ManagerHelperWithStopException/h", path=[os.path.dirname(__file__)])
         assert_raises(ChimeraObjectException, self.manager.stop, '/ManagerHelperWithStopException/h')
 
         # another path to stop

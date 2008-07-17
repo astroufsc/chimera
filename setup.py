@@ -65,7 +65,7 @@ win32_deps = []
 if sys.platform == "win32":
     win32_deps += ["pywin32 == 210"]
 else:
-    linux_deps += ["python-sbigudrv >= 0.1", "coords"]
+    linux_deps += ["python-sbigudrv >= 0.1", "coords", "pywcs"]
 
 setup(name='chimera-python',
       package_dir      = {"": "src"},
@@ -83,16 +83,19 @@ setup(name='chimera-python',
                           "pyephem > 3.7",
                           "python-dateutil >= 1.4",
                           "RO >= 2.2.7",
-                          "matplotlib == 0.98.1",
-                          "numpy == 1.0.4"] + win32_deps + linux_deps,
+                          "matplotlib >= 0.98.1",
+                          "numpy >= 1.0.4",
+                          "asciidata == 1.1"] + win32_deps + linux_deps,
 
       dependency_links = ["http://www.stsci.edu/resources/software_hardware/pyfits/pyfits-1.3.tar.gz",
-                          "http://astropy.scipy.org/svn/astrolib/trunk/coords#egg=coords==trunk",
-                          "http://sourceforge.net/project/showfiles.php?group_id=46487"],
+                          "http://astropy.scipy.org/svn/astrolib/trunk/coords#egg=coords",
+                          "http://astropy.scipy.org/svn/astrolib/trunk/pywcs#egg=pywcs",
+                          "http://sourceforge.net/project/showfiles.php?group_id=46487",
+                          "http://www.stecf.org/software/PYTHONtools/astroasciidata/asciidata1.1_download.php"],
 
       tests_require    = ["nose"],
-      test_loader      = "nose.loader:TestLoader",
-      test_suite       = "src/chimera/core",
+#      test_loader      = "nose.loader:TestLoader",
+#      test_suite       = "src/chimera/core src/chimera/util",
             
       version          = _chimera_version_,
       description      = _chimera_description_,
