@@ -62,10 +62,15 @@ win32_deps = []
 # coords needs an egg to works on Windows, at least without requiring the user to compile TPM
 # on Windows, requires numpy 1.0.4 'cause newer version still doesn't have an egg
 
+# FIXME: pywcs only works on python 2.5
+
 if sys.platform == "win32":
     win32_deps += ["pywin32 == 210"]
 else:
-    linux_deps += ["python-sbigudrv >= 0.1", "coords", "pywcs"]
+    linux_deps += ["python-sbigudrv >= 0.1", "coords"]
+
+    if sys.version_info[0:2] >= (2,5):
+        linux_deps += ["pywcs"]
 
 setup(name='chimera-python',
       package_dir      = {"": "src"},
@@ -75,17 +80,19 @@ setup(name='chimera-python',
 
       zip_safe         = False,
 
-      install_requires = ["Pyro >= 3.7",
-                          "pyfits >= 1.3",
-                          "pyserial >= 2.2",
+      # dependencies are installed bottom up, so put important things last
+      install_requires = linux_deps + win32_deps + \
+                         ["asciidata == 1.1",
                           "sqlalchemy >= 0.4.5",
                           "Elixir >= 0.5.2",
                           "pyephem > 3.7",
                           "python-dateutil >= 1.4",
-                          "RO >= 2.2.7",
+                          "RO >= 2.2.7",                          
+                          "pyfits >= 1.3",
+                          "pyserial >= 2.2",
                           "matplotlib >= 0.98.1",
                           "numpy >= 1.0.4",
-                          "asciidata == 1.1"] + win32_deps + linux_deps,
+                          "Pyro >= 3.7"],
 
       dependency_links = ["http://www.stsci.edu/resources/software_hardware/pyfits/pyfits-1.3.tar.gz",
                           "http://astropy.scipy.org/svn/astrolib/trunk/coords#egg=coords",
@@ -93,10 +100,8 @@ setup(name='chimera-python',
                           "http://sourceforge.net/project/showfiles.php?group_id=46487",
                           "http://www.stecf.org/software/PYTHONtools/astroasciidata/asciidata1.1_download.php"],
 
-      tests_require    = ["nose"],
-#      test_loader      = "nose.loader:TestLoader",
-#      test_suite       = "src/chimera/core src/chimera/util",
-            
+      tests_require    = ["nose", "coverage"],
+
       version          = _chimera_version_,
       description      = _chimera_description_,
       long_description = open("docs/site/index.rst").read(),

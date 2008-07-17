@@ -8,7 +8,12 @@ from chimera.util.sextractor import SExtractor
 
 import pyfits
 import numpy as N
-import pywcs
+
+try:
+    have_pywcs = True
+    import pywcs
+except ImportError:
+    have_pywcs = False
 
 import sys
 from UserDict import DictMixin
@@ -78,7 +83,10 @@ class Image (DictMixin):
     #
     
     def pixelAt (self, *world):
-        self._findWCS()
+
+        if not self._findWCS():
+            return (0,0)
+
         pixel = self._valueAt(self._wcs.world2pixel_fits, *world)
 
         # round pixel to avoid large decimal numbers and get out strange -0
@@ -92,17 +100,24 @@ class Image (DictMixin):
         return tuple(pixel)
 
     def worldAt (self, *pixel):
-        self._findWCS()
+
+        if not self._findWCS():
+            return (0,0)
+
         world = self._valueAt(self._wcs.pixel2world_fits, *pixel)
         return Position.fromRaDec(Coord.fromD(world[0]), Coord.fromD(world[1]))
 
     def _findWCS (self):
+
+        if not have_pywcs: return False
 
         if not self._wcs:
             try:
                 self._wcs = pywcs.WCS(self.fd["PRIMARY"].header)
             except KeyError:
                 raise WCSNotFoundException("Couldn't found WCS information on %s" % (self.filename))
+
+        return True
 
     def _valueAt(self, fn, *coords):
         """
@@ -154,11 +169,12 @@ class Image (DictMixin):
         sex.config.update(params)
 
         # ok, here we go!
-        sex.run(self.filename)
-
+        try:
+            sex.run(self.filename)
+        finally:
+            sex.clean(config=True, catalog=True, check=True)
+            
         result = sex.catalog()
-
-        sex.clean(config=True, catalog=True, check=True)
 
         return result
 
