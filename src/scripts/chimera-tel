@@ -359,7 +359,10 @@ if __name__ == '__main__':
             newloc = Location(cls=driverloc.cls, name=driverloc.name, config=dict(driverloc.config, **config),
                               host=driverloc.host, port=driverloc.port)
 
-            driver = manager.addLocation(newloc, path=drivers_path)
+            if manager._belongsToMe(newloc):
+                driver = manager.addLocation(newloc, path=drivers_path)
+            else:
+                driver = manager.getProxy(newloc)
             telescope = manager.addClass(Telescope, "tel", {"driver": options.driver[-1]})
 
         except (ObjectNotFoundException, ClassLoaderException), e:
