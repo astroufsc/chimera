@@ -25,6 +25,7 @@ import logging
 import signal
 import copy
 import threading
+import optparse
 
 from optparse import OptionParser, OptionGroup
 
