@@ -106,13 +106,7 @@ class SiteConfig (object):
                 tmpSite["utc_offset"]  = int(site.findtext("utc_offset", 0))
             except ValueError:
                 tmpSite["utc_offset"]  = 0
-                
-            dst = site.find("dst")
-            if dst and len(dst) > 0:
-                tmpSite["dst"] = True
-            else:
-                tmpSite["dst"] = False
-                
+                                
             self.__sites.append(tmpSite)
 
         # instruments

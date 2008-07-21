@@ -12,11 +12,11 @@ __all__ = ['Scheduler']
 
 class Scheduler (ChimeraObject):
 
-    __config__ = {"telescope"   : "/Telescope/tel?driver=/FakeTelescope/fake",
-                  "camera"      : "/Camera/cam?driver=/FakeCamera/fake",
-                  "filterwheel" : "/FilterWheel/wheel?driver=/FakeFilterWheel/fake",
-                  "focuser"     : "/Focuser/focus?driver=/FakeFocuser/fake",
-                  "dome"        : "/Dome/dome?driver=/FakeDome/fake"}
+    __config__ = {"telescope"   : "/Telescope/0?driver=/FakeTelescope/0",
+                  "camera"      : "/Camera/0?driver=/FakeCamera/0",
+                  "filterwheel" : "/FilterWheel/0?driver=/FakeFilterWheel/0",
+                  "focuser"     : "/Focuser/0?driver=/FakeFocuser/0",
+                  "dome"        : "/Dome/0?driver=/FakeDome/0"}
 
     def __init__ (self):
         ChimeraObject.__init__(self)

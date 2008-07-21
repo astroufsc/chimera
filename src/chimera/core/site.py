@@ -52,8 +52,7 @@ class Site (ChimeraObject):
                       latitude   = Coord.fromDMS("-23 00 00"),
                       longitude  = Coord.fromDMS(-48.5),
                       altitude   = 20,
-                      utc_offset = -3,
-                      dst        = False)
+                      utc_offset = -3)
 
     def __init__ (self):
         ChimeraObject.__init__(self)
