@@ -319,7 +319,14 @@ if __name__ == '__main__':
     # create a new camera using selected driver
     else:
         try:
-            driver = manager.addLocation(options.driver[-1], path=drivers_path)
+            driverloc = Location(options.driver[-1])
+            newloc = Location(cls=driverloc.cls, name=driverloc.name, config=dict(driverloc.config, **config),
+                              host=driverloc.host, port=driverloc.port)
+
+            if manager._belongsToMe(newloc):
+                driver = manager.addLocation(newloc, path=drivers_path)
+            else:
+                driver = manager.getProxy(newloc)
             camera = manager.addClass(Camera, "cam", {"driver": options.driver[-1]})
             filter = manager.addClass(FilterWheel, "filter", {"driver": options.driver[-1]} )
         except (ObjectNotFoundException, ClassLoaderException), e:

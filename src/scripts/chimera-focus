@@ -212,7 +212,14 @@ if __name__ == '__main__':
     # create a new focuser using selected driver
     else:
         try:
-            driver = manager.addLocation(options.driver[-1], path=drivers_path)
+            driverloc = Location(options.driver[-1])
+            newloc = Location(cls=driverloc.cls, name=driverloc.name, config=dict(driverloc.config, **config),
+                              host=driverloc.host, port=driverloc.port)
+
+            if manager._belongsToMe(newloc):
+                driver = manager.addLocation(newloc, path=drivers_path)
+            else:
+                driver = manager.getProxy(newloc)
             focuser = manager.addClass(Focuser, "tel", {"driver": options.driver[-1]})
         except (ObjectNotFoundException, ClassLoaderException), e:
             print >> sys.stderr, "Cannot find focuser driver %s. (%s)" % (options.driver[-1],e)
