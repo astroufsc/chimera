@@ -551,6 +551,7 @@ class Manager (RemoteObject):
 
             if resource.instance.getState() != State.STOPPED:
                 resource.instance.__stop__ ()
+                resource.instance.__setstate__(State.STOPPED)
 
             return True
 
