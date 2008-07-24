@@ -131,9 +131,9 @@ class doStuff():
                 print ' - ' + key.__str__() + state
                 if options.listdetail:
                     try:
-                        keys = ro.__get_config_keys__()
-                        for key in sorted(keys):
-                            print '      ' + key + ': ' + ro[key].__str__()
+                        config = ro.__get_config__()
+                        for key, value in sorted(config):
+                            print '      ' + key + ': ' + value.__str__()
                     except AttributeError:
                         print '      {Config not available}'
                     except Exception, e:
