@@ -24,6 +24,9 @@ import re
 import sys
 from types import StringType, LongType, IntType, FloatType
 
+TWO_PI = 2.0 * math.pi
+PI_OVER_TWO = (math.pi / 2.0)
+
 
 # to allow use of Coord outside of Chimera
 
@@ -272,6 +275,86 @@ class CoordUtil (object):
         else:
             return format % subs
 
+    @staticmethod
+    def coordToR(coord):
+        if isinstance(coord, Coord):
+            return float(coord.toR())
+        else:
+            return float(coord)
+    
+    @staticmethod
+    def makeValid0to360(coord):
+        coordR = Site.coordToR(coord)
+        coordR = coordR % TWO_PI
+        if coordR < 0.0:
+            coordR += TWO_PI
+        return Coord.fromR(coordR)
+    
+    @staticmethod
+    def makeValid180to180(coord):
+        coordR = Site.coordToR(coord)
+        coordR = coordR % TWO_PI
+        if coordR > math.pi:
+            coordR -= TWO_PI
+        if coordR < (- math.pi):
+            coordR += TWO_PI
+        return Coord.fromR(coordR)
+                
+    @staticmethod
+    def raToHa(ra, lst):
+        return Coord.fromR(CoordUtil.coordToR(lst) - CoordUtil.coordToR(ra))
+    
+    @staticmethod
+    def haToRa(ha, lst):
+        return Coord.fromR(CoordUtil.coordToR(lst) - CoordUtil.coordToR(ha))
+
+#    #coordRotate, raDecToAltAz and altAzToRaDec adopted from sidereal.py
+#    #http://www.nmt.edu/tcc/help/lang/python/examples/sidereal/ims/
+    
+    @staticmethod
+    def coordRotate (x, y, z):
+        """Used to convert between equatorial and horizon coordinates.
+    
+          [ x, y, and z are angles in radians ->
+              return (xt, yt) where
+              xt=arcsin(sin(x)*sin(y)+cos(x)*cos(y)*cos(z)) and
+              yt=arccos((sin(x)-sin(y)*sin(xt))/(cos(y)*cos(xt))) ]
+        """
+        #-- 1 --
+        xt  =  math.asin (math.sin(x) * math.sin(y) +
+                      math.cos(x) * math.cos(y) * math.cos(z))
+        #-- 2 --
+        yt  =  math.acos ((math.sin(x) - math.sin(y) * math.sin(xt)) /
+                      (math.cos(y) * math.cos(xt)))
+        #-- 3 --
+        if  math.sin(z) > 0.0:
+            yt  =  TWO_PI - yt
+    
+        #-- 4 --
+        return (xt, yt)
+            
+    @staticmethod
+    def raDecToAltAz(raDec, latitude, lst):
+        decR = CoordUtil.coordToR(raDec.dec)
+        latR = CoordUtil.coordToR(latitude)
+        ha = CoordUtil.raToHa(raDec.ra, lst)
+        haR = CoordUtil.coordToR(ha)
+        
+        altR,azR = CoordUtil.coordRotate(decR, latR, haR)
+        
+        return Position.fromAltAz(Coord.fromR(CoordUtil.makeValid180to180(altR)), Coord.fromR(CoordUtil.makeValid0to360(azR)))
+    
+    @staticmethod
+    def altAzToRaDec(altAz, latitude, lst):
+        altR = CoordUtil.coordToR(altAz.alt)
+        latR = CoordUtil.coordToR(latitude)
+        azR = CoordUtil.coordToR(altAz.az)
+        
+        decR,haR = CoordUtil.coordRotate(altR, latR, azR)
+        
+        ra = CoordUtil.haToRa(haR, lst)
+        
+        return Position.fromRaDec(CoordUtil.makeValid0to360(ra), CoordUtil.makeValid180to180(decR))
 
 class Coord (object):
     """L{Coord} represents a single angular coordinate.

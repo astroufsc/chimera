@@ -31,6 +31,7 @@ from chimera.interfaces.telescopedriver import SlewRate
 from chimera.core.chimeraobject         import ChimeraObject
 
 from chimera.core.lock import lock
+from chimera.core.site import Site
 
 from chimera.util.coord    import Coord
 from chimera.util.position import Position
@@ -41,30 +42,60 @@ class FakeTelescope (ChimeraObject,
                      ITelescopeDriverSync,
                      ITelescopeDriverPark,
                      ITelescopeDriverTracking):
-
+    
+    __config__ = {'site':   '/Site/0'}
+    
     def __init__ (self):
         ChimeraObject.__init__(self)
 
         self.__slewing = False
-        self._ra  = Coord.fromHMS("10:10:10")
-        self._dec = Coord.fromDMS("20:20:20")
         self._az  = Coord.fromDMS(0)
-        self._alt = Coord.fromDMS(10)
+        self._alt = Coord.fromDMS(70)
 
         self._slewing  = False
         self._tracking = True
         self._parked   = False
         
         self._abort = threading.Event()
+        
+        try:
+            self._site = self.getManager().getProxy(self['site'])
+            self._gotSite=True
+        except:
+            self._site = Site()
+            self._gotSite=False
+        
+        self._setRaDecFromAltAz()
+    
+    def _setRaDecFromAltAz(self):
+        if self._gotSite:
+            self._site._transferThread()
+        raDec=self._site.altAzToRaDec(Position.fromAltAz(self._alt, self._az))
+        self._ra=raDec.ra
+        self._dec=raDec.dec
+
+    def _setAltAzFromRaDec(self):
+        if self._gotSite:
+            self._site._transferThread()
+        altAz=self._site.raDecToAltAz(Position.fromRaDec(self._ra, self._dec))
+        self._alt=altAz.alt
+        self._az=altAz.az
 
     def __start__ (self):
         self.setHz(1)
 
     @lock
     def control (self):
-        self._ra  += Coord.fromAS(15)
-        self._az  += Coord.fromAS(5*60)
-        self._alt += Coord.fromAS(15)
+        if not self._gotSite:
+            try:
+                self._site=self.getManager().getProxy(self['site'])
+                self._gotSite=True
+            except:
+                pass
+        if self._tracking:
+            self._setAltAzFromRaDec()
+        else:
+            self._setRaDecFromAltAz()                                                          
         return True
 
     def open(self):
@@ -99,8 +130,7 @@ class FakeTelescope (ChimeraObject,
 
             self._ra  += ra_steps
             self._dec += dec_steps
-            self._az  += ra_steps
-            self._alt += dec_steps
+            self._setAltAzFromRaDec()
             
             time.sleep(0.5)
             t += 0.5
@@ -111,13 +141,35 @@ class FakeTelescope (ChimeraObject,
 
     @lock
     def slewToAltAz(self, position):
-        self.slewBegin(position)
-        self._az = position.az
-        self._alt = position.alt
+        self.slewBegin(self._site.altAzToRaDec(position))
+
+        alt_steps = position.alt - self.getAlt()
+        alt_steps = float(alt_steps/10.0)
+
+        az_steps = position.az - self.getAz()
+        az_steps = float(az_steps/10.0)
+
         self._slewing = True
-        time.sleep(3)
+        self._abort.clear()
+
+        t = 0
+        while t < 5:
+
+            if self._abort.isSet():
+                self._slewing = False
+                return
+
+            self._alt  += alt_steps
+            self._az += az_steps
+            self._setRaDecFromAltAz()
+            
+            time.sleep(0.5)
+            t += 0.5
+
         self._slewing = False
-        self.slewComplete(position)
+            
+        self.slewComplete(self.getPositionRaDec())
+
 
     def isSlewing (self):
         return self._slewing
@@ -161,13 +213,13 @@ class FakeTelescope (ChimeraObject,
         return Position.fromRaDec(self.getRa(), self.getDec())
 
     def getPositionAltAz(self):
-        return Position.fromRaDec(self.getAlt(), self.getAz())
+        return Position.fromAltAz(self.getAlt(), self.getAz())
 
     def getTargetRaDec(self):
         return Position.fromRaDec(self.getRa(), self.getDec())
 
     def getTargetAltAz(self):
-        return Position.fromRaDec(self.getAlt(), self.getAz())
+        return Position.fromAltAz(self.getAlt(), self.getAz())
 
     @lock
     def sync(self, position):

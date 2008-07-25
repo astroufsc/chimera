@@ -32,6 +32,8 @@ from chimera.core.exceptions import ObjectNotFoundException, InvalidLocationExce
 from chimera.core.path import ChimeraPath
 from chimera.core.state    import State
 
+from Pyro.util import getPyroTraceback
+
 import chimera.core.log
 
 log = logging.getLogger('chimera.scripts')
@@ -90,11 +92,26 @@ class doStuff():
             
         
         for co in options.drivers:
-            rm.addLocation(co, path=self.paths["drivers"], start=True)
+            log.info('Loading driver ' + co + '...')
+            try:
+                rm.addLocation(co, path=self.paths["drivers"], start=True)
+            except Exception, e:
+                log.warning('Failed to start ' + co + ': ' + e.message)
+                print ''.join(getPyroTraceback(e))
         for co in options.instruments:
-            rm.addLocation(co, path=self.paths["instruments"], start=True)
+            log.info('Loading instrument ' + co + '...')
+            try:
+                rm.addLocation(co, path=self.paths["instruments"], start=True)
+            except Exception, e:
+                log.warning('Failed to start ' + co + ': ' + e.message)
+                print ''.join(getPyroTraceback(e))
         for co in options.controllers:
-            rm.addLocation(co, path=self.paths["controllers"], start=True)
+            log.info('Loading controller ' + co + '...')
+            try:
+                rm.addLocation(co, path=self.paths["controllers"], start=True)
+            except Exception, e:
+                log.warning('Failed to start ' + co + ': ' + e.message)
+                print ''.join(getPyroTraceback(e))
         
         for co in options.start:
             try:
@@ -103,6 +120,7 @@ class doStuff():
                 log.info('Started ' + remSite + co)
             except Exception, e:
                 log.warning('Unable to start ' + co + ': ' + e.message)
+                print ''.join(getPyroTraceback(e))
         
         for co in options.stop:
             try:
@@ -111,6 +129,7 @@ class doStuff():
                 log.info('Stopped ' + remSite + co)
             except Exception, e:
                 log.warning('Unable to stop ' + co + ': ' + e.message)
+                print ''.join(getPyroTraceback(e))
         
         for co in options.remove:
             try:
@@ -119,6 +138,7 @@ class doStuff():
                 log.info('Started ' + remSite + co)
             except Exception, e:
                 log.warning('Unable to remove ' + co + ': ' + e.message)
+                print ''.join(getPyroTraceback(e))
         
         if options.list or options.listdetail:
             print rm.URI.__str__()

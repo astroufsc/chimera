@@ -30,7 +30,7 @@ from chimera.core.util          import getManagerURI
 from chimera.core.state         import State
 
 from chimera.core.exceptions   import InvalidLocationException, \
-                                      ObjectNotFoundException,  \
+                                      ObjectNotFoundException, \
                                       NotValidChimeraObjectException, \
                                       ChimeraObjectException, \
                                       ClassLoaderException, \
@@ -133,9 +133,9 @@ class Manager (RemoteObject):
         self.adapterThread = threading.Thread(target=self.adapter.requestLoop)
         self.adapterThread.setDaemon(True)
         self.adapterThread.start()
-
+        
         # register ourself
-        self.resources.add(MANAGER_LOCATION, self, getManagerURI(host, port))
+        self.resources.add(MANAGER_LOCATION, self, getManagerURI(host, self.adapter.port))
 
         # signals
         signal.signal(signal.SIGTERM, self._sighandler)
@@ -528,7 +528,7 @@ class Manager (RemoteObject):
         @param location: The object to stop.
         @type location: Location or str
 
-        @raises ObjectNotFoundException: When te request object or the Manager was not found.
+        @raises ObjectNotFoundException: When the requested object or the Manager was not found.
         @raises ChimeraObjectException: Internal error on managed (user) object.
 
         @return: retuns True if sucessfull. False otherwise.
@@ -559,3 +559,5 @@ class Manager (RemoteObject):
             log.exception("Error running %s __stop__ method. Exception follows..." % location)
             raise ChimeraObjectException("Error running %s __stop__ method." % location)
 
+    def getGUID(self):
+        return self.objectGUID

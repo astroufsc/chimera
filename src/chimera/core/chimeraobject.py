@@ -213,3 +213,6 @@ class ChimeraObject (RemoteObject, ILifeCycle):
     def getProxy (self):
         # just to put everthing together (no need to change the base implementation)
         return super(ChimeraObject, self).getProxy()
+    
+    def getGUID(self):
+        return self.objectGUID

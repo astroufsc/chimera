@@ -24,6 +24,12 @@ import math
 import numpy
 import sbigudrv as udrv
 
+import logging
+from chimera.core.log import logging
+from chimera.util.dumper import dumpObj
+
+log = logging.getLogger(__name__)
+
 from chimera.core.exceptions import ChimeraException
 
 
@@ -95,9 +101,9 @@ class TemperatureSetpoint(object):
         elif temp > 35.0:
             temp = 35.0
         
-        r = cls.r0 * math.exp ( (math.log (cls.r_ratio[sensor]) * (cls.t0 - temp)) / cls.dt[sensor])
+        r = cls.r0 * math.exp ((math.log (cls.r_ratio[sensor]) * (cls.t0 - temp)) / cls.dt[sensor])
 
-        setpoint = (cls.max_ad / ( (cls.r_bridge[sensor] / r) + 1.0 )) + 0.5
+        setpoint = (cls.max_ad / ((cls.r_bridge[sensor] / r) + 1.0)) + 0.5
 
         #print "from %f to %d" % (temp, int(setpoint))
 
@@ -117,9 +123,9 @@ class TemperatureSetpoint(object):
         elif setpoint >= (cls.max_ad - 1):
             setpoint = cls.max_ad - 1
 
-        r = cls.r_bridge[sensor] / ( (float(cls.max_ad) / setpoint) - 1.0 )
+        r = cls.r_bridge[sensor] / ((float(cls.max_ad) / setpoint) - 1.0)
 
-        temp = cls.t0 - ( cls.dt[sensor] * ( math.log (r/cls.r0) / math.log (cls.r_ratio[sensor]) ) )
+        temp = cls.t0 - (cls.dt[sensor] * (math.log (r/cls.r0) / math.log (cls.r_ratio[sensor])))
 
         #print "from %f to %f" % (setpoint, temp)
 
@@ -269,8 +275,8 @@ class SBIGDrv(object):
         return self._cmd(udrv.CC_END_READOUT, erp, None)
     
     def readoutLine(self, ccd, mode = 0, line = None):
-        
-	if mode not in self.readoutModes[ccd].keys():
+
+        if mode not in self.readoutModes[ccd].keys():
             raise ValueError("Invalid readout mode")
 
         # geometry check
@@ -423,12 +429,18 @@ class SBIGDrv(object):
         if err == udrv.CE_NO_ERROR:
             return True
         else:
+            log.error('Got a problem here! Dumping error params')
             gesp = udrv.GetErrorStringParams()
             gesr = udrv.GetErrorStringResults()
 
             gesp.errorNo = err
             
             udrv.SBIGUnivDrvCommand(udrv.CC_GET_ERROR_STRING, gesp, gesr)
+            
+            dumpObj(gesp)
+            dumpObj(gesr)
+            
+            log.warning('You may need to restart the SBIGDriver!')
 
             raise SBIGException(err, gesr.errorString)
 

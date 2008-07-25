@@ -47,6 +47,7 @@ from chimera.core.version import  _chimera_version_,		\
 # modules
 
 chimera_scripts = ['src/scripts/chimera',
+                   'src/scripts/chimera-admin',
                    'src/scripts/chimera-cam',
                    'src/scripts/chimera-tel',
                    'src/scripts/chimera-dome',

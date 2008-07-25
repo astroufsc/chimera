@@ -68,9 +68,9 @@ class SBIG(ChimeraObject, ICameraDriver, IFilterWheelDriver):
         else:
             self.dev = SBIGDrv.lpt1
 
-	self["bitpix"] = Bitpix.uint16
-                        
-	self["bitpix"] = Bitpix.uint16
+        self["bitpix"] = Bitpix.uint16
+
+        #self["bitpix"] = Bitpix.uint16
                         
         return self.open(self.dev)
 
@@ -262,7 +262,7 @@ class SBIG(ChimeraObject, ICameraDriver, IFilterWheelDriver):
         #window, line = self._getWindowAndLine(img)
 
         try:
-            next_filename = ImageSave.save(None, 
+            next_filename = ImageSave.save(None,
                                            self["directory"],
                                            self["file_format"],
                                            self["file_extension"],
@@ -317,7 +317,7 @@ class SBIG(ChimeraObject, ICameraDriver, IFilterWheelDriver):
                                                     self["file_extension"],
                                                     self["date_format"],
                                                     self.lastFrameStartTime,
-                                                    self["exp_time"],                                                    
+                                                    self["exp_time"],
                                                     self["bitpix"],
                                                     self["save_on_temp"])
         except Exception, e:

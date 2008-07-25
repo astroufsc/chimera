@@ -59,7 +59,7 @@ class ILifeCycle (Interface):
         """
         Cleanup {__start__} actions.
 
-        {__stop__} it's called by Manager when Manager is diying or
+        {__stop__} it's called by Manager when Manager is dying or
         programatically at any time (to remove an Instrument during
         system lifetime).
 
@@ -69,7 +69,7 @@ class ILifeCycle (Interface):
 
     def __main__ (self):
         """
-        Main control method. Implementeers could use this method to
+        Main control method. Implementers could use this method to
         implement control loop functions.
 
         @note: This method runs on their own thread.
@@ -106,5 +106,5 @@ class ILifeCycle (Interface):
 
     def getProxy (self):
         """
-        Get a Proxy for this object (usefull for callbacks)
+        Get a Proxy for this object (useful for callbacks)
         """

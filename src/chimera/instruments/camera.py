@@ -67,9 +67,14 @@ class Camera (ChimeraObject, ICameraExpose, ICameraTemperature):
         return True
 
     def __stop__ (self):
-
+        
+        if self.isExposing():
+            self.abortExposure(False)
+            while self.isExposing():
+                time.sleep(1)
+        
         # disconnect our callbacks
-        drv = self.getDriver()        
+        drv = self.getDriver()
 
         drv.exposeBegin       -= self.getProxy()._exposeBeginDrvClbk        
         drv.exposeComplete    -= self.getProxy()._exposeCompleteDrvClbk

@@ -21,7 +21,7 @@
 
 from chimera.core.chimeraobject import ChimeraObject
 
-from chimera.util.coord import Coord
+from chimera.util.coord import Coord, CoordUtil
 from chimera.util.position import Position
 
 from dateutil import tz
@@ -69,6 +69,7 @@ class Site (ChimeraObject):
         site.long = self["longitude"].strfcoord('%(d)d:%(m)d:%(s).2f')
         site.elev = self['altitude']
         site.date = date or self.ut()
+        site.epoch='2000/1/1 00:00:00'
         return site
 
     def _Date2local (self, Date):
@@ -99,13 +100,17 @@ class Site (ChimeraObject):
 
     def ut (self):
         return dt.datetime.now(self.utc_tz)
+    
+    def LST_inRads(self):
+        return float(self._getEphem(date=self.ut()).sidereal_time())
 
     def LST (self):
         """
         Mean Local Sidereal Time
         """
-        lst = self._getEphem(self.ut()).sidereal_time()
-        lst_c = Coord.fromR(lst)
+        #lst = self._getEphem(self.ut()).sidereal_time()
+        #required since a Coord cannot be constructed from an Ephem.Angle
+        lst_c = Coord.fromR(self.LST_inRads())
         return lst_c.toHMS()
 
     def GST (self):
@@ -181,7 +186,15 @@ class Site (ChimeraObject):
         date = date or self.localtime()
         self._moon.compute(self._getEphem(date))
         return self._moon.phase/100.0
-
-
     
-        
+    def raToHa(self, ra):
+        return CoordUtil.raToHa(ra, self.LST_inRads())
+
+    def haToRa(self, ha):
+        return CoordUtil.raToHa(ra, self.LST_inRads())
+    
+    def raDecToAltAz(self, raDec):
+        return CoordUtil.raDecToAltAz(raDec, self['latitude'], self.LST_inRads())
+    
+    def altAzToRaDec(self, altAz):
+        return CoordUtil.raDecToAltAz(raDec, self['latitude'], self.LST_inRads())#    
