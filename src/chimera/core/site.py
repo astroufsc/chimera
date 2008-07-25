@@ -194,7 +194,7 @@ class Site (ChimeraObject):
         return CoordUtil.raToHa(ra, self.LST_inRads())
     
     def raDecToAltAz(self, raDec):
-        return CoordUtil.raDecToAltAz(raDec, self['latitude'], self.LST_inRads())
+        return Position.raDecToAltAz(raDec, self['latitude'], self.LST_inRads())
     
     def altAzToRaDec(self, altAz):
-        return CoordUtil.raDecToAltAz(raDec, self['latitude'], self.LST_inRads())#    
+        return Position.altAzToRaDec(altAz, self['latitude'], self.LST_inRads())#    

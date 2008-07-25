@@ -52,7 +52,6 @@ __all__ = ['Coord',
 
 State = Enum("HMS", "DMS", "D", "H", "R", "AS")
 
-
 class CoordUtil (object):
 
     COORD_RE = re.compile('((?P<dd>(?P<sign>[+-]?)[\s]*\d+)[dh]?[\s:]*)?((?P<mm>\d+)[m]?[\s:]*)?((?P<ss>\d+)(?P<msec>\.\d*)?([\ss]*))?')
@@ -284,7 +283,7 @@ class CoordUtil (object):
     
     @staticmethod
     def makeValid0to360(coord):
-        coordR = Site.coordToR(coord)
+        coordR = CoordUtil.coordToR(coord)
         coordR = coordR % TWO_PI
         if coordR < 0.0:
             coordR += TWO_PI
@@ -292,7 +291,7 @@ class CoordUtil (object):
     
     @staticmethod
     def makeValid180to180(coord):
-        coordR = Site.coordToR(coord)
+        coordR = CoordUtil.coordToR(coord)
         coordR = coordR % TWO_PI
         if coordR > math.pi:
             coordR -= TWO_PI
@@ -307,8 +306,8 @@ class CoordUtil (object):
     @staticmethod
     def haToRa(ha, lst):
         return Coord.fromR(CoordUtil.coordToR(lst) - CoordUtil.coordToR(ha))
-
-#    #coordRotate, raDecToAltAz and altAzToRaDec adopted from sidereal.py
+    
+#    #coordRotate adopted from sidereal.py
 #    #http://www.nmt.edu/tcc/help/lang/python/examples/sidereal/ims/
     
     @staticmethod
@@ -332,29 +331,6 @@ class CoordUtil (object):
     
         #-- 4 --
         return (xt, yt)
-            
-    @staticmethod
-    def raDecToAltAz(raDec, latitude, lst):
-        decR = CoordUtil.coordToR(raDec.dec)
-        latR = CoordUtil.coordToR(latitude)
-        ha = CoordUtil.raToHa(raDec.ra, lst)
-        haR = CoordUtil.coordToR(ha)
-        
-        altR,azR = CoordUtil.coordRotate(decR, latR, haR)
-        
-        return Position.fromAltAz(Coord.fromR(CoordUtil.makeValid180to180(altR)), Coord.fromR(CoordUtil.makeValid0to360(azR)))
-    
-    @staticmethod
-    def altAzToRaDec(altAz, latitude, lst):
-        altR = CoordUtil.coordToR(altAz.alt)
-        latR = CoordUtil.coordToR(latitude)
-        azR = CoordUtil.coordToR(altAz.az)
-        
-        decR,haR = CoordUtil.coordRotate(altR, latR, azR)
-        
-        ra = CoordUtil.haToRa(haR, lst)
-        
-        return Position.fromRaDec(CoordUtil.makeValid0to360(ra), CoordUtil.makeValid180to180(decR))
 
 class Coord (object):
     """L{Coord} represents a single angular coordinate.

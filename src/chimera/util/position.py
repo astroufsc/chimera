@@ -12,9 +12,9 @@ except ImportError:
 # to allow use outsise chimera
 
 try:
-    from chimera.util.coord import Coord
+    from chimera.util.coord import Coord, CoordUtil
 except ImportError:
-    from coord import Coord
+    from coord import Coord, CoordUtil
 
 try:
     from chimera.util.enum  import Enum
@@ -303,3 +303,29 @@ class Position (CoordsPosition):
 
     def rad (self):
         return self.R
+
+#    #raDecToAltAz and altAzToRaDec adopted from sidereal.py
+#    #http://www.nmt.edu/tcc/help/lang/python/examples/sidereal/ims/
+                
+    @staticmethod
+    def raDecToAltAz(raDec, latitude, lst):
+        decR = CoordUtil.coordToR(raDec.dec)
+        latR = CoordUtil.coordToR(latitude)
+        ha = CoordUtil.raToHa(raDec.ra, lst)
+        haR = CoordUtil.coordToR(ha)
+        
+        altR,azR = CoordUtil.coordRotate(decR, latR, haR)
+        
+        return Position.fromAltAz(Coord.fromR(CoordUtil.makeValid180to180(altR)), Coord.fromR(CoordUtil.makeValid0to360(azR)))
+    
+    @staticmethod
+    def altAzToRaDec(altAz, latitude, lst):
+        altR = CoordUtil.coordToR(altAz.alt)
+        latR = CoordUtil.coordToR(latitude)
+        azR = CoordUtil.coordToR(altAz.az)
+        
+        decR,haR = CoordUtil.coordRotate(altR, latR, azR)
+        
+        ra = CoordUtil.haToRa(haR, lst)
+        
+        return Position.fromRaDec(CoordUtil.makeValid0to360(ra), CoordUtil.makeValid180to180(decR))

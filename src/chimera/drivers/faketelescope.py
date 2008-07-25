@@ -92,10 +92,11 @@ class FakeTelescope (ChimeraObject,
                 self._gotSite=True
             except:
                 pass
-        if self._tracking:
-            self._setAltAzFromRaDec()
-        else:
-            self._setRaDecFromAltAz()                                                          
+        if not self._slewing:
+            if self._tracking:
+                self._setAltAzFromRaDec()
+            else:
+                self._setRaDecFromAltAz()                                                          
         return True
 
     def open(self):
@@ -134,7 +135,7 @@ class FakeTelescope (ChimeraObject,
             
             time.sleep(0.5)
             t += 0.5
-
+        
         self._slewing = False
             
         self.slewComplete(self.getPositionRaDec())
@@ -165,7 +166,7 @@ class FakeTelescope (ChimeraObject,
             
             time.sleep(0.5)
             t += 0.5
-
+        
         self._slewing = False
             
         self.slewComplete(self.getPositionRaDec())

@@ -135,7 +135,7 @@ class Manager (RemoteObject):
         self.adapterThread.start()
         
         # register ourself
-        self.resources.add(MANAGER_LOCATION, self, getManagerURI(host, self.adapter.port))
+        self.resources.add(MANAGER_LOCATION, self, getManagerURI(self.getHostname(), self.getPort()))
 
         # signals
         signal.signal(signal.SIGTERM, self._sighandler)

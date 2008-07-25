@@ -1,3 +1,7 @@
+#Taken from http://code.activestate.com/recipes/137951/
+#Originally licensed under the Python License (presumably version 2.0.1/2.1.1 or later)
+#Relicensed under GPL of use in Chimera
+
 def printDict(di, format="%-25s %s"):
     for (key, val) in di.items():
         print format % (str(key)+':', val)

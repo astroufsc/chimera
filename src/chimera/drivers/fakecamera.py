@@ -49,8 +49,8 @@ class FakeCamera (ChimeraObject, ICameraDriver, IFilterWheelDriver):
 
     __config__ = {"telescope"   : "/Telescope/0",
                   "dome"        : "/Dome/0",
-                  "ccd_width"   : 1530,
-                  "ccd_height"  : 1020,
+                  "ccd_width"   : 765,
+                  "ccd_height"  : 510,
                   "use_dss"     : False}
     
     def __init__ (self):
