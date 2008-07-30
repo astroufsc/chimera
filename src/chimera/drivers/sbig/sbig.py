@@ -34,7 +34,8 @@ from chimera.interfaces.filterwheeldriver  import IFilterWheelDriver
 
 from chimera.core.lock import lock
 
-from chimera.util.imagesave import ImageSave
+#from chimera.util.imagesave import ImageSave
+from chimera.controllers.imageserver.image import Image
 
 
 class SBIG(ChimeraObject, ICameraDriver, IFilterWheelDriver):  
@@ -50,6 +51,7 @@ class SBIG(ChimeraObject, ICameraDriver, IFilterWheelDriver):
         self.lastFilter = None
 
         self.lastFrameStartTime = 0
+        self.lastFrameTemp = None
         self.lastFrameFilename = ""
 
         self.term = threading.Event()
@@ -121,12 +123,12 @@ class SBIG(ChimeraObject, ICameraDriver, IFilterWheelDriver):
         return self.drv.exposing(self.ccd)
 
     @lock
-    def expose(self):
+    def expose(self, imageRequest):
 
         self.term.clear()
 
-        if self._expose():
-            return self._readout(aborted=False)
+        if self._expose(imageRequest):
+            return self._readout(imageRequest, aborted=False)
         else:
             return False
 
@@ -199,26 +201,33 @@ class SBIG(ChimeraObject, ICameraDriver, IFilterWheelDriver):
 
         return True
         
-    def _expose(self):
+    def _expose(self, imageRequest):
+        
+        shutterRequest = imageRequest['shutter'][1]
+        
+        #TODO: Support CCD Selection
+        #ccdRequest = imageRequest['ccd'][1]
 
-        if self["shutter"] == Shutter.OPEN:
+        if shutterRequest == Shutter.OPEN:
             shutter = SBIGDrv.openShutter
-        elif self["shutter"] == Shutter.CLOSE:
+        elif shutterRequest == Shutter.CLOSE:
             shutter = SBIGDrv.closeShutter
-        elif self["shutter"] == Shutter.LEAVE:
+        elif shutterRequest == Shutter.LEAVE:
             shutter = SBIGDrv.leaveShutter
         else:
-            raise ValueError("Incorrect shutter option (%s). Leaving shutter intact" % self["shutter"])
+            #raise ValueError("Incorrect shutter option (%s). Leaving shutter intact" % shutterRequest)
+            self.log.warning("Incorrect shutter option (%s). Leaving shutter intact" % shutterRequest)
             shutter = SBIGDrv.leaveShutter
-
-        # ok, start it
-        self.exposeBegin(self["exp_time"])
         
-        self.drv.startExposure(self.ccd, int(self["exp_time"]*100), shutter)
+        # ok, start it
+        self.exposeBegin(imageRequest["exp_time"])
+        
+        self.drv.startExposure(self.ccd, int(imageRequest["exp_time"]*100), shutter)
         
         # save time exposure started
-        self.lastFrameStartTime = time.time()
-
+        self.lastFrameStartTime = time.gmtime()
+        self.lastFrameTemp = self.getTemperature()
+        
         while self.isExposing():
                                         
             # check if user asked to abort
@@ -228,8 +237,9 @@ class SBIG(ChimeraObject, ICameraDriver, IFilterWheelDriver):
                 if self.isExposing():
                     self._endExposure()
                 
-                if self["readout_aborted"]:
-                    self._readout(aborted=True)
+                #TODO: Support aborted readout
+                #if self["readout_aborted"]:
+                #    self._readout(aborted=True)
                     
                 return False
 
@@ -244,7 +254,7 @@ class SBIG(ChimeraObject, ICameraDriver, IFilterWheelDriver):
 
         return True
 
-    def _readout(self, aborted=False):
+    def _readout(self, imageRequest, aborted=False):
 
         #readoutMode = self._getReadoutMode(self["window_width"],
         #                                   self["window_height"], self["binning"])
@@ -261,21 +271,21 @@ class SBIG(ChimeraObject, ICameraDriver, IFilterWheelDriver):
         # convert the matrix to SBIG specific window and line specification
         #window, line = self._getWindowAndLine(img)
 
-        try:
-            next_filename = ImageSave.save(None,
-                                           self["directory"],
-                                           self["file_format"],
-                                           self["file_extension"],
-                                           self["date_format"],
-                                           self.lastFrameStartTime,
-                                           self["exp_time"],
-                                           self["bitpix"],
-                                           self["save_on_temp"],
-                                           dry=True)
-        except Exception, e:
-            print e
+#        try:
+#            next_filename = ImageSave.save(None,
+#                                           self["directory"],
+#                                           self["file_format"],
+#                                           self["file_extension"],
+#                                           self["date_format"],
+#                                           self.lastFrameStartTime,
+#                                           self["exp_time"],
+#                                           self["bitpix"],
+#                                           self["save_on_temp"],
+#                                           dry=True)
+#        except Exception, e:
+#            print e
 
-        self.readoutBegin(next_filename)
+        self.readoutBegin(imageRequest)
 
         self.drv.startReadout(self.ccd, 0)
         
@@ -283,14 +293,27 @@ class SBIG(ChimeraObject, ICameraDriver, IFilterWheelDriver):
 	
             img[line] = self.drv.readoutLine(self.ccd, 0)
 
-            # check if user asked to abort
-            if not aborted and self.term.isSet():
-                self._saveFITS(img)
-                return self._endReadout(next_filename)
+            #TODO: Handle readout abort
+            ## check if user asked to abort
+            #if not aborted and self.term.isSet():
+            #    self._saveFITS(img)
+            #    return self._endReadout(next_filename)
 
         # end readout and save
-        self._saveFITS(img)
-        return self._endReadout(next_filename)
+        
+        image.imageFromImg(img, imageRequest, [
+                                               ('DATE-OBS',image.formatDate(self.lastFrameStartTime),'Date exposure started'),
+                                               ('CCD-TEMP',self.lastFrameTemp,'CCD Temperature at Exposure Start [deg. C]'),
+                                               ('XBINNING',1,'Readout CCD Binning (x-axis)'),
+                                               ('YBINNING',1,'Readout CCD Binning (y-axis)'),
+                                               ('XWIN_LFT',0,'Readout window x left position'),
+                                               ('XWIN_SZ',readoutMode.width,'Readout window width'),
+                                               ('YWIN_TOP',0,'Readout window y top position'),
+                                               ('YWIN_SZ',readoutMode.height,'Readout window height'),
+                                               ('IMAGETYP',imageRequest['image_type'],'Image type'),
+                                               ]
+                           )
+        return self._endReadout(image.getURI())
 
 
     # TODO
@@ -308,20 +331,20 @@ class SBIG(ChimeraObject, ICameraDriver, IFilterWheelDriver):
 
         return None
 
-    def _saveFITS(self, img):
-
-        try:
-            self.lastFrameFilename = ImageSave.save(img,
-                                                    self["directory"],
-                                                    self["file_format"],
-                                                    self["file_extension"],
-                                                    self["date_format"],
-                                                    self.lastFrameStartTime,
-                                                    self["exp_time"],
-                                                    self["bitpix"],
-                                                    self["save_on_temp"])
-        except Exception, e:
-            print e
+#    def _saveFITS(self, img):
+#
+#        try:
+#            self.lastFrameFilename = ImageSave.save(img,
+#                                                    self["directory"],
+#                                                    self["file_format"],
+#                                                    self["file_extension"],
+#                                                    self["date_format"],
+#                                                    self.lastFrameStartTime,
+#                                                    self["exp_time"],
+#                                                    self["bitpix"],
+#                                                    self["save_on_temp"])
+#        except Exception, e:
+#            print e
             
     def _endReadout(self, filename):
         
