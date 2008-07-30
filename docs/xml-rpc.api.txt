@@ -1,0 +1,17 @@
+Chimera XML-RPC Interface
+====================
+
+The Chimera XML-RPC controller exports the following methods:
+
+Chimera.isAlive () -> boolean
+Chimera.getListOf (String  className) -> String[]
+
+all classes extending ChimeraObject could be used as 'className', so Chimera.getListOf("Camera")
+ will return a list, possibly empy, of all 'Camera' objects currently running on the system.
+ The names returned will be of the form ClassName.instance_name, like 'Camera.st7'.
+ This name should be used as a base name to actualy request actions from a given object.
+
+To call the isExposing method of a Camera object name st7, request Chimera.st7.isExposing with a 
+valid list of parameters, in this case a empty list.
+
+The default port of the XML-RPC server is 7667. The general form of the URL is http://IP_OR_NAME:7667/RPC2.
