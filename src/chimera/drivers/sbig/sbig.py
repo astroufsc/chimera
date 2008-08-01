@@ -301,8 +301,10 @@ class SBIG(ChimeraObject, ICameraDriver, IFilterWheelDriver):
 
         # end readout and save
         
-        image.imageFromImg(img, imageRequest, [
-                                               ('DATE-OBS',image.formatDate(self.lastFrameStartTime),'Date exposure started'),
+        imageRequest.addPostHeaders(self.getManager())
+        
+        Image.imageFromImg(img, imageRequest, [
+                                               ('DATE-OBS',Image.formatDate(self.lastFrameStartTime),'Date exposure started'),
                                                ('CCD-TEMP',self.lastFrameTemp,'CCD Temperature at Exposure Start [deg. C]'),
                                                ('XBINNING',1,'Readout CCD Binning (x-axis)'),
                                                ('YBINNING',1,'Readout CCD Binning (y-axis)'),
