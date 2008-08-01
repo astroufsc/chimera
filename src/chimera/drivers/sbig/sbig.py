@@ -29,7 +29,7 @@ from sbigdrv import *
 
 from chimera.core.chimeraobject            import ChimeraObject
 from chimera.interfaces.cameradriver       import ICameraDriver, CCD, Device, Bitpix
-from chimera.interfaces.camera             import Shutter, Binning
+from chimera.interfaces.camera             import Shutter#, Binning
 from chimera.interfaces.filterwheeldriver  import IFilterWheelDriver
 
 from chimera.core.lock import lock
@@ -60,17 +60,17 @@ class SBIG(ChimeraObject, ICameraDriver, IFilterWheelDriver):
 
     def __start__ (self):
 
-        if self['ccd'] == CCD.IMAGING:
-            self.ccd = SBIGDrv.imaging
-        else:
-            self.ccd = SBIGDrv.tracking
-           
+        #if self['ccd'] == CCD.IMAGING:
+        self.ccd = SBIGDrv.imaging
+#        else:
+#            self.ccd = SBIGDrv.tracking
+#           
         if self['device'] == Device.USB:
             self.dev = SBIGDrv.usb
         else:
             self.dev = SBIGDrv.lpt1
 
-        self["bitpix"] = Bitpix.uint16
+        #self["bitpix"] = Bitpix.uint16
 
         #self["bitpix"] = Bitpix.uint16
                         
@@ -303,7 +303,7 @@ class SBIG(ChimeraObject, ICameraDriver, IFilterWheelDriver):
         
         imageRequest.addPostHeaders(self.getManager())
         
-        Image.imageFromImg(img, imageRequest, [
+        img = Image.imageFromImg(img, imageRequest, [
                                                ('DATE-OBS',Image.formatDate(self.lastFrameStartTime),'Date exposure started'),
                                                ('CCD-TEMP',self.lastFrameTemp,'CCD Temperature at Exposure Start [deg. C]'),
                                                ('XBINNING',1,'Readout CCD Binning (x-axis)'),
@@ -313,9 +313,10 @@ class SBIG(ChimeraObject, ICameraDriver, IFilterWheelDriver):
                                                ('YWIN_TOP',0,'Readout window y top position'),
                                                ('YWIN_SZ',readoutMode.height,'Readout window height'),
                                                ('IMAGETYP',imageRequest['image_type'],'Image type'),
+                                               ('SHUTTER',str(imageRequest['shutter'][1]), 'Requested shutter state')
                                                ]
                            )
-        return self._endReadout(image.getURI())
+        return self._endReadout(img)
 
 
     # TODO
@@ -348,8 +349,8 @@ class SBIG(ChimeraObject, ICameraDriver, IFilterWheelDriver):
 #        except Exception, e:
 #            print e
             
-    def _endReadout(self, filename):
+    def _endReadout(self, imageURI):
         
         self.drv.endReadout(self.ccd)
-        self.readoutComplete(filename)
-        return self.lastFrameFilename
+        self.readoutComplete(imageURI)
+        return imageURI
