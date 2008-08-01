@@ -13,7 +13,12 @@ from chimera.util.enum import Enum
 from chimera.util.sextractor import SExtractor
 
 import numpy as N
-import pylab as P
+
+plot = True
+try:
+    import pylab as P
+except ImportError:
+    plot = False
 
 import tempfile
 import time
@@ -55,19 +60,22 @@ class FocusFit (object):
                                        (-self.B**2 + 4*self.A*self.C) / (4*self.A)))
  
     def plot (self, filename):
-
-        P.plot(self.position, self.fwhm, "ro", label="data")
-        P.errorbar(self.position, self.fwhm_fit, yerr=self.err, fmt="k:",
-                   ms=15, label="fit")
         
-        P.plot([self.best_focus[0]], [self.best_focus[1]], "bD",
-               label="best focus from fit")
+        global plot
         
-        P.legend()
-        P.title("Focus")
-        P.xlabel("Focus position")
-        P.ylabel("FWHM (pixel)")
-        P.savefig(filename)
+        if plot:
+            P.plot(self.position, self.fwhm, "ro", label="data")
+            P.errorbar(self.position, self.fwhm_fit, yerr=self.err, fmt="k:",
+                       ms=15, label="fit")
+            
+            P.plot([self.best_focus[0]], [self.best_focus[1]], "bD",
+                   label="best focus from fit")
+            
+            P.legend()
+            P.title("Focus")
+            P.xlabel("Focus position")
+            P.ylabel("FWHM (pixel)")
+            P.savefig(filename)
 
     def log (self, filename):
         

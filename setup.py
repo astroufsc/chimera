@@ -67,10 +67,10 @@ win32_deps = win32_cdeps = []
 # FIXME: pywcs only works on python 2.5
 
 if sys.platform == "win32":
-    win32_cdeps = ["matplotlib == 0.91.4", "numpy == 1.0.4"]
+    win32_cdeps = ["numpy == 1.0.4"]
     win32_deps += ["pywin32 == 210"]
 else:
-    linux_cdeps = ["matplotlib == 0.98.1", "numpy==1.1.0"]
+    linux_cdeps = ["numpy==1.1.0"]
     linux_deps += ["python-sbigudrv >= 0.1", "coords"]
 
     if sys.version_info[0:2] >= (2,5):
