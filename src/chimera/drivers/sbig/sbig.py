@@ -29,7 +29,7 @@ from sbigdrv import *
 
 from chimera.core.chimeraobject            import ChimeraObject
 from chimera.interfaces.cameradriver       import ICameraDriver, CCD, Device, Bitpix
-from chimera.interfaces.camera             import Shutter#, Binning
+from chimera.interfaces.camera             import Shutter#, Binning 
 from chimera.interfaces.filterwheeldriver  import IFilterWheelDriver
 
 from chimera.core.lock import lock
