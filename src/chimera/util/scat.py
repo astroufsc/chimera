@@ -24,7 +24,7 @@ class SCatWrapper (object):
                    "mag_both"   : "-m%d %.2f,%.2f",}
 
 
-    # TODO: merge wirh _make_cmdline_args and simplify
+    # TODO: merge with _make_cmdline_args and simplify
     def _make_options_dict (self, conditions, bands):
 
         scat_options = {}
