@@ -152,12 +152,12 @@ class TheSkyTelescope (ChimeraObject, ITelescopeDriverSlew):
 
     @com
     def getAz (self):
-        self._telescope.GetAltAz()
+        self._telescope.GetAzAlt()
         return Coord.fromDMS(self._telescope.dAz)
 
     @com
     def getAlt (self):
-        self._telescope.GetAltAz()
+        self._telescope.GetAzAlt()
         return Coord.fromDMS(self._telescope.dAlt)
 
     @com
@@ -240,7 +240,8 @@ class TheSkyTelescope (ChimeraObject, ITelescopeDriverSlew):
     def abortSlew (self):
 
         if self.isSlewing ():
-
+            
+            #TODO:Where do we use this?! We are failing lint since self.term is undefined
             self.term.set ()
             time.sleep (self._idle_time)
             self._telescope.Abort ()
@@ -276,8 +277,4 @@ class TheSkyTelescope (ChimeraObject, ITelescopeDriverSlew):
     @com
     def stopTracking (self):
         self._telescope.SetTracking(0,0,0,0)
-
-    @com
-    def isTracking (self):
-        return (self._telescope.IsTracking == 1)
 

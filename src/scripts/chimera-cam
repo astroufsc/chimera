@@ -83,6 +83,12 @@ if __name__ == '__main__':
                       " format: [host:port]/Class/name.",
                       callback=check_location)
 
+    config.add_option("-W", "--wheel", action="callback", type="string", dest="wheel",
+                      help="Camera instrument to be used. If blank, create a new"
+                      " camera instance, using the the driver selected with --driver."
+                      " format: [host:port]/Class/name.",
+                      callback=check_location)
+
     config.add_option("-d", "--driver", action="callback", type="string", dest="driver",
                       help="Camera driver to be used."
                       " /Class/name?option1=value1,option2=value. [default=%default]",
@@ -169,6 +175,7 @@ if __name__ == '__main__':
     parser.set_defaults(camera   = [],
                         driver   = ["/FakeCamera/fc"],
                         drv_dir  = [],
+                        wheel    = [],
                         nexp     = 1,
                         texp     = 1,
                         interval = 0,
@@ -305,7 +312,11 @@ if __name__ == '__main__':
         try:
             camera = manager.getProxy(options.camera[0])
             driver = camera.getDriver()
-            filter = manager.getProxy(options.camera[0])
+            if options.wheel:
+                filter = manager.getProxy(options.wheel[0])
+            else:
+                filter = manager.getProxy(options.camera[0])
+
         except (ObjectNotFoundException, ClassLoaderException), e:
             print >> sys.stderr, "Cannot find camera %s. (%s)" % (options.camera[0], e)
             manager.shutdown()

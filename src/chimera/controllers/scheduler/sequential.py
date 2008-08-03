@@ -23,21 +23,29 @@ class SequentialScheduler (IScheduler):
 
         self.rq = Queue(-1)
 
-        programs = Program.query.filter_by(finished=False).all()
+        #programs = Program.query.all()
 
-        log.debug("rescheduling, found %d programs." % len(programs))
+        #log.debug("rescheduling, found %d programs." % len(programs))
 
-        for program in programs:
-            for obs in program.observations:
-                for exp in obs.exposures:
-                    self.rq.put(exp)
+#        for program in programs:
+#            for obs in program.observations:
+#                for exp in obs.exposures:
+#                    self.rq.put(exp)
+        
+        exps = Exposure.query.filter_by(finished = False).all()
+        
+        log.debug("rescheduling, found %d exposures." % len(exps))
+        for exp in exps:
+            self.rq.put(exp)
 
         machine.wakeup()
 
-    def next (self, now, sensors):
+    def next (self):
         if not self.rq.empty():
             return self.rq.get()
 
     def done (self, task):
+        task.finished=True
+        task.flush()
         self.rq.task_done()
         self.machine.wakeup()

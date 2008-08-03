@@ -34,7 +34,6 @@ from chimera.interfaces.filterwheeldriver  import IFilterWheelDriver
 
 from chimera.core.lock import lock
 
-#from chimera.util.imagesave import ImageSave
 from chimera.controllers.imageserver.image import Image
 
 
@@ -74,7 +73,10 @@ class SBIG(ChimeraObject, ICameraDriver, IFilterWheelDriver):
 
         #self["bitpix"] = Bitpix.uint16
                         
-        return self.open(self.dev)
+	self.open(self.dev)
+
+	# make sure filter wheel is in the right position
+	self.setFilter(0)
 
     def __stop__ (self):
         self.close ()
@@ -175,14 +177,12 @@ class SBIG(ChimeraObject, ICameraDriver, IFilterWheelDriver):
 
     @lock
     def getFilter (self):
-        # Chimera uses filter starting with 0
-        position = self.drv.getFilterPosition()
-        if position == 0: return -1 # unknown
-        return position-1
+        # SBIG support for this is very poor, we just keep track mannualy
+        return self.lastFilter
 
     @lock
     def setFilter (self, filter):
-        # Chimera uses filter starting with 0
+        # Chimera uses filter starting with 0, and SBIG uses 1
         position = self.drv.filters.get(filter+1, None)
 
         if not position:
@@ -317,7 +317,6 @@ class SBIG(ChimeraObject, ICameraDriver, IFilterWheelDriver):
                                                ]
                            )
         return self._endReadout(img)
-
 
     # TODO
     def _getWindowAndLine(self, img):

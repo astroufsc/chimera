@@ -5,7 +5,7 @@ from chimera.core.chimeraobject import ChimeraObject
 from chimera.core.lock import lock
 from chimera.core.exceptions import ChimeraException, printException
 
-from chimera.interfaces.camera import Shutter, Binning, Window
+from chimera.interfaces.camera import Shutter#, Binning, Window
 from chimera.interfaces.filterwheel import Filter
 
 from chimera.util.enum import Enum

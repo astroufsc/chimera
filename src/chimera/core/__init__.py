@@ -17,3 +17,18 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+import sys
+
+try:
+    import Pyro.util
+
+    def hook (e,v,t):
+        print ''.join(Pyro.util.getPyroTraceback(v))
+        #sys.excepthook =lambda exctype, value, traceback: Pyro.util.getPyroTraceback(value)
+        sys.excepthook = hook
+        #sys.excepthook()
+except:
+    #We don't have pyro -- don't worry about this.
+    #FIXME: Get a working excepthook for everything and everyone!
+    pass

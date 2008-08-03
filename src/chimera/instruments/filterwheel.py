@@ -59,8 +59,7 @@ class FilterWheel (ChimeraObject, IFilterWheel):
         try:
             return self.getFilters()[index]
         except ValueError:
-            self.log.warning("Driver returned an filter that I don't known the name.")
-            return filter
+           raise InvalidFilterPositionException("Driver returned an filter that I don't known the name.")
 
     def _getFilterPosition (self, name):
         return self.getFilters().index(name)
@@ -81,4 +80,8 @@ class FilterWheel (ChimeraObject, IFilterWheel):
         return self.getManager().getProxy(self['driver'], lazy=lazy)        
         
 
-
+    def getMetadata(self):
+        return [
+                ('FWHEEL', str(self['model']), 'FilterWheel Model'),
+                ('FILTER',   str(self.getFilter()), 'Filter used for this observation'),
+                ] + self.getDriver().getMetadata()

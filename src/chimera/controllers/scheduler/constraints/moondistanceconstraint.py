@@ -1,5 +1,5 @@
-from chimera.controllers.schedulerng.constraints.iconstraint import IConstraint
-#from chimera.controllers.schedulerng.constraints import ConstraintReturns
+from chimera.controllers.scheduler.constraints import IConstraint
+#from chimera.controllers.scheduler.constraints import ConstraintReturns
 
 class MoonDistanceConstraint(IConstraint):
     def getMyKey(self):

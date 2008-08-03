@@ -22,13 +22,13 @@
 from chimera.core.interface import Interface
 from chimera.core.event import event
 
-from chimera.interfaces.camera import Shutter, Binning, Window
-
 from chimera.util.enum import Enum
-
 
 Bitpix = Enum("char8", "uint16", "int16", "int32", "int64", "float32", "float64")
 
+# this makes sense for non-SBIG cameras?
+# how to handle multiple USB cameras? USB1, USBn...?
+# remove LPT support? (only works for SBIG on 2.4.x Linux kernel.
 Device = Enum ("USB",
                "USB1",
                "USB2",
@@ -36,46 +36,33 @@ Device = Enum ("USB",
                "LPT1",
                "LPT2")
 
+# keep this just as a way to force common names for the first two CCD?
+# (most cameras won't have more than 2 CCDs anyway).
 CCD = Enum ("IMAGING",
             "TRACKING")
 
+# Special features parameters can be passed as ImageRequest
+# parameters. The ICameraDriver.supports(feature) method can be used
+# to ask if the current camera support a given feature (useful for
+# interfaces, to decides when to display options to the user).
+
+CameraFeature = Enum("TEMPERATURE_CONTROL",
+                     "PROGRAMMABLE_GAIN",
+                     "PROGRAMMABLE_OVERSCAN",
+                     "PROGRAMMABLE_FAN",
+                     "PROGRAMMABLE_LEDS",
+                     "PROGRAMMABLE_BIAS_LEVEL")
 
 class ICameraDriver(Interface):
 
-    # config
-    __config__ = {"device"	     : Device.USB,
-                  "ccd"          : CCD.IMAGING,
-                  
-                  "exp_time"         : (0.0, 216000.0), # seconds
-                  "shutter" 	     : Shutter.OPEN,
+    __config__ = {"device"            : Device.USB,
+                  "readout_aborted" : True,
+                  "temp_delta"      : 1.0}
 
-                  "readout_aborted"  : True,
-
-                  "temp_setpoint"    : 20.0,
-                  "temp_delta"       : 1.0,
-                  
-                  # drivers should use SaveImage utility class to
-                  # handles this values according to the semantics
-                  # defined in ICamera spec.
-                  "window_x"         : 0.5,
-                  "window_y"         : 0.5,
-                  "window_width"     : 1.0,
-                  "window_height"    : 1.0,
-
-                  "binning"	     :  Binning._1x1,
-                  #"gain"            : 1.0,
-                  
-                  # FITS generation parameters
-                  "date_format"	     : "%d%m%y-%H%M%S",
-                  "file_format"	     : "$date",
-                  "file_extension"   : "fits",
-                  "directory"	     : "$HOME/images", # environment variables allowed
-                  "save_on_temp"     : True,
-                  "bitpix"           : Bitpix.int16,
-                  }
-                  
-    # methods
-
+    #
+    # device handling
+    #
+    
     def open(self, device):
         pass
 
@@ -85,16 +72,29 @@ class ICameraDriver(Interface):
     def ping(self):
         pass
 
+    #
+    # exposure request and control
+    #
+
     def isExposing(self):
+        """Ask if camera is exposing right now.
+
+        @return: The currently exposing ImageRequest if the camera is exposing, False otherwise.
+        @rtype: bool or chimera.controllers.imageserver.imagerequest.ImageRequest
+        """
         pass
 
-    def expose(self):
+    def expose(self, request):
         pass
 
     def abortExposure(self):
         pass
 
-    def startCooling(self):
+    #
+    # temperature control
+    #
+
+    def startCooling(self, setpoint):
         pass
 
     def stopCooling(self):
@@ -106,24 +106,64 @@ class ICameraDriver(Interface):
     def getTemperature(self):
         pass
 
-    def getSetpoint(self):
+    def getSetPoint(self):
         pass
 
+    #
+    # geometry and readout
+    #
+
+    # for getCCDs, getBinnings and getADCs, the driver should returns a
+    # list of Human readable strings, which could be later passed as a
+    # ImageRequest and be recognized by the driver. Those strings can
+    # be use as key to an internal hashmap.
+    # example:
+    # ADCs = {'12 bits': SomeInternalValueWhichMapsTo12BitsADC,
+    #         '16 bits': SomeInternalValueWhichMapsTo16BitsADC}
+
+    def getCCDs(self):
+        pass
+
+    def getBinnings(self):
+        pass
+
+    def getADCs(self):
+        pass
+
+    def getPhysicalSize(self, ccd=None):
+        pass
+
+    def getPixelSize(self, ccd=None):
+        pass
+
+    def getOverscanSize(self, ccd=None):
+        pass
+
+    #
+    # special features support
+    #
+    
+    def supports(self, feature=None):
+        pass
+
+    #
     # events
+    #
+    
     @event
-    def exposeBegin (self, exp_time):
+    def exposeBegin (self, request):
         pass
     
     @event
-    def exposeComplete (self):
+    def exposeComplete (self, request):
         pass
 
     @event
-    def readoutBegin (self, filename):
+    def readoutBegin (self, request):
         pass
 
     @event
-    def readoutComplete (self, filename):
+    def readoutComplete (self, request):
         pass
 
     @event
