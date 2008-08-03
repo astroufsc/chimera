@@ -1,35 +1,82 @@
-#! /usr/bin/python
+#!/usr/bin/env python
 # -*- coding: iso-8859-1 -*-
 
-# chimera - observatory automation system
-# Copyright (C) 2006-2007  P. Henrique Silva <henrique@astro.ufsc.br>
+class Catalog (object):
 
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License
-# as published by the Free Software Foundation; either version 2
-# of the License, or (at your option) any later version.
+    def getName (self):
+        """
+        Return the catalog name
+        """
 
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
+    def getMetadata (self):
+        """
+        Returns a list of tuples with information about the each
+        column of the catalog.  Each tuple contains, in this order,
+        name of the column, unit of the column data and a comment.
+        """
 
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-
-class Object:
-
-    def __init__(self, name = "", ra = None, dec = None):
-
-        self.name = name
-
-        self.ra = ra
-        self.dec = dec
+    def getMagnitudeBands (self):
+        """
+        Return a list of the available magnitude bands on this catalog
+        """
+   
+    def find (self, near, limit=None, **conditions):
+        """
+        Query the catalog near a specific object/place with spatial
+        and flux limits.
         
-        self.altitude = None
-        self.azimuth = None
+        Examples:
 
-        self.ephoch = None
+        ucac = Catalog()
 
-        self.resolvers = {}
+        ucac.find (near='00:00:00 +00:00:00', radius=10)
+        ucac.find (near='m5', box=(240, 240))           
+        ucac.find (near='m4', radius=10, magV=10, limit=1)
+        ucac.find (near='meridian', magV=(10, 12), limit=10)                  
+
+        Keywords:
+
+        closest (bool)
+        =====================
+        return the closest star near the given coordinate independent
+        of radius and box limits. (it's ortogonal to box/radius
+        options).
+
+        near (str)
+        ======================
+
+        name (resolved by any resolver), ra dec pair in degress or
+        sexagesimal, special names (meridian, zenith)
+
+        radius (int)
+        ==========
+
+        limit selection to r arseconds from target (r can be arcsec or
+        degress)
+
+        box (int or tuple of 2 ints)
+        ================
+
+        limit to a box centered on the target with w arcsec (or
+        degresss) in increasing right ascension direction and h
+        arseconds towards the north (or degress)
+
+        limit (int)
+        =========
+
+        max number of objects to return (default = 100)
+
+        magX (float | tuple of 2 floats)
+        ================================
+
+        Limit the query based on the X magnitude. One float N param
+        was given, limit the query to the Nth faintest magnitude (only
+        stars brighter than N will be returned).
+
+        If a tuple (B, F) was given, limit the query to stars brighter
+        than F but fainter than B.
+
+
+        Unknown keywords will be ignored (properly warned on the log).
+
+        """
