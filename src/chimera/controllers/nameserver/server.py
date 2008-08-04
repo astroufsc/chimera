@@ -44,8 +44,8 @@ class Server(Thread):
         except errors.DaemonError, x:
             log.error('The Name Server appears to be already running on this host.'
                       '(or somebody else occupies our port,', nsport, ')')
-            if hostname:
-                log.error('It could also be that the address \'%s\' is not correct.' % hostname)
+#            if hostname:
+            log.error('It could also be that the address \'%s\' is not correct.' % self.host)
             log.error('Name Server was not started!')
             raise
 

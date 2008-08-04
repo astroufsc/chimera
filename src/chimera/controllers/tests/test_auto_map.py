@@ -108,7 +108,7 @@ class TestAutoMap (object):
             print time.time(), "[cam] Readout complete for %s." % frame
 
         @callback(self.manager)
-        def abortCompleteClbk():
+        def camAbortCompleteClbk():
             print time.time(), "[cam] Abort complete."
 
         cam = self.manager.getProxy(Camera)
@@ -116,7 +116,7 @@ class TestAutoMap (object):
         cam.exposeComplete  += exposeCompleteClbk        
         cam.readoutBegin    += readoutBeginClbk        
         cam.readoutComplete += readoutCompleteClbk
-        cam.abortComplete   += abortCompleteClbk
+        cam.abortComplete   += camAbortCompleteClbk
 
         @callback(self.manager)
         def slewBeginClbk(target):
@@ -127,13 +127,13 @@ class TestAutoMap (object):
             print time.time(), "[tel] Slew complete. position=%s" % str(position)
 
         @callback(self.manager)
-        def abortCompleteClbk(position):
+        def telAbortCompleteClbk(position):
             print time.time(), "[tel] Abort complete. position=%s" % str(position)
 
         self.tel = self.manager.getProxy(Telescope)
         self.tel.slewBegin      += slewBeginClbk
         self.tel.slewComplete   += slewCompleteClbk
-        self.tel.abortComplete  += abortCompleteClbk
+        self.tel.abortComplete  += telAbortCompleteClbk
 
         @callback(self.manager)
         def domeSlewBeginClbk(target):
