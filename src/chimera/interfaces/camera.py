@@ -144,6 +144,13 @@ class ICameraTemperature (ICamera):
         @rtype: bool
         """
 
+    def isCooling (self):
+        """Returns whether the camera is currently cooling.
+
+        @return: True if cooling, False otherwise.
+        @rtype: bool
+        """
+
     def setTemperature(self, tempC):
         """Set new setpoint temperature (if cooling is disabled, this will turn it on).
 
@@ -151,13 +158,6 @@ class ICameraTemperature (ICamera):
         @type  tempC: float or int
 
         @return: True if successful, False otherwise.
-        @rtype: bool
-        """
-
-    def isCooling (self):
-        """Returns whether the camera is currently cooling.
-
-        @return: True if cooling, False otherwise.
         @rtype: bool
         """
 
