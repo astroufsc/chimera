@@ -49,13 +49,13 @@ class ICameraExpose (ICamera):
     """
 
     def expose (self, request=None, **kwargs):
-        
+
         """Start an exposure based upon the specified image request or will create
         a new image request from kwargs
 
         @param request: ImageRequest containing details of the image to be taken
         @type  request: ImageRequest
-                       
+
         @return: ImageURI if exposure succeeds; False otherwise
         @rtype: bool or ImageURI
         """
@@ -77,7 +77,7 @@ class ICameraExpose (ICamera):
         @return: The currently exposing ImageRequest if the camera is exposing, False otherwise.
         @rtype: bool or chimera.controllers.imageserver.imagerequest.ImageRequest
         """
-    
+
     @event
     def exposeBegin (self, exp_time):
         """Indicates that new exposure is starting.
@@ -88,7 +88,7 @@ class ICameraExpose (ICamera):
         @param exp_time: How long the exposure will long.
         @type  exp_time: float
         """
-        
+
     @event
     def exposeComplete (self):
         """Indicates that new exposure frame was taken.
@@ -143,7 +143,7 @@ class ICameraTemperature (ICamera):
         @return: True if successful, False otherwise.
         @rtype: bool
         """
-    
+
     def setTemperature(self, tempC):
         """Set new setpoint temperature (if cooling is disabled, this will turn it on).
 
@@ -151,6 +151,13 @@ class ICameraTemperature (ICamera):
         @type  tempC: float or int
 
         @return: True if successful, False otherwise.
+        @rtype: bool
+        """
+
+    def isCooling (self):
+        """Returns whether the camera is currently cooling.
+
+        @return: True if cooling, False otherwise.
         @rtype: bool
         """
 
