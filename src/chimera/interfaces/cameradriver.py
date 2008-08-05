@@ -53,12 +53,13 @@ CameraFeature = Enum("TEMPERATURE_CONTROL",
                      "PROGRAMMABLE_LEDS",
                      "PROGRAMMABLE_BIAS_LEVEL")
 
+
 class ICameraDriver(Interface):
 
-    __config__ = {"device"            : Device.USB,
-                  "readout_aborted" : True,
-                  "temp_delta"      : 1.0,
-                  "temp_setpoint"   : 10.0}
+    __config__ = {"device"     : Device.USB,
+                  "ccd"        : CCD.IMAGING,
+                  "temp_delta" : 2.0}
+
 
     #
     # device handling
@@ -83,12 +84,11 @@ class ICameraDriver(Interface):
         @return: The currently exposing ImageRequest if the camera is exposing, False otherwise.
         @rtype: bool or chimera.controllers.imageserver.imagerequest.ImageRequest
         """
-        pass
 
     def expose(self, request):
         pass
 
-    def abortExposure(self):
+    def abortExposure(self, readout=True):
         pass
 
     #
@@ -107,10 +107,13 @@ class ICameraDriver(Interface):
     def getTemperature(self):
         pass
 
-    def getSetPoint(self):
+    def getSetpoint(self):
         pass
 
     def startFan(self, rate=None):
+        pass
+
+    def stopFan(self):
         pass
 
     def isFanning(self):
@@ -130,28 +133,32 @@ class ICameraDriver(Interface):
     #         '16 bits': SomeInternalValueWhichMapsTo16BitsADC}
 
     def getCCDs(self):
-        pass
+        return {"Imaging": CCD.IMAGING}
+
+    def getCurrentCCD(self):
+        return "Imaging"
 
     def getBinnings(self):
-        pass
+        return {}
 
     def getADCs(self):
-        pass
+        return {}
 
-    def getPhysicalSize(self, ccd=None):
-        pass
+    def getPhysicalSize(self):
+        return (1,1)
 
-    def getPixelSize(self, ccd=None):
-        pass
+    def getPixelSize(self):
+        return (1,1)
 
-    def getOverscanSize(self, ccd=None):
-        pass
+    def getOverscanSize(self):
+        return (0,0)
 
     #
     # special features support
     #
     
     def supports(self, feature=None):
+        
         pass
 
     #

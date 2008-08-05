@@ -54,19 +54,27 @@ class ReadoutMode(object):
         self.pixelHeight = float(hex(mode.pixel_height).split('x')[1]) / 100.0
 
     def getSize(self):
+        return (self.width, self.height)
+
+    def getInternalSize(self):
         return (self.height, self.width)
 
     def getWindow(self):
         return [0, 0, self.width, self.height]
 
+    def getPixelSize(self):
+        return (self.pixelWidth, self.pixelHeight)
+
     def getLine(self):
         return [0, self.width]
 
     def __str__(self):
-        return "%d: %.2f [%d,%d] [%.2f, %.2f]" % (self.mode, self.gain,
-                                                  self.width, self.height,
-                                                  self.pixelWidth, self.pixelHeight)
-    
+        s = "mode: %d: \n\tgain: %.2f\n\tWxH: [%d,%d]" \
+            "\n\tpix WxH: [%.2f, %.2f]" % (self.mode,
+                                           self.gain,
+                                           self.width, self.height,
+                                           self.pixelWidth, self.pixelHeight)
+        return s
 
     def __repr__(self):
         return self.__str__()
@@ -205,8 +213,12 @@ class SBIGDrv(object):
     def establishLink(self):
         elp = udrv.EstablishLinkParams()
         elr = udrv.EstablishLinkResults()
+        err = self._cmd(udrv.CC_ESTABLISH_LINK, elp, elr)
 
-        return self._cmd(udrv.CC_ESTABLISH_LINK, elp, elr)
+        if not err:
+            self.queryCCDInfo()
+
+        return err
 
     def isLinked(self):
         # FIXME: ask SBIG to get a better CC_GET_LINK_STATUS.. this one it too bogus
@@ -386,6 +398,20 @@ class SBIGDrv(object):
                 (qtsr.power / 255.0) * 100.0,
                 TemperatureSetpoint.toDegrees(qtsr.ccdSetpoint, "ccd"),
                 TemperatureSetpoint.toDegrees(qtsr.ccdThermistor, "ccd"))
+
+    def startFan(self):
+        mcp = udrv.MiscellaneousControlParams()
+        mcp.fanEnable = 1
+        return self._cmd(udrv.CC_MISCELLANEOUS_CONTROL, mcp, None)
+
+    def stopFan(self):
+        mcp = udrv.MiscellaneousControlParams()
+        mcp.fanEnable = 0
+        return self._cmd(udrv.CC_MISCELLANEOUS_CONTROL, mcp, None)
+
+    def isFanning(self):
+        status = self._status(udrv.CC_MISCELLANEOUS_CONTROL)
+        return (status & 0x8)
 
     # filter wheel
     def getFilterPosition (self):

@@ -36,6 +36,7 @@ from chimera.core.constants import MANAGER_DEFAULT_HOST, MANAGER_DEFAULT_PORT
 from chimera.instruments.camera import Camera
 from chimera.instruments.filterwheel import FilterWheel
 from chimera.interfaces.camera import Shutter
+from chimera.interfaces.cameradriver import CameraFeature
 
 from chimera.core.exceptions import ObjectNotFoundException
 from chimera.core.exceptions import ChimeraObjectException
@@ -144,6 +145,16 @@ if __name__ == '__main__':
                       dest="disable_cooling",
                       help="Disable camera cooling. [default=%default].")
 
+
+    
+    temp.add_option("--stop-fan", action="store_true", dest="stop_fan",
+                      help="Stop the cooler fan.")
+
+
+    temp.add_option("--start-fan", action="store_true", dest="start_fan",
+                      help="Start the cooler fan.")
+
+
     display = OptionGroup(parser, "Display configuration")
     display.add_option("--no-display", action="store_true", dest="no_display",
                       help="Don't try to display image on DS9. default is display for exptime >= 5")
@@ -187,6 +198,8 @@ if __name__ == '__main__':
                         disable_cooling  = False ,
                         setpoint = -500, # magic number
                         wait     = False,
+                        start_fan = False,
+                        stop_fan = False,
                         filter   = None,
                         filters  = False,
                         info     = False,
@@ -414,6 +427,44 @@ if __name__ == '__main__':
             print "Cooling disabled."
 
         print "Current CCD temperature:", camera.getTemperature(), "oC"
+        if camera.isFanning():
+            print "Cooler fan active."
+        else:
+            print "Cooler fan inactive."
+
+        print "="*40
+        for feature in CameraFeature:
+            print str(feature), camera.supports(feature)
+
+        print "="*40
+        ccds = camera.getCCDs()
+        currentCCD = camera.getCurrentCCD()
+        print "Available CCDs: ",
+        for ccd in ccds.keys():
+            if ccd == currentCCD:
+                print "*%s* " % str(ccd),
+            else:
+                print "%s " % str(ccd),
+        print
+
+        print "="*40
+        print "ADCs: ",
+        adcs = camera.getADCs()
+        for adc in adcs.keys():
+            print "%s " % adc,
+        print
+
+        print "="*40
+        print "CCD size (pixel)       : %d x %d" % camera.getPhysicalSize()
+        print "Pixel size (micrometer): %.2f x %.2f" % camera.getPixelSize()
+        print "Overscan size (pixel)  : %d x %d" % camera.getOverscanSize()
+        
+        print "="*40
+        print "Available binnings: ",
+        binnings = camera.getBinnings()
+        for bin in binnings.keys():
+            print "%s " % bin,
+        print
 
         manager.shutdown()
         sys.exit(1)
@@ -422,6 +473,24 @@ if __name__ == '__main__':
         print "Available filters:",
         for i,f in enumerate(filter.getFilters()):
             print f,
+        manager.shutdown()
+        sys.exit(1)
+
+    if options.stop_fan:
+        print "="*40
+        print "Stopping cooler fan... ",
+        camera.stopFan()
+        print "OK"
+        print "="*40
+        manager.shutdown()
+        sys.exit(1)
+
+    if options.start_fan:
+        print "="*40
+        print "Starting cooler fan... ",
+        camera.startFan()
+        print "OK"
+        print "="*40
         manager.shutdown()
         sys.exit(1)
 

@@ -25,7 +25,8 @@ import time
 import Pyro.util
 
 from chimera.core.chimeraobject import ChimeraObject
-from chimera.interfaces.camera import ICameraExpose, ICameraTemperature, SHUTTER_LEAVE
+from chimera.interfaces.camera import (ICameraExpose, ICameraTemperature,
+                                       ICameraInformation, SHUTTER_LEAVE)
 
 from chimera.controllers.imageserver.imagerequest import ImageRequest
 
@@ -36,7 +37,8 @@ from chimera.core.exceptions import ChimeraException
 from chimera.core.lock import lock
 
 
-class Camera (ChimeraObject, ICameraExpose, ICameraTemperature):
+class Camera (ChimeraObject,
+              ICameraExpose, ICameraTemperature, ICameraInformation):
 
     def __init__(self):
         ChimeraObject.__init__(self)
@@ -170,10 +172,7 @@ class Camera (ChimeraObject, ICameraExpose, ICameraTemperature):
     @lock
     def startCooling (self, tempC):
         drv = self.getDriver()
-        
-        drv += {"temp_setpoint": tempC}
-
-        drv.startCooling()
+        drv.startCooling(tempC)
         return True
 
     @lock
@@ -186,20 +185,71 @@ class Camera (ChimeraObject, ICameraExpose, ICameraTemperature):
         drv = self.getDriver()
         return drv.isCooling()
 
+    @lock
     def getTemperature(self):
         drv = self.getDriver()
         return drv.getTemperature()
 
+    @lock
     def getSetpoint(self):
         drv = self.getDriver()
         return drv.getSetpoint()
+
+    @lock
+    def startFan(self, rate=None):
+        drv = self.getDriver()
+        return drv.startFan(rate)
+
+    @lock
+    def stopFan(self):
+        drv = self.getDriver()
+        return drv.stopFan()
+
+    def isFanning(self):
+        drv = self.getDriver()
+        return drv.isFanning()
+
     
     def getMetadata(self):
         return [
                 ('CAMERA', str(self['camera_model']), 'Camera Model'),
                 ('CCD',      str(self['ccd_model']), 'CCD Model'),
-                ('CCD_DIMX', self['ccd_dimension_x'], 'CCD X Dimension Size'),
-                ('CCD_DIMY', self['ccd_dimension_y'], 'CCD Y Dimension Size'),
-                ('CCDPXSZX', self['ccd_pixel_size_x'], 'CCD X Pixel Size [microns]'),
-                ('CCDPXSZY', self['ccd_pixel_size_y'], 'CCD Y Pixel Size [micrpns]'),
+                #('CCD_DIMX', self['ccd_dimension_x'], 'CCD X Dimension Size'),
+                #('CCD_DIMY', self['ccd_dimension_y'], 'CCD Y Dimension Size'),
+                #('CCDPXSZX', self['ccd_pixel_size_x'], 'CCD X Pixel Size [microns]'),
+                #('CCDPXSZY', self['ccd_pixel_size_y'], 'CCD Y Pixel Size [micrpns]'),
                 ] + self.getDriver().getMetadata()
+
+    def getCCDs(self):
+        drv = self.getDriver()
+        return drv.getCCDs()
+
+    def getCurrentCCD(self):
+        drv = self.getDriver()
+        return drv.getCurrentCCD()
+
+    def getBinnings(self):
+        drv = self.getDriver()
+        return drv.getBinnings()
+
+    def getADCs(self):
+        drv = self.getDriver()
+        return drv.getADCs()
+
+    def getPhysicalSize(self):
+        drv = self.getDriver()
+        return drv.getPhysicalSize()
+
+    def getPixelSize(self):
+        drv = self.getDriver()
+        return drv.getPixelSize()
+
+    def getOverscanSize(self, ccd=None):
+        drv = self.getDriver()
+        return drv.getOverscanSize()
+
+    def supports(self, feature=None):
+        drv = self.getDriver()
+        return drv.supports(feature)
+
+

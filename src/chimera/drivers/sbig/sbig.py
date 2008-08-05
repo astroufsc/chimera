@@ -18,6 +18,8 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+from __future__ import division
+
 import os
 import time
 import logging
@@ -28,8 +30,9 @@ import numpy as N
 from sbigdrv import *
 
 from chimera.core.chimeraobject            import ChimeraObject
-from chimera.interfaces.cameradriver       import ICameraDriver, CCD, Device, Bitpix
-from chimera.interfaces.camera             import Shutter#, Binning 
+from chimera.interfaces.cameradriver       import (ICameraDriver, CCD,
+                                                   Device, Bitpix, CameraFeature)
+from chimera.interfaces.camera             import Shutter
 from chimera.interfaces.filterwheeldriver  import IFilterWheelDriver
 
 from chimera.core.lock import lock
@@ -57,28 +60,42 @@ class SBIG(ChimeraObject, ICameraDriver, IFilterWheelDriver):
 
         self.setHz(1.0/5)
 
+        self._supports = {CameraFeature.TEMPERATURE_CONTROL: True,
+                          CameraFeature.PROGRAMMABLE_GAIN: False,
+                          CameraFeature.PROGRAMMABLE_OVERSCAN: False,
+                          CameraFeature.PROGRAMMABLE_FAN: False,
+                          CameraFeature.PROGRAMMABLE_LEDS: True,
+                          CameraFeature.PROGRAMMABLE_BIAS_LEVEL: False}
+
+        self._ccds = {CCD.IMAGING: SBIGDrv.imaging,
+                      CCD.TRACKING: SBIGDrv.tracking}
+
+        self._adcs = {"12 bits": 0}
+
+        self._binnings = None
+
     def __start__ (self):
 
-        #if self['ccd'] == CCD.IMAGING:
-        self.ccd = SBIGDrv.imaging
-#        else:
-#            self.ccd = SBIGDrv.tracking
-#           
+        if self['ccd'] == CCD.IMAGING:
+            self.ccd = SBIGDrv.imaging
+        else:
+            self.ccd = SBIGDrv.tracking
+
         if self['device'] == Device.USB:
             self.dev = SBIGDrv.usb
         else:
             self.dev = SBIGDrv.lpt1
 
-        #self["bitpix"] = Bitpix.uint16
-
-        #self["bitpix"] = Bitpix.uint16
-                        
 	self.open(self.dev)
 
 	# make sure filter wheel is in the right position
 	self.setFilter(0)
+        self.startCooling(self.getSetpoint())
+        self.startFan()
 
     def __stop__ (self):
+        self.stopFan()
+        self.stopCooling()
         self.close ()
 
     def control (self):
@@ -121,6 +138,7 @@ class SBIG(ChimeraObject, ICameraDriver, IFilterWheelDriver):
     def ping(self):
         return self.drv.isLinked()
 
+    @lock
     def isExposing(self):
         return self.drv.exposing(self.ccd)
 
@@ -134,7 +152,7 @@ class SBIG(ChimeraObject, ICameraDriver, IFilterWheelDriver):
         else:
             return False
 
-    def abortExposure(self):
+    def abortExposure(self, readout=True):
 
         if not self.isExposing():
             return False
@@ -151,16 +169,13 @@ class SBIG(ChimeraObject, ICameraDriver, IFilterWheelDriver):
 
     # methods
     @lock
-    def startCooling(self):
-        self.drv.setTemperature (True,
-                                 self["temp_setpoint"])
+    def startCooling(self, tempC):
+        self.drv.setTemperature (True, tempC)
         return True
 
     @lock
     def stopCooling(self):
-        self.drv.setTemperature (False,
-                                 self["temp_setpoint"])
-
+        self.drv.setTemperature (False, self.getSetpoint())
         return True
 
     @lock
@@ -174,6 +189,20 @@ class SBIG(ChimeraObject, ICameraDriver, IFilterWheelDriver):
     @lock
     def getSetpoint(self):
         return self.drv.getTemperature()[-2]
+
+
+    @lock
+    def startFan(self, rate=None):
+        self.drv.startFan()
+        self._isFanning = True
+
+    @lock
+    def stopFan(self):
+        self.drv.stopFan()
+        self._isFanning = False
+
+    def isFanning(self):
+        return self.drv.isFanning()
 
     @lock
     def getFilter (self):
@@ -200,14 +229,52 @@ class SBIG(ChimeraObject, ICameraDriver, IFilterWheelDriver):
         self.lastFilter = filter
 
         return True
-        
+
+
+    def getCCDs(self):
+        return self._ccds
+
+    def getCurrentCCD(self):
+        return self["ccd"]
+
+    def getBinnings(self):
+
+        if not self._binnings:
+            self._binnings = {"1x1": 0}
+
+            mainMode = self.drv.readoutModes[self.ccd][0]
+
+            for i, mode in self.drv.readoutModes[self.ccd].items():
+                if i == 0: continue
+
+                if not all(mode.getSize()): continue
+
+                x_binning = mode.pixelWidth/mainMode.pixelWidth
+                y_binning = mode.pixelHeight/mainMode.pixelHeight
+                
+                self._binnings["%dx%d" % (int(x_binning), int(y_binning))] = i
+
+        return self._binnings
+
+    def getADCs(self):
+        return self._adcs
+
+    def getPhysicalSize(self):
+        return self.drv.readoutModes[self.ccd][0].getSize()
+
+    def getPixelSize(self):
+        return self.drv.readoutModes[self.ccd][0].getPixelSize()
+
+    def getOverscanSize(self):
+        return (0,0)
+
+    def supports(self, feature=None):
+        return self._supports[feature]
+
     def _expose(self, imageRequest):
         
         shutterRequest = imageRequest['shutter'][1]
         
-        #TODO: Support CCD Selection
-        #ccdRequest = imageRequest['ccd'][1]
-
         if shutterRequest == Shutter.OPEN:
             shutter = SBIGDrv.openShutter
         elif shutterRequest == Shutter.CLOSE:
@@ -215,8 +282,8 @@ class SBIG(ChimeraObject, ICameraDriver, IFilterWheelDriver):
         elif shutterRequest == Shutter.LEAVE_AS_IS:
             shutter = SBIGDrv.leaveShutter
         else:
-            #raise ValueError("Incorrect shutter option (%s). Leaving shutter intact" % shutterRequest)
-            self.log.warning("Incorrect shutter option (%s). Leaving shutter intact" % shutterRequest)
+            self.log.warning("Incorrect shutter option (%s)."
+                             " Leaving shutter intact" % shutterRequest)
             shutter = SBIGDrv.leaveShutter
         
         # ok, start it
@@ -248,10 +315,7 @@ class SBIG(ChimeraObject, ICameraDriver, IFilterWheelDriver):
 
     def _endExposure(self):
         self.drv.endExposure(self.ccd)
-
-        # fire exposeComplete event
         self.exposeComplete()
-
         return True
 
     def _readout(self, imageRequest, aborted=False):
@@ -261,7 +325,7 @@ class SBIG(ChimeraObject, ICameraDriver, IFilterWheelDriver):
         
         readoutMode = self.drv.readoutModes[self.ccd][0]
         
-        img = N.zeros(readoutMode.getSize(), N.int32)
+        img = N.zeros(readoutMode.getInternalSize(), N.int32)
         
         # start readout
         #img = ImageSave.getPixels(readoutMode,
@@ -320,8 +384,8 @@ class SBIG(ChimeraObject, ICameraDriver, IFilterWheelDriver):
 
         imageRequest.addPostHeaders(self.getManager())
 
-        scale_x = ((180/pi) / cam["telescope_focal_length"]) * (cam["ccd_pixel_size_x"] * 0.001)
-        scale_y = ((180/pi) / cam["telescope_focal_length"]) * (cam["ccd_pixel_size_y"] * 0.001)
+        #scale_x = ((180/pi) / cam["telescope_focal_length"]) * (cam["ccd_pixel_size_x"] * 0.001)
+        #scale_y = ((180/pi) / cam["telescope_focal_length"]) * (cam["ccd_pixel_size_y"] * 0.001)
         
         img = Image.imageFromImg(img, imageRequest, [
                 ("EXPTIME", float(imageRequest['exp_time']) or -1, "exposure time in seconds"),
@@ -338,11 +402,11 @@ class SBIG(ChimeraObject, ICameraDriver, IFilterWheelDriver):
                 ('SHUTTER',str(imageRequest['shutter'][1]), 'Requested shutter state'),
                 ("CRPIX1", int(readoutMode.width/2.0), "coordinate system reference pixel"),
                 ("CRPIX2", int(readoutMode.height/2.0), "coordinate system reference pixel"),
-                ("CD1_1", scale_x, "transformation matrix element (1,1)"),
+                #("CD1_1", scale_x, "transformation matrix element (1,1)"),
                 ("CD1_2", 0.0, "transformation matrix element (1,2)"),
-                ("CD2_1", 0.0, "transformation matrix element (2,1)"),
-                ("CD2_2", scale_y, "transformation matrix element (2,2)")])
-
+                ("CD2_1", 0.0, "transformation matrix element (2,1)")])
+                #("CD2_2", scale_y, "transformation matrix element (2,2)")])
+                                 
         return self._endReadout(img)
 
     # TODO

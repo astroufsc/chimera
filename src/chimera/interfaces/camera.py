@@ -29,14 +29,7 @@ SHUTTER_OPEN    = Shutter.OPEN
 SHUTTER_CLOSE   = Shutter.CLOSE
 SHUTTER_LEAVE   = Shutter.LEAVE_AS_IS
 
-#Shutter     = {'OPEN':  SHUTTER_OPEN,
-#               'CLOSE': SHUTTER_CLOSE,
-#               'LEAVE': SHUTTER_LEAVE}
 
-
-#Shutter = Enum ("OPEN",
-#                "CLOSE",
-#                "LEAVE_AS_IS")
 
 class ICamera (Interface):
     """Base camera interface.
@@ -47,10 +40,6 @@ class ICamera (Interface):
 
                   "camera_model"    : "Fake camera Inc.",
                   "ccd_model"       : "KAF XYZ 10",
-                  "ccd_dimension_x" : 100,  # pixel
-                  "ccd_dimension_y" : 100,  # pixel
-                  "ccd_pixel_size_x": 10.0, # micrometer (without binning factors)
-                  "ccd_pixel_size_y": 10.0, # micrometer (without binning factors),
                   "telescope_focal_length": 4000 # milimeter
                   }
 
@@ -89,20 +78,12 @@ class ICameraExpose (ICamera):
         @rtype: bool or chimera.controllers.imageserver.imagerequest.ImageRequest
         """
     
-    def getBinnings(self):
-        """Return the allowed binning settings for this camera
-        
-        @return: Dictionary with the keys being the English binning description (caption), and 
-                 the values being a device-specific value needed to activate the described binning
-        @rtype: dictionary
-        """
-        return {'1x1': 0}
-
     @event
     def exposeBegin (self, exp_time):
         """Indicates that new exposure is starting.
 
-        When multiple frames are taken in a single shot, multiple exposeBegin events will be fired.
+        When multiple frames are taken in a single shot, multiple
+        exposeBegin events will be fired.
 
         @param exp_time: How long the exposure will long.
         @type  exp_time: float
@@ -112,14 +93,16 @@ class ICameraExpose (ICamera):
     def exposeComplete (self):
         """Indicates that new exposure frame was taken.
 
-        When multiple frames are taken in a single shot, multiple exposeComplete events will be fired.
+        When multiple frames are taken in a single shot, multiple
+        exposeComplete events will be fired.
         """
 
     @event
     def readoutBegin (self, filename):
         """Indicates that new readout is starting.
 
-        When multiple frames are taken in a single shot, multiple readoutBegin events will be fired.
+        When multiple frames are taken in a single shot, multiple
+        readoutBegin events will be fired.
 
         @param filename: Where this new frame was put in the filesystem.
         @type  filename: str
@@ -143,8 +126,6 @@ class ICameraTemperature (ICamera):
     """A camera that supports temperature monitoring and control.
     """
 
-    __config__ = {"temperature_monitor_delta": 2.0}
-    
 
     def startCooling (self, tempC):
         """Start cooling the camera with setpoint setted to tempC.
@@ -187,10 +168,21 @@ class ICameraTemperature (ICamera):
         @rtype: float
         """
 
+    def startFan(self, rate=None):
+        pass
+
+    def stopFan(self):
+        pass
+
+    def isFanning(self):
+        pass
+
+
     @event
     def temperatureChange (self, newTempC, delta):
-        """Camera temperature probe. Will be fired everytime that the camera temperature changes more than
-        temperature_monitor_delta degrees Celsius.
+        """Camera temperature probe. Will be fired everytime that the camera
+        temperature changes more than temperature_monitor_delta
+        degrees Celsius.
 
         @param newTempC: The current camera temperature in degrees Celsius.
         @type newTempC: float
@@ -198,3 +190,39 @@ class ICameraTemperature (ICamera):
         @param delta: How much the temperature has changed in degrees Celsius.
         @type  delta: float
         """
+
+class ICameraInformation (ICamera):
+
+    # for getCCDs, getBinnings and getADCs, the driver should returns a
+    # list of Human readable strings, which could be later passed as a
+    # ImageRequest and be recognized by the driver. Those strings can
+    # be use as key to an internal hashmap.
+    # example:
+    # ADCs = {'12 bits': SomeInternalValueWhichMapsTo12BitsADC,
+    #         '16 bits': SomeInternalValueWhichMapsTo16BitsADC}
+
+
+    def getCCDs(self):
+        pass
+
+    def getCurrentCCD(self):
+        pass
+
+    def getBinnings(self):
+        pass
+
+    def getADCs(self):
+        pass
+
+    def getPhysicalSize(self):
+        pass
+
+    def getPixelSize(self):
+        pass
+
+    def getOverscanSize(self):
+        pass
+
+    def supports(self, feature=None):
+        pass
+
