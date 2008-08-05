@@ -50,7 +50,8 @@ class ICamera (Interface):
                   "ccd_dimension_x" : 100,  # pixel
                   "ccd_dimension_y" : 100,  # pixel
                   "ccd_pixel_size_x": 10.0, # micrometer (without binning factors)
-                  "ccd_pixel_size_y": 10.0  # micrometer (without binning factors)
+                  "ccd_pixel_size_y": 10.0, # micrometer (without binning factors),
+                  "telescope_focal_length": 4000 # milimeter
                   }
 
 

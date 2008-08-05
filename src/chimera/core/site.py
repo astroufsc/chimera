@@ -90,10 +90,13 @@ class Site (ChimeraObject):
     def JD (self):
         return AstroDate(self.ut()).jd
 
-    def MJD (self):
+    def MJD (self, t=None):
         # JD - julian date at November 17, 1858 (thanks Sputinik!)
         # http://www.slac.stanford.edu/~rkj/crazytime.txt
-        return AstroDate(self.ut()).mjd
+        if not t:
+            return AstroDate(self.ut()).mjd
+        else:
+            return AstroDate(t).mjd
 
     def localtime (self):
         return dt.datetime.now(self.local_tz)

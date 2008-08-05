@@ -170,7 +170,7 @@ class CoordUtil (object):
         return c.strfcoord()
 
     @staticmethod
-    def strfcoord (c, format=None, add_sign=True):
+    def strfcoord (c, format=None, signed=True):
         """strfcoord acts like sprintf family, allowing arbitrary
         coordinate conversion to str following the given template
         format.
@@ -183,7 +183,7 @@ class CoordUtil (object):
         s[s]: seconds (can be float)
         s[h]: hours
 
-        if add_sign was True, decimal degrees will always begins with
+        if signed was True, decimal degrees will always begins with
         a sign (+ or -) and hours values will have a negative sign if
         needed. Note that 
 
@@ -269,7 +269,7 @@ class CoordUtil (object):
                     s=s, ss=s,
                     h=h, hh=h)
 
-        if add_sign:
+        if signed:
             return (sign_str+format) % subs
         else:
             return format % subs
@@ -585,8 +585,8 @@ class Coord (object):
         else:
             return '%.2f' % self.get()
 
-    def strfcoord (self, format=None):
-        return CoordUtil.strfcoord(self, format)
+    def strfcoord (self, *args, **kwargs):
+        return CoordUtil.strfcoord(self, *args, **kwargs)
 
     #
     # primitive conversion

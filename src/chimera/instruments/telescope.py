@@ -267,5 +267,12 @@ class Telescope(ChimeraObject,
                 ('RA', self.getRa().toHMS().__str__(), 'Right ascension of the observed object'),
                 ('DEC', self.getDec().toDMS().__str__(), 'Declination of the observed object'),
                 ('ALT', self.getAlt().toDMS().__str__(), 'Altitude of the observed object'),
-                ('AZ', self.getAz().toDMS().__str__(),'Azimuth of the observed object')
+                ('AZ', self.getAz().toDMS().__str__(),'Azimuth of the observed object'),
+                ("WCSAXES", 2, "wcs dimensionality"),
+                ("CRVAL1", self.getTargetRaDec().ra.D, "coordinate system value at reference pixel"),
+                ("CRVAL2", self.getTargetRaDec().dec.D, "coordinate system value at reference pixel"),
+                ("CTYPE1", 'RA---TAN', "name of the coordinate axis"),
+                ("CTYPE2", 'DEC---TAN', "name of the coordinate axis"),
+                ("CUNIT1", 'deg', "units of coordinate value"),
+                ("CUNIT2", 'deg', "units of coordinate value")                                              
                 ] + self.getDriver().getMetadata()

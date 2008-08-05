@@ -8,6 +8,8 @@ from chimera.core.exceptions import ChimeraException, printException
 from chimera.interfaces.camera import Shutter#, Binning, Window
 from chimera.interfaces.filterwheel import Filter
 
+from chimera.controllers.imageserver import ImageServer
+
 from chimera.util.enum import Enum
 
 from chimera.util.sextractor import SExtractor
@@ -180,7 +182,7 @@ class Autofocus (ChimeraObject):
                   
                   "focus_on_subwindow" : True,
                   "focus_with_binning" : False,
-                  "binning"            : Binning._2x2,
+                  #"binning"            : Binning._2x2,
                   
                   "save_frames"        : False,
                   
@@ -273,6 +275,9 @@ class Autofocus (ChimeraObject):
 
                 if not self.best_fit or fit < self.best_fit:
                     self.best_fit = fit
+
+                return fit
+
             except Exception, e:
                 printException(e)
 
@@ -343,13 +348,21 @@ class Autofocus (ChimeraObject):
         else:
             filename = "focus-sequence"
 
+        filename="focus-sequence"
+
         cam = self.getCam()
         
         frame = cam.expose(exp_time=self.exptime,
-                           frames=1, shutter=Shutter.OPEN,
+                           frames=1, shutter=(str(Shutter.OPEN), Shutter.OPEN),
                            filename=filename)
 
-        return frame[0]
+        if frame:
+            imageserver = self.getManager().getProxy(frame[0])
+            img = imageserver.getProxyByURI(frame[0])
+            return img.getPath()
+
+        else:
+            raise Exception("Couldn't take an image")
 
     def _findStars (self, fits_file):
 

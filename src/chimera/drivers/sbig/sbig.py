@@ -22,7 +22,7 @@ import os
 import time
 import logging
 import threading
-
+from math import pi
 import numpy as N
         
 from sbigdrv import *
@@ -212,7 +212,7 @@ class SBIG(ChimeraObject, ICameraDriver, IFilterWheelDriver):
             shutter = SBIGDrv.openShutter
         elif shutterRequest == Shutter.CLOSE:
             shutter = SBIGDrv.closeShutter
-        elif shutterRequest == Shutter.LEAVE:
+        elif shutterRequest == Shutter.LEAVE_AS_IS:
             shutter = SBIGDrv.leaveShutter
         else:
             #raise ValueError("Incorrect shutter option (%s). Leaving shutter intact" % shutterRequest)
@@ -301,21 +301,48 @@ class SBIG(ChimeraObject, ICameraDriver, IFilterWheelDriver):
 
         # end readout and save
         
+        try:
+            manager = self.getManager()
+            hostPort = manager.getHostname() + ':' + str(manager.getPort())
+
+            tel = manager.getProxy("/Telescope/0")
+            imageRequest["metadatapost"].append(hostPort+"/Telescope/0")
+
+        except Exception:
+            self.log.info("Couldn't found an telescope, WCS info will be incomplete")
+
+        try:
+            cam = manager.getProxy("/Camera/0")
+            imageRequest["metadatapost"].append(hostPort+"/Camera/0")
+        except Exception:
+            pass # will never happen!
+
+
         imageRequest.addPostHeaders(self.getManager())
+
+        scale_x = ((180/pi) / cam["telescope_focal_length"]) * (cam["ccd_pixel_size_x"] * 0.001)
+        scale_y = ((180/pi) / cam["telescope_focal_length"]) * (cam["ccd_pixel_size_y"] * 0.001)
         
         img = Image.imageFromImg(img, imageRequest, [
-                                               ('DATE-OBS',Image.formatDate(self.lastFrameStartTime),'Date exposure started'),
-                                               ('CCD-TEMP',self.lastFrameTemp,'CCD Temperature at Exposure Start [deg. C]'),
-                                               ('XBINNING',1,'Readout CCD Binning (x-axis)'),
-                                               ('YBINNING',1,'Readout CCD Binning (y-axis)'),
-                                               ('XWIN_LFT',0,'Readout window x left position'),
-                                               ('XWIN_SZ',readoutMode.width,'Readout window width'),
-                                               ('YWIN_TOP',0,'Readout window y top position'),
-                                               ('YWIN_SZ',readoutMode.height,'Readout window height'),
-                                               ('IMAGETYP',imageRequest['image_type'],'Image type'),
-                                               ('SHUTTER',str(imageRequest['shutter'][1]), 'Requested shutter state')
-                                               ]
-                           )
+                ("EXPTIME", float(imageRequest['exp_time']) or -1, "exposure time in seconds"),
+                ('IMAGETYP', imageRequest['image_type'].upper().strip(), 'Image type'),
+                ('DATE-OBS',Image.formatDate(self.lastFrameStartTime),'Date exposure started'),
+                ('CCD-TEMP',self.lastFrameTemp,'CCD Temperature at Exposure Start [deg. C]'),
+                ('XBINNING',1,'Readout CCD Binning (x-axis)'),
+                ('YBINNING',1,'Readout CCD Binning (y-axis)'),
+                ('XWIN_LFT',0,'Readout window x left position'),
+                ('XWIN_SZ',readoutMode.width,'Readout window width'),
+                ('YWIN_TOP',0,'Readout window y top position'),
+                ('YWIN_SZ',readoutMode.height,'Readout window height'),
+                ('IMAGETYP',imageRequest['image_type'],'Image type'),
+                ('SHUTTER',str(imageRequest['shutter'][1]), 'Requested shutter state'),
+                ("CRPIX1", int(readoutMode.width/2.0), "coordinate system reference pixel"),
+                ("CRPIX2", int(readoutMode.height/2.0), "coordinate system reference pixel"),
+                ("CD1_1", scale_x, "transformation matrix element (1,1)"),
+                ("CD1_2", 0.0, "transformation matrix element (1,2)"),
+                ("CD2_1", 0.0, "transformation matrix element (2,1)"),
+                ("CD2_2", scale_y, "transformation matrix element (2,2)")])
+
         return self._endReadout(img)
 
     # TODO

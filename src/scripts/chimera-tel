@@ -27,6 +27,8 @@ import copy
 import threading
 import optparse
 
+import Pyro.util
+
 from optparse import OptionParser, OptionGroup
 
 from chimera.core.manager import Manager
@@ -34,7 +36,7 @@ from chimera.core.version import _chimera_version_, _chimera_description_
 from chimera.core.constants import MANAGER_DEFAULT_HOST, MANAGER_DEFAULT_PORT
 
 from chimera.instruments.telescope import Telescope
-
+from chimera.interfaces.telescopedriver import SlewRate
 from chimera.util.position import Position
 
 from chimera.core.exceptions import ObjectNotFoundException
@@ -420,19 +422,19 @@ if __name__ == '__main__':
                     offset = Coord.fromDMS(move[0])
 
                 print 40*"="
-                print "moving %s arcseconds (%s) %s at %s rate... " % (offset.AS,
+		print "moving %s arcseconds (%s) %s at %s rate... " % (offset.AS,
                                                                        offset.strfcoord(),
                                                                        move_strs[direction],
-                                                                       options.rate),
+                                                                       SlewRate.MAX),
                 sys.stdout.flush()
 
                 try:
                     cmd = getattr(telescope, move[1])
-                    cmd(offset.AS, options.rate)
+                    cmd(offset.AS, SlewRate.MAX)
                     print "OK"
                     sys.stdout.flush()                
                 except Exception, e:
-                    print "ERROR. (%s)" % e
+                    print ''.join(Pyro.util.getPyroTraceback(e))
                     sys.stdout.flush()
 
         elif options.init:
@@ -494,6 +496,7 @@ if __name__ == '__main__':
 		
             except Exception, e:
                 print >> sys.stderr, "Error trying to park. (%s)" % e
+	        ''.join(Pyro.util.getTraceback())
 
         elif options.unpark:
             try:
@@ -537,6 +540,7 @@ if __name__ == '__main__':
 
         elif options.info:
             try:
+
                 print 40*"="
                 print "telescope:", telescope["driver"], "(%s)" % driver["device"]
                 print "current position ra/dec: %s" % telescope.getPositionRaDec()
@@ -545,6 +549,23 @@ if __name__ == '__main__':
                     print "tracking: enabled."
                 else:
                     print "tracking: disabled."
+
+                print "align mode:", driver.getAlignMode()
+                print "ra :", driver.getRa()
+                print "dec:", driver.getDec()
+                print "az :", driver.getAz()
+                print "alt:", driver.getAlt()
+        
+                print "lat :", driver.getLat()
+                print "long:", driver.getLong()
+        
+                print "date:" , driver.getDate()
+                print "time:" , driver.getLocalTime()
+                print "to utc:", driver.getUTCOffset()
+                print "lst:", driver.getLocalSiderealTime()
+
+                print "tracking rate:", driver.getCurrentTrackingRate()
+
                     
             except Exception, e:
                 print >> sys.stderr, "Error getting telescope coordinates. (%s)" % e

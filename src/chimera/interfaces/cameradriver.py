@@ -57,7 +57,8 @@ class ICameraDriver(Interface):
 
     __config__ = {"device"            : Device.USB,
                   "readout_aborted" : True,
-                  "temp_delta"      : 1.0}
+                  "temp_delta"      : 1.0,
+                  "temp_setpoint"   : 10.0}
 
     #
     # device handling
@@ -108,6 +109,13 @@ class ICameraDriver(Interface):
 
     def getSetPoint(self):
         pass
+
+    def startFan(self, rate=None):
+        pass
+
+    def isFanning(self):
+        pass
+
 
     #
     # geometry and readout

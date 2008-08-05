@@ -97,7 +97,7 @@ class XMLRPC(ChimeraObject):
         
     def isAlive (self):
         return True
-    
+
     def getListOf (self, cls):
         locations = filter(lambda loc: loc.cls == cls, self.getManager().getResources())
         return ["%s.%s" % (loc.cls, loc.name) for loc in locations]

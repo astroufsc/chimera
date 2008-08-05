@@ -3,12 +3,18 @@ from chimera.util.filenamesequence import FilenameSequence
 from chimera.core.manager import Manager
 from chimera.core.exceptions import ObjectNotFoundException, ClassLoaderException
 from chimera.core.path import ChimeraPath
+from chimera.controllers.imageserver.imageuri import ImageURI
 import Pyro.util
+
+import cherrypy
+from cherrypy.lib.static import serve_file
+
 import time
 import os
 import os.path
 import string
 import random
+import threading
 
 dateFormat="%d%m%y-%H%M%S"
 
@@ -20,7 +26,48 @@ class ImageServer(ChimeraObject):
         
         self.imagesByID = {}
         self.imagesByPath = {}
-    
+
+    def __start__ (self):
+        cherrypy.config.update({"server.socket_port": 7669,
+                                "server.socket_host":  "0.0.0.0",
+                                "tools.encode.on": True,
+                                "tools.encode.encoding": "iso-8859-1",
+                                "tools.decode.on": True,
+                                "tools.trailing_slash.on": True,
+                                "engine.autoreload_on": False})
+
+        class ImageServerHTTP(object):
+
+            def __init__ (self, ctrl):
+                self.ctrl = ctrl
+                
+            @cherrypy.expose
+            def index (self, *args, **kwargs):
+                return "All your images belongs to us."
+
+            @cherrypy.expose
+            def image (self, *args, **kwargs):
+                if args:
+                    uri = ImageURI(self.ctrl, args[0])
+
+                    img = self.ctrl.getImageByURI(uri)
+
+                    if not img:
+                        return "Couldn't found the image."
+
+                    return serve_file(img.getPath(), "image/fits", "attachment")
+
+
+                else:
+                    return "What are you looking for?"
+
+        def start():
+            cherrypy.quickstart(ImageServerHTTP(self))
+        
+        self.http = threading.Thread(target=start)
+        self.http.setDaemon(True)
+        self.http.start()
+
     def getFileName(self, filename='$DATE'):
         try:
             dest = os.path.expanduser(self['savedir'])
@@ -66,6 +113,10 @@ class ImageServer(ChimeraObject):
     def getImageByURI(self, imageURI):
         if self._isMyImage(imageURI):
             return self.imagesByID[imageURI.config['hash']]
+    
+    def getProxyByURI(self, imageURI):
+        if self._isMyImage(imageURI):
+            return self.imagesByID[imageURI.config['hash']].getProxy()
     
     def getImageByPath(self, path):
         if path in self.imagesByPath.keys():

@@ -76,7 +76,7 @@ class Meade (ChimeraObject,
         # how much arcseconds / second for every slew rate
         # and direction
         self._calibration = {}
-        self._calibration_time = 2.0
+        self._calibration_time = 3.0
         
         for rate in SlewRate:
             self._calibration[rate] = {}
@@ -276,6 +276,8 @@ class Meade (ChimeraObject,
     @lock
     def slewToAltAz(self, position):
 
+	self.setSlewRate(self["slew_rate"])
+
         if self.isSlewing ():
             # never should happens 'cause @lock
             raise MeadeException("Telescope already slewing.")
@@ -425,6 +427,7 @@ class Meade (ChimeraObject,
             
         for rate in SlewRate:
             for direction in Direction:
+	        self.log.debug("Calibrating %s %s" % (rate, direction))
 
                 total = 0
 
@@ -433,7 +436,15 @@ class Meade (ChimeraObject,
                 
                 self._calibration[rate][direction] = total/3.0
 
+	self.log.info("Calibration was OK.")
+        self._calibrated = True
+
     def _calcDuration (self, arc, direction, rate):
+
+        if not self.isMoveCalibrated():
+            self.log.info("Telescope fine movement not calibrated. Calibrating now...")
+            self.calibrateMove()
+
         return arc*(self._calibration_time/self._calibration[rate][direction])
 
     @lock
@@ -611,7 +622,7 @@ class Meade (ChimeraObject,
         if not isinstance (alt, Coord):
             alt = Coord.fromD (alt)
 
-        self._write(":Sa%s#" % alt.strfcoord("%(d)02d\xdf%(m)02d:%(s)02d"))
+        self._write(":Sa%s#" % alt.strfcoord("%(d)02d\xdf%(m)02d\'%(s)02d"))
 
         ret = self._readbool()
 
@@ -631,7 +642,7 @@ class Meade (ChimeraObject,
         if not isinstance (az, Coord):
             az = Coord.fromDMS (az)
 
-        self._write (":Sz%s#" % az.strfcoord("%(d)03d\xdf%(m)02d:%(s)02d"))
+        self._write (":Sz%s#" % az.strfcoord("%(d)03d\xdf%(m)02d:%(s)02d", signed=False))
 
         ret = self._readbool()
 
@@ -912,8 +923,10 @@ class Meade (ChimeraObject,
 
         # 1. slew to park position
         # FIXME: allow different park positions and conversions from ra/dec -> az/alt
+	site = self.getManager().getProxy("/Site/0")
+
         self.slewToRaDec(Position.fromRaDec(str(self.getLocalSiderealTime()),
-                                            self.getLatitude()))
+                                            site["latitude"]))
 
         # 2. stop tracking
         self.stopTracking ()

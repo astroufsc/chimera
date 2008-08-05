@@ -24,9 +24,15 @@ class ImageRequest(dict):
                        'filename':              '$date',
                        'headers':               [],
                        'image_type':             'object',
-                       'metadatapre':           [],                             #URLs of proxies from which to get metadata before taking each image
-                       'metadatapost':          [],                             #URLs of proxies from which to get metadata after taking each image
-                       'accum_headers':         [],                             #Headers accumulated during processing of each frame (=headers+metadatapre+metadatapost)
+
+                       #URLs of proxies from which to get metadata before taking each image
+                       'metadatapre':           [],
+
+                       #URLs of proxies from which to get metadata after taking each image
+                       'metadatapost':          [],
+
+                       #Headers accumulated during processing of each frame (=headers+metadatapre+metadatapost)
+                       'accum_headers':         [],
                        }
         
         for k,v in __config__.items():
@@ -40,7 +46,7 @@ class ImageRequest(dict):
                 self[k]=v
     
         
-        forceArgsValid           = kwargs.get('forceArgsValid', False)
+        forceArgsValid = kwargs.get('forceArgsValid', False)
 
         if self['exp_time'] < 0.0:
             if forceArgsValid:

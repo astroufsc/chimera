@@ -103,19 +103,23 @@ class Camera (ChimeraObject, ICameraExpose, ICameraTemperature):
         self.temperatureChange(temp, delta)
 
     @lock
-    def expose (self, *args, **kwargs):
-        
-        if len(args) > 0:
-            if isinstance(args[0], ImageRequest):
-                imageRequest = args[0]
-            else:
-                imageRequest = ImageRequest(kwargs)
-                imageRequest += kwargs
+    def expose (self, request=None, **kwargs):
+
+        if request:
+
+            if isinstance(request, ImageRequest):
+                imageRequest = request
+            elif isinstance(request, dict):
+                imageRequest = ImageRequest(request)
         else:
-            imageRequest = ImageRequest()
+            if kwargs:
+                imageRequest = ImageRequest(kwargs)
+            else:
+                imageRequest = ImageRequest()
         
         frames = imageRequest['frames']
         interval = imageRequest['interval']
+
         if frames == 1:
             interval = 0.0
 
@@ -124,8 +128,9 @@ class Camera (ChimeraObject, ICameraExpose, ICameraTemperature):
 
         # config driver
         drv = self.getDriver()
-        
+
         imageURIs = []
+
         self.log.debug('Looping through ' + str(frames) + ' frames...')
         for frame_num in range(frames):
             
@@ -134,18 +139,15 @@ class Camera (ChimeraObject, ICameraExpose, ICameraTemperature):
             
             try:
                 imageRequest.addPreHeaders(self.getManager())
-                imageURI = None
+
                 try:
                     imageURI = drv.expose(imageRequest)
+                    imageURIs.append(imageURI)
                     self.log.debug('Got back imageURI = ' + str(imageURI) + '[' + str(frame_num) + '/' + str(frames) + ']')
                     self.log.info(str(imageRequest) + ': [' + str(frame_num) + '/' + str(frames) + '] done')
+                    
                 except Exception, e:
                     print ''.join(Pyro.util.getPyroTraceback(e))
-                
-                if imageURI:
-                    
-                    imageURIs.append(imageURI)
-                    del imageURI
                 
                 if interval > 0 and frame_num < frames:
                     time.sleep(interval)
@@ -194,7 +196,7 @@ class Camera (ChimeraObject, ICameraExpose, ICameraTemperature):
     
     def getMetadata(self):
         return [
-                ('INSTRUME', str(self['camera_model']), 'Camera Model'),
+                ('CAMERA', str(self['camera_model']), 'Camera Model'),
                 ('CCD',      str(self['ccd_model']), 'CCD Model'),
                 ('CCD_DIMX', self['ccd_dimension_x'], 'CCD X Dimension Size'),
                 ('CCD_DIMY', self['ccd_dimension_y'], 'CCD Y Dimension Size'),

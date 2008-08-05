@@ -505,7 +505,7 @@ if __name__ == '__main__':
                           frames=options.nexp,
                           interval=options.interval,
                           filename=options.output,
-                          shutter=options.shutter)
+                          shutter=(str(options.shutter), options.shutter))
         except Exception, e:
             print >> sys.stderr, "Error trying to take exposures. (%s)" % printException(e)
 

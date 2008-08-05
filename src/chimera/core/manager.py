@@ -244,7 +244,7 @@ class Manager (RemoteObject):
         @rtype: Proxy
         """
 
-        if type(location) not in [StringType, Location]:
+        if not isinstance(location, StringType) and not isinstance(location, Location):
             if issubclass(location, ChimeraObject):
                 #TODO: Verify usage of host= and port= for lookup by class type;
                 #        currently, I don't know of any code which sets host=,port= when
