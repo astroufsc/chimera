@@ -61,6 +61,7 @@
 #
 # ======================================================================
 
+import os
 
 """
 A simple interface to manipulate SExtractor ASCII catalogs
@@ -670,10 +671,15 @@ class SExtractorfile:
         self._output = None
         self._firstline = True
         
+
+        print "*** " , name
+
         if self.mode != 'r':
             raise ValueError, \
                   'only read-only access is now implemented.'
-        
+
+        print "*** ", os.path.exists(name)
+
         self._file = __builtin__.open(self.name, self.mode)
         self.closed = False
         

@@ -1,4 +1,3 @@
-
 from chimera.util.votable import VOTable
 
 from httplib import HTTPConnection
@@ -15,6 +14,7 @@ class VizQuery(object):
         self.args = {}
         self.args["-mime"] = "xml"
         self.columns = None
+
     
     def useCat(self, catName):
         """
@@ -48,6 +48,21 @@ class VizQuery(object):
             self.args["-sort"] = "-"+sortBy
         else:
             self.args["-sort"] = sortBy
+
+    def sortBy(self, column):
+        """
+        One sets here which column to sort by
+        @param column: name of column to sort by
+        @type  column: str
+        """
+
+    def constrainColumns(self, columns):
+        """
+        Use this to add constraints to any of the columns
+        @param columns: list of dictionaries {COLUMN:condition}
+        @type  columns: list
+        """
+        self.args.update(columns)
 
 
     def useTarget(self, center, radius=None, box=None):
@@ -93,6 +108,7 @@ class VizQuery(object):
         conn = HTTPConnection("webviz.u-strasbg.fr")
 
         s = urllib.urlencode(self.args)
+
         conn.request("POST", "/viz-bin/votable",s)  
         resp = conn.getresponse()
         ret = resp.read()
@@ -110,4 +126,3 @@ class VizQuery(object):
             obj.append(dict(zip(self.columns, v)))
 
         return obj
-            
