@@ -215,11 +215,7 @@ class ITelescopeSlew (ITelescope):
         @rtype: L{Position}
         """
 
-<<<<<<< .mine
     def getTargetAltAz (self):
-=======
-    def getTargetAzAlt (self):
->>>>>>> .r317
         """Get the current telescope target in local coordinates.
 
         @return: Telescope's current target (alt, az).
