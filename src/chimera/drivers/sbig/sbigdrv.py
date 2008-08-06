@@ -276,8 +276,8 @@ class SBIGDrv(object):
         srp.readoutMode = mode
         srp.top    = window[0]
         srp.left   = window[1]
-        srp.height = window[2]
-        srp.width  = window[3]
+        srp.width  = window[2]
+        srp.height = window[3]
 
         return self._cmd(udrv.CC_START_READOUT, srp, None)
 

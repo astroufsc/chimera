@@ -31,7 +31,7 @@ from sbigdrv import *
 
 from chimera.core.chimeraobject            import ChimeraObject
 from chimera.interfaces.cameradriver       import (ICameraDriver, CCD,
-                                                   Device, Bitpix, CameraFeature)
+                                                   Device, CameraFeature)
 from chimera.interfaces.camera             import Shutter
 from chimera.interfaces.filterwheeldriver  import IFilterWheelDriver
 
@@ -72,7 +72,15 @@ class SBIG(ChimeraObject, ICameraDriver, IFilterWheelDriver):
 
         self._adcs = {"12 bits": 0}
 
-        self._binnings = None
+        self._binnings = {"1x1": 0,
+                          "2x2": 1,
+                          "3x3": 2,
+                          "9x9": 9}
+
+        self._binning_factors = {"1x1": 1,
+                                 "2x2": 2,
+                                 "3x3": 3,
+                                 "4x4": 4}
 
     def __start__ (self):
 
@@ -238,22 +246,6 @@ class SBIG(ChimeraObject, ICameraDriver, IFilterWheelDriver):
         return self["ccd"]
 
     def getBinnings(self):
-
-        if not self._binnings:
-            self._binnings = {"1x1": 0}
-
-            mainMode = self.drv.readoutModes[self.ccd][0]
-
-            for i, mode in self.drv.readoutModes[self.ccd].items():
-                if i == 0: continue
-
-                if not all(mode.getSize()): continue
-
-                x_binning = mode.pixelWidth/mainMode.pixelWidth
-                y_binning = mode.pixelHeight/mainMode.pixelHeight
-                
-                self._binnings["%dx%d" % (int(x_binning), int(y_binning))] = i
-
         return self._binnings
 
     def getADCs(self):
@@ -273,7 +265,7 @@ class SBIG(ChimeraObject, ICameraDriver, IFilterWheelDriver):
 
     def _expose(self, imageRequest):
         
-        shutterRequest = imageRequest['shutter'][1]
+        shutterRequest = imageRequest['shutter']
         
         if shutterRequest == Shutter.OPEN:
             shutter = SBIGDrv.openShutter
@@ -320,42 +312,27 @@ class SBIG(ChimeraObject, ICameraDriver, IFilterWheelDriver):
 
     def _readout(self, imageRequest, aborted=False):
 
-        #readoutMode = self._getReadoutMode(self["window_width"],
-        #                                   self["window_height"], self["binning"])
+        try:
+            mode, binning, top, left, width, height = self._getReadoutMode(imageRequest)
+        except TypeError, e:
+            self.log.warning("Invalid subframe %s. "
+                             "Using full frame, no-binning, just to don't loose your data."%imageRequest["window"])
+            self.log.warning(e)
+            mode = self.drv.readoutModes[self.ccd][0]
+            top = left = 0
+            binning = "1x1"
+            width, height = mode.width, mode.height
         
-        readoutMode = self.drv.readoutModes[self.ccd][0]
-        
-        img = N.zeros(readoutMode.getInternalSize(), N.int32)
-        
-        # start readout
-        #img = ImageSave.getPixels(readoutMode,
-        #                          self["window_width"], self["window_height"],
-        #                          self["bitpix"])
-
-        # convert the matrix to SBIG specific window and line specification
-        #window, line = self._getWindowAndLine(img)
-
-#        try:
-#            next_filename = ImageSave.save(None,
-#                                           self["directory"],
-#                                           self["file_format"],
-#                                           self["file_extension"],
-#                                           self["date_format"],
-#                                           self.lastFrameStartTime,
-#                                           self["exp_time"],
-#                                           self["bitpix"],
-#                                           self["save_on_temp"],
-#                                           dry=True)
-#        except Exception, e:
-#            print e
+        # readout 
+        img = N.zeros((height, width), N.int32)
 
         self.readoutBegin(imageRequest)
 
-        self.drv.startReadout(self.ccd, 0)
+        self.drv.startReadout(self.ccd, mode.mode, (top,left,width,height))
         
-        for line in range(readoutMode.height):
+        for line in range(height):
 	
-            img[line] = self.drv.readoutLine(self.ccd, 0)
+            img[line] = self.drv.readoutLine(self.ccd, mode.mode, (left, width))
 
             #TODO: Handle readout abort
             ## check if user asked to abort
@@ -384,63 +361,92 @@ class SBIG(ChimeraObject, ICameraDriver, IFilterWheelDriver):
 
         imageRequest.addPostHeaders(self.getManager())
 
-        #scale_x = ((180/pi) / cam["telescope_focal_length"]) * (cam["ccd_pixel_size_x"] * 0.001)
-        #scale_y = ((180/pi) / cam["telescope_focal_length"]) * (cam["ccd_pixel_size_y"] * 0.001)
+        binFactor = self._binning_factors[binning]
+        scale_x = binFactor * (((180/pi) / cam["telescope_focal_length"]) * (self.getPixelSize()[0] * 0.001))
+        scale_y = binFactor * (((180/pi) / cam["telescope_focal_length"]) * (self.getPixelSize()[1] * 0.001))
+        
+        fullsize = self.drv.readoutModes[self.ccd][0]
+        
+        CRPIX1 = ((int(fullsize.width/2)) - left) - 1
+        CRPIX2 = ((int(fullsize.height/2)) - top) - 1
         
         img = Image.imageFromImg(img, imageRequest, [
-                ("EXPTIME", float(imageRequest['exp_time']) or -1, "exposure time in seconds"),
-                ('IMAGETYP', imageRequest['image_type'].upper().strip(), 'Image type'),
                 ('DATE-OBS',Image.formatDate(self.lastFrameStartTime),'Date exposure started'),
                 ('CCD-TEMP',self.lastFrameTemp,'CCD Temperature at Exposure Start [deg. C]'),
-                ('XBINNING',1,'Readout CCD Binning (x-axis)'),
-                ('YBINNING',1,'Readout CCD Binning (y-axis)'),
-                ('XWIN_LFT',0,'Readout window x left position'),
-                ('XWIN_SZ',readoutMode.width,'Readout window width'),
-                ('YWIN_TOP',0,'Readout window y top position'),
-                ('YWIN_SZ',readoutMode.height,'Readout window height'),
-                ('IMAGETYP',imageRequest['image_type'],'Image type'),
-                ('SHUTTER',str(imageRequest['shutter'][1]), 'Requested shutter state'),
-                ("CRPIX1", int(readoutMode.width/2.0), "coordinate system reference pixel"),
-                ("CRPIX2", int(readoutMode.height/2.0), "coordinate system reference pixel"),
-                #("CD1_1", scale_x, "transformation matrix element (1,1)"),
+                ("EXPTIME", float(imageRequest['exp_time']) or -1, "exposure time in seconds"),
+                ('IMAGETYP', imageRequest['image_type'].strip(), 'Image type'),
+                ('SHUTTER',str(imageRequest['shutter']), 'Requested shutter state'),
+                ("CRPIX1", CRPIX1, "coordinate system reference pixel"),
+                ("CRPIX2", CRPIX2, "coordinate system reference pixel"),
+                ("CD1_1", scale_x, "transformation matrix element (1,1)"),
                 ("CD1_2", 0.0, "transformation matrix element (1,2)"),
-                ("CD2_1", 0.0, "transformation matrix element (2,1)")])
-                #("CD2_2", scale_y, "transformation matrix element (2,2)")])
+                ("CD2_1", 0.0, "transformation matrix element (2,1)"),
+                ("CD2_2", scale_y, "transformation matrix element (2,2)")])
                                  
         return self._endReadout(img)
+
+    def _endReadout(self, imageURI):
+        
+        self.drv.endReadout(self.ccd)
+        self.readoutComplete(imageURI)
+        return imageURI
+
 
     # TODO
     def _getWindowAndLine(self, img):
         shape = img.shape()
         return ()
 
-    def _getReadoutMode(self, width, height, binning):
-        """
-        Given width, height and binning get a
-        """
+    def _getReadoutMode(self, imageRequest):
 
-        for i, mode in self.drv.readoutModes[self.ccd].items():
-            print i, mode
+        mode = None
 
-        return None
-
-#    def _saveFITS(self, img):
-#
-#        try:
-#            self.lastFrameFilename = ImageSave.save(img,
-#                                                    self["directory"],
-#                                                    self["file_format"],
-#                                                    self["file_extension"],
-#                                                    self["date_format"],
-#                                                    self.lastFrameStartTime,
-#                                                    self["exp_time"],
-#                                                    self["bitpix"],
-#                                                    self["save_on_temp"])
-#        except Exception, e:
-#            print e
+        try:
+            binMode = self.getBinnings()[str(imageRequest["binning"])]
+            binning = imageRequest["binning"]
+            mode = self.drv.readoutModes[self.ccd][binMode]
+        except KeyError:
+            self.log.warning("Invalid binning mode, using 1x1")
+            binning = "1x1"
+            mode = self.drv.readoutModes[self.ccd][0]
             
-    def _endReadout(self, imageURI):
-        
-        self.drv.endReadout(self.ccd)
-        self.readoutComplete(imageURI)
-        return imageURI
+        left = 0
+        top = 0
+        width, height = mode.getSize()
+
+        if imageRequest["window"] != None:
+            try:
+                xx, yy = imageRequest["window"].split(",")
+                xx = xx.strip()
+                yy = yy.strip()
+                x1, x2 = xx.split(":")
+                y1, y2 = yy.split(":")
+                
+                x1 = int(x1)
+                x2 = int(x2)
+                y1 = int(y1)
+                y2 = int(y2)
+
+                left = min(x1,x2) - 1
+                top  = min(y1,y2) - 1
+                width  = (max(x1,x2) - min(x1,x2)) + 1
+                height = (max(y1,y2) - min(y1,y2)) + 1
+
+                if left < 0 or left >= mode.width:
+                    raise TypeError("Invalid subframe: left=%d, ccd width (in this binning)=%d" % (left, mode.width))
+
+                if top < 0 or top >= mode.height:
+                    raise TypeError("Invalid subframe: top=%d, ccd height (in this binning)=%d" % (top,mode.height))
+
+                if width > mode.width:
+                    raise TypeError("Invalid subframe: width=%d, ccd width (int this binning)=%d" % (width, mode.width))
+
+                if height > mode.height:
+                    raise TypeError("Invalid subframe: height=%d, ccd height (int this binning)=%d" % (height, mode.height))
+
+            except ValueError:
+                left = 0
+                top = 0
+                width, height = mode.getSize()
+            
+        return (mode, binning, top, left, width, height)

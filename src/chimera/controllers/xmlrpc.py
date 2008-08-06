@@ -22,14 +22,15 @@ import SocketServer
 import SimpleXMLRPCServer
 
 import socket
-import logging
-import new
 import sys
 
 from chimera.core.chimeraobject import ChimeraObject
 from chimera.core.location import Location
 from chimera.core.exceptions import ObjectNotFoundException
 
+from chimera.util.coord import Coord
+from chimera.util.position import Position
+#from chimera.controllers.imageserver.imageuri import ImageURI
 
 class ThreadingXMLRPCServer (SocketServer.ThreadingTCPServer,
                              SimpleXMLRPCServer.SimpleXMLRPCDispatcher):
@@ -80,8 +81,36 @@ class ChimeraXMLDispatcher:
             ret = handle(*params)
         except AttributeError:
             raise ValueError("Method not found,")
-        
-        return ret
+
+        # do some conversions to help Java XML Server
+
+        if isinstance(ret, (tuple, list)):
+
+            newret = []
+
+            for arg in ret:
+                if isinstance(arg, (Position, Coord)):
+                    newret.append(str(arg))
+                elif isinstance(arg, Location):
+                    if "hash" in arg.config:
+                        newret.append(str(arg.config["hash"]))
+                    else:
+                        newret.append(str(ret))
+                else:
+                    newret.append(arg)
+
+            return newret
+
+        else:
+            if isinstance(ret, (Position, Coord)):
+                    return str(ret)
+            elif isinstance(ret, Location):
+                if "hash" in ret.config:
+                    return str(ret.config["hash"])
+                else:
+                    return str(ret)
+            else:
+                return ret
 
     
 class XMLRPC(ChimeraObject):

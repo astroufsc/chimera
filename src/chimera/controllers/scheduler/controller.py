@@ -5,7 +5,7 @@ from chimera.controllers.scheduler.machine import Machine
 from chimera.controllers.scheduler.sequential import SequentialScheduler
 from chimera.controllers.scheduler.states import State
 
-from chimera.interfaces.camera  import SHUTTER_OPEN, SHUTTER_CLOSE#, Binning, Window 
+from chimera.interfaces.camera import Shutter
 
 from chimera.controllers.imageserver.imagerequest import ImageRequest
 
@@ -121,9 +121,9 @@ class Controller(ChimeraObject):
         self.log.debug('Generating exposure request..')
         
         if exposure.shutterOpen:
-            shutter=('Open', SHUTTER_OPEN)
+            shutter=Shutter.OPEN
         else:
-            shutter=('Closed', SHUTTER_CLOSE)
+            shutter=Shutter.CLOSE
         
         ir = ImageRequest(
                           exp_time = exposure.duration,

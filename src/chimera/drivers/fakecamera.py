@@ -21,18 +21,16 @@
 import time
 import random
 import threading
-import sys
 import urllib
 import gzip
 import os
-import logging
 
 import numpy as N
 import pyfits
 
 from chimera.interfaces.cameradriver      import ICameraDriver
 from chimera.interfaces.filterwheeldriver import IFilterWheelDriver
-from chimera.interfaces.camera import SHUTTER_CLOSE
+from chimera.interfaces.camera import Shutter
 
 from chimera.controllers.imageserver.image import Image
 
@@ -43,7 +41,8 @@ from chimera.core.exceptions         import ChimeraException, ObjectNotFoundExce
 
 from chimera.core.lock import lock
 
-from chimera.core.log import setConsoleLevel
+#from chimera.core.log import setConsoleLevel
+#import logging
 #setConsoleLevel(logging.DEBUG)
 
 
@@ -212,7 +211,7 @@ class FakeCamera (ChimeraObject, ICameraDriver, IFilterWheelDriver):
             self.log.debug("FakeCamera couldn't find telescope.")
 
 
-        if (imageRequest["shutter"][1]==SHUTTER_CLOSE):
+        if (imageRequest["shutter"]==Shutter.CLOSE):
             self.log.info("Shutter closed -- making dark")
             pix = self.make_dark((self["ccd_height"],self["ccd_width"]), N.float, imageRequest['exp_time'])
 

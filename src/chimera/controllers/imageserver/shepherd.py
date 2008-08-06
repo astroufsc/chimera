@@ -1,4 +1,4 @@
-from chimera.interfaces.camerang import Shutter, SHUTTER_LEAVE
+from chimera.interfaces.camerang import Shutter
 
 from chimera.core.chimeraobject import ChimeraObject
 from chimera.core.exceptions import ChimeraValueError
@@ -29,7 +29,7 @@ class Shepherd(ChimeraObject):
                    'exp_time':              1.0,
                    'frames':                1,
                    'interval':              0.0,
-                   'shutter':               SHUTTER_LEAVE,
+                   'shutter':               Shutter.LEAVE_AS_IS
                    'binning':               ('None', None),                 #Based upon camera.getBinnings
                                                 # (('1x1', 3), ('2x2', 323))
                    'filter':                ('Clear', 'CLEAR'),             #Based upon filter.getFilters
@@ -66,7 +66,7 @@ class Shepherd(ChimeraObject):
 
         if self['shutter'] not in Shutter.values():
             if forceArgsValid:
-                self.shutter = SHUTTER_LEAVE
+                self.shutter = Shutter.LEAVE_AS_IS
             else:
                 raise ChimeraValueError('Invalid shutter value')
         

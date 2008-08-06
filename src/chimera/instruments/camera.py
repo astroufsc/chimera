@@ -20,19 +20,15 @@
 
 
 import threading
-import os
 import time
 import Pyro.util
 
 from chimera.core.chimeraobject import ChimeraObject
-from chimera.interfaces.camera import (ICameraExpose, ICameraTemperature,
-                                       ICameraInformation, SHUTTER_LEAVE)
+from chimera.interfaces.camera import (ICameraExpose, ICameraTemperature, ICameraInformation)
 
 from chimera.controllers.imageserver.imagerequest import ImageRequest
 
-from chimera.core.exceptions import OptionConversionException
 from chimera.core.exceptions import ChimeraValueError
-from chimera.core.exceptions import ChimeraException
 
 from chimera.core.lock import lock
 

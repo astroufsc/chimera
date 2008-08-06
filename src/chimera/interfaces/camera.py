@@ -25,11 +25,6 @@ from chimera.util.enum  import Enum
 
 Shutter = Enum('OPEN', 'CLOSE', 'LEAVE_AS_IS')
 
-SHUTTER_OPEN    = Shutter.OPEN
-SHUTTER_CLOSE   = Shutter.CLOSE
-SHUTTER_LEAVE   = Shutter.LEAVE_AS_IS
-
-
 
 class ICamera (Interface):
     """Base camera interface.

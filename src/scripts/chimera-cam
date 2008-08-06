@@ -132,6 +132,13 @@ if __name__ == '__main__':
                       choices=["open", "OPEN", "close", "CLOSE", "leave", "LEAVE"],
                       help="What to do with the shutter: open, close, leave (case insensitive) [default=%default]")
 
+    expose.add_option("--binning", action="store", type="string", dest="binning",
+                      help="Apply the selected binning to all frames")
+
+    expose.add_option("--subframe", action="store", type="string", dest="subframe",
+                      help="Readout only the selected subframe portion. The notation follows IRAF conventions."
+                      " x1:x2,y1:y2 to specify the corners of the desired subframe")
+
     temp = OptionGroup(parser, "Temperature control")
     
     temp.add_option("-T", "--setpoint", action="store", type="float", dest="setpoint",
@@ -157,16 +164,16 @@ if __name__ == '__main__':
     imagetyp = OptionGroup(parser, "Image types")
 
     
-    imagetyp.add_option("--bias", action="store_const", dest="imagetyp", const="ZERO",
+    imagetyp.add_option("--bias", action="store_const", dest="imagetyp", const="zero",
                         help="Mark this frame as a BIAS frame.")
 
-    imagetyp.add_option("--dark", action="store_const", dest="imagetyp", const="DARK",
+    imagetyp.add_option("--dark", action="store_const", dest="imagetyp", const="dark",
                         help="Mark this frame as a DARK frame.")
 
-    imagetyp.add_option("--flat", action="store_const", dest="imagetyp", const="FLAT",
+    imagetyp.add_option("--flat", action="store_const", dest="imagetyp", const="flat",
                         help="Mark this frame as a FLAT frame.")
 
-    imagetyp.add_option("--object", action="store_const", dest="imagetyp", const="OBJECT",
+    imagetyp.add_option("--object", action="store_const", dest="imagetyp", const="object",
                         help="Mark this frame as a OBJECT frame.")
 
 
@@ -211,7 +218,9 @@ if __name__ == '__main__':
                         no_display  = False,
                         force_display = False, 
                         quiet    = False,
-                        imagetyp="OBJECT",
+                        imagetyp="object",
+                        binning = "",
+                        subframe= "",
                         disable_cooling  = False ,
                         setpoint = -500, # magic number
                         wait     = False,
@@ -386,6 +395,15 @@ if __name__ == '__main__':
     currentFrameExposeStart = 0
     currentFrameReadoutStart = 0
 
+    # first check binning
+    binnings = camera.getBinnings()
+
+    if options.binning:
+        if options.binning not in binnings.keys():
+            print >> sys.stderr, "Invalid binning mode. See --info for available binning modes"
+            manager.shutdown()
+            sys.exit(1)
+
     @callback(manager)
     def exposeBegin(exptime):
         global currentFrame, currentFrameExposeStart, options
@@ -479,8 +497,10 @@ if __name__ == '__main__':
         
         print "="*40
         print "Available binnings: ",
-        binnings = camera.getBinnings()
-        for bin in binnings.keys():
+        sortedBins = binnings.keys()
+        sortedBins.sort()
+
+        for bin in sortedBins:
             print "%s " % bin,
         print
 
@@ -516,10 +536,10 @@ if __name__ == '__main__':
 
         print 40*"="
         if options.camera:
-            print "Taking %d %s frame[s] of %.3fs each on %s" % (options.nexp, options.imagetyp,
+            print "Taking %d %s frame[s] of %.3fs each on %s" % (options.nexp, options.imagetyp.capitalize(),
                                                               options.texp, options.camera[0])
         else:
-            print "Taking %d %s frame[s] of %.3fs each using %s" % (options.nexp, options.imagetyp,
+            print "Taking %d %s frame[s] of %.3fs each using %s" % (options.nexp, options.imagetyp.capitalize(),
                                                                  options.texp, options.driver[-1])
         print "Shutter: %s" % options.shutter
         print "Interval between frames: %.3fs" % options.interval
@@ -534,6 +554,16 @@ if __name__ == '__main__':
 
         if options.filter != None:
             print "Filter: %s" % options.filter
+
+        if options.binning:
+            print "Binning: %s" % options.binning
+        else:
+            print "No binning"
+
+        if options.subframe:
+            print "Subframe: %s" % options.subframe
+        else:
+            print "Full Frame"
 
         sys.stdout.flush()
 
@@ -593,7 +623,9 @@ if __name__ == '__main__':
                           interval=options.interval,
                           filename=options.output,
                           image_type=options.imagetyp,
-                          shutter=(str(options.shutter), options.shutter))
+                          binning=options.binning or None,
+                          window=options.subframe or None,
+                          shutter=options.shutter)
         except Exception, e:
             print >> sys.stderr, "Error trying to take exposures. (%s)" % printException(e)
 

@@ -1,6 +1,6 @@
 from chimera.core.chimeraobject import ChimeraObject
 from chimera.interfaces.cameradriver import Bitpix
-from chimera.interfaces.camera import SHUTTER_LEAVE, SHUTTER_OPEN,SHUTTER_CLOSE
+from chimera.interfaces.camera import Shutter
 from chimera.core.exceptions import ChimeraValueError
 import Pyro.util
 import logging
@@ -13,12 +13,9 @@ class ImageRequest(dict):
         __config__ =  {'exp_time':              1.0,
                        'frames':                1,
                        'interval':              0.0,
-                       'shutter':               ('Leave', SHUTTER_LEAVE),
-                       'binning':               ('None', None),                 #Based upon camera.getBinnings
-                                                    # (('1x1', 3), ('2x2', 323))
-                       #'filter':                ('Clear', 'CLEAR'),             #Based upon filter.getFilters
-                       'window':                ('Full', (0.5, 0.5, 1.0, 1.0)), #Ignored if hardware cannot handle
-                       'chip':                  ('Default', None),              #Based upon camera.getChips
+                       'shutter':               "OPEN",
+                       'binning':               None,
+                       'window':                None,
                        'readOnAbort':           False,
                        'bitpix':                Bitpix.uint16,
                        'filename':              '$date',
@@ -66,9 +63,9 @@ class ImageRequest(dict):
             else:
                 raise ChimeraValueError('Invalid interval between exposures (<0 seconds)')
 
-        if self['shutter'][1] not in (SHUTTER_LEAVE,SHUTTER_OPEN,SHUTTER_CLOSE):
+        if str(self['shutter']) not in Shutter:
             if forceArgsValid:
-                self.shutter = SHUTTER_LEAVE
+                self.shutter = Shutter.LEAVE_AS_IS
             else:
                 raise ChimeraValueError('Invalid shutter value: ' + str(self['shutter']))
     
@@ -99,4 +96,4 @@ class ImageRequest(dict):
                 log.warning('Unable to get metadata from ' + proxyurl)
     
     def __str__(self):
-        return ('Duration: %f, Frames: %i, Shutter: %s, image_type: %s' % (self['exp_time'],self['frames'],self['shutter'][0],self['image_type']))
+        return ('Duration: %f, Frames: %i, Shutter: %s, image_type: %s' % (self['exp_time'],self['frames'],self['shutter'],self['image_type']))
