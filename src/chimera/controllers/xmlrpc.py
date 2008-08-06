@@ -96,6 +96,8 @@ class ChimeraXMLDispatcher:
                         newret.append(str(arg.config["hash"]))
                     else:
                         newret.append(str(ret))
+                elif isinstance(arg, type(None)):
+                    newret.append(True)
                 else:
                     newret.append(arg)
 
@@ -109,6 +111,8 @@ class ChimeraXMLDispatcher:
                     return str(ret.config["hash"])
                 else:
                     return str(ret)
+            elif isinstance(ret, type(None)):
+                return True
             else:
                 return ret
 
