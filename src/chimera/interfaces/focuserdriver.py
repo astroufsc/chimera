@@ -107,3 +107,8 @@ class IFocuserDriver (Interface):
         """
         
     
+    def getRange (self):
+        """Gets the focuser total range
+        @rtype: tuple
+        @return: Start and end positions of the focuser (start, end)
+        """

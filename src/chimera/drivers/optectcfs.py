@@ -186,6 +186,9 @@ class OptecTCFS (ChimeraObject, IFocuserDriver):
         except ValueError, e:
             raise IOError("Error getting focuser position. Invalid position returned '%s'" % ack)
 
+    def getRange (self):
+        return (self["min_position", self["max_position"])
+        
     def _setMode (self, mode):
 
         if mode not in Mode:

@@ -64,6 +64,10 @@ class Focuser (ChimeraObject, IFocuser):
         drv = self.getDriver()
         return drv.getPosition ()
 
+    def getRange (self):
+        drv = self.getDriver()
+        return drv.getRange ()
+
     def getMetadata(self):
         return [
                 ('FOCUSER', str(self['model']), 'Focuser Model'),

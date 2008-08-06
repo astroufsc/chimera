@@ -81,3 +81,6 @@ class FakeFocuser (ChimeraObject, IFocuserDriver):
 
     def _inRange (self, n):
         return (self["min_position"] <= n <= self["max_position"])
+
+    def getRange (self):
+        return (self["min_position", self["max_position"])

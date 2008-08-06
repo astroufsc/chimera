@@ -114,3 +114,9 @@ class IFocuser (Interface):
         @return  : Current focuser position.
         """
 
+    def getRange (self):
+        """Gets the focuser total range
+        @rtype: tuple
+        @return: Start and end positions of the focuser (start, end)
+        """
+
