@@ -37,7 +37,7 @@ class ThreadingXMLRPCServer (SocketServer.ThreadingTCPServer,
 
     def __init__(self, addr,
                  requestHandler=SimpleXMLRPCServer.SimpleXMLRPCRequestHandler,
-                 logRequests=1):
+                 logRequests=1, allow_none=True):
 
         self.logRequests = logRequests
 
