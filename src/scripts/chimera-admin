@@ -40,8 +40,7 @@ log = logging.getLogger('chimera.scripts')
 chimera.core.log.setConsoleLevel(logging.WARNING)
 
 
-
-class doStuff():
+class doStuff:
     def __init__(self, options, args):
     
         self.locManager = Manager('localhost', MANAGER_DEFAULT_PORT-1)

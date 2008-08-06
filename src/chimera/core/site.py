@@ -194,10 +194,18 @@ class Site (ChimeraObject):
         return CoordUtil.raToHa(ra, self.LST_inRads())
 
     def haToRa(self, ha):
-        return CoordUtil.raToHa(ra, self.LST_inRads())
+        return CoordUtil.raToHa(ha, self.LST_inRads())
     
     def raDecToAltAz(self, raDec):
         return Position.raDecToAltAz(raDec, self['latitude'], self.LST_inRads())
     
     def altAzToRaDec(self, altAz):
         return Position.altAzToRaDec(altAz, self['latitude'], self.LST_inRads())#    
+
+    def getMetadata(self):
+        return [
+                ('SITE',self['name'], 'Site name (in config)'),
+                ('LATITUDE',str(self['latitude']), 'Site latitude'),
+                ('LONGITUD',str(self['longitude']), 'Site longitude'),
+                ('ALTITUDE',str(self['altitude']), 'Site altitude'),
+                ]

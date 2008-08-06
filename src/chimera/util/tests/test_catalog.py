@@ -16,7 +16,7 @@ class TestCatalog (object):
     
     def test_box (self):
 
-	print
+        print
 
         for catalog in [UCAC2, PPM]:
 

@@ -1,7 +1,7 @@
-from chimera.core.chimeraobject import ChimeraObject
 from chimera.interfaces.cameradriver import Bitpix
 from chimera.interfaces.camera import Shutter
 from chimera.core.exceptions import ChimeraValueError
+
 import Pyro.util
 import logging
 import chimera.core.log
@@ -13,14 +13,18 @@ class ImageRequest(dict):
         __config__ =  {'exp_time':              1.0,
                        'frames':                1,
                        'interval':              0.0,
-                       'shutter':               "OPEN",
+                       'shutter':               Shutter.OPEN,
                        'binning':               None,
                        'window':                None,
-                       'readOnAbort':           False,
+                       'readOnAbort':           False,  #FIXME: Not operating yet. Do we need this?
                        'bitpix':                Bitpix.uint16,
-                       'filename':              '$date',
+                       'filename':              '$DATE-$TIME',
                        'headers':               [],
                        'image_type':             'object',
+                       
+                       #Automatically call getMetadata on all instruments + site as long as only
+                       #one instance of each is listed by the manager.
+                       'auto_collect_metadata': True,
 
                        #URLs of proxies from which to get metadata before taking each image
                        'metadatapre':           [],
@@ -39,8 +43,14 @@ class ImageRequest(dict):
             self[k]=v
         
         for a in args:
-            for k,v in a.items():
-                self[k]=v
+            try:
+                for k,v in a.items():
+                    self[k]=v
+            except:
+                #Probably not a dict. Oh well.
+                pass
+        
+        self.accum_from = []        #Used so that we don't take metadata twice from the same object
     
         
         forceArgsValid = kwargs.get('forceArgsValid', False)
@@ -77,23 +87,45 @@ class ImageRequest(dict):
     def addPreHeaders(self, manager):
         self['accum_headers']=[]
         self['accum_headers']+=self['headers']
-        for proxyurl in self['metadatapre']:
+        self.accum_from = []
+        autoHeaders=[]
+        if self['auto_collect_metadata']:
+            for cls in ('Site', 'Camera', 'Dome', 'FilterWheel', 'Focuser', 'Telescope'):
+                classes = manager.getResourcesByClass(cls)
+                if len(classes) == 1:
+                    autoHeaders.append(str(classes[0]))
+        for proxyurl in (self['metadatapre'] + autoHeaders):
             try:
                 proxy = manager.getProxy(proxyurl)
-                self['accum_headers']+=proxy.getMetadata()
+                proxyLoc = str(proxy.getLocation())
+                if proxyLoc not in self.accum_from:
+                    self.accum_from.append(proxyLoc)
+                    self['accum_headers']+=proxy.getMetadata()
+                else:
+                    ##This is too verbose
+                    #log.debug('Already got metadata from %s' % (proxyLoc))
+                    pass
             except Exception, e:
-                log.warning('Unable to get metadata from ' + proxyurl)
+                log.warning('Unable to get metadata from %s' % (proxyurl))
                 print ''.join(Pyro.util.getPyroTraceback(e))
 
     
     def addPostHeaders(self, manager):
+        log.debug('in postheaders')
         for proxyurl in self['metadatapost']:
             proxy = manager.getProxy(proxyurl)
             try:
                 proxy = manager.getProxy(proxyurl)
-                self['accum_headers']+=proxy.getMetadata()
-            except:
-                log.warning('Unable to get metadata from ' + proxyurl)
+                proxyLoc = str(proxy.getLocation())
+                if proxyLoc not in self.accum_from:
+                    self.accum_from.append(proxyLoc)
+                    self['accum_headers']+=proxy.getMetadata()
+                else:
+                    ##This is too verbose
+                    #log.debug('Already got metadata from %s' % (proxyLoc))
+                    pass
+            except Exception, e:
+                log.warning('Unable to get metadata from %s' % (proxyurl))
     
     def __str__(self):
         return ('Duration: %f, Frames: %i, Shutter: %s, image_type: %s' % (self['exp_time'],self['frames'],self['shutter'],self['image_type']))

@@ -193,7 +193,9 @@ class Enum(object):
         else:
             try:
                 is_member = (value in self._values)
-            except EnumValueCompareError, e:
+            #EnumValueError isn't defined!
+            #except EnumValueCompareError, e:
+            except Exception, e:
                 is_member = False
         return is_member
     def __cmp__ (self, other):

@@ -38,6 +38,8 @@ from chimera.core.exceptions   import InvalidLocationException, \
                                       OptionConversionException
 
 
+from chimera.core.path import ChimeraPath
+
 import chimera.core.log
 
 from chimera.core.constants import MANAGER_DEFAULT_HOST, MANAGER_DEFAULT_PORT, MANAGER_LOCATION
@@ -192,6 +194,14 @@ class Manager (RemoteObject):
         Returns a list with the Location of all the available resources
         """
         return self.resources.keys()
+    
+    def getResourcesByClass(self, cls):
+        resources = self.getResources()
+        toRet=[]
+        for r in resources:
+            if r.cls == cls:
+                toRet.append(r)
+        return toRet
         
     # helpers
     
@@ -578,3 +588,7 @@ class Manager (RemoteObject):
 
     def getGUID(self):
         return self.objectGUID
+    
+    @staticmethod
+    def getPath():
+        return ChimeraPath()

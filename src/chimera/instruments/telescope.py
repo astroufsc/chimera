@@ -28,7 +28,6 @@ from chimera.interfaces.telescopedriver import SlewRate
 from chimera.core.lock import lock
 
 from chimera.util.position import Position
-import datetime
 
 
 __all__ = ["Telescope"]

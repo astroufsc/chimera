@@ -276,7 +276,7 @@ class Meade (ChimeraObject,
     @lock
     def slewToAltAz(self, position):
 
-	self.setSlewRate(self["slew_rate"])
+        self.setSlewRate(self["slew_rate"])
 
         if self.isSlewing ():
             # never should happens 'cause @lock
@@ -427,7 +427,7 @@ class Meade (ChimeraObject,
             
         for rate in SlewRate:
             for direction in Direction:
-	        self.log.debug("Calibrating %s %s" % (rate, direction))
+                self.log.debug("Calibrating %s %s" % (rate, direction))
 
                 total = 0
 
@@ -436,7 +436,7 @@ class Meade (ChimeraObject,
                 
                 self._calibration[rate][direction] = total/3.0
 
-	self.log.info("Calibration was OK.")
+        self.log.info("Calibration was OK.")
         self._calibrated = True
 
     def _calcDuration (self, arc, direction, rate):
@@ -872,7 +872,7 @@ class Meade (ChimeraObject,
         ret = self._readline ()
 
         if not ret:
-            raise MeadeException("Error syncing on '%s' '%s'." % (ra, dec))
+            raise MeadeException("Error syncing on '%s' '%s'." % (position.ra, position.dec))
 
         self.syncComplete (self.getPositionRaDec())
 
@@ -923,7 +923,7 @@ class Meade (ChimeraObject,
 
         # 1. slew to park position
         # FIXME: allow different park positions and conversions from ra/dec -> az/alt
-	site = self.getManager().getProxy("/Site/0")
+        site = self.getManager().getProxy("/Site/0")
 
         self.slewToRaDec(Position.fromRaDec(str(self.getLocalSiderealTime()),
                                             site["latitude"]))

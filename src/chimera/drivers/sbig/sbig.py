@@ -94,10 +94,10 @@ class SBIG(ChimeraObject, ICameraDriver, IFilterWheelDriver):
         else:
             self.dev = SBIGDrv.lpt1
 
-	self.open(self.dev)
+            self.open(self.dev)
 
-	# make sure filter wheel is in the right position
-	self.setFilter(0)
+            # make sure filter wheel is in the right position
+            self.setFilter(0)
         self.startCooling(self.getSetpoint())
         self.startFan()
 
@@ -331,7 +331,7 @@ class SBIG(ChimeraObject, ICameraDriver, IFilterWheelDriver):
         self.drv.startReadout(self.ccd, mode.mode, (top,left,width,height))
         
         for line in range(height):
-	
+            
             img[line] = self.drv.readoutLine(self.ccd, mode.mode, (left, width))
 
             #TODO: Handle readout abort

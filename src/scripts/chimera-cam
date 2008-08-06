@@ -27,6 +27,8 @@ import copy
 import threading
 import warnings
 
+import Pyro.util
+
 from optparse import OptionParser, OptionGroup
 
 from chimera.core.manager import Manager
@@ -121,7 +123,7 @@ if __name__ == '__main__':
                       "[default=%default].")
 
     expose.add_option("-o", "--output", action="store", type="string", dest="output",
-                      help="Base filename including full path if needed. "
+                      help="Base filename without path"
                       "[default=%default]")
     
     expose.add_option("-f", "--filter", action="store", type="string", dest="filter",
@@ -213,7 +215,7 @@ if __name__ == '__main__':
                         nexp     = 1,
                         texp     = 1,
                         interval = 0,
-                        output   = "$date.fits",
+                        output   = "$DATE-$TIME",
                         shutter  = "open",
                         no_display  = False,
                         force_display = False, 
@@ -616,9 +618,9 @@ if __name__ == '__main__':
     start = time.time()
 
     try:
-
+        imageURIs = []
         try:
-            camera.expose(exp_time=options.texp,
+            imageURIs = camera.expose(exp_time=options.texp,
                           frames=options.nexp,
                           interval=options.interval,
                           filename=options.output,
@@ -628,6 +630,8 @@ if __name__ == '__main__':
                           shutter=options.shutter)
         except Exception, e:
             print >> sys.stderr, "Error trying to take exposures. (%s)" % printException(e)
+        for iURI in imageURIs:
+            print 'Frame saved to file://%s:%s%s' % (iURI.host, str(iURI.port), str(iURI.getProxy().getPath()))
 
     finally:
         camera.exposeBegin     -= exposeBegin

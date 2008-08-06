@@ -226,7 +226,7 @@ class FakeCamera (ChimeraObject, ICameraDriver, IFilterWheelDriver):
                     domeAZ=dome.getAz().toD()
                     telAZ=telescope.getAz().toD()
                     if (telAZ < 3 and domeAZ > 357):
-                    	domeAZ-=360     #take care of wrap-around
+                        domeAZ-=360     #take care of wrap-around
                     self.log.debug("Dome AZ: "+str(domeAZ)+"  Tel AZ: "+str(telAZ))
                     if (abs(domeAZ-telAZ) <= 3):
                         self.log.debug("Dome & Slit aligned -- getting DSS")
@@ -261,13 +261,13 @@ class FakeCamera (ChimeraObject, ICameraDriver, IFilterWheelDriver):
             # without telescope/dome, or if dome/telescope aren't aligned, or the dome is closed
             # or we otherwise failed, just make a flat pattern with dark noise
             if (pix == None):
-               try:
-                   self.log.info("Making simulated flat image: " + str(self["ccd_height"]) + "x" + str(self["ccd_width"]))
-                   self.log.debug("Generating dark...")
-                   pix = self.make_dark((self["ccd_height"],self["ccd_width"]), N.float, imageRequest['exp_time'])
-                   self.log.debug("Making flat...")
-                   pix += self.make_flat((self["ccd_height"],self["ccd_width"]), N.float)
-               except Exception, e:
+                try:
+                    self.log.info("Making simulated flat image: " + str(self["ccd_height"]) + "x" + str(self["ccd_width"]))
+                    self.log.debug("Generating dark...")
+                    pix = self.make_dark((self["ccd_height"],self["ccd_width"]), N.float, imageRequest['exp_time'])
+                    self.log.debug("Making flat...")
+                    pix += self.make_flat((self["ccd_height"],self["ccd_width"]), N.float)
+                except Exception, e:
                     self.log.warning("MakekFlat error: " + str(e))
         
         #Last resort if nothing else could make a picture

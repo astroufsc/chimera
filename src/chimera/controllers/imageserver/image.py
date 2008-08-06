@@ -1,18 +1,19 @@
 from chimera.core.remoteobject import RemoteObject
-from Pyro.errors import NamingError
-from chimera.interfaces.cameradriver import Bitpix
+from chimera.controllers.imageserver.util import getImageServer
 from chimera.controllers.imageserver.imageuri import ImageURI
-from chimera.core.exceptions import ClassLoaderException
 import Pyro.util
-from chimera.controllers.imageserver.imageserver import ImageServer
-from chimera.core.version import _chimera_description_
+from chimera.core.version import _chimera_name_, _chimera_long_description_
 
 fits_date_format = "%Y-%m-%dT%H:%M:%S"
 
 import pyfits
-import numpy
 import os.path
 import time
+
+import logging
+import chimera.core.log
+log = logging.getLogger(__name__)
+
 
 ##TODO: Python2.4 Compatible hashlib
 #try:
@@ -33,10 +34,10 @@ import time
 
 class Image(RemoteObject):
     
-    def __init__(self, fileName = None):
+    def __init__(self, fileName = None, register = True):
         RemoteObject.__init__(self)
         
-        self.imageServer = ImageServer.getImageServer()
+        self.imageServer = getImageServer()
         
         if fileName == None:
             self.path = None
@@ -55,10 +56,11 @@ class Image(RemoteObject):
                 self.header = None
                 self.myGUID = Pyro.util.getGUID()
         
-        try:
-            self.imageServer.registerImage(self)
-        except Exception, e:
-            print ''.join(Pyro.util.getPyroTraceback(e))
+        if register:
+            try:
+                self.imageServer.registerImage(self)
+            except Exception, e:
+                print ''.join(Pyro.util.getPyroTraceback(e))
         
     def getID(self):
         return self.myGUID
@@ -75,7 +77,7 @@ class Image(RemoteObject):
     
     @staticmethod
     def imageFromFile(fileName):
-        toReturn = ImageServer.getImageServer().getImageByPath(fileName)
+        toReturn = getImageServer().getImageByPath(fileName)
         if not toReturn:
             toReturn = Image(fileName)
         return toReturn
@@ -83,7 +85,7 @@ class Image(RemoteObject):
     @staticmethod
     def imageFromImg(img, imageRequest, hdrs = []):
 
-        filename = ImageServer.getImageServer().getFileName(imageRequest['filename'])
+        filename = getImageServer().getFileName(imageRequest['filename'])
 
         image = Image(filename)
         
@@ -102,7 +104,7 @@ class Image(RemoteObject):
                          #("RADESYS", "FK5",  "reference frame"),
                          
                          #("SECPIX", 0.0, "plate scale"),                                   #Added after all other stuff is in
-                         ("CREATOR", _chimera_description_, ""),
+                         ("CREATOR", _chimera_name_, _chimera_long_description_),
                          #('OBJECT', 'UNKNOWN', 'Object observed'),                        #Added by scheduler
                          #('TELESCOP', 'UNKNOWN', 'Telescope used for observation'),        #Added by telescope
                          #('PI', 'Chimera User', 'Principal Investigator'),                #Added by scheduler
@@ -110,7 +112,6 @@ class Image(RemoteObject):
                          ]
 
         #TODO: Implement bitpix support
-        #Should be done just before writing
         #if imageRequest['bitpix'] == Bitpix.uint16:
         hdu.scale('int16', '', bzero=32768, bscale=1)
         
@@ -118,7 +119,7 @@ class Image(RemoteObject):
             try:
                 hdu.header.update(*header)
             except Exception, e:
-                self.log.warning("Couldn't add %s" % str(header))
+                log.warning("Couldn't add %s: %s" % (str(header), str(e)))
         
         hduList = pyfits.HDUList([hdu])
         

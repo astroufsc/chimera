@@ -70,7 +70,7 @@ if sys.platform == "win32":
     win32_cdeps = ["numpy == 1.0.4"]
     win32_deps += ["pywin32 == 210"]
 else:
-    linux_cdeps = ["numpy==1.1.0"]
+    linux_cdeps = ["numpy >= 1.1.0"]
     linux_deps += ["python-sbigudrv >= 0.1", "coords"]
 
     if sys.version_info[0:2] >= (2,5):
@@ -87,24 +87,25 @@ setup(name='chimera-python',
       # dependencies are installed bottom up, so put important things last
       install_requires = linux_deps + win32_deps + \
                          ["CherryPy >= 3.1.0",
-			  "suds == 0.2.4",
+                          "suds == 0.2.4",    #FIXME: is this used?
                           "asciidata == 1.1",
                           "sqlalchemy >= 0.4.5",
                           "Elixir >= 0.5.2",
                           "pyephem > 3.7",
                           "python-dateutil >= 1.4",
-                          "RO >= 2.2.7",                          
+                          "RO >= 2.2.7",
                           "pyfits >= 1.3",
                           "pyserial >= 2.2",
                           "Pyro >= 3.7"] + linux_cdeps + win32_cdeps,
 
-      dependency_links = ["/home/vela/henrique/chimera-depend",
-                          "https://fedorahosted.org/suds/attachment/wiki/WikiStart/suds-0.2.4-py2.5.egg?format=raw",
+      dependency_links = [
+                          "https://fedorahosted.org/suds/attachment/wiki/WikiStart/suds-0.2.4.tar.gz?format=raw",
                           "http://www.stsci.edu/resources/software_hardware/pyfits/pyfits-1.3.tar.gz",
                           "http://astropy.scipy.org/svn/astrolib/trunk/coords#egg=coords",
                           "http://astropy.scipy.org/svn/astrolib/trunk/pywcs#egg=pywcs",
                           "http://sourceforge.net/project/showfiles.php?group_id=46487",
-                          "http://www.stecf.org/software/PYTHONtools/astroasciidata/asciidata1.1_download.php"],
+                          "http://www.stecf.org/software/PYTHONtools/astroasciidata/asciidata1.1_download.php",
+                          ],
 
       tests_require    = ["nose", "coverage"],
 

@@ -110,5 +110,5 @@ class IWeatherStation (Interface):
         pass
 
     @event
-    def rain (self, rain, unit, delta):
+    def rainChange (self, rain, unit, delta):
         pass
