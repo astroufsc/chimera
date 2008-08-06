@@ -40,7 +40,7 @@ class ITelescope (Interface):
     __config__ = {"driver": "/FakeTelescope/0",
 
                   "limits": "limits.filename",
-                  
+
                   "model"           : "Fake Telescopes Inc.",
                   "optics"          : ["Newtonian", "SCT", "RCT"],
                   "mount"           : "Mount type Inc.",
@@ -72,9 +72,9 @@ class ITelescopeSlew (ITelescope):
         @param position: the equatorial coordinates to slew to. It can
         be given as a Position object or as a tuple with arguments to
         Position.fromRaDec factory.
-        
+
         @type position: L{Position} or tuple
-        
+
         @returns: Nothing.
         @rtype: None
         """
@@ -85,9 +85,9 @@ class ITelescopeSlew (ITelescope):
         @param position: the local coordinates to slew to. It can be
         given as a Position object or as a tuple with arguments to
         Position.fromAltAz factory.
-        
+
         @type position: L{Position} or tuple
-        
+
         @returns: Nothing.
         @rtype: None
         """
@@ -172,7 +172,7 @@ class ITelescopeSlew (ITelescope):
         @return: Telescope's current Right Ascension.
         @rtype: L{Coord}
         """
-    
+
     def getDec (self):
         """Get the current telescope Declination.
 
@@ -215,7 +215,7 @@ class ITelescopeSlew (ITelescope):
         @rtype: L{Position}
         """
 
-    def getTargetRaDec (self):
+    def getTargetAzAlt (self):
         """Get the current telescope target in local coordinates.
 
         @return: Telescope's current target (az, alt).
@@ -228,7 +228,7 @@ class ITelescopeSlew (ITelescope):
 
         @param target: The target position where the telescope will
         slew to.
-        
+
         @type target: L{Position}
         """
 
@@ -259,7 +259,7 @@ class ITelescopeSync (ITelescope):
     def syncObject (self, name):
         """Synchronize the telescope using the coordinates of the
         given object.
-        
+
         @param name: Object name to sync in.
         @type  name: str
         """
@@ -275,7 +275,7 @@ class ITelescopeSync (ITelescope):
 
         @param position: coordinates to sync on as a Position or a
         tuple with arguments to Position.fromRaDec.
-        
+
         @type  position: L{Position} or tuple
 
         @returns: Nothing
@@ -289,13 +289,13 @@ class ITelescopeSync (ITelescope):
 
         @param position: coordinates to sync on as a Position or a
         tuple with arguments to Position.fromAltAz.
-        
+
         @type  position: L{Position} or tuple
 
         @returns: Nothing
         @rtype: None
         """
-    
+
     @event
     def syncComplete(self, position):
         """Fired when a synchronization operation finishes.
@@ -312,7 +312,7 @@ class ITelescopePark (ITelescope):
     __config__ = {"default_park_position_az" : 180.0,
                   "default_park_position_alt": 90.0}
 
-        
+
     def park(self):
         """Park the telescope on the actual saved park position
         (L{setParkPosition}) or on the default position if none
@@ -327,7 +327,7 @@ class ITelescopePark (ITelescope):
 
     def unpark (self):
         """Wake up the telescope of the last park operation.
-        
+
         @return: Nothing.
         @rtype: None
         """
@@ -387,5 +387,5 @@ class ITelescopeTracking (ITelescope):
 
         @return: True if the telescope is tracking, False otherwise.
         @rtype: bool
-        
+
         """
