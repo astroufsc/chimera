@@ -671,23 +671,23 @@ if __name__ == '__main__':
     except Exception, e:
             print >> sys.stderr, "Error trying to take exposures. (%s)" % printException(e)                
 
-    finally:
-        camera.exposeBegin     -= exposeBegin
-        camera.exposeComplete  -= exposeComplete
-        camera.readoutBegin    -= readoutBegin
-        camera.readoutComplete -= readoutComplete
-        manager.shutdown()
+    #finally: Doesn't work in python2.4 with except block above which prevents silent failures
+    camera.exposeBegin     -= exposeBegin
+    camera.exposeComplete  -= exposeComplete
+    camera.readoutBegin    -= readoutBegin
+    camera.readoutComplete -= readoutComplete
+    manager.shutdown()
 
-        if not options.quiet and aborted:
-            print 40*"="
-            print "Took %03d of %03d frames. Aborted by the user." % (currentFrame, options.nexp)
+    if not options.quiet and aborted:
+        print 40*"="
+        print "Took %03d of %03d frames. Aborted by the user." % (currentFrame, options.nexp)
 
-        if not options.quiet:
-            print 40*"="
-            print "Total time: %.3fs" % (time.time()-start)
-            print 40*"="
-            print "%s" % time.strftime("%c")            
-            print 40*"="
+    if not options.quiet:
+        print 40*"="
+        print "Total time: %.3fs" % (time.time()-start)
+        print 40*"="
+        print "%s" % time.strftime("%c")            
+        print 40*"="
 
-        sys.exit(0)
+    sys.exit(0)
 
