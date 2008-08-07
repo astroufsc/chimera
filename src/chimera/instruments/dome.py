@@ -84,7 +84,7 @@ class Dome(ChimeraObject, IDome):
                 self.slewToAz(self['stowPos'])
             except Exception, e:
                 self.log.warning('Unable to stow dome: %s', str(e))
-        if self['closeOnShutdown']:
+        if self['closeOnShutdown'] and (self['assumeOpenOnShutdown'] or self.isSlitOpen()):
             try:
                 self.closeSlit()
             except Exception, e:

@@ -55,7 +55,9 @@ class IDome (Interface):
                   "type"     : Type.Classic,
                   'stowPos'  : 155,
                   'stowOnShutdown': True,
-                  'closeOnShutdown': True}
+                  'closeOnShutdown': True,
+                  'assumeOpenOnShutdown': False,    #If False, check first if dome is open before closing
+                  }
 
 
     def stand (self):
