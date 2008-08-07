@@ -187,9 +187,9 @@ class Camera (ChimeraObject,
         return drv.getTemperature()
 
     @lock
-    def getSetpoint(self):
+    def getSetPoint(self):
         drv = self.getDriver()
-        return drv.getSetpoint()
+        return drv.getSetPoint()
 
     @lock
     def startFan(self, rate=None):

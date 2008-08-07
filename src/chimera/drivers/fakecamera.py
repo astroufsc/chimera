@@ -320,7 +320,7 @@ class FakeCamera (ChimeraObject, ICameraDriver, IFilterWheelDriver):
         self.abortComplete()
 
     @lock
-    def startCooling(self, setpoint = self['temp_setpoint']):
+    def startCooling(self, setpoint):
         self.__cooling = True
         self.__setpoint = setpoint
         return True

@@ -123,9 +123,9 @@ class ICameraTemperature (ICamera):
 
 
     def startCooling (self, tempC):
-        """Start cooling the camera with setpoint setted to tempC.
+        """Start cooling the camera with SetPoint setted to tempC.
 
-        @param tempC: Setpoint temperature in degrees Celsius.
+        @param tempC: SetPoint temperature in degrees Celsius.
         @type  tempC: float or int
 
         @return: True if successful, False otherwise.
@@ -147,9 +147,9 @@ class ICameraTemperature (ICamera):
         """
 
     def setTemperature(self, tempC):
-        """Set new setpoint temperature (if cooling is disabled, this will turn it on).
+        """Set new SetPoint temperature (if cooling is disabled, this will turn it on).
 
-        @param tempC: New setpoint temperature in degrees Celsius.
+        @param tempC: New SetPoint temperature in degrees Celsius.
         @type  tempC: float or int
 
         @return: True if successful, False otherwise.
@@ -163,10 +163,10 @@ class ICameraTemperature (ICamera):
         @rtype: float
         """
 
-    def getSetpoint(self):
-        """Get the current camera temperature setpoint.
+    def getSetPoint(self):
+        """Get the current camera temperature SetPoint.
 
-        @return: The current camera temperature setpoint in degrees Celsius.
+        @return: The current camera temperature SetPoint in degrees Celsius.
         @rtype: float
         """
 

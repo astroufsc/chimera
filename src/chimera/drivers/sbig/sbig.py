@@ -98,7 +98,7 @@ class SBIG(ChimeraObject, ICameraDriver, IFilterWheelDriver):
 
         # make sure filter wheel is in the right position
         self.setFilter(0)
-        self.startCooling(self.getSetpoint())
+        self.startCooling(self.getSetPoint())
         self.startFan()
 
     def __stop__ (self):
@@ -183,7 +183,7 @@ class SBIG(ChimeraObject, ICameraDriver, IFilterWheelDriver):
 
     @lock
     def stopCooling(self):
-        self.drv.setTemperature (False, self.getSetpoint())
+        self.drv.setTemperature (False, self.getSetPoint())
         return True
 
     @lock

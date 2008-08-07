@@ -80,7 +80,7 @@ class ReadoutMode(object):
         return self.__str__()
 
 
-class TemperatureSetpoint(object):
+class TemperatureSetPoint(object):
 
     t0 = 25.0
     r0 = 3.0
@@ -111,31 +111,31 @@ class TemperatureSetpoint(object):
         
         r = cls.r0 * math.exp ((math.log (cls.r_ratio[sensor]) * (cls.t0 - temp)) / cls.dt[sensor])
 
-        setpoint = (cls.max_ad / ((cls.r_bridge[sensor] / r) + 1.0)) + 0.5
+        SetPoint = (cls.max_ad / ((cls.r_bridge[sensor] / r) + 1.0)) + 0.5
 
-        #print "from %f to %d" % (temp, int(setpoint))
+        #print "from %f to %d" % (temp, int(SetPoint))
 
-        return int(setpoint)
+        return int(SetPoint)
 
     @classmethod
-    def toDegrees (cls, setpoint, sensor = "ccd"):
+    def toDegrees (cls, SetPoint, sensor = "ccd"):
 
         if sensor not in ["ccd", "amb"]:
             sensor = "ccd"
 
-        setpoint = int (setpoint)
+        SetPoint = int (SetPoint)
 
         # limits from CSBIGCam
-        if setpoint < 1:
-            setpoint = 1
-        elif setpoint >= (cls.max_ad - 1):
-            setpoint = cls.max_ad - 1
+        if SetPoint < 1:
+            SetPoint = 1
+        elif SetPoint >= (cls.max_ad - 1):
+            SetPoint = cls.max_ad - 1
 
-        r = cls.r_bridge[sensor] / ((float(cls.max_ad) / setpoint) - 1.0)
+        r = cls.r_bridge[sensor] / ((float(cls.max_ad) / SetPoint) - 1.0)
 
         temp = cls.t0 - (cls.dt[sensor] * (math.log (r/cls.r0) / math.log (cls.r_ratio[sensor])))
 
-        #print "from %f to %f" % (setpoint, temp)
+        #print "from %f to %f" % (SetPoint, temp)
 
         return temp
  
@@ -360,7 +360,7 @@ class SBIGDrv(object):
 
 
     # temperature
-    def setTemperature (self, regulation, setpoint, autofreeze = True):
+    def setTemperature (self, regulation, SetPoint, autofreeze = True):
 
         strp = udrv.SetTemperatureRegulationParams()
 
@@ -369,7 +369,7 @@ class SBIGDrv(object):
         else:
             strp.regulation = udrv.REGULATION_OFF
         
-        strp.ccdSetpoint = TemperatureSetpoint.toAD (setpoint)
+        strp.ccdSetPoint = TemperatureSetPoint.toAD (SetPoint)
 
         self._cmd(udrv.CC_SET_TEMPERATURE_REGULATION, strp, None)
 
@@ -377,7 +377,7 @@ class SBIGDrv(object):
         if autofreeze == True:
             strp = udrv.SetTemperatureRegulationParams()
             strp.regulation = udrv.REGULATION_ENABLE_AUTOFREEZE
-            strp.ccdSetpoint = 0 # irrelevant
+            strp.ccdSetPoint = 0 # irrelevant
             return self._cmd(udrv.CC_SET_TEMPERATURE_REGULATION, strp, None)
 
         return True
@@ -387,7 +387,7 @@ class SBIGDrv(object):
         # USB based cameras have only one thermistor on the top of the CCD
         # Ambient thermistor value will be always 25.0 oC
 
-        # ccdSetpoint value will be always equal to ambient thermistor
+        # ccdSetPoint value will be always equal to ambient thermistor
         # when regulation not enabled (not documented)
 
         qtsr = udrv.QueryTemperatureStatusResults()
@@ -396,8 +396,8 @@ class SBIGDrv(object):
 
         return (qtsr.enabled,
                 (qtsr.power / 255.0) * 100.0,
-                TemperatureSetpoint.toDegrees(qtsr.ccdSetpoint, "ccd"),
-                TemperatureSetpoint.toDegrees(qtsr.ccdThermistor, "ccd"))
+                TemperatureSetPoint.toDegrees(qtsr.ccdSetPoint, "ccd"),
+                TemperatureSetPoint.toDegrees(qtsr.ccdThermistor, "ccd"))
 
     def startFan(self):
         mcp = udrv.MiscellaneousControlParams()

@@ -95,7 +95,7 @@ class ICameraDriver(Interface):
     # temperature control
     #
 
-    def startCooling(self, setpoint):
+    def startCooling(self, SetPoint):
         pass
 
     def stopCooling(self):
@@ -107,7 +107,7 @@ class ICameraDriver(Interface):
     def getTemperature(self):
         pass
 
-    def getSetpoint(self):
+    def getSetPoint(self):
         pass
 
     def startFan(self, rate=None):
