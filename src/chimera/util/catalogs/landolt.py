@@ -22,8 +22,8 @@ class Landolt (VizQuery):
         
         """
 
-        #self.useCat("II/183A/")
-        self.useCat("II/118/")
+        self.useCat("II/183A/")
+        #self.useCat("II/118/")
         self.useColumns("*POS_EQ_RA_MAIN,*POS_EQ_DEC_MAIN,*ID_MAIN,Vmag,_r",
                         sortBy="*POS_EQ_RA_MAIN")
         # self.useTarget(Position.fromRaDec("14:00:00","-22:00:00"),radius=45)
