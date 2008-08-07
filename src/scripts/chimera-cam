@@ -1,6 +1,5 @@
 #! /usr/bin/env python
 # -*- coding: iso-8859-1 -*-
-from types import StringType, TupleType
 
 # chimera - observatory automation system
 # Copyright (C) 2006-2007  P. Henrique Silva <henrique@astro.ufsc.br>
@@ -29,7 +28,7 @@ import threading
 import warnings
 import socket
 
-from types import ListType,TupleType
+from types import StringType, ListType, TupleType
 
 import Pyro.util
 
@@ -461,8 +460,8 @@ if __name__ == '__main__':
             return "url '%s'" % imageURI.getHttpUri()
     
     def displayPath(path):
-        global displayedImages
-        if path not in displayedImages:
+        global displayedImages, display
+        if path not in displayedImages and display:
             displayedImages += path
             print 'Trying to display "%s" ...' % path
             try:
