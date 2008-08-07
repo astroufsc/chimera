@@ -77,6 +77,7 @@ class FakeFocuser (ChimeraObject, IFocuserDriver):
         return self._position
 
     def _setPosition (self, n):
+        self.log.info("Changing focuser to %s" % n)
         self._position = n
 
     def _inRange (self, n):

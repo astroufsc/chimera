@@ -46,7 +46,7 @@ class DomeLNA40cm (ChimeraObject, IDomeDriver):
         self._slewing  = False
         self._slitOpen = False
 
-        self._az_shift = 180
+        self._az_shift = 0
 
     def __start__ (self):
         self.open()

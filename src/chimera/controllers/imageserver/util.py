@@ -1,5 +1,5 @@
 from chimera.core.manager import Manager
-from chimera.core.exceptions import ObjectNotFoundException, ClassLoaderException
+from chimera.core.exceptions import ChimeraException, ObjectNotFoundException, ClassLoaderException
 from chimera.core.path import ChimeraPath
 import Pyro.util
 
@@ -19,3 +19,9 @@ def getImageServer():
     if not toReturn:
         raise ClassLoaderException('Unable to create or find an ImageServer')
     return toReturn
+
+class ImageServerException(ChimeraException):
+    pass
+
+class InvalidFitsImageException(ImageServerException):
+    pass

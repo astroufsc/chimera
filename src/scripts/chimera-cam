@@ -1,5 +1,6 @@
 #! /usr/bin/env python
 # -*- coding: iso-8859-1 -*-
+from types import StringType, TupleType
 
 # chimera - observatory automation system
 # Copyright (C) 2006-2007  P. Henrique Silva <henrique@astro.ufsc.br>
@@ -26,6 +27,9 @@ import signal
 import copy
 import threading
 import warnings
+import socket
+
+from types import ListType,TupleType
 
 import Pyro.util
 
@@ -390,7 +394,23 @@ if __name__ == '__main__':
             print >> sys.stderr, "Problems starting camera driver %s. (%s)" % (options.driver[-1],e)
             manager.shutdown()
             sys.exit(1)
+    
+    def getListContents(list):
+        toRet = []
+        for l in list:
+            if isinstance(l, ListType) or isinstance(l, TupleType):
+                toRet+=getListContents(l)
+            else:
+                if l not in toRet:
+                    toRet+=l.lower()
+        return toRet
 
+    driverHost = driver.getManager().getHostname().lower()
+    localHosts = getListContents(socket.gethostbyname_ex('localhost'))
+    localHosts += getListContents(socket.gethostbyname_ex(socket.gethostname()))
+    hostIsLocal = (driverHost in localHosts)
+    displayedImages = []
+    
     # take some exposures
 
     currentFrame = 0
@@ -429,11 +449,30 @@ if __name__ == '__main__':
         global currentFrameReadoutStart, options
         currentFrameReadoutStart = time.time()
         if not options.quiet:
-            print "reading out and saving to %s ..."  % filename,
+            #TODO: How to get the filename
+            print "reading out ..."
             sys.stdout.flush()
+    
+    def imageURItoDS9Path(imageURI):
+        global hostIsLocal
+        if hostIsLocal:
+            return imageURI.getProxy().getPath()
+        else:
+            return "url '%s'" % imageURI.getHttpUri()
+    
+    def displayPath(path):
+        global displayedImages
+        if path not in displayedImages:
+            displayedImages += path
+            print 'Trying to display "%s" ...' % path
+            try:
+                ds9.xpaset('file %s' % path)
+            except RuntimeError, e:
+                #print >> sys.stderr, "Can't display image %s. (%s)" % (path,e)
+                pass    #Issue with xpaset prevents us from assuming that this failed!        
 
     @callback(manager)
-    def readoutComplete(filename):
+    def readoutComplete(imageURI):
         global currentFrameReadoutStart, currentFrameExposeStart, options, display, ds9
         global currentFrame
 
@@ -442,14 +481,9 @@ if __name__ == '__main__':
             print "[%03d/%03d] took %.3fs" % (currentFrame, options.nexp,
                                               time.time()-currentFrameExposeStart)
             sys.stdout.flush()
-
-        if display:
-            
-            try:
-                ds9.showFITSFile(filename)
-            except RuntimeError, e:
-                print >> sys.stderr, "Can't display image %s. (%s)" % (filename,e)
         
+        if display:
+            displayPath(imageURItoDS9Path(imageURI))
 
     camera.exposeBegin     += exposeBegin
     camera.exposeComplete  += exposeComplete
@@ -630,8 +664,13 @@ if __name__ == '__main__':
                           shutter=options.shutter)
         except Exception, e:
             print >> sys.stderr, "Error trying to take exposures. (%s)" % printException(e)
-        for iURI in imageURIs:
-            print 'Frame saved to file://%s:%s%s' % (iURI.host, str(iURI.port), str(iURI.getProxy().getPath()))
+        if not options.quiet and len(imageURIs) > 0:
+            displayPath(imageURItoDS9Path(imageURIs[0]))    #Ensure that something gets displayed
+            for iURI in imageURIs:
+                print 'Frame saved to file://%s:%s%s' % (iURI.host, str(iURI.port), str(iURI.getProxy().getPath()))
+
+    except Exception, e:
+            print >> sys.stderr, "Error trying to take exposures. (%s)" % printException(e)                
 
     finally:
         camera.exposeBegin     -= exposeBegin

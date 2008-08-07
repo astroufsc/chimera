@@ -25,3 +25,13 @@ class ImageURI(Location):
             #imageServer = m.addClass(ImageServer, self.name)
             raise
         return imageServer.getProxyByURI(self)
+    
+    def getHttpUri(self):
+        m = Manager.getManagerProxy()
+        try:
+            imageServer = m.getProxy(self)
+        except ObjectNotFoundException:
+            #TODO: What if imageserver isn't running? how to start it?
+            #imageServer = m.addClass(ImageServer, self.name)
+            raise
+        return 'http://%s:%s/image/%s' % (self.host,imageServer['http_port'],self.config['hash'])

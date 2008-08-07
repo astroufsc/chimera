@@ -1,5 +1,5 @@
 from chimera.core.remoteobject import RemoteObject
-from chimera.controllers.imageserver.util import getImageServer
+from chimera.controllers.imageserver.util import getImageServer, InvalidFitsImageException
 from chimera.controllers.imageserver.imageuri import ImageURI
 import Pyro.util
 from chimera.core.version import _chimera_name_, _chimera_long_description_
@@ -13,7 +13,6 @@ import time
 import logging
 import chimera.core.log
 log = logging.getLogger(__name__)
-
 
 ##TODO: Python2.4 Compatible hashlib
 #try:
@@ -34,10 +33,13 @@ log = logging.getLogger(__name__)
 
 class Image(RemoteObject):
     
-    def __init__(self, fileName = None, register = True):
+    def __init__(self, fileName = None, register = True, imageServer = None):
         RemoteObject.__init__(self)
         
-        self.imageServer = getImageServer()
+        if imageServer:
+            self.imageServer = imageServer.getProxy()
+        else:
+            self.imageServer = getImageServer()
         
         if fileName == None:
             self.path = None
@@ -51,7 +53,10 @@ class Image(RemoteObject):
 
             if os.path.exists(self.path):
                 self.header = pyfits.getheader(self.path)
-                self.myGUID = self.header['CHM_IMID']
+                try:
+                    self.myGUID = self.header['CHM_IMID']
+                except KeyError:
+                    raise InvalidFitsImageException('No CHM_IMID header in %s' % self.path)
             else:
                 self.header = None
                 self.myGUID = Pyro.util.getGUID()
@@ -62,6 +67,8 @@ class Image(RemoteObject):
             except Exception, e:
                 print ''.join(Pyro.util.getPyroTraceback(e))
         
+        self.imageServer._release()
+    
     def getID(self):
         return self.myGUID
 #        if self.hash == None:
@@ -73,21 +80,27 @@ class Image(RemoteObject):
         return self.path
     
     def getURI(self):
-        return ImageURI(self.imageServer, self.getID())
+        toRet = ImageURI(self.imageServer, self.getID())
+        self.imageServer._release() 
+        return toRet
     
     @staticmethod
     def imageFromFile(fileName):
-        toReturn = getImageServer().getImageByPath(fileName)
+        imageServer = getImageServer()
+        toReturn = imageServer.getImageByPath(fileName)
         if not toReturn:
-            toReturn = Image(fileName)
+            toReturn = Image(fileName, imageServer = imageServer)
+        imageServer._release()
         return toReturn
             
     @staticmethod
     def imageFromImg(img, imageRequest, hdrs = []):
+        
+        imageServer = getImageServer()
 
-        filename = getImageServer().getFileName(imageRequest['filename'])
+        filename = imageServer.getFileName(imageRequest['filename'])
 
-        image = Image(filename)
+        image = Image(filename, imageServer = imageServer)
         
         hdu = pyfits.PrimaryHDU(img)
         

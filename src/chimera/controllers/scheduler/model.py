@@ -51,7 +51,9 @@ class Exposure(Entity):
     
     priority    = Field(Integer, default=1000)    
     
-    finished   = Field(Boolean, default=False)            #Observation finished
+    finished    = Field(Boolean, default=False)            #Observation finished
+    
+    filename    = Field(Text, default='$DATE-$TIME')
     
     constraints = OneToMany('Constraint', inverse='exposure')
     

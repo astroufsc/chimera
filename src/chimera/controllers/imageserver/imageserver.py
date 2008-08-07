@@ -6,6 +6,7 @@ from chimera.core.path import ChimeraPath
 from chimera.controllers.imageserver.imageuri import ImageURI
 from chimera.controllers.imageserver.image import Image
 from chimera.core.site import Site
+from chimera.controllers.imageserver.util import InvalidFitsImageException
 import Pyro.util
 
 import cherrypy
@@ -118,7 +119,10 @@ class ImageServer(ChimeraObject):
                 elif os.path.isfile(file):
                     if file.endswith('.fits'):
                         self.log.debug('Loading %s' % file)
-                        self.registerImage(Image(file))
+                        try:
+                            self.registerImage(Image(file, register=False))
+                        except InvalidFitsImageException, e:
+                            self.log.warning(str(e))
 
     def getFileName(self, filename='$DATE-$TIME'):
         try:

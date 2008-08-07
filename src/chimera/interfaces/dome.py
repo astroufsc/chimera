@@ -52,7 +52,10 @@ class IDome (Interface):
                   "mode"     : Mode.Stand,
 
                   "model"    : "Fake Domes Inc.",
-                  "type"     : Type.Classic,}
+                  "type"     : Type.Classic,
+                  'stowPos'  : 155,
+                  'stowOnShutdown': True,
+                  'closeOnShutdown': True}
 
 
     def stand (self):

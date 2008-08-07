@@ -137,6 +137,7 @@ class Controller(ChimeraObject):
                                      ('PROG_PI', str(program.pi), 'Program\'s PI'),
                                      ],
                           image_type = str(exposure.imageType),
+                          filename = exposure.filename,
                           metadatapre = [
                                          self.hostPort+self['telescope'],
                                          self.hostPort+self['camera'],

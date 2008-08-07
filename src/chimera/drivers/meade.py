@@ -22,6 +22,7 @@ import time
 import threading
 import datetime as dt
 from types import FloatType
+import math
 
 import serial
 
@@ -54,6 +55,8 @@ class Meade (ChimeraObject,
              ITelescopeDriverSync,
              ITelescopeDriverPark,
              ITelescopeDriverTracking):
+    
+    __config__ = {'azimuth180Correct'   : True}
 
     def __init__(self):
 
@@ -602,8 +605,20 @@ class Meade (ChimeraObject,
         self._write(":GZ#")
         ret = self._readline()
         ret = ret.replace('\xdf', ':')
-
-        return Coord.fromDMS(ret[:-1])
+        
+        c = Coord.fromDMS(ret[:-1])
+        
+        if self['azimuth180Correct']:
+            self.log.debug('Initial azimuth:  %s' % str(c.toDMS()))
+            
+            if c.toD() > 180:
+                c = c - Coord.fromD(180)
+            else:
+                c = c + Coord.fromD(180)
+            
+            self.log.debug('Final azimuth:  %s' % str(c.toDMS()))
+    
+        return c
 
     @lock
     def getAlt(self):

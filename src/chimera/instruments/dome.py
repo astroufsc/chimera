@@ -78,6 +78,18 @@ class Dome(ChimeraObject, IDome):
         return True
 
     def __stop__ (self):
+        if self['stowOnShutdown']:
+            try:
+                self.stand()
+                self.slewToAz(self['stowPos'])
+            except Exception, e:
+                self.log.warning('Unable to stow dome: %s', str(e))
+        if self['closeOnShutdown']:
+            try:
+                self.closeSlit()
+            except Exception, e:
+                self.log.warning('Unable to close dome: %s', str(e))
+        
         # disconnect events
         drv = self.getDriver()
         
