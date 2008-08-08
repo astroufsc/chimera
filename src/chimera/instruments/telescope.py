@@ -173,6 +173,23 @@ class Telescope(ChimeraObject,
         drv = self.getDriver()
         return drv.moveSouth(offset, rate)
 
+    @lock
+    def moveOffset(self, offsetRA, offsetDec, rate=SlewRate.GUIDE):
+        drv = self.getDriver()
+        if offsetRA == 0 :
+            pass
+        elif offsetRA > 0 :
+            drv.moveEast(offsetRA, rate)
+        else:
+            drv.moveWest(abs(offsetRA), rate)
+
+        if offsetDec == 0 :
+            pass
+        elif offsetDec > 0 :
+            drv.moveNorth(offsetDec, rate)
+        else:
+            drv.moveSouth(abs(offsetDec), rate)
+
     def getRa(self):
         drv = self.getDriver()
         return drv.getRa()

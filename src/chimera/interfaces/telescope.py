@@ -107,7 +107,8 @@ class ITelescopeSlew (ITelescope):
         """
 
     def moveEast (self, offset, rate=SlewRate.MAX):
-        """Move the scope I{offset} arcseconds East (if offset positive, West otherwise)
+        """Move the scope I{offset} arcseconds East (if offset positive, West
+        otherwise)
 
         @param offset: Arcseconds to move East.
         @type  offset: int or float
@@ -122,7 +123,8 @@ class ITelescopeSlew (ITelescope):
         """
 
     def moveWest (self, offset, rate=SlewRate.MAX):
-        """Move the scope I{offset} arcseconds West (if offset positive, East otherwise)
+        """Move the scope I{offset} arcseconds West (if offset positive, East
+        otherwise)
 
         @param offset: Arcseconds to move West.
         @type  offset: int or float
@@ -133,11 +135,13 @@ class ITelescopeSlew (ITelescope):
         @return: Nothing.
         @rtype: None
 
-        @note: float accepted only to make life easier, probably we can't handle such precision.
+        @note: float accepted only to make life easier, probably we
+        can't handle such precision.
         """
 
     def moveNorth (self, offset, rate=SlewRate.MAX):
-        """Move the scope I{offset} arcseconds North (if offset positive, South otherwise)
+        """Move the scope I{offset} arcseconds North (if offset positive, South
+        otherwise)
 
         @param offset: Arcseconds to move North.
         @type  offset: int or float
@@ -148,11 +152,13 @@ class ITelescopeSlew (ITelescope):
         @return: Nothing.
         @rtype: None
 
-        @note: float accepted only to make life easier, probably we can't handle such precision.
+        @note: float accepted only to make life easier, probably we
+        can't handle such precision.
         """
 
     def moveSouth (self, offset, rate=SlewRate.MAX):
-        """Move the scope {offset} arcseconds South (if offset positive, North otherwise)
+        """Move the scope {offset} arcseconds South (if offset positive, North
+        otherwise)
 
         @param offset: Arcseconds to move South.
         @type  offset: int or float
@@ -163,7 +169,26 @@ class ITelescopeSlew (ITelescope):
         @return: Nothing.
         @rtype: None
 
-        @note: float accepted only to make life easier, probably we can't handle such precision.
+        @note: float accepted only to make life easier, probably we
+        can't handle such precision.
+        """
+
+    def moveOffset (self, offsetRA, offsetDec, rate=SlewRate.GUIDE):
+        """
+        @param offsetRA: Arcseconds to move in RA.
+        @type  offsetDec: int or float
+
+        @param offsetDec: Arcseconds to move in Dec
+        @type  offsetDec: int or float
+
+        @param rate: Slew rate to be used when moving.
+        @type  rate: L{SlewRate}
+
+        @return: Nothing.
+        @rtype: None
+
+        @note: float accepted only to make life easier, probably we
+        can't handle such precision.
         """
 
     def getRa (self):
