@@ -265,6 +265,8 @@ if __name__ == '__main__':
     # create a new dome using selected driver
     else:
         try:
+            config = {}
+
             driverloc = Location(options.driver[-1])
             newloc = Location(cls=driverloc.cls, name=driverloc.name, config=dict(driverloc.config, **config),
                               host=driverloc.host, port=driverloc.port)
