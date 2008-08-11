@@ -308,10 +308,11 @@ if __name__ == '__main__':
             try:
                 ds9 = DS9 (doRaise=True, doOpen=True)
                 display = True
-            except RuntimeError:
+            except RuntimeError, e:
                 # even with RO installed, we still need XPA package to get DS9 working
                 print >> sys.stderr, 40*"="                
                 print >> sys.stderr, "DS9 is not available, check if you have the XPA package installed. Display disabled."
+                print >> sys.stderr, str(e)
                 display = False
 
     # 
