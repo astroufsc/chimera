@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="src"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="lib" path="Jars/commons-logging-1.1.jar"/>
+	<classpathentry kind="lib" path="Jars/idw-gpl.jar"/>
+	<classpathentry kind="lib" path="Jars/jcommon-1.0.13.jar"/>
+	<classpathentry kind="lib" path="Jars/jfreechart-1.0.10.jar"/>
+	<classpathentry kind="lib" path="Jars/ws-commons-util-1.0.2.jar"/>
+	<classpathentry kind="lib" path="Jars/xmlrpc-client-3.1.jar"/>
+	<classpathentry kind="lib" path="Jars/xmlrpc-common-3.1.jar"/>
+	<classpathentry kind="lib" path="Jars/xmlrpc-server-3.1.jar"/>
+	<classpathentry kind="output" path="build"/>
+</classpath>
