@@ -67,17 +67,25 @@ class FakeTelescope (ChimeraObject,
         
         self._setRaDecFromAltAz()
     
-    def _setRaDecFromAltAz(self):
+    def _getSite(self):
         if self._gotSite:
             self._site._transferThread()
-        raDec=self._site.altAzToRaDec(Position.fromAltAz(self._alt, self._az))
+            return self._site
+        else:
+            try:
+                self._site = self.getManager().getProxy(self['site'])
+                self._gotSite=True
+            except:
+                pass
+        return self._site
+    
+    def _setRaDecFromAltAz(self):
+        raDec=self._getSite().altAzToRaDec(Position.fromAltAz(self._alt, self._az))
         self._ra=raDec.ra
         self._dec=raDec.dec
 
     def _setAltAzFromRaDec(self):
-        if self._gotSite:
-            self._site._transferThread()
-        altAz=self._site.raDecToAltAz(Position.fromRaDec(self._ra, self._dec))
+        altAz=self._getSite().raDecToAltAz(Position.fromRaDec(self._ra, self._dec))
         self._alt=altAz.alt
         self._az=altAz.az
 
@@ -86,12 +94,7 @@ class FakeTelescope (ChimeraObject,
 
     @lock
     def control (self):
-        if not self._gotSite:
-            try:
-                self._site=self.getManager().getProxy(self['site'])
-                self._gotSite=True
-            except:
-                pass
+        self._getSite()
         if not self._slewing:
             if self._tracking:
                 self._setAltAzFromRaDec()
@@ -142,7 +145,7 @@ class FakeTelescope (ChimeraObject,
 
     @lock
     def slewToAltAz(self, position):
-        self.slewBegin(self._site.altAzToRaDec(position))
+        self.slewBegin(self._getSite().altAzToRaDec(position))
 
         alt_steps = position.alt - self.getAlt()
         alt_steps = float(alt_steps/10.0)
@@ -221,6 +224,31 @@ class FakeTelescope (ChimeraObject,
 
     def getTargetAltAz(self):
         return Position.fromAltAz(self.getAlt(), self.getAz())
+
+    #GUI Compatibility methods
+    def getAlignMode(self):
+        return self['align_mode']
+ 
+    def getLat(self):
+        return self._getSite()['latitude']
+
+    def getLong(self):
+        return self._getSite()['longitude']
+    
+    def getDate(self):
+        return self._getSite().ut()
+
+    def getLocalTime(self):
+        return self._getSite().localtime()
+    
+    def getUTCOffset(self):
+        return self._getSite()['utc_offset']
+    
+    def getLocalSiderealTime(self):
+        return self._getSite().LST()
+    
+    def getCurrentTrackingRate(self):
+        pass
 
     @lock
     def sync(self, position):

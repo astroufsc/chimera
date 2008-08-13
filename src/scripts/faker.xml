@@ -1,0 +1,54 @@
+<chimera host="localhost" port="7666">
+	
+	<instruments>
+		<instrument name="tel" class="Telescope">
+			<option name="driver" value="/FakeTelescope/0"/>
+		</instrument>
+		<instrument name="dome" class="Dome">
+			<option name="driver" value="/FakeDome/0"></option>
+		</instrument>
+		<instrument name="cam" class="Camera">
+			<option name="driver" value="/FakeCamera/0"/>
+		</instrument>
+		<instrument name="wheel" class="FilterWheel">
+			<option name="driver" value="/FakeFilterWheel/0"></option>
+		</instrument>
+		<instrument name="focuser" class="Focuser">
+			<option name="driver" value="/FakeFocuser/0"></option>
+		</instrument>
+	</instruments>
+	
+	<drivers>
+		<driver name="ft" class="FakeTelescope" />
+		<driver name="fc" class="FakeCamera">
+			<option name="ccd_width" value="50" />
+			<option name="ccd_height" value="50" />
+		</driver>
+		<driver name="fw" class="FakeFilterWheel" />
+		<driver name="ff" class="FakeFocuser" />
+		<driver name="fd" class="FakeDome" />
+	</drivers>
+	
+	<controllers>
+		<controller name="imageserver" class="ImageServer" />
+		<controller name="xmlrpc" class="XMLRPC" />
+	</controllers>
+	
+	<site>
+		<name>UFSC</name>
+		<latitude>-27:36:12.286</latitude>
+		<longitude>-48:31:20.535</longitude>
+		<altitude>20</altitude>
+		<utc_offset>-3</utc_offset>
+		<dst>False</dst>
+	</site>
+	<site>
+		<name>LNA</name>
+		<latitude>-22:32:08.066</latitude>
+		<longitude>-45:34:58.480</longitude>
+		<altitude>20</altitude>
+		<utc_offset>-3</utc_offset>
+		<dst>False</dst>
+	</site>
+	
+</chimera>

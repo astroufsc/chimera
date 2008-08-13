@@ -23,6 +23,8 @@ import SimpleXMLRPCServer
 
 import socket
 import sys
+import select
+import threading
 
 from chimera.core.chimeraobject import ChimeraObject
 from chimera.core.location import Location
@@ -47,7 +49,37 @@ class ThreadingXMLRPCServer (SocketServer.ThreadingTCPServer,
             SimpleXMLRPCServer.SimpleXMLRPCDispatcher.__init__(self)
 
         SocketServer.ThreadingTCPServer.__init__(self, addr, requestHandler)
+        
+        self.closed = False
+    
+    def shutdown(self):
+        self.closed = True
+    
+    def get_request(self):
+        inputObjects = []
+        while not inputObjects and not self.closed:
+            inputObjects = select.select([self.socket], [], [], 0.2)[0]
+            try:
+                return self.socket.accept()
+            except socket.error:
+                raise
 
+class serverThread(threading.Thread):
+    
+    def __init__(self, server):
+        threading.Thread.__init__(self)
+        self.setDaemon(True)
+        self.server = server
+        self.server.socket.setblocking(0)
+        self.closed = False
+    
+    def shutdown(self):
+        self.closed = True
+        self.server.shutdown()
+    
+    def run(self):
+        while not self.closed:
+            self.server.handle_request()
 
 class ChimeraXMLDispatcher:
     
@@ -127,6 +159,7 @@ class XMLRPC(ChimeraObject):
 
         self._srv = None
         self._dispatcher = None
+        self._srvThread = None
         
     def isAlive (self):
         return True
@@ -146,10 +179,16 @@ class XMLRPC(ChimeraObject):
             return True
         except socket.error, e:
             self.log.error ("Error while starting Remote server (%s)" % e)
+
+    def __stop__(self):
+        self.log.info('Shutting down XMLRPC server at http://%s:%d' % (self["host"], self["port"]))
+        self._srvThread.shutdown()
         
     def control (self):
         
         if self._srv != None:
             self.log.info("Starting XML-RPC server at http://%s:%d" % (self["host"], self["port"])) 
-            self._srv.serve_forever ()
-                    
+            self._srvThread = serverThread(self._srv)
+            self._srvThread.start()
+            
+        return False

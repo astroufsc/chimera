@@ -304,7 +304,7 @@ class FakeCamera (ChimeraObject, ICameraDriver, IFilterWheelDriver):
                                                ]
                            )
 
-        self.readoutComplete(imageRequest)
+        self.readoutComplete(img)
         
         return img
 
