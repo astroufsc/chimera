@@ -43,7 +43,6 @@ class PointVerify (ChimeraObject):
         self.max_trials = 10
 
     def __start__ (self):
-        self.log.warning("LALALA")
         self.pointVerify()
         return True
         
@@ -70,8 +69,8 @@ class PointVerify (ChimeraObject):
         if frame:
             imageserver = self.getManager().getProxy(frame[0])
             img = imageserver.getProxyByURI(frame[0])
-            return("/media/USB2/astindices/demo/dss/NH1_a10d30.fits")
-            #return img.getPath()
+            #return("/media/USB2/astindices/demo/dss/NH1_a10d30.fits")
+            return img.getPath()
 
         else:
             raise Exception("Could not take an image")
@@ -100,6 +99,8 @@ class PointVerify (ChimeraObject):
         # take an image and read its coordinates off the header
         try:
             image_name = self._takeImage()
+            # for testing purposes uncomment line below and specify some image
+            # image_name = "/media/USB2/astindices/demo/dss/a10d30.fits"
         except:
             self.log.error( "Can't take image" )
             raise
@@ -114,13 +115,13 @@ class PointVerify (ChimeraObject):
         # analyze the previous image using
         # AstrometryNet defined in util
         try:
-            wcs_name = AstrometryNet.solveField(image.filename) 
+            wcs_name = AstrometryNet.solveField(image.filename,findstarmethod="sex") 
         except:
             print "No WCS solution"
             raise
         wcs = Image.fromFile(wcs_name)
-        ra_wcs_center = wcs["CRVAL1"]
-        dec_wcs_center= wcs["CRVAL2"]
+        ra_wcs_center = wcs["CRVAL1"] + (wcs["NAXIS1"]/2.0 - wcs["CRPIX1"]) * wcs["CD1_1"]
+        dec_wcs_center= wcs["CRVAL2"] + (wcs["NAXIS2"]/2.0 - wcs["CRPIX2"]) * wcs["CD2_2"]
         currentWCS = Position.fromRaDec(Coord.fromD(ra_wcs_center), 
                                         Coord.fromD(dec_wcs_center))  
 
