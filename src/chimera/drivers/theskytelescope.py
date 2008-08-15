@@ -24,6 +24,8 @@ import subprocess
 import logging
 import time
 
+from chimera.core.site import Site
+
 from chimera.util.coord    import Coord
 from chimera.util.position import Position
 
@@ -68,7 +70,9 @@ def com (func):
 
 class TheSkyTelescope (ChimeraObject, ITelescopeDriverSlew):
 
-    __config__ = {"thesky": [5, 6]}
+    __config__ = {"thesky": [5, 6],
+                  'site':   '/Site/0',
+                  }
 
     def __init__ (self):
         ChimeraObject.__init__ (self)
@@ -78,6 +82,14 @@ class TheSkyTelescope (ChimeraObject, ITelescopeDriverSlew):
         self._term = threading.Event ()
         self._idle_time = 0.2
         self._target = None
+
+        try:
+            self._site = self.getManager().getProxy(self['site'])
+            self._gotSite=True
+        except:
+            self._site = Site()
+            self._gotSite=False
+        
 
     @com
     def __start__ (self):
@@ -279,6 +291,18 @@ class TheSkyTelescope (ChimeraObject, ITelescopeDriverSlew):
         self._telescope.SetTracking(0,0,0,0)
 
 
+    def _getSite(self):
+        if self._gotSite:
+            self._site._transferThread()
+            return self._site
+        else:
+            try:
+                self._site = self.getManager().getProxy(self['site'])
+                self._gotSite=True
+            except:
+                pass
+        return self._site
+    
     #GUI Compatibility methods
     def getAlignMode(self):
         return self['align_mode']
