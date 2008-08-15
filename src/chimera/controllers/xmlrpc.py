@@ -96,6 +96,8 @@ class ChimeraXMLDispatcher:
         try:
             cls, instance, method = request.split(".")
         except ValueError:
+            if self._ctrl['debug']:
+                self._ctrl.log.debug('ValueError:Invalid Request')
             raise ValueError("Invalid Request")
 
         loc = Location(cls=cls, name=instance)
@@ -105,6 +107,8 @@ class ChimeraXMLDispatcher:
                 obj = self._ctrl.getManager().getProxy(loc)
                 self._proxyCache[loc] = obj
             except ObjectNotFoundException:
+                if self._ctrl['debug']:
+                    self._ctrl.log.debug('ObjectNotFoundException:Object Not Found')
                 raise ValueError("Object Not Found")
 
         obj = self._proxyCache[loc]
@@ -115,7 +119,9 @@ class ChimeraXMLDispatcher:
         try:
             ret = handle(*params)
         except AttributeError:
-            raise ValueError("Method not found,")
+            if self._ctrl['debug']:
+                self._ctrl.log.debug('AttributError:Method not found')
+            raise ValueError("Method not found")
 
         # do some conversions to help Java XML Server
 
@@ -136,19 +142,32 @@ class ChimeraXMLDispatcher:
                 else:
                     newret.append(arg)
 
+            if self._ctrl['debug']:
+                self._ctrl.log.debug('Returning: %s' % str(newret))
+                
             return newret
 
         else:
             if isinstance(ret, (Position, Coord)):
+                if self._ctrl['debug']:
+                    self._ctrl.log.debug('Returning: %s' % str(ret))
                     return str(ret)
             elif isinstance(ret, Location):
                 if "hash" in ret.config:
+                    if self._ctrl['debug']:
+                        self._ctrl.log.debug('Returning: %s' % str(ret.config["hash"]))
                     return str(ret.config["hash"])
                 else:
+                    if self._ctrl['debug']:
+                        self._ctrl.log.debug('Returning: %s' % str(ret))
                     return str(ret)
             elif isinstance(ret, type(None)):
+                if self._ctrl['debug']:
+                    self._ctrl.log.debug('Returning: %s' % str(True))
                 return True
             else:
+                if self._ctrl['debug']:
+                    self._ctrl.log.debug('Returning: %s' % str(ret))
                 return ret
 
     
