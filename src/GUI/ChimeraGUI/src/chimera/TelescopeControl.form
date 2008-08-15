@@ -112,7 +112,7 @@
                   <Component id="StatusPanel" alignment="0" max="32767" attributes="3"/>
                   <Component id="InputPanel" alignment="0" max="32767" attributes="3"/>
               </Group>
-              <EmptySpace pref="29" max="32767" attributes="0"/>
+              <EmptySpace pref="31" max="32767" attributes="0"/>
           </Group>
       </Group>
     </DimensionLayout>
@@ -208,9 +208,7 @@
         <Component class="javax.swing.JTextField" name="NAMEinputTextField">
           <Properties>
             <Property name="horizontalAlignment" type="int" value="0"/>
-            <Property name="text" type="java.lang.String" value="Not Implemented."/>
             <Property name="toolTipText" type="java.lang.String" value="Name to find"/>
-            <Property name="enabled" type="boolean" value="false"/>
           </Properties>
           <Events>
             <EventHandler event="focusGained" listener="java.awt.event.FocusListener" parameters="java.awt.event.FocusEvent" handler="NAMEinputTextFieldFocusGained"/>
@@ -224,8 +222,10 @@
         <Component class="javax.swing.JButton" name="GETCOORDINATESinputButton">
           <Properties>
             <Property name="text" type="java.lang.String" value="Get Coordinates"/>
-            <Property name="enabled" type="boolean" value="false"/>
           </Properties>
+          <Events>
+            <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="GETCOORDINATESinputButtonActionPerformed"/>
+          </Events>
           <Constraints>
             <Constraint layoutClass="org.netbeans.modules.form.compat2.layouts.DesignGridBagLayout" value="org.netbeans.modules.form.compat2.layouts.DesignGridBagLayout$GridBagConstraintsDescription">
               <GridBagConstraints gridX="0" gridY="10" gridWidth="3" gridHeight="1" fill="1" ipadX="0" ipadY="0" insetsTop="0" insetsLeft="0" insetsBottom="0" insetsRight="0" anchor="10" weightX="1.0" weightY="0.0"/>
@@ -267,7 +267,7 @@
         <Component class="javax.swing.JSpinner" name="RAinputSecondsSpinner">
           <Properties>
             <Property name="model" type="javax.swing.SpinnerModel" editor="org.netbeans.modules.form.editors2.SpinnerModelEditor">
-              <SpinnerModel initial="0.0" maximum="60.0" minimum="-0.0010" numberType="java.lang.Double" stepSize="0.0010" type="number"/>
+              <SpinnerModel initial="0.0" maximum="60.0" minimum="-0.001" numberType="java.lang.Double" stepSize="0.001" type="number"/>
             </Property>
             <Property name="toolTipText" type="java.lang.String" value="Seconds"/>
           </Properties>
@@ -315,7 +315,7 @@
         <Component class="javax.swing.JSpinner" name="DECinputSecondsSpinner">
           <Properties>
             <Property name="model" type="javax.swing.SpinnerModel" editor="org.netbeans.modules.form.editors2.SpinnerModelEditor">
-              <SpinnerModel initial="0.0" maximum="60.001" minimum="-60.0" numberType="java.lang.Double" stepSize="0.0010" type="number"/>
+              <SpinnerModel initial="0.0" maximum="60.001" minimum="-60.0" numberType="java.lang.Double" stepSize="0.001" type="number"/>
             </Property>
             <Property name="toolTipText" type="java.lang.String" value="Seconds"/>
           </Properties>
