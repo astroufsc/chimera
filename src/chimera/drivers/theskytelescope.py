@@ -278,3 +278,32 @@ class TheSkyTelescope (ChimeraObject, ITelescopeDriverSlew):
     def stopTracking (self):
         self._telescope.SetTracking(0,0,0,0)
 
+
+    #GUI Compatibility methods
+    def getAlignMode(self):
+        return self['align_mode']
+ 
+    def getLat(self):
+        return self._getSite()['latitude']
+
+    def getLong(self):
+        return self._getSite()['longitude']
+    
+    def getDate(self):
+        return self._getSite().ut()
+
+    def getLocalTime(self):
+        return self._getSite().localtime()
+    
+    def getUTCOffset(self):
+        return self._getSite()['utc_offset']
+    
+    def getLocalSiderealTime(self):
+        return self._getSite().LST()
+    
+    @com
+    def getCurrentTrackingRate(self):
+        raTrack = Coord.fromH(self._telescope.dRaTrackingRate)
+        decTrack = Coord.fromR(self._telescope.dDecTrackingRate)
+        return (raTrack.toHMS(), decTrack.toDMS())
+
