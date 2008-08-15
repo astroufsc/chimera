@@ -7,6 +7,10 @@ import os
 import shutil
 from pyraf import iraf
 
+import logging
+import chimera.core.log
+log = logging.getLogger(__name__)
+
 class AstrometryNet():
     
     # staticmethod allows to use a single method of a class
@@ -73,7 +77,7 @@ class AstrometryNet():
             sex.run(fullfilename)
 
         else:
-            self.log.error("Unknown option used in astrometry.net")
+            log.error("Unknown option used in astrometry.net")
 
         # when there is a solution astrometry.net creates a file with .solved
         # added as extension.  

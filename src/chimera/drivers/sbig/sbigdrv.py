@@ -396,7 +396,7 @@ class SBIGDrv(object):
 
         return (qtsr.enabled,
                 (qtsr.power / 255.0) * 100.0,
-                TemperatureSetPoint.toDegrees(qtsr.ccdSetPoint, "ccd"),
+                TemperatureSetPoint.toDegrees(qtsr.ccdSetpoint, "ccd"),
                 TemperatureSetPoint.toDegrees(qtsr.ccdThermistor, "ccd"))
 
     def startFan(self):
