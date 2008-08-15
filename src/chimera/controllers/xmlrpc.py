@@ -90,6 +90,9 @@ class ChimeraXMLDispatcher:
     def _dispatch (self, request, params):
         # this dispatcher expects methods names like ClassName.instance_name.method
         
+        if self._ctrl['debug']:
+            self._ctrl.log.debug('XML Request for %s : %s' % (str(request),str(params)))
+        
         try:
             cls, instance, method = request.split(".")
         except ValueError:
@@ -151,8 +154,10 @@ class ChimeraXMLDispatcher:
     
 class XMLRPC(ChimeraObject):
 
-    __config__ = {"host": "localhost",
-                  "port": 7667}
+    __config__ = {"host": False,     #If host == False, take from manager
+                  "port": 7667,
+                  'debug': False,    #Log all XMLRPC communications
+                  }
 
     def __init__(self):
         ChimeraObject.__init__(self)
@@ -160,6 +165,7 @@ class XMLRPC(ChimeraObject):
         self._srv = None
         self._dispatcher = None
         self._srvThread = None
+        self.host = None
         
     def isAlive (self):
         return True
@@ -170,8 +176,11 @@ class XMLRPC(ChimeraObject):
 
     def __start__(self):
         self._dispatcher = ChimeraXMLDispatcher(self)
+        self.host = self["host"]
+        if not self.host:
+            self.host=self.getManager().getHostname()
         try:
-            self._srv = ThreadingXMLRPCServer ((self["host"], self["port"]))
+            self._srv = ThreadingXMLRPCServer ((self.host, self["port"]))
             self._srv.register_introspection_functions ()
             self._srv.register_instance (self._dispatcher)
             self._srv.register_function(self.isAlive, 'Chimera.isAlive')
@@ -181,13 +190,13 @@ class XMLRPC(ChimeraObject):
             self.log.error ("Error while starting Remote server (%s)" % e)
 
     def __stop__(self):
-        self.log.info('Shutting down XMLRPC server at http://%s:%d' % (self["host"], self["port"]))
+        self.log.info('Shutting down XMLRPC server at http://%s:%d' % (self.host, self["port"]))
         self._srvThread.shutdown()
         
     def control (self):
         
         if self._srv != None:
-            self.log.info("Starting XML-RPC server at http://%s:%d" % (self["host"], self["port"])) 
+            self.log.info("Starting XML-RPC server at http://%s:%d" % (self.host, self["port"])) 
             self._srvThread = serverThread(self._srv)
             self._srvThread.start()
             
