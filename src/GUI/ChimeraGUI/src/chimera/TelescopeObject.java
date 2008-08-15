@@ -133,11 +133,12 @@ public class TelescopeObject
     {
         try
         {
-            Vector<Object> vec = new Vector<Object>();
-            vec.add(new Double( offset ));
-            
-            Object[] obj = new Object[]{vec};
-            myManager.execute( myName + ".moveEast", obj );
+//            Vector<Object> vec = new Vector<Object>();
+//            vec.add(new Double( offset ));
+//            
+//            Object[] obj = new Object[]{vec};        	
+//            myManager.execute( myName + ".moveEast", obj );
+        	myManager.execute(myName + ".moveEast", new Object[]{new Double(offset)});
         }
         catch ( XmlRpcException ex )
         {
@@ -162,11 +163,12 @@ public class TelescopeObject
     {
         try
         {
-            Vector<Object> vec = new Vector<Object>();
-            vec.add(new Double( offset ));
-            
-            Object[] obj = new Object[]{vec};
-            myManager.execute( myName + ".moveWest", obj );
+//            Vector<Object> vec = new Vector<Object>();
+//            vec.add(new Double( offset ));
+//            
+//            Object[] obj = new Object[]{vec};
+//            myManager.execute( myName + ".moveWest", obj );
+        	myManager.execute(myName + ".moveWest", new Object[]{new Double(offset)});
         }
         catch ( XmlRpcException ex )
         {
@@ -191,11 +193,12 @@ public class TelescopeObject
     {
         try
         {
-            Vector<Object> vec = new Vector<Object>();
-            vec.add(new Double( offset ));
-            
-            Object[] obj = new Object[]{vec};
-            myManager.execute( myName + ".moveNorth", obj );
+//            Vector<Object> vec = new Vector<Object>();
+//            vec.add(new Double( offset ));
+//            
+//            Object[] obj = new Object[]{vec};
+//            myManager.execute( myName + ".moveNorth", obj );
+        	myManager.execute(myName + ".moveNorth", new Object[]{new Double(offset)});
         }
         catch ( XmlRpcException ex )
         {
@@ -220,11 +223,12 @@ public class TelescopeObject
     {
         try
         {
-            Vector<Object> vec = new Vector<Object>();
-            vec.add(new Double( offset ));
-            
-            Object[] obj = new Object[]{vec};
-            myManager.execute( myName + ".moveSouth", obj );
+//            Vector<Object> vec = new Vector<Object>();
+//            vec.add(new Double( offset ));
+//            
+//            Object[] obj = new Object[]{vec};
+//            myManager.execute( myName + ".moveSouth", obj );
+        	myManager.execute(myName + ".moveSouth", new Object[]{new Double(offset)});
         }
         catch ( XmlRpcException ex )
         {

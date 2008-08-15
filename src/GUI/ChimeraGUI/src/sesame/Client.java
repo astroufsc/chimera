@@ -13,6 +13,7 @@ public class Client {
 		SesameServiceLocator loc = new SesameServiceLocator();
 		Sesame ses = loc.getSesame();
 		String result = ses.sesame(name, "x");
+		//TODO: Need real xml parsing here!
 		int first = result.indexOf("<jpos>");
 		if (first == -1) {
 			throw new RuntimeException("Invalid response -- perhaps that isn\'t an object.");
