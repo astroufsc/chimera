@@ -96,7 +96,7 @@ setup(name='chimera-python',
                           "RO >= 2.2.7",
                           "pyfits >= 1.3",
                           "pyserial >= 2.2",
-                          "Pyro >= 3.7"] + linux_cdeps + win32_cdeps,
+                          "Pyro >= 3.8-beta2"] + linux_cdeps + win32_cdeps,
 
       dependency_links = [
                           "https://fedorahosted.org/suds/attachment/wiki/WikiStart/suds-0.2.4.tar.gz?format=raw",

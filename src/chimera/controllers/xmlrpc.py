@@ -32,6 +32,8 @@ from chimera.core.exceptions import ObjectNotFoundException
 
 from chimera.util.coord import Coord
 from chimera.util.position import Position
+
+from Pyro.util import getPyroTraceback
 #from chimera.controllers.imageserver.imageuri import ImageURI
 
 class ThreadingXMLRPCServer (SocketServer.ThreadingTCPServer,
@@ -120,8 +122,13 @@ class ChimeraXMLDispatcher:
             ret = handle(*params)
         except AttributeError:
             if self._ctrl['debug']:
-                self._ctrl.log.debug('AttributError:Method not found')
+                self._ctrl.log.debug('AttributeError:Method not found')
             raise ValueError("Method not found")
+        except Exception, e:
+            if self._ctrl['debug']:
+                print ''.join(getPyroTraceback(e))
+                self._ctrl.log.debug('Other Error <%s>: %s' % (type(e),str(e)))
+            raise
 
         # do some conversions to help Java XML Server
 

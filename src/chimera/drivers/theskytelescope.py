@@ -303,6 +303,26 @@ class TheSkyTelescope (ChimeraObject, ITelescopeDriverSlew):
                 pass
         return self._site
     
+    @com
+    def moveEast (self, offset, slewRate = None):
+        newRa = self.getRa() + Coord.fromH(offset/3600)
+        self.slewToRaDec(Position.fromRaDec(newRa, self.getDec()))
+
+    @com
+    def moveWest (self, offset, slewRate = None):
+        newRa = self.getRa() - Coord.fromH(offset/3600)
+        self.slewToRaDec(Position.fromRaDec(newRa, self.getDec()))
+
+    @com
+    def moveNorth (self, offset, slewRate = None):
+        newDec = self.getDec() + Coord.fromD(offset/3600)
+        self.slewToRaDec(Position.fromRaDec(self.getRa(),newDec))
+
+    @com
+    def moveSouth (self, offset, slewRate = None):
+        newDec = self.getDec() - Coord.fromD(offset/3600)
+        self.slewToRaDec(Position.fromRaDec(self.getRa(),newDec))
+    
     #GUI Compatibility methods
     def getAlignMode(self):
         return self['align_mode']
