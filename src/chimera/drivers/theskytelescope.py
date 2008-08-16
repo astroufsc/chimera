@@ -30,10 +30,11 @@ from chimera.util.coord    import Coord
 from chimera.util.position import Position
 
 from chimera.core.chimeraobject import ChimeraObject
-from chimera.core.exceptions    import ChimeraException
+from chimera.core.exceptions    import ChimeraException, NotImplementedException
 
 from chimera.interfaces.telescope       import PositionOutsideLimitsException
 from chimera.interfaces.telescopedriver import ITelescopeDriverSlew
+from chimera.interfaces.focuserdriver   import IFocuserDriver 
 
 log = logging.getLogger(__name__)
 
@@ -68,7 +69,8 @@ def com (func):
     return com_wrapper
 
 
-class TheSkyTelescope (ChimeraObject, ITelescopeDriverSlew):
+class TheSkyTelescope (ChimeraObject, ITelescopeDriverSlew,
+                       IFocuserDriver):
 
     __config__ = {"thesky": [5, 6],
                   'site':   '/Site/0',
@@ -305,23 +307,27 @@ class TheSkyTelescope (ChimeraObject, ITelescopeDriverSlew):
     
     @com
     def moveEast (self, offset, slewRate = None):
-        newRa = self.getRa() + Coord.fromH(offset/3600)
-        self.slewToRaDec(Position.fromRaDec(newRa, self.getDec()))
+#        newRa = self.getRa() + Coord.fromH(offset/3600)
+#        self.slewToRaDec(Position.fromRaDec(newRa, self.getDec()))
+        self._telescope.Jog(offset / 60, 'East')
 
     @com
     def moveWest (self, offset, slewRate = None):
-        newRa = self.getRa() - Coord.fromH(offset/3600)
-        self.slewToRaDec(Position.fromRaDec(newRa, self.getDec()))
+#        newRa = self.getRa() - Coord.fromH(offset/3600)
+#        self.slewToRaDec(Position.fromRaDec(newRa, self.getDec()))
+        self._telescope.Jog(offset / 60, 'West')
 
     @com
     def moveNorth (self, offset, slewRate = None):
-        newDec = self.getDec() + Coord.fromD(offset/3600)
-        self.slewToRaDec(Position.fromRaDec(self.getRa(),newDec))
+#        newDec = self.getDec() + Coord.fromD(offset/3600)
+#        self.slewToRaDec(Position.fromRaDec(self.getRa(),newDec))
+        self._telescope.Jog(offset / 60, 'North')
 
     @com
     def moveSouth (self, offset, slewRate = None):
-        newDec = self.getDec() - Coord.fromD(offset/3600)
-        self.slewToRaDec(Position.fromRaDec(self.getRa(),newDec))
+#        newDec = self.getDec() - Coord.fromD(offset/3600)
+#        self.slewToRaDec(Position.fromRaDec(self.getRa(),newDec))
+        self._telescope.Jog(offset / 60, 'South')
     
     #GUI Compatibility methods
     def getAlignMode(self):
@@ -351,3 +357,93 @@ class TheSkyTelescope (ChimeraObject, ITelescopeDriverSlew):
         decTrack = Coord.fromR(self._telescope.dDecTrackingRate)
         return (raTrack.toHMS(), decTrack.toDMS())
 
+
+
+    def moveIn (self, n):
+        """
+        Move the focuser IN by n steps.
+
+        Driver should interpret n as whatever it support (time pulse
+        or absolute encoder positions).  if only time pulse is
+        available, driver must use pulse_in_multiplier as a multiple
+        to determine how much time the focuser will move
+        IN. pulse_in_multiplier and n will be in miliseconds.
+
+        @note: Drivers must raise InvalidFocusPositionException if the
+        request position couldn't be achived.
+
+        @type  n: int
+        @param n: Number of steps to move IN.
+
+        @rtype   : None
+        """
+        while(n > 1000):
+            n-=1000
+            self._telescope.FocusInFast()
+        while(n > 0):
+            n-=1
+            self._telescope.FocusInSlow()
+        
+
+
+    def moveOut (self, n):
+        """
+        Move the focuser OUT by n steps.
+
+        Driver should interpret n as whatever it support (time pulse
+        or absolute encoder positions).  if only time pulse is
+        available, driver must use pulse_out_multiplier as a multiple
+        to determine how much time the focuser will move
+        OUT. pulse_out_multiplier and n will be in miliseconds.
+
+        @note: Drivers must raise InvalidFocusPositionException if the
+        request position couldn't be achived.
+
+        @type  n: int
+        @param n: Number of steps to move OUT.
+
+        @rtype   : None
+        """
+        while(n > 1000):
+            n-=1000
+            self._telescope.FocusOutFast()
+        while(n > 0):
+            n-=1
+            self._telescope.FocusOutSlow()
+
+    def moveTo (self, position):
+        """
+        Move the focuser to the select position.
+
+        If the focuser doesn't support absolute position movement, it
+        MUST return False.
+
+        @note: Drivers must raise InvalidFocusPositionException if the
+        request position couldn't be achived.
+
+        @type  position: int
+        @param position: Position to move the focuser.
+
+        @rtype   : None
+        """
+        return False
+
+    def getPosition (self):
+        """
+        Gets the current focuser position.
+
+        @note: If the driver doesn't support position readout it MUST
+        raise NotImplementedError.
+
+        @rtype   : int
+        @return  : Current focuser position.
+        """
+        raise NotImplementedException()
+        
+    
+    def getRange (self):
+        """Gets the focuser total range
+        @rtype: tuple
+        @return: Start and end positions of the focuser (start, end)
+        """
+        return (0,0)

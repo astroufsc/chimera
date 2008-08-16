@@ -88,3 +88,6 @@ class OptionConversionException (ChimeraException):
 
 class ChimeraValueError (ChimeraException):
     pass
+
+class NotImplementedException(ChimeraException):
+    pass
