@@ -104,20 +104,28 @@ class ChimeraXMLDispatcher:
 
         loc = Location(cls=cls, name=instance)
         
-#        if loc not in self._proxyCache:
-#            try:
-#                obj = self._ctrl.getManager().getProxy(loc)
-#                self._proxyCache[loc] = obj
-#            except ObjectNotFoundException:
-#                if self._ctrl['debug']:
-#                    self._ctrl.log.debug('ObjectNotFoundException:Object Not Found')
-#                raise ValueError("Object Not Found")
-#
-#        obj = self._proxyCache[loc]
-#        obj._transferThread()
-        
-        #Otherwise, we need to validate if the proxy cache is valid.
-        obj = self._ctrl.getManager().getProxy(loc)
+        if loc not in self._proxyCache:
+            try:
+                obj = self._ctrl.getManager().getProxy(loc)
+                self._proxyCache[loc] = obj
+            except ObjectNotFoundException:
+                if self._ctrl['debug']:
+                    self._ctrl.log.debug('ObjectNotFoundException:Object Not Found')
+                raise ValueError("Object Not Found")
+        else:
+            try:
+                obj = self._proxyCache[loc]
+                obj._transferThread()
+                if not obj.ping():
+                    raise Exception()   #We need to remake the proxy
+            except:
+                try:
+                    obj = self._ctrl.getManager().getProxy(loc)
+                    self._proxyCache[loc] = obj
+                except ObjectNotFoundException:
+                    if self._ctrl['debug']:
+                        self._ctrl.log.debug('ObjectNotFoundException:Object Not Found')
+                    raise ValueError("Object Not Found")
         
         handle = getattr(obj, method)
         obj._release()

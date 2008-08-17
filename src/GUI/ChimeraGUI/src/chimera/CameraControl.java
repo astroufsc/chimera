@@ -33,6 +33,8 @@ import javax.swing.SwingUtilities;
 import org.apache.xmlrpc.XmlRpcException;
 import org.apache.xmlrpc.client.XmlRpcClient;
 
+import xpa.DS9;
+
 /**
  *
  * @author  Denis
@@ -155,6 +157,15 @@ public class CameraControl extends javax.swing.JInternalFrame
                         }
                         Runtime rt = Runtime.getRuntime();
                         rt.exec(linuxDir + fullList);
+                        
+                        //New way to open DS9
+                        //Doesn't work yet
+                        //TODO: Get this to work
+//                        DS9 ds9 = new DS9();
+//                        ds9.clearFrames();
+//                        for (int i=0; i<result.length; i++) {
+//                        	ds9.loadURLNewFrame("http://" + clientURL + ":7669/image/" + result[i].toString());
+//                        }
                     }
                     catch (IOException ex)
                     {
