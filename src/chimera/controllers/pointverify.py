@@ -43,7 +43,8 @@ class PointVerify (ChimeraObject):
         self.max_trials = 10
 
     def __start__ (self):
-        self.pointVerify()
+        #self.pointVerify()
+        self.checkPointing()
         return True
         
 
@@ -92,15 +93,13 @@ class PointVerify (ChimeraObject):
 
         Returns True if centering was succesful
                 False if not
-
-
         """
 
         # take an image and read its coordinates off the header
         try:
             image_name = self._takeImage()
             # for testing purposes uncomment line below and specify some image
-            # image_name = "/media/USB2/astindices/demo/dss/a10d30.fits"
+            image_name = "/media/USB2/astindices/demo/dss/a10d30.fits"
         except:
             self.log.error( "Can't take image" )
             raise
@@ -116,9 +115,29 @@ class PointVerify (ChimeraObject):
         # AstrometryNet defined in util
         try:
             wcs_name = AstrometryNet.solveField(image.filename,findstarmethod="sex") 
-        except:
-            print "No WCS solution"
-            raise
+
+        except NoSolutionAstronomyNetException:
+            # there was no solution to this field.
+            # send the telescope back to checkPointing
+            # if that fails, clouds or telescope problem
+            # an exception will be raised there
+            self.log.error("No WCS solution")
+            if not self.checkedpointing:
+                if checkPointing() == True:
+                    self.checkedpointing = True
+                    tel.slewToRaDec(currentImageCenter)
+                    try:
+                        pointVerify()
+                        return True
+                    except CanSetScopeButNotThisField:
+                        pass # let the caller decide whether we go to next 
+                             # field or stay on this with no verification
+            else:
+                self.checkedpointing = False
+                raise CanSetScopeButNotThisField("Able to set scope, but unable to verify this field %s" %(currentImageCenter))
+
+
+
         wcs = Image.fromFile(wcs_name)
         ra_wcs_center = wcs["CRVAL1"] + (wcs["NAXIS1"]/2.0 - wcs["CRPIX1"]) * wcs["CD1_1"]
         dec_wcs_center= wcs["CRVAL2"] + (wcs["NAXIS2"]/2.0 - wcs["CRPIX2"]) * wcs["CD2_2"]
@@ -176,12 +195,17 @@ class PointVerify (ChimeraObject):
         Then it does the pointing and verifies it.
         If unsuccesfull e-mail the operator for help
         isto em portugues eh chamado calagem
+
+        Choice is based on some catalog (Landolt here)
+        We choose the field closest to zenith
         """
         # find where the zenith is
         site =  self.getManager().getProxy("/Site/0")
         lst = site.LST()
         lat = site["latitude"]
         coords = Position.fromRaDec(lst,lat)
+
+        self.log.info("Check pointing - Zenith coordinates: %f %f" %(lst, lat))
 
         # use the Vizier catalogs to see what Landolt field is closest to zenith
         fld = Landolt()
@@ -191,8 +215,15 @@ class PointVerify (ChimeraObject):
         # get ra, dec to call pointVerify
         ra = obj[0]["RA"]
         dec = obj[0]["DEC"]
-        print ra, dec
-        self.pointVerify(Position.fromRaDec(ra,dec))
+        name = obj[0]["ID"]
+        self.log.info("Chose %s %f %f" %(name, ra, dec))
+        tel.slewToRaDec(Position.fromRaDec(ra,dec))
+        try:
+            self.pointVerify()
+        except:
+            raise CantSetScopeException("Can't set scope on field %s %f %f we are in trouble, call for help" %(name, ra, dec))
+        return True
+            
 
 
     def findStandards(self):
@@ -224,12 +255,35 @@ class PointVerify (ChimeraObject):
         """
 
 class CantPointScopeException(ChimeraException):
+    """
+    This exception is raised when we cannot center the scope on a field
+    It may happen if there is something funny with our fields like:
+    faint objects, bright objects, extended objects
+    or non-astronomical problems like:
+    clouds, mount misalignment, dust cover, etc
+    When this happens one can simply go on and observe or ask for a checkPoint
+    if checkPoint succeeds then the problem is astronomical
+    if checkPoint fails then the problem is non-astronomical
+    """
     pass
 
+class CantSetScopeException(ChimeraException):
+    """
+    This exception is raised to indicate we could not set the telescope 
+    coordinates when trying to do it on a chosen field.  
+    Chosen fields are those known to work for setting the scope.
+    So, if it fails we must have some serious problem.
+    Might be clouds, might be mount misalignment, dust cover, etc, etc
+    Never raise this exception for a science field.  It may be that pointverify 
+    fails there because of bright objects or other more astronomical reasons
+    """
+
+    pass
 
 if __name__ == "__main__":
     
     x = PointVerify()
+    # x.checkPointing()
     x.pointVerify()
 
     
