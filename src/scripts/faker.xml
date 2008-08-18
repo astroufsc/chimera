@@ -32,6 +32,7 @@
 	<controllers>
 		<controller name="imageserver" class="ImageServer" />
 		<controller name="xmlrpc" class="XMLRPC" />
+		<controller name="xephem" class="XEphem" />
 	</controllers>
 	
 	<site>
