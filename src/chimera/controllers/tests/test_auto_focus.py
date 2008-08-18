@@ -26,7 +26,7 @@ from chimera.core.manager  import Manager
 from chimera.core.callback import callback
 from chimera.core.site     import Site
 
-from chimera.controllers.autofocus import Autofocus, Target, Mode
+from chimera.controllers.autofocus import Autofocus, Target
 
 from chimera.instruments.camera import Camera
 from chimera.drivers.fakecamera import FakeCamera
@@ -102,9 +102,7 @@ class TestAutofocus (object):
         autofocus += {"debug": True,
                       "debug_path": "/home/henrique/work/chimera/sprint1/autofocus/run1"}
 
-        best_focus = autofocus.focus(mode=Mode.FIT, target=Target.CURRENT,
-                                     exptime=10, points=10)
-        autofocus.plot("focus-lna.png")
-        autofocus.log("focus-lna.txt")
+        best_focus = autofocus.focus(target=Target.CURRENT, exptime=10, start=0, end=7000, step=1000, minmax=(0,30))
+        #best_focus = autofocus.focus(target=Target.CURRENT, exptime=10, points=25, minmax=(0,30))
 
 
