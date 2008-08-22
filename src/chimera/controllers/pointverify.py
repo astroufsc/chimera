@@ -9,7 +9,7 @@ from chimera.util.position import Position
 from chimera.util.coord import Coord
 from chimera.util.image import Image
 
-from chimera.util.astrometrynet import AstrometryNet
+from chimera.util.astrometrynet import AstrometryNet, AstrometryNetException, NoSolutionAstrometryNetException
 
     
 class PointVerify (ChimeraObject):
