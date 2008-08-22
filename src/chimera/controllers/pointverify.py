@@ -38,10 +38,10 @@ class PointVerify (ChimeraObject):
         ChimeraObject.__init__ (self)
         self.ntrials = 0
 
-    def __start__ (self):
+    #def __start__ (self):
         #self.pointVerify()
-        self.checkPointing()
-        return True
+        #self.checkPointing()
+        #return True
         
 
     def getTel(self):
