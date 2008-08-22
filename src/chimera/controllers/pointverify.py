@@ -23,24 +23,20 @@ class PointVerify (ChimeraObject):
     # set of parameters and their defaults
     __config__ = {"telescope"          : "/Telescope/0",
                   "camera"             : "/Camera/0",
-                  "filterwheel"        : "/FilterWheel/0" 
+                  "filterwheel"        : "/FilterWheel/0",
+                  "tolra"              : 0.0166666666667,
+                  "toldec"             : 0.0166666666667,
+                  "exptime"            :  10.0,
+                  "filter"             :  "R",
+                  "max_trials"         :  10
+
                   }
 
     # normal constructor
     # initialize the relevant variables
     def __init__ (self):
         ChimeraObject.__init__ (self)
-
-        self.exptime = 10
-        self.filter  = "B"
-
-        # *** the tolerances must come from the config files
-        # for now they are just hardwired
-        self.tolra = 1./60.  # pointing tolerance in degrees
-        self.toldec = 1./60.
-
         self.ntrials = 0
-        self.max_trials = 10
 
     def __start__ (self):
         #self.pointVerify()
@@ -60,9 +56,8 @@ class PointVerify (ChimeraObject):
     def _takeImage (self):
 
         cam = self.getCam()
-        
         #filename = time.strftime("pointverify-%Y%m%d%H%M%S")
-        frame = cam.expose(exp_time=self.exptime,
+        frame = cam.expose(exp_time=self["exptime"],
                            frames=1, shutter=Shutter.OPEN,
                            filename="pointverify-$DATE")
         #                   filename=filename)
@@ -70,19 +65,15 @@ class PointVerify (ChimeraObject):
         if frame:
             imageserver = self.getManager().getProxy(frame[0])
             img = imageserver.getProxyByURI(frame[0])
-            #return("/media/USB2/astindices/demo/dss/NH1_a10d30.fits")
-            return img.getPath()
+            return("/media/USB2/astindices/demo/dss/NH1_a10d30.fits")
+            #return img.getPath()
 
         else:
             raise Exception("Could not take an image")
         
 
-
     def pointVerify (self):
         """ Checks telescope pointing
-
-        @param coords: Coordinates the telescope has been pointed to
-        @type  coords: L{Position}
 
         Checks the pointing.
         If telescope coordinates - image coordinates > tolerance
@@ -99,7 +90,6 @@ class PointVerify (ChimeraObject):
         try:
             image_name = self._takeImage()
             # for testing purposes uncomment line below and specify some image
-            image_name = "/media/USB2/astindices/demo/dss/a10d30.fits"
         except:
             self.log.error( "Can't take image" )
             raise
@@ -110,13 +100,16 @@ class PointVerify (ChimeraObject):
         currentImageCenter = Position.fromRaDec(Coord.fromD(ra_img_center), 
                                                 Coord.fromD(dec_img_center))  
 
+        tel = self.getTel()
+
 
         # analyze the previous image using
         # AstrometryNet defined in util
         try:
             wcs_name = AstrometryNet.solveField(image.filename,findstarmethod="sex") 
-
-        except NoSolutionAstronomyNetException:
+        except (NoSolutionAstronomyNetException): 
+            # why can't I select this exception?
+            # 
             # there was no solution to this field.
             # send the telescope back to checkPointing
             # if that fails, clouds or telescope problem
@@ -165,15 +158,15 @@ class PointVerify (ChimeraObject):
         logstr = "%s %f %f %f %f %f %f" %(image["DATE-OBS"],ra_img_center,dec_img_center,ra_wcs_center,dec_wcs_center,delta_ra,delta_dec)
         self.log.debug(logstr)
 
-        tel = self.getTel()
 
-        if ( delta_ra > self.tolra ) or ( delta_dec > self.toldec):
+
+        if ( delta_ra > self["tolra"] ) or ( delta_dec > self["toldec"]):
             print "Telescope not there yet."
             print "Trying again"
             self.ntrials += 1
-            if (self.ntrials > self.max_trials):
+            if (self.ntrials > self["max_trials"]):
                 self.ntrials = 0
-                raise CantPointScopeException("Scope does not point with a precision of %f (RA) or %f (DEC) after %d trials\n" % self.tolra % self.toldec % self.max_trials)
+                raise CantPointScopeException("Scope does not point with a precision of %f (RA) or %f (DEC) after %d trials\n" % self["tolra"] % self["toldec"] % self["max_trials"])
             tel.moveOffset(delta_ra, delta_dec)
             self.pointVerify()
         else:
@@ -206,6 +199,8 @@ class PointVerify (ChimeraObject):
         coords = Position.fromRaDec(lst,lat)
 
         self.log.info("Check pointing - Zenith coordinates: %f %f" %(lst, lat))
+
+        tel = self.getTel()
 
         # use the Vizier catalogs to see what Landolt field is closest to zenith
         fld = Landolt()
