@@ -360,7 +360,7 @@ class SBIGDrv(object):
 
 
     # temperature
-    def setTemperature (self, regulation, SetPoint, autofreeze = True):
+    def setTemperature (self, regulation, setpoint, autofreeze = True):
 
         strp = udrv.SetTemperatureRegulationParams()
 
@@ -369,7 +369,7 @@ class SBIGDrv(object):
         else:
             strp.regulation = udrv.REGULATION_OFF
         
-        strp.ccdSetPoint = TemperatureSetPoint.toAD (SetPoint)
+        strp.ccdsetpoint = TemperatureSetPoint.toAD (setpoint)
 
         self._cmd(udrv.CC_SET_TEMPERATURE_REGULATION, strp, None)
 

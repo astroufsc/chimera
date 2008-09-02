@@ -74,7 +74,11 @@ class Controller(ChimeraObject):
             raise ChimeraException("Cannot start scheduler. %s." % e)
 
     def control(self):
-        self.machine.start()
+	if not self.machine.isAlive():
+	    self.machine.start()
+	else:
+	    self.machine.state(State.DIRTY)
+
         return False # that's all folks; control is only run once
 
     def __stop__ (self):

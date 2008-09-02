@@ -82,6 +82,7 @@ consoleHandler.setLevel(logging.WARNING)
 
 root = logging.getLogger("chimera")
 root.setLevel(logging.DEBUG)
+root.propagate = False
 
 if fileHandler:
     root.addHandler(fileHandler)

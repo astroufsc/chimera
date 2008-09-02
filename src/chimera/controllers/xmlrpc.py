@@ -192,7 +192,7 @@ class ChimeraXMLDispatcher:
     
 class XMLRPC(ChimeraObject):
 
-    __config__ = {"host": False,     #If host == False, take from manager
+    __config__ = {"host": "",
                   "port": 7667,
                   'debug': False,    #Log all XMLRPC communications
                   }

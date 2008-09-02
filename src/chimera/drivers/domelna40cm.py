@@ -67,8 +67,7 @@ class DomeLNA40cm (ChimeraObject, IDomeDriver):
 
         ret = self._readline ()
         if ret != "INVALIDO":
-            print "quirk", '"%"' % ret
-            raise ChimeraException ("Quirk error!!!")
+            raise ChimeraException ("Quirk error!!! (%s)" % str(ret))
 
         return True
 

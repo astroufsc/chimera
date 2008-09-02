@@ -146,11 +146,11 @@ if __name__ == '__main__':
 
     temp = OptionGroup(parser, "Temperature control")
     
-    temp.add_option("-T", "--SetPoint", action="store", type="float", dest="SetPoint",
-                      help="Enable CCD cooling with TEMP as SetPoint.", metavar="TEMP")
+    temp.add_option("-T", "--setpoint", action="store", type="float", dest="SetPoint",
+                      help="Enable CCD cooling with TEMP as setpoint.", metavar="TEMP")
 
     temp.add_option("-w", "--wait", action="store_true", dest="wait",
-                      help="Wait until the selected CCD SetPoint is achived."
+                      help="Wait until the selected CCD setpoint is achived."
                       "[default=%default].")
 
     temp.add_option("--disable-cooling", action="store_true",

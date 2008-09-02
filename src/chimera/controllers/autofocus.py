@@ -17,7 +17,7 @@ import numpy as N
 plot = True
 try:
     import pylab as P
-except ImportError:
+except (ImportError, RuntimeError):
     plot = False
 
 from math import sqrt, ceil
@@ -170,10 +170,10 @@ class Autofocus (ChimeraObject):
 
     """
 
-    __config__ = {"telescope"          : "/Telescope/fake",
-                  "camera"             : "/Camera/fake",
-                  "filterwheel"        : "/FilterWheel/fake",
-                  "focuser"            : "/Focuser/fake",
+    __config__ = {"telescope"          : "/Telescope/0",
+                  "camera"             : "/Camera/0",
+                  "filterwheel"        : "/FilterWheel/0",
+                  "focuser"            : "/Focuser/0",
                   
                   "save_frames"        : True,
                   
@@ -346,7 +346,6 @@ class Autofocus (ChimeraObject):
                                          "Leaving focuser at %04d" % initial_position)
             
 
-
         fit.plot(os.path.expanduser("~/.chimera/autofocus-%s.plot.png" % self.currentRun))
         fit.log(os.path.expanduser("~/.chimera/autofocus-%s.dat" % self.currentRun))
 
@@ -379,7 +378,7 @@ class Autofocus (ChimeraObject):
             self.imageRequest["filename"] = os.path.join(self.currentRun, "focus-$DATE.fits")
 
         cam = self.getCam()
-
+        
         if self.filter:
             filter = self.getFilter()
             filter.setFilter(self.filter)
