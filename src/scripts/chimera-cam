@@ -146,17 +146,16 @@ if __name__ == '__main__':
 
     temp = OptionGroup(parser, "Temperature control")
     
-    temp.add_option("-T", "--setpoint", action="store", type="float", dest="SetPoint",
-                      help="Enable CCD cooling with TEMP as setpoint.", metavar="TEMP")
+    temp.add_option("-T", "--start-cooling", action="store", type="float", dest="setpoint",
+                      help="Start CCD cooling with TEMP as setpoint. chimera-cam will continue its work unless you use --wait (see below)", metavar="TEMP")
 
     temp.add_option("-w", "--wait", action="store_true", dest="wait",
                       help="Wait until the selected CCD setpoint is achived."
                       "[default=%default].")
 
-    temp.add_option("--disable-cooling", action="store_true",
+    temp.add_option("--stop-cooling", action="store_true",
                       dest="disable_cooling",
-                      help="Disable camera cooling. [default=%default].")
-
+                      help="Stop camera cooling. This option is exclusive.")
 
     temp.add_option("--stop-fan", action="store_true", dest="stop_fan",
                       help="Stop the cooler fan.")
@@ -226,8 +225,8 @@ if __name__ == '__main__':
                         imagetyp="object",
                         binning = "",
                         subframe= "",
-                        disable_cooling  = False ,
-                        SetPoint = -500, # magic number
+                        disable_cooling  = False,
+                        setpoint = -500, # magic number
                         wait     = False,
                         start_fan = False,
                         stop_fan = False,
@@ -267,15 +266,15 @@ if __name__ == '__main__':
 
     # be cool?
     cooling  = None
-    SetPoint = 10 # FIXME: magic number
+    setpoint = 10 # FIXME: magic number
 
-    if options.SetPoint != -500:
+    if options.setpoint != -500:
         cooling = True
-        SetPoint = options.SetPoint
+        setpoint = options.setpoint
 
     if options.disable_cooling:
         cooling  = False
-        SetPoint = None
+        setpoint = None
 
     # filter
     filter = None
@@ -496,11 +495,11 @@ if __name__ == '__main__':
         print "Camera:", camera["driver"], "(%s)" % driver["device"]
 
         if camera.isCooling() == True:
-            print "Cooling enabled, SetPoint: %.3f oC" % SetPoint
+            print "Cooling enabled, Setpoint: %.1f oC" % camera.getSetPoint()
         else:
             print "Cooling disabled."
 
-        print "Current CCD temperature:", camera.getTemperature(), "oC"
+        print "Current CCD temperature:", "%.1f" % camera.getTemperature(), "oC"
         if camera.isFanning():
             print "Cooler fan active."
         else:
@@ -570,6 +569,15 @@ if __name__ == '__main__':
         manager.shutdown()
         sys.exit(1)
 
+    if cooling == False:
+       print "="*40
+       print "Disabling cooling... ",
+       camera.stopCooling()
+       print "OK"
+       print "="*40
+       manager.shutdown()
+       sys.exit(1)
+
     if not options.quiet:
 
         print 40*"="
@@ -582,9 +590,7 @@ if __name__ == '__main__':
         print "Shutter: %s" % options.shutter
         print "Interval between frames: %.3fs" % options.interval
         if cooling == True:
-            print "Cooling enabled, SetPoint: %.3f oC" % SetPoint
-        elif cooling == False:
-            print "Cooling disabled."
+            print "Cooling enabled, Setpoint: %.3f oC" % setpoint
         else:
             print "Leaving cooling as is."
 
@@ -607,11 +613,8 @@ if __name__ == '__main__':
 
     # cooling
     if cooling == True:
-        camera.startCooling(SetPoint)
+        camera.startCooling(setpoint)
         
-    elif cooling == False:
-        camera.stopCooling()
-
 
     def eps_equal(a, b, eps=0.01):
         return abs(a-b) <= eps
@@ -623,7 +626,7 @@ if __name__ == '__main__':
         print 40*"="
 
         while not eps_equal(camera.getTemperature(), camera.getSetPoint(), 0.2):
-            print "\rwaiting SetPoint temperature %.3f oC, current: %.3f oC" \
+            print "\rwaiting setpoint temperature %.3f oC, current: %.3f oC" \
                 % (camera.getSetPoint(), camera.getTemperature()),
 
             sys.stdout.flush()

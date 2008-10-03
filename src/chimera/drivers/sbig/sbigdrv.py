@@ -369,7 +369,7 @@ class SBIGDrv(object):
         else:
             strp.regulation = udrv.REGULATION_OFF
         
-        strp.ccdsetpoint = TemperatureSetPoint.toAD (setpoint)
+        strp.ccdSetpoint = TemperatureSetPoint.toAD (setpoint)
 
         self._cmd(udrv.CC_SET_TEMPERATURE_REGULATION, strp, None)
 
@@ -377,12 +377,14 @@ class SBIGDrv(object):
         if autofreeze == True:
             strp = udrv.SetTemperatureRegulationParams()
             strp.regulation = udrv.REGULATION_ENABLE_AUTOFREEZE
-            strp.ccdSetPoint = 0 # irrelevant
             return self._cmd(udrv.CC_SET_TEMPERATURE_REGULATION, strp, None)
 
         return True
 
     def getTemperature (self, ccd = True):
+        """
+	@returns: a tuple with (is cooling enabled, current cooling power (0-100), setpoint temperature, current ccd temperature)
+	"""
 
         # USB based cameras have only one thermistor on the top of the CCD
         # Ambient thermistor value will be always 25.0 oC
