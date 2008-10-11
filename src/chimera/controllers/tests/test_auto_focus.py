@@ -46,11 +46,11 @@ class TestAutofocus (object):
         self.manager = Manager(port=8000)
 
         # fake
-        #self.manager.addClass(FakeCamera, "fake")
-        #self.manager.addClass(Camera, "cam", {"driver": "/FakeCamera/fake"})
+        self.manager.addClass(FakeCamera, "fake")
+        self.manager.addClass(Camera, "cam", {"driver": "/FakeCamera/fake"})
 
-        #self.manager.addClass(FakeFocuser, "fake")
-        #self.manager.addClass(Focuser, "focus", {"driver": "/FakeFocuser/0"})
+        self.manager.addClass(FakeFocuser, "fake")
+        self.manager.addClass(Focuser, "focus", {"driver": "/FakeFocuser/0"})
 
         # real
         #self.manager.addClass(SBIG, "sbig", {"device": "USB"})
@@ -59,11 +59,11 @@ class TestAutofocus (object):
         #self.manager.addClass(OptecTCFS, "optec", {"device": "/dev/ttyS0"})
         #self.manager.addClass(Focuser, "focus", {"driver": "/OptecTCFS/0"})
 
-        self.manager.addClass(Autofocus, "autofocus", {"camera" : "200.131.64.203:7666/Camera/0",
-                                                       "focuser": "200.131.64.203:7666/Focuser/0"})
+        #self.manager.addClass(Autofocus, "autofocus", {"camera" : "200.131.64.203:7666/Camera/0",
+        #                                               "focuser": "200.131.64.203:7666/Focuser/0"})
 
-        #self.manager.addClass(Autofocus, "autofocus", {"camera" : "/Camera/0",
-        #                                               "focuser": "/Focuser/0"})
+        self.manager.addClass(Autofocus, "autofocus", {"camera" : "/Camera/0",
+                                                       "focuser": "/Focuser/0"})
 
         @callback(self.manager)
         def exposeBeginClbk(exp_time):
@@ -85,7 +85,7 @@ class TestAutofocus (object):
         def abortCompleteClbk():
             print time.time(), "Abort complete."
 
-        cam = self.manager.getProxy(Camera, host='200.131.64.203', port=7666)
+        cam = self.manager.getProxy(Camera)
         cam.exposeBegin     += exposeBeginClbk
         cam.exposeComplete  += exposeCompleteClbk        
         cam.readoutBegin    += readoutBeginClbk        
@@ -100,12 +100,13 @@ class TestAutofocus (object):
 
         autofocus = self.manager.getProxy(Autofocus)
 
-        #autofocus += {"save_frames": True}
+        autofocus += {"debug": True,
+                     "debug_path": "/home/henrique/ph/basic-run"}
 
-        best_focus = autofocus.focus(target=Target.CURRENT, exptime=10, start=0, end=7000, step=1000, minmax=(0,30))
-        #best_focus = autofocus.focus(target=Target.CURRENT, exptime=10, points=25, minmax=(0,30))
+        #best_focus = autofocus.focus(target=Target.CURRENT, exptime=10, start=0, end=7000, step=1000, minmax=(0,30))
+        best_focus = autofocus.focus(target=Target.CURRENT, exptime=10, start=0, end=7000, points=28)
 
-        best_focus.plot("focus-lna.png")
-        best_focus.log("focus-lna.txt")
+        #best_focus.plot("focus.png")
+        #best_focus.log("focus-lna.txt")
 
 

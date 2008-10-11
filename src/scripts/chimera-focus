@@ -37,6 +37,7 @@ from chimera.core.exceptions import ObjectNotFoundException
 from chimera.core.exceptions import ChimeraObjectException
 from chimera.core.exceptions import InvalidLocationException
 from chimera.core.exceptions import ClassLoaderException
+from chimera.core.exceptions import printException
 
 from chimera.core.location import Location
 
@@ -94,10 +95,10 @@ if __name__ == '__main__':
                       help="Move N steps OUT", metavar="N")
 
     actions.add_option("--to", action="store", type="int", dest="move_to",
-                      help="Move to POSITION", metavar="POSITION")
+                       help="Move to POSITION", metavar="POSITION")
 
     actions.add_option("-i", "--info", action="store_true", dest="info",
-                      help="Print focuser information and exit")
+                       help="Print focuser information and exit")
 
     parser.add_option("-H", "--host", action="store", 
                       dest="pyro_host", type="string",
@@ -114,8 +115,28 @@ if __name__ == '__main__':
     parser.add_option("-q", "--quiet", action="store_true", dest='quiet',
                       help="Don't display informations while working [default=%default].")
 
+    # autofocus
+    af = OptionGroup(parser, "Autofocus")
+
+    af.add_option("--auto", action="store_true", dest="autofocus",
+                  help="Start an autofocus session using the selected parameters."
+                  " You can select a focuser range and the size of the step for the sequence."
+                  " This option is exclusive, you cannot move manually at the same time.")
+
+    af.add_option("--range", action="store", type="string", dest="autofocus_range",
+                  help="Defines autofocus sequence focuser range in the form start-end, "
+                  "as in 1000-6000 to run from 1000 to 6000 [default=%default]", metavar="START-END")
+
+    af.add_option("--step", action="store", type="int", dest="autofocus_step",
+                  help="Defines autofocus sequence step [default=%default]", metavar="STEP")
+
+    af.add_option("--exptime", action="store", type="float", dest="autofocus_exptime",
+                  help="Defines autofocus sequence frame exposure time [default=%default]",
+                  metavar="EXPTIME")
+
     parser.add_option_group(config)
     parser.add_option_group(actions)    
+    parser.add_option_group(af)    
 
 
     parser.set_defaults(focuser= [],
@@ -127,12 +148,16 @@ if __name__ == '__main__':
                         move_out = None,
                         move_to  = None,
                         pyro_host=MANAGER_DEFAULT_HOST,
-                        pyro_port=12000)
+                        pyro_port=12000,
+                        autofocus=None,
+                        autofocus_range="1000-6000",
+                        autofocus_step=5000,
+                        autofocus_exptime=10.0)
 
 
     options, args = parser.parse_args(sys.argv)
 
-    Action = Enum("IN", "OUT", "TO")
+    Action = Enum("IN", "OUT", "TO", "AUTO")
 
     action = None
     steps  = None
@@ -142,28 +167,38 @@ if __name__ == '__main__':
         action = Action.IN
         steps  = options.move_in
         
-        if (options.move_out != None) or (options.move_to != None):
-            print >> sys.stderr, "Cannot use --in with --out/--to"
+        if (options.move_out != None) or (options.move_to != None) or (options.autofocus != None):
+            print >> sys.stderr, "Cannot use --in with --out/--to/--auto"
             sys.exit(1)
 
     if options.move_out != None:
         action = Action.OUT
         steps  = options.move_out
 
-        if (options.move_in != None) or (options.move_to != None):
-            print >> sys.stderr, "Cannot use --out with --in/--to"
+        if (options.move_in != None) or (options.move_to != None) or (options.autofocus != None):
+            print >> sys.stderr, "Cannot use --out with --in/--to/--auto"
             sys.exit(1)
 
     if options.move_to != None:
         action = Action.TO
         steps  = options.move_to
 
-        if (options.move_in != None) or (options.move_out != None):
-            print >> sys.stderr, "Cannot use --to with --in/--out"
+        if (options.move_in != None) or (options.move_out != None) or (options.autofocus != None):
+            print >> sys.stderr, "Cannot use --to with --in/--out/--auto"
+            sys.exit(1)
+
+    if options.autofocus != None:
+        action = Action.AUTO
+        start = None
+        end = None
+        step = None
+
+        if (options.move_in != None) or (options.move_out != None) or (options.move_to != None):
+            print >> sys.stderr, "Cannot use --to with --in/--out/--to"
             sys.exit(1)
 
     if not action and not options.info:
-        print >> sys.stderr, "Please, ask me anything to do. Try --in/--out/--to."
+        print >> sys.stderr, "Please, ask me anything to do. Try --in/--out/--to/--auto."
         sys.exit(1)
  
     drivers_path = []
@@ -250,14 +285,37 @@ if __name__ == '__main__':
                 elif action == Action.OUT:
                     print "Moving %d steps OUT ... " % steps,
                     focuser.moveOut(steps)
-                else:
+                elif action == Action.TO:
                     print "Moving to %d ... " % steps,
                     focuser.moveTo(steps)
+                elif action == Action.AUTO:
+
+                    @callback(manager)
+                    def stepComplete (position, star, frame):
+                        print "Adding star to curve. (X,Y)=(%d,%d)" \
+                              " FWHM=%.3f FLUX=%.3f" % (star["XWIN_IMAGE"], star["YWIN_IMAGE"],
+                                                        star["FWHM_IMAGE"], star["FLUX_BEST"])
+
+                    try:
+                        autofocus = focuser.getManager().getProxy("/Autofocus/0")
+                        autofocus.stepComplete += stepComplete
+
+                        autofocus += {"debug": True,
+                                      "debug_path": "/home/henrique/ph/basic-run"}
+                        
+                        best_focus = autofocus.focus(exptime=options.autofocus_exptime,
+                                                     start=0, end=7000, points=28,
+                                                     minmax=(0,30))
+                    except ObjectNotFoundException:
+                        print >> sys.stderr, "Couldn't find autofocus controller."
+                        manager.shutdown()
+                        sys.exit(1)
                     
                 print "OK (took %.3fs)" % (time.time()-start)
 
             except Exception, e:
                 print >> sys.stderr, "Error trying to move focuser. (%s)" % e
+                printException(e)
 
     finally:
 
