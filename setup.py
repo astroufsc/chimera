@@ -96,12 +96,11 @@ setup(name='chimera-python',
                           "RO >= 2.2.7",
                           "pyfits >= 1.3",
                           "pyserial >= 2.2",
-                          "Pyro == 3.8"] + linux_cdeps + win32_cdeps,
+                          "Pyro == 3.8.1"] + linux_cdeps + win32_cdeps,
 
       dependency_links = [
                           "https://fedorahosted.org/suds/attachment/wiki/WikiStart/suds-0.2.4.tar.gz?format=raw",
-                          "http://sourceforge.net/project/showfiles.php?group_id=18837&package_id=29259&release_id=621369",
-			  #"http://sourceforge.net/project/showfiles.php?group_id=18837&package_id=29259&release_id=619449",
+                          "http://sourceforge.net/project/showfiles.php?group_id=18837&package_id=29259&release_id=630764"
                           "http://www.stsci.edu/resources/software_hardware/pyfits/pyfits-1.3.tar.gz",
                           "http://astropy.scipy.org/svn/astrolib/trunk/coords#egg=coords",
                           "http://astropy.scipy.org/svn/astrolib/trunk/pywcs#egg=pywcs",
