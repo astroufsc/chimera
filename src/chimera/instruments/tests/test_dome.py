@@ -40,7 +40,7 @@ from chimera.instruments.telescope import Telescope
 from chimera.util.position import Position
 
 import chimera.core.log
-chimera.core.log.setConsoleLevel(logging.DEBUG)
+#chimera.core.log.setConsoleLevel(logging.DEBUG)
 
 from nose.tools import assert_raises
 
@@ -75,24 +75,31 @@ class TestDome (object):
         def slewBeginClbk(target):
             print
             print time.time(), "[dome] Slew begin. target=%s" % str(target)
+            print
 
         @callback(self.manager)
         def slewCompleteClbk(position):
+            print
             print time.time(), "[dome] Slew complete. position=%s" % str(position)
+            print
 
         @callback(self.manager)
         def abortCompleteClbk(position):
+            print
             print time.time(), "[dome] Abort slew at position=%s" % str(position)
+            print
 
         @callback(self.manager)
         def slitOpenedClbk(position):
             print
             print time.time(), "[dome] Slit opened with dome at at position=%s" % str(position)
+            print
 
         @callback(self.manager)
         def slitClosedClbk(position):
             print
             print time.time(), "[dome] Slit closed with dome at at position=%s" % str(position)
+            print
 
         dome = self.manager.getProxy(Dome)
         dome.slewBegin    += slewBeginClbk
@@ -101,11 +108,35 @@ class TestDome (object):
         dome.slitOpened   += slitOpenedClbk
         dome.slitClosed   += slitClosedClbk     
 
+    def test_stress_dome_track (self):
+        dome = self.manager.getProxy(Dome)
+        tel  = self.manager.getProxy(Telescope)
+
+        dome.track()
+
+        for i in range(25):
+            ra  = "%d %d 00" % (random.randint(0,23), random.randint(0,59))
+            dec = "%d %d 00" % (random.randint(-90,0), random.randint(0,59))
+            tel.slewToRaDec((ra, dec))
+            time.sleep(random.randint(0,10))
+
+        dome.sync()
+
+    def test_stress_dome_slew (self):
+
+        dome = self.manager.getProxy(Dome)
+
+        for i in range(25):
+            az = random.randint(0,359)
+            dome.slewToAz(az)
+            assert dome.getAz() == az
+
     def test_get_az (self):
         dome = self.manager.getProxy(Dome)
         assert dome.getAz() >= 0
 
     def test_slew_to_az (self):
+
         dome = self.manager.getProxy(Dome)
 
         start = dome.getAz()
@@ -125,28 +156,6 @@ class TestDome (object):
         dome.closeSlit()
         assert dome.isSlitOpen() == False
 
-    def test_track (self):
-
-        dome = self.manager.getProxy(Dome)
-        tel  = self.manager.getProxy(Telescope)
-
-        dome.track()
-        assert dome.getMode() == Mode.Track
-
-        p = tel.getPositionRaDec()
-
-        time.sleep(30)
-        
-        tel.slewToRaDec((p.ra-10, p.dec-10))
-
-        time.sleep(30)
-
-        dome.stand()
-
-        time.sleep(30)
-
-
-        
 
 
         

@@ -51,11 +51,14 @@ class TestFocuser (object):
                                             "altitude": "1896",
                                             "utc_offset": "-3"})
 
-        #self.manager.addClass(FakeFocuser, "fake", {"device": "/dev/ttyS0"})
-        #self.manager.addClass(Focuser, "focus", {"driver": "/FakeFocuser/0"})
+        self.manager.addClass(FakeFocuser, "fake", {"device": "/dev/ttyS0"})
+        self.manager.addClass(Focuser, "focus", {"driver": "/FakeFocuser/0"})
 
-        self.manager.addClass(OptecTCFS, "optec", {"device": "/dev/ttyS0"})
-        self.manager.addClass(Focuser, "focus", {"driver": "/OptecTCFS/0"})
+        #self.manager.addClass(OptecTCFS, "optec", {"device": "/dev/ttyS0"})
+        #self.manager.addClass(Focuser, "focus", {"driver": "/OptecTCFS/0"})
+
+    def teardown (self):
+        self.manager.shutdown()
 
     def test_get_position (self):
 

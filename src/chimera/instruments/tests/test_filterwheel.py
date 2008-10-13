@@ -30,7 +30,7 @@ from chimera.instruments.filterwheel import FilterWheel
 
 from chimera.drivers.fakefilterwheel import FakeFilterWheel
 
-from chimera.drivers.sbig import SBIG
+#from chimera.drivers.sbig import SBIG
 from chimera.interfaces.cameradriver import Device
 
 
@@ -46,29 +46,19 @@ class TestFilterWheel (object):
 
         self.manager = Manager(port=8000)
 
-        #self.manager.addClass(FakeFilterWheel, "fake", {"device": "/dev/ttyS0"})
-        #self.manager.addClass(FilterWheel, "filter", {"driver": "/FakeFilterWheel/0",
-        #                                              "filters": "U B V R I"})
+        self.manager.addClass(FakeFilterWheel, "fake", {"device": "/dev/ttyS0"})
+        self.manager.addClass(FilterWheel, "filter", {"driver": "/FakeFilterWheel/0",
+                                                      "filters": "U B V R I"})
 
-        self.manager.addClass(SBIG, "sbig", {"device": Device.USB})
-        self.manager.addClass(FilterWheel, "filter", {"driver": "/SBIG/0",
-                                                      "filters": "R G B LUNAR CLEAR"})
+        #self.manager.addClass(SBIG, "sbig", {"device": Device.USB})
+        #self.manager.addClass(FilterWheel, "filter", {"driver": "/SBIG/0",
+        #                                              "filters": "R G B LUNAR CLEAR"})
 
 
-        @callback(self.manager)
-        def filterChangeClbk (new, old):
-            #print "[filter change] new: %s,  old: %s" % (new, old)
-            pass
+    def teardown (self):
+        self.manager.shutdown()
 
-        f = self.manager.getProxy(FilterWheel)
-        f.filterChange += filterChangeClbk
-
-    def test_get_filter (self):
-
-        f = self.manager.getProxy(FilterWheel)
-        f.getFilter()
-
-    def test_set_filter (self):
+    def test_filters (self):
 
         f = self.manager.getProxy(FilterWheel)
         
@@ -76,6 +66,7 @@ class TestFilterWheel (object):
 
         for filter in filters:
             f.setFilter(filter)
+            assert f.getFilter() == filter
 
     def test_get_filters (self):
         

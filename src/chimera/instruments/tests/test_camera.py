@@ -23,19 +23,23 @@ import time
 import logging
 import sys
 
+import Pyro.util
+
 from chimera.core.manager  import Manager
 from chimera.core.callback import callback
 from chimera.core.threads  import ThreadPool
+from chimera.core.exceptions import ChimeraValueError
+from chimera.core.proxy import Proxy
 
 from chimera.instruments.camera import Camera
 from chimera.drivers.fakecamera import FakeCamera
 
-from chimera.drivers.sbig import SBIG
+#from chimera.drivers.sbig import SBIG
 
 from chimera.interfaces.cameradriver import Device
 
 import chimera.core.log
-#chimera.core.log.setConsoleLevel(logging.INFO)
+#chimera.core.log.setConsoleLevel(logging.DEBUG)
 log = logging.getLogger("chimera.tests")
 
 
@@ -55,20 +59,21 @@ class TestCamera (object):
         self.manager.addClass(Camera, "cam", {"driver": "/FakeCamera/fake"})
 
         @callback(self.manager)
-        def exposeBeginClbk(exp_time):
-            print time.time(), "Expose begin for %.3f s." % exp_time
+        def exposeBeginClbk(request):
+            print
+            print time.time(), "Expose begin for request %s." % request
 
         @callback(self.manager)
-        def exposeCompleteClbk():
-            print time.time(), "Expose complete."
+        def exposeCompleteClbk(request):
+            print time.time(), "Expose complete for request %s." % request
 
         @callback(self.manager)
-        def readoutBeginClbk(frame):
-            print time.time(), "Readout begin for %s." % frame
+        def readoutBeginClbk(request):
+            print time.time(), "Readout begin for request %s." % request["filename"]
 
         @callback(self.manager)
-        def readoutCompleteClbk(frame):
-            print time.time(), "Readout complete for %s." % frame
+        def readoutCompleteClbk(request):
+            print time.time(), "Readout complete for request %s." % request["filename"]
 
         @callback(self.manager)
         def abortCompleteClbk():
@@ -83,44 +88,41 @@ class TestCamera (object):
         
     def teardown (self):
         self.manager.shutdown()
-        del self.manager
 
     def test_simple (self):
 
         cam = self.manager.getProxy(Camera)
-
         assert cam.isExposing() == False
 
     def test_expose (self):
 
-        print
-        
         cam = self.manager.getProxy(Camera)
 
         frames = 0
 
         try:
-            frames = cam.expose(exp_time=1, frames=5, interval=0.5, filename="test_expose.fits")
+            frames = cam.expose(exptime=2, frames=2, interval=0.5, filename="autogen-expose.fits")
         except Exception, e:
             log.exception("problems")
 
-        assert len(frames) == 5        
-
+        assert len(frames) == 2  
+        assert isinstance(frames[0], Proxy)
+        assert isinstance(frames[1], Proxy)
 
     def test_expose_checkings (self):
 
         cam = self.manager.getProxy(Camera)
 
         # exp_time ranges
-        assert_raises(ValueError, cam.expose, exp_time=-1)
-        assert_raises(ValueError, cam.expose, exp_time=10e100)
+        assert_raises(ChimeraValueError, cam.expose, exptime=-1)
+        assert_raises(ChimeraValueError, cam.expose, exptime=1e100)
 
         # frame ranges
-        assert_raises(ValueError, cam.expose, exp_time=1, frames=0)
-        assert_raises(ValueError, cam.expose, exp_time=1, frames=-1)
+        assert_raises(ChimeraValueError, cam.expose, exptime=1, frames=0)
+        assert_raises(ChimeraValueError, cam.expose, exptime=1, frames=-1)
 
         # interval ranges
-        assert_raises(ValueError, cam.expose, exp_time=0, interval=-1)
+        assert_raises(ChimeraValueError, cam.expose, exptime=0, interval=-1)
 
     def test_expose_lock (self):
 
@@ -129,14 +131,12 @@ class TestCamera (object):
         begin_times = []
         end_times = []
 
-        print
-        
         @callback(self.manager)
-        def exposeBeginClbk(exp_time):
+        def exposeBeginClbk(request):
             begin_times.append(time.time())
 
         @callback(self.manager)
-        def readoutCompleteClbk(frame):
+        def readoutCompleteClbk(request):
             end_times.append(time.time())
 
         cam.exposeBegin     += exposeBeginClbk
@@ -145,7 +145,7 @@ class TestCamera (object):
         def doExpose():
             # need to get another Proxy as Proxies cannot be shared among threads
             cam = self.manager.getProxy(Camera)
-            cam.expose(exp_time=2, filename="test_expose_lock.fits")
+            cam.expose(exptime=2, filename="autogen-expose-lock.fits")
 
         pool = ThreadPool()
         pool.queueTask(doExpose)
@@ -161,6 +161,8 @@ class TestCamera (object):
         assert len(begin_times) == 2
         assert len(end_times) == 2
         assert (end_times[1] > begin_times[0])
+
+        pool.joinAll()
         
     def test_expose_abort (self):
 
@@ -171,7 +173,7 @@ class TestCamera (object):
         def doExpose():
             # need to get another Proxy as Proxies cannot be shared among threads
             cam = self.manager.getProxy(Camera)
-            cam.expose(exp_time=10, filename="test_expose_abort.fits")
+            cam.expose(exptime=10, filename="autogen-expose-abort.fits")
 
         #
         # abort exposure while exposing
@@ -187,6 +189,8 @@ class TestCamera (object):
         cam.abortExposure()
         assert cam.isExposing() == False
 
+        pool.joinAll()
+
     def test_cooling (self):
 
         cam = self.manager.getProxy(Camera)
@@ -197,17 +201,11 @@ class TestCamera (object):
         cam.stopCooling()
         assert cam.isCooling() == False
 
-        print
-        for i in range(10):
-            print "\rcurrent temp:", cam.getTemperature(),
-            sys.stdout.flush()
-            time.sleep(0.5)
-        print
-
         cool=10
         cam.startCooling(cool)
         assert cam.isCooling() == True
 
+        print
         while not eps_equal(cam.getTemperature(), cool, 0.25):
             print "\rwaiting to cool to %d oC:" % cool, cam.getTemperature(),
             sys.stdout.flush()
@@ -215,5 +213,3 @@ class TestCamera (object):
 
         cam.stopCooling()
         assert cam.isCooling() == False
-
-        

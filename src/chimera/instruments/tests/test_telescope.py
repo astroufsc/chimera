@@ -38,6 +38,13 @@ import chimera.core.log
 from chimera.util.coord    import Coord
 from chimera.util.position import Position
 
+
+def assertEpsEqual (a, b, e=60):
+    """Assert wether a equals b withing eps precision, in
+    arcseconds. Both a and b must be Coords.
+    """
+    assert abs(a.AS-b.AS) <= e
+
 class TestTelescope (object):
 
     def setup (self):
@@ -65,93 +72,89 @@ class TestTelescope (object):
         #self.manager.addClass(Telescope, "meade",
         #                      {"driver": "200.131.64.134:7666/TheSkyTelescope/0"})
 
-        @callback(self.manager)
-        def slewBeginClbk(target):
-            print time.time(), "Slew begin. target=%s" % str(target)
-
-        @callback(self.manager)
-        def slewCompleteClbk(position):
-            print time.time(), "Slew complete. position=%s" % str(position)
-
-        @callback(self.manager)
-        def abortCompleteClbk(position):
-            print time.time(), "Abort complete. position=%s" % str(position)
-
-        @callback(self.manager)
-        def syncCompleteClbk(position):
-            print time.time(), "Sync complete. position=%s" % str(position)
-
-        @callback(self.manager)
-        def parkCompleteClbk():
-            print time.time(), "Park complete..."
-
-        @callback(self.manager)
-        def unparkCompleteClbk():
-            print time.time(), "Unpark complete..."
-
         self.tel = self.manager.getProxy(Telescope)
-        self.tel.slewBegin      += slewBeginClbk
-        self.tel.slewComplete   += slewCompleteClbk
-        self.tel.abortComplete  += abortCompleteClbk
-        self.tel.syncComplete   += syncCompleteClbk
-        self.tel.parkComplete   += parkCompleteClbk
-        self.tel.unparkComplete += unparkCompleteClbk
+
+    def teardown (self):
+        self.manager.shutdown()
 
     def test_slew (self):
 
         ra  = self.tel.getRa()
         dec = self.tel.getDec()
 
-        print
-        print "current position:", self.tel.getPositionRaDec()
-        print "moving to:", (ra-"1 00 00"), (dec-"15 00 00")
+        dest_ra  = (ra+"1 00 00")
+        dest_dec = (dec+"15 00 00")
 
-        self.tel.slewToRaDec((ra-"1 00 00", dec-"15 00 00"))
+        @callback(self.manager)
+        def slewBeginClbk(target):
+            assert target.ra == dest_ra
+            assert target.dec == dest_dec
 
-        print "new position:", self.tel.getPositionRaDec()
+        @callback(self.manager)
+        def slewCompleteClbk(position):
+            assertEpsEqual(position.ra, dest_ra, 60)
+            assertEpsEqual(position.dec, dest_dec, 60)
+
+        self.tel.slewBegin += slewBeginClbk
+        self.tel.slewComplete += slewCompleteClbk
+
+        self.tel.slewToRaDec((dest_ra, dest_dec))
 
     def test_slew_abort (self):
 
-        p =  self.tel.getPositionRaDec()
+        last_ra  = self.tel.getRa()
+        last_dec = self.tel.getDec()
 
-        print
-        print "current position:", p
-        print "moving to:", (p.ra-"10 00 00"), (p.dec-"10 00 00")
+        dest_ra  = last_ra  + "01 00 00"
+        dest_dec = last_dec + "10 00 00"
 
+        @callback(self.manager)
+        def abortCompleteClbk(position):
+            assert last_ra  < position.ra  < dest_ra
+            assert last_dec < position.dec < dest_dec
+
+        self.tel.abortComplete += abortCompleteClbk
+
+        # async slew
         def slew():
-            tel = self.manager.getProxy(Telescope)
-            tel.slewToRaDec((p.ra-"10 00 00", p.dec-"10 00 00"))
+            self.tel = self.manager.getProxy(Telescope)
+            self.tel.slewToRaDec((dest_ra, dest_dec))
 
         pool = ThreadPool()
         pool.queueTask(slew)
 
+        # wait thread to be scheduled
         time.sleep(2)
 
+        # abort and test (on abortCompleteClbk).
         self.tel.abortSlew()
 
-        print "new position:", self.tel.getPositionRaDec()
+        pool.joinAll()
 
     def test_sync (self):
 
-        start = self.tel.getPositionRaDec()
+        # get current position, drift the scope, and sync on the first
+        # position (like done when aligning the telescope).
 
-        ra  = self.tel.getRa()
-        dec = self.tel.getDec()
+        real_ra  = self.tel.getRa()
+        real_dec = self.tel.getDec()
 
-        print
+        @callback(self.manager)
+        def syncCompleteClbk(position):
+            assert position.ra == real_ra
+            assert position.dec == real_dec
 
-        print "current position:", self.tel.getPositionRaDec()
-        print "moving to:", (ra-"01 00 00"), (dec-"01 00 00")
+        self.tel.syncComplete += syncCompleteClbk
 
-        self.tel.slewToRaDec((ra-"01 00 00", dec-"01 00 00"))
+        # drift to "real" object coordinate
+        self.tel.slewToRaDec((real_ra+"01 00 00", real_dec+"01 00 00"))
 
-        print "syncing on:", start
-
-        self.tel.syncRaDec(start)
-
-        print "current position:", self.tel.getPositionRaDec()
+        self.tel.syncRaDec((real_ra, real_dec))
 
     def test_park (self):
+        
+        # FIXME: make a real test.
+        return
 
         def printPosition():
             print self.tel.getPositionRaDec(), self.tel.getPositionAltAz()
@@ -176,7 +179,7 @@ class TestTelescope (object):
         self.tel.park()
 
         t0 = time.time()
-        wait = 120
+        wait = 30
 
         for i in range(10):
             printPosition()

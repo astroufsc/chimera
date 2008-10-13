@@ -62,7 +62,7 @@ class Dome(ChimeraObject, IDome):
         drv.slitOpened    += self.getProxy()._slitOpenedClbk
         drv.slitClosed    += self.getProxy()._slitClosedClbk
 
-        self.setHz(1/5.0)
+        self.setHz(1/4.0)
 
         if self["mode"] == Mode.Track:
             self.track ()
@@ -75,16 +75,25 @@ class Dome(ChimeraObject, IDome):
         # telescope events
         self._connectTelEvents()
 
+        # reuse telescope proxy on control method
+        self.controlTel = None
+        self.controlDrv = None
+        # cache for az_resolution of the dome
+        self.controlAzRes = None
+
         return True
 
     def __stop__ (self):
-        if self['stowOnShutdown']:
+
+        if self['park_on_shutdown']:
+
             try:
                 self.stand()
-                self.slewToAz(self['stowPos'])
+                self.slewToAz(self['park_pos'])
             except Exception, e:
-                self.log.warning('Unable to stow dome: %s', str(e))
-        if self['closeOnShutdown'] and (self['assumeOpenOnShutdown'] or self.isSlitOpen()):
+                self.log.warning('Unable to park dome: %s', str(e))
+
+        if self['close_on_shutdown'] and self.isSlitOpen():
             try:
                 self.closeSlit()
             except Exception, e:
@@ -93,11 +102,12 @@ class Dome(ChimeraObject, IDome):
         # disconnect events
         drv = self.getDriver()
         
-        drv.slewBegin    -= self.getProxy()._slewBeginClbk
+        drv.slewBegin     -= self.getProxy()._slewBeginClbk
         drv.slewComplete  -= self.getProxy()._slewCompleteClbk
         drv.abortComplete -= self.getProxy()._abortCompleteClbk
         drv.slitOpened    -= self.getProxy()._slitOpenedClbk
         drv.slitClosed    -= self.getProxy()._slitClosedClbk
+
         self._disconnectTelEvents()
         return True
 
@@ -170,26 +180,19 @@ class Dome(ChimeraObject, IDome):
         if self.getMode() != Mode.Track: return
 
         self.log.debug("[event] telescope slewing to %s." % target)
-        # FIXME: conversao equatorial-local
-        #FIXME: We cannot call this now due to deadlocking. Must be handled with normal control loop!
-        #self._telescopeChanged(target.asAltAz(site.longitude(), site.lst()))
-        return
         
     def _telSlewCompleteClbk (self, target):
         if self.getMode() != Mode.Track: return
 
         tel = self.getTelescope()
         self.log.debug("[event] telescope slew complete, new position=%s." % target)
-        #FIXME: We cannot call this now due to deadlocking. Must be handled with normal control loop!
-        #self._telescopeChanged(tel.getAz())
 
     def _telAbortCompleteClbk (self, position):
         if self.getMode() != Mode.Track: return
 
         tel = self.getTelescope()
         self.log.debug("[event] telescope aborted last slew, new position=%s." % position)
-        #FIXME: We cannot call this now due to deadlocking. Must be handled with normal control loop!
-        #self._telescopeChanged(tel.getAz())
+
 
     # utilitaries
     def getDriver(self):
@@ -198,11 +201,7 @@ class Dome(ChimeraObject, IDome):
     def getTelescope(self):
         return self.getManager().getProxy(self['telescope'], lazy=True)        
 
-    # main control loop
-    @lock
     def control (self):
-
-        drv = self.getDriver()
 
         if self.getMode() == Mode.Stand:
             self.log.debug("[control] standing...")
@@ -214,13 +213,15 @@ class Dome(ChimeraObject, IDome):
             return True
 
         try:
-            tel = self.getTelescope()
 
-            if tel.isSlewing():
+            if not self.controlTel:
+                self.controlTel = self.getTelescope()
+
+            if self.controlTel.isSlewing():
                     self.log.debug("[control] telescope slewing... not checking az.")
                     return True
 
-            self._telescopeChanged(tel.getAz())
+            self._telescopeChanged(self.controlTel.getAz())
 
         except ObjectNotFoundException:
             raise ChimeraException("Couldn't found the selected telescope."
@@ -240,15 +241,15 @@ class Dome(ChimeraObject, IDome):
             self.log.debug("[control] telescope still in the slit, standing"
                             " (dome az=%.2f, tel az=%.2f, delta=%.2f.)" % (self.getAz(), az, abs(self.getAz()-az)))
 
-    def notSyncWithTel(self):
-        if self.isSlewing():
-            return True
-        else:
-            return self._needToMove(self.getTelescope().getAz())
 
     def _needToMove (self, az):
-        drv = self.getDriver()
-        return abs(az - self.getAz()) >= drv["az_resolution"]
+        if not self.controlDrv:
+            self.controlDrv = self.getDriver()
+
+        if not self.controlAzRes:
+            self.controlAzRes = self.controlDrv["az_resolution"]
+            
+        return abs(az - self.controlDrv.getAz()) >= self.controlAzRes
 
     def _processQueue (self):
         
@@ -257,21 +258,24 @@ class Dome(ChimeraObject, IDome):
         while not self.queue.empty():
 
             target = self.queue.get()
-            self.log.debug("[queue] slewing to %s" % target)
-            self.slewToAz(target)
-            self.queue.task_done()
+            try:
+                self.log.debug("[queue] slewing to %s" % target)
+                self.slewToAz(target)
+            finally:
+                self.log.debug("[queue] slew to %s complete" % target)                
+                self.queue.task_done()
         
     @lock
     def track(self):
         if self.getMode() == Mode.Track: return
-        
-        self._mode = Mode.Track
 
         self._reconnectTelEvents()
         
         tel = self.getTelescope()
         self.log.debug("[mode] tracking...")
         self._telescopeChanged(tel.getAz())
+
+        self._mode = Mode.Track
 
     @lock
     def stand(self):
@@ -308,24 +312,8 @@ class Dome(ChimeraObject, IDome):
 
     @lock
     def getAz (self):
-        tries = 3
-        left = tries
         drv = self.getDriver()
-        #FIXME: dome deiver failure bandaid
-        while left>0:
-            left-=1
-            try:
-                return drv.getAz ()
-            except IOError, ValueError:
-                if left > 0:
-                    self.log.exception('We couldn\'t get the azimuth retrying... (%i left)' % left)
-                    man = self.getManager()
-                    man.stop(self['driver'])
-                    man.start(self['driver'])
-                else:
-                    self.log.exception('Couldn\'t get the azimuth. We failed after %i tries.' % tries)
-                    raise
-                
+        return drv.getAz ()
 
     @lock
     def openSlit (self):
