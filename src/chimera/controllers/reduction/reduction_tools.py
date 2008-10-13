@@ -2,11 +2,9 @@
 import os
 import shutil
 import sys
-from pyraf import iraf
-from glob import *
+from glob import glob
 
-import utilities
-from image_class import *
+from pyraf import iraf
 
 iraf.images()
 iraf.noao.imred()
@@ -14,86 +12,59 @@ iraf.noao.imred.ccdred()
 
 
 def rmExistingDir(directory):
-  check=os.path.exists(directory)
-  if check==True:
-    shutil.rmtree(directory)
-    print "Directory '%s' removed" % directory
-  else: 
-    print "Directory '%s' does not exist; '%s' not removed" % (directory, directory)
-
-def rmFile(filename):
-  check=os.path.isfile(filename)
-  if check==True:
-    os.remove(filename)
-    print "File %s removed" % filename
-  else:
-    print "File '%s' does not exist; '%s' not removed" % (filename, filename)
+    """Removes a directory
+    @param directory:
+    @type directory: str
+    """
+    check = os.path.exists(directory)
+    if check:
+        shutil.rmtree(directory)
+        print "Directory '%s' removed" % directory
+    else:
+        print "Directory '%s' does not exist; '%s' not removed"
+        
+def rmFile(fileroot):
+    """Removes file(s) based on root name of the file
+    @param fileroot: <root>*
+    @type fileroot: str 
+    """
+    del_list = glob(fileroot+'*')
+    for file in del_list:
+        os.remove(file)
+        print "File %s removed" % file
 
 def makeDir(newdir):
-  if os.path.exists(newdir)==True:
-    shutil.rmtree(newdir)
-    print "Overwriting '%s'" % (newdir)
-  os.mkdir(newdir)
-  print "New directory '%s' created" % newdir
+    while(1):
+        if os.path.exists(newdir):
+            print "Directory %s already exists" % newdir
+            return newdir
+            break
+        else:
+            os.mkdir(newdir)
+            print "New Directory '%s' created" % newdir
+            return newdir
+            break
 
-def copyFits(imist, destdir):
-  if os.path.exists(destdir)==False:
-    os.mkdir(destdir)
-  for im in imlist:
-    if utilities.isstr(im)==False:
-      im=str(im)
-    shutil.copy(im, destdir)
-   
-def makeIrafList(inlist):
-  newlist = ''
-  for im in inlist:
-    newlist = newlist +im.location + ','+' '
-  newlist = '"'+newlist+'"'
-  return newlist 
-
-def filter(imobjlist, param):
-
-  stolist=[]
-  typelist=[]
-  while len(imobjlist)!=0:
-    newlist=[]  
-    primero=imobjlist[0]
-    parameter=primero.getParam(param)
-    newlist.append(primero)
-    del imobjlist[0]
-
-    i=0
-    for image in imobjlist:
-      if image.getParam(param)==parameter:
-        newlist.append(image)
-        del imobjlist[i]
-      i+=1
+def copyNewFits(imlist, destdir):
+    """Copies all files in a python list to certain destination directory
+    @param imlist: images to be copied
+    @type imlist: list
+    @param destdir: destination directory
+    @type destdir: str
+    """
+    copiedlist = []
     
-    stolist.append(newlist)
-    typelist.append(parameter)
-
-  return stolist, typelist
-
-def _add(imobjone, imobjtwo, writeloc):
-  locone = imobjone.location
-  loctwo = imobjone.location
-  iraf.imarith(operand1 = locone, op = '+', operand2 = loctwo, result = writeloc)
-  return Image(writeloc)
-
-def _subtract(imobjone, imobjtwo, writeloc):
-  locone = imobjone.location
-  loctwo = imobjone.location
-  iraf.imarith(operand1 = locone, op = '-', operand2 = loctwo, result = writeloc)
-  return Image(writeloc)
-
-def _multiply(imobjone, imobjtwo, writeloc):
-  locone = imobjone.location
-  loctwo = imobjone.location
-  iraf.imarith(operand1 = locone, op = '*', operand2 = loctwo, result = writeloc)
-  return Image(writeloc)
-
-def _divide(imobjone, imobjtwo, writeloc):
-  locone = imobjone.location
-  loctwo = imobjone.location
-  iraf.imarith(operand1 = locone, op = '/', operand2 = loctwo, result = writeloc) 
-  return Image(writeloc)
+    if not os.path.exists(destdir):
+        os.mkdir(destdir)
+    for im in imlist:
+        if os.path.isfile(im):
+            if not os.path.isfile(destdir+os.path.split(im)[-1]):
+                shutil.copy(im, destdir)
+                newloc = destdir+os.path.split(im)[-1]
+                print "Copied %s to %s" % (im, destdir)
+                copiedlist.append(newloc)
+    
+    return copiedlist
+        
+    
+    
