@@ -26,7 +26,6 @@ from chimera.core.exceptions import ChimeraException
 from chimera.util.enum import Enum
 
 
-
 __all__ = ['Mode',
            'Type',
            'IDome',
@@ -49,15 +48,15 @@ class IDome (Interface):
 
     __config__ = {"driver"   : "/FakeDome/0",
                   "telescope": "/Telescope/0",
-                  "mode"     : Mode.Stand,
 
                   "model"    : "Fake Domes Inc.",
                   "type"     : Type.Classic,
-                  'stowPos'  : 155,
-                  'stowOnShutdown': True,
-                  'closeOnShutdown': True,
-                  'assumeOpenOnShutdown': False,    #If False, check first if dome is open before closing
-                  }
+
+                  "mode"     : Mode.Stand,
+
+                  'park_pos' : 155,
+                  'park_on_shutdown' : False,
+                  'close_on_shutdown': False}
 
 
     def stand (self):

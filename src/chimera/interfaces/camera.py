@@ -51,8 +51,8 @@ class ICameraExpose (ICamera):
         @param request: ImageRequest containing details of the image to be taken
         @type  request: ImageRequest
 
-        @return: ImageURI if exposure succeeds; False otherwise
-        @rtype: bool or ImageURI
+        @return: L{Image} proxy if exposure succeeds; False otherwise
+        @rtype: bool or L{Proxy}
         """
 
     def abortExposure (self, readout=True):
@@ -74,41 +74,44 @@ class ICameraExpose (ICamera):
         """
 
     @event
-    def exposeBegin (self, exp_time):
+    def exposeBegin (self, request):
         """Indicates that new exposure is starting.
 
         When multiple frames are taken in a single shot, multiple
         exposeBegin events will be fired.
 
-        @param exp_time: How long the exposure will long.
-        @type  exp_time: float
+        @param request: The image request.
+        @type  request: L{ImageRequest}
         """
 
     @event
-    def exposeComplete (self):
+    def exposeComplete (self, request):
         """Indicates that new exposure frame was taken.
 
         When multiple frames are taken in a single shot, multiple
         exposeComplete events will be fired.
+
+        @param request: The image request.
+        @type  request: L{ImageRequest}
         """
 
     @event
-    def readoutBegin (self, filename):
+    def readoutBegin (self, request):
         """Indicates that new readout is starting.
 
         When multiple frames are taken in a single shot, multiple
         readoutBegin events will be fired.
 
-        @param filename: Where this new frame was put in the filesystem.
-        @type  filename: str
+        @param request: The image request.
+        @type  request: L{ImageRequest}
         """
 
     @event
     def readoutComplete (self, filename):
         """Indicates that a new frame was exposed and saved.
 
-        @param filename: Where this new frame was put in the filesystem.
-        @type  filename: str
+        @param request: The image request.
+        @type  request: L{ImageRequest}
         """
 
     @event

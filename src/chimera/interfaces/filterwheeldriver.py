@@ -27,7 +27,7 @@ from chimera.interfaces.cameradriver import Device
 
 class IFilterWheelDriver(Interface):
 
-    __config__ = {"device": Device.USB}
+    __config__ = {"device": "/dev/ttyS0"}
 
     def getFilter (self):
         """
