@@ -27,6 +27,7 @@ import threading
 import urllib
 import gzip
 import os
+import datetime as dt
 
 import numpy as N
 import pyfits
@@ -35,12 +36,12 @@ from chimera.interfaces.cameradriver      import ICameraDriver
 from chimera.interfaces.filterwheeldriver import IFilterWheelDriver
 from chimera.interfaces.camera import Shutter
 
-from chimera.controllers.imageserver.image import Image
+from chimera.controllers.imageserver.util import getImageServer
 
 from chimera.core.chimeraobject      import ChimeraObject
 from chimera.core.exceptions         import ChimeraException, ObjectNotFoundException
 
-#from chimera.util.imagesave import ImageSave
+from chimera.util.image import Image, ImageUtil
 
 from chimera.core.lock import lock
 
@@ -69,6 +70,18 @@ class FakeCamera (ChimeraObject, ICameraDriver, IFilterWheelDriver):
         self.__setpoint = 0
         self.__lastFrameStart = 0
 
+        self._adcs = {"12 bits": 0}
+
+        self._binnings = {"1x1": 0,
+                          "2x2": 1,
+                          "3x3": 2,
+                          "9x9": 9}
+
+        self._binning_factors = {"1x1": 1,
+                                 "2x2": 2,
+                                 "3x3": 3,
+                                 "4x4": 4}
+
     def __start__ (self):
         self.setHz(2)
 
@@ -93,17 +106,6 @@ class FakeCamera (ChimeraObject, ICameraDriver, IFilterWheelDriver):
 
     @lock
     def expose(self, imageRequest):
-#        self.__exposing = True
-#        self.__abort.clear()
-#
-#        ret = ()
-#
-#        # normal exposure
-#        if self._expose():
-#            ret = self._readout()
-#
-#        self.__exposing = False
-#        return ret
         
         self.__exposing = True
         self.__abort.clear()
@@ -119,18 +121,18 @@ class FakeCamera (ChimeraObject, ICameraDriver, IFilterWheelDriver):
 
     def _expose(self, imageRequest):
         
-        self.exposeBegin(imageRequest["exp_time"])
+        self.exposeBegin(imageRequest)
 
         t=0
         self.__lastFrameStart = time.time()
-        while t < imageRequest["exp_time"]:
+        while t < imageRequest["exptime"]:
             if self.__abort.isSet():
                 return False
             
             time.sleep (0.1)            
             t+=0.1
 
-        self.exposeComplete()
+        self.exposeComplete(imageRequest)
         return True
     
     @staticmethod
@@ -186,23 +188,13 @@ class FakeCamera (ChimeraObject, ICameraDriver, IFilterWheelDriver):
         telescope = None
         dome = None
 
-#        next_filename = ImageSave.save(pix, 
-#                                       self["directory"],
-#                                       self["file_format"],
-#                                       self["file_extension"],
-#                                       self["date_format"],
-#                                       self.__lastFrameStart,
-#                                       self["exp_time"],                                       
-#                                       self["bitpix"],
-#                                       self["save_on_temp"],
-#                                       dry=True)
-
         self.readoutBegin(imageRequest)
         
         try:
             telescope = self.getManager().getProxy(self['telescope'], lazy=True)
         except ObjectNotFoundException:
             pass
+
         try:
             dome = self.getManager().getProxy(self['dome'], lazy=True)
         except ObjectNotFoundException:
@@ -215,10 +207,9 @@ class FakeCamera (ChimeraObject, ICameraDriver, IFilterWheelDriver):
         elif (not telescope) and dome:
             self.log.debug("FakeCamera couldn't find telescope.")
 
-
         if (imageRequest["shutter"]==Shutter.CLOSE):
             self.log.info("Shutter closed -- making dark")
-            pix = self.make_dark((self["ccd_height"],self["ccd_width"]), N.float, imageRequest['exp_time'])
+            pix = self.make_dark((self["ccd_height"],self["ccd_width"]), N.float, imageRequest['exptime'])
 
         else:
 
@@ -260,7 +251,7 @@ class FakeCamera (ChimeraObject, ICameraDriver, IFilterWheelDriver):
                             self.log.warning("Error generating flat: " + str(e))
                         self.log.debug("Generating dark...")
                         try:
-                            pix += self.make_dark(pix.shape, N.float, imageRequest['exp_time'])
+                            pix += self.make_dark(pix.shape, N.float, imageRequest['exptime'])
                         except Exception, e:
                             self.log.warning("Error generating dark: " + str(e))
             # without telescope/dome, or if dome/telescope aren't aligned, or the dome is closed
@@ -269,7 +260,7 @@ class FakeCamera (ChimeraObject, ICameraDriver, IFilterWheelDriver):
                 try:
                     self.log.info("Making simulated flat image: " + str(self["ccd_height"]) + "x" + str(self["ccd_width"]))
                     self.log.debug("Generating dark...")
-                    pix = self.make_dark((self["ccd_height"],self["ccd_width"]), N.float, imageRequest['exp_time'])
+                    pix = self.make_dark((self["ccd_height"],self["ccd_width"]), N.float, imageRequest['exptime'])
                     self.log.debug("Making flat...")
                     pix += self.make_flat((self["ccd_height"],self["ccd_width"]), N.float)
                 except Exception, e:
@@ -279,34 +270,28 @@ class FakeCamera (ChimeraObject, ICameraDriver, IFilterWheelDriver):
         if (pix == None):
             pix = N.zeros((100,100), dtype=N.int32)
 
-#        next_filename = ImageSave.save(pix, 
-#                                       self["directory"],
-#                                       self["file_format"],
-#                                       self["file_extension"],
-#                                       self["date_format"],
-#                                       self.__lastFrameStart,
-#                                       self["exp_time"],                                       
-#                                       self["bitpix"],
-#                                       self["save_on_temp"],
-#                                       dry=False)
+        imageRequest.fetchPostHeaders(self.getManager())
         
-        imageRequest.addPostHeaders(self.getManager())
-        
-        img = Image.imageFromImg(pix, imageRequest, [
-                                               ('DATE-OBS',Image.formatDate(self.__lastFrameStart),'Date exposure started'),
-                                               ('XBINNING',1,'Readout CCD Binning (x-axis)'),
-                                               ('YBINNING',1,'Readout CCD Binning (y-axis)'),
-                                               ('XWIN_LFT',0,'Readout window x left position'),
-                                               ('XWIN_SZ',pix.shape[1],'Readout window width'),
-                                               ('YWIN_TOP',0,'Readout window y top position'),
-                                               ('YWIN_SZ',pix.shape[0],'Readout window height'),
-                                               ('IMAGETYP',imageRequest['image_type'],'Image type'),
-                                               ]
-                           )
+        img = Image.create(pix, imageRequest)
 
-        self.readoutComplete(img)
-        
-        return img
+        # update image request
+        imageRequest["filename"] = img.filename
+
+        img += [('DATE-OBS', ImageUtil.formatDate(dt.datetime.fromtimestamp(self.__lastFrameStart)), 'Date exposure started'),
+                ('XBINNING', 1,'Readout CCD Binning (x-axis)'),
+                ('YBINNING', 1,'Readout CCD Binning (y-axis)'),
+                ('XWIN_LFT', 0,'Readout window x left position'),
+                ('XWIN_SZ', pix.shape[1],'Readout window width'),
+                ('YWIN_TOP', 0,'Readout window y top position'),
+                ('YWIN_SZ', pix.shape[0],'Readout window height'),
+                ('IMAGETYP', imageRequest['type'],'Image type')]
+
+        self.readoutComplete(imageRequest)
+
+        server = getImageServer(self.getManager())
+        proxy = server.register(img)
+
+        return proxy
 
     def abortExposure(self):
 
@@ -347,3 +332,15 @@ class FakeCamera (ChimeraObject, ICameraDriver, IFilterWheelDriver):
     def setFilter (self, filter):
         self.filterChange(filter, self.__lastFilter)
         self.__lastFilter = filter
+
+    def getBinnings(self):
+        return self._binnings
+
+    def getADCs(self):
+        return self._adcs
+
+    def getPhysicalSize(self):
+        return (512,512)
+
+    def getPixelSize(self):
+        return (9,9)

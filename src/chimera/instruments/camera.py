@@ -82,17 +82,17 @@ class Camera (ChimeraObject,
         drv.abortComplete     -= self.getProxy()._abortDrvClbk
         drv.temperatureChange -= self.getProxy()._tempChangeDrvClbk
 
-    def _exposeBeginDrvClbk (self, exp_time):
-        self.exposeBegin(exp_time)
+    def _exposeBeginDrvClbk (self, request):
+        self.exposeBegin(request)
     
-    def _exposeCompleteDrvClbk (self):
-        self.exposeComplete()
+    def _exposeCompleteDrvClbk (self, request):
+        self.exposeComplete(request)
 
-    def _readoutBeginDrvClbk (self, filename):
-        self.readoutBegin(filename)
+    def _readoutBeginDrvClbk (self, request):
+        self.readoutBegin(request)
     
-    def _readoutCompleteDrvClbk (self, filename):
-        self.readoutComplete(filename)
+    def _readoutCompleteDrvClbk (self, request):
+        self.readoutComplete(request)
 
     def _abortDrvClbk (self):
         self.abortComplete()
@@ -108,10 +108,10 @@ class Camera (ChimeraObject,
             if isinstance(request, ImageRequest):
                 imageRequest = request
             elif isinstance(request, dict):
-                imageRequest = ImageRequest(request)
+                imageRequest = ImageRequest(**request)
         else:
             if kwargs:
-                imageRequest = ImageRequest(kwargs)
+                imageRequest = ImageRequest(**kwargs)
             else:
                 imageRequest = ImageRequest()
         
@@ -127,34 +127,22 @@ class Camera (ChimeraObject,
         # config driver
         drv = self.getDriver()
 
-        imageURIs = []
+        images = []
 
-        self.log.debug('Looping through ' + str(frames) + ' frames...')
         for frame_num in range(frames):
             
             if self.abort.isSet():
-                return imageURIs
+                return images
             
-            try:
-                imageRequest.addPreHeaders(self.getManager())
+            imageRequest.fetchPreHeaders(self.getManager())
+            image = drv.expose(imageRequest)
+            images.append(image)
+            
+            if interval > 0 and frame_num < frames:
+                time.sleep(interval)
 
-                try:
-                    imageURI = drv.expose(imageRequest)
-                    imageURIs.append(imageURI)
-                    self.log.debug('Got back imageURI = ' + str(imageURI) + '[' + str(frame_num) + '/' + str(frames) + ']')
-                    self.log.info(str(imageRequest) + ': [' + str(frame_num) + '/' + str(frames) + '] done')
-                    
-                except Exception, e:
-                    print ''.join(Pyro.util.getPyroTraceback(e))
+        return tuple(images)
                 
-                if interval > 0 and frame_num < frames:
-                    time.sleep(interval)
-            except ValueError:
-                raise ChimeraValueError('An error occurred while trying to take the exposure.')
-        
-        return tuple(imageURIs)
-                
-        
     def abortExposure (self, readout=True):
         drv = self.getDriver()
         drv.abortExposure()
