@@ -23,6 +23,12 @@ import threading
 import datetime as dt
 from types import FloatType
 import math
+import os
+
+try:
+    import cPickle as pickle
+except ImportError:
+    import pickle
 
 import serial
 
@@ -80,6 +86,7 @@ class Meade (ChimeraObject,
         # and direction
         self._calibration = {}
         self._calibration_time = 3.0
+        self._calibrationFile = os.path.expandvars("$HOME/.chimera/move_calibration.bin")
         
         for rate in SlewRate:
             self._calibration[rate] = {}
@@ -93,6 +100,16 @@ class Meade (ChimeraObject,
 
     def __start__ (self):
         self.open()
+
+        # try to read saved calibration data
+        if os.path.exists(self._calibrationFile):
+            try:
+                self._calibration = pickle.loads(open(self._calibrationFile, "r").read())
+                self.calibrated = True
+            except Exception, e:
+                self.log.warning("Problems reading calibration persisted data (%s)" % e)
+
+        return True
 
     def __stop__ (self):
 
@@ -438,6 +455,14 @@ class Meade (ChimeraObject,
                     total += calibrate(direction, rate).arcsec()
                 
                 self._calibration[rate][direction] = total/3.0
+
+        # save calibration
+        try:
+            f = open(self._calibrationFile, "w")
+            f.write(pickle.dumps(self._calibration))
+            f.close()
+        except Exception, e:
+            self.log.warning("Problems persisting calibration data. (%s)" % e)
 
         self.log.info("Calibration was OK.")
         self._calibrated = True
