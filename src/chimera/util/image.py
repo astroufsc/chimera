@@ -141,9 +141,7 @@ class Image (DictMixin, RemoteObject):
 
         fd = pyfits.open(filename, mode="update")
 
-        img = Image()
-        img.filename = filename
-        img.fd = fd
+        img = Image(filename, fd)
 
         if fix:
             img.fix()
@@ -193,26 +191,33 @@ class Image (DictMixin, RemoteObject):
     #
     # standard constructor
     #
-    def __init__ (self):
+    def __init__ (self, filename, fd):
         RemoteObject.__init__(self)
 
-        self.filename = ""
-        self.fd       = None
-        self.readonly = False
-
+        self._fd       = fd
+        self._filename = filename
+        self._http = None
         self._wcs = None
+
+
+    filename = lambda self: self._filename
+    
+    def http (self, http=None):
+        if http:
+            self._http = http
+        return self._http
 
     #
     # serialization support
     # we close before pickle and reopen after it
     #
     def __getstate__ (self):
-        self.fd.close()
+        self._fd.close()
         return self.__dict__
 
     def __setstate__ (self, args):
         self.__dict__ = args
-        self.fd = pyfits.open(self.filename, mode="update")
+        self._fd = pyfits.open(self._filename, mode="update")
 
     #
     # geometry
@@ -260,9 +265,9 @@ class Image (DictMixin, RemoteObject):
 
         if not self._wcs:
             try:
-                self._wcs = pywcs.WCS(self.fd["PRIMARY"].header)
+                self._wcs = pywcs.WCS(self._fd["PRIMARY"].header)
             except KeyError:
-                raise WCSNotFoundException("Couldn't find WCS information on %s" % (self.filename))
+                raise WCSNotFoundException("Couldn't find WCS information on %s" % (self._filename))
 
         return True
 
@@ -317,7 +322,7 @@ class Image (DictMixin, RemoteObject):
 
         # ok, here we go!
         try:
-            sex.run(self.filename)
+            sex.run(self._filename)
             result = sex.catalog()
             return result
         finally:
@@ -328,20 +333,20 @@ class Image (DictMixin, RemoteObject):
     #
     
     def fix (self):
-        self.fd.verify('fix')
+        self._fd.verify('fix')
 
     def save (self, filename=None, verify='exception'):
 
         if filename:
-            self.fd.writeto(filename, output_verify=verify)
+            self._fd.writeto(filename, output_verify=verify)
         else:
-            self.fd.flush(output_verify=verify)
+            self._fd.flush(output_verify=verify)
 
         return True
 
     # dict mixin implementation for headers
     def __getitem__ (self, key):
-        return self.fd["PRIMARY"].header.__getitem__(key)
+        return self._fd["PRIMARY"].header.__getitem__(key)
         
     def __setitem__ (self, key, value):
 
@@ -349,19 +354,19 @@ class Image (DictMixin, RemoteObject):
             self += (key, value)
             return True
 
-        return self.fd["PRIMARY"].header.__setitem__(key, value)
+        return self._fd["PRIMARY"].header.__setitem__(key, value)
 
     def __delitem__ (self, key):
-        return self.fd["PRIMARY"].header.__delitem__(key)
+        return self._fd["PRIMARY"].header.__delitem__(key)
 
     def keys (self):
-        return [item[0] for item in self.fd["PRIMARY"].header.items()]
+        return [item[0] for item in self._fd["PRIMARY"].header.items()]
 
     def items (self):
-        return self.fd["PRIMARY"].header.items()
+        return self._fd["PRIMARY"].header.items()
     
     def __contains__(self, key):
-        return self.fd["PRIMARY"].header.has_key(key)
+        return self._fd["PRIMARY"].header.has_key(key)
 
     def __iter__ (self):
         for k in self.keys():
@@ -388,6 +393,6 @@ class Image (DictMixin, RemoteObject):
             headers = [headers]
 
         for header in headers:
-            self.fd["PRIMARY"].header.update(*header)
+            self._fd["PRIMARY"].header.update(*header)
 
         return self

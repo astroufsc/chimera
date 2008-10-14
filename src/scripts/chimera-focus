@@ -290,12 +290,19 @@ if __name__ == '__main__':
                     focuser.moveTo(steps)
                 elif action == Action.AUTO:
 
+                    from RO.DS9 import DS9Win as DS9
+                    ds9 = DS9(doRaise=True, doOpen=True)
+
                     @callback(manager)
                     def stepComplete (position, star, frame):
+                        global ds9
                         print "Adding star to curve. (X,Y)=(%d,%d)" \
                               " FWHM=%.3f FLUX=%.3f" % (star["XWIN_IMAGE"], star["YWIN_IMAGE"],
                                                         star["FWHM_IMAGE"], star["FLUX_BEST"])
-
+                        ds9.xpaset("file %s" % frame.filename())
+                        ds9.xpaset("regions command { circle %d %d 20}" % (int(star["XWIN_IMAGE"]), int(star["YWIN_IMAGE"])))
+                        #ds9.xpaset("pan to %d %d physical" % (int(star["XWIN_IMAGE"]), int(star["YWIN_IMAGE"])))
+                        
                     try:
                         autofocus = focuser.getManager().getProxy("/Autofocus/0")
                         autofocus.stepComplete += stepComplete
@@ -306,6 +313,9 @@ if __name__ == '__main__':
                         best_focus = autofocus.focus(exptime=options.autofocus_exptime,
                                                      start=0, end=7000, points=28,
                                                      minmax=(0,30))
+
+                        print best_focus
+
                     except ObjectNotFoundException:
                         print >> sys.stderr, "Couldn't find autofocus controller."
                         manager.shutdown()

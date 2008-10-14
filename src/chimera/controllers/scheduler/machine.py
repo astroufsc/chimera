@@ -1,8 +1,8 @@
 import chimera.core.log
+from chimera.controllers.scheduler.states import State
+
 import threading
 import logging
-from chimera.core.chimeraobject import ChimeraObject
-from chimera.controllers.scheduler.states import State
 
 log = logging.getLogger(__name__)
 
@@ -14,11 +14,12 @@ class Machine(threading.Thread):
     
     def __init__(self, scheduler, controller):
         threading.Thread.__init__(self)
-        self.proxies = {}
+
         self.scheduler = scheduler
         self.controller = controller
-        self.__state=(State.OFF)
         self.setDaemon(False)
+
+        self.state(State.OFF)
     
     def state(self, state=None):
         self.__stateLock.acquire()

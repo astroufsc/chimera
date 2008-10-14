@@ -1,0 +1,48 @@
+<?xml version="1.0"?>
+
+<chimera host="200.131.64.203" port="10000">
+
+<instruments>
+ 
+<instrument name="tel" class="Telescope">
+  <option name="driver" value="/FakeTelescope/0"/>
+ </instrument>
+
+ <instrument name="cam" class="Camera">
+  <option name="driver" value="/FakeCamera/0"/>
+ </instrument>
+
+ <instrument name="wheel" class="FilterWheel">
+  <option name="driver" value="/FakeFilterWheel/0"/>
+  <option name="filters" value="R G B LUNAR CLEAR"/>
+ </instrument>
+
+ <instrument name="dome" class="Dome">
+  <option name="driver" value="/FakeDome/0"/>
+  <option name="telescope" value="/Telescope/0"/>
+  <option name="mode" value="stand"/>
+ </instrument>
+
+ <instrument name="focus" class="Focuser">
+  <option name="driver" value="/FakeFocuser/0"/>
+ </instrument>
+</instruments>
+
+<drivers>
+
+ <driver name="st7"     class="FakeCamera"/>
+ <driver name="meade"   class="FakeTelescope"/>
+ <driver name="wheel"   class="FakeFilterWheel"/>
+ <driver name="dome"    class="FakeDome"/>
+ <driver name="focuser" class="FakeFocuser"/>
+
+</drivers>
+
+<controllers>
+
+ <controller name="focus"  class="Autofocus"/>
+ <controller name="verify" class="PointVerify"/>
+
+</controllers>
+
+</chimera> 

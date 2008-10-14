@@ -1,5 +1,4 @@
 from chimera.controllers.scheduler.constraints import IConstraint
-#from chimera.controllers.scheduler.constraints import ConstraintReturns
 
 class MoonDistanceConstraint(IConstraint):
     def getMyKey(self):
@@ -11,4 +10,3 @@ class MoonDistanceConstraint(IConstraint):
     def checkConstraint(self, paramMin, paramMax, exposure = None, observation = None, program = None):
         if exposure == None:
             return self.DONTCARE
-        #TODO: Add code here!

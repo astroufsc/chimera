@@ -204,7 +204,6 @@ class Dome(ChimeraObject, IDome):
     def control (self):
 
         if self.getMode() == Mode.Stand:
-            self.log.debug("[control] standing...")
             return True
 
         if not self.queue.empty():

@@ -1,0 +1,146 @@
+Mandatory FITS keywords are as follows:
+
+    *
+
+      SIMPLE – always “T”, indicating a FITS header.
+    *
+
+      BITPIX – indicates array format. Options include unsigned 8-bit (8), signed 16 bit (16), signed 32 bit (32), 32-bit IEEE float (-32), and 64-bit IEEE float (-64). The standard format is 16; -64 can be read by MaxIm DL but is not written.
+    *
+
+      NAXIS – number of axes in the data array. MaxIm DL uses 2 for monochrome images, and 3 for color images.
+    *
+
+      NAXIS1 – corresponds to the X axis.
+    *
+
+      NAXIS2 – corresponds to the Y axis.
+    *
+
+      NAXIS3 – present only for color images; value is always 3 (red, green, blue color planes are present in that order).
+
+Optional keywords defined by FITS standard and used in MaxIm DL:
+
+    *
+
+      OBJECT – name or catalog number of object being imaged, if available from Telescope Control window or specified by the user in Settings.
+    *
+
+      TELESCOP – user-entered information about the telescope used.
+    *
+
+      INSTRUME – camera information. Either user entered or obtained from the camera driver.
+    *
+
+      OBSERVER – user-entered information; the observer’s name.
+    *
+
+      DATE-OBS – date of observation in the ISO standard 8601 format (Y2K compliant FITS): CCYY-MM-DDThh:mm:ss.sss. The Universal time at the start of the exposure is used. Note: the alternate format using DATE-OBS and TIME-OBS is not written, but MaxIm DL will correctly interpret it when read.
+    *
+
+      BSCALE – this value should be multiplied by the data array values when reading the FITS file. MaxIm DL always writes a value of 1 for this keyword.
+    *
+
+      BZERO – this value should be added to the data array values when reading the FITS file. For 16-bit integer files, MaxIm DL writes 32768 (unless overridden by the Settings dialog).
+    *
+
+      HISTORY – indicates the processing history of the image. This keyword may be repeated as many times as necessary.
+
+Non-standard keywords used in MaxIm DL:
+
+    *
+
+      EXPTIME – duration of exposure in seconds.
+    *
+
+      DARKTIME – dark current integration time, if recorded. May be longer than exposure time.
+    *
+
+      CCD-TEMP – actual measured sensor temperature at the start of exposure in degrees C. Absent if temperature is not available.
+    *
+
+      XPIXSZ – physical X dimension of the sensor's pixels in microns (present only if the information is provided by the camera driver). Includes binning.
+    *
+
+      YPIXSZ – physical Y dimension of the sensor's pixels in microns (present only if the information is provided by the camera driver). Includes binning.
+    *
+
+      XBINNING – binning factor used on X axis
+    *
+
+      YBINNING – binning factor used on Y axis
+    *
+
+      XORGSUBF – subframe origin on X axis
+    *
+
+      YORGSUBF – subframe origin on Y axis
+    *
+
+      EGAIN – electronic gain in photoelectrons per ADU.
+    *
+
+      FOCALLEN – focal length of the telescope in millimeters.
+    *
+
+      APTDIA – diameter of the telescope in millimeters.
+    *
+
+      APTAREA – aperture area of the telescope in square millimeters. This value includes the effect of the central obstruction.
+    *
+
+      CBLACK – indicates the black point used when displaying the image (screen stretch).
+    *
+
+      CWHITE – indicates the white point used when displaying the image (screen stretch).
+    *
+
+      PEDESTAL – add this value to each pixel value to get a zero-based ADU. Calibration in MaxIm DL sets this to 100.
+    *
+
+      DATAMAX – pixel values above this level are considered saturated.
+    *
+
+      SWCREATE – string indicating the software used to create the file; will be “MaxIm DL Version x.xx”, where x.xx is the current version number.
+    *
+
+      SWMODIFY – string indicating the software that modified the file. May be multiple copies.
+    *
+
+      SBSTDVER – string indicating the version of the SBIG FITS extensions supported.
+    *
+
+      FILTER – name of selected filter, if filter wheel used.
+    *
+
+      TRAKTIME – exposure time of the autoguider used during imaging.
+    *
+
+      SET-TEMP – CCD temperature setpoint in degrees C. Absent if setpoint was not entered.
+    *
+
+      IMAGETYP – type of image: Light Frame, Bias Frame, Dark Frame, Flat Frame, or Tricolor Image.
+    *
+
+      OBJCTDEC - Declination of object being imaged, string format DD MM SS, if available. Note: this is an approximate field center value only.
+    *
+
+      OBJCTRA – Right Ascension of object being imaged, string format HH MM SS, if available. Note: this is an approximate field center value only.
+    *
+
+      OBJCTALT – nominal altitude of center of image             
+    *
+
+      OBJCTAZ – nominal azimuth of center of image              
+    *
+
+      OBJCTHA – nominal hour angle of center of image          
+    *
+
+      SITELAT – latitude of the imaging site in degrees, if available. Uses the same format as OBJECTDEC.
+    *
+
+      SITELONG – longitude of the imaging site in degrees, if available. Uses the same format as OBJECTDEC.
+    *
+
+      NOTES – user-entered information; free-form notes.

@@ -75,7 +75,10 @@ class ImageServer(ChimeraObject):
                 
             self.getDaemon().connect(image)
             self.imagesByID[image.GUID()]    = image
-            self.imagesByPath[image.filename] = image
+            self.imagesByPath[image.filename()] = image
+
+            # save Image's HTTP address
+            image.http(self.getHTTPByID(image.GUID()))
             return image.getProxy()
         except Exception, e:
             print ''.join(Pyro.util.getPyroTraceback(e))
@@ -84,7 +87,7 @@ class ImageServer(ChimeraObject):
         try:
             self.getDaemon().disconnect(image)
             del self.imagesByID[image.GUID()]
-            del self.imagesByPath[image.filename]
+            del self.imagesByPath[image.filename()]
         except Exception, e:
             print ''.join(Pyro.util.getPyroTraceback(e))
     
@@ -105,3 +108,7 @@ class ImageServer(ChimeraObject):
         img = self.getImageByPath(path)
         if img:
             return img.getProxy()
+
+    def getHTTPByID (self, id):
+        return "http://%s:%d/image/%s" % (self["http_host"], int(self["http_port"]), str(id))
+        

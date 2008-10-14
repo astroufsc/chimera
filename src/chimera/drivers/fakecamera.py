@@ -167,7 +167,7 @@ class FakeCamera (ChimeraObject, ICameraDriver, IFilterWheelDriver):
         iadd=15.0/shape[0]
         jadd=10.0/shape[1]
 
-        badlevel = 50
+        badlevel = 0
 
         badareai=shape[0]/2
         badareaj=shape[1]/2
@@ -275,9 +275,11 @@ class FakeCamera (ChimeraObject, ICameraDriver, IFilterWheelDriver):
         img = Image.create(pix, imageRequest)
 
         # update image request
-        imageRequest["filename"] = img.filename
+        imageRequest["filename"] = img.filename()
 
-        img += [('DATE-OBS', ImageUtil.formatDate(dt.datetime.fromtimestamp(self.__lastFrameStart)), 'Date exposure started'),
+        img += [('DATE-OBS',
+                 ImageUtil.formatDate(dt.datetime.fromtimestamp(self.__lastFrameStart)),
+                 'Date exposure started'),
                 ('XBINNING', 1,'Readout CCD Binning (x-axis)'),
                 ('YBINNING', 1,'Readout CCD Binning (y-axis)'),
                 ('XWIN_LFT', 0,'Readout window x left position'),
@@ -286,10 +288,10 @@ class FakeCamera (ChimeraObject, ICameraDriver, IFilterWheelDriver):
                 ('YWIN_SZ', pix.shape[0],'Readout window height'),
                 ('IMAGETYP', imageRequest['type'],'Image type')]
 
-        self.readoutComplete(imageRequest)
-
         server = getImageServer(self.getManager())
         proxy = server.register(img)
+
+        self.readoutComplete(proxy)
 
         return proxy
 

@@ -550,23 +550,6 @@ if __name__ == '__main__':
                 else:
                     print "tracking: disabled."
 
-                print "align mode:", driver.getAlignMode()
-                print "ra :", driver.getRa()
-                print "dec:", driver.getDec()
-                print "az :", driver.getAz()
-                print "alt:", driver.getAlt()
-        
-                print "lat :", driver.getLat()
-                print "long:", driver.getLong()
-        
-                print "date:" , driver.getDate()
-                print "time:" , driver.getLocalTime()
-                print "to utc:", driver.getUTCOffset()
-                print "lst:", driver.getLocalSiderealTime()
-
-                print "tracking rate:", driver.getCurrentTrackingRate()
-
-                    
             except Exception, e:
                 print >> sys.stderr, "Error getting telescope coordinates. (%s)" % e
 

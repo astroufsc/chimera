@@ -115,10 +115,10 @@ if __name__ == '__main__':
 
     expose = OptionGroup(parser, "Exposure control")
     
-    expose.add_option("-n", "--nexp", action="store", type="int", dest="nexp",
+    expose.add_option("-n", "--frames", action="store", type="int", dest="frames",
                       help="Number of frames [default=%default].")
 
-    expose.add_option("-t", "--texp", action="store", type="float", dest="texp",
+    expose.add_option("-t", "--exptime", action="store", type="float", dest="exptime",
                       help="Integration time in seconds for each frame [default=%default].")
 
     expose.add_option("-i", "--interval", action="store", type="float", dest="interval",
@@ -126,7 +126,7 @@ if __name__ == '__main__':
                       "[default=%default].")
 
     expose.add_option("-o", "--output", action="store", type="string", dest="output",
-                      help="Base filename without path"
+                      help="Base filename with path"
                       "[default=%default]")
     
     expose.add_option("-f", "--filter", action="store", type="string", dest="filter",
@@ -159,7 +159,6 @@ if __name__ == '__main__':
 
     temp.add_option("--stop-fan", action="store_true", dest="stop_fan",
                       help="Stop the cooler fan.")
-
 
     temp.add_option("--start-fan", action="store_true", dest="start_fan",
                       help="Start the cooler fan.")
@@ -214,10 +213,10 @@ if __name__ == '__main__':
                         driver   = ["/FakeCamera/fc"],
                         drv_dir  = [],
                         wheel    = [],
-                        nexp     = 1,
-                        texp     = 1,
+                        frames     = 1,
+                        exptime     = 1,
                         interval = 0,
-                        output   = "$DATE-$TIME",
+                        output   = os.path.join(os.getcwd(), "$DATE-$TIME"),
                         shutter  = "open",
                         no_display  = False,
                         force_display = False, 
@@ -241,12 +240,12 @@ if __name__ == '__main__':
 
     # some validations
 
-    if options.nexp < 0:
-        print >> sys.stderr, "--nexp must be a positive number."
+    if options.frames < 0:
+        print >> sys.stderr, "--frames must be a positive number."
         sys.exit(1)
 
-    if options.texp < 0:
-        print >> sys.stderr, "--texp must be a positive number."
+    if options.exptime < 0:
+        print >> sys.stderr, "--exptime must be a positive number."
         sys.exit(1)
 
     if options.shutter.lower() == "open":
@@ -285,10 +284,7 @@ if __name__ == '__main__':
     ds9 = None
     display = False
     
-    # FIXME: display broken
-    #options.no_display = True
-
-    if (not options.no_display and options.texp >= 5) or options.force_display:
+    if (not options.no_display and options.exptime >= 5) or options.force_display:
 
         try:
 
@@ -396,24 +392,8 @@ if __name__ == '__main__':
             manager.shutdown()
             sys.exit(1)
     
-    def getListContents(list):
-        toRet = []
-        for l in list:
-            if isinstance(l, ListType) or isinstance(l, TupleType):
-                toRet+=getListContents(l)
-            else:
-                if l not in toRet:
-                    toRet+=l.lower()
-        return toRet
 
-    driverHost = driver.getManager().getHostname().lower()
-    localHosts = getListContents(socket.gethostbyname_ex('localhost'))
-    localHosts += getListContents(socket.gethostbyname_ex(socket.gethostname()))
-    hostIsLocal = (driverHost in localHosts)
-    displayedImages = []
-    
     # take some exposures
-
     currentFrame = 0
     currentFrameExposeStart = 0
     currentFrameReadoutStart = 0
@@ -428,63 +408,68 @@ if __name__ == '__main__':
             sys.exit(1)
 
     @callback(manager)
-    def exposeBegin(exptime):
+    def exposeBegin(request):
         global currentFrame, currentFrameExposeStart, options
         currentFrameExposeStart = time.time()
         currentFrame += 1
         if not options.quiet:
             print 40*"="
-            print "[%03d/%03d] [%s]" % (currentFrame, options.nexp, time.strftime("%c"))
-            print "exposing (%.3fs) ..." % exptime,
+            print "[%03d/%03d]" % (currentFrame, options.frames)
+            print "exposing (%.3fs) ..." % request["exptime"],
             sys.stdout.flush()
     
     @callback(manager)
-    def exposeComplete():
+    def exposeComplete(request):
         global currentFrameExposeStart, options
         if not options.quiet:
             print "OK (took %.3f s)" % (time.time()-currentFrameExposeStart)
             sys.stdout.flush()
 
     @callback(manager)
-    def readoutBegin(filename):
+    def readoutBegin(request):
         global currentFrameReadoutStart, options
         currentFrameReadoutStart = time.time()
         if not options.quiet:
-            #TODO: How to get the filename
-            print "reading out ..."
+            print "reading out ...",
             sys.stdout.flush()
     
-    def imageURItoDS9Path(imageURI):
-        global hostIsLocal
-        if hostIsLocal:
-            return imageURI.getProxy().getPath()
+    def displayImage(image):
+        global options
+
+        if not os.path.exists(image.filename()):
+            xpa = "file '%s'" % image.filename()
         else:
-            return "url '%s'" % imageURI.getHttpUri()
-    
-    def displayPath(path):
-        global displayedImages, display
-        if path not in displayedImages and display:
-            displayedImages += path
-            print 'Trying to display "%s" ...' % path
-            try:
-                ds9.xpaset('file %s' % path)
-            except RuntimeError, e:
-                #print >> sys.stderr, "Can't display image %s. (%s)" % (path,e)
-                pass    #Issue with xpaset prevents us from assuming that this failed!        
+            xpa = "file url '%s'" % image.http()
+
+        if not options.quiet:
+            print 'trying to display ...'
+            sys.stdout.flush()
+        try:
+            ds9.xpaset(xpa)
+        except RuntimeError, e:
+            # Issue with xpaset prevents us from assuming that this failed!        
+            #print >> sys.stderr, "Can't display image %s. (%s)" % (image.filename(), e)
+            # FIXME
+            pass
 
     @callback(manager)
-    def readoutComplete(imageURI):
+    def readoutComplete(image):
         global currentFrameReadoutStart, currentFrameExposeStart, options, display, ds9
         global currentFrame
 
         if not options.quiet:
             print "OK (took %.3f s)"  % (time.time()-currentFrameReadoutStart)
-            print "[%03d/%03d] took %.3fs" % (currentFrame, options.nexp,
+            print "saved to %s ... OK" % image.filename()
+            sys.stdout.flush()
+
+        if display:
+            displayImage(image)
+
+        if not options.quiet:
+            print "[%03d/%03d] took %.3fs" % (currentFrame, options.frames,
                                               time.time()-currentFrameExposeStart)
             sys.stdout.flush()
         
-        if display:
-            displayPath(imageURItoDS9Path(imageURI))
 
     camera.exposeBegin     += exposeBegin
     camera.exposeComplete  += exposeComplete
@@ -507,7 +492,7 @@ if __name__ == '__main__':
 
         print "="*40
         for feature in CameraFeature:
-            print str(feature), camera.supports(feature)
+            print str(feature), bool(camera.supports(feature))
 
         print "="*40
         ccds = camera.getCCDs()
@@ -582,11 +567,11 @@ if __name__ == '__main__':
 
         print 40*"="
         if options.camera:
-            print "Taking %d %s frame[s] of %.3fs each on %s" % (options.nexp, options.imagetyp.capitalize(),
-                                                              options.texp, options.camera[0])
+            print "Taking %d %s frame[s] of %.3fs each on %s" % (options.frames, options.imagetyp.capitalize(),
+                                                              options.exptime, options.camera[0])
         else:
-            print "Taking %d %s frame[s] of %.3fs each using %s" % (options.nexp, options.imagetyp.capitalize(),
-                                                                 options.texp, options.driver[-1])
+            print "Taking %d %s frame[s] of %.3fs each using %s" % (options.frames, options.imagetyp.capitalize(),
+                                                                 options.exptime, options.driver[-1])
         print "Shutter: %s" % options.shutter
         print "Interval between frames: %.3fs" % options.interval
         if cooling == True:
@@ -656,28 +641,21 @@ if __name__ == '__main__':
     # finally, expose
     start = time.time()
 
+    print 40*"="
+    print "%s" % time.strftime("%c")
+
     try:
-        imageURIs = []
-        try:
-            imageURIs = camera.expose(exp_time=options.texp,
-                          frames=options.nexp,
-                          interval=options.interval,
-                          filename=options.output,
-                          image_type=options.imagetyp,
-                          binning=options.binning or None,
-                          window=options.subframe or None,
-                          shutter=options.shutter)
-        except Exception, e:
-            print >> sys.stderr, "Error trying to take exposures. (%s)" % printException(e)
-        if not options.quiet and len(imageURIs) > 0:
-            displayPath(imageURItoDS9Path(imageURIs[0]))    #Ensure that something gets displayed
-            for iURI in imageURIs:
-                print 'Frame saved to file://%s:%s%s' % (iURI.host, str(iURI.port), str(iURI.getProxy().getPath()))
-
+        camera.expose(exptime=options.exptime,
+                      frames=options.frames,
+                      interval=options.interval,
+                      filename=options.output,
+                      type=options.imagetyp,
+                      binning=options.binning or None,
+                      window=options.subframe or None,
+                      shutter=options.shutter)
     except Exception, e:
-            print >> sys.stderr, "Error trying to take exposures. (%s)" % printException(e)                
+        print >> sys.stderr, "Error trying to take exposures. (%s)" % printException(e)
 
-    #finally: Doesn't work in python2.4 with except block above which prevents silent failures
     camera.exposeBegin     -= exposeBegin
     camera.exposeComplete  -= exposeComplete
     camera.readoutBegin    -= readoutBegin
@@ -686,7 +664,7 @@ if __name__ == '__main__':
 
     if not options.quiet and aborted:
         print 40*"="
-        print "Took %03d of %03d frames. Aborted by the user." % (currentFrame, options.nexp)
+        print "Took %03d of %03d frames. Aborted by the user." % (currentFrame, options.frames)
 
     if not options.quiet:
         print 40*"="

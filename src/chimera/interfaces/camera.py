@@ -107,11 +107,11 @@ class ICameraExpose (ICamera):
         """
 
     @event
-    def readoutComplete (self, filename):
+    def readoutComplete (self, proxy):
         """Indicates that a new frame was exposed and saved.
 
-        @param request: The image request.
-        @type  request: L{ImageRequest}
+        @param request: The just taken Image (as a Proxy).
+        @type  request: L{Proxy}
         """
 
     @event

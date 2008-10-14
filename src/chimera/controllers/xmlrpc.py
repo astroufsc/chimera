@@ -34,7 +34,7 @@ from chimera.util.coord import Coord
 from chimera.util.position import Position
 
 from Pyro.util import getPyroTraceback
-#from chimera.controllers.imageserver.imageuri import ImageURI
+
 
 class ThreadingXMLRPCServer (SocketServer.ThreadingTCPServer,
                              SimpleXMLRPCServer.SimpleXMLRPCDispatcher):

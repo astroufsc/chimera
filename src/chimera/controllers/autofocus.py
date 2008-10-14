@@ -9,8 +9,10 @@ from chimera.core.exceptions import ChimeraException, printException
 from chimera.interfaces.focuser import InvalidFocusPositionException
 
 from chimera.controllers.imageserver.imagerequest import ImageRequest
+from chimera.controllers.imageserver.util         import getImageServer
 
 from chimera.util.enum import Enum
+from chimera.util.image import Image
 from chimera.util.sextractor import SExtractor
 
 import numpy as N
@@ -313,7 +315,7 @@ class Autofocus (ChimeraObject):
             if not self.best_fit or fit < self.best_fit:
                 self.best_fit = fit
                 
-            return fit
+            return (self.currentRun, fit.A, fit.B, fit.C, fit.best_focus)
 
         except Exception, e:
             printException(e)
@@ -337,8 +339,9 @@ class Autofocus (ChimeraObject):
 
             focuser.moveTo(position)
 
-            frame = self._takeImageAndResolveStars()
-            star = self._findBrighterStar(frame)
+            frame = self._takeImage()
+            stars = self._findStars(frame.filename())
+            star = self._findBrighterStar(stars)
 
             self.log.debug("Adding star to curve. (X,Y)=(%d,%d) FWHM=%.3f FLUX=%.3f" % (star["XWIN_IMAGE"], star["YWIN_IMAGE"],
                                                                                         star["FWHM_IMAGE"], star["FLUX_BEST"]))
@@ -374,7 +377,7 @@ class Autofocus (ChimeraObject):
     def _takeImageAndResolveStars (self):
 
         frame = self._takeImage()
-        stars = self._findStars(frame)
+        stars = self._findStars(frame.filename())
 
         return stars
 
@@ -384,7 +387,10 @@ class Autofocus (ChimeraObject):
             try:
                 frame = self._debug_images[self._debug_image]
                 self._debug_image += 1
-                return frame
+
+                img = Image.fromFile(frame)
+                srv = getImageServer(self.getManager())
+                return srv.register(img)
             except IndexError:
                 raise ChimeraException("Cannot find debug images")
 
@@ -402,10 +408,7 @@ class Autofocus (ChimeraObject):
         frame = cam.expose(self.imageRequest)
 
         if frame:
-            imageserver = self.getManager().getProxy(frame[0])
-            img = imageserver.getProxyByURI(frame[0])
-            return img.getPath()
-
+            return frame
         else:
             raise Exception("Error taking image.")
 

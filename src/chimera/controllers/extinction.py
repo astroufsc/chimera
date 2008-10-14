@@ -1,6 +1,8 @@
 
 from chimera.core.chimeraobject import ChimeraObject
+from chimera.core.event import event
 from chimera.controllers.autofocus import Target, Mode
+
 from chimera.util.catalogs.landolt import Landolt
 from chimera.util.position import Position
 
@@ -8,6 +10,10 @@ class Extinction (ChimeraObject):
 
     def __init__ (self):
         ChimeraObject.__init__(self)
+
+    @event
+    def extinctionComplete (self, data):
+        pass
 
     def __main__ (self):
 
@@ -44,5 +50,17 @@ class Extinction (ChimeraObject):
                        frames=1, filename="extincao-%s" % landolt["ID"].replace(" ", "_"))
 
 
-	  
+class ExtinctionData (object):
+    date = None
 
+    star = None
+    position = None
+
+    airmass = None
+    magnitude = None
+    
+class ExtinctionHTTPServer (object):
+    pass
+
+class ExtinctionDatabase (object):
+    pass

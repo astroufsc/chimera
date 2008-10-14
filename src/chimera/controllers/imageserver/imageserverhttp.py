@@ -3,6 +3,7 @@ import cherrypy
 from cherrypy.lib.static import serve_file
 
 import threading
+import logging
 
 class ImageServerHTTP(threading.Thread):
 
@@ -12,6 +13,9 @@ class ImageServerHTTP(threading.Thread):
         self.setName("Image Server HTTPD")
         self.ctrl = ctrl
 
+        # less verbose cherry
+        logging.getLogger("cherrypy.error").setLevel(logging.WARNING)
+
         cherrypy.config.update({"server.socket_port": self.ctrl['http_port'],
                                 "server.socket_host": self.ctrl['http_host'],
                                 "tools.encode.on": True,
@@ -20,7 +24,7 @@ class ImageServerHTTP(threading.Thread):
                                 "tools.trailing_slash.on": True,
                                 "engine.autoreload_on": False})
     def run(self):
-        cherrypy.engine.start()
+        cherrypy.quickstart(self)
 
     def stop(self):
         cherrypy.engine.stop()
@@ -38,7 +42,7 @@ class ImageServerHTTP(threading.Thread):
 
             if not img:
                 return "Couldn't find the image."
-            return serve_file(img.filename, "image/fits", "attachment")
+            return serve_file(img.filename(), "image/fits", "attachment")
 
         else:
             return "What are you looking for?"
@@ -51,7 +55,7 @@ class ImageServerHTTP(threading.Thread):
         for key in keys:
             image = self.ctrl.imagesByPath[key]
             id = image.GUID()
-            path = image.filename
+            path = image.filename()
             toReturn += ('<tr><td><a href="/image/%s">%s</a></td><td><a href="/image/%s">%s</a></td></tr>' %
                          (id,id,id,path))
         return toReturn

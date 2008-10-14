@@ -25,6 +25,7 @@ import time
 import logging
 import threading
 from math import pi
+import datetime as dt
 import numpy as N
         
 from sbigdrv import *
@@ -37,7 +38,7 @@ from chimera.interfaces.filterwheeldriver  import IFilterWheelDriver
 
 from chimera.core.lock import lock
 
-from chimera.controllers.imageserver.image import Image
+from chimera.util.image import Image, ImageUtil
 
 
 class SBIG(ChimeraObject, ICameraDriver, IFilterWheelDriver):  
@@ -279,12 +280,12 @@ class SBIG(ChimeraObject, ICameraDriver, IFilterWheelDriver):
             shutter = SBIGDrv.leaveShutter
         
         # ok, start it
-        self.exposeBegin(imageRequest["exp_time"])
+        self.exposeBegin(imageRequest["exptime"])
         
-        self.drv.startExposure(self.ccd, int(imageRequest["exp_time"]*100), shutter)
+        self.drv.startExposure(self.ccd, int(imageRequest["exptime"]*100), shutter)
         
         # save time exposure started
-        self.lastFrameStartTime = time.gmtime()
+        self.lastFrameStartTime = dt.datetime.now()
         self.lastFrameTemp = self.getTemperature()
         
         while self.isExposing():
@@ -296,10 +297,6 @@ class SBIG(ChimeraObject, ICameraDriver, IFilterWheelDriver):
                 if self.isExposing():
                     self._endExposure()
                 
-                #TODO: Support aborted readout
-                #if self["readout_aborted"]:
-                #    self._readout(aborted=True)
-                    
                 return False
 
         # end exposure and returns
@@ -331,30 +328,23 @@ class SBIG(ChimeraObject, ICameraDriver, IFilterWheelDriver):
         self.drv.startReadout(self.ccd, mode.mode, (top,left,width,height))
         
         for line in range(height):
-            
             img[line] = self.drv.readoutLine(self.ccd, mode.mode, (left, width))
 
-            #TODO: Handle readout abort
-            ## check if user asked to abort
-            #if not aborted and self.term.isSet():
-            #    self._saveFITS(img)
-            #    return self._endReadout(next_filename)
 
         # end readout and save
-        
         try:
             manager = self.getManager()
             hostPort = manager.getHostname() + ':' + str(manager.getPort())
 
             tel = manager.getProxy("/Telescope/0")
-            imageRequest["metadatapost"].append(hostPort+"/Telescope/0")
+            imageRequest.metadataPost.append(hostPort+"/Telescope/0")
 
         except Exception:
             self.log.info("Couldn't found an telescope, WCS info will be incomplete")
 
         try:
             cam = manager.getProxy("/Camera/0")
-            imageRequest["metadatapost"].append(hostPort+"/Camera/0")
+            imageRequest.metadataPost.append(hostPort+"/Camera/0")
         except Exception:
             pass # will never happen!
 
@@ -370,32 +360,33 @@ class SBIG(ChimeraObject, ICameraDriver, IFilterWheelDriver):
         CRPIX1 = ((int(fullsize.width/2)) - left) - 1
         CRPIX2 = ((int(fullsize.height/2)) - top) - 1
         
-        img = Image.imageFromImg(img, imageRequest, [
-                ('DATE-OBS',Image.formatDate(self.lastFrameStartTime),'Date exposure started'),
+        img = Image.create(img, imageRequest)
+
+        img += [('DATE-OBS',ImageUtil.formatDate(self.lastFrameStartTime),'Date exposure started'),
                 ('CCD-TEMP',self.lastFrameTemp,'CCD Temperature at Exposure Start [deg. C]'),
-                ("EXPTIME", float(imageRequest['exp_time']) or -1, "exposure time in seconds"),
-                ('IMAGETYP', imageRequest['image_type'].strip(), 'Image type'),
+                ("EXPTIME", float(imageRequest['exptime']) or -1, "exposure time in seconds"),
+                ('IMAGETYP', imageRequest['type'].strip(), 'Image type'),
                 ('SHUTTER',str(imageRequest['shutter']), 'Requested shutter state'),
                 ("CRPIX1", CRPIX1, "coordinate system reference pixel"),
                 ("CRPIX2", CRPIX2, "coordinate system reference pixel"),
                 ("CD1_1", scale_x, "transformation matrix element (1,1)"),
                 ("CD1_2", 0.0, "transformation matrix element (1,2)"),
                 ("CD2_1", 0.0, "transformation matrix element (2,1)"),
-                ("CD2_2", scale_y, "transformation matrix element (2,2)")])
-                                 
-        return self._endReadout(img)
+                ("CD2_2", scale_y, "transformation matrix element (2,2)")]
 
-    def _endReadout(self, imageURI):
+        # update image request
+        imageRequest["filename"] = img.filename()
+
+        server = getImageServer(self.getManager())
+        proxy = server.register(img)
+
+        return self._endReadout(proxy)
+
+    def _endReadout(self, proxy):
         
         self.drv.endReadout(self.ccd)
-        self.readoutComplete(imageURI)
-        return imageURI
-
-
-    # TODO
-    def _getWindowAndLine(self, img):
-        shape = img.shape()
-        return ()
+        self.readoutComplete(proxy)
+        return proxy
 
     def _getReadoutMode(self, imageRequest):
 
