@@ -31,3 +31,15 @@ with a non-root account use:
 
 ... <how_to_run_with_non_root.txt>
 
+
+
+
+Windows install:
+
+Install Tortoise SVN
+Use SVN Checkout and download the code.
+If you use the normal (not develop) install, after checking out do 
+
+python setup.py install
+
+just like the unix version
