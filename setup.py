@@ -86,7 +86,7 @@ setup(name='chimera-python',
 
       # dependencies are installed bottom up, so put important things last
       install_requires = linux_deps + win32_deps + \
-                         ["suds == 0.2.4",
+                         ["suds == 0.3.1",
                           "CherryPy == 3.0.3",
                           "asciidata == 1.1",
                           "sqlalchemy >= 0.4.5",
@@ -98,9 +98,7 @@ setup(name='chimera-python',
                           "pyserial >= 2.2",
                           "Pyro == 3.8.1"] + linux_cdeps + win32_cdeps,
 
-      dependency_links = [
-                          "https://fedorahosted.org/suds/attachment/wiki/WikiStart/suds-0.2.4.tar.gz?format=raw",
-                          "http://sourceforge.net/project/showfiles.php?group_id=18837&package_id=29259&release_id=630764",
+      dependency_links = ["http://sourceforge.net/project/showfiles.php?group_id=18837&package_id=29259&release_id=630764",
                           "http://www.stsci.edu/resources/software_hardware/pyfits/pyfits-1.3.tar.gz",
                           "http://astropy.scipy.org/svn/astrolib/trunk/coords#egg=coords",
                           "http://astropy.scipy.org/svn/astrolib/trunk/pywcs#egg=pywcs",
