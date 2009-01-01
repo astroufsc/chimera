@@ -19,11 +19,14 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 
-import socket
+import sys
+import os
 
-#MANAGER_DEFAULT_HOST = socket.gethostname()
 MANAGER_DEFAULT_HOST = 'localhost'
 MANAGER_DEFAULT_PORT = 7666
+MANAGER_BEACON_PORT  = 7670
+MANAGER_BEACON_CHALLENGE = "Is there anybody out there?"
+MANAGER_BEACON_ERROR = "Get out!"
 
 MANAGER_LOCATION = '/Manager/manager'
 
@@ -43,3 +46,15 @@ RWLOCK_ATTRIBUTE_NAME           = '__rwlock__'
 CONFIG_ATTRIBUTE_NAME  = '__config__'
 EVENTS_ATTRIBUTE_NAME  = '__events__'
 METHODS_ATTRIBUTE_NAME = '__methods__'
+
+# system config
+if sys.platform == "win32":
+    SYSTEM_CONFIG_DIRECTORY        = os.path.expanduser('~/chimera')
+else:
+    SYSTEM_CONFIG_DIRECTORY        = os.path.expanduser('~/.chimera')
+    
+SYSTEM_CONFIG_DEFAULT_FILENAME = os.path.join(SYSTEM_CONFIG_DIRECTORY, 'chimera.config')
+SYSTEM_CONFIG_DEFAULT_SAMPLE   = os.path.join(os.path.dirname(__file__), 'chimera.sample.config')
+SYSTEM_CONFIG_DEFAULT_GLOBAL   = os.path.join(os.path.dirname(__file__), 'chimera.global.config')
+
+SYSTEM_CONFIG_LOG_NAME = os.path.join(SYSTEM_CONFIG_DIRECTORY, 'chimera.log')

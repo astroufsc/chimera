@@ -18,17 +18,39 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-import sys
 
-try:
-    import Pyro.util
+import os.path
+import logging
+import shutil
 
-    def hook (e,v,t):
-        print ''.join(Pyro.util.getPyroTraceback(v))
-        #sys.excepthook =lambda exctype, value, traceback: Pyro.util.getPyroTraceback(value)
-        sys.excepthook = hook
-        #sys.excepthook()
-except:
-    #We don't have pyro -- don't worry about this.
-    #FIXME: Get a working excepthook for everything and everyone!
-    pass
+from chimera.core.constants import (SYSTEM_CONFIG_DIRECTORY,
+                                    SYSTEM_CONFIG_DEFAULT_FILENAME,
+                                    SYSTEM_CONFIG_DEFAULT_SAMPLE,
+                                    SYSTEM_CONFIG_LOG_NAME)
+
+logging.getLogger().setLevel(logging.DEBUG)
+
+def init_sysconfig ():
+
+    if not os.path.exists(SYSTEM_CONFIG_DIRECTORY):
+        try:
+            logging.info("Default configuration directory not found (%s). Creating a new one." % SYSTEM_CONFIG_DIRECTORY)
+            os.mkdir(SYSTEM_CONFIG_DIRECTORY)
+        except IOError, e:
+            logging.error("Couldn't create default configuration directory at %s (%s)" % (SYSTEM_CONFIG_DIRECTORY, e))
+
+    if not os.path.exists(SYSTEM_CONFIG_DEFAULT_FILENAME):
+        logging.info("Default chimera.config not found. Creating a sample at %s." % SYSTEM_CONFIG_DEFAULT_FILENAME)
+
+        try:
+            shutil.copyfile(SYSTEM_CONFIG_DEFAULT_SAMPLE, SYSTEM_CONFIG_DEFAULT_FILENAME)
+        except IOError, e:
+            logging.error("Couldn't create default chimera.config at %s (%s)" % (SYSTEM_CONFIG_DEFAULT_FILENAME, e))
+
+    if not os.path.exists(SYSTEM_CONFIG_LOG_NAME):
+        try:
+            open(SYSTEM_CONFIG_LOG_NAME, 'w').close()
+        except IOError, e:
+            logging.error("Couldn't create initial log file %s (%s)" % (SYSTEM_CONFIG_LOG_NAME, e))
+
+init_sysconfig()
