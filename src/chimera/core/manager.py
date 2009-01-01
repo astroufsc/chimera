@@ -23,6 +23,8 @@ from chimera.core.classloader import ClassLoader
 from chimera.core.resources   import ResourcesManager
 from chimera.core.location    import Location
 
+from chimera.core.managerbeacon import ManagerBeacon
+
 from chimera.core.chimeraobject import ChimeraObject
 from chimera.core.remoteobject  import RemoteObject
 from chimera.core.proxy         import Proxy
@@ -57,6 +59,7 @@ import signal
 import time
 import atexit
 import sys
+import SocketServer
 from types import StringType
 
 
@@ -149,7 +152,12 @@ class Manager (RemoteObject):
 
         # shutdown event
         self.died = threading.Event()
-        
+
+        # finder beacon
+        self.beacon = ManagerBeacon(self)
+        self.beaconThread = threading.Thread(target=self.beacon.run)
+        self.beaconThread.setDaemon(True)
+        self.beaconThread.start()
 
     # private
     def __repr__ (self):
@@ -332,6 +340,7 @@ class Manager (RemoteObject):
             finally:
                 # kill our adapter
                 self.adapter.shutdown(disconnect=True)
+                self.beacon.shutdown()
 
                 # die!
                 self.died.set()
