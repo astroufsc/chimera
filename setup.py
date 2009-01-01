@@ -65,14 +65,25 @@ win32_deps = win32_cdeps = []
 # and older matplotlib which doesn't require numpy >= 1.1.0
 
 # FIXME: pywcs only works on python 2.5
-
 if sys.platform == "win32":
     win32_cdeps = ["numpy == 1.0.4"]
     win32_deps += ["pywin32 == 210"]
 else:
-    linux_cdeps = ["numpy >= 1.1.0"]
-    linux_deps += ["python-sbigudrv >= 0.1", "coords"]
 
+    import pkg_resources
+    
+    # check if user have Numpy, we don't try to install it, please use your distro default installation
+    # method.
+    try:
+        pkg_resources.require("numpy >= 1.1.0")
+    except pkg_resources.DistributionNotFound:
+        print >> sys.stderr, "*"*80
+        print >> sys.stderr, "You don't seem to have Numpy installed. Please install Numpy >= 1.1.0 and try again."
+        print >> sys.stderr, "*"*80
+        sys.exit(1)
+
+    linux_deps += ["python-sbigudrv == 0.1", "coords"]
+    
     if sys.version_info[0:2] >= (2,5):
         linux_deps += ["pywcs"]
 
@@ -86,25 +97,20 @@ setup(name='chimera-python',
 
       # dependencies are installed bottom up, so put important things last
       install_requires = linux_deps + win32_deps + \
-                         ["suds == 0.3.1",
+                         ["PyYAML == 3.08",
+                          "suds == 0.3.3",
                           "CherryPy == 3.0.3",
                           "asciidata == 1.1",
-                          "sqlalchemy >= 0.4.5",
-                          "Elixir >= 0.5.2",
-                          "pyephem > 3.7",
-                          "python-dateutil >= 1.4",
-                          "RO >= 2.2.7",
-                          "pyfits >= 1.3",
-                          "pyserial >= 2.2",
+                          "SQLAlchemy == 0.4.8",
+                          "Elixir == 0.6.1",
+                          "pyephem == 3.7.3.3",
+                          "python-dateutil == 1.4.1",
+                          "RO == 2.2.8",
+                          "pyfits == 1.3",
+                          "pyserial == 2.4",
                           "Pyro == 3.8.1"] + linux_cdeps + win32_cdeps,
 
-      dependency_links = ["http://sourceforge.net/project/showfiles.php?group_id=18837&package_id=29259&release_id=630764",
-                          "http://www.stsci.edu/resources/software_hardware/pyfits/pyfits-1.3.tar.gz",
-                          "http://astropy.scipy.org/svn/astrolib/trunk/coords#egg=coords",
-                          "http://astropy.scipy.org/svn/astrolib/trunk/pywcs#egg=pywcs",
-                          "http://sourceforge.net/project/showfiles.php?group_id=46487",
-                          "http://www.stecf.org/software/PYTHONtools/astroasciidata/asciidata1.1_download.php",
-                          ],
+      dependency_links = [os.path.join(os.path.dirname(__file__), "contrib")],
 
       tests_require    = ["nose", "coverage"],
 
