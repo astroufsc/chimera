@@ -271,7 +271,7 @@ class Telescope(ChimeraObject,
         drv = self.getDriver()
         return drv.isTracking()
         
-    def getMetadata(self):
+    def getMetadata(self, request):
         return [
                 ('TELESCOP', self['model'], 'Telescope Model'),
                 ('OPTICS',   self['optics'], 'Telescope Optics Type'),
@@ -294,4 +294,4 @@ class Telescope(ChimeraObject,
                 ("CTYPE2", 'DEC---TAN', "name of the coordinate axis"),
                 ("CUNIT1", 'deg', "units of coordinate value"),
                 ("CUNIT2", 'deg', "units of coordinate value")                                              
-                ] + self.getDriver().getMetadata()
+                ] + self.getDriver().getMetadata(request)

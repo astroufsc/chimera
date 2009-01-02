@@ -25,7 +25,7 @@ __all__ = ['ChimeraCLI',
            'action',
            'parameter']
 
-ParameterType = Enum("INSTRUMENT", "CONTROLLER", "BOOLEAN", "CHOICE", "INCLUDE_PATH")
+ParameterType = Enum("INSTRUMENT", "CONTROLLER", "BOOLEAN", "CHOICE", "INCLUDE_PATH", "CONSTANT")
 
 class Option (object):
     name  = None
@@ -52,6 +52,8 @@ class Option (object):
 
     # if ParameterType.INSTRUMENT or ParameterType.CONTROLLER
     location = None
+
+    const = None
 
     def __init__ (self, **kw):
 
@@ -586,6 +588,7 @@ class ChimeraCLI (object):
             option_action = "store"
             option_callback = None
             option_choices = None
+            option_const = None
             option_type = param.type or None
 
             if param.type in (ParameterType.INSTRUMENT, ParameterType.CONTROLLER):
@@ -596,6 +599,11 @@ class ChimeraCLI (object):
             if param.type == ParameterType.BOOLEAN:
                 option_action = "store_true"
                 option_type = None
+
+            if param.type == ParameterType.CONSTANT:
+                option_action = "store_const"
+                option_type = None
+                option_const = param.const
 
             if param.type == ParameterType.INCLUDE_PATH:
                 option_action = "callback"
@@ -611,7 +619,6 @@ class ChimeraCLI (object):
                                  dest=param.name,
                                  help=param.help, metavar=param.metavar)
 
-
             if option_callback:
                 option_kwargs["callback"] = option_callback
 
@@ -620,6 +627,9 @@ class ChimeraCLI (object):
                 
             if option_choices:
                 option_kwargs["choices"] = option_choices
+
+            if option_const:
+                option_kwargs["const"] = option_const
 
             if param.short:
                 group.add_option(param.short, param.long, **option_kwargs)

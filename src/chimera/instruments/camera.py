@@ -194,15 +194,18 @@ class Camera (ChimeraObject,
         return drv.isFanning()
 
     
-    def getMetadata(self):
+    def getMetadata(self, request):
+        drv = self.getDriver()
         return [
                 ('CAMERA', str(self['camera_model']), 'Camera Model'),
-                ('CCD',      str(self['ccd_model']), 'CCD Model'),
-                #('CCD_DIMX', self['ccd_dimension_x'], 'CCD X Dimension Size'),
-                #('CCD_DIMY', self['ccd_dimension_y'], 'CCD Y Dimension Size'),
-                #('CCDPXSZX', self['ccd_pixel_size_x'], 'CCD X Pixel Size [microns]'),
-                #('CCDPXSZY', self['ccd_pixel_size_y'], 'CCD Y Pixel Size [micrpns]'),
-                ] + self.getDriver().getMetadata()
+                ('CCD',    str(self['ccd_model']), 'CCD Model'),
+                ('CCD_DIMX', drv.getPhysicalSize()[0], 'CCD X Dimension Size'),
+                ('CCD_DIMY', drv.getPhysicalSize()[1], 'CCD Y Dimension Size'),
+                ('CCDPXSZX', drv.getPixelSize()[0], 'CCD X Pixel Size [micrometer]'),
+                ('CCDPXSZY', drv.getPixelSize()[1], 'CCD Y Pixel Size [micrometer]')]  + drv.getMetadata(request)
+                #('XBINNING', int(request.binning[0]), 'Readout CCD Binning (x-axis)'),
+                #('YBINNING', int(request.binning[-1]), 'Readout CCD Binning (y-axis)'),
+                #('IMAGETYP', request['type'], 'Image type')]
 
     def getCCDs(self):
         drv = self.getDriver()

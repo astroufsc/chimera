@@ -328,7 +328,7 @@ class Dome(ChimeraObject, IDome):
         drv = self.getDriver()
         return drv.isSlitOpen()
     
-    def getMetadata(self):
+    def getMetadata(self, request):
         if self.isSlitOpen():
             slit = 'Open'
         else:
@@ -338,4 +338,4 @@ class Dome(ChimeraObject, IDome):
                 ('DOME_TYP', str(self['type']), 'Dome Type'),
                 ('DOME_TRK', str(self['mode']), 'Dome Tracking/Standing'),
                 ('DOME_SLT', str(slit), 'Dome slit status'),
-                ] + self.getDriver().getMetadata()
+                ] + self.getDriver().getMetadata(request)

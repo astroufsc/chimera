@@ -202,7 +202,7 @@ class Site (ChimeraObject):
     def altAzToRaDec(self, altAz):
         return Position.altAzToRaDec(altAz, self['latitude'], self.LST_inRads())#    
 
-    def getMetadata(self):
+    def getMetadata(self, request):
         return [
                 ('SITE',self['name'], 'Site name (in config)'),
                 ('LATITUDE',str(self['latitude']), 'Site latitude'),

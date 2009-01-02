@@ -105,7 +105,7 @@ class ImageRequest (dict):
                 proxyLoc = str(proxy.getLocation())
                 if proxyLoc not in self._accum_from:
                     self._accum_from.append(proxyLoc)
-                    self.headers += proxy.getMetadata()
+                    self.headers += proxy.getMetadata(self)
             except Exception, e:
                 log.warning('Unable to get metadata from %s' % (proxyurl))
                 print ''.join(Pyro.util.getPyroTraceback(e))

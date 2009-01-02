@@ -18,655 +18,400 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-import sys
-import os
-import time
-import logging
-import signal
-import copy
-import threading
-import warnings
-import socket
 
-from types import StringType, ListType, TupleType
+from chimera.core.cli import ChimeraCLI, action, ParameterType
 
-import Pyro.util
-
-from optparse import OptionParser, OptionGroup
-
-from chimera.core.manager import Manager
-from chimera.core.version import _chimera_version_, _chimera_description_
-from chimera.core.constants import MANAGER_DEFAULT_HOST, MANAGER_DEFAULT_PORT
-
-from chimera.instruments.camera import Camera
-from chimera.instruments.filterwheel import FilterWheel
-from chimera.interfaces.camera import Shutter
+from chimera.core.callback import callback
+from chimera.core.exceptions import printException
+from chimera.interfaces.filterwheel import InvalidFilterPositionException
 from chimera.interfaces.cameradriver import CameraFeature
 
-from chimera.core.exceptions import ObjectNotFoundException
-from chimera.core.exceptions import ChimeraObjectException
-from chimera.core.exceptions import InvalidLocationException
-from chimera.core.exceptions import ClassLoaderException
-from chimera.core.exceptions import printException
+import os
+import sys
+import time
+import warnings
 
-from chimera.interfaces.filterwheel import InvalidFilterPositionException
+currentFrame = 0
+currentFrameExposeStart = 0
+currentFrameReadoutStart = 0
+DS9 = None
 
-from chimera.core.location import Location
-from chimera.core.path     import ChimeraPath
-from chimera.core.callback import callback
-
-from chimera.core.log import setConsoleLevel
-#setConsoleLevel(logging.DEBUG)
-setConsoleLevel(1e9)
-
-if __name__ == '__main__':
-
-    chimera_cam_description = " - Camera controller"
-
-
-    def check_includepath (option, opt_str, value, parser):
-        if not value or not os.path.isdir (os.path.abspath(value)):
-            raise optparse.OptionValueError ("Couldn't found %s include path." % value)
-        eval ('parser.values.%s.append ("%s")' % (option.dest, value))
-
-    def check_location (option, opt_str, value, parser):
-        try:
-            l = Location (value)
-        except InvalidLocationException:
-            raise optparse.OptionValueError ("%s isnt't a valid location." % value)
-
-        eval ('parser.values.%s.append ("%s")' % (option.dest, value))
-
-
-    parser = OptionParser(prog="chimera-cam", version=_chimera_version_,
-                          description=_chimera_description_+chimera_cam_description)
-
-    config = OptionGroup(parser, "Camera and driver configuration")
-
-    config.add_option("-c", "--camera", action="callback", type="string", dest="camera",
-                      help="Camera instrument to be used. If blank, create a new"
-                      " camera instance, using the the driver selected with --driver."
-                      " format: [host:port]/Class/name.",
-                      callback=check_location)
-
-    config.add_option("-W", "--wheel", action="callback", type="string", dest="wheel",
-                      help="Filter wheel instrument to be used. If blank, create a new"
-                      " filter wheel instance, using the the driver selected with --driver."
-                      " format: [host:port]/Class/name.",
-                      callback=check_location)
-
-    config.add_option("-d", "--driver", action="callback", type="string", dest="driver",
-                      help="Camera driver to be used."
-                      " /Class/name?option1=value1,option2=value. [default=%default]",
-                      callback=check_location)
-
-    config.add_option("-D", "--drivers-dir", action="callback", callback=check_includepath,
-                      dest="drv_dir", type="string",
-                      help="Append PATH to drivers load path.",
-                      metavar="PATH")
-
-    info = OptionGroup(parser, "Information")
+class ChimeraCam (ChimeraCLI):
     
-    info.add_option("--info", action="store_true", dest="info",
-                      help="Print camera information and exit")
-
-    info.add_option("-F", "--filters", action="store_true", dest="filters",
-                      help="Print available filter names and positions.")
-
-    expose = OptionGroup(parser, "Exposure control")
-    
-    expose.add_option("-n", "--frames", action="store", type="int", dest="frames",
-                      help="Number of frames [default=%default].")
-
-    expose.add_option("-t", "--exptime", action="store", type="float", dest="exptime",
-                      help="Integration time in seconds for each frame [default=%default].")
-
-    expose.add_option("-i", "--interval", action="store", type="float", dest="interval",
-                      help="Number of seconds to wait between each frame "
-                      "[default=%default].")
-
-    expose.add_option("-o", "--output", action="store", type="string", dest="output",
-                      help="Base filename with path"
-                      "[default=%default]")
-    
-    expose.add_option("-f", "--filter", action="store", type="string", dest="filter",
-                      help="Filter to be used. Use filter name. "
-                      "Use --filters to get a list of available filters")
-    
-    expose.add_option("-s", "--shutter", action="store", type="choice", dest="shutter",
-                      choices=["open", "OPEN", "close", "CLOSE", "leave", "LEAVE"],
-                      help="What to do with the shutter: open, close, leave (case insensitive) [default=%default]")
-
-    expose.add_option("--binning", action="store", type="string", dest="binning",
-                      help="Apply the selected binning to all frames")
-
-    expose.add_option("--subframe", action="store", type="string", dest="subframe",
-                      help="Readout only the selected subframe portion. The notation follows IRAF conventions."
-                      " x1:x2,y1:y2 to specify the corners of the desired subframe")
-
-    temp = OptionGroup(parser, "Temperature control")
-    
-    temp.add_option("-T", "--start-cooling", action="store", type="float", dest="setpoint",
-                      help="Start CCD cooling with TEMP as setpoint. chimera-cam will continue its work unless you use --wait (see below)", metavar="TEMP")
-
-    temp.add_option("-w", "--wait", action="store_true", dest="wait",
-                      help="Wait until the selected CCD setpoint is achived."
-                      "[default=%default].")
-
-    temp.add_option("--stop-cooling", action="store_true",
-                      dest="disable_cooling",
-                      help="Stop camera cooling. This option is exclusive.")
-
-    temp.add_option("--stop-fan", action="store_true", dest="stop_fan",
-                      help="Stop the cooler fan.")
-
-    temp.add_option("--start-fan", action="store_true", dest="start_fan",
-                      help="Start the cooler fan.")
-
-
-    imagetyp = OptionGroup(parser, "Image types")
-
-    
-    imagetyp.add_option("--bias", action="store_const", dest="imagetyp", const="zero",
-                        help="Mark this frame as a BIAS frame.")
-
-    imagetyp.add_option("--dark", action="store_const", dest="imagetyp", const="dark",
-                        help="Mark this frame as a DARK frame.")
-
-    imagetyp.add_option("--flat", action="store_const", dest="imagetyp", const="flat",
-                        help="Mark this frame as a FLAT frame.")
-
-    imagetyp.add_option("--object", action="store_const", dest="imagetyp", const="object",
-                        help="Mark this frame as a OBJECT frame.")
-
-
-    display = OptionGroup(parser, "Display configuration")
-    display.add_option("--no-display", action="store_true", dest="no_display",
-                      help="Don't try to display image on DS9. default is display for exptime >= 5")
-
-    display.add_option("--force-display", action="store_true", dest="force_display",
-                      help="Always display image on DS9 regardless of exptime.")
-
-    parser.add_option("-H", "--host", action="store", 
-                      dest="pyro_host", type="string",
-                      help="Host name/IP to run instrument under when using local manager"
-                      "; [default=%default]",
-                      metavar="HOST")
-
-    parser.add_option("-P", "--port", action="store", 
-                      dest="pyro_port", type="string",
-                      help="Port on which to to run instrument under when using local manager"
-                      "; [default=%default]",
-                      metavar="PORT")
-
-    parser.add_option("-q", "--quiet", action="store_true", dest='quiet',
-                      help="Don't display information during the exposures [default=%default].")
-
-    parser.add_option_group(config)
-    parser.add_option_group(info)
-    parser.add_option_group(expose)
-    parser.add_option_group(display)    
-    parser.add_option_group(imagetyp)    
-    parser.add_option_group(temp)
-
-    parser.set_defaults(camera   = [],
-                        driver   = ["/FakeCamera/fc"],
-                        drv_dir  = [],
-                        wheel    = [],
-                        frames     = 1,
-                        exptime     = 1,
-                        interval = 0,
-                        output   = os.path.join(os.getcwd(), "$DATE-$TIME"),
-                        shutter  = "open",
-                        no_display  = False,
-                        force_display = False, 
-                        quiet    = False,
-                        imagetyp="object",
-                        binning = "",
-                        subframe= "",
-                        disable_cooling  = False,
-                        setpoint = -500, # magic number
-                        wait     = False,
-                        start_fan = False,
-                        stop_fan = False,
-                        filter   = None,
-                        filters  = False,
-                        info     = False,
-                        
-                        pyro_host=MANAGER_DEFAULT_HOST,
-                        pyro_port=10000)
-
-    options, args = parser.parse_args(sys.argv)
-
-    # some validations
-
-    if options.frames < 0:
-        print >> sys.stderr, "--frames must be a positive number."
-        sys.exit(1)
-
-    if options.exptime < 0:
-        print >> sys.stderr, "--exptime must be a positive number."
-        sys.exit(1)
-
-    if options.shutter.lower() == "open":
-        options.shutter = Shutter.OPEN
-    elif options.shutter.lower() == "close":
-        options.shutter = Shutter.CLOSE
-    elif options.shutter.lower() == "leave":
-        options.shutter = Shutter.LEAVE_AS_IS
-    else:
-        options.shutter = Shutter.OPEN
-
-    drivers_path = []
-    for path in options.drv_dir:
-        drivers_path.append(path)
-
-    drivers_path.append(ChimeraPath.drivers())
-
-    # be cool?
-    cooling  = None
-    setpoint = 10 # FIXME: magic number
-
-    if options.setpoint != -500:
-        cooling = True
-        setpoint = options.setpoint
-
-    if options.disable_cooling:
-        cooling  = False
-        setpoint = None
-
-    # filter
-    filter = None
-
-    # DS9 setup
-
-    has_ds9 = False
-    ds9 = None
-    display = False
-    
-    if (not options.no_display and options.exptime >= 5) or options.force_display:
-
-        try:
-
-            # disable RO warning
-            warnings.filterwarnings(action='ignore', module='RO.DS9')
-
-            from RO.DS9 import DS9Win as DS9
-            
-            has_ds9 = True
-        except ImportError:
-            print >> sys.stderr, 40*"="
-            print >> sys.stderr, "DS9 is not available. Display disabled"
-            
-        if has_ds9:
-
-            try:
-                ds9 = DS9 (doRaise=True, doOpen=True)
-                display = True
-            except RuntimeError, e:
-                # even with RO installed, we still need XPA package to get DS9 working
-                print >> sys.stderr, 40*"="                
-                print >> sys.stderr, "DS9 is not available, check if you have the XPA package installed. Display disabled."
-                print >> sys.stderr, str(e)
-                display = False
-
-    # 
-    # start
-    #
-
-    manager = Manager(host=options.pyro_host,port=options.pyro_port)
-
-    camera = None
-    driver = None
-    
-    filter = None
-
-    # ctrl+c handling
-    aborted = False
-
-    def sighandler(self, sig = None, frame = None):
-
-        global aborted
+    def __init__ (self):
+        ChimeraCLI.__init__(self, "chimera-cam", "Camera controller", 0.1)
         
-        if aborted == False:
-            aborted = True
-        else:
-            return
-            
-        print >> sys.stdout, "aborting... "
-        sys.stdout.flush()
-
-        def abort():
-            cam = copy.copy(camera)
-            if cam.isExposing():
-                cam.abortExposure()
-
-        t = threading.Thread(target=abort)
-        t.start()
-        t.join()
-            
-    signal.signal(signal.SIGTERM, sighandler)
-    signal.signal(signal.SIGINT, sighandler)
-
-    # use an already running camera
-    if options.camera:
-        try:
-            camera = manager.getProxy(options.camera[0])
-            driver = camera.getDriver()
-            if options.wheel:
-                filter = manager.getProxy(options.wheel[0])
-            else:
-                filter = manager.getProxy(options.camera[0])
-
-        except (ObjectNotFoundException, ClassLoaderException), e:
-            print >> sys.stderr, "Cannot find camera %s. (%s)" % (options.camera[0], e)
-            manager.shutdown()
-            sys.exit(1)
-        except (ChimeraObjectException), e:
-            print >> sys.stderr, "Problems starting camera %s. (%s)" % (options.camera[0],e)
-            manager.shutdown()
-            sys.exit(1)
-
-
-    # create a new camera using selected driver
-    else:
-        try:
-            config = {}
-
-            driverloc = Location(options.driver[-1])
-            newloc = Location(cls=driverloc.cls, name=driverloc.name, config=dict(driverloc.config, **config),
-                              host=driverloc.host, port=driverloc.port)
-
-            if manager._belongsToMe(newloc):
-                driver = manager.addLocation(newloc, path=drivers_path)
-            else:
-                driver = manager.getProxy(newloc)
-            camera = manager.addClass(Camera, "cam", {"driver": options.driver[-1]})
-            filter = manager.addClass(FilterWheel, "filter", {"driver": options.driver[-1]} )
-        except (ObjectNotFoundException, ClassLoaderException), e:
-            print >> sys.stderr, "Cannot find camera driver %s. (%s)" % (options.driver[-1],e)
-            manager.shutdown()
-            sys.exit(1)
-        except (ChimeraObjectException), e:
-            print >> sys.stderr, "Problems starting camera driver %s. (%s)" % (options.driver[-1],e)
-            manager.shutdown()
-            sys.exit(1)
-    
-
-    # take some exposures
-    currentFrame = 0
-    currentFrameExposeStart = 0
-    currentFrameReadoutStart = 0
-
-    # first check binning
-    binnings = camera.getBinnings()
-
-    if options.binning:
-        if options.binning not in binnings.keys():
-            print >> sys.stderr, "Invalid binning mode. See --info for available binning modes"
-            manager.shutdown()
-            sys.exit(1)
-
-    @callback(manager)
-    def exposeBegin(request):
-        global currentFrame, currentFrameExposeStart, options
-        currentFrameExposeStart = time.time()
-        currentFrame += 1
-        if not options.quiet:
-            print 40*"="
-            print "[%03d/%03d]" % (currentFrame, options.frames)
-            print "exposing (%.3fs) ..." % request["exptime"],
-            sys.stdout.flush()
-    
-    @callback(manager)
-    def exposeComplete(request):
-        global currentFrameExposeStart, options
-        if not options.quiet:
-            print "OK (took %.3f s)" % (time.time()-currentFrameExposeStart)
-            sys.stdout.flush()
-
-    @callback(manager)
-    def readoutBegin(request):
-        global currentFrameReadoutStart, options
-        currentFrameReadoutStart = time.time()
-        if not options.quiet:
-            print "reading out ...",
-            sys.stdout.flush()
-    
-    def displayImage(image):
-        global options
-
-        if os.path.exists(image.filename()):
-            xpa = "file '%s'" % image.filename()
-        else:
-            xpa = "file url '%s'" % image.http()
-
-        try:
-            ds9.xpaset(xpa)
-        except RuntimeError, e:
-            # Issue with xpaset prevents us from assuming that this failed!        
-            print >> sys.stderr, "Can't display image %s. (%s)" % (image.filename(), e)
-
-    @callback(manager)
-    def readoutComplete(image):
-        global currentFrameReadoutStart, currentFrameExposeStart, options, display, ds9
-        global currentFrame
-
-        if not options.quiet:
-            print "OK (took %.3f s)"  % (time.time()-currentFrameReadoutStart)
-            print "saved to %s ... OK" % image.filename()
-            sys.stdout.flush()
-
-        if display:
-            displayImage(image)
-
-        if not options.quiet:
-            print "[%03d/%03d] took %.3fs" % (currentFrame, options.frames,
-                                              time.time()-currentFrameExposeStart)
-            sys.stdout.flush()
+        self.ds9 = None
         
+        self.addHelpGroup("CAM", "Camera and Filter Wheel configuration")
+        self.addInstrument(name="camera", cls="Camera",
+                           help="Camera instrument to be used. If blank, try to guess from chimera.config",
+                           helpGroup="CAM", required=True)
+        
+        self.addInstrument(name="wheel", cls="FilterWheel",
+                           help="Filter Wheel instrument to be used. If blank, try to guess from chimera.config",
+                           helpGroup="CAM")
+        
+        self.addHelpGroup("EXPOSE", "Exposure control")
+        self.addParameters(dict(name="frames", short="n", type="int", default=1, helpGroup="EXPOSE", help="Number of frames"),
+                           dict(name="exptime", short="t", type="float", default=1, helpGroup="EXPOSE",
+                                help="Integration time in seconds for each frame"),
+                           dict(name="interval", short="i", type="float", default=0.0, helpGroup="EXPOSE",
+                                help="Number of seconds to wait between each frame"),
+                           dict(name="output", short="o", type="string", helpGroup="EXPOSE",
+                                help="Base filename including full path if needed.",
+                                default="$date.fits"),
+                           dict(name="filter", short="f", type="string", helpGroup="EXPOSE",
+                                help="Filter to be used. "
+                                     "Use --filters to get a list of available filters"),
+                           dict(name="shutter", type=ParameterType.CHOICE, helpGroup="EXPOSE",
+                                choices=["open", "OPEN", "close", "CLOSE", "leave", "LEAVE"],
+                                default="OPEN",
+                                help="What to do with the shutter: open, close, leave (case insensitive)"),
+                           dict(name="binning", help="Apply the selected binning to all frames", helpGroup="EXPOSE"),
+                           dict(name="subframe", 
+                                help="Readout only the selected subframe portion. The notation follows IRAF conventions."
+                                " x1:x2,y1:y2 to specify the corners of the desired subframe", helpGroup="EXPOSE"))
 
-    camera.exposeBegin     += exposeBegin
-    camera.exposeComplete  += exposeComplete
-    camera.readoutBegin    += readoutBegin
-    camera.readoutComplete += readoutComplete
+        self.addHelpGroup("DISPLAY", "Display configuration")
+        self.addParameters(dict(name="no_display", long="no-display", type=ParameterType.BOOLEAN,
+                                helpGroup="DISPLAY",
+                                help="Don't try to display image on DS9. default is display for exptime >= 5"),
+                           dict(name="force_display", long="force-display", type=ParameterType.BOOLEAN,
+                                helpGroup="DISPLAY",
+                                help="Always display image on DS9 regardless of exptime."))
+    
+        self.addHelpGroup("TEMP", "Temperature control")
+        self.addParameters(dict(name="wait", short="w", type=ParameterType.BOOLEAN,
+                                default=False,
+                                helpGroup="TEMP",
+                                help="Wait until the selected CCD setpoint is achived."))
 
-    if options.info and not options.quiet:
-        print "Camera:", camera["driver"], "(%s)" % driver["device"]
+        self.addHelpGroup("INFO", "Information")
+
+        self.addHelpGroup("IMAGETYPE", "Image types")
+        self.addParameters(dict(name="isBias", long="bias", type=ParameterType.CONSTANT, const="zero",
+                                help="Mark this frame as a BIAS frame.", helpGroup="IMAGETYPE"),
+                           dict(name="isDomeFlat", long="flat", type=ParameterType.CONSTANT, const="flat",
+                                help="Mark this frame as a DOME FLAT frame.", helpGroup="IMAGETYPE"),
+                           dict(name="isSkyFlat", long="sky-flat", type=ParameterType.CONSTANT, const="skyflat",
+                                help="Mark this frame as a SKY FLAT frame.", helpGroup="IMAGETYPE"),
+                           dict(name="isDark", long="dark", type=ParameterType.CONSTANT, const="dark",
+                                help="Mark this frame as a DARK frame.", helpGroup="IMAGETYPE"),
+                           dict(name="isObject", long="object", type=ParameterType.CONSTANT, const="object",
+                                help="Mark this frame as a OBJECT frame.", helpGroup="IMAGETYPE"))
+
+    @action(short="F", helpGroup="INFO", help="Print available filter names.")
+    def filters(self, options):
+        if not self.wheel:
+            self.exit("No Filter Wheel found. Edit chimera.config or pass --wheel/--wheel-driver (see --help)")
+        
+        self.out("Available filters:", end="")
+        
+        for i,f in enumerate(self.wheel.getFilters()):
+            self.out(str(f), end="")
+        
+        self.out()
+        self.exit()
+        
+    @action(name="setpoint", short="T", long="start-cooling", actionGroup="TEMP",
+            type="float",
+            helpGroup="TEMP", help="Start camera cooling, using the defined TEMP",
+            metavar="TEMP")
+    def startCooling (self, options):
+        
+        def eps_equal(a, b, eps=0.01):
+            return abs(a-b) <= eps
+
+        camera = self.camera
+        
+        if options.wait:
+            timeout = 4*60 # FIXME: configurable?
+        
+        start = time.time()
+
+        self.out(40*"=")
+        
+        camera.startCooling(options.setpoint)
+        self.out("setting camera setpoint to %.3f." % options.setpoint)
+        
+        if options.wait:
+            while not eps_equal(camera.getTemperature(), camera.getSetPoint(), 0.2):
+                self.out("\rwaiting setpoint temperature %.3f oC, current: %.3f oC" \
+                    % (camera.getSetPoint(), camera.getTemperature()), end="")
+                time.sleep(1)
+    
+                if time.time() > (start+timeout):
+                    self.out("giving up after wait for %d seconds" % timeout)
+                    break
+    
+            self.out("OK (took %.3fs)" % (time.time()-start))
+    
+        self.out(40*"=")
+        self.exit()        
+
+    @action(long="stop-cooling", actionGroup="TEMP",
+            helpGroup="TEMP", help="Stop camera cooling")
+    def stopCooling (self, options):
+        camera = self.camera
+
+        self.out(40*"=")
+        self.out("stopping camera cooling...", end="")
+        camera.stopCooling()
+        self.out("OK")        
+        self.out(40*"=")
+        self.exit()
+
+    @action(long="stop-fan", actionGroup="TEMP_FAN",
+            helpGroup="TEMP", help="Stop the cooler fan.")
+    def stopFan (self, options):
+        camera = self.camera
+
+        self.out(40*"=")
+        self.out("stopping cooler fan...", end="")
+        camera.stopFan()
+        self.out("OK")        
+        self.out(40*"=")
+        self.exit()
+
+    @action(long="start-fan", actionGroup="TEMP_FAN",
+            helpGroup="TEMP", help="Start the cooler fan.")
+    def startFan (self, options):
+        camera = self.camera
+
+        self.out(40*"=")
+        self.out("starting cooler fan...", end="")
+        camera.startFan()
+        self.out("OK")        
+        self.out(40*"=")
+        self.exit()
+
+    @action(help="Print camera information and exit", helpGroup="INFO")
+    def info(self, options):
+        camera = self.camera
+        
+        self.out("Camera:", camera["driver"], "(%s)" % camera.getDriver()["device"])
 
         if camera.isCooling() == True:
-            print "Cooling enabled, Setpoint: %.1f oC" % camera.getSetPoint()
+            self.out("Cooling enabled, Setpoint: %.1f oC" % camera.getSetPoint())
         else:
-            print "Cooling disabled."
+            self.out("Cooling disabled.")
 
-        print "Current CCD temperature:", "%.1f" % camera.getTemperature(), "oC"
+        self.out("Current CCD temperature:", "%.1f" % camera.getTemperature(), "oC")
         if camera.isFanning():
-            print "Cooler fan active."
+            self.out("Cooler fan active.")
         else:
-            print "Cooler fan inactive."
+            self.out("Cooler fan inactive.")
 
-        print "="*40
+        self.out("="*40)
         for feature in CameraFeature:
-            print str(feature), bool(camera.supports(feature))
+            self.out(str(feature), str(bool(camera.supports(feature))))
 
-        print "="*40
+        self.out("="*40)
         ccds = camera.getCCDs()
         currentCCD = camera.getCurrentCCD()
-        print "Available CCDs: ",
+        self.out("Available CCDs: ", end="")
         for ccd in ccds.keys():
             if ccd == currentCCD:
-                print "*%s* " % str(ccd),
+                self.out("*%s* " % str(ccd), end="")
             else:
-                print "%s " % str(ccd),
-        print
+                self.out("%s " % str(ccd), end="")
+        self.out()
 
-        print "="*40
-        print "ADCs: ",
+        self.out("="*40)
+        self.out("ADCs: ", end="")
         adcs = camera.getADCs()
         for adc in adcs.keys():
-            print "%s " % adc,
-        print
+            self.out("%s " % adc, end="")
+        self.out()
 
-        print "="*40
-        print "CCD size (pixel)       : %d x %d" % camera.getPhysicalSize()
-        print "Pixel size (micrometer): %.2f x %.2f" % camera.getPixelSize()
-        print "Overscan size (pixel)  : %d x %d" % camera.getOverscanSize()
+        self.out("="*40)
+        self.out("CCD size (pixel)       : %d x %d" % camera.getPhysicalSize())
+        self.out("Pixel size (micrometer): %.2f x %.2f" % camera.getPixelSize())
+        self.out("Overscan size (pixel)  : %d x %d" % camera.getOverscanSize())
         
-        print "="*40
-        print "Available binnings: ",
-        sortedBins = binnings.keys()
+        self.out("="*40)
+        self.out("Available binnings: ", end="")
+        sortedBins = camera.getBinnings().keys()
         sortedBins.sort()
 
         for bin in sortedBins:
-            print "%s " % bin,
-        print
+            self.out("%s " % bin, end="")
+        self.out()
 
-        manager.shutdown()
-        sys.exit(1)
+        self.exit()
     
-    if options.filters and not options.quiet:
-        print "Available filters:",
-        for i,f in enumerate(filter.getFilters()):
-            print f,
-        manager.shutdown()
-        sys.exit(1)
+    def _getImageType(self, options):
+        types = (options.isBias, options.isDomeFlat, options.isSkyFlat, options.isDark, options.isObject)
+        for t in types:
+            if t: return t
+        return "object"
 
-    if options.stop_fan:
-        print "="*40
-        print "Stopping cooler fan... ",
-        camera.stopFan()
-        print "OK"
-        print "="*40
-        manager.shutdown()
-        sys.exit(1)
+    def __abort__ (self):
+        self.out("aborting... ", endl="")
 
-    if options.start_fan:
-        print "="*40
-        print "Starting cooler fan... ",
-        camera.startFan()
-        print "OK"
-        print "="*40
-        manager.shutdown()
-        sys.exit(1)
-
-    if cooling == False:
-       print "="*40
-       print "Disabling cooling... ",
-       camera.stopCooling()
-       print "OK"
-       print "="*40
-       manager.shutdown()
-       sys.exit(1)
-
-    if not options.quiet:
-
-        print 40*"="
-        if options.camera:
-            print "Taking %d %s frame[s] of %.3fs each on %s" % (options.frames, options.imagetyp.capitalize(),
-                                                              options.exptime, options.camera[0])
-        else:
-            print "Taking %d %s frame[s] of %.3fs each using %s" % (options.frames, options.imagetyp.capitalize(),
-                                                                 options.exptime, options.driver[-1])
-        print "Shutter: %s" % options.shutter
-        print "Interval between frames: %.3fs" % options.interval
-        if cooling == True:
-            print "Cooling enabled, Setpoint: %.3f oC" % setpoint
-        else:
-            print "Leaving cooling as is."
-
-        print "Current CCD temperature:", camera.getTemperature(), "oC"
-
-        if options.filter != None:
-            print "Filter: %s" % options.filter
+        if self.camera.isExposing():
+            self.camera.abortExposure()
+        
+    @action(default=True, helpGroup="EXPOSE", help="Take an exposure with selected parameters")
+    def expose(self, options):
+        
+        camera = self.camera
+    
+        # first check binning
+        binnings = camera.getBinnings()
 
         if options.binning:
-            print "Binning: %s" % options.binning
+            if options.binning not in binnings.keys():
+                self.exit("Invalid binning mode. See --info for available binning modes")
+
+        # make files in the current directory if path is not absolute
+        if not os.path.isabs(options.output):
+            options.output = os.path.join(os.getcwd(), options.output)
+            
+        if (not self.options.no_display and options.exptime >= 5) or options.force_display:
+            self._setupDS9()
+
+        imagetype = self._getImageType(options)
+         
+        @callback(self.localManager)
+        def exposeBegin(request):
+            global currentFrame, currentFrameExposeStart
+            currentFrameExposeStart = time.time()
+            currentFrame += 1
+            self.out(40*"=")
+            self.out("[%03d/%03d] [%s]" % (currentFrame, options.frames, time.strftime("%c")))
+            self.out("exposing (%.3fs) ..." % request["exptime"], end="")
+        
+        @callback(self.localManager)
+        def exposeComplete(request):
+            global currentFrameExposeStart
+            self.out("OK (took %.3f s)" % (time.time()-currentFrameExposeStart))
+    
+        @callback(self.localManager)
+        def readoutBegin(request):
+            global currentFrameReadoutStart
+            currentFrameReadoutStart = time.time()
+            self.out("reading out and saving to %s ..."  % request["filename"], end="")
+                
+        def displayImage(image):
+            global DS9
+
+            if not DS9: return
+
+            if os.path.exists(image.filename()):
+                xpa = "file '%s'" % image.filename()
+            else:
+                xpa = "file url '%s'" % image.http()
+
+            try:
+                DS9.xpaset(xpa)
+            except RuntimeError, e:
+                # Issue with xpaset prevents us from assuming that this failed!        
+                print >> sys.stderr, "Can't display image %s. (%s)" % (image.filename(), e)
+
+        @callback(self.localManager)
+        def readoutComplete(image):
+            global currentFrame, currentFrameExposeStart, currentFrameReadoutStart
+            self.out("OK (took %.3f s)"  % (time.time()-currentFrameReadoutStart))
+            self.out("[%03d/%03d] took %.3fs" % (currentFrame, options.frames,
+                                              time.time()-currentFrameExposeStart))
+            displayImage(image)
+    
+        @callback(self.localManager)
+        def abortComplete():
+            global currentFrameExposeStart
+            self.out("OK (took %.3f s)"  % (time.time()-currentFrameExposeStart))
+
+        camera.exposeBegin     += exposeBegin
+        camera.exposeComplete  += exposeComplete
+        camera.abortComplete   += abortComplete
+        camera.readoutBegin    += readoutBegin
+        camera.readoutComplete += readoutComplete
+        
+        self.out(40*"=")
+        self.out("Taking %d %s frame[s] of %.3fs each" % (options.frames, imagetype.upper(), options.exptime))
+        self.out("Shutter: %s" % options.shutter)
+        self.out("Interval between frames: %.3fs" % options.interval)
+        if camera.isCooling():
+            self.out("Cooling enabled, setpoint: %.3f oC" % camera.getSetpoint())
         else:
-            print "No binning"
+            self.out("Cooling disabled.")
+
+        self.out("Current CCD temperature: %.3f oC" % camera.getTemperature())
+
+        if options.binning:
+            self.out("Binning: %s" % options.binning)
+        else:
+            self.out("No binning")
 
         if options.subframe:
-            print "Subframe: %s" % options.subframe
+            self.out("Subframe: %s" % options.subframe)
         else:
-            print "Full Frame"
+            self.out("Full Frame")
 
-        sys.stdout.flush()
-
-    # cooling
-    if cooling == True:
-        camera.startCooling(setpoint)
+        if options.filter != None:
+            self.out("Filter: %s" % options.filter)
         
+        if options.filter != None and self.wheel:
+            self.out(40*"=")
+            try:
+                self.out("Changing to filter %s... " % options.filter, end="")
+                self.wheel.setFilter(options.filter)
+                self.out("OK")
+            except InvalidFilterPositionException, e:
+                self.out("ERROR. Couldn't move filter wheel to %s. (%s)" % (options.filter, e))
+                time.sleep(3)
 
-    def eps_equal(a, b, eps=0.01):
-        return abs(a-b) <= eps
-
-    if cooling == True and options.wait == True:
-        timeout = 4*60 # FIXME: configurable?
+        # finally, expose
         start = time.time()
+        
+        try:
+            try:
+                camera.expose(exptime=options.exptime,
+                              frames=options.frames,
+                              interval=options.interval,
+                              filename=options.output,
+                              type=imagetype,
+                              binning=options.binning or None,
+                              window=options.subframe or None,
+                              shutter=options.shutter)
+            except Exception, e:
+                self.err("Error trying to take exposures. (%s)" % printException(e))
+        finally:
 
-        print 40*"="
+            #camera.exposeBegin     -= exposeBegin
+            #camera.exposeComplete  -= exposeComplete
+            #camera.abortComplete   -= abortComplete
+            #camera.readoutBegin    -= readoutBegin
+            #camera.readoutComplete -= readoutComplete
 
-        while not eps_equal(camera.getTemperature(), camera.getSetPoint(), 0.2):
-            print "\rwaiting setpoint temperature %.3f oC, current: %.3f oC" \
-                % (camera.getSetPoint(), camera.getTemperature()),
+            self.out(40*"=")
+            self.out("Total time: %.3fs" % (time.time()-start))
+            self.out(40*"=")
+            self.out("%s" % time.strftime("%c"))            
+            self.out(40*"=")
 
-            sys.stdout.flush()
-            time.sleep(1)
-
-            if time.time() > (start+timeout):
-                print "giving up after wait for %d seconds" % timeout
-                break
-
-        print "OK (took %.3fs)" % (time.time()-start)
-        sys.stdout.flush()
-
-    # filter
-    if options.filter != None:
-        print 40*"="
+    def _setupDS9(self):
+        
+        global DS9
 
         try:
-            print "Changing to filter %s... " % options.filter,
-            sys.stdout.flush()
-            filter.setFilter(options.filter)
-            print "OK"
-            sys.stdout.flush()
-        except InvalidFilterPositionException, e:
-            print "ERROR. Couldn't move filter wheel to %s. (%s)" % (options.filter, e)
-            time.sleep(5)
-
-    # finally, expose
-    start = time.time()
-
-    print 40*"="
-    print "%s" % time.strftime("%c")
-
-    try:
-        camera.expose(exptime=options.exptime,
-                      frames=options.frames,
-                      interval=options.interval,
-                      filename=options.output,
-                      type=options.imagetyp,
-                      binning=options.binning or None,
-                      window=options.subframe or None,
-                      shutter=options.shutter)
-    except Exception, e:
-        print >> sys.stderr, "Error trying to take exposures. (%s)" % printException(e)
-
-    camera.exposeBegin     -= exposeBegin
-    camera.exposeComplete  -= exposeComplete
-    camera.readoutBegin    -= readoutBegin
-    camera.readoutComplete -= readoutComplete
-    manager.shutdown()
-
-    if not options.quiet and aborted:
-        print 40*"="
-        print "Took %03d of %03d frames. Aborted by the user." % (currentFrame, options.frames)
-
-    if not options.quiet:
-        print 40*"="
-        print "Total time: %.3fs" % (time.time()-start)
-        print 40*"="
-        print "%s" % time.strftime("%c")            
-        print 40*"="
-
-    sys.exit(0)
-
+            # disable RO warning
+            warnings.filterwarnings(action='ignore', module='RO.DS9')
+            from RO.DS9 import DS9Win
+            DS9 = DS9Win(doRaise=True, doOpen=True)
+        except ImportError:
+            self.err(40*"=")
+            self.err("DS9 is not available. Display disabled")
+        except RuntimeError:
+            # even with RO installed, we still need XPA package to get DS9 working
+            self.err(40*"=")                
+            self.err("DS9 is not available, check if you have the XPA package installed. Display disabled.")
+    
+def main():
+    cli = ChimeraCam()
+    return cli.run(sys.argv)
+    
+if __name__ == '__main__':
+    main()

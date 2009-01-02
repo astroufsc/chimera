@@ -80,8 +80,8 @@ class FilterWheel (ChimeraObject, IFilterWheel):
         return self.getManager().getProxy(self['driver'], lazy=lazy)        
         
 
-    def getMetadata(self):
+    def getMetadata(self, request):
         return [
                 ('FWHEEL', str(self['model']), 'FilterWheel Model'),
                 ('FILTER',   str(self.getFilter()), 'Filter used for this observation'),
-                ] + self.getDriver().getMetadata()
+                ] + self.getDriver().getMetadata(request)

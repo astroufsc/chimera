@@ -108,3 +108,13 @@ class ILifeCycle (Interface):
         """
         Get a Proxy for this object (useful for callbacks)
         """
+
+    def getMetadata(self, data):
+        """
+        Get object metadata.
+
+        @param data: Context relevant data.
+        @type  data: object
+
+        @rtype: list
+        """
