@@ -19,20 +19,19 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 
-import sys
 import os.path
 import logging
 import optparse
-from xml.parsers.expat import ExpatError, ErrorString
-
-import chimera.util.etree.ElementTree as ET
 
 from chimera.core.location import Location
 from chimera.core.manager import Manager
+from chimera.core.systemconfig import SystemConfig
 from chimera.core.version import _chimera_version_, _chimera_description_, find_dev_version
-from chimera.controllers.site.config import SiteConfig
-from chimera.core.exceptions import ChimeraException, printException, InvalidLocationException
-from chimera.core.constants import MANAGER_DEFAULT_HOST, MANAGER_DEFAULT_PORT
+from chimera.core.exceptions import printException, InvalidLocationException
+from chimera.core.constants import (MANAGER_DEFAULT_HOST,
+                                    MANAGER_DEFAULT_PORT,
+                                    SYSTEM_CONFIG_DEFAULT_FILENAME,
+                                    SYSTEM_CONFIG_DEFAULT_GLOBAL)
 
 from chimera.core.site import Site
 from chimera.core.path import ChimeraPath
@@ -45,7 +44,9 @@ log = logging.getLogger(__name__)
 
 class SiteController (object):
 
-    def __init__(self, args = []):
+    def __init__(self, args = [], wait=True):
+        
+        self.wait = wait
 
         self.options, self.args = self.parseArgs(args)
 
@@ -83,82 +84,89 @@ class SiteController (object):
 
             eval ('parser.values.%s.append ("%s")' % (option.dest, value))
 
-        def check_xml (option, opt_str, value, parser):
-
-            if not value or not os.path.exists (os.path.abspath(value)):
-                raise optparse.OptionValueError ("Couldn't found %s configuration file." % value)
-
-            eval ('parser.values.%s.append ("%s")' % (option.dest, value))
-
-
         parser = optparse.OptionParser(prog="chimera", version=find_dev_version() or _chimera_version_,
                                        description=_chimera_description_,
                                        usage="chimera --help for more information")
 
-        parser.add_option("-i", "--instrument", action="callback", callback=check_location,
-                          dest="instruments", type="string",
-                          help="Load the instrument defined by LOCATION."
-                               "This option could be setted many times to load multiple instruments.",
-                          metavar="LOCATION")
+        manag_group = optparse.OptionGroup(parser, "Basic options")
+        manag_group.add_option("-H", "--host", action="store", 
+                               dest="pyro_host", type="string",
+                               help="Host name/IP address to run as; [default=%default]",
+                               metavar="HOST")
 
-        parser.add_option("-c", "--controller", action="callback", callback=check_location,
-                          dest="controllers", type="string",
-                          help="Load the controller defined by LOCATION."
-                               "This option could be setted many times to load multiple controllers.",
-                          metavar="LOCATION")
+        manag_group.add_option("-P", "--port", action="store", 
+                               dest="pyro_port", type="string",
+                               help="Port on which to listen for requests; [default=%default]",
+                               metavar="PORT")
 
-        parser.add_option("-d", "--driver", action="callback", callback=check_location,
-                          dest="drivers", type="string",
-                          help="Load the driver defined by LOCATION."
-                               "This option could be setted many times to load multiple drivers.",
-                          metavar="LOCATION")
+        config_group = optparse.OptionGroup(parser, "Configuration")
 
-        parser.add_option("-f", "--file", action="callback", callback=check_xml,
-                          dest="config", type="string",
-                          help="Load instruments and controllers defined on FILE."
-                               "This option could be setted many times to load inst/controllers from multiple files.",
-                          metavar="FILE")
+        config_group.add_option("--config", dest="config_file",
+                              help="Start Chimera using configuration from FILE.", metavar="FILE")
 
-        parser.add_option("-I", "--instruments-dir", action="callback", callback=check_includepath,
-                          dest="inst_dir", type="string",
-                          help="Append PATH to instruments load path.",
-                          metavar="PATH")
+        config_group.add_option("--skip-global", action="store_false", 
+                              dest="use_global",
+                              help="Don't use global coniguration file.")
 
-        parser.add_option("-C", "--controllers-dir", action="callback", callback=check_includepath,
-                          dest="ctrl_dir", type="string",
-                          help="Append PATH to controllers load path.",
-                          metavar="PATH")
+        misc_group = optparse.OptionGroup(parser, "General")
 
-        parser.add_option("-D", "--drivers-dir", action="callback", callback=check_includepath,
-                          dest="drv_dir", type="string",
-                          help="Append PATH to drivers load path.",
-                          metavar="PATH")
+        misc_group.add_option("--dry-run", action="store_true", 
+                              dest="dry",
+                              help="Only list all configured objects (from command line and configuration files) without starting the system.")
+        
+        misc_group.add_option("-v", "--verbose", action="count", dest='verbose',
+                              help="Increase log level (multiple v's to increase even more).")
 
-        parser.add_option("-H", "--host", action="store", 
-                          dest="pyro_host", type="string",
-                          help="Host name/IP address to run as; [default=%default]",
-                          metavar="HOST")
+        inst_group = optparse.OptionGroup(parser, "Instruments, Controllers and Drivers Management")
 
-        parser.add_option("-P", "--port", action="store", 
-                          dest="pyro_port", type="string",
-                          help="Port on which to listen for requests; [default=%default]",
-                          metavar="PORT")
+        inst_group.add_option("-i", "--instrument", action="callback", callback=check_location,
+                              dest="instruments", type="string",
+                              help="Load the instrument defined by LOCATION."
+                              "This option could be setted many times to load multiple instruments.",
+                              metavar="LOCATION")
 
-        parser.add_option("--dry-run", action="store_true", 
-                          dest="dry",
-                          help="Only list all configured objects (from command line and configuration files) without starting the system.")
+        inst_group.add_option("-c", "--controller", action="callback", callback=check_location,
+                              dest="controllers", type="string",
+                              help="Load the controller defined by LOCATION."
+                              "This option could be setted many times to load multiple controllers.",
+                              metavar="LOCATION")
 
-        parser.add_option("-v", "--verbose", action="count", dest='verbose',
-                          help="Increase log level (multiple v's to increase even more).")
+        inst_group.add_option("-d", "--driver", action="callback", callback=check_location,
+                              dest="drivers", type="string",
+                              help="Load the driver defined by LOCATION."
+                              "This option could be setted many times to load multiple drivers.",
+                              metavar="LOCATION")
+
+        inst_group.add_option("-I", "--instruments-dir", action="callback", callback=check_includepath,
+                              dest="inst_dir", type="string",
+                              help="Append PATH to instruments load path.",
+                              metavar="PATH")
+
+        inst_group.add_option("-C", "--controllers-dir", action="callback", callback=check_includepath,
+                              dest="ctrl_dir", type="string",
+                              help="Append PATH to controllers load path.",
+                              metavar="PATH")
+
+        inst_group.add_option("-D", "--drivers-dir", action="callback", callback=check_includepath,
+                              dest="drv_dir", type="string",
+                              help="Append PATH to drivers load path.",
+                              metavar="PATH")
+        
+
+        parser.add_option_group(manag_group)
+        parser.add_option_group(config_group)        
+        parser.add_option_group(misc_group)
+        parser.add_option_group(inst_group)
 
         parser.set_defaults(instruments = [],
                             controllers = [],
                             drivers     = [],
-                            config = [],
+                            config_file = SYSTEM_CONFIG_DEFAULT_FILENAME,
                             inst_dir = [],
                             ctrl_dir = [],
                             drv_dir = [],
                             dry=False,
+                            use_global=True,
                             verbose = 0,
                             pyro_host=MANAGER_DEFAULT_HOST,
                             pyro_port=MANAGER_DEFAULT_PORT)
@@ -167,29 +175,27 @@ class SiteController (object):
 
     def startup(self):
 
-
-        # config file
-        self.config = SiteConfig(pyro_host=self.options.pyro_host, pyro_port=self.options.pyro_port)
         
-        for config in self.options.config:
-            self.config.read(config)
-
+        # system config
+        self.config = SystemConfig.fromFile(self.options.config_file, self.options.use_global)
+        
         # manager
         if not self.options.dry:
             log.info("Starting system.")
             log.info("Chimera version: %s" % find_dev_version() or _chimera_version_)
             log.info("Chimera prefix: %s" % ChimeraPath.root())
                 
-            self.manager = Manager(**self.config.getChimera())
-            log.info("Manager running on "+ self.manager.getHostname() + ":" + str(self.manager.getPort()))
+            self.manager = Manager(**self.config.chimera)
+            log.info("Chimera: running on "+ self.manager.getHostname() + ":" + str(self.manager.getPort()))
+            if self.options.use_global:
+                log.info("Chimera: reading configuration from %s" % SYSTEM_CONFIG_DEFAULT_GLOBAL)            
+            log.info("Chimera: reading configuration from %s" % self.options.config_file)
 
         # add site object
         if not self.options.dry:
             
-            sites = self.config.getSites()
-            
-            for site in sites:
-                self.manager.addClass(Site, site["name"], site, True)
+            for site in self.config.sites:
+                self.manager.addClass(Site, site.name, site.config, True)
             
         # search paths
         log.info("Setting objects include path from command line parameters...")
@@ -204,7 +210,7 @@ class SiteController (object):
 
         # init from config
         log.info("Trying to start drivers...")
-        for drv in self.config.getDrivers() + self.options.drivers:
+        for drv in self.config.drivers + self.options.drivers:
 
             if self.options.dry:
                 print drv
@@ -212,7 +218,7 @@ class SiteController (object):
                 self._add(drv, path=self.paths["drivers"], start=True)
 
         log.info("Trying to start instruments...")
-        for inst in self.config.getInstruments()+self.options.instruments:
+        for inst in self.config.instruments + self.options.instruments:
             
             if self.options.dry:
                 print inst
@@ -220,7 +226,7 @@ class SiteController (object):
                 self._add(inst, path=self.paths["instruments"], start=True)
 
         log.info("Trying to start controllers...")                
-        for ctrl in self.config.getControllers()+self.options.controllers:
+        for ctrl in self.config.controllers + self.options.controllers:
             
             if self.options.dry:
                 print ctrl
@@ -230,7 +236,7 @@ class SiteController (object):
         log.info("System up and running.")
 
         # ok, let's wait manager work
-        if not self.options.dry:
+        if self.wait and not self.options.dry:
             self.manager.wait()
 
     def _add (self, location, path, start):
