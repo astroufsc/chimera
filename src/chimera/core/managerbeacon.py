@@ -1,6 +1,7 @@
 import threading
 import SocketServer
 
+from chimera.core.exceptions import ChimeraException
 from chimera.core.constants import MANAGER_BEACON_PORT, MANAGER_BEACON_CHALLENGE, MANAGER_BEACON_ERROR
 
 class _ManagerBeaconHandler(SocketServer.BaseRequestHandler):
@@ -9,18 +10,21 @@ class _ManagerBeaconHandler(SocketServer.BaseRequestHandler):
         data = self.request[0]
         client = self.request[1]
 
-        if data == MANAGER_BEACON_CHALLENGE:
-            client.sendto("%s:%s" % (self.server.manager.getHostname(), self.server.manager.getPort()),
-                          self.client_address)
-            client.close()
-        else:
-            client.sendto(MANAGER_BEACON_ERROR, self.client_address)
+        try:
+            if data == MANAGER_BEACON_CHALLENGE:
+                client.sendto("%s:%s" % (self.server.manager.getHostname(), self.server.manager.getPort()), self.client_address)
+            else:
+                client.sendto(MANAGER_BEACON_ERROR, self.client_address)
+        finally:
             client.close()
         
 class ManagerBeacon(SocketServer.ThreadingUDPServer):
 
     def __init__ (self, manager):
-        SocketServer.ThreadingUDPServer.__init__(self, ("<broadcast>", MANAGER_BEACON_PORT), _ManagerBeaconHandler)
+        try:
+            SocketServer.ThreadingUDPServer.__init__(self, ("<broadcast>", MANAGER_BEACON_PORT), _ManagerBeaconHandler)
+        except Exception:
+            raise ChimeraException("Failed to start Manager Beacon.")
 
         self.manager = manager
         self.shouldDie = threading.Event()
