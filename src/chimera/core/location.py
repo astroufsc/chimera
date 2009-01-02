@@ -22,8 +22,8 @@
 import re
 import sys
 
-import logging
 import chimera.core.log
+import logging
 log = logging.getLogger(__name__)
 
 from types import DictType, StringType
@@ -121,10 +121,7 @@ class Location(object):
 
         port = matches['port']
         if port:
-            # FIXME py2.4 hack
-            if ":" in port:
-                port = port[1:]
-
+            # don't expect ValueError because RE already check this
             port = int(port)
 
         if not matches['name']:
@@ -140,7 +137,7 @@ class Location(object):
         if not isinstance (loc, Location):
             loc = Location (loc)
 
-        return (loc.cls == self.cls)  and \
+        return (loc.cls.lower() == self.cls.lower())  and \
                (loc.name == self.name)
 
     def __ne__ (self, loc):
