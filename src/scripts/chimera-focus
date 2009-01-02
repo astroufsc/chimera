@@ -18,317 +18,124 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-import sys
-import os
-import time
-import logging
-import signal
 
-from optparse import OptionParser, OptionGroup
-
-from chimera.core.manager import Manager
-from chimera.core.version import _chimera_version_, _chimera_description_
-from chimera.core.constants import MANAGER_DEFAULT_HOST, MANAGER_DEFAULT_PORT
-
-from chimera.instruments.focuser import Focuser
-from chimera.util.enum import Enum
-
-from chimera.core.exceptions import ObjectNotFoundException
-from chimera.core.exceptions import ChimeraObjectException
-from chimera.core.exceptions import InvalidLocationException
-from chimera.core.exceptions import ClassLoaderException
-from chimera.core.exceptions import printException
-
-from chimera.core.location import Location
-
+from chimera.core.cli import ChimeraCLI, action, parameter
 from chimera.core.callback import callback
-from chimera.core.path     import ChimeraPath
-from chimera.core.log import setConsoleLevel
-#setConsoleLevel(logging.DEBUG)
-setConsoleLevel(1e9)
+from chimera.controllers.autofocus import StarNotFoundException, FocusNotFoundException
 
+import sys
+import time    
+
+class ChimeraFocus (ChimeraCLI):
+    
+    def __init__ (self):
+        ChimeraCLI.__init__(self, "chimera-focus", "Focuser controller", 0.1)
+        
+        self.addHelpGroup("FOCUS", "Focus")
+        self.addInstrument(name="focuser", cls="Focuser", required=True, helpGroup="FOCUS", help="Focuser instrument to be used")
+        self.addController(name="autofocus", cls="Autofocus", required=False, helpGroup="FOCUS", help="Autofocus controller to be used")
+        
+        self.addHelpGroup("AUTOFOCUS", "Autofocus")
+        self.addParameters(dict(name="autofocus_step", long="step", type="int", helpGroup="AUTOFOCUS",
+                                help="Defines autofocus step.", metavar="STEP", default=500),
+                           dict(name="autofocus_exptime", long="exptime", type="float", helpGroup="AUTOFOCUS",
+                                help="Defines autofocus frame exposure time.", metavar="EXPTIME", default=10.0),
+                           dict(name="autofocus_debug", long="debug", helpGroup="AUTOFOCUS",
+                                help="Run an autofocus debug session using data from PREVIOUS_RUN_DIR.",
+                                metavar="PREVIOUS_RUN_DIR", default=""))
+
+        self.addHelpGroup("COMMANDS", "Commands")        
+
+    @parameter(long="range", helpGroup="AUTOFOCUS", default="1000-6000",
+               help="Defines autofocus focuser range to be covered. Use start-end, "
+               "as in 1000-6000 to run from 1000 to 6000.", metavar="START-END")
+    def autofocus_range(self, value):
+        try:
+            start, end = value.split("-")
+            start = int(start)
+            end = int(start)
+            return (start, end)
+        except ValueError:
+            raise ValuError("Invalid start-end range")
+        
+    @action(long="in", type="int", help="Move N steps IN", metavar="N", helpGroup="COMMANDS")
+    def move_in (self, options):
+        self.out("Moving %d steps IN ... " % options.move_in, end="")
+        self.focuser.moveIn(options.move_in)
+        self.out("OK")
+        
+        self._currentPosition(options)
+        
+    @action(long="out", type="int", help="Move N steps OUT", metavar="N", helpGroup="COMMANDS")
+    def move_out (self, options):
+        self.out("Moving %d steps OUT ... " % options.move_out, end="")
+        self.focuser.moveOut(options.move_out)
+        self.out("OK")
+        
+        self._currentPosition(options)
+
+    @action(long="to", type="int",help="Move to POSITION", metavar="POSITION", helpGroup="COMMANDS")
+    def move_to (self, options):
+        self.out("Moving to %d ... " % options.move_to, end="")
+        self.focuser.moveTo(options.move_to)
+        self.out("OK")
+        
+    @action(short="i", help="Print focuser current information", helpGroup="COMMANDS")
+    def info(self, options):
+        
+        drv = self.focuser.getDriver()
+        
+        self.out("Focuser: %s (%s)" % (self.focuser["driver"], drv["device"]))
+        self._currentPosition(options)
+
+    @action(helpGroup="AUTOFOCUS",
+            help="Start an autofocus session using the selected parameters."
+            " You can select a focuser range and the size of the step for the sequence."
+            " This option is exclusive, you cannot move manually at the same time.")
+    def auto(self, options):
+        
+        if not self.autofocus:
+            self.exit("No Autofocus controller available. Try --autofocus=..., or --help.")
+
+        from RO.DS9 import DS9Win as DS9
+        ds9 = DS9(doRaise=True, doOpen=True)
+        ds9.xpaset("scale mode 99.5")
+
+        @callback(self.localManager)
+        def stepComplete (position, star, frame):
+            print "#%04d (%4d, %4d) FWHM=%.3f FLUX=%.3f" % (position,
+                                                            star["XWIN_IMAGE"], star["YWIN_IMAGE"],
+                                                            star["FWHM_IMAGE"], star["FLUX_BEST"])
+                
+            ds9.xpaset("file %s" % frame.filename())
+            ds9.xpaset("regions command { circle %d %d %d}" % (int(star["XWIN_IMAGE"]), int(star["YWIN_IMAGE"]), int(star["FWHM_IMAGE"])))
+            ds9.xpaset("pan to %d %d physical" % (int(star["XWIN_IMAGE"]), int(star["YWIN_IMAGE"])))
+                        
+        self.autofocus.stepComplete += stepComplete
+        
+        start, end = options.autofocus_range
+
+        try:
+            best_focus = self.autofocus.focus(exptime=options.autofocus_exptime,
+                                              start=start, end=end, step=options.autofocus_step,
+                                              minmax=(0,30), debug=False or options.autofocus_debug)
+            print "Best focus position:", best_focus[-1][0]
+            time.sleep(1)
+
+        except IOError, e:
+            self.exit("Invalid debug directory %s." % options.autofocus_debug)
+
+        except StarNotFoundException:
+            self.exit("Couldn't find the best focus position."
+                      " See autofocus log for more information.")
+
+    def _currentPosition(self, options):
+        return self.out("Current focuser position: %s" % self.focuser.getPosition())
+    
+
+def main():
+    cli = ChimeraFocus()
+    return cli.run(sys.argv)
+    
 if __name__ == '__main__':
-
-    chimera_focus_description = " - Focuser controller"
-
-    def check_includepath (option, opt_str, value, parser):
-        if not value or not os.path.isdir (os.path.abspath(value)):
-            raise optparse.OptionValueError ("Couldn't found %s include path." % value)
-        eval ('parser.values.%s.append ("%s")' % (option.dest, value))
-
-    def check_location (option, opt_str, value, parser):
-        try:
-            l = Location (value)
-        except InvalidLocationException:
-            raise optparse.OptionValueError ("%s isnt't a valid location." % value)
-
-        eval ('parser.values.%s.append ("%s")' % (option.dest, value))
-
-
-    parser = OptionParser(prog="chimera-focus", version=_chimera_version_,
-                          description=_chimera_description_+chimera_focus_description)
-
-    config = OptionGroup(parser, "Focuser and driver configuration")
-
-    config.add_option("-f", "--focuser", action="callback", type="string", dest="focuser",
-                      help="Focuser instrument to be used. If blank, create a new"
-                      " focuser instance, using the the driver selected with --driver."
-                      " format: [host:port]/Class/name. [default=\"\"]",
-                      callback=check_location)
-
-    config.add_option("-d", "--driver", action="callback", type="string", dest="driver",
-                      help="Focuser driver to be used."
-                      " /Class/name?option1=value1,option2=value. [default=%default]",
-                      callback=check_location)
-
-    config.add_option("-D", "--drivers-dir", action="callback", callback=check_includepath,
-                      dest="drv_dir", type="string",
-                      help="Append PATH to drivers load path.",
-                      metavar="PATH")
-
-    actions = OptionGroup(parser, "Actions")
-    
-    actions.add_option("--in", action="store", type="int", dest="move_in",
-                      help="Move N steps IN", metavar="N")
-
-    actions.add_option("--out", action="store", type="int", dest="move_out",
-                      help="Move N steps OUT", metavar="N")
-
-    actions.add_option("--to", action="store", type="int", dest="move_to",
-                       help="Move to POSITION", metavar="POSITION")
-
-    actions.add_option("-i", "--info", action="store_true", dest="info",
-                       help="Print focuser information and exit")
-
-    parser.add_option("-H", "--host", action="store", 
-                      dest="pyro_host", type="string",
-                      help="Host name/IP to run instrument under when using local manager"
-                      "; [default=%default]",
-                      metavar="HOST")
-
-    parser.add_option("-P", "--port", action="store", 
-                      dest="pyro_port", type="string",
-                      help="Port on which to to run instrument under when using local manager"
-                      "; [default=%default]",
-                      metavar="PORT")
-
-    parser.add_option("-q", "--quiet", action="store_true", dest='quiet',
-                      help="Don't display informations while working [default=%default].")
-
-    # autofocus
-    af = OptionGroup(parser, "Autofocus")
-
-    af.add_option("--auto", action="store_true", dest="autofocus",
-                  help="Start an autofocus session using the selected parameters."
-                  " You can select a focuser range and the size of the step for the sequence."
-                  " This option is exclusive, you cannot move manually at the same time.")
-
-    af.add_option("--range", action="store", type="string", dest="autofocus_range",
-                  help="Defines autofocus sequence focuser range in the form start-end, "
-                  "as in 1000-6000 to run from 1000 to 6000 [default=%default]", metavar="START-END")
-
-    af.add_option("--step", action="store", type="int", dest="autofocus_step",
-                  help="Defines autofocus sequence step [default=%default]", metavar="STEP")
-
-    af.add_option("--exptime", action="store", type="float", dest="autofocus_exptime",
-                  help="Defines autofocus sequence frame exposure time [default=%default]",
-                  metavar="EXPTIME")
-
-    parser.add_option_group(config)
-    parser.add_option_group(actions)    
-    parser.add_option_group(af)    
-
-
-    parser.set_defaults(focuser= [],
-                        driver   = ["/FakeFocuser/ff"],
-                        drv_dir  = [],
-                        quiet    = False,
-                        info     = False,
-                        move_in  = None,
-                        move_out = None,
-                        move_to  = None,
-                        pyro_host=MANAGER_DEFAULT_HOST,
-                        pyro_port=12000,
-                        autofocus=None,
-                        autofocus_range="1000-6000",
-                        autofocus_step=5000,
-                        autofocus_exptime=10.0)
-
-
-    options, args = parser.parse_args(sys.argv)
-
-    Action = Enum("IN", "OUT", "TO", "AUTO")
-
-    action = None
-    steps  = None
-
-    # some validations
-    if options.move_in != None:
-        action = Action.IN
-        steps  = options.move_in
-        
-        if (options.move_out != None) or (options.move_to != None) or (options.autofocus != None):
-            print >> sys.stderr, "Cannot use --in with --out/--to/--auto"
-            sys.exit(1)
-
-    if options.move_out != None:
-        action = Action.OUT
-        steps  = options.move_out
-
-        if (options.move_in != None) or (options.move_to != None) or (options.autofocus != None):
-            print >> sys.stderr, "Cannot use --out with --in/--to/--auto"
-            sys.exit(1)
-
-    if options.move_to != None:
-        action = Action.TO
-        steps  = options.move_to
-
-        if (options.move_in != None) or (options.move_out != None) or (options.autofocus != None):
-            print >> sys.stderr, "Cannot use --to with --in/--out/--auto"
-            sys.exit(1)
-
-    if options.autofocus != None:
-        action = Action.AUTO
-        start = None
-        end = None
-        step = None
-
-        if (options.move_in != None) or (options.move_out != None) or (options.move_to != None):
-            print >> sys.stderr, "Cannot use --to with --in/--out/--to"
-            sys.exit(1)
-
-    if not action and not options.info:
-        print >> sys.stderr, "Please, ask me anything to do. Try --in/--out/--to/--auto."
-        sys.exit(1)
- 
-    drivers_path = []
-    for path in options.drv_dir:
-        drivers_path.append(path)
-
-    drivers_path.append(ChimeraPath.drivers())
-
-    # 
-    # start
-    #
-
-    manager = Manager(host=options.pyro_host,port=options.pyro_port)
-
-    focuser = None
-
-    # ctrl+c handling
-    aborted = False
-
-    def sighandler(self, sig = None, frame = None):
-
-        global aborted
-        
-        if aborted == False:
-            aborted = True
-        else:
-            return
-            
-    signal.signal(signal.SIGTERM, sighandler)
-    signal.signal(signal.SIGINT, sighandler)
-
-    # use an already running focuser
-    if options.focuser:
-        try:
-            focuser = manager.getProxy(options.focuser[0])
-            driver = focuser.getDriver();
-        except (ObjectNotFoundException, ClassLoaderException), e:
-            print >> sys.stderr, "Cannot find focuser %s. (%s)" % (options.focuser[0], e)
-            manager.shutdown()
-            sys.exit(1)
-        except (ChimeraObjectException), e:
-            print >> sys.stderr, "Problems starting focuser %s. (%s)" % (options.focuser[0], e)
-            manager.shutdown()
-            sys.exit(1)
-
-    # create a new focuser using selected driver
-    else:
-        try:
-            config = {}
-
-            driverloc = Location(options.driver[-1])
-            newloc = Location(cls=driverloc.cls, name=driverloc.name, config=dict(driverloc.config, **config),
-                              host=driverloc.host, port=driverloc.port)
-
-            if manager._belongsToMe(newloc):
-                driver = manager.addLocation(newloc, path=drivers_path)
-            else:
-                driver = manager.getProxy(newloc)
-            focuser = manager.addClass(Focuser, "tel", {"driver": options.driver[-1]})
-        except (ObjectNotFoundException, ClassLoaderException), e:
-            print >> sys.stderr, "Cannot find focuser driver %s. (%s)" % (options.driver[-1],e)
-            manager.shutdown()
-            sys.exit(1)
-        except (ChimeraObjectException), e:
-            print >> sys.stderr, "Problems starting focuser driver %s. (%s)" % (options.driver[-1], e)
-            manager.shutdown()
-            sys.exit(1)
-    
-    # move
-    start = time.time()
-
-    try:
-
-        if options.info:
-            print "Focuser: %s (%s)" % (focuser["driver"], driver["device"])
-            print "Current focuser position:", focuser.getPosition()
-
-        else:
-            
-            try:
-                if action == Action.IN:
-                    print "Moving %d steps IN ... " % steps,
-                    focuser.moveIn(steps)
-                elif action == Action.OUT:
-                    print "Moving %d steps OUT ... " % steps,
-                    focuser.moveOut(steps)
-                elif action == Action.TO:
-                    print "Moving to %d ... " % steps,
-                    focuser.moveTo(steps)
-                elif action == Action.AUTO:
-
-                    from RO.DS9 import DS9Win as DS9
-                    ds9 = DS9(doRaise=True, doOpen=True)
-
-                    @callback(manager)
-                    def stepComplete (position, star, frame):
-                        global ds9
-                        print "Adding star to curve. (X,Y)=(%d,%d)" \
-                              " FWHM=%.3f FLUX=%.3f" % (star["XWIN_IMAGE"], star["YWIN_IMAGE"],
-                                                        star["FWHM_IMAGE"], star["FLUX_BEST"])
-                        ds9.xpaset("file %s" % frame.filename())
-                        ds9.xpaset("regions command { circle %d %d 20}" % (int(star["XWIN_IMAGE"]), int(star["YWIN_IMAGE"])))
-                        #ds9.xpaset("pan to %d %d physical" % (int(star["XWIN_IMAGE"]), int(star["YWIN_IMAGE"])))
-                        
-                    try:
-                        autofocus = focuser.getManager().getProxy("/Autofocus/0")
-                        autofocus.stepComplete += stepComplete
-
-                        autofocus += {"debug": True,
-                                      "debug_path": "/home/henrique/ph/basic-run"}
-                        
-                        best_focus = autofocus.focus(exptime=options.autofocus_exptime,
-                                                     start=0, end=7000, points=28,
-                                                     minmax=(0,30))
-
-                        print best_focus
-
-                    except ObjectNotFoundException:
-                        print >> sys.stderr, "Couldn't find autofocus controller."
-                        manager.shutdown()
-                        sys.exit(1)
-                    
-                print "OK (took %.3fs)" % (time.time()-start)
-
-            except Exception, e:
-                print >> sys.stderr, "Error trying to move focuser. (%s)" % e
-                printException(e)
-
-    finally:
-
-        manager.shutdown()
-        time.sleep(1)
-        sys.exit(0)
+    main()

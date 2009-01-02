@@ -295,7 +295,7 @@ class SystemConfig (object):
         printIt("Sites", self.sites)
         
         printIt("Controllers", self.controllers)
-        printIt("Instruments", self.controllers)        
+        printIt("Instruments", self.instruments)        
         printIt("Drivers", self.drivers)
 
         printIt("Telescopes", self.telescopes)

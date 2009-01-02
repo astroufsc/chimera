@@ -86,7 +86,7 @@ class ChimeraDome (ChimeraCLI):
     @action(help="Print dome information", helpGroup="COMMANDS")
     def info(self, options):
 
-        self.out("Dome: %s (%s)." % (self.dome.getDriver().URI, self.dome.getDriver()["device"]))
+        self.out("Dome: %s (%s)." % (self.dome["driver",] self.dome.getDriver()["device"]))
         self.out("Current dome azimuth: %s." % self.dome.getAz())
         if self.dome.isSlitOpen():
             self.out("Dome slit is open.")

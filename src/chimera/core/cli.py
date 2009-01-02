@@ -1,11 +1,14 @@
 from chimera.core.version   import _chimera_version_, _chimera_description_
 from chimera.core.constants import SYSTEM_CONFIG_DEFAULT_FILENAME
-from chimera.core.location import Location, InvalidLocationException
+from chimera.core.location  import Location, InvalidLocationException
+
 from chimera.core.systemconfig import SystemConfig
-from chimera.core.manager import Manager
+from chimera.core.manager      import Manager
+from chimera.core.path         import ChimeraPath
+
 from chimera.controllers.site.main import SiteController
-from chimera.core.exceptions import ObjectNotFoundException
-from chimera.core.path import ChimeraPath
+from chimera.core.exceptions       import ObjectNotFoundException, printException
+
 
 from chimera.util.enum      import Enum
 
@@ -463,6 +466,8 @@ class ChimeraCLI (object):
         self.localManager = localManager
 
     def _belongsTo(self, meHost, mePort, location):
+        
+        if not location: return False
 
         meName = socket.gethostbyname(meHost)
         return (location.host == None or location.host in (meHost, meName)) and \
@@ -487,12 +492,12 @@ class ChimeraCLI (object):
             else:
                 # no instrument selected, ask sysconfig for the first available
                 if self.sysconfig:
-                    locs = [i for i in self.sysconfig.instruments if i.cls.lower() == inst.cls.lower()]
+                    locs = [i for i in self.sysconfig.instruments+self.sysconfig.controllers if i.cls.lower() == inst.cls.lower()]
                     if locs:
                         inst.location = locs[0]
 
-            if not inst.location:
-                self.exit("Couldn't find %s configuration."
+            if not inst.location and inst.required:
+                self.exit("Couldn't find %s configuration. "
                           "Edit chimera.config or see --help for more information" % inst.name.capitalize())
 
         # we only need to autostart the Manager instance configured on sysconfig
@@ -516,19 +521,10 @@ class ChimeraCLI (object):
             try:
                 inst_proxy = self.localManager.getProxy(inst.location)
             except ObjectNotFoundException:
-                pass
-
-            print "inst name:", inst.name
-            print "inst class:", inst.cls
-            print "inst location:", inst.location
-            print "inst proxy   :", inst_proxy
-            print "sysconfig:", needSysconfigManager
-            print
-
-            if not inst_proxy and inst.required == True:
-                self.exit("Couldn't find %s, edit %s or "
-                          "pass the right instrument parameter (see --help)" % (inst.name.capitalize(),
-                                                                                options.sysconfig))
+                if inst.required == True:
+                    self.exit("Couldn't find %s, edit %s or "
+                              "pass the right instrument parameter (see --help)" % (inst.name.capitalize(),
+                                                                                    options.sysconfig))
 
             # save values in CLI object (which users are supposed to inherites from).
             setattr(self, inst.name, inst_proxy)                
@@ -672,12 +668,7 @@ class ChimeraCLI (object):
 
     def _validateParameters(self, options):
 
-        # validate instrument Location
-                                   
-
-        # for each defined parameter (!= default)
-        paramValues =  [ getattr(options, param) for param in self._parameters.keys()
-                        if getattr(options,param) != self._parameters[param].default ]
+        paramValues =  [ getattr(options, param) for param in self._parameters.keys() ]
 
         for name, value in zip(self._parameters.keys(), paramValues):
             param = self._parameters[name]
@@ -699,7 +690,7 @@ class ChimeraCLI (object):
                 method(options)
         except Exception, e:
             self.err("Something wrong with '%s' action." % (action.name))
-            sys.excepthook(*sys.exc_info())
+            printException(e)
             return False
 
         return True

@@ -5,6 +5,7 @@ from chimera.core.chimeraobject import ChimeraObject
 from chimera.core.lock import lock
 from chimera.core.event import event
 from chimera.core.exceptions import ChimeraException, printException
+from chimera.core.constants import SYSTEM_CONFIG_DIRECTORY
 
 from chimera.interfaces.focuser import InvalidFocusPositionException
 
@@ -16,6 +17,7 @@ from chimera.util.image import Image
 from chimera.util.sextractor import SExtractor
 
 import numpy as N
+import yaml
 
 plot = True
 try:
@@ -177,15 +179,7 @@ class Autofocus (ChimeraObject):
                   "camera"             : "/Camera/0",
                   "filterwheel"        : "/FilterWheel/0",
                   "focuser"            : "/Focuser/0",
-                  
-                  "save_frames"        : True,
-                  
-                  "max_stars_to_try"   : 5,
-                  
-                  "debug"              : False,
-                  "debug_path"         :""
-                  
-                  }
+                  "max_stars_to_try"   : 5}
 
     def __init__ (self):
         ChimeraObject.__init__ (self)
@@ -197,6 +191,7 @@ class Autofocus (ChimeraObject):
 
         self.best_fit = None
 
+        self._debugging = False
         self._debug_images = []
         self._debug_image = 0
 
@@ -228,7 +223,7 @@ class Autofocus (ChimeraObject):
         if self._log_handler:
             self._closeLogger()
             
-        self._log_handler = logging.FileHandler(os.path.expanduser("~/.chimera/autofocus-%s.log" % self.currentRun))
+        self._log_handler = logging.FileHandler(os.path.join(SYSTEM_CONFIG_DIRECTORY, self.currentRun, "autofocus.log"))
         self._log_handler.setFormatter(logging.Formatter(fmt="%(message)s"))
         self._log_handler.setLevel(logging.DEBUG)
         self.log.addHandler(self._log_handler)
@@ -242,12 +237,37 @@ class Autofocus (ChimeraObject):
     def focus (self, target=Target.CURRENT,
                filter=None, exptime=None, binning=None, window=None,
                start=2000, end=6000, step=500, points=None,
-               minmax=None):
+               minmax=None, debug=False):
+
+        self._debugging = debug
 
         self.currentRun = self._getID()
+
+        if not os.path.exists(os.path.join(SYSTEM_CONFIG_DIRECTORY, self.currentRun)):
+            os.mkdir(os.path.join(SYSTEM_CONFIG_DIRECTORY, self.currentRun))
+
         self._openLogger()
 
-        # if points given, use calculate step size
+        if debug:
+            debug_file = open(os.path.join(debug, "autofocus.debug"), "r")
+            debug_data = yaml.load(debug_file.read())
+
+            start = debug_data["start"]
+            end   = debug_data["end"]
+            points= debug_data["points"]
+            
+            debug_file.close()
+        else:
+            # save parameter to ease a debug run later
+            debug_data = dict(id=self.currentRun, start=start, end=end, points=len(positions))
+            try:
+                debug_file = open(os.path.join(SYSTEM_CONFIG_DIRECTORY, self.currentRun, "autofocus.debug"), "w")
+                debug_file.write(yaml.dump(debug_data))
+                debug_file.close()
+            except IOError:
+                self.log.warning("Cannot save debug information. Debug will be a little harder later.")
+
+        # if points given, use to calculate step size
         if points:
             step = int(ceil(end-start)/points)
             positions = N.arange(start, end, step)
@@ -260,8 +280,8 @@ class Autofocus (ChimeraObject):
         self.log.debug("Focus range: start=%d end=%d step=%d points=%d" % (start, end, step, len(positions)))
         
         # images for debug mode
-        if self["debug"] and not self._debug_images:
-            self._debug_images = [ "%s/image-%02d.fits" % (self["debug_path"], i)
+        if debug:
+            self._debug_images = [ "%s/image-%02d.fits" % (debug, i)
                                    for i in range(len(positions)+1)]
 
         self.imageRequest["exp_time"] = exptime or 10
@@ -317,9 +337,6 @@ class Autofocus (ChimeraObject):
                 
             return (self.currentRun, fit.A, fit.B, fit.C, fit.best_focus)
 
-        except Exception, e:
-            printException(e)
-
         finally:
             # reset debug counter
             self._debug_image = 0
@@ -362,8 +379,8 @@ class Autofocus (ChimeraObject):
                                          "Leaving focuser at %04d" % initial_position)
             
 
-        fit.plot(os.path.expanduser("~/.chimera/autofocus-%s.plot.png" % self.currentRun))
-        fit.log(os.path.expanduser("~/.chimera/autofocus-%s.dat" % self.currentRun))
+        fit.plot(os.path.join(SYSTEM_CONFIG_DIRECTORY, self.currentRun, "autofocus.plot.png"))
+        fit.log(os.path.join(SYSTEM_CONFIG_DIRECTORY, self.currentRun, "autofocus.plot.dat"))
 
         # leave focuser at best position
         try:
@@ -383,7 +400,7 @@ class Autofocus (ChimeraObject):
 
     def _takeImage (self):
 
-        if self["debug"]:
+        if self._debugging:
             try:
                 frame = self._debug_images[self._debug_image]
                 self._debug_image += 1
@@ -397,7 +414,7 @@ class Autofocus (ChimeraObject):
         if not self["save_frames"]:
             self.imageRequest["filename"] = "focus-$DATE"
         else:
-            self.imageRequest["filename"] = os.path.join(self.currentRun, "focus-$DATE.fits")
+            self.imageRequest["filename"] = os.path.join(SYSTEM_CONFIG_DIRECTORY, self.currentRun, "focus-$DATE.fits")
 
         cam = self.getCam()
         
@@ -408,7 +425,7 @@ class Autofocus (ChimeraObject):
         frame = cam.expose(self.imageRequest)
 
         if frame:
-            return frame
+            return frame[0]
         else:
             raise Exception("Error taking image.")
 
