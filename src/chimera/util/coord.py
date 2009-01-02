@@ -453,7 +453,7 @@ class Coord (object):
                   State.D  : lambda d  : float(d),
                   State.H  : lambda h  : h*15.0,
                   State.R  : lambda r  : r * Coord.rad2deg,
-                  State.AS : lambda as : as/3600.0}
+                  State.AS : lambda AS : AS/3600.0}
     
     to_state = {State.HMS: CoordUtil.d2hms, 
                 State.DMS: CoordUtil.d2dms,
