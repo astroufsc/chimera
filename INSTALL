@@ -20,19 +20,17 @@ Requirements:
 
 Installation:
 
-Chimera use standard Python distutils module (link here). Just use:
+Before install Chimera, install the following packages using the standard way
+on your distribution.
+
+python-numpy python-dev libusb-dev
+
+After that,
 
 $ cd <uncompressed_chimera_dir>
 # python setup.py install 
 
-setup.py must be run as root user to install Chimera in a system-wide basis. To run Chimera
-with a non-root account use:
-
-
-... <how_to_run_with_non_root.txt>
-
-
-
+setup.py must be run as root user to install Chimera in a system-wide basis.
 
 Windows install:
 
@@ -43,3 +41,4 @@ If you use the normal (not develop) install, after checking out do
 python setup.py install
 
 just like the unix version
+
