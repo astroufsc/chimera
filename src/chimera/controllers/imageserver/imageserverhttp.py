@@ -13,18 +13,21 @@ class ImageServerHTTP(threading.Thread):
         self.setName("Image Server HTTPD")
         self.ctrl = ctrl
 
-        # less verbose cherry
-        logging.getLogger("cherrypy.error").setLevel(logging.WARNING)
-
-        cherrypy.config.update({"server.socket_port": self.ctrl['http_port'],
-                                "server.socket_host": self.ctrl['http_host'],
-                                "tools.encode.on": True,
-                                "tools.encode.encoding": "iso-8859-1",
-                                "tools.decode.on": True,
-                                "tools.trailing_slash.on": True,
-                                "engine.autoreload_on": False})
     def run(self):
-        cherrypy.quickstart(self)
+
+        # uses Chimera's log system
+        cherrypy.log.screen = False
+        for handler in logging.getLogger("chimera").handlers:
+            cherrypy.log.error_log.addHandler(handler)
+        
+        cherrypy.quickstart(self, "chimera",
+                            config={"chimera": {"server.socket_port": self.ctrl['http_port'],
+                                                "server.socket_host": self.ctrl['http_host'],
+                                                "tools.encode.on": True,
+                                                "tools.encode.encoding": "iso-8859-1",
+                                                "tools.decode.on": True,
+                                                "tools.trailing_slash.on": True,
+                                                "engine.autoreload_on": False}})
 
     def stop(self):
         cherrypy.engine.stop()
