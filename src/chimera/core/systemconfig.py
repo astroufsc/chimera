@@ -140,6 +140,9 @@ class SystemConfig (object):
         self.domes        = []
         self.focusers     = []
         self.sites        = []
+
+        self.chimera["host"] = MANAGER_DEFAULT_HOST
+        self.chimera["port"] = MANAGER_DEFAULT_PORT
         
         if loadGlobal:
             self._loadConfig(open(SYSTEM_CONFIG_DEFAULT_GLOBAL, 'r').read())
@@ -182,8 +185,6 @@ class SystemConfig (object):
         
         if "port" not in self.chimera:
             self.chimera["port"] = MANAGER_DEFAULT_PORT
-
-            
         
         for type, values in config.items():
 
