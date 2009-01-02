@@ -22,6 +22,9 @@ class Reduction(ChimeraObject):
     def __init__(self):
         ChimeraObject.__init__(self)
              
+    @event
+    def reductionComplete (self, imageRequest):
+        pass
              
     def __start__(self):
         
@@ -187,6 +190,8 @@ class Reduction(ChimeraObject):
                 self._createMasters()
                
             reduced_images = self._processScienceIm(self.reduction_dir, masterdir)
+
+            self.reductionComplete(imageRequest)
             return reduced_images
                 
                        
