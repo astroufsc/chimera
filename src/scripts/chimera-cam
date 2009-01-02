@@ -90,8 +90,8 @@ if __name__ == '__main__':
                       callback=check_location)
 
     config.add_option("-W", "--wheel", action="callback", type="string", dest="wheel",
-                      help="Camera instrument to be used. If blank, create a new"
-                      " camera instance, using the the driver selected with --driver."
+                      help="Filter wheel instrument to be used. If blank, create a new"
+                      " filter wheel instance, using the the driver selected with --driver."
                       " format: [host:port]/Class/name.",
                       callback=check_location)
 
@@ -436,21 +436,16 @@ if __name__ == '__main__':
     def displayImage(image):
         global options
 
-        if not os.path.exists(image.filename()):
+        if os.path.exists(image.filename()):
             xpa = "file '%s'" % image.filename()
         else:
             xpa = "file url '%s'" % image.http()
 
-        if not options.quiet:
-            print 'trying to display ...'
-            sys.stdout.flush()
         try:
             ds9.xpaset(xpa)
         except RuntimeError, e:
             # Issue with xpaset prevents us from assuming that this failed!        
-            #print >> sys.stderr, "Can't display image %s. (%s)" % (image.filename(), e)
-            # FIXME
-            pass
+            print >> sys.stderr, "Can't display image %s. (%s)" % (image.filename(), e)
 
     @callback(manager)
     def readoutComplete(image):
