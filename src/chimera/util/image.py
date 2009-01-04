@@ -112,8 +112,7 @@ class ImageUtil (object):
         finalname = os.path.join(dirname, "%s-%04d%s%s" % (basename, seq_num, os.path.extsep, ext))
             
         if os.path.exists(finalname):
-            tmp = finalname
-            finalname = os.path.join(dest, "%s-%04d%s%s" % (filename, int (random.random()*1000), os.path.extsep, ext))    
+            finalname = os.path.join(dirname, "%s-%04d%s%s" % (filename, int (random.random()*1000), os.path.extsep, ext))    
             
         return finalname
 

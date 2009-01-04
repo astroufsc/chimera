@@ -21,7 +21,12 @@
 
 from chimera.core.cli import ChimeraCLI, action, parameter
 from chimera.core.callback import callback
-from chimera.controllers.autofocus import StarNotFoundException, FocusNotFoundException
+from chimera.core.exceptions import ChimeraException
+
+from chimera.interfaces.autofocus import StarNotFoundException, FocusNotFoundException
+from chimera.interfaces.focuser import InvalidFocusPositionException
+
+from chimera.util.ds9 import DS9
 
 import sys
 import time    
@@ -61,7 +66,15 @@ class ChimeraFocus (ChimeraCLI):
     @action(long="in", type="int", help="Move N steps IN", metavar="N", helpGroup="COMMANDS")
     def move_in (self, options):
         self.out("Moving %d steps IN ... " % options.move_in, end="")
-        self.focuser.moveIn(options.move_in)
+
+        try:
+            self.focuser.moveIn(options.move_in)
+        except InvalidFocusPositionException, e:
+            self.exit("Invalid position. Current position %d,"
+                      " target position %d, valid range %d-%d." % (self.focuser.getPosition(),
+                                                                   self.focuser.getPosition()-int(options.move_in),
+                                                                   self.focuser.getRange()[0], self.focuser.getRange()[1]))
+
         self.out("OK")
         
         self._currentPosition(options)
@@ -69,7 +82,15 @@ class ChimeraFocus (ChimeraCLI):
     @action(long="out", type="int", help="Move N steps OUT", metavar="N", helpGroup="COMMANDS")
     def move_out (self, options):
         self.out("Moving %d steps OUT ... " % options.move_out, end="")
-        self.focuser.moveOut(options.move_out)
+
+        try:
+            self.focuser.moveOut(options.move_out)
+        except InvalidFocusPositionException, e:
+            self.exit("Invalid position. Current position %d,"
+                      " target position %d, valid range %d-%d." % (self.focuser.getPosition(),
+                                                                   self.focuser.getPosition()+int(options.move_out),
+                                                                   self.focuser.getRange()[0], self.focuser.getRange()[1]))
+
         self.out("OK")
         
         self._currentPosition(options)
@@ -77,7 +98,12 @@ class ChimeraFocus (ChimeraCLI):
     @action(long="to", type="int",help="Move to POSITION", metavar="POSITION", helpGroup="COMMANDS")
     def move_to (self, options):
         self.out("Moving to %d ... " % options.move_to, end="")
-        self.focuser.moveTo(options.move_to)
+
+        try:
+            self.focuser.moveTo(options.move_to)
+        except InvalidFocusPositionException, e:
+            self.exit("Invalid position, must be between %d and %d," % self.focuser.getRange())
+
         self.out("OK")
         
     @action(short="i", help="Print focuser current information", helpGroup="COMMANDS")
@@ -87,6 +113,7 @@ class ChimeraFocus (ChimeraCLI):
         
         self.out("Focuser: %s (%s)" % (self.focuser["driver"], drv["device"]))
         self._currentPosition(options)
+        self.out("Valid range: %d-%d" % self.focuser.getRange())
 
     @action(helpGroup="AUTOFOCUS",
             help="Start an autofocus session using the selected parameters."
@@ -97,19 +124,23 @@ class ChimeraFocus (ChimeraCLI):
         if not self.autofocus:
             self.exit("No Autofocus controller available. Try --autofocus=..., or --help.")
 
-        from RO.DS9 import DS9Win as DS9
-        ds9 = DS9(doRaise=True, doOpen=True)
-        ds9.xpaset("scale mode 99.5")
+        ds9 = None
+        try:
+            ds9 = DS9(open=True)
+        except IOError:
+            pass
 
         @callback(self.localManager)
         def stepComplete (position, star, frame):
-            print "#%04d (%4d, %4d) FWHM=%.3f FLUX=%.3f" % (position,
-                                                            star["XWIN_IMAGE"], star["YWIN_IMAGE"],
-                                                            star["FWHM_IMAGE"], star["FLUX_BEST"])
+
+            self.out("#%04d (%4d, %4d) FWHM=%.3f FLUX=%.3f" % (position,
+                                                               star["XWIN_IMAGE"], star["YWIN_IMAGE"],
+                                                               star["FWHM_IMAGE"], star["FLUX_BEST"]))
                 
-            ds9.xpaset("file %s" % frame.filename())
-            ds9.xpaset("regions command { circle %d %d %d}" % (int(star["XWIN_IMAGE"]), int(star["YWIN_IMAGE"]), int(star["FWHM_IMAGE"])))
-            ds9.xpaset("pan to %d %d physical" % (int(star["XWIN_IMAGE"]), int(star["YWIN_IMAGE"])))
+            if ds9:
+                ds9.displayFile(frame.filename())
+                ds9.set("regions command { circle %d %d %d}" % (int(star["XWIN_IMAGE"]), int(star["YWIN_IMAGE"]), int(star["FWHM_IMAGE"])))
+                #ds9.xpaset("pan to %d %d physical" % (int(star["XWIN_IMAGE"]), int(star["YWIN_IMAGE"])))
                         
         self.autofocus.stepComplete += stepComplete
         
@@ -120,14 +151,17 @@ class ChimeraFocus (ChimeraCLI):
                                               start=start, end=end, step=options.autofocus_step,
                                               minmax=(0,30), debug=False or options.autofocus_debug)
             print "Best focus position:", best_focus[-1][0]
-            time.sleep(1)
 
         except IOError, e:
             self.exit("Invalid debug directory %s." % options.autofocus_debug)
 
-        except StarNotFoundException:
+        except FocusNotFoundException:
             self.exit("Couldn't find the best focus position."
                       " See autofocus log for more information.")
+        except StarNotFoundException:
+            self.exit("Couldn't find a suitable star to focus on.")
+
+        time.sleep(1)
 
     def _currentPosition(self, options):
         return self.out("Current focuser position: %s" % self.focuser.getPosition())

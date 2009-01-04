@@ -20,11 +20,13 @@
 
 
 from chimera.core.cli import ChimeraCLI, action, ParameterType
-
 from chimera.core.callback import callback
 from chimera.core.exceptions import printException
+
 from chimera.interfaces.filterwheel import InvalidFilterPositionException
 from chimera.interfaces.cameradriver import CameraFeature
+
+from chimera.util.ds9 import DS9
 
 import os
 import sys
@@ -34,14 +36,11 @@ import warnings
 currentFrame = 0
 currentFrameExposeStart = 0
 currentFrameReadoutStart = 0
-DS9 = None
 
 class ChimeraCam (ChimeraCLI):
     
     def __init__ (self):
         ChimeraCLI.__init__(self, "chimera-cam", "Camera controller", 0.1)
-        
-        self.ds9 = None
         
         self.addHelpGroup("CAM", "Camera and Filter Wheel configuration")
         self.addInstrument(name="camera", cls="Camera",
@@ -60,7 +59,7 @@ class ChimeraCam (ChimeraCLI):
                                 help="Number of seconds to wait between each frame"),
                            dict(name="output", short="o", type="string", helpGroup="EXPOSE",
                                 help="Base filename including full path if needed.",
-                                default="$date.fits"),
+                                default="$DATE-$TIME.fits"),
                            dict(name="filter", short="f", type="string", helpGroup="EXPOSE",
                                 help="Filter to be used. "
                                      "Use --filters to get a list of available filters"),
@@ -269,8 +268,12 @@ class ChimeraCam (ChimeraCLI):
         if not os.path.isabs(options.output):
             options.output = os.path.join(os.getcwd(), options.output)
             
+        ds9 = None
         if (not self.options.no_display and options.exptime >= 5) or options.force_display:
-            self._setupDS9()
+            try:
+                ds9 = DS9(open=True)
+            except IOError:
+                self.err("Problems starting DS9. DIsplay disabled.")
 
         imagetype = self._getImageType(options)
          
@@ -292,31 +295,18 @@ class ChimeraCam (ChimeraCLI):
         def readoutBegin(request):
             global currentFrameReadoutStart
             currentFrameReadoutStart = time.time()
-            self.out("reading out and saving to %s ..."  % request["filename"], end="")
+            self.out("reading out and saving ...", end="")
                 
-        def displayImage(image):
-            global DS9
-
-            if not DS9: return
-
-            if os.path.exists(image.filename()):
-                xpa = "file '%s'" % image.filename()
-            else:
-                xpa = "file url '%s'" % image.http()
-
-            try:
-                DS9.xpaset(xpa)
-            except RuntimeError, e:
-                # Issue with xpaset prevents us from assuming that this failed!        
-                print >> sys.stderr, "Can't display image %s. (%s)" % (image.filename(), e)
-
         @callback(self.localManager)
         def readoutComplete(image):
             global currentFrame, currentFrameExposeStart, currentFrameReadoutStart
+            self.out(" (%s) " % image.filename(), end="")
             self.out("OK (took %.3f s)"  % (time.time()-currentFrameReadoutStart))
             self.out("[%03d/%03d] took %.3fs" % (currentFrame, options.frames,
                                               time.time()-currentFrameExposeStart))
-            displayImage(image)
+            
+            if ds9:
+                ds9.displayImage(image)
     
         @callback(self.localManager)
         def abortComplete():
@@ -392,23 +382,6 @@ class ChimeraCam (ChimeraCLI):
             self.out("%s" % time.strftime("%c"))            
             self.out(40*"=")
 
-    def _setupDS9(self):
-        
-        global DS9
-
-        try:
-            # disable RO warning
-            warnings.filterwarnings(action='ignore', module='RO.DS9')
-            from RO.DS9 import DS9Win
-            DS9 = DS9Win(doRaise=True, doOpen=True)
-        except ImportError:
-            self.err(40*"=")
-            self.err("DS9 is not available. Display disabled")
-        except RuntimeError:
-            # even with RO installed, we still need XPA package to get DS9 working
-            self.err(40*"=")                
-            self.err("DS9 is not available, check if you have the XPA package installed. Display disabled.")
-    
 def main():
     cli = ChimeraCam()
     return cli.run(sys.argv)

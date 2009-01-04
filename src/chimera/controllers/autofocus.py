@@ -7,6 +7,7 @@ from chimera.core.event import event
 from chimera.core.exceptions import ChimeraException, printException
 from chimera.core.constants import SYSTEM_CONFIG_DIRECTORY
 
+from chimera.interfaces.autofocus import IAutofocus, Target, StarNotFoundException, FocusNotFoundException
 from chimera.interfaces.focuser import InvalidFocusPositionException
 
 from chimera.controllers.imageserver.imagerequest import ImageRequest
@@ -29,16 +30,6 @@ from math import sqrt, ceil
 import time
 import os
 import logging
-
-
-Target = Enum("CURRENT", "AUTO")
-
-
-class StarNotFoundException (ChimeraException):
-    pass
-
-class FocusNotFoundException (ChimeraException):
-    pass
 
 
 class FocusFit (object):
@@ -68,13 +59,9 @@ class FocusFit (object):
         
         if plot:
             P.plot(self.position, self.fwhm, "ro", label="data")
-            #P.errorbar(self.position, self.fwhm_fit, yerr=self.err, fmt="k:",
-            #           ms=15, label="fit")
+            P.plot(self.position, self.fwhm_fit, "b--", label="fit")
+            P.plot([self.best_focus[0]], [self.best_focus[1]], "bD", label="best focus from fit")
             
-            P.plot([self.best_focus[0]], [self.best_focus[1]], "bD",
-                   label="best focus from fit")
-            
-            #P.legend()
             if self.minmax:
                 P.ylim(*self.minmax)
                 
@@ -142,7 +129,7 @@ class FocusFit (object):
 
         return fit
     
-class Autofocus (ChimeraObject):
+class Autofocus (ChimeraObject, IAutofocus):
     
     """
     Auto focuser
@@ -174,12 +161,6 @@ class Autofocus (ChimeraObject):
     4) Leave focuser at best focus point (parabola vertice)
 
     """
-
-    __config__ = {"telescope"          : "/Telescope/0",
-                  "camera"             : "/Camera/0",
-                  "filterwheel"        : "/FilterWheel/0",
-                  "focuser"            : "/Focuser/0",
-                  "max_stars_to_try"   : 5}
 
     def __init__ (self):
         ChimeraObject.__init__ (self)
@@ -216,7 +197,7 @@ class Autofocus (ChimeraObject):
         return self.getManager().getProxy(self["focuser"])
 
     def _getID(self):
-        return time.strftime("%Y%m%d-%H%M%S")
+        return "autofocus-%s" % time.strftime("%Y%m%d-%H%M%S")
 
     def _openLogger(self):
 
@@ -257,7 +238,16 @@ class Autofocus (ChimeraObject):
             points= debug_data["points"]
             
             debug_file.close()
+
+        # if points given, use to calculate step size
+        if points:
+            step = int(ceil(end-start)/points)
+            positions = N.arange(start, end, step)
         else:
+            positions = N.arange(start, end+1, step)
+
+
+        if not debug:
             # save parameter to ease a debug run later
             debug_data = dict(id=self.currentRun, start=start, end=end, points=len(positions))
             try:
@@ -266,13 +256,6 @@ class Autofocus (ChimeraObject):
                 debug_file.close()
             except IOError:
                 self.log.warning("Cannot save debug information. Debug will be a little harder later.")
-
-        # if points given, use to calculate step size
-        if points:
-            step = int(ceil(end-start)/points)
-            positions = N.arange(start, end, step)
-        else:
-            positions = N.arange(start, end+1, step)
 
         self.log.debug("="*40)
         self.log.debug("[%s] Starting autofocus run." % time.strftime("%c"))
@@ -411,10 +394,7 @@ class Autofocus (ChimeraObject):
             except IndexError:
                 raise ChimeraException("Cannot find debug images")
 
-        if not self["save_frames"]:
-            self.imageRequest["filename"] = "focus-$DATE"
-        else:
-            self.imageRequest["filename"] = os.path.join(SYSTEM_CONFIG_DIRECTORY, self.currentRun, "focus-$DATE.fits")
+        self.imageRequest["filename"] = os.path.join(SYSTEM_CONFIG_DIRECTORY, self.currentRun, "focus-$DATE.fits")
 
         cam = self.getCam()
         
