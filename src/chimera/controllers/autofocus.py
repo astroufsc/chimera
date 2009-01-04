@@ -340,7 +340,7 @@ class Autofocus (ChimeraObject, IAutofocus):
             focuser.moveTo(position)
 
             frame = self._takeImage()
-            stars = self._findStars(frame.filename())
+            stars = self._findStars(frame)
             star = self._findBrighterStar(stars)
 
             self.log.debug("Adding star to curve. (X,Y)=(%d,%d) FWHM=%.3f FLUX=%.3f" % (star["XWIN_IMAGE"], star["YWIN_IMAGE"],
@@ -377,7 +377,7 @@ class Autofocus (ChimeraObject, IAutofocus):
     def _takeImageAndResolveStars (self):
 
         frame = self._takeImage()
-        stars = self._findStars(frame.filename())
+        stars = self._findStars(frame)
 
         return stars
 
@@ -409,35 +409,27 @@ class Autofocus (ChimeraObject, IAutofocus):
         else:
             raise Exception("Error taking image.")
 
-    def _findStars (self, fits_file):
+    def _findStars (self, frame):
 
-        sex = SExtractor ()
+        config = {}
+        config['PIXEL_SCALE'] = 0.45
+        config['BACK_TYPE']   = "AUTO"
 
-        sex.config['PIXEL_SCALE'] = 0.45
-        sex.config['BACK_TYPE']   = "AUTO"
-
-        sex.config['SATUR_LEVEL'] = 60000
+        config['SATUR_LEVEL'] = 60000
 
         # improve speed with higher threshold
-        sex.config['DETECT_THRESH'] = 3.0
+        config['DETECT_THRESH'] = 3.0
 
         # no output, please
-        sex.config['VERBOSE_TYPE'] = "QUIET"
+        config['VERBOSE_TYPE'] = "QUIET"
 
         # our "star" dict entry will contain all this members
-        sex.config['PARAMETERS_LIST'] = ["NUMBER",
-                                         "XWIN_IMAGE", "YWIN_IMAGE",
-                                         "FLUX_BEST", "FWHM_IMAGE",
-                                         "FLAGS"]
+        config['PARAMETERS_LIST'] = ["NUMBER",
+                                     "XWIN_IMAGE", "YWIN_IMAGE",
+                                     "FLUX_BEST", "FWHM_IMAGE",
+                                     "FLAGS"]
 
-        # ok, here we go!
-        sex.run(fits_file)
-
-        result = sex.catalog()
-
-        sex.clean(config=True, catalog=True, check=True)
-
-        return result
+        return frame.extract(config)
 
     def _findBestStarToFocus (self, catalog):
 
