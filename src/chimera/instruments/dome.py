@@ -50,6 +50,12 @@ class Dome(ChimeraObject, IDome):
         self.queue = Queue.Queue()
         self._mode = None
 
+        # to reuse telescope proxy on control method
+        self._controlTel = None
+        self._controlDrv = None
+        # to cache for az_resolution of the dome
+        self.controlAzRes = None
+
     def __start__(self):
 
         # connect events with driver
@@ -75,12 +81,6 @@ class Dome(ChimeraObject, IDome):
         # telescope events
         self._connectTelEvents()
 
-        # reuse telescope proxy on control method
-        self.controlTel = None
-        self.controlDrv = None
-        # cache for az_resolution of the dome
-        self.controlAzRes = None
-
         return True
 
     def __stop__ (self):
@@ -89,12 +89,14 @@ class Dome(ChimeraObject, IDome):
 
             try:
                 self.stand()
+                self.log.info("Parking the dome...")
                 self.slewToAz(self['park_pos'])
             except Exception, e:
                 self.log.warning('Unable to park dome: %s', str(e))
 
         if self['close_on_shutdown'] and self.isSlitOpen():
             try:
+                self.log.info("Closing the slit...")
                 self.closeSlit()
             except Exception, e:
                 self.log.warning('Unable to close dome: %s', str(e))
@@ -213,14 +215,14 @@ class Dome(ChimeraObject, IDome):
 
         try:
 
-            if not self.controlTel:
-                self.controlTel = self.getTelescope()
+            if not self._controlTel:
+                self._controlTel = self.getTelescope()
 
-            if self.controlTel.isSlewing():
+            if self._controlTel.isSlewing():
                     self.log.debug("[control] telescope slewing... not checking az.")
                     return True
 
-            self._telescopeChanged(self.controlTel.getAz())
+            self._telescopeChanged(self._controlTel.getAz())
 
         except ObjectNotFoundException:
             raise ChimeraException("Couldn't found the selected telescope."
@@ -242,13 +244,13 @@ class Dome(ChimeraObject, IDome):
 
 
     def _needToMove (self, az):
-        if not self.controlDrv:
-            self.controlDrv = self.getDriver()
+        if not self._controlDrv:
+            self._controlDrv = self.getDriver()
 
         if not self.controlAzRes:
-            self.controlAzRes = self.controlDrv["az_resolution"]
+            self.controlAzRes = self._controlDrv["az_resolution"]
             
-        return abs(az - self.controlDrv.getAz()) >= self.controlAzRes
+        return abs(az - self._controlDrv.getAz()) >= self.controlAzRes
 
     def _processQueue (self):
         

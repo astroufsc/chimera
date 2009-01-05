@@ -465,10 +465,10 @@ class SBIGDrv(object):
             
             udrv.SBIGUnivDrvCommand(udrv.CC_GET_ERROR_STRING, gesp, gesr)
             
-            dumpObj(gesp)
-            dumpObj(gesr)
+            #dumpObj(gesp)
+            #dumpObj(gesr)
             
-            log.warning('You may need to restart the SBIGDriver!')
+            #log.warning('You may need to restart the SBIGDriver!')
 
             raise SBIGException(err, gesr.errorString)
 

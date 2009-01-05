@@ -206,6 +206,9 @@ class Image (DictMixin, RemoteObject):
             self._http = http
         return self._http
 
+    def __str__ (self):
+        return "<Image %s>" % self.filename()
+
     #
     # serialization support
     # we close before pickle and reopen after it

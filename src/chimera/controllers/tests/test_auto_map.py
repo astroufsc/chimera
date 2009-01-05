@@ -22,7 +22,7 @@ from chimera.core.manager  import Manager
 from chimera.core.callback import callback
 from chimera.core.site     import Site
 
-from chimera.controllers.autofocus import Autofocus, Target, Mode
+from chimera.controllers.autofocus import Autofocus
 
 from chimera.instruments.camera import Camera
 from chimera.drivers.fakecamera import FakeCamera

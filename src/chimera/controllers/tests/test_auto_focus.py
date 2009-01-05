@@ -99,14 +99,5 @@ class TestAutofocus (object):
     def test_focus (self):
 
         autofocus = self.manager.getProxy(Autofocus)
-
-        autofocus += {"debug": True,
-                     "debug_path": "/home/henrique/ph/basic-run"}
-
-        #best_focus = autofocus.focus(target=Target.CURRENT, exptime=10, start=0, end=7000, step=1000, minmax=(0,30))
-        best_focus = autofocus.focus(target=Target.CURRENT, exptime=10, start=0, end=7000, points=28)
-
-        #best_focus.plot("focus.png")
-        #best_focus.log("focus-lna.txt")
-
+        best_focus = autofocus.focus(debug="/home/henrique/ph/basic-run")
 
