@@ -24,6 +24,9 @@ import os
 
 MANAGER_DEFAULT_HOST = 'localhost'
 MANAGER_DEFAULT_PORT = 7666
+MANAGER_BEACON_PORT  = 7670
+MANAGER_BEACON_CHALLENGE = "Is there anybody out there?"
+MANAGER_BEACON_ERROR = "Get out!"
 
 MANAGER_LOCATION = '/Manager/manager'
 

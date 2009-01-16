@@ -22,12 +22,13 @@
 import os.path
 import logging
 import optparse
+import sys
 
 from chimera.core.location import Location
 from chimera.core.manager import Manager
 from chimera.core.systemconfig import SystemConfig
 from chimera.core.version import _chimera_version_, _chimera_description_, find_dev_version
-from chimera.core.exceptions import printException, InvalidLocationException
+from chimera.core.exceptions import printException, InvalidLocationException, ChimeraException
 from chimera.core.constants import (MANAGER_DEFAULT_HOST,
                                     MANAGER_DEFAULT_PORT,
                                     SYSTEM_CONFIG_DEFAULT_FILENAME,
@@ -108,6 +109,9 @@ class SiteController (object):
                               dest="use_global",
                               help="Don't use global coniguration file.")
 
+        config_group.add_option("--daemon", action="store_true", dest='daemon',
+                              help="Run Chimera in Daemon mode (will detach from current terminal).")
+
         misc_group = optparse.OptionGroup(parser, "General")
 
         misc_group.add_option("--dry-run", action="store_true", 
@@ -168,6 +172,7 @@ class SiteController (object):
                             dry=False,
                             use_global=True,
                             verbose = 0,
+                            daemon=False,
                             pyro_host=MANAGER_DEFAULT_HOST,
                             pyro_port=MANAGER_DEFAULT_PORT)
 
@@ -175,7 +180,10 @@ class SiteController (object):
 
     def startup(self):
 
-        
+        if self.options.daemon:
+            # detach
+            log.info("FIXME: Daemon...")
+            
         # system config
         self.config = SystemConfig.fromFile(self.options.config_file, self.options.use_global)
         
@@ -185,11 +193,16 @@ class SiteController (object):
             log.info("Chimera version: %s" % find_dev_version() or _chimera_version_)
             log.info("Chimera prefix: %s" % ChimeraPath.root())
                 
-            self.manager = Manager(**self.config.chimera)
+            try:
+                self.manager = Manager(**self.config.chimera)
+            except ChimeraException, e:
+                log.error("Chimera is already running on this machine. Use chimera-admin to manage it.")
+                sys.exit(1)
+
             log.info("Chimera: running on "+ self.manager.getHostname() + ":" + str(self.manager.getPort()))
             if self.options.use_global:
                 log.info("Chimera: reading configuration from %s" % SYSTEM_CONFIG_DEFAULT_GLOBAL)            
-            log.info("Chimera: reading configuration from %s" % self.options.config_file)
+            log.info("Chimera: reading configuration from %s" % os.path.realpath(self.options.config_file))
 
         # add site object
         if not self.options.dry:

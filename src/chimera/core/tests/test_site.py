@@ -18,7 +18,6 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-
 from chimera.core.manager    import Manager
 from chimera.core.site       import Site
 from chimera.core.exceptions import printException
@@ -53,6 +52,9 @@ class TestSite (object):
                                             "longitude": "-48 31 20",
                                             "altitude": "20",
                                             "utc_offset": "-3"})
+
+    def teardown (self):
+        self.manager.shutdown()
 
     def test_times (self):
 
