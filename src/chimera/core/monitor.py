@@ -1,7 +1,7 @@
 
 import threading
 
-class Monitor(threading.Condition):
+class Monitor(object):
     """
     Currently, a simple wrapper around a Condition with a Reentrant
     Lock.  Later, more elaborate Monitor, like C# or Java.
