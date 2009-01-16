@@ -39,7 +39,7 @@ class ChimeraTel (ChimeraCLI):
         self.localSlew = False
         
         self.addHelpGroup("TELESCOPE", "Telescope")
-        self.addInstrument(name="telescope", cls="Telescope",
+        self.addInstrument(name="telescope", cls="Telescope", required=True,
                            help="Telescope instrument to be used. If blank, try to guess from chimera.config",
                            helpGroup="TELESCOPE")
         
@@ -194,7 +194,7 @@ class ChimeraTel (ChimeraCLI):
             self.out("tracking: disabled.")
             
         self.out(40*"=")
-    
+
     def _move(self, direction, cmd, offset):
         
         offset = self._validateOffset(offset)
@@ -284,3 +284,4 @@ def main():
     
 if __name__ == '__main__':
     main()
+
