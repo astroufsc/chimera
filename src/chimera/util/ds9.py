@@ -47,7 +47,7 @@ class DS9 (object):
             id = ids[-1]
 
         try:
-            self.ds9 = DS9Win(doRaise=True, doOpen=open, template=id)
+            self.ds9 = DS9Win(doRaise=True, doOpen=open, template=id, closeFDs=True)
         except RuntimeError, e:
             # even with RO installed, we still need XPA package to get DS9 working
             raise IOError("DS9 is not available, check if you have the XPA package installed. Display disabled.")
