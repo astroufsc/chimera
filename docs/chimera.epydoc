@@ -10,7 +10,7 @@ modules: chimera
 
 # Don't examine in any way the modules whose dotted name match this
 # regular expression pattern.
-exclude: chimera.util.etree chimera.util.output
+exclude: chimera.util.etree chimera.util.output chimera.core.tests chimera.util.tests chimera.controllers.tests
 
 exclude-parse: chimera.util.enum
 
@@ -19,7 +19,7 @@ exclude-parse: chimera.util.enum
 
 # Include all automatically generated graphs.  These graphs are
 # generated using Graphviz dot.
-#graph: all
+graph: all
 
 # Whether or not parsing should be used to examine objects.
 parse: yes
