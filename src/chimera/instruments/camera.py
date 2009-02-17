@@ -118,9 +118,6 @@ class Camera (ChimeraObject,
         frames = imageRequest['frames']
         interval = imageRequest['interval']
 
-        if frames == 1:
-            interval = 0.0
-
         # clear abort setting
         self.abort.clear()
 
@@ -138,7 +135,7 @@ class Camera (ChimeraObject,
             image = drv.expose(imageRequest)
             images.append(image)
             
-            if interval > 0 and frame_num < frames:
+            if (interval > 0 and frame_num < frames) and (not frames == 1):
                 time.sleep(interval)
 
         return tuple(images)

@@ -53,16 +53,17 @@ class ChimeraCam (ChimeraCLI):
         
         self.addHelpGroup("EXPOSE", "Exposure control")
         self.addParameters(dict(name="frames", short="n", type="int", default=1, helpGroup="EXPOSE", help="Number of frames"),
-                           dict(name="exptime", short="t", type="float", default=1, helpGroup="EXPOSE",
+                           dict(name="exptime", short="t", type="string", default=1, helpGroup="EXPOSE",
                                 help="Integration time in seconds for each frame"),
                            dict(name="interval", short="i", type="float", default=0.0, helpGroup="EXPOSE",
                                 help="Number of seconds to wait between each frame"),
                            dict(name="output", short="o", type="string", helpGroup="EXPOSE",
                                 help="Base filename including full path if needed.",
                                 default="$DATE-$TIME.fits"),
-                           dict(name="filter", short="f", type="string", helpGroup="EXPOSE",
-                                help="Filter to be used. "
-                                     "Use --filters to get a list of available filters"),
+                           dict(name="filter", long="filters", short="f", type="string", helpGroup="EXPOSE",
+                                help="Filter(s) to be used. "
+                                     "Use --list-filters to get a list of available filters. "
+                                     "You can pass a comma-separated list of filter to get multiple exposure (in the same order as the filter list)."),
                            dict(name="shutter", type=ParameterType.CHOICE, helpGroup="EXPOSE",
                                 choices=["open", "OPEN", "close", "CLOSE", "leave", "LEAVE"],
                                 default="OPEN",
@@ -100,7 +101,7 @@ class ChimeraCam (ChimeraCLI):
                            dict(name="isObject", long="object", type=ParameterType.CONSTANT, const="object",
                                 help="Mark this frame as a OBJECT frame.", helpGroup="IMAGETYPE"))
 
-    @action(short="F", helpGroup="INFO", help="Print available filter names.")
+    @action(short="F", long="--list-filters", helpGroup="INFO", help="Print available filter names.")
     def filters(self, options):
         if not self.wheel:
             self.exit("No Filter Wheel found. Edit chimera.config or pass --wheel/--wheel-driver (see --help)")
@@ -267,9 +268,37 @@ class ChimeraCam (ChimeraCLI):
         # make files in the current directory if path is not absolute
         if not os.path.isabs(options.output):
             options.output = os.path.join(os.getcwd(), options.output)
-            
+
+        # filter/exptime list support
+        filterList = []
+
+        if options.filter != None:
+            if "," in options.filter:
+                for f in options.filter.split(","):
+                    filterList.append(f.strip())
+            else:
+                filterList.append(options.filter)
+
+            self.out("Filters: %s" % ' '.join(filterList))
+
+        expTimes = []
+        if "," in options.exptime:
+            for exp in options.exptime.split(","):
+                expTimes.append(float(exp))
+        else:
+            expTimes.append(float(options.exptime))
+
+        # match expTimes and filterFist (if last given)
+        if filterList:
+            # use last given exptime if there are more filter than exptimes (if less, we just ignore).
+            if len(expTimes) < len(filterList):
+                exps = [ expTimes[-1] for x in range(len(filterList)-len(expTimes)) ]
+                expTimes.extend(exps)
+
+
+        # DS9
         ds9 = None
-        if (not self.options.no_display and options.exptime >= 5) or options.force_display:
+        if (not self.options.no_display and expTimes[0] >= 5) or options.force_display:
             try:
                 ds9 = DS9(open=True)
             except IOError:
@@ -320,7 +349,7 @@ class ChimeraCam (ChimeraCLI):
         camera.readoutComplete += readoutComplete
         
         self.out(40*"=")
-        self.out("Taking %d %s frame[s] of %.3fs each" % (options.frames, imagetype.upper(), options.exptime))
+        self.out("Taking %d %s frame[s]" % (options.frames, imagetype.upper()))
         self.out("Shutter: %s" % options.shutter)
         self.out("Interval between frames: %.3fs" % options.interval)
         if camera.isCooling():
@@ -340,41 +369,55 @@ class ChimeraCam (ChimeraCLI):
         else:
             self.out("Full Frame")
 
-        if options.filter != None:
-            self.out("Filter: %s" % options.filter)
-        
-        if options.filter != None and self.wheel:
-            self.out(40*"=")
-            try:
-                self.out("Changing to filter %s... " % options.filter, end="")
-                self.wheel.setFilter(options.filter)
-                self.out("OK")
-            except InvalidFilterPositionException, e:
-                self.out("ERROR. Couldn't move filter wheel to %s. (%s)" % (options.filter, e))
-                time.sleep(3)
+        def changeFilter(f):
+            if options.filter != None and self.wheel:
+                self.out(40*"=")
+                try:
+                    self.out("Changing to filter %s... " % f, end="")
+                    self.wheel.setFilter(f)
+                    self.out("OK")
+                except InvalidFilterPositionException, e:
+                    self.out("ERROR. Couldn't move filter wheel to %s. (%s)" % (f, e))
+                    time.sleep(3)
 
+        
         # finally, expose
         start = time.time()
         
         try:
             try:
-                camera.expose(exptime=options.exptime,
-                              frames=options.frames,
-                              interval=options.interval,
-                              filename=options.output,
-                              type=imagetype,
-                              binning=options.binning or None,
-                              window=options.subframe or None,
-                              shutter=options.shutter)
+
+                if filterList:
+                    for f in range(len(filterList)):
+                        changeFilter(filterList[f])
+
+                        if (options.interval > 0) and (1 <= f < (len(filterList))):
+                            self.out("="*40)
+                            self.out("waiting %.2f s before next frame..." % options.interval)
+                            time.sleep(options.interval)
+
+                        camera.expose(exptime=expTimes[f],
+                                      frames=options.frames,
+                                      interval=options.interval,
+                                      filename=options.output,
+                                      type=imagetype,
+                                      binning=options.binning or None,
+                                      window=options.subframe or None,
+                                      shutter=options.shutter)
+
+                else:
+                    camera.expose(exptime=expTimes[0],
+                                  frames=options.frames,
+                                  interval=options.interval,
+                                  filename=options.output,
+                                  type=imagetype,
+                                  binning=options.binning or None,
+                                  window=options.subframe or None,
+                                  shutter=options.shutter)
+
             except Exception, e:
                 self.err("Error trying to take exposures. (%s)" % printException(e))
         finally:
-
-            #camera.exposeBegin     -= exposeBegin
-            #camera.exposeComplete  -= exposeComplete
-            #camera.abortComplete   -= abortComplete
-            #camera.readoutBegin    -= readoutBegin
-            #camera.readoutComplete -= readoutComplete
 
             self.out(40*"=")
             self.out("Total time: %.3fs" % (time.time()-start))
