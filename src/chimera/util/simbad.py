@@ -28,18 +28,20 @@ import chimera.core.log
 #import suds
 #suds.logger('suds').setLevel(logging.DEBUG)
 
-from suds.serviceproxy import ServiceProxy
+from suds.xsd.sxbasic import Import
+Import.bind('http://schemas.xmlsoap.org/soap/encoding/')
 
+from suds.client import Client
 
 class Simbad (object):
 
     WSDL = 'http://cdsws.u-strasbg.fr/axis/services/Sesame?wsdl'
     
     def __init__ (self):
-        self.proxy = ServiceProxy(Simbad.WSDL)
+        self.client = Client(Simbad.WSDL)
 
     def lookup (self, name):
-        res = self.proxy.sesame (name, 'x')
+        res = self.client.service.Sesame.sesame(name, 'x', True)
         target = self._parseSesame(res)
 
         if not target:
@@ -48,17 +50,17 @@ class Simbad (object):
         return target
 
     def _parseSesame (self, xml):
-        
+       
         sesame = ET.fromstring(xml.replace("&", "&amp;"))
-        
-        for resolver in sesame.findall("Resolver"):
 
-            jpos  = resolver.find("jpos")
+        target = sesame.findall("Target")
+        if target:
+            for resolver in target[0].findall("Resolver"):
+                jpos  = resolver.find("jpos")
+                if jpos is None:
+                    continue
 
-            if jpos is None:
-                continue
-
-            return Position.fromRaDec(*jpos.text.split())
+                return Position.fromRaDec(*jpos.text.split())
 
         return False
         
