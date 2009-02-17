@@ -92,6 +92,8 @@ setup(name='chimera-python',
       
       packages         = find_packages("src", exclude=["*.tests"]),
       scripts          = chimera_scripts,
+      data_files       = [("chimera/core", ["src/chimera/core/chimera.global.config",
+                                            "src/chimera/core/chimera.sample.config"])],
 
       zip_safe         = False,
 
