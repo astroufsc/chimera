@@ -1,0 +1,8 @@
+#! /bin/bash
+
+DOC_DIR=`dirname $0`
+
+make -C $DOC_DIR html latex
+make -C $DOC_DIR/build/latex all
+
+rsync -av $DOC_DIR/build/html/ $DOC_DIR/build/latex/*.pdf phsilva,chimera@web.sourceforge.net:/home/groups/c/ch/chimera/htdocs/quick-start/

@@ -1,0 +1,4 @@
+# Optec TCF-S focuser on serial port
+focuser:
+    driver: OptecTCSF
+    device: /dev/ttyS2

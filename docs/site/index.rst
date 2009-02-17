@@ -32,8 +32,8 @@ focusers and domes in a very integrated way.
    It's free (as in *free beer*) and written in a very modern
    language. Python!.
 
-Getting start
--------------
+Getting started
+---------------
 
 To try out Chimera, follow the installation instructions and make sure
 that you have at least one `supported devices`_.
@@ -48,6 +48,9 @@ The easiest way to install Chimera is to use `easy_install
 You can also download the sources at `Chimera Development page
 <http://code.google.com/p/chimera>`_ and try to install it *by hands*.
 
+Use our `Quickstart <http://chimera.sf.net/quick-start>`_ document
+to guide yout through the first steps of using Chimera. There is also a
+`PDF <http://chimera.sf.net/quick-start/quick-start.pdf>`_ version as well.
 
 Help and Development
 --------------------

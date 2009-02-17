@@ -1,0 +1,9 @@
+# Meade telescope on serial port
+telescope:
+    driver: Meade
+    device:/dev/ttyS0
+
+# RoboDome on serial port
+dome:
+    driver: DomeLNA40cm
+    device: /dev/ttyS1

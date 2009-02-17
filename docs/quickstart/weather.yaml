@@ -1,0 +1,4 @@
+# Davis weather station on serial port
+weather:
+    driver: DavisII
+    device: /dev/ttyS3

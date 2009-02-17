@@ -1,0 +1,6 @@
+# SBIG camera on USB port with a RGB filter set
+
+camera:
+    driver: SBIG
+    device: USB
+    filters: [RED, GREEN, BLUE, LUNAR, CLEAR]

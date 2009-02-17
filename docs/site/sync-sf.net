@@ -3,4 +3,4 @@
 SITE_DIR=`dirname $0`
 
 make -C $SITE_DIR html
-rsync -av $SITE_DIR/build/html/ phsilva@shell.sourceforge.net:/home/groups/c/ch/chimera/htdocs
+rsync -av $SITE_DIR/build/html/ phsilva,chimera@web.sourceforge.net:/home/groups/c/ch/chimera/htdocs
