@@ -50,7 +50,7 @@ You can also download the sources at `Chimera Development page
 
 Use our `Quickstart <http://chimera.sf.net/quick-start>`_ document
 to guide yout through the first steps of using Chimera. There is also a
-`PDF <http://chimera.sf.net/quick-start/quick-start.pdf>`_ version as well.
+`PDF <http://chimera.sf.net/quick-start/chimera-quick-start.pdf>`_ version as well.
 
 Help and Development
 --------------------
@@ -64,7 +64,7 @@ more information, to report a bug or just follow Chimera's development
 closely.
 
 To start coding, look at our `Getting Started with Chimera <http://chimera.sf.net/getting-started>`_ document.
-You can download it in `PDF <http://chimera.sf.net/getting-started/getting-started.pdf>`_ as well.
+You can download it in `PDF <http://chimera.sf.net/getting-started/chimera-getting-started.pdf>`_ as well.
 
 .. _supported_devices:
 
