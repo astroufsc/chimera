@@ -1,3 +1,99 @@
+2008-08-01  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* setup.py: Add suds (required by Simbad resolver)
+	* src/chimera/util/simbad.py: Use Simbad to get coordinates of
+	object names.
+
+	* src/scripts/chimera-focus:
+	* src/scripts/chimera-cam:
+	* src/scripts/chimera-dome:
+	* src/scripts/chimera-tel: Finish port to new CLI infrascructure.
+
+	* src/chimera/instruments/camera.py:
+	* src/chimera/drivers/sbig/sbig.py:
+	* src/chimera/interfaces/camera.py: fix convention of getSetPoint
+	method.
+
+	* src/chimera/core/cli.py: Lot of small fixes, nothing big.
+
+	* src/chimera/core/location.py: Classloader now treat classes in
+	case insensitive way, so does Location now.
+
+	* src/chimera/core/tests/chimera-dome.py:
+	* src/chimera/core/tests/chimera-focus.py: Moved to final location
+	on scripts.
+
+	* src/chimera/core/eventsproxy.py: Fix handling of exceptions on
+	event handlers.
+
+	* src/chimera/instruments/telescope.py: implements slewToObject.
+
+	* src/chimera/util/position.py: better error messages.
+
+	* src/chimera/drivers/faketelescope.py:
+	* src/chimera/drivers/fakecamera.py: Small fixes... those fakes
+	need to be more realistic to enable more automated tests.
+
+2008-07-28  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* src/chimera/core/cli.py: Fix multiple actions execution order:
+	Respect command line order, always! There are no static
+	priorities, just user will.
+
+2008-07-28  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* src/chimera/core/cli.py:
+	Add support for multiple actions groups. For each action group,
+	only one action can be specified. This enables multiple actions
+	handlind as specified in issue 9. But, this is not final yet as
+	the order in which the actions run is not the same as user
+	specified. Working on this now, commit just to create a runnable
+	snapshot.
+
+	Fix bug on _validateParameter: now validating only specified
+	options (was trying to validate all independent of what user
+	specified).
+
+	* src/chimera/core/tests/chimera-dome.py:
+	* src/chimera/core/tests/chimera-focus.py: Update to new helpGroup
+	option.
+
+2008-07-27  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	*** chimera-new-scripts branch ***
+
+	* src/chimera/core/cli.py:
+	Add Local Mnager host/port configuration.
+	Add include path options.
+
+	* src/chimera/core/tests/chimera-dome.py: Updated groups for
+	better help message.
+
+2008-07-27  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	*** chimera-new-scripts branch ***
+
+	* src/chimera/core/cli.py: Much better implementation of
+	_getObjects method. Working with most configurations of
+	local/remote instrument/driver. Needs test cases for promotion to
+	stable branch.
+
+	* .project:
+	* .pydevproject: updated to branch project.
+
+	* src/chimera/core/chimera.config.sample
+	* src/chimera/core/chimera.sample.config: Rename.
+	* src/chimera/core/constants.py: Updated for above rename.
+
+	* src/chimera/core/classloader.py: Accepts string paths.
+	* src/chimera/core/manager.py: Add exception handling on daemon
+	start.
+	* src/chimera/core/systemconfig.py: Hack! need better
+	implementation of multiple yaml files handling (location creation
+	versus host/port config)
+	* src/chimera/instruments/dome.py: less verbose dome.
+
+
 2008-07-17  P. Henrique Silva  <henrique@astro.ufsc.br>
 
 	* src/chimera/controllers/autofocus.py: Fix bug returning a scalar
