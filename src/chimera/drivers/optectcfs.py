@@ -18,7 +18,6 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-import logging
 import sys
 
 import serial
@@ -104,9 +103,6 @@ class OptecTCFS (ChimeraObject, IFocuserDriver):
 
         current = self.getPosition ()
 
-        if current < 0:
-            return False
-
         delta = position - current
 
         #   0 ------- 7000
@@ -119,9 +115,22 @@ class OptecTCFS (ChimeraObject, IFocuserDriver):
         else:
             return True
 
+    def _inRange (self, direction, n):
+
+        current = self.getPosition()
+
+        if direction == Direction.IN:
+            target = current - n
+        else:
+            target = current + n
+
+        min_pos, max_pos = self.getRange()
+        
+        return (min_pos <= target <= max_pos)
+
     def _move (self, direction, steps):
 
-        if steps < self["min_position"] or steps > self["max_position"]:
+        if not self._inRange(direction, steps):
             raise InvalidFocusPositionException("%d is outside focuser limits." % steps)
         
         if direction not in Direction:
@@ -187,7 +196,7 @@ class OptecTCFS (ChimeraObject, IFocuserDriver):
             raise IOError("Error getting focuser position. Invalid position returned '%s'" % ack)
 
     def getRange (self):
-        return (self["min_position"], self["max_position"])
+        return (0, 7000)
         
     def _setMode (self, mode):
 

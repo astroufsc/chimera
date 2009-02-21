@@ -18,15 +18,11 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-import time
-import random
-
 from chimera.core.chimeraobject       import ChimeraObject
+from chimera.core.lock                import lock
 
 from chimera.interfaces.focuser       import InvalidFocusPositionException
 from chimera.interfaces.focuserdriver import IFocuserDriver
-
-from chimera.core.lock import lock
 
 
 class FakeFocuser (ChimeraObject, IFocuserDriver):
@@ -37,10 +33,10 @@ class FakeFocuser (ChimeraObject, IFocuserDriver):
         self._position = 0
 
     def __start__ (self):
-
-        self._position = int(self["max_position"] / 2)
+        self._position = int(self.getRange()[1] / 2.0)
         
-        self.setHz(1.0/10)
+    def getRange (self):
+        return (0, 7000)
 
     @lock
     def moveIn (self, n):
@@ -73,6 +69,7 @@ class FakeFocuser (ChimeraObject, IFocuserDriver):
         
         return False
 
+    @lock
     def getPosition (self):
         return self._position
 
@@ -81,7 +78,6 @@ class FakeFocuser (ChimeraObject, IFocuserDriver):
         self._position = n
 
     def _inRange (self, n):
-        return (self["min_position"] <= n <= self["max_position"])
+        min_pos, max_pos = self.getRange()
+        return (min_pos <= n <= max_pos)
 
-    def getRange (self):
-        return (self["min_position"], self["max_position"])

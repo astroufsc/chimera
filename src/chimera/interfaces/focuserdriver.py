@@ -20,7 +20,6 @@
 
 
 from chimera.core.interface import Interface
-from chimera.core.event import event
 
 
 class IFocuserDriver (Interface):
@@ -35,9 +34,7 @@ class IFocuserDriver (Interface):
     __config__ = {"device": "/dev/ttyS1",
                   "open_timeout": 10,
                   "move_timeout": 60,
-                  "max_position": 7000,
-                  "min_position": 0,
-                  "pulse_in_multiplier": 100,
+                  "pulse_in_multiplier" : 100,
                   "pulse_out_multiplier": 100}
                  
     def moveIn (self, n):
