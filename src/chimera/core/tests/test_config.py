@@ -1,6 +1,7 @@
 
 from chimera.core.config import Config, OptionConversionException
 from chimera.util.enum import Enum, EnumValue
+from chimera.util.coord import Coord, State
 
 from nose.tools import assert_raises
 
@@ -158,6 +159,22 @@ class TestConfig (object):
 
         # invalid
         assert_raises(KeyError, c.__getitem__, "WHATERVER")
-        
 
+    def test_coord (self):
+
+        c = Config({"DMS": Coord.fromDMS(10),
+                    "HMS": Coord.fromHMS(10)})
+
+        assert c["DMS"].state == State.DMS
+        assert c["HMS"].state == State.HMS
+
+        c["DMS"] = 20
+        assert c["DMS"] == Coord.fromDMS(20)
+        
+        c["HMS"] = 20
+        assert c["HMS"] == Coord.fromHMS(20)
+        assert c["HMS"] == Coord.fromDMS(20*15)
+
+    def test_position (self):
+        assert 1==0, "Fix position checker"
         

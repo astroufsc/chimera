@@ -32,10 +32,11 @@ import logging
 import chimera.core.log
 log = logging.getLogger(__name__)
 
-from chimera.util.enum import Enum, EnumValue
+from chimera.util.enum import EnumValue
 from chimera.core.exceptions import OptionConversionException
 
 from chimera.util.coord import Coord
+from chimera.util.position import Position
 
 
 class Option (object):
@@ -268,8 +269,6 @@ class RangeChecker (Checker):
                 raise OptionConversionException ("'%s' it's outside valid limits (%f <= x <= %f." % (str (value),
                                                                                                      self._min,
                                                                                                      self._max))
-
-
 class EnumChecker (Checker):
 
     def __init__ (self, value):
@@ -323,6 +322,32 @@ class CoordChecker (Checker):
         # any other type is ignored
         raise OptionConversionException ('invalid coord value %s.' % value)
 
+class PositionOption (Option):
+
+    def __init__ (self, name, value, checker):
+        Option.__init__(self, name, value, checker)
+
+        self._system = value.system
+        self._equinox = value.equinox
+
+    def set (self, value):
+        try:
+            oldvalue = self._value
+            self._value = self._checker.check(value, self._system, self._equinox)
+            return oldvalue
+        except OptionConversionException, e:
+            log.debug ("Error setting %s: %s." % (self._name, str (e)))
+            raise e
+
+# FIXME: check and convert positions
+class PositionChecker (Checker):
+
+    def __init__ (self, value):
+        Checker.__init__ (self)
+
+    def check (self, value, state=None):
+        return value
+
 
 class Config (object):
 
@@ -372,10 +397,14 @@ class Config (object):
             # special Coord type, remember which state create the
             # option to allow the use of the right constructor when
             # checking new values
-            if type (value) == Coord:
+            if isinstance(value, Coord):
                 options[name] = CoordOption (name, value, CoordChecker (value))
                 continue
                 
+            if isinstance(value, Position):
+                options[name] = PositionOption (name, value, PositionChecker (value))
+                continue
+
             raise ValueError("Invalid option type: %s." % type(value))
 
         return options

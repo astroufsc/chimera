@@ -115,7 +115,7 @@ class Position (CoordsPosition):
             Position._checkRange(float(ra), 0, 360)
 
         except ValueError, e:
-            raise ValueError("Invalid RA coordinate %s (%s)" % (str(ra), e))
+            raise ValueError("Invalid RA coordinate %s" % str(ra))
         except PositionOutsideLimitsError:
             raise ValueError("Invalid RA range %s. Must be between 0-24 hours or 0-360 deg." % str(ra))
 
@@ -134,7 +134,7 @@ class Position (CoordsPosition):
             Position._checkRange(float(dec), -90, 360)
 
         except ValueError, e:
-            raise ValueError("Invalid DEC coordinate %s (%s)" % (str(dec), e))
+            raise ValueError("Invalid DEC coordinate %s" % str(dec))
         except PositionOutsideLimitsError:
             raise ValueError("Invalid DEC range %s. Must be between 0-360 deg or -90 - +90 deg." % str(dec))
 
@@ -151,7 +151,7 @@ class Position (CoordsPosition):
             Position._checkRange(float(az), -180, 360)
 
         except ValueError, e:
-            raise ValueError("Invalid AZ coordinate %s (%s)" % (str(az), e))
+            raise ValueError("Invalid AZ coordinate %s" % str(az))
         except PositionOutsideLimitsError:
             raise ValueError("Invalid AZ range %s. Must be between 0-360 deg or -180 - +180 deg." % str(az))
 
@@ -164,7 +164,7 @@ class Position (CoordsPosition):
             Position._checkRange(float(alt), -90, 180)
 
         except ValueError, e:
-            raise ValueError("Invalid ALT coordinate %s (%s)" % (str(alt), e))
+            raise ValueError("Invalid ALT coordinate %s" % str(alt))
         except PositionOutsideLimitsError:
             raise ValueError("Invalid ALT range %s. Must be between 0-180 deg or -90 - +90 deg." % str(alt))
 
@@ -193,7 +193,7 @@ class Position (CoordsPosition):
             Position._checkRange(float(long), -180, 360)
 
         except ValueError, e:
-            raise ValueError("Invalid LONGITUDE coordinate %s (%s)" % (str(long), e))
+            raise ValueError("Invalid LONGITUDE coordinate %s" % str(long))
         except PositionOutsideLimitsError:
             raise ValueError("Invalid LONGITUDE range %s. Must be between 0-360 deg or -180 - +180 deg." % str(long))
 
@@ -206,7 +206,7 @@ class Position (CoordsPosition):
             Position._checkRange(float(lat), -90, 180)
 
         except ValueError, e:
-            raise ValueError("Invalid LATITUDE coordinate %s (%s)" % (str(lat), e))
+            raise ValueError("Invalid LATITUDE coordinate %s" % str(lat))
         except PositionOutsideLimitsError:
             raise ValueError("Invalid LATITUDE range %s. Must be between 0-180 deg or -90 - +90 deg." % str(lat))
 
