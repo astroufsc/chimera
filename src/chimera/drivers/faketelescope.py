@@ -19,7 +19,6 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 import time
-import random
 import threading
 
 from chimera.interfaces.telescopedriver import ITelescopeDriverSlew
@@ -201,62 +200,45 @@ class FakeTelescope (ChimeraObject,
     def moveSouth(self, offset, rate=SlewRate.MAX):
         pass
 
+    @lock
     def getRa(self):
         return self._ra
 
+    @lock
     def getDec(self):
         return self._dec
 
+    @lock
     def getAz(self):
         return self._az
 
+    @lock
     def getAlt(self):
         return self._alt
 
+    @lock
     def getPositionRaDec(self):
         return Position.fromRaDec(self.getRa(), self.getDec())
 
+    @lock
     def getPositionAltAz(self):
         return Position.fromAltAz(self.getAlt(), self.getAz())
 
+    @lock
     def getTargetRaDec(self):
         return Position.fromRaDec(self.getRa(), self.getDec())
 
+    @lock
     def getTargetAltAz(self):
         return Position.fromAltAz(self.getAlt(), self.getAz())
 
-    #GUI Compatibility methods
-    def getAlignMode(self):
-        return self['align_mode']
- 
-    def getLat(self):
-        return self._getSite()['latitude']
-
-    def getLong(self):
-        return self._getSite()['longitude']
-    
-    def getDate(self):
-        return self._getSite().ut()
-
-    def getLocalTime(self):
-        return self._getSite().localtime()
-    
-    def getUTCOffset(self):
-        return self._getSite()['utc_offset']
-    
-    def getLocalSiderealTime(self):
-        return self._getSite().LST()
-    
-    def getCurrentTrackingRate(self):
-        pass
-
     @lock
-    def sync(self, position):
-        self._ra  = position.ra
+    def syncRaDec (self, position):
+        self._ra = position.ra
         self._dec = position.dec
 
     @lock
-    def park(self):
+    def park(self, position):
         self._parked = True
 
     @lock
@@ -267,12 +249,10 @@ class FakeTelescope (ChimeraObject,
         return self._parked
 
     @lock
-    def setParkPosition (self, position):
-        pass
-
     def startTracking (self):
         self._tracking = True
-    
+
+    @lock
     def stopTracking (self):
         self._tracking = False
 
