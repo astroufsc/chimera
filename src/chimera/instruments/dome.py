@@ -90,7 +90,7 @@ class Dome(ChimeraObject, IDome):
             try:
                 self.stand()
                 self.log.info("Parking the dome...")
-                self.slewToAz(self['park_pos'])
+                self.slewToAz(self['park_position'])
             except Exception, e:
                 self.log.warning('Unable to park dome: %s', str(e))
 
@@ -285,8 +285,12 @@ class Dome(ChimeraObject, IDome):
         self._mode = Mode.Stand
 
     @lock
-    def sync(self):
+    def syncWithTel(self):
         self._processQueue()
+
+    @lock
+    def isSyncWithTel(self):
+        return self.queue.empty()
 
     def getMode(self):
         return self._mode

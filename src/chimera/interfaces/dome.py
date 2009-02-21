@@ -24,6 +24,7 @@ from chimera.core.event      import event
 from chimera.core.exceptions import ChimeraException
 
 from chimera.util.enum import Enum
+from chimera.util.coord import Coord
 
 
 __all__ = ['Mode',
@@ -48,13 +49,12 @@ class IDome (Interface):
 
     __config__ = {"driver"   : "/FakeDome/0",
                   "telescope": "/Telescope/0",
+                  "mode"     : Mode.Stand,
 
                   "model"    : "Fake Domes Inc.",
                   "type"     : Type.Classic,
-
-                  "mode"     : Mode.Stand,
-
-                  'park_pos' : 155,
+                  
+                  'park_position'    : Coord.fromD(155),
                   'park_on_shutdown' : False,
                   'close_on_shutdown': False}
 
@@ -74,13 +74,20 @@ class IDome (Interface):
         @rtype: None
         """
 
-    def sync (self):
+    def syncWithTel (self):
         """
         If dome was in Track mode, sync dome position with current scope position.
 
         @rtype: None
         """
 
+    def isSyncWithTel (self):
+        """
+        If dome was in Track mode, returns wether the dome slit is synchronized with telescope azimuth.
+
+        @rtype: bool
+        """
+        
     def getMode (self):
         """
         Get the current Dome mode, Stand or Track, currently.

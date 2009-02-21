@@ -21,9 +21,7 @@
 import time
 import serial
 import threading
-import logging
 import math
-import sys
 
 from chimera.core.chimeraobject import ChimeraObject
 from chimera.interfaces.dome    import InvalidDomePositionException
@@ -99,7 +97,10 @@ class DomeLNA40cm (ChimeraObject, IDomeDriver):
 
         # correct dome/telescope phase difference
         dome_az = az.D + self._az_shift
-        dome_az = dome_az % 360
+
+        if dome_az > 360:
+            raise InvalidDomePositionException("Cannot slew to %s. "
+                                               "Outside azimuth limits." % az)
         
         dome_az = int (math.ceil (dome_az / self["az_resolution"]))
 

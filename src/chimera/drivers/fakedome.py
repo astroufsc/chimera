@@ -18,16 +18,14 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-import time
-from random import Random
-import threading
-
 from chimera.core.chimeraobject       import ChimeraObject
+from chimera.core.lock import lock
 
 from chimera.interfaces.dome        import InvalidDomePositionException
 from chimera.interfaces.domedriver  import IDomeDriver
 
-from chimera.core.lock import lock
+import time
+import threading
 
 
 class FakeDome (ChimeraObject, IDomeDriver):
@@ -39,6 +37,7 @@ class FakeDome (ChimeraObject, IDomeDriver):
         self._slewing = False
         self._slitOpen  = False
         self._abort = threading.Event()
+        self._maxSlewTime = 5/180.0
 
     @lock
     def slewToAz (self, az):
@@ -51,11 +50,22 @@ class FakeDome (ChimeraObject, IDomeDriver):
         self._slewing = True
         
         self.slewBegin(az)
+        self.log.info("Slewing to %s" % az)
+        
+        # slew time ~ distance from current position
+        distance = abs(float(az-self._position))
+        if distance > 180:
+            distance = 360-distance
 
-        slew_time = (Random().random()*self["slew_timeout"]) / 10
+        self.log.info("Slew distance %.3f deg" % distance)
 
+        slew_time = distance*self._maxSlewTime
+
+        self.log.info("Slew time ~ %.3f s" % slew_time)
+        
         t=0
         while t < slew_time:
+            
             if self._abort.isSet():
                 self._slewing = False
                 return
@@ -64,9 +74,7 @@ class FakeDome (ChimeraObject, IDomeDriver):
             t+=0.1
 
         self._position = az # move :)
-
         self._slewing = False
-
         self.slewComplete(self.getAz())
 
     def isSlewing (self):
@@ -83,10 +91,12 @@ class FakeDome (ChimeraObject, IDomeDriver):
 
     @lock
     def openSlit (self):
+        self.log.info("Opening slit")
         self._slitOpen = True
 
     @lock
     def closeSlit (self):
+        self.log.info("Closing slit")
         self._slitOpen = False
 
     def isSlitOpen (self):
