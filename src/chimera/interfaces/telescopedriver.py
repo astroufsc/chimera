@@ -106,9 +106,6 @@ class ITelescopeDriverSlew (ITelescopeDriver):
     def getTargetAltAz(self):
         pass
     
-    def getFocalLength(self):
-        pass
-
     # events
     
     @event
@@ -126,13 +123,7 @@ class ITelescopeDriverSlew (ITelescopeDriver):
 
 class ITelescopeDriverSync(ITelescopeDriver):
 
-    def syncObject (self, name):
-        pass
-
     def syncRaDec (self, position):
-        pass
-
-    def syncAltAz (self, position):
         pass
 
     @event
@@ -142,20 +133,14 @@ class ITelescopeDriverSync(ITelescopeDriver):
 
 class ITelescopeDriverPark (ITelescopeDriver):
 
-    __config__ = {"park_position_alt": 90.0,
-                  "park_position_az": 180.0}
-        
     # methods
-    def park(self):
+    def park(self, position):
         pass
 
     def unpark(self):
         pass
 
     def isParked(self):
-        pass
-
-    def setParkPosition (self, position):
         pass
 
     # events

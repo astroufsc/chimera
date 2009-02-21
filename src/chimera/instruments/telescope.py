@@ -40,6 +40,8 @@ class Telescope(ChimeraObject,
 
     def __init__(self):
         ChimeraObject.__init__(self)
+
+        self._park_position = None
         
     def __start__(self):
 
@@ -100,8 +102,9 @@ class Telescope(ChimeraObject,
         
     @lock
     def syncObject(self, name):
-        # FIXME
-        return ITelescopeSync.syncObject(self, name)
+        simbad = Simbad()
+        target = simbad.lookup(name)
+        self.getDriver().syncRaDec(target)
 
     @lock
     def syncRaDec(self, position):
@@ -113,8 +116,11 @@ class Telescope(ChimeraObject,
 
     @lock
     def syncAltAz(self, position):
-        # FIXME
-        return ITelescopeSync.syncAltAz(self, position)
+        if not isinstance(position, Position):
+            position = Position.fromAltAz(*position)
+        
+        drv = self.getDriver()
+        drv.syncAltAz(position)
 
     @lock
     def slewToObject(self, name):
@@ -124,8 +130,6 @@ class Telescope(ChimeraObject,
 
     @lock
     def slewToRaDec(self, position):
-        # FIXME: validate limits?
-
         if not isinstance(position, Position):
             position = Position.fromRaDec(*position)
         
@@ -134,8 +138,6 @@ class Telescope(ChimeraObject,
        
     @lock
     def slewToAltAz(self, position):
-        # FIXME: validate limits?        
-
         if not isinstance(position, Position):
             position = Position.fromAltAz(*position)
 
@@ -246,8 +248,10 @@ class Telescope(ChimeraObject,
 
     @lock
     def park(self):
+        position = self.getParkPosition()
+
         drv = self.getDriver()
-        return drv.park()
+        return drv.park(position)
 
     @lock
     def unpark(self):
@@ -256,8 +260,10 @@ class Telescope(ChimeraObject,
 
     @lock
     def setParkPosition(self, position):
-        drv = self.getDriver()
-        return drv.setParkPosition(position)
+        self._park_position = position
+
+    def getParkPosition(self):
+        return self._park_position or self["default_park_position"]
 
     def startTracking (self):
         drv = self.getDriver()

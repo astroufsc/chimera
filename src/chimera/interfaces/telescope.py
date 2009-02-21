@@ -22,10 +22,10 @@
 from chimera.core.interface  import Interface
 from chimera.core.event      import event
 from chimera.core.exceptions import ChimeraException
-from chimera.util.enum       import Enum
-
 
 from chimera.interfaces.telescopedriver import SlewRate
+
+from chimera.util.position import Position
 
 
 class PositionOutsideLimitsException (ChimeraException):
@@ -38,8 +38,6 @@ class ITelescope (Interface):
     """
 
     __config__ = {"driver": "/FakeTelescope/0",
-
-                  "limits": "limits.filename",
 
                   "model"           : "Fake Telescopes Inc.",
                   "optics"          : ["Newtonian", "SCT", "RCT"],
@@ -307,20 +305,6 @@ class ITelescopeSync (ITelescope):
         @rtype: None
         """
 
-    def syncAltAz (self, position):
-        """Synchronizes the telescope on the given local coordinates.
-
-        See L{syncRaDec} for more information.
-
-        @param position: coordinates to sync on as a Position or a
-        tuple with arguments to Position.fromAltAz.
-
-        @type  position: L{Position} or tuple
-
-        @returns: Nothing
-        @rtype: None
-        """
-
     @event
     def syncComplete(self, position):
         """Fired when a synchronization operation finishes.
@@ -334,9 +318,7 @@ class ITelescopePark (ITelescope):
     """Telescope with park/unpark support.
     """
 
-    __config__ = {"default_park_position_az" : 180.0,
-                  "default_park_position_alt": 90.0}
-
+    __config__ = {"default_park_position": Position.fromAltAz(90, 180)}
 
     def park(self):
         """Park the telescope on the actual saved park position
@@ -367,11 +349,18 @@ class ITelescopePark (ITelescope):
     def setParkPosition (self, position):
         """Defines where the scope will park when asked to.
 
-        @param position: local coordinates to aprk the scope
+        @param position: local coordinates to park the scope
         @type  position: L{Position}
 
         @return: Nothing.
         @rtype: None
+        """
+
+    def getParkPosition (self):
+        """Get the Current park position.
+
+        @return: Current park position.
+        @rtype: L{Position}
         """
 
     @event
