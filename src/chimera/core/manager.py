@@ -48,6 +48,7 @@ from chimera.core.constants import MANAGER_DEFAULT_HOST, MANAGER_DEFAULT_PORT, M
 try:
     import Pyro.core
     import Pyro.util
+    import Pyro.errors
 except ImportError, e:
     raise RuntimeError ("You must have Pyro version >= 3.6 installed.")
 
@@ -73,11 +74,15 @@ class ManagerAdapter (Pyro.core.Daemon):
     def __init__ (self, manager, host = None, port = None):
 
         Pyro.core.initServer(banner=False)
-        
-        Pyro.core.Daemon.__init__ (self,
-                                   host=host or MANAGER_DEFAULT_HOST,
-                                   port=port or MANAGER_DEFAULT_PORT,
-                                   norange=0)
+
+        try:
+            Pyro.core.Daemon.__init__ (self,
+                                       host=host or MANAGER_DEFAULT_HOST,
+                                       port=port or MANAGER_DEFAULT_PORT,
+                                       norange=0)
+        except Pyro.errors.DaemonError, e:
+            log.error("Couldn't start Chimera server. Check errors below.")
+            raise
 
         self.useNameServer(None)
         self.connect (manager)

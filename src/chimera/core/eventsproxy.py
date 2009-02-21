@@ -25,6 +25,9 @@ import chimera.core.log
 
 import Pyro.errors
 
+import traceback
+import sys
+
 log = logging.getLogger(__name__)
 
 
@@ -79,8 +82,14 @@ class EventsProxy:
                 #proxy._setOneway ([handler["method"]]) should be faster but results say no!
                 dispatcher (*args, **kwargs)
             except AttributeError, e:
-                log.debug("Invalid proxy method ('%s %s') for '%s' handler." % \
-                          (handler["proxy"], handler["method"], topic))
+                tb_size = len(traceback.extract_tb(sys.exc_info()[2]))
+                if tb_size == 1:
+                    log.debug("Invalid proxy method ('%s %s') for '%s' handler." % \
+                              (handler["proxy"], handler["method"], topic))
+                else:
+                    log.debug ("Handler (%s) raised an exception. Removing from subscribers list." % proxy)
+                    log.exception(e)
+
                 excluded.append(handler)
                 continue
             except Pyro.errors.ProtocolError, e:
