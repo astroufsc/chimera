@@ -32,64 +32,76 @@ import datetime as dt
 import numpy as N
 import pyfits
 
-from chimera.interfaces.cameradriver      import ICameraDriver
-from chimera.interfaces.filterwheeldriver import IFilterWheelDriver
-from chimera.interfaces.camera import Shutter
+from chimera.interfaces.camera import (CCD, CameraFeature,
+                                       ReadoutMode, Shutter)
+
+from chimera.instruments.camera      import CameraBase
+from chimera.instruments.filterwheel import FilterWheelBase
 
 from chimera.controllers.imageserver.util import getImageServer
 
-from chimera.core.chimeraobject      import ChimeraObject
-from chimera.core.exceptions         import ChimeraException, ObjectNotFoundException
+from chimera.core.exceptions         import (ChimeraException,
+                                             ObjectNotFoundException)
 
 from chimera.util.image import Image, ImageUtil
-
 from chimera.core.lock import lock
 
-#from chimera.core.log import setConsoleLevel
-#import logging
-#setConsoleLevel(logging.DEBUG)
 
+class FakeCamera (CameraBase, FilterWheelBase):
 
-class FakeCamera (ChimeraObject, ICameraDriver, IFilterWheelDriver):
-
-    __config__ = {"telescope"   : "/Telescope/0",
-                  "dome"        : "/Dome/0",
-                  "ccd_width"   : 765,
-                  "ccd_height"  : 510,
+    __config__ = {"telescope"   : "/FakeTelescope/0",
+                  "dome"        : "/FakeDome/0",
                   "use_dss"     : False}
     
     def __init__ (self):
-        ChimeraObject.__init__(self)
+        CameraBase.__init__ (self)
+        FilterWheelBase.__init__ (self)
 
         self.__exposing = False
         self.__cooling  = False
 
-        self.__abort = threading.Event()
-        self.__lastFilter = 0
+        self.__lastFilter = self._getFilterName(0)
         self.__temperature = 20.0
         self.__setpoint = 0
         self.__lastFrameStart = 0
+        self.__isFanning = False
 
-        self._adcs = {"12 bits": 0}
+        # my internal CCD code
+        self._MY_CCD = 1 << 1
+        self._MY_ADC = 1 << 2
+        self._MY_READOUT_MODE = 1 << 3
 
-        self._binnings = {"1x1": 0,
-                          "2x2": 1,
-                          "3x3": 2,
-                          "9x9": 9}
+        self._ccds = {CCD.IMAGING: self._MY_CCD}
 
-        self._binning_factors = {"1x1": 1,
-                                 "2x2": 2,
-                                 "3x3": 3,
-                                 "4x4": 4}
+        self._adcs = {"12 bits": self._MY_ADC}
+
+        self._binnings = {"1x1": self._MY_READOUT_MODE}
+
+        self._binning_factors = {"1x1": 1}
+
+        self._supports = {CameraFeature.TEMPERATURE_CONTROL: True,
+                          CameraFeature.PROGRAMMABLE_GAIN: False,
+                          CameraFeature.PROGRAMMABLE_OVERSCAN: False,
+                          CameraFeature.PROGRAMMABLE_FAN: False,
+                          CameraFeature.PROGRAMMABLE_LEDS: True,
+                          CameraFeature.PROGRAMMABLE_BIAS_LEVEL: False}
+        
+        readoutMode = ReadoutMode()
+        readoutMode.mode = 0
+        readoutMode.gain = 1.0
+        readoutMode.width = 1024
+        readoutMode.height = 1024
+        readoutMode.pixelWidth = 9.0
+        readoutMode.pixelHeight = 9.0
+
+        self._readoutModes = {self._MY_CCD:
+                                  {self._MY_READOUT_MODE: readoutMode}}
 
     def __start__ (self):
+        self["camera_model"] = "Fake Cameras Inc."
+        self["ccd_model"] = "Fake CCDs Inc."
+
         self.setHz(2)
-
-    def open(self, device):
-        return True
-
-    def close(self):
-        return True
 
     def control (self):
         if self.isCooling():
@@ -98,27 +110,6 @@ class FakeCamera (ChimeraObject, ICameraDriver, IFilterWheelDriver):
             
         return True
 
-    def ping(self):
-        return True
-
-    def isExposing(self):
-        return self.__exposing
-
-    @lock
-    def expose(self, imageRequest):
-        
-        self.__exposing = True
-        self.__abort.clear()
-        
-        ret = False
-
-        if self._expose(imageRequest):
-            ret = self._readout(imageRequest, aborted=False)
-        
-        self.__exposing=False
-        return ret
-
-
     def _expose(self, imageRequest):
         
         self.exposeBegin(imageRequest)
@@ -126,7 +117,7 @@ class FakeCamera (ChimeraObject, ICameraDriver, IFilterWheelDriver):
         t=0
         self.__lastFrameStart = time.time()
         while t < imageRequest["exptime"]:
-            if self.__abort.isSet():
+            if self.abort.isSet():
                 return False
             
             time.sleep (0.1)            
@@ -200,16 +191,16 @@ class FakeCamera (ChimeraObject, ICameraDriver, IFilterWheelDriver):
         except ObjectNotFoundException:
             pass
         
-        if not (telescope or dome):
-            self.log.debug("FakeCamera couldn't find telescope or dome.")
-        elif telescope and (not dome):
-            self.log.debug("FakeCamera couldn't find dome.")
-        elif (not telescope) and dome:
+        if not telescope:
             self.log.debug("FakeCamera couldn't find telescope.")
+        if not dome:
+            self.log.debug("FakeCamera couldn't find dome.")
 
+        ccd_width, ccd_height = self.getPhysicalSize()
+        
         if (imageRequest["shutter"]==Shutter.CLOSE):
             self.log.info("Shutter closed -- making dark")
-            pix = self.make_dark((self["ccd_height"],self["ccd_width"]), N.float, imageRequest['exptime'])
+            pix = self.make_dark((ccd_height, ccd_width), N.float, imageRequest['exptime'])
 
         else:
 
@@ -223,11 +214,10 @@ class FakeCamera (ChimeraObject, ICameraDriver, IFilterWheelDriver):
                     telAZ=telescope.getAz().toD()
                     if (telAZ < 3 and domeAZ > 357):
                         domeAZ-=360     #take care of wrap-around
+
                     self.log.debug("Dome AZ: "+str(domeAZ)+"  Tel AZ: "+str(telAZ))
                     if (abs(domeAZ-telAZ) <= 3):
                         self.log.debug("Dome & Slit aligned -- getting DSS")
-                        #http://archive.eso.org/dss/dss/image?ra=20+03+43&dec=-08+10+21&equinox=J2000&x=5&y=5&Sky-Survey=DSS1&mime-type=application/x-fits
-                        #http://stdatu.stsci.edu/cgi-bin/dss_search?v=quickv&r=13+29+52.37&d=%2B47+11+40.8&e=J2000&h=15&w=15&f=fits&c=gz&fov=NONE&v3=
                         url = "http://stdatu.stsci.edu/cgi-bin/dss_search?v=poss1_red&r=" + \
                               urllib.quote(telescope.getRa().strfcoord().replace(":"," ")) + \
                               "&d=" + urllib.quote(telescope.getDec().strfcoord().replace(":"," ")) + \
@@ -254,49 +244,30 @@ class FakeCamera (ChimeraObject, ICameraDriver, IFilterWheelDriver):
                             pix += self.make_dark(pix.shape, N.float, imageRequest['exptime'])
                         except Exception, e:
                             self.log.warning("Error generating dark: " + str(e))
+
             # without telescope/dome, or if dome/telescope aren't aligned, or the dome is closed
             # or we otherwise failed, just make a flat pattern with dark noise
             if (pix == None):
                 try:
-                    self.log.info("Making simulated flat image: " + str(self["ccd_height"]) + "x" + str(self["ccd_width"]))
+                    self.log.info("Making simulated flat image: " + str(ccd_height) + "x" + str(ccd_width))
                     self.log.debug("Generating dark...")
-                    pix = self.make_dark((self["ccd_height"],self["ccd_width"]), N.float, imageRequest['exptime'])
+                    pix = self.make_dark((ccd_height,ccd_width), N.float, imageRequest['exptime'])
                     self.log.debug("Making flat...")
-                    pix += self.make_flat((self["ccd_height"],self["ccd_width"]), N.float)
+                    pix += self.make_flat((ccd_height,ccd_width), N.float)
                 except Exception, e:
                     self.log.warning("MakekFlat error: " + str(e))
         
-        #Last resort if nothing else could make a picture
+        # Last resort if nothing else could make a picture
         if (pix == None):
             pix = N.zeros((100,100), dtype=N.int32)
 
-        imageRequest.fetchPostHeaders(self.getManager())
-        
-        img = Image.create(pix, imageRequest)
-
-        # update image request
-        imageRequest["filename"] = img.filename()
-
-        img += [('DATE-OBS',
-                 ImageUtil.formatDate(dt.datetime.fromtimestamp(self.__lastFrameStart)))]
-
-        server = getImageServer(self.getManager())
-        proxy = server.register(img)
+        proxy = self._saveImage(imageRequest, pix, {"frame_start_time": self.__lastFrameStart})
 
         self.readoutComplete(proxy)
-
         return proxy
 
-    def abortExposure(self):
-
-        if not self.isExposing(): return
-
-        self.__abort.set()
-
-        # busy waiting for exposure/readout stops
-        while self.isExposing(): time.sleep(0.1)
-            
-        self.abortComplete()
+    def isExposing(self):
+        return self.__exposing
 
     @lock
     def startCooling(self, setpoint):
@@ -319,13 +290,22 @@ class FakeCamera (ChimeraObject, ICameraDriver, IFilterWheelDriver):
     def getSetPoint(self):
         return self.__setpoint
 
-    def getFilter (self):
-        return self.__lastFilter
+    @lock
+    def startFan(self, rate=None):
+        self.__isFanning = True
 
     @lock
-    def setFilter (self, filter):
-        self.filterChange(filter, self.__lastFilter)
-        self.__lastFilter = filter
+    def stopFan(self):
+        self.__isFanning = False
+
+    def isFanning(self):
+        self.__isFanning
+    
+    def getCCDs(self):
+        return self._ccds
+
+    def getCurrentCCD(self):
+        return self._MY_CCD
 
     def getBinnings(self):
         return self._binnings
@@ -334,7 +314,28 @@ class FakeCamera (ChimeraObject, ICameraDriver, IFilterWheelDriver):
         return self._adcs
 
     def getPhysicalSize(self):
-        return (512,512)
+        return (512, 512)
 
     def getPixelSize(self):
         return (9,9)
+
+    def getOverscanSize(self, ccd=None):
+        return (0, 0)
+
+    def getReadoutModes(self):
+        return self._readoutModes
+
+    def supports(self, feature=None):
+        return self._supports[feature]
+
+    #
+    # filter wheel
+    #
+    def getFilter (self):
+        return self.__lastFilter
+
+    @lock
+    def setFilter (self, filter):
+        self.filterChange(filter, self.__lastFilter)
+        self.__lastFilter = filter
+

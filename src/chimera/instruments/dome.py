@@ -26,10 +26,9 @@ import Queue
 
 from chimera.core.chimeraobject import ChimeraObject
 
-from chimera.interfaces.dome import IDome
-from chimera.interfaces.dome import Mode
+from chimera.interfaces.dome import (IDome, Mode)
 
-from chimera.core.event    import event
+from chimera.core.event   import event
 from chimera.core.lock    import lock
 from chimera.core.callback import callback
 
@@ -39,10 +38,10 @@ from chimera.core.exceptions import ChimeraException
 from chimera.util.coord import Coord
 
 
-__all__ = ['Dome']
+__all__ = ['DomeBase']
 
 
-class Dome(ChimeraObject, IDome):
+class DomeBase (ChimeraObject, IDome):
 
     def __init__(self):
         ChimeraObject.__init__(self)
@@ -51,22 +50,12 @@ class Dome(ChimeraObject, IDome):
         self._mode = None
 
         # to reuse telescope proxy on control method
-        self._controlTel = None
-        self._controlDrv = None
+        self._tel = None
+
         # to cache for az_resolution of the dome
         self.controlAzRes = None
 
     def __start__(self):
-
-        # connect events with driver
-        drv = self.getDriver()
-        drv.ping()
-        
-        drv.slewBegin    += self.getProxy()._slewBeginClbk
-        drv.slewComplete  += self.getProxy()._slewCompleteClbk
-        drv.abortComplete += self.getProxy()._abortCompleteClbk
-        drv.slitOpened    += self.getProxy()._slitOpenedClbk
-        drv.slitClosed    += self.getProxy()._slitClosedClbk
 
         self.setHz(1/4.0)
 
@@ -75,7 +64,8 @@ class Dome(ChimeraObject, IDome):
         elif self["mode"] == Mode.Stand:
             self.stand ()
         else:
-            self.log.warning ("Invalid dome mode: %s. Will use Stand mode instead.")
+            self.log.warning ("Invalid dome mode: %s. "
+                              "Will use Stand mode instead.")
             self.stand ()
 
         # telescope events
@@ -101,18 +91,9 @@ class Dome(ChimeraObject, IDome):
             except Exception, e:
                 self.log.warning('Unable to close dome: %s', str(e))
         
-        # disconnect events
-        drv = self.getDriver()
-        
-        drv.slewBegin     -= self.getProxy()._slewBeginClbk
-        drv.slewComplete  -= self.getProxy()._slewCompleteClbk
-        drv.abortComplete -= self.getProxy()._abortCompleteClbk
-        drv.slitOpened    -= self.getProxy()._slitOpenedClbk
-        drv.slitClosed    -= self.getProxy()._slitClosedClbk
-
+        # telescope events
         self._disconnectTelEvents()
         return True
-
 
     def _connectTelEvents (self):
         
@@ -146,37 +127,6 @@ class Dome(ChimeraObject, IDome):
         self._disconnectTelEvents()
         self._connectTelEvents()
 
-    # callbacks
-    def _slewBeginClbk(self, position):
-        if not isinstance(position, Coord):
-            position = Coord.fromDMS(position)
-
-        self.slewBegin(position)
-        
-    def _slewCompleteClbk(self, position):
-        if not isinstance(position, Coord):
-            position = Coord.fromDMS(position)
-
-        self.slewComplete(position)
-
-    def _abortCompleteClbk(self, position):
-        if not isinstance(position, Coord):
-            position = Coord.fromDMS(position)
-
-        self.abortComplete(position)
-
-    def _slitOpenedClbk(self, position):
-        if not isinstance(position, Coord):
-            position = Coord.fromDMS(position)
-
-        self.slitOpened(position)
-
-    def _slitClosedClbk(self, position):
-        if not isinstance(position, Coord):
-            position = Coord.fromDMS(position)
-
-        self.slitClosed(position)
-
     # telescope callbacks
     def _telSlewBeginClbk (self, target):
         if self.getMode() != Mode.Track: return
@@ -187,19 +137,17 @@ class Dome(ChimeraObject, IDome):
         if self.getMode() != Mode.Track: return
 
         tel = self.getTelescope()
-        self.log.debug("[event] telescope slew complete, new position=%s." % target)
+        self.log.debug("[event] telescope slew complete, "
+                       "new position=%s." % target)
 
     def _telAbortCompleteClbk (self, position):
         if self.getMode() != Mode.Track: return
 
         tel = self.getTelescope()
-        self.log.debug("[event] telescope aborted last slew, new position=%s." % position)
-
+        self.log.debug("[event] telescope aborted last slew, "
+                       "new position=%s." % position)
 
     # utilitaries
-    def getDriver(self):
-        return self.getManager().getProxy(self['driver'], lazy=True)        
-        
     def getTelescope(self):
         return self.getManager().getProxy(self['telescope'], lazy=True)        
 
@@ -215,14 +163,14 @@ class Dome(ChimeraObject, IDome):
 
         try:
 
-            if not self._controlTel:
-                self._controlTel = self.getTelescope()
+            if not self._tel:
+                self._tel = self.getTelescope()
 
-            if self._controlTel.isSlewing():
+            if self._tel.isSlewing():
                     self.log.debug("[control] telescope slewing... not checking az.")
                     return True
 
-            self._telescopeChanged(self._controlTel.getAz())
+            self._telescopeChanged(self._tel.getAz())
 
         except ObjectNotFoundException:
             raise ChimeraException("Couldn't found the selected telescope."
@@ -244,13 +192,7 @@ class Dome(ChimeraObject, IDome):
 
 
     def _needToMove (self, az):
-        if not self._controlDrv:
-            self._controlDrv = self.getDriver()
-
-        if not self.controlAzRes:
-            self.controlAzRes = self._controlDrv["az_resolution"]
-            
-        return abs(az - self._controlDrv.getAz()) >= self.controlAzRes
+        return abs(az - self.getAz()) >= self["az_resolution"]
 
     def _processQueue (self):
         
@@ -297,51 +239,36 @@ class Dome(ChimeraObject, IDome):
 
     @lock
     def slewToAz (self, az):
-
-        if not isinstance(az, Coord):
-            az = Coord.fromDMS(az)
-
-        if int(az) >= 360:
-            az = az % 360
+        raise NotImplementedError()
         
-        drv = self.getDriver()
-        drv.slewToAz (az)
-
     def isSlewing (self):
-        drv = self.getDriver()
-        return drv.isSlewing ()
+        raise NotImplementedError()
     
     def abortSlew (self):
-        drv = self.getDriver()
-        drv.abortSlew ()
+        raise NotImplementedError()
 
     @lock
     def getAz (self):
-        drv = self.getDriver()
-        return drv.getAz ()
+        raise NotImplementedError()
 
     @lock
     def openSlit (self):
-        drv = self.getDriver()
-        drv.openSlit()
+        raise NotImplementedError()
 
     @lock
     def closeSlit (self):
-        drv = self.getDriver()
-        drv.closeSlit()
+        raise NotImplementedError()
 
     def isSlitOpen (self):
-        drv = self.getDriver()
-        return drv.isSlitOpen()
+        raise NotImplementedError()
     
     def getMetadata(self, request):
         if self.isSlitOpen():
             slit = 'Open'
         else:
             slit = 'Closed'
-        return [
-                ('DOME_MDL', str(self['model']), 'Dome Model'),
+
+        return [('DOME_MDL', str(self['model']), 'Dome Model'),
                 ('DOME_TYP', str(self['type']), 'Dome Type'),
                 ('DOME_TRK', str(self['mode']), 'Dome Tracking/Standing'),
-                ('DOME_SLT', str(slit), 'Dome slit status'),
-                ] + self.getDriver().getMetadata(request)
+                ('DOME_SLT', str(slit), 'Dome slit status')]

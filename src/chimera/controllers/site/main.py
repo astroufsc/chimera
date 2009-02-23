@@ -60,13 +60,11 @@ class SiteController (object):
         self.manager = None
 
         self.paths = {"instruments": [],
-                      "controllers": [],
-                      "drivers": []}
+                      "controllers": []}
 
         # add system path
         self.paths["instruments"].append(ChimeraPath.instruments())
         self.paths["controllers"].append(ChimeraPath.controllers())
-        self.paths["drivers"].append(ChimeraPath.drivers())
 
     def parseArgs(self, args):
 
@@ -121,7 +119,7 @@ class SiteController (object):
         misc_group.add_option("-v", "--verbose", action="count", dest='verbose',
                               help="Increase log level (multiple v's to increase even more).")
 
-        inst_group = optparse.OptionGroup(parser, "Instruments, Controllers and Drivers Management")
+        inst_group = optparse.OptionGroup(parser, "Instruments and Controllers Management")
 
         inst_group.add_option("-i", "--instrument", action="callback", callback=check_location,
                               dest="instruments", type="string",
@@ -135,12 +133,6 @@ class SiteController (object):
                               "This option could be setted many times to load multiple controllers.",
                               metavar="LOCATION")
 
-        inst_group.add_option("-d", "--driver", action="callback", callback=check_location,
-                              dest="drivers", type="string",
-                              help="Load the driver defined by LOCATION."
-                              "This option could be setted many times to load multiple drivers.",
-                              metavar="LOCATION")
-
         inst_group.add_option("-I", "--instruments-dir", action="callback", callback=check_includepath,
                               dest="inst_dir", type="string",
                               help="Append PATH to instruments load path.",
@@ -151,12 +143,6 @@ class SiteController (object):
                               help="Append PATH to controllers load path.",
                               metavar="PATH")
 
-        inst_group.add_option("-D", "--drivers-dir", action="callback", callback=check_includepath,
-                              dest="drv_dir", type="string",
-                              help="Append PATH to drivers load path.",
-                              metavar="PATH")
-        
-
         parser.add_option_group(manag_group)
         parser.add_option_group(config_group)        
         parser.add_option_group(misc_group)
@@ -164,7 +150,6 @@ class SiteController (object):
 
         parser.set_defaults(instruments = [],
                             controllers = [],
-                            drivers     = [],
                             config_file = SYSTEM_CONFIG_DEFAULT_FILENAME,
                             inst_dir = [],
                             ctrl_dir = [],
@@ -218,18 +203,7 @@ class SiteController (object):
         for _dir in self.options.ctrl_dir:
             self.paths["controllers"].append(_dir)
         
-        for _dir in self.options.drv_dir:
-            self.paths["drivers"].append(_dir)
-
         # init from config
-        log.info("Trying to start drivers...")
-        for drv in self.config.drivers + self.options.drivers:
-
-            if self.options.dry:
-                print drv
-            else:
-                self._add(drv, path=self.paths["drivers"], start=True)
-
         log.info("Trying to start instruments...")
         for inst in self.config.instruments + self.options.instruments:
             

@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#! /usr/bin/python
 # -*- coding: iso-8859-1 -*-
 
 # chimera - observatory automation system
@@ -18,29 +18,8 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-import time
-import random
+##
+## drivers packaged (as this one) should import the corresponding driver on __init__
+##
 
-from chimera.core.chimeraobject import ChimeraObject
-
-from chimera.interfaces.filterwheeldriver import IFilterWheelDriver
-from chimera.interfaces.filterwheel import Filter
-
-from chimera.core.lock import lock
-
-
-class FakeFilterWheel (ChimeraObject, IFilterWheelDriver):
-
-    def __init__ (self):
-        ChimeraObject.__init__(self)
-
-        self._lastFilter = 0
-
-    @lock
-    def getFilter (self):
-        return self._lastFilter
-
-    @lock
-    def setFilter (self, filter):
-        self.filterChange(filter, self._lastFilter)
-        self._lastFilter = filter
+from chimera.instruments.sbig.sbig import SBIG

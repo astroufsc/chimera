@@ -32,8 +32,3 @@ class ChimeraPath (object):
     @staticmethod
     def controllers ():
         return os.path.join(ChimeraPath.root(), 'controllers')
-
-    @staticmethod                                
-    def drivers ():
-        return os.path.join(ChimeraPath.root(), 'drivers')
-

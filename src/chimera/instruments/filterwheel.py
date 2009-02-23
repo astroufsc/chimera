@@ -21,36 +21,25 @@
 
 from chimera.core.chimeraobject import ChimeraObject
 
-from chimera.interfaces.filterwheel import IFilterWheel
-from chimera.interfaces.filterwheel import Filter
-from chimera.interfaces.filterwheel import InvalidFilterPositionException
+from chimera.interfaces.filterwheel import (IFilterWheel,
+                                            Filter,
+                                            InvalidFilterPositionException)
 
 from chimera.core.lock import lock
 
 
-class FilterWheel (ChimeraObject, IFilterWheel):
+class FilterWheelBase (ChimeraObject, IFilterWheel):
 
     def __init__ (self):
         ChimeraObject.__init__(self)
 
-    def __start__ (self):
-        drv = self.getDriver()
-        drv.filterChange += self.getProxy()._filterChangeClbk
-        return True
-
-    def __stop__ (self):
-        drv = self.getDriver()
-        drv.filterChange -= self.getProxy()._filterChangeClbk
-        return True
-
-    def _filterChangeClbk (self, new, old):
-        self.filterChange (self._getFilterName(new),
-                           self._getFilterName(old))
+    @lock
+    def setFilter (self, filter):
+        raise NotImplementedError()
 
     @lock
     def getFilter (self):
-        drv = self.getDriver()
-        return self._getFilterName(drv.getFilter())
+        raise NotImplementedError()
 
     def getFilters (self):
         return self["filters"].upper().split()
@@ -58,30 +47,13 @@ class FilterWheel (ChimeraObject, IFilterWheel):
     def _getFilterName (self, index):
         try:
             return self.getFilters()[index]
-        except ValueError:
-           raise InvalidFilterPositionException("Driver returned an filter that I don't known the name.")
+        except (ValueError, TypeError):
+           raise InvalidFilterPositionException("Unknown filter (%s)."%str(index))
 
     def _getFilterPosition (self, name):
         return self.getFilters().index(name)
 
-    @lock
-    def setFilter (self, filter):
-        
-        drv = self.getDriver()
-        filterName = str(filter).upper()
-
-        if filterName not in self.getFilters() :
-            raise InvalidFilterPositionException("Invalid filter %s" % filterName)      
-
-        return drv.setFilter(self._getFilterPosition(filterName))
-
-    @lock
-    def getDriver(self, lazy=True):
-        return self.getManager().getProxy(self['driver'], lazy=lazy)        
-        
-
     def getMetadata(self, request):
-        return [
-                ('FWHEEL', str(self['model']), 'FilterWheel Model'),
-                ('FILTER',   str(self.getFilter()), 'Filter used for this observation'),
-                ] + self.getDriver().getMetadata(request)
+        return [('FWHEEL', str(self['model']), 'FilterWheel Model'),
+                ('FILTER', str(self.getFilter()),
+                 'Filter used for this observation')]

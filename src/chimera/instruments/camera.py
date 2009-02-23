@@ -21,49 +21,33 @@
 
 import threading
 import time
+from math import pi
+import datetime as dt
+
 import Pyro.util
 
 from chimera.core.chimeraobject import ChimeraObject
-from chimera.interfaces.camera import (ICameraExpose, ICameraTemperature, ICameraInformation)
+from chimera.interfaces.camera  import (ICameraExpose, ICameraTemperature,
+                                        ICameraInformation,
+                                        InvalidReadoutMode)
 
 from chimera.controllers.imageserver.imagerequest import ImageRequest
+from chimera.controllers.imageserver.util import getImageServer
 
 from chimera.core.exceptions import ChimeraValueError
-
 from chimera.core.lock import lock
 
+from chimera.util.image import Image, ImageUtil
 
-class Camera (ChimeraObject,
-              ICameraExpose, ICameraTemperature, ICameraInformation):
+
+class CameraBase (ChimeraObject,
+                  ICameraExpose, ICameraTemperature, ICameraInformation):
 
     def __init__(self):
         ChimeraObject.__init__(self)
 
         self.abort = threading.Event()
         self.abort.clear()
-
-    def getDriver(self):
-        """
-        Get a Proxy to the instrument driver. This function is necessary '
-        cause Proxies cannot be shared among different threads.
-        So, every time you need a driver Proxy you need to call this to
-        get a Proxy to the current thread.
-        """
-        return self.getManager().getProxy(self['driver'], lazy=True)        
-        
-    def __start__ (self):
-
-        drv = self.getDriver()
-
-        # connect callbacks to driver events
-        drv.exposeBegin       += self.getProxy()._exposeBeginDrvClbk        
-        drv.exposeComplete    += self.getProxy()._exposeCompleteDrvClbk
-        drv.readoutBegin      += self.getProxy()._readoutBeginDrvClbk
-        drv.readoutComplete   += self.getProxy()._readoutCompleteDrvClbk        
-        drv.abortComplete     += self.getProxy()._abortDrvClbk
-        drv.temperatureChange += self.getProxy()._tempChangeDrvClbk
-
-        return True
 
     def __stop__ (self):
         
@@ -72,36 +56,8 @@ class Camera (ChimeraObject,
             while self.isExposing():
                 time.sleep(1)
         
-        # disconnect our callbacks
-        drv = self.getDriver()
-
-        drv.exposeBegin       -= self.getProxy()._exposeBeginDrvClbk        
-        drv.exposeComplete    -= self.getProxy()._exposeCompleteDrvClbk
-        drv.readoutBegin      -= self.getProxy()._readoutBeginDrvClbk
-        drv.readoutComplete   -= self.getProxy()._readoutCompleteDrvClbk        
-        drv.abortComplete     -= self.getProxy()._abortDrvClbk
-        drv.temperatureChange -= self.getProxy()._tempChangeDrvClbk
-
-    def _exposeBeginDrvClbk (self, request):
-        self.exposeBegin(request)
-    
-    def _exposeCompleteDrvClbk (self, request):
-        self.exposeComplete(request)
-
-    def _readoutBeginDrvClbk (self, request):
-        self.readoutBegin(request)
-    
-    def _readoutCompleteDrvClbk (self, request):
-        self.readoutComplete(request)
-
-    def _abortDrvClbk (self):
-        self.abortComplete()
-    
-    def _tempChangeDrvClbk (self, temp, delta):
-        self.temperatureChange(temp, delta)
-
     @lock
-    def expose (self, request=None, **kwargs):
+    def expose(self, request=None, **kwargs):
 
         if request:
 
@@ -118,11 +74,12 @@ class Camera (ChimeraObject,
         frames = imageRequest['frames']
         interval = imageRequest['interval']
 
+        # validate readout mode
+        self._getReadoutModeInfo(imageRequest["binning"],
+                                 imageRequest["window"])
+
         # clear abort setting
         self.abort.clear()
-
-        # config driver
-        drv = self.getDriver()
 
         images = []
 
@@ -132,108 +89,218 @@ class Camera (ChimeraObject,
                 return images
             
             imageRequest.fetchPreHeaders(self.getManager())
-            image = drv.expose(imageRequest)
-            images.append(image)
-            
+
+            if self._expose(imageRequest):
+                image = self._readout(imageRequest, aborted=False)
+                images.append(image)
+            else:
+                return False
+
             if (interval > 0 and frame_num < frames) and (not frames == 1):
                 time.sleep(interval)
 
         return tuple(images)
                 
-    def abortExposure (self, readout=True):
-        drv = self.getDriver()
-        drv.abortExposure()
+    def abortExposure(self, readout=True):
+
+        if not self.isExposing():
+            return False
+
+        # set our event, so current exposure know that it must abort
+        self.abort.set()
+
+        while self.isExposing():
+            time.sleep (0.1)
+
+        self.abortComplete()
 
         return True
-    
+
+    def _saveImage(self, imageRequest, imageData, extra):
+
+        try:
+            telLocation = self.getManager().getResourcesByClass("ITelescope", True)
+            if telLocation:
+                tel = self.getManager().getProxy(telLocation[0])
+                imageRequest.metadataPost.append(tel.getLocation())
+        except Exception:
+            self.log.info("Couldn't find a telescope, "
+                          "WCS info will be incomplete")
+
+        (mode, binning, top, left,
+         width, height) = self._getReadoutModeInfo(imageRequest["binning"],
+                                                   imageRequest["window"])
+
+        binFactor = extra.get("binning_factor", 1.0)
+        
+        pix_w, pix_h = self.getPixelSize()
+        focal_length = self["telescope_focal_length"]
+
+        scale_x = binFactor * (((180/pi) / focal_length) * (pix_w * 0.001))
+        scale_y = binFactor * (((180/pi) / focal_length) * (pix_h * 0.001))
+        
+        full_width, full_height = self.getPhysicalSize()
+        CRPIX1 = ((int(full_width/2.0)) - left) - 1
+        CRPIX2 = ((int(full_height/2.0)) - top) - 1
+        
+        img = Image.create(imageData, imageRequest)
+
+        img += [('DATE-OBS',
+                 ImageUtil.formatDate(extra.get("frame_start_time", dt.datetime.now())),
+                 'Date exposure started'),
+                
+                ('CCD-TEMP', extra.get("frame_temperature", -275.0),
+                 'CCD Temperature at Exposure Start [deg. C]'),
+
+                ("EXPTIME", float(imageRequest['exptime']) or -1,
+                 "exposure time in seconds"),
+
+                ('IMAGETYP', imageRequest['type'].strip(), 
+                 'Image type'),
+
+                ('SHUTTER', str(imageRequest['shutter']),
+                 'Requested shutter state'),
+
+                ("CRPIX1", CRPIX1, "coordinate system reference pixel"),
+                ("CRPIX2", CRPIX2, "coordinate system reference pixel"),
+                ("CD1_1", scale_x, "transformation matrix element (1,1)"),
+                ("CD1_2", 0.0, "transformation matrix element (1,2)"),
+                ("CD2_1", 0.0, "transformation matrix element (2,1)"),
+                ("CD2_2", scale_y, "transformation matrix element (2,2)"),
+
+                ('CAMERA', str(self['camera_model']), 'Camera Model'),
+                ('CCD',    str(self['ccd_model']), 'CCD Model'),
+                ('CCD_DIMX', self.getPhysicalSize()[0], 'CCD X Dimension Size'),
+                ('CCD_DIMY', self.getPhysicalSize()[1], 'CCD Y Dimension Size'),
+                ('CCDPXSZX', self.getPixelSize()[0],
+                 'CCD X Pixel Size [micrometer]'),
+                ('CCDPXSZY', self.getPixelSize()[1],
+                 'CCD Y Pixel Size [micrometer]')]
+
+        # update image request
+        imageRequest["filename"] = img.filename()
+
+        # regiter image on ImageServer
+        server = getImageServer(self.getManager())
+        proxy = server.register(img)
+
+        return proxy
+
+    def _getReadoutModeInfo(self, binning, window):
+        """
+        Check if the given binning and window could be used on the given CCD.
+
+        Returns a tuple (modeId, binning, top, left, width, height)
+        """
+
+        mode = None
+
+        try:
+            binId = self.getBinnings()[binning]
+            mode = self.getReadoutModes[self.getCurrentCCD()][binId]
+        except KeyError:
+            # use full frame if None given
+            binId = self.getBinnings()["1x1"]
+            mode = self.getReadoutModes()[self.getCurrentCCD()][binId]
+            
+        left = 0
+        top = 0
+        width, height = mode.getSize()
+
+        if window != None:
+            try:
+                xx, yy = window.split(",")
+                xx = xx.strip()
+                yy = yy.strip()
+                x1, x2 = xx.split(":")
+                y1, y2 = yy.split(":")
+                
+                x1 = int(x1)
+                x2 = int(x2)
+                y1 = int(y1)
+                y2 = int(y2)
+
+                left = min(x1,x2) - 1
+                top  = min(y1,y2) - 1
+                width  = (max(x1,x2) - min(x1,x2)) + 1
+                height = (max(y1,y2) - min(y1,y2)) + 1
+
+                if left < 0 or left >= mode.width:
+                    raise InvalidReadoutMode("Invalid subframe: left=%d, ccd width (in this binning)=%d" % (left, mode.width))
+
+                if top < 0 or top >= mode.height:
+                    raise InvalidReadoutMode("Invalid subframe: top=%d, ccd height (in this binning)=%d" % (top,mode.height))
+
+                if width > mode.width:
+                    raise InvalidReadoutMode("Invalid subframe: width=%d, ccd width (int this binning)=%d" % (width, mode.width))
+
+                if height > mode.height:
+                    raise InvalidReadoutMode("Invalid subframe: height=%d, ccd height (int this binning)=%d" % (height, mode.height))
+
+            except ValueError:
+                left = 0
+                top = 0
+                width, height = mode.getSize()
+            
+        return (mode, binning, top, left, width, height)
+
     def isExposing (self):
-        drv = self.getDriver()
-        return drv.isExposing()
+        raise NotImplementedError()
 
     @lock
     def startCooling (self, tempC):
-        drv = self.getDriver()
-        drv.startCooling(tempC)
-        return True
+        raise NotImplementedError()
 
     @lock
     def stopCooling (self):
-        drv = self.getDriver()
-        drv.stopCooling()
-        return True
+        raise NotImplementedError()
 
     def isCooling (self):
-        drv = self.getDriver()
-        return drv.isCooling()
+        raise NotImplementedError()
 
     @lock
     def getTemperature(self):
-        drv = self.getDriver()
-        return drv.getTemperature()
+        raise NotImplementedError()
 
     @lock
     def getSetPoint(self):
-        drv = self.getDriver()
-        return drv.getSetPoint()
+        raise NotImplementedError()
 
     @lock
     def startFan(self, rate=None):
-        drv = self.getDriver()
-        return drv.startFan(rate)
+        raise NotImplementedError()
 
     @lock
     def stopFan(self):
-        drv = self.getDriver()
-        return drv.stopFan()
+        raise NotImplementedError()
 
     def isFanning(self):
-        drv = self.getDriver()
-        return drv.isFanning()
-
+        raise NotImplementedError()
     
-    def getMetadata(self, request):
-        drv = self.getDriver()
-        return [
-                ('CAMERA', str(self['camera_model']), 'Camera Model'),
-                ('CCD',    str(self['ccd_model']), 'CCD Model'),
-                ('CCD_DIMX', drv.getPhysicalSize()[0], 'CCD X Dimension Size'),
-                ('CCD_DIMY', drv.getPhysicalSize()[1], 'CCD Y Dimension Size'),
-                ('CCDPXSZX', drv.getPixelSize()[0], 'CCD X Pixel Size [micrometer]'),
-                ('CCDPXSZY', drv.getPixelSize()[1], 'CCD Y Pixel Size [micrometer]')]  + drv.getMetadata(request)
-                #('XBINNING', int(request.binning[0]), 'Readout CCD Binning (x-axis)'),
-                #('YBINNING', int(request.binning[-1]), 'Readout CCD Binning (y-axis)'),
-                #('IMAGETYP', request['type'], 'Image type')]
-
     def getCCDs(self):
-        drv = self.getDriver()
-        return drv.getCCDs()
+        raise NotImplementedError()
 
     def getCurrentCCD(self):
-        drv = self.getDriver()
-        return drv.getCurrentCCD()
+        raise NotImplementedError()
 
     def getBinnings(self):
-        drv = self.getDriver()
-        return drv.getBinnings()
+        raise NotImplementedError()
 
     def getADCs(self):
-        drv = self.getDriver()
-        return drv.getADCs()
+        raise NotImplementedError()
 
     def getPhysicalSize(self):
-        drv = self.getDriver()
-        return drv.getPhysicalSize()
+        raise NotImplementedError()
 
     def getPixelSize(self):
-        drv = self.getDriver()
-        return drv.getPixelSize()
+        raise NotImplementedError()
 
     def getOverscanSize(self, ccd=None):
-        drv = self.getDriver()
-        return drv.getOverscanSize()
+        raise NotImplementedError()
+
+    def getReadoutModes(self):
+        raise NotImplementedError()
 
     def supports(self, feature=None):
-        drv = self.getDriver()
-        return drv.supports(feature)
-
+        raise NotImplementedError()
 

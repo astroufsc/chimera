@@ -54,7 +54,7 @@ Unit = Enum ("PERCENTUAL", # Humidity
 
 class IWeatherStation (Interface):
 
-    __config__ = {"driver": "/Fake/weather",
+    __config__ = {"device": "/dev/ttyS0",
                   
                   "humidity_unit"   : Unit.MM_HG,
                   "temperature_unit": Unit.CELSIUS,

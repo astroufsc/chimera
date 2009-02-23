@@ -48,8 +48,8 @@ class ILifeCycle (Interface):
         
     def __start__ (self):
         """
-        Do device initialization. Open files, access drivers and
-        sockets. This method it's called by Manager, just after the constructor.
+        Do device initialization. Open files, sockets, etc. This
+        method it's called by Manager, just after the constructor.
 
         @note: Runs on the L{Manager} thread.
         @warning: This method must not block, so be a good boy/girl.

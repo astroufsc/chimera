@@ -21,13 +21,8 @@
 import time
 import threading
 
-from chimera.interfaces.telescopedriver import ITelescopeDriverSlew
-from chimera.interfaces.telescopedriver import ITelescopeDriverSync
-from chimera.interfaces.telescopedriver import ITelescopeDriverPark
-from chimera.interfaces.telescopedriver import ITelescopeDriverTracking
-from chimera.interfaces.telescopedriver import SlewRate
-
-from chimera.core.chimeraobject         import ChimeraObject
+from chimera.interfaces.telescope  import SlewRate
+from chimera.instruments.telescope import TelescopeBase
 
 from chimera.core.lock import lock
 from chimera.core.site import Site
@@ -36,16 +31,10 @@ from chimera.util.coord    import Coord
 from chimera.util.position import Position
 
 
-class FakeTelescope (ChimeraObject,
-                     ITelescopeDriverSlew,
-                     ITelescopeDriverSync,
-                     ITelescopeDriverPark,
-                     ITelescopeDriverTracking):
-    
-    __config__ = {'site':   '/Site/0'}
+class FakeTelescope (TelescopeBase):
     
     def __init__ (self):
-        ChimeraObject.__init__(self)
+        TelescopeBase.__init__(self)
 
         self.__slewing = False
         self._az  = Coord.fromDMS(0)
@@ -58,7 +47,7 @@ class FakeTelescope (ChimeraObject,
         self._abort = threading.Event()
         
         try:
-            self._site = self.getManager().getProxy(self['site'])
+            self._site = self.getManager().getProxy("/Site/0")
             self._gotSite=True
         except:
             self._site = Site()
@@ -72,7 +61,7 @@ class FakeTelescope (ChimeraObject,
             return self._site
         else:
             try:
-                self._site = self.getManager().getProxy(self['site'])
+                self._site = self.getManager().getProxy("/Site/0")
                 self._gotSite=True
             except:
                 pass
@@ -101,17 +90,11 @@ class FakeTelescope (ChimeraObject,
                 self._setRaDecFromAltAz()                                                          
         return True
 
-    def open(self):
-        pass
-
-    def close(self):
-        pass
-
-    def ping(self):
-        pass
-
     @lock
     def slewToRaDec(self, position):
+
+        if not isinstance(position, Position):
+            position = Position.fromRaDec(*position)
 
         self.slewBegin(position)
 
@@ -144,6 +127,10 @@ class FakeTelescope (ChimeraObject,
 
     @lock
     def slewToAltAz(self, position):
+
+        if not isinstance(position, Position):
+            position = Position.fromAltAz(*position)
+
         self.slewBegin(self._getSite().altAzToRaDec(position))
 
         alt_steps = position.alt - self.getAlt()
@@ -173,10 +160,6 @@ class FakeTelescope (ChimeraObject,
             
         self.slewComplete(self.getPositionRaDec())
 
-
-    def isSlewing (self):
-        return self._slewing
-
     def abortSlew(self):
         self._abort.set()
         while self.isSlewing():
@@ -184,21 +167,65 @@ class FakeTelescope (ChimeraObject,
 
         self.abortComplete(self.getPositionRaDec())
 
+    def isSlewing (self):
+        return self._slewing
+
     @lock
     def moveEast(self, offset, rate=SlewRate.MAX):
-        pass
+
+        self._slewing = True
+
+        pos = self.getPositionRaDec()
+        pos.ra += Coord.fromAS(offset)
+        self.slewBegin(pos)
+        
+        self._ra += Coord.fromAS(offset)
+        self._setAltAzFromRaDec()
+
+        self._slewing = False
+        self.slewComplete(self.getPositionRaDec())
 
     @lock
     def moveWest(self, offset, rate=SlewRate.MAX):
-        pass
+        self._slewing = True
+
+        pos = self.getPositionRaDec()
+        pos.ra += Coord.fromAS(-offset)
+        self.slewBegin(pos)
+        
+        self._ra += Coord.fromAS(-offset)
+        self._setAltAzFromRaDec()
+
+        self._slewing = False
+        self.slewComplete(self.getPositionRaDec())
 
     @lock
     def moveNorth(self, offset, rate=SlewRate.MAX):
-        pass
+        self._slewing = True
+
+        pos = self.getPositionRaDec()
+        pos.ra += Coord.fromAS(offset)
+        self.slewBegin(pos)
+        
+        self._dec += Coord.fromAS(offset)
+        self._setAltAzFromRaDec()
+
+        self._slewing = False
+        self.slewComplete(self.getPositionRaDec())
 
     @lock
     def moveSouth(self, offset, rate=SlewRate.MAX):
-        pass
+        self._slewing = True
+
+        pos = self.getPositionRaDec()
+        pos.dec += Coord.fromAS(-offset)
+        self.slewBegin(pos)
+        
+        self._dec += Coord.fromAS(-offset)
+        self._setAltAzFromRaDec()
+
+        self._slewing = False
+        self.slewComplete(self.getPositionRaDec())
 
     @lock
     def getRa(self):
@@ -234,6 +261,9 @@ class FakeTelescope (ChimeraObject,
 
     @lock
     def syncRaDec (self, position):
+        if not isinstance(position, Position):
+            position = Position.fromRaDec(*position)
+
         self._ra = position.ra
         self._dec = position.dec
 

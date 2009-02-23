@@ -20,31 +20,26 @@
 
 from __future__ import division
 
-import os
 import time
 import logging
-import threading
-from math import pi
-import datetime as dt
 import numpy as N
         
-from sbigdrv import *
+from chimera.instruments.sbig.sbigdrv import *
 
-from chimera.core.chimeraobject            import ChimeraObject
-from chimera.interfaces.cameradriver       import (ICameraDriver, CCD,
-                                                   Device, CameraFeature)
-from chimera.interfaces.camera             import Shutter
-from chimera.interfaces.filterwheeldriver  import IFilterWheelDriver
+from chimera.core.chimeraobject  import ChimeraObject
+from chimera.interfaces.camera   import (CCD, CameraFeature, Shutter)
+
+from chimera.instruments.camera      import CameraBase
+from chimera.instruments.filterwheel import FilterWheelBase
 
 from chimera.core.lock import lock
 
-from chimera.util.image import Image, ImageUtil
 
-
-class SBIG(ChimeraObject, ICameraDriver, IFilterWheelDriver):  
+class SBIG(CameraBase, FilterWheelBase):  
 
     def __init__(self):
-        ChimeraObject.__init__ (self)
+        CameraBase.__init__ (self)
+        FilterWheelBase.__init__ (self)
 
         self.drv = SBIGDrv()
         self.ccd = SBIGDrv.imaging
@@ -57,7 +52,7 @@ class SBIG(ChimeraObject, ICameraDriver, IFilterWheelDriver):
         self.lastFrameTemp = None
         self.lastFrameFilename = ""
 
-        self.term = threading.Event()
+        self._isFanning = False
 
         self.setHz(1.0/5)
 
@@ -78,6 +73,7 @@ class SBIG(ChimeraObject, ICameraDriver, IFilterWheelDriver):
                           "3x3": 2,
                           "9x9": 9}
 
+
         self._binning_factors = {"1x1": 1,
                                  "2x2": 2,
                                  "3x3": 3,
@@ -85,20 +81,19 @@ class SBIG(ChimeraObject, ICameraDriver, IFilterWheelDriver):
 
     def __start__ (self):
 
+        # FIXME
+        self["camera_model"] = "SBIG XXX"
+        self["ccd_model"] = "KAF XXX"
+
         if self['ccd'] == CCD.IMAGING:
             self.ccd = SBIGDrv.imaging
         else:
             self.ccd = SBIGDrv.tracking
 
-        if self['device'] == Device.USB:
-            self.dev = SBIGDrv.usb
-        else:
-            self.dev = SBIGDrv.lpt1
-
         self.open(self.dev)
 
         # make sure filter wheel is in the right position
-        self.setFilter(0)
+        self.setFilter(self.getFilters()[0])
         self.startCooling(self.getSetPoint())
         self.startFan()
 
@@ -107,32 +102,12 @@ class SBIG(ChimeraObject, ICameraDriver, IFilterWheelDriver):
         self.stopCooling()
         self.close ()
 
-    def control (self):
-
-        #FIXME disabled to get more tests
-        return False
-
-        try:
-            temp = self.drv.getTemperature ()
-
-            newTemp = temp[3]
-
-            if (newTemp - self.lastTemp) >= self['temp_delta']:
-                self.temperatureChange (newTemp, self.lastTemp-newTemp)
-                self.lastTemp = newTemp
-            
-        except SBIGException, e:
-            self.log.exception("something wrong, will try again on the next loop.")
-
-        return True # to continue pooling
-
     @lock
     def open(self, device):
         self.drv.openDriver()
         self.drv.openDevice(device)
         self.drv.establishLink()
         self.drv.queryCCDInfo()
-
         return True
 
     @lock
@@ -151,32 +126,6 @@ class SBIG(ChimeraObject, ICameraDriver, IFilterWheelDriver):
     def isExposing(self):
         return self.drv.exposing(self.ccd)
 
-    @lock
-    def expose(self, imageRequest):
-
-        self.term.clear()
-
-        if self._expose(imageRequest):
-            return self._readout(imageRequest, aborted=False)
-        else:
-            return False
-
-    def abortExposure(self, readout=True):
-
-        if not self.isExposing():
-            return False
-
-        # set our event, so current exposure know that it must abort
-        self.term.set()
-
-        while self.isExposing():
-            time.sleep (0.1)
-
-        self.abortComplete()
-
-        return True
-
-    # methods
     @lock
     def startCooling(self, tempC):
         self.drv.setTemperature (True, tempC)
@@ -199,7 +148,6 @@ class SBIG(ChimeraObject, ICameraDriver, IFilterWheelDriver):
     def getSetPoint(self):
         return self.drv.getTemperature()[-2]
 
-
     @lock
     def startFan(self, rate=None):
         self.drv.startFan()
@@ -221,7 +169,7 @@ class SBIG(ChimeraObject, ICameraDriver, IFilterWheelDriver):
     @lock
     def setFilter (self, filter):
         # Chimera uses filter starting with 0, and SBIG uses 1
-        position = self.drv.filters.get(filter+1, None)
+        position = self.drv.filters.get(self._getFilterPosition(filter)+1, None)
 
         if not position:
             raise ValueError("Selected filter not defined on SBIG driver.")
@@ -238,7 +186,6 @@ class SBIG(ChimeraObject, ICameraDriver, IFilterWheelDriver):
         self.lastFilter = filter
 
         return True
-
 
     def getCCDs(self):
         return self._ccds
@@ -261,6 +208,9 @@ class SBIG(ChimeraObject, ICameraDriver, IFilterWheelDriver):
     def getOverscanSize(self):
         return (0,0)
 
+    def getReadoutModes(self):
+        return self.drv.readoutModes
+
     def supports(self, feature=None):
         return self._supports[feature]
 
@@ -282,7 +232,8 @@ class SBIG(ChimeraObject, ICameraDriver, IFilterWheelDriver):
         # ok, start it
         self.exposeBegin(imageRequest["exptime"])
         
-        self.drv.startExposure(self.ccd, int(imageRequest["exptime"]*100), shutter)
+        self.drv.startExposure(self.ccd,
+                               int(imageRequest["exptime"]*100), shutter)
         
         # save time exposure started
         self.lastFrameStartTime = dt.datetime.now()
@@ -291,9 +242,8 @@ class SBIG(ChimeraObject, ICameraDriver, IFilterWheelDriver):
         while self.isExposing():
                                         
             # check if user asked to abort
-            if self.term.isSet():
+            if self.abort.isSet():
                 # ok, abort and check if user asked to do a readout anyway
-
                 if self.isExposing():
                     self._endExposure()
                 
@@ -309,76 +259,23 @@ class SBIG(ChimeraObject, ICameraDriver, IFilterWheelDriver):
 
     def _readout(self, imageRequest, aborted=False):
 
-        try:
-            mode, binning, top, left, width, height = self._getReadoutMode(imageRequest)
-        except TypeError, e:
-            self.log.warning("Invalid subframe %s. "
-                             "Using full frame, no-binning, just to don't loose your data."%imageRequest["window"])
-            self.log.warning(e)
-            mode = self.drv.readoutModes[self.ccd][0]
-            top = left = 0
-            binning = "1x1"
-            width, height = mode.width, mode.height
-        
+        (mode, binning, top,  left,
+         width, height) = self._getReadoutModeInfo(imageRequest["binning"],
+                                                   imageRequest["window"])
         # readout 
         img = N.zeros((height, width), N.int32)
 
         self.readoutBegin(imageRequest)
 
-        self.drv.startReadout(self.ccd, mode.mode, (top,left,width,height))
+        self.drv.startReadout(self.ccd, mode.mode, (top, left, width, height))
         
         for line in range(height):
             img[line] = self.drv.readoutLine(self.ccd, mode.mode, (left, width))
 
-
-        # end readout and save
-        try:
-            manager = self.getManager()
-            hostPort = manager.getHostname() + ':' + str(manager.getPort())
-
-            tel = manager.getProxy("/Telescope/0")
-            imageRequest.metadataPost.append(hostPort+"/Telescope/0")
-
-        except Exception:
-            self.log.info("Couldn't found an telescope, WCS info will be incomplete")
-
-        try:
-            cam = manager.getProxy("/Camera/0")
-            imageRequest.metadataPost.append(hostPort+"/Camera/0")
-        except Exception:
-            pass # will never happen!
-
-
-        imageRequest.addPostHeaders(self.getManager())
-
-        binFactor = self._binning_factors[binning]
-        scale_x = binFactor * (((180/pi) / cam["telescope_focal_length"]) * (self.getPixelSize()[0] * 0.001))
-        scale_y = binFactor * (((180/pi) / cam["telescope_focal_length"]) * (self.getPixelSize()[1] * 0.001))
-        
-        fullsize = self.drv.readoutModes[self.ccd][0]
-        
-        CRPIX1 = ((int(fullsize.width/2)) - left) - 1
-        CRPIX2 = ((int(fullsize.height/2)) - top) - 1
-        
-        img = Image.create(img, imageRequest)
-
-        img += [('DATE-OBS',ImageUtil.formatDate(self.lastFrameStartTime),'Date exposure started'),
-                ('CCD-TEMP',self.lastFrameTemp,'CCD Temperature at Exposure Start [deg. C]'),
-                ("EXPTIME", float(imageRequest['exptime']) or -1, "exposure time in seconds"),
-                ('IMAGETYP', imageRequest['type'].strip(), 'Image type'),
-                ('SHUTTER',str(imageRequest['shutter']), 'Requested shutter state'),
-                ("CRPIX1", CRPIX1, "coordinate system reference pixel"),
-                ("CRPIX2", CRPIX2, "coordinate system reference pixel"),
-                ("CD1_1", scale_x, "transformation matrix element (1,1)"),
-                ("CD1_2", 0.0, "transformation matrix element (1,2)"),
-                ("CD2_1", 0.0, "transformation matrix element (2,1)"),
-                ("CD2_2", scale_y, "transformation matrix element (2,2)")]
-
-        # update image request
-        imageRequest["filename"] = img.filename()
-
-        server = getImageServer(self.getManager())
-        proxy = server.register(img)
+        proxy = self._saveImage(imageRequest, img,
+                                {"frame_temperature": self.lastFrameTemp,
+                                 "frame_start_time": self.lastFrameStartTime,
+                                 "binning_factor":self._binning_factors[binning]})
 
         return self._endReadout(proxy)
 
@@ -388,56 +285,3 @@ class SBIG(ChimeraObject, ICameraDriver, IFilterWheelDriver):
         self.readoutComplete(proxy)
         return proxy
 
-    def _getReadoutMode(self, imageRequest):
-
-        mode = None
-
-        try:
-            binMode = self.getBinnings()[str(imageRequest["binning"])]
-            binning = imageRequest["binning"]
-            mode = self.drv.readoutModes[self.ccd][binMode]
-        except KeyError:
-            self.log.warning("Invalid binning mode, using 1x1")
-            binning = "1x1"
-            mode = self.drv.readoutModes[self.ccd][0]
-            
-        left = 0
-        top = 0
-        width, height = mode.getSize()
-
-        if imageRequest["window"] != None:
-            try:
-                xx, yy = imageRequest["window"].split(",")
-                xx = xx.strip()
-                yy = yy.strip()
-                x1, x2 = xx.split(":")
-                y1, y2 = yy.split(":")
-                
-                x1 = int(x1)
-                x2 = int(x2)
-                y1 = int(y1)
-                y2 = int(y2)
-
-                left = min(x1,x2) - 1
-                top  = min(y1,y2) - 1
-                width  = (max(x1,x2) - min(x1,x2)) + 1
-                height = (max(y1,y2) - min(y1,y2)) + 1
-
-                if left < 0 or left >= mode.width:
-                    raise TypeError("Invalid subframe: left=%d, ccd width (in this binning)=%d" % (left, mode.width))
-
-                if top < 0 or top >= mode.height:
-                    raise TypeError("Invalid subframe: top=%d, ccd height (in this binning)=%d" % (top,mode.height))
-
-                if width > mode.width:
-                    raise TypeError("Invalid subframe: width=%d, ccd width (int this binning)=%d" % (width, mode.width))
-
-                if height > mode.height:
-                    raise TypeError("Invalid subframe: height=%d, ccd height (int this binning)=%d" % (height, mode.height))
-
-            except ValueError:
-                left = 0
-                top = 0
-                width, height = mode.getSize()
-            
-        return (mode, binning, top, left, width, height)

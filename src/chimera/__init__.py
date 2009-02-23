@@ -32,7 +32,6 @@ G{packagetree chimera}
 @group Interfaces: interfaces
 @group Instruments: instruments
 @group Controllers: controllers
-@group Drivers: drivers
 @group Utilitary: util
 
 @author: P. Henrique Silva

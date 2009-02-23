@@ -31,7 +31,7 @@ from chimera.util.dumper import dumpObj
 log = logging.getLogger(__name__)
 
 from chimera.core.exceptions import ChimeraException
-
+from chimera.interfaces.camera import ReadoutMode
 
 class SBIGException (ChimeraException):
 
@@ -43,7 +43,7 @@ class SBIGException (ChimeraException):
         return "%s (%d)" % (self.message, self.code)
 
 
-class ReadoutMode(object):
+class SBIGReadoutMode(ReadoutMode):
 
     def __init__(self, mode):
         self.mode =  mode.mode
@@ -52,32 +52,6 @@ class ReadoutMode(object):
         self.height = mode.height
         self.pixelWidth = float(hex(mode.pixel_width).split('x')[1]) / 100.0
         self.pixelHeight = float(hex(mode.pixel_height).split('x')[1]) / 100.0
-
-    def getSize(self):
-        return (self.width, self.height)
-
-    def getInternalSize(self):
-        return (self.height, self.width)
-
-    def getWindow(self):
-        return [0, 0, self.width, self.height]
-
-    def getPixelSize(self):
-        return (self.pixelWidth, self.pixelHeight)
-
-    def getLine(self):
-        return [0, self.width]
-
-    def __str__(self):
-        s = "mode: %d: \n\tgain: %.2f\n\tWxH: [%d,%d]" \
-            "\n\tpix WxH: [%.2f, %.2f]" % (self.mode,
-                                           self.gain,
-                                           self.width, self.height,
-                                           self.pixelWidth, self.pixelHeight)
-        return s
-
-    def __repr__(self):
-        return self.__str__()
 
 
 class TemperatureSetPoint(object):
@@ -350,11 +324,11 @@ class SBIGDrv(object):
         # imaging ccd readout modes
         for i in range(infoImg.readoutModes):
             mode = infoImg.readoutInfo[i]
-            self.readoutModes[self.imaging][mode.mode] = ReadoutMode(mode)
+            self.readoutModes[self.imaging][mode.mode] = SBIGReadoutMode(mode)
 
         for i in range(infoTrk.readoutModes):
             mode = infoTrk.readoutInfo[i]
-            self.readoutModes[self.tracking][mode.mode] = ReadoutMode(mode)
+            self.readoutModes[self.tracking][mode.mode] = SBIGReadoutMode(mode)
 
         return True
 

@@ -206,13 +206,9 @@ class Manager (RemoteObject):
         """
         return self.resources.keys()
     
-    def getResourcesByClass(self, cls):
-        resources = self.getResources()
-        toRet=[]
-        for r in resources:
-            if r.cls == cls:
-                toRet.append(r)
-        return toRet
+    def getResourcesByClass(self, cls, checkBases=False):
+        r = self.resources.getAllByClass(cls, checkBases)
+        return [ x.location for x in r ]
         
     # helpers
     

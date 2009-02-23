@@ -82,7 +82,6 @@ class TestResources:
         assert_raises(InvalidLocationException, self.res.get, 'wrong location')
 
 
-
     def test_get_by_class (self):
         
         assert len (self.res) == 0
@@ -97,3 +96,21 @@ class TestResources:
         
         assert (entries == found)
 
+
+    def test_get_by_class_and_bases (self):
+
+        assert len (self.res) == 0
+        
+        class Base(object): pass
+        class A(Base): pass
+        class B(A): pass
+
+        assert self.res.add ("/A/a", A(), "a-uri") == 0
+        assert self.res.add ("/B/b", B(), "b-uri") == 0
+
+        entries = [self.res.get ("/A/a"), self.res.get ("/B/b")]
+
+        # get by class
+        found = self.res.getAllByClass ("Base", checkBases=True)
+        
+        assert (entries == found)

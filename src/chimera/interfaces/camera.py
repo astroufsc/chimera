@@ -22,8 +22,74 @@
 from chimera.core.interface import Interface
 from chimera.core.event import event
 from chimera.util.enum  import Enum
+from chimera.core.exceptions import ChimeraException
 
 Shutter = Enum('OPEN', 'CLOSE', 'LEAVE_AS_IS')
+Bitpix  = Enum("char8", "uint16", "int16", "int32", "int64", "float32", "float64")
+CCD     = Enum("IMAGING", "TRACKING")
+
+# Special features parameters can be passed as ImageRequest
+# parameters. The ICamera.supports(feature) method can be used
+# to ask if the current camera support a given feature (useful for
+# interfaces, to decides when to display options to the user).
+
+CameraFeature = Enum("TEMPERATURE_CONTROL",
+                     "PROGRAMMABLE_GAIN",
+                     "PROGRAMMABLE_OVERSCAN",
+                     "PROGRAMMABLE_FAN",
+                     "PROGRAMMABLE_LEDS",
+                     "PROGRAMMABLE_BIAS_LEVEL")
+
+
+class ReadoutMode(object):
+    """
+    Store basic geometry for a given readout mode. Implementer should
+    provide an constuctor from a modeString (some instrument specific
+    internal value).
+
+    pixelWidth and pixelHeight should provides the virtual size of a
+    pixel after any on-chip sum.
+
+    gain is in e-/ADU. All others, except mode (which is an internal
+    value) are in pixel.
+    """
+
+    mode = 0
+    gain = 0.0
+    width = 0
+    height = 0
+    pixelWidth = 0.0
+    pixelHeight = 0.0
+
+    def __init__(self, modeString=""):
+        pass
+
+    def getSize(self):
+        return (self.width, self.height)
+
+    def getWindow(self):
+        return [0, 0, self.width, self.height]
+
+    def getPixelSize(self):
+        return (self.pixelWidth, self.pixelHeight)
+
+    def getLine(self):
+        return [0, self.width]
+
+    def __str__(self):
+        s = "mode: %d: \n\tgain: %.2f\n\tWxH: [%d,%d]" \
+            "\n\tpix WxH: [%.2f, %.2f]" % (self.mode,
+                                           self.gain,
+                                           self.width, self.height,
+                                           self.pixelWidth, self.pixelHeight)
+        return s
+
+    def __repr__(self):
+        return self.__str__()
+
+
+class InvalidReadoutMode (ChimeraException):
+    pass
 
 
 class ICamera (Interface):
@@ -31,7 +97,9 @@ class ICamera (Interface):
     """
 
     # config
-    __config__ = {"driver" : "/FakeCamera/0",
+    __config__ = {"device"     : "USB",
+                  "ccd"        : CCD.IMAGING,
+                  "temp_delta" : 2.0,
 
                   "camera_model"    : "Fake camera Inc.",
                   "ccd_model"       : "KAF XYZ 10",
@@ -45,8 +113,8 @@ class ICameraExpose (ICamera):
 
     def expose (self, request=None, **kwargs):
 
-        """Start an exposure based upon the specified image request or will create
-        a new image request from kwargs
+        """Start an exposure based upon the specified image request or
+        will create a new image request from kwargs
 
         @param request: ImageRequest containing details of the image to be taken
         @type  request: ImageRequest
@@ -56,11 +124,13 @@ class ICameraExpose (ICamera):
         """
 
     def abortExposure (self, readout=True):
-        """Try abort the current exposure, reading out the current frame if asked to.
+        """Try abort the current exposure, reading out the current
+        frame if asked to.
 
-        @param readout: Whether to readout the current frame after abort, otherwise the
-                        current photons will be lost forever. Default is True
-        @type  readout: bool
+        @param readout: Whether to readout the current frame after
+                        abort, otherwise the current photons will be
+                        lost forever. Default is True @type readout:
+                        bool
 
         @return: True if successful, False otherwise.
         @rtype: bool
@@ -69,8 +139,10 @@ class ICameraExpose (ICamera):
     def isExposing (self):
         """Ask if camera is exposing right now.
 
-        @return: The currently exposing ImageRequest if the camera is exposing, False otherwise.
-        @rtype: bool or chimera.controllers.imageserver.imagerequest.ImageRequest
+        @return: The currently exposing ImageRequest if the camera is
+        exposing, False otherwise.  
+
+        @rtype: bool or L{ImageRequest}
         """
 
     @event
@@ -149,16 +221,6 @@ class ICameraTemperature (ICamera):
         @rtype: bool
         """
 
-    def setTemperature(self, tempC):
-        """Set new SetPoint temperature (if cooling is disabled, this will turn it on).
-
-        @param tempC: New SetPoint temperature in degrees Celsius.
-        @type  tempC: float or int
-
-        @return: True if successful, False otherwise.
-        @rtype: bool
-        """
-
     def getTemperature(self):
         """Get the current camera temperature.
 
@@ -198,9 +260,9 @@ class ICameraTemperature (ICamera):
 
 class ICameraInformation (ICamera):
 
-    # for getCCDs, getBinnings and getADCs, the driver should returns a
-    # list of Human readable strings, which could be later passed as a
-    # ImageRequest and be recognized by the driver. Those strings can
+    # for getCCDs, getBinnings and getADCs, the instrument should return a
+    # hash with keys as Human readable strings, which could be later passed as a
+    # ImageRequest and be recognized by the intrument. Those strings can
     # be use as key to an internal hashmap.
     # example:
     # ADCs = {'12 bits': SomeInternalValueWhichMapsTo12BitsADC,
@@ -228,6 +290,17 @@ class ICameraInformation (ICamera):
     def getOverscanSize(self):
         pass
 
+    def getReadoutModes(self):
+        """Get readout modes supported by this camera.
+        The return value would have the following format:
+         {ccd1: {mode1: ReadoutMode(), mode2: ReadoutMode2()},
+          ccd2: {mode1: ReadoutMode(), mode2: ReadoutMode2()}}
+        """
+
+    #
+    # special features support
+    #
+    
     def supports(self, feature=None):
         pass
 

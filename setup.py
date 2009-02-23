@@ -49,6 +49,7 @@ from chimera.core.version import  _chimera_version_,		\
 chimera_scripts = ['src/scripts/chimera',
                    'src/scripts/chimera-cam',
                    'src/scripts/chimera-admin',
+                   'src/scripts/chimera-filter',
                    'src/scripts/chimera-tel',
                    'src/scripts/chimera-dome',
                    'src/scripts/chimera-focus',

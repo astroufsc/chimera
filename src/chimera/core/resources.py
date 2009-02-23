@@ -101,7 +101,24 @@ class ResourcesManager (object):
 
         return ret
 
- 
+    def getAllByClass(self, cls, checkBases=False):
+
+        toRet=[]
+
+        for k, v in self.items():
+
+            if not checkBases:
+                if k.cls == cls:
+                    toRet.append(self.get(k))
+            else:
+                if (v.instance):
+                    bases = [ b.__name__ for b in type(v.instance).mro() ]
+                    if cls in bases:
+                        toRet.append(self.get(k))
+
+        toRet.sort (key=lambda entry: entry.created)
+        return toRet
+        
     def _get (self, item):
 
         location = self._validLocation (item)

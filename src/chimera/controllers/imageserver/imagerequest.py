@@ -1,6 +1,5 @@
 
-from chimera.interfaces.cameradriver import Bitpix
-from chimera.interfaces.camera import Shutter
+from chimera.interfaces.camera import (Shutter, Bitpix)
 
 from chimera.core.exceptions import ChimeraValueError
 
@@ -19,7 +18,7 @@ class ImageRequest (dict):
                    'frames'  : 1,
                    'interval': 0.0,
                    'shutter' : Shutter.OPEN,
-                   'binning' : None,
+                   'binning' : "1x1",
                    'window'  : None,
                    'bitpix'  : Bitpix.uint16,
                    'filename': '$DATE-$TIME',

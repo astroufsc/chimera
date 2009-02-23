@@ -1,0 +1,93 @@
+#! /usr/bin/env python
+# -*- coding: iso-8859-1 -*-
+
+# chimera - observatory automation system
+# Copyright (C) 2006-2007  P. Henrique Silva <henrique@astro.ufsc.br>
+
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+
+from chimera.core.cli import ChimeraCLI, action, ParameterType
+from chimera.core.callback import callback
+from chimera.core.exceptions import printException
+
+from chimera.interfaces.filterwheel import InvalidFilterPositionException
+
+import os
+import sys
+import time
+import warnings
+
+
+class ChimeraFilter (ChimeraCLI):
+    
+    def __init__ (self):
+        ChimeraCLI.__init__(self, "chimera-filter", "Filter Wheel Controller", 0.1)
+        
+        self.addHelpGroup("INFO", "Filter Wheel Information")
+        self.addHelpGroup("FILTER_CHANGE", "Filter Position")
+
+        self.addHelpGroup("FILTER", "Filter Wheel configuration")
+        self.addInstrument(name="wheel", cls="IFilterWheel", required=True,
+                           help="Filter Wheel instrument to be used. If blank, try to guess from chimera.config",
+                           helpGroup="FILTER")
+        
+    @action(short="F", long="--list-filters", helpGroup="INFO", help="Print available filter names.")
+    def filters(self, options):
+        
+        self.out("Available filters:", end="")
+        
+        for i,f in enumerate(self.wheel.getFilters()):
+            self.out(str(f), end="")
+        
+        self.out()
+        self.exit()
+        
+    @action(help="Print Filter Wheel information and exit", helpGroup="INFO")
+    def info(self, options):
+
+        self.out("="*40)        
+        self.out("Filter Wheel: %s (%s)" % (self.wheel.getLocation(), self.wheel["device"]))
+        self.out("Current Filter:", self.wheel.getFilter())
+
+        self.out("Available filters:", end="")
+        for i,f in enumerate(self.wheel.getFilters()):
+            self.out(str(f), end="")
+        self.out()
+        self.out("="*40)
+
+    @action(long="--get-filter", help="Get the current filter name",
+            helpGroup="FILTER_CHANGE", actionGroup="FILTER_CHANGE")
+    def getFilter(self, options):
+        self.out("Current Filter:", self.wheel.getFilter())
+        self.exit()
+
+    @action(name="filtername", short="f", long="--set-filter", type="str", help="Set current filter.",
+            actionGroup="FILTER_CHANGE", helpGroup="FILTER_CHANGE")
+    def changeFilter(self, options):
+
+        self.out("Changing current filter to %s ..." % self.options.filtername, end="")
+        try:
+            self.wheel.setFilter(self.options.filtername)
+            self.out("OK")
+        except InvalidFilterPositionException:
+            self.err("ERROR (Invalid Filter)")
+
+def main():
+    cli = ChimeraFilter()
+    return cli.run(sys.argv)
+    
+if __name__ == '__main__':
+    main()

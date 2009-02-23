@@ -22,6 +22,8 @@
 from chimera.core.cli import ChimeraCLI, action
 from chimera.util.coord import Coord
 
+from chimera.interfaces.dome import Mode
+
 import sys
 
 
@@ -32,7 +34,7 @@ class ChimeraDome (ChimeraCLI):
     
 
         self.addHelpGroup("DOME", "Dome")
-        self.addInstrument(name="dome", cls="Dome", required=True,
+        self.addInstrument(name="dome", cls="IDome", required=True,
                            help="Dome instrument to be used", helpGroup="DOME")
 
         self.addHelpGroup("TELESCOPE", "Telescope Tracking Configuration")
@@ -44,13 +46,13 @@ class ChimeraDome (ChimeraCLI):
 
     @action(help="Open dome slit", helpGroup="COMMANDS", actionGroup="SLIT")
     def open(self, options):
-        self.out("Opening dome slit ... ")
+        self.out("Opening dome slit ... ", end="")
         self.dome.openSlit()
         self.out("OK")
     
     @action(help="Close dome slit", helpGroup="COMMANDS", actionGroup="SLIT")
     def close(self, options):
-        self.out("Closing dome slit ... ")
+        self.out("Closing dome slit ... ", end="")
         self.dome.closeSlit()
         self.out("OK")
 
@@ -60,13 +62,13 @@ class ChimeraDome (ChimeraCLI):
         if options.telescope:
             self.dome["telescope"] = options.telescope
             
-        self.out("Activating tracking ... ")
+        self.out("Activating tracking ... ", end="")
         self.dome.track()
         self.out("OK")
 
     @action(help="Stop tracking the telescope (stand)", helpGroup="COMMANDS", actionGroup="TRACKING")
     def stand(self, options):
-        self.out("Deactivating tracking ... ")
+        self.out("Deactivating tracking ... ", end="")
         self.dome.stand()
         self.out("OK")
 
@@ -79,19 +81,26 @@ class ChimeraDome (ChimeraCLI):
         except ValueError, e:
             self.exit("Invalid azimuth (%s)" % e)
 
-        self.out("Moving dome to %s ... " % target)
+        self.out("Moving dome to %s ... " % target, end="")
         self.dome.slewToAz(target)
         self.out("OK")
     
     @action(help="Print dome information", helpGroup="COMMANDS")
     def info(self, options):
 
-        self.out("Dome: %s (%s)." % (self.dome["driver"], self.dome.getDriver()["device"]))
+        self.out("="*40)
+        self.out("Dome: %s (%s)."%(self.dome.getLocation(), self.dome["device"]))
+
         self.out("Current dome azimuth: %s." % self.dome.getAz())
+        self.out("Current dome mode: %s." % self.dome.getMode())
+        if self.dome.getMode() == Mode.Track:
+                self.out("Tracking: %s." % self.dome["telescope"])
+
         if self.dome.isSlitOpen():
             self.out("Dome slit is open.")
         else:
             self.out("Dome slit is closed.")
+        self.out("="*40)
 
 def main():
     cli = ChimeraDome()

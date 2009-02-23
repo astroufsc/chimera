@@ -44,8 +44,8 @@ class SystemConfig (object):
     will be mapped to [1,2,3]
 
     Chimera uses both maps and sequences. It use keys that maps to
-    Instrmuments/Controllers/Drivers names. And for each key, the
-    value can be either another map or a sequence of maps.
+    Instrmuments/Controllers names. And for each key, the value can be
+    either another map or a sequence of maps.
 
     The following example defines a instrument with a few parameters:
 
@@ -76,9 +76,9 @@ class SystemConfig (object):
 
     {'InstrumentType': {'parameter1': {'parameterkey': 'parametervalue'}
 
-    Chimera accepts definition of instruments, controllers and
-    drivers. Besides this, there are specials shortcut to most common
-    object types (like telescopes).
+    Chimera accepts definition of instruments and controllers. Besides
+    this, there are specials shortcut to most common object types
+    (like telescopes).
 
     For each object, Chimera accepts a set os parameters plus any
     other parameter specific to the given object type. The deault
@@ -88,11 +88,6 @@ class SystemConfig (object):
     type: ChimeraObject type
     host: where this object is/or will be located.
     port: port where to find the object on the given host
-    driver: ChimeraObject of the driver to be used (in instruments only)
-    device: device to use for the given driver
-
-    driver could also be an map, which accepts the same parameters as
-    normal drivers does (name, type, host, and so on).
 
     For special shortcuts the type would be guessed, so the folling
     two entries are equivalent:
@@ -100,18 +95,17 @@ class SystemConfig (object):
     instrument:
      type: Telescope
      name: meade
-     driver: Meade
      device: /dev/ttyS0
 
     telescope:
      name: meade
-     driver: Meade
      device: /dev/ttyS0
     """
 
     @staticmethod
     def fromDefault (loadGlobal=True):
-        return SystemConfig.fromFile(SYSTEM_CONFIG_DEFAULT_FILENAME, loadGlobal=loadGlobal)
+        return SystemConfig.fromFile(SYSTEM_CONFIG_DEFAULT_FILENAME,
+                                     loadGlobal=loadGlobal)
 
     @staticmethod
     def fromFile (filename, loadGlobal=True):
@@ -122,7 +116,6 @@ class SystemConfig (object):
 
         # primitives
         self.chimera = {}
-        self.drivers = []
         self.instruments = []
         self.controllers = []
 
@@ -169,10 +162,11 @@ class SystemConfig (object):
         for type, values in config.items():
             if type.lower() == "chimera":
                 self.chimera.update(values)
-                # BIGGG FIXME: read all files before create Locations, to avoid this hack
+                # BIGGG FIXME: read all files before create Locations,
+                # to avoid this hack
                 if "host" in values or "port" in values:
                    # host/port changed
-                   for l in self.drivers+self.instruments+self.controllers:
+                   for l in self.instruments+self.controllers:
                        l._host = values["host"]
                        l._port = values["port"]            
                  
@@ -220,8 +214,6 @@ class SystemConfig (object):
                     self.instruments.append(loc)
                 elif key == "controller":
                     self.controllers.append(loc)
-                elif key == "driver":
-                    self.drivers.append(loc)
                 else:
                     self.controllers.append(loc)
                     
@@ -236,48 +228,13 @@ class SystemConfig (object):
             if type in self._specials:
                 cls = type.capitalize()
             else:
-                raise TypeNotFoundException("%s %s must have a type." % (type, name))
+                raise TypeNotFoundException("%s %s must have a type." % (type,
+                                                                         name))
             
         host = dic.pop('host', self.chimera["host"])
         port = dic.pop('port', self.chimera["port"])
 
-        if 'driver' in dic:
-            device = dic.pop('device',None)
-            driver = self._parseDriver(dic.pop('driver'), device)
-            self.drivers.append(driver)
-            dic['driver'] = str(driver)
-
         return Location(name=name, cls=cls, host=host, port=port, config=dic)
-
-    def _parseDriver (self, dic, device):
-
-        if isinstance(dic, dict):
-            name = dic.pop('name', 'noname')
-            cls  = dic.pop('type', None)
-
-            if not cls:
-                raise TypeNotFoundException("Driver '%s' must have a type." % (name))
-            
-            host = dic.pop('host', self.chimera["host"])
-            port = dic.pop('port', self.chimera["port"])
-
-            driver = Location(name=name, cls=cls, host=host, port=port, config=dic)
-            
-        else:
-            driver_name = 'noname'
-            driver_cls  = dic
-            driver_device = device
-            
-            driver_config = {}
-            
-            if driver_device is not None:
-                driver_config["device"] = driver_device
-            
-            driver = Location(name=driver_name,
-                              cls=driver_cls,
-                              config=driver_config)
-
-        return driver
 
     def dump (self):
 
@@ -296,7 +253,6 @@ class SystemConfig (object):
         
         printIt("Controllers", self.controllers)
         printIt("Instruments", self.instruments)        
-        printIt("Drivers", self.drivers)
 
         printIt("Telescopes", self.telescopes)
         printIt("Cameras", self.cameras)

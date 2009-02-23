@@ -40,6 +40,9 @@ class ImageUtil (object):
 
     @staticmethod
     def formatDate (datetime):
+        if type(datetime) == float:
+            datetime = dt.datetime.fromtimestamp(datetime)
+
         return datetime.strftime("%Y-%m-%dT%H:%M:%S")
 
     @staticmethod

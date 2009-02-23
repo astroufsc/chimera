@@ -308,11 +308,11 @@ class ChimeraCLI (object):
 
         if verbosity:
             self.addParameters(dict(name="quiet", short="q", long="quiet",
-                                    type=ParameterType.BOOLEAN, default=False,
+                                    type=ParameterType.BOOLEAN, default=True,
                                     help="Don't display information while working."),
 
                                dict(name="verbose", short="v", long="verbose",
-                                    type=ParameterType.BOOLEAN, default=True,
+                                    type=ParameterType.BOOLEAN, default=False,
                                     help="Display information while working"))
 
         self.addHelpGroup("LOCALMANAGER", "Client Configuration")
@@ -492,7 +492,7 @@ class ChimeraCLI (object):
             else:
                 # no instrument selected, ask remote Chimera instance for the newest
                 if self._remoteManager:
-                    insts = self._remoteManager.getResourcesByClass(inst.cls)
+                    insts = self._remoteManager.getResourcesByClass(inst.cls, checkBases=True)
                     if insts:
                         inst.location = insts[-1]
 

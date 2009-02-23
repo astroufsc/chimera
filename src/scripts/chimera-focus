@@ -24,7 +24,7 @@ from chimera.core.callback import callback
 from chimera.core.exceptions import ChimeraException
 
 from chimera.interfaces.autofocus import StarNotFoundException, FocusNotFoundException
-from chimera.interfaces.focuser import InvalidFocusPositionException
+from chimera.interfaces.focuser import InvalidFocusPositionException, FocuserFeature
 
 from chimera.util.ds9 import DS9
 
@@ -37,7 +37,7 @@ class ChimeraFocus (ChimeraCLI):
         ChimeraCLI.__init__(self, "chimera-focus", "Focuser controller", 0.1)
         
         self.addHelpGroup("FOCUS", "Focus")
-        self.addInstrument(name="focuser", cls="Focuser", required=True, helpGroup="FOCUS", help="Focuser instrument to be used")
+        self.addInstrument(name="focuser", cls="IFocuser", required=True, helpGroup="FOCUS", help="Focuser instrument to be used")
         self.addController(name="autofocus", cls="Autofocus", required=False, helpGroup="FOCUS", help="Autofocus controller to be used")
         
         self.addHelpGroup("AUTOFOCUS", "Autofocus")
@@ -109,11 +109,17 @@ class ChimeraFocus (ChimeraCLI):
     @action(short="i", help="Print focuser current information", helpGroup="COMMANDS")
     def info(self, options):
         
-        drv = self.focuser.getDriver()
-        
-        self.out("Focuser: %s (%s)" % (self.focuser["driver"], drv["device"]))
+        self.out("="*40)
+        self.out("Focuser: %s (%s)" % (self.focuser.getLocation(), self.focuser["device"]))
         self._currentPosition(options)
         self.out("Valid range: %d-%d" % self.focuser.getRange())
+        if self.options.verbose:
+            self.out("="*40)
+            self.out("Supports:")
+            for feature in FocuserFeature:
+                self.out("\t%-25s" % str(feature), str(bool(self.focuser.supports(feature))))
+        self.out("="*40)
+
 
     @action(helpGroup="AUTOFOCUS",
             help="Start an autofocus session using the selected parameters."

@@ -23,9 +23,12 @@ from chimera.core.interface  import Interface
 from chimera.core.event      import event
 from chimera.core.exceptions import ChimeraException
 
-from chimera.interfaces.telescopedriver import SlewRate
-
 from chimera.util.position import Position
+from chimera.util.enum import Enum
+
+
+AlignMode = Enum("ALT_AZ", "POLAR", "LAND")
+SlewRate  = Enum("GUIDE", "CENTER", "FIND", "MAX")
 
 
 class PositionOutsideLimitsException (ChimeraException):
@@ -37,8 +40,7 @@ class ITelescope (Interface):
     Telescope base interface.
     """
 
-    __config__ = {"driver": "/FakeTelescope/0",
-
+    __config__ = {"device": "/dev/ttyS0",
                   "model"           : "Fake Telescopes Inc.",
                   "optics"          : ["Newtonian", "SCT", "RCT"],
                   "mount"           : "Mount type Inc.",
@@ -51,6 +53,15 @@ class ITelescope (Interface):
 class ITelescopeSlew (ITelescope):
     """Basic interface for telescopes.
     """
+
+    __config__ = {"timeout"             : 30, # s
+                  "slew_rate"           : SlewRate.MAX,
+                  "auto_align"          : True,
+                  "slew_idle_time"      : 0.1,  # s
+                  "max_slew_time"       : 90.0, # s
+                  "stabilization_time"  : 2.0,  # s
+                  "position_sigma_delta": 60.0, # arcseconds
+                  "skip_init"           : False} 
 
     def slewToObject (self, name):
         """Slew the scope to the the coordinates of the given

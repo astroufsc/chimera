@@ -48,7 +48,7 @@ class IFilterWheel (Interface):
     Allow simple control and monitor filter changes    
     """
 
-    __config__ = {"driver"  : "/FakeFilterWheel/0",
+    __config__ = {"device": "/dev/ttyS0",
                   "model"   : "Fake Filters Inc.",
                   "filters" : "R G B LUNAR CLEAR" # space or comma separated
                                                   # filter names (in position order)

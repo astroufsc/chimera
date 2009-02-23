@@ -39,7 +39,7 @@ class ChimeraTel (ChimeraCLI):
         self.localSlew = False
         
         self.addHelpGroup("TELESCOPE", "Telescope")
-        self.addInstrument(name="telescope", cls="Telescope", required=True,
+        self.addInstrument(name="telescope", cls="ITelescope", required=True,
                            help="Telescope instrument to be used. If blank, try to guess from chimera.config",
                            helpGroup="TELESCOPE")
         
@@ -176,7 +176,7 @@ class ChimeraTel (ChimeraCLI):
     def startTracking(self, options):
         self.out(40*"=")
         self.out("starting telescope tracking... ", end="")
-        self.telescope.getDriver().startTracking()
+        self.telescope.startTracking()
         self.out("OK")
         self.out(40*"=")        
 
@@ -185,7 +185,9 @@ class ChimeraTel (ChimeraCLI):
         telescope = self.telescope
 
         self.out(40*"=")
-        self.out("telescope:", telescope["driver"], "(%s)" % telescope.getDriver()["device"])
+        self.out("telescope: %s (%s)." % (telescope.getLocation(),
+                                          telescope["device"]))
+
         self.out("current position ra/dec: %s" % telescope.getPositionRaDec())
         self.out("current position alt/az: %s" % telescope.getPositionAltAz())
         if telescope.isTracking():

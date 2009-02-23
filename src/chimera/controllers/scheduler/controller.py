@@ -20,6 +20,7 @@ class Controller(ChimeraObject):
                   "focuser"     : "/Focuser/0",
                   "dome"        : "/Dome/0",
                   'site'        : '/Site/0',
+                  
                   'camTemp'     : -10,
                   'camTempEnable': False,
                   'camTempWait' : True,
@@ -61,15 +62,17 @@ class Controller(ChimeraObject):
 	    self.machine.start()
 	else:
 	    self.machine.state(State.DIRTY)
-
         return False # that's all folks; control is only run once
 
     def __stop__ (self):
         self.log.debug('Attempting to stop machine')
         self.machine.state(State.SHUTDOWN)
         self.log.debug('Attempted to stop machine')
+        
+        # FIXME: do we need this?
         if self['camTempEnable']:
             self.getManager().getProxy(self['camera']).stopCooling()
+            
         session.flush()
         
     def process(self, exposure):
@@ -87,20 +90,17 @@ class Controller(ChimeraObject):
         if program == None:
             raise ObjectNotFoundException('Unable to find associated program')
         
-        
         self.log.debug('Attempting to slew telescope to ' + observation.targetPos.__str__())
         telescope.slewToRaDec(observation.targetPos)
+        
         self.log.debug('Setting filter to ' + str(exposure.filter) + '...')
         filterwheel.setFilter(str(exposure.filter))
-        while (telescope.isSlewing() or dome.notSyncWithTel()):
+        
+        while (telescope.isSlewing() or not dome.isSyncWithTel()):
             self.log.debug('Waiting for slew to finish. Dome: ' + dome.isSlewing().__str__() + '; Tel:' + telescope.isSlewing().__str__())
             time.sleep(1)
         self.log.debug('Telescope Slew Complete')
-        #FIXME: filterwheel doesn't respond properly!
-        #while (str(filterwheel.getFilter()) != str(exposure.filter)):
-        #    self.log.debug('Waiting for filterwheel to finish. Current: ' + filterwheel.getFilter().__str__() + '; Wanted: ' + exposure.filter.__str__())
-        #    filterwheel.setFilter(str(exposure.filter))
-        #    time.sleep(1)
+        
         if (str(filterwheel.getFilter()) != str(exposure.filter)):
             self.log.warning('Filterwheel didn\'t behave as expected. Current: ' + filterwheel.getFilter().__str__() + '; Wanted: ' + exposure.filter.__str__())
         self.log.debug('Filter set')

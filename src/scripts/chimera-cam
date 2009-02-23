@@ -24,7 +24,7 @@ from chimera.core.callback import callback
 from chimera.core.exceptions import printException
 
 from chimera.interfaces.filterwheel import InvalidFilterPositionException
-from chimera.interfaces.cameradriver import CameraFeature
+from chimera.interfaces.camera import CameraFeature
 
 from chimera.util.ds9 import DS9
 
@@ -43,7 +43,7 @@ class ChimeraCam (ChimeraCLI):
         ChimeraCLI.__init__(self, "chimera-cam", "Camera controller", 0.1)
         
         self.addHelpGroup("CAM", "Camera and Filter Wheel configuration")
-        self.addInstrument(name="camera", cls="Camera",
+        self.addInstrument(name="camera", cls="ICamera",
                            help="Camera instrument to be used. If blank, try to guess from chimera.config",
                            helpGroup="CAM", required=True)
         
@@ -104,7 +104,7 @@ class ChimeraCam (ChimeraCLI):
     @action(short="F", long="--list-filters", helpGroup="INFO", help="Print available filter names.")
     def filters(self, options):
         if not self.wheel:
-            self.exit("No Filter Wheel found. Edit chimera.config or pass --wheel/--wheel-driver (see --help)")
+            self.exit("No Filter Wheel found. Edit chimera.config or pass --wheel (see --help)")
         
         self.out("Available filters:", end="")
         
@@ -189,8 +189,9 @@ class ChimeraCam (ChimeraCLI):
     @action(help="Print camera information and exit", helpGroup="INFO")
     def info(self, options):
         camera = self.camera
-        
-        self.out("Camera:", camera["driver"], "(%s)" % camera.getDriver()["device"])
+
+        self.out("="*40)        
+        self.out("Camera: %s (%s)." % (camera.getLocation(), camera["device"]))
 
         if camera.isCooling() == True:
             self.out("Cooling enabled, Setpoint: %.1f oC" % camera.getSetPoint())
@@ -239,6 +240,8 @@ class ChimeraCam (ChimeraCLI):
             self.out("%s " % bin, end="")
         self.out()
 
+        self.out("="*40)
+        
         self.exit()
     
     def _getImageType(self, options):
@@ -282,7 +285,7 @@ class ChimeraCam (ChimeraCLI):
             self.out("Filters: %s" % ' '.join(filterList))
 
         expTimes = []
-        if "," in options.exptime:
+        if type(options.exptime) == str and "," in options.exptime:
             for exp in options.exptime.split(","):
                 expTimes.append(float(exp))
         else:

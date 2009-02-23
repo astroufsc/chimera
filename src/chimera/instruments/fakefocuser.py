@@ -18,60 +18,70 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-from chimera.core.chimeraobject       import ChimeraObject
-from chimera.core.lock                import lock
+from chimera.core.chimeraobject import ChimeraObject
+from chimera.core.lock          import lock
 
-from chimera.interfaces.focuser       import InvalidFocusPositionException
-from chimera.interfaces.focuserdriver import IFocuserDriver
+from chimera.interfaces.focuser import (IFocuser,
+                                        FocuserFeature,
+                                        InvalidFocusPositionException)
 
 
-class FakeFocuser (ChimeraObject, IFocuserDriver):
+class FakeFocuser (ChimeraObject, IFocuser):
 
     def __init__ (self):
         ChimeraObject.__init__(self)
 
         self._position = 0
 
+        self._supports = {FocuserFeature.TEMPERATURE_COMPENSATION: False,
+                          FocuserFeature.POSITION_FEEDBACK: True}
+
     def __start__ (self):
         self._position = int(self.getRange()[1] / 2.0)
-        
-    def getRange (self):
-        return (0, 7000)
 
     @lock
     def moveIn (self, n):
-
         target = self.getPosition() - n
 
         if self._inRange(target):
             self._setPosition(target)
         else:
-            raise InvalidFocusPositionException("%d is outside focuser boundaries." % target)
-
+            raise InvalidFocusPositionException("%d is outside focuser "
+                                                "boundaries." % target)
     @lock
     def moveOut (self, n):
-        
         target = self.getPosition() + n
 
         if self._inRange(target):
             self._setPosition(target)
         else:
-            raise InvalidFocusPositionException("%d is outside focuser boundaries." % target)
-
-
+            raise InvalidFocusPositionException("%d is outside focuser "
+                                                "boundaries." % target)
     @lock
     def moveTo (self, position):
-
         if self._inRange(position):
             self._setPosition(position)
         else:
-            raise InvalidFocusPositionException("%d is outside focuser boundaries." % position)
-        
-        return False
-
+            raise InvalidFocusPositionException("%d is outside focuser "
+                                                "boundaries." % position)
     @lock
     def getPosition (self):
         return self._position
+
+    def getRange (self):
+        return (0, 7000)
+
+    def supports(self, feature=None):
+        if feature in self._supports:
+            return self._supports[feature]
+        else:
+            self.log.info("Invalid feature: %s" % str(feature))
+            return False
+
+    @lock
+    def getMetadata(self, request):
+        return [('FOCUSER', str(self['model']), 'Focuser Model'),
+                ('FOCUS',   self.getPosition(), 'Focuser position used for this observation')]
 
     def _setPosition (self, n):
         self.log.info("Changing focuser to %s" % n)

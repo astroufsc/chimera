@@ -20,18 +20,8 @@ class SequentialScheduler (IScheduler):
     def reschedule (self, machine):
 
         self.machine = machine
-
         self.rq = Queue(-1)
 
-        #programs = Program.query.all()
-
-        #log.debug("rescheduling, found %d programs." % len(programs))
-
-#        for program in programs:
-#            for obs in program.observations:
-#                for exp in obs.exposures:
-#                    self.rq.put(exp)
-        
         exps = Exposure.query.filter_by(finished = False).all()
         
         log.debug("rescheduling, found %d exposures." % len(exps))

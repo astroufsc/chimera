@@ -18,20 +18,20 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-from chimera.core.chimeraobject       import ChimeraObject
 from chimera.core.lock import lock
+from chimera.util.coord import Coord
 
-from chimera.interfaces.dome        import InvalidDomePositionException
-from chimera.interfaces.domedriver  import IDomeDriver
+from chimera.interfaces.dome import InvalidDomePositionException
+from chimera.instruments.dome import DomeBase
 
 import time
 import threading
 
 
-class FakeDome (ChimeraObject, IDomeDriver):
+class FakeDome (DomeBase):
 
     def __init__ (self):
-        ChimeraObject.__init__(self)
+        DomeBase.__init__(self)
 
         self._position  = 0
         self._slewing = False
@@ -41,6 +41,9 @@ class FakeDome (ChimeraObject, IDomeDriver):
 
     @lock
     def slewToAz (self, az):
+
+        if not isinstance(az, Coord):
+            az = Coord.fromDMS(az)
 
         if az > 360:
             raise InvalidDomePositionException("Cannot slew to %s. "
@@ -84,10 +87,12 @@ class FakeDome (ChimeraObject, IDomeDriver):
         if not self.isSlewing(): return
 
         self._abort.set()
-
         while self.isSlewing(): time.sleep(0.1)
-            
         self.abortComplete(self.getAz())
+
+    @lock
+    def getAz(self):
+        return self._position
 
     @lock
     def openSlit (self):
@@ -101,7 +106,3 @@ class FakeDome (ChimeraObject, IDomeDriver):
 
     def isSlitOpen (self):
         return self._slitOpen
-
-    @lock
-    def getAz(self):
-        return self._position

@@ -141,81 +141,6 @@ class TestSystemConfig (object):
 
         system.dump()
 
-    def test_simple_driver (self):
-
-        s = """
-        telescope:
-          name: tel1
-          driver: DriverType
-        """
-
-        system = SystemConfig(s, loadGlobal=False)
-
-        assert system.drivers[0].cls == 'DriverType'
-        assert "device" not in system.drivers[0].config
-
-        assert system.telescopes[0].config['driver'] == system.drivers[0]
-
-        system.dump()
-
-    def test_simple_driver_with_device (self):
-
-        s = """
-        telescope:
-          name: tel1
-          driver: DriverType
-          device: /dev/ttyS0
-        """
-
-        system = SystemConfig(s, loadGlobal=False)
-
-        assert system.drivers[0].cls == 'DriverType'
-        assert system.drivers[0].config["device"] == '/dev/ttyS0'
-
-        assert system.telescopes[0].config['driver'] == system.drivers[0]
-
-        system.dump()
-
-    def test_complex_device (self):
-        
-        s = """
-        telescope:
-          name: tel1
-          device: /dev/ttyS0
-
-          driver:
-           name: driverName
-        """
-
-        # driver must have a type
-        assert_raises(TypeNotFoundException, SystemConfig, s)
-
-
-        s = """
-        telescope:
-          name: tel1
-          device: /dev/ttyS0
-
-          driver:
-           type: DriverType
-           device: /dev/ttyS1           
-           # name: driverName # default=noname
-        """
-
-        system = SystemConfig(s, loadGlobal=False)
-        
-        assert system.drivers[0].cls == 'DriverType'
-        assert system.drivers[0].name == 'noname'
-        
-        assert system.drivers[0].config["device"] == '/dev/ttyS1'
-
-        # device is ignored, just the driver get their own
-        assert not 'device' in system.telescopes[0].config
-
-        assert system.telescopes[0].config['driver'] == system.drivers[0]
-
-        system.dump()
-
     def test_errors (self):
         
         s = """
@@ -232,43 +157,6 @@ class TestSystemConfig (object):
         """
         # syntax eror on first line (forgot ':' after telescope)
         assert_raises(SystemConfigSyntaxException, SystemConfig, s)
-
-    #
-    # driver primitive
-    #
-    def test_driver (self):
-
-        s = """
-        driver:
-         name: simple
-         type: DriverType
-        """
-
-        system = SystemConfig(s, loadGlobal=False)
-
-        assert system.drivers[0].name == 'simple'
-        assert system.drivers[0].cls   == 'DriverType'
-
-    def test_multiple_drivers (self):
-        s = """
-        driver:
-         - name: simple
-           type: DriverType
-
-         - name: simple
-           type: DriverType
-        """
-
-        system = SystemConfig(s, loadGlobal=False)
-        assert len(system.drivers) == 2
-
-    def test_driver_error (self):
-        s = """
-        driver:
-         name: simple
-         #type: DriverType
-        """
-        assert_raises(TypeNotFoundException, SystemConfig, s)
 
     #
     # instrument primitive

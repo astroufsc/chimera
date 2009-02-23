@@ -21,7 +21,11 @@
 
 from chimera.core.interface import Interface
 from chimera.core.exceptions import ChimeraException
+from chimera.util.enum import Enum
 
+FocuserFeature = Enum("TEMPERATURE_COMPENSATION",
+                      "ENCODER_BASED",
+                      "POSITION_FEEDBACK")
 
 class InvalidFocusPositionException (ChimeraException):
     """
@@ -33,7 +37,7 @@ class IFocuser (Interface):
     """Instrument interface for an electromechanical focuser for
        astronomical telescopes.
        
-       Two kinds of focusers are supported (depending of the driver):
+       Two kinds of focusers are supported:
 
        - Encoder based: use optical encoder to move to exact
          positions.
@@ -41,16 +45,17 @@ class IFocuser (Interface):
          to selected directions only (no position information).
     """
 
-    __config__ = {"driver": "/FakeFocuser/0",
-                  "model": "Fake Focus Inc.",}
-
+    __config__ = {"model": "Fake Focus Inc.",
+                  "device": "/dev/ttyS1",
+                  "open_timeout": 10,
+                  "move_timeout": 60}
 
     def moveIn (self, n):
         """
         Move the focuser IN by n steps. Steps could be absolute units
         (for focuser with absolute encoders) or just a pulse of
-        time. Drivers use internal parameters to define the amount of
-        movement depending of the type of the encoder.
+        time. Instruments use internal parameters to define the amount
+        of movement depending of the type of the encoder.
 
         Use L{moveTo} to move to exact positions (If the focuser
         support it).
@@ -69,8 +74,8 @@ class IFocuser (Interface):
         """
         Move the focuser OUT by n steps. Steps could be absolute units
         (for focuser with absolute encoders) or just a pulse of
-        time. Drivers use internal parameters to define the amount of
-        movement depending of the type of the encoder.
+        time. Instruments use internal parameters to define the amount
+        of movement depending of the type of the encoder.
 
         Use L{moveTo} to move to exact positions (If the focuser
         support it).
@@ -86,8 +91,8 @@ class IFocuser (Interface):
 
     def moveTo (self, position):
         """
-        Move the focuser to the select position (if the driver support
-        it).
+        Move the focuser to the select position (if ENCODER_BASED
+        supported).
 
         If the focuser doesn't support absolute position movement, use
         L{moveIn} and L{moveOut} to command the focuser.
@@ -103,7 +108,8 @@ class IFocuser (Interface):
 
     def getPosition (self):
         """
-        Gets the current focuser position (if the driver support it).
+        Gets the current focuser position (if the POSITION_FEEDBACK
+        supported).
 
         @raises NotImplementedError: When the focuser doesn't support
         position readout.
@@ -118,3 +124,13 @@ class IFocuser (Interface):
         @return: Start and end positions of the focuser (start, end)
         """
 
+    def supports (self, feature=None):
+        """Ask Focuser if it supports the given feature. Feature list
+        is availble on L{FocuserFeature} enum.
+
+        @param feature: Feature to inquire about
+        @type  feature: FocusrFeature or str
+
+        @returns: True is supported, False otherwise.
+        @rtype: bool
+        """

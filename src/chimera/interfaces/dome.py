@@ -47,7 +47,7 @@ class IDome (Interface):
     """A Roll-off or classic dome.
     """
 
-    __config__ = {"driver"   : "/FakeDome/0",
+    __config__ = {"device"   : "/dev/ttyS1",
                   "telescope": "/Telescope/0",
                   "mode"     : Mode.Stand,
 
@@ -56,8 +56,14 @@ class IDome (Interface):
                   
                   'park_position'    : Coord.fromD(155),
                   'park_on_shutdown' : False,
-                  'close_on_shutdown': False}
+                  'close_on_shutdown': False,
 
+                  "az_resolution": 2,  # dome position resolution in degrees
+                  "slew_timeout" : 120,
+                  "abort_timeout": 60,
+                  "init_timeout" : 5,
+                  "open_timeout" : 20,
+                  "close_timeout": 20}
 
     def stand (self):
         """
