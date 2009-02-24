@@ -23,20 +23,19 @@ import serial
 import threading
 import math
 
-from chimera.core.chimeraobject import ChimeraObject
-from chimera.interfaces.dome    import InvalidDomePositionException
+from chimera.instruments.dome import DomeBase
+from chimera.interfaces.dome  import InvalidDomePositionException
 
 from chimera.core.exceptions import ChimeraException
 from chimera.core.lock import lock
-from chimera.interfaces.domedriver import IDomeDriver
 
 from chimera.util.coord import Coord
 
 
-class DomeLNA40cm (ChimeraObject, IDomeDriver):
+class DomeLNA40cm (DomeBase):
 
     def __init__(self):
-        ChimeraObject.__init__ (self)
+        DomeBase.__init__ (self)
 
         self.tty = None
         self.abort = threading.Event ()
@@ -76,7 +75,8 @@ class DomeLNA40cm (ChimeraObject, IDomeDriver):
                                  bytesize=serial.EIGHTBITS,
                                  parity=serial.PARITY_NONE,
                                  stopbits=serial.STOPBITS_ONE,
-                                 timeout=self["init_timeout"], xonxoff=0, rtscts=0)
+                                 timeout=self["init_timeout"],
+                                 xonxoff=0, rtscts=0)
 
 
         self.tty.open()
@@ -135,7 +135,8 @@ class DomeLNA40cm (ChimeraObject, IDomeDriver):
             self.slewComplete(self.getAz())
         else:
             self._slewing = False
-            raise IOError("Unknow error while slewing. Received '%s' from dome." % fin)
+            raise IOError("Unknow error while slewing. "
+                          "Received '%s' from dome." % fin)
 
     def isSlewing (self):
         return self._slewing
@@ -184,7 +185,8 @@ class DomeLNA40cm (ChimeraObject, IDomeDriver):
 
         if ack == "ERRO":
             # FIXME: restart and try again
-            raise ChimeraException ("Dome is in invalid state. Hard restart needed.")
+            raise ChimeraException ("Dome is in invalid state. "
+                                    "Hard restart needed.")
 
         # correct dome/telescope phase difference
         az = int(math.ceil(int(ack)*self["az_resolution"]))
@@ -213,7 +215,8 @@ class DomeLNA40cm (ChimeraObject, IDomeDriver):
 
         # check timeout
         if not fin:
-            raise IOError("Dome is still opening after %d seconds" % self["open_timeout"])
+            raise IOError("Dome is still opening after "
+                          "%d seconds" % self["open_timeout"])
 
         if not fin.startswith ("ABERTO"):
             raise IOError("Error opening slit.")
@@ -240,7 +243,8 @@ class DomeLNA40cm (ChimeraObject, IDomeDriver):
 
         # check timeout
         if not fin:
-            raise IOError("Dome is still closing after %d seconds" % self["close_timeout"])
+            raise IOError("Dome is still closing after "
+                          "%d seconds" % self["close_timeout"])
 
         if not fin.startswith ("FECHADO"):
             raise IOError("Error closing slit.")

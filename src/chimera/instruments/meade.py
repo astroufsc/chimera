@@ -22,7 +22,6 @@ import time
 import threading
 import datetime as dt
 from types import FloatType
-import math
 import os
 
 try:
@@ -32,13 +31,8 @@ except ImportError:
 
 import serial
 
-from chimera.core.chimeraobject         import ChimeraObject
-
-from chimera.interfaces.telescopedriver import ITelescopeDriverSlew
-from chimera.interfaces.telescopedriver import ITelescopeDriverSync
-from chimera.interfaces.telescopedriver import ITelescopeDriverPark
-from chimera.interfaces.telescopedriver import ITelescopeDriverTracking
-from chimera.interfaces.telescopedriver import SlewRate, AlignMode
+from chimera.instruments import TelescopeBase
+from chimera.interfaces.telescope import SlewRate, AlignMode
 
 from chimera.util.coord    import Coord
 from chimera.util.position import Position
@@ -56,17 +50,13 @@ class MeadeException(ChimeraException):
 Direction = Enum("E", "W", "N", "S")
 
 
-class Meade (ChimeraObject,
-             ITelescopeDriverSlew,
-             ITelescopeDriverSync,
-             ITelescopeDriverPark,
-             ITelescopeDriverTracking):
+class Meade (TelescopeBase):
     
     __config__ = {'azimuth180Correct'   : True}
 
     def __init__(self):
 
-        ChimeraObject.__init__ (self)
+        TelescopeBase.__init__ (self)
 
         self._tty = None
         self._slewRate = None
@@ -121,7 +111,7 @@ class Meade (ChimeraObject,
     def __main__ (self):
         pass
 
-    # -- ITelescopeDriver implementation
+    # -- ITelescope implementation
 
     def _checkMeade (self):
 
@@ -249,10 +239,6 @@ class Meade (ChimeraObject,
 
         return True
 
-
-    def isSlewing(self):
-        return self._slewing
-
     @lock
     def slewToRaDec(self, position):
 
@@ -376,6 +362,9 @@ class Meade (ChimeraObject,
         time.sleep (self["stabilization_time"])
 
         self.abortComplete(self.getPositionRaDec())
+
+    def isSlewing(self):
+        return self._slewing
 
     def _move (self, direction, duration=1.0, slewRate = None):
 
@@ -900,7 +889,7 @@ class Meade (ChimeraObject,
 
         return True
 
-    # -- ITelescopeDriverSync implementation --
+    # -- ITelescopeSync implementation --
 
     @lock
     def syncRaDec(self, position):
@@ -943,7 +932,8 @@ class Meade (ChimeraObject,
     # -- park
 
     def getParkPosition (self):
-        return Position.fromAltAz(self["park_position_alt"], self["park_position_az"])
+        return Position.fromAltAz(self["park_position_alt"],
+                                  self["park_position_az"])
 
     @lock
     def setParkPosition (self, position):
@@ -961,8 +951,9 @@ class Meade (ChimeraObject,
         if self.isParked ():
             return True
 
-        # 1. slew to park position
-        # FIXME: allow different park positions and conversions from ra/dec -> az/alt
+        # 1. slew to park position FIXME: allow different park
+        # positions and conversions from ra/dec -> az/alt
+
         site = self.getManager().getProxy("/Site/0")
 
         self.slewToRaDec(Position.fromRaDec(str(self.getLocalSiderealTime()),
@@ -995,7 +986,9 @@ class Meade (ChimeraObject,
         # 3. set location, date and time
         self._initTelescope()
 
-        # 4. sync on park position (not really necessary when parking on DEC=0, RA=LST
+        # 4. sync on park position (not really necessary when parking
+        # on DEC=0, RA=LST
+
         # convert from park position to RA/DEC using the last LST set on 2.
         #ra = 0
         #dec = 0
