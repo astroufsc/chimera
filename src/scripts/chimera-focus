@@ -30,6 +30,7 @@ from chimera.util.ds9 import DS9
 
 import sys
 import time    
+import os
 
 class ChimeraFocus (ChimeraCLI):
     
@@ -155,7 +156,7 @@ class ChimeraFocus (ChimeraCLI):
         try:
             best_focus = self.autofocus.focus(exptime=options.autofocus_exptime,
                                               start=start, end=end, step=options.autofocus_step,
-                                              minmax=(0,30), debug=False or options.autofocus_debug)
+                                              minmax=(0,30), debug=False or os.path.realpath(options.autofocus_debug))
             print "Best focus position:", best_focus[-1][0]
 
         except IOError, e:

@@ -36,10 +36,10 @@ Target = Enum("CURRENT", "AUTO")
 
 class IAutofocus (Interface):
 
-    __config__ = {"telescope"          : "/Telescope/0",
-                  "camera"             : "/Camera/0",
-                  "filterwheel"        : "/FilterWheel/0",
-                  "focuser"            : "/Focuser/0",
+    __config__ = {"telescope"          : "/FakeTelescope/0",
+                  "camera"             : "/FakeCamera/0",
+                  "filterwheel"        : "/FakeFilterWheel/0",
+                  "focuser"            : "/FakeFocuser/0",
                   "max_stars_to_try"   : 5}
 
     def focus (self, target=Target.CURRENT,
