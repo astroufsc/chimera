@@ -28,9 +28,9 @@ from chimera.core.manager  import Manager
 from chimera.core.callback import callback
 from chimera.core.site     import Site
 
-from chimera.interfaces.telescopedriver import SlewRate, AlignMode
+from chimera.interfaces.telescope import SlewRate, AlignMode
 
-from chimera.drivers.meade import Meade
+from chimera.instruments.meade import Meade
 
 import chimera.core.log
 #chimera.core.log.setConsoleLevel(logging.DEBUG)

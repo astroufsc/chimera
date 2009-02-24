@@ -194,7 +194,7 @@ class CameraBase (ChimeraObject,
 
         try:
             binId = self.getBinnings()[binning]
-            mode = self.getReadoutModes[self.getCurrentCCD()][binId]
+            mode = self.getReadoutModes()[self.getCurrentCCD()][binId]
         except KeyError:
             # use full frame if None given
             binId = self.getBinnings()["1x1"]

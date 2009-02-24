@@ -31,8 +31,8 @@ except ImportError:
 
 import serial
 
-from chimera.instruments import TelescopeBase
-from chimera.interfaces.telescope import SlewRate, AlignMode
+from chimera.instruments.telescope import TelescopeBase
+from chimera.interfaces.telescope  import SlewRate, AlignMode
 
 from chimera.util.coord    import Coord
 from chimera.util.position import Position

@@ -20,32 +20,22 @@
 
 
 import time
-import logging
+import sys
 import random
 
 from chimera.core.manager  import Manager
 from chimera.core.callback import callback
 from chimera.core.site     import Site
 
-from chimera.instruments.dome  import Dome
-from chimera.interfaces.dome   import InvalidDomePositionException, Mode
-
-from chimera.drivers.fakedome     import FakeDome
-#from chimera.drivers.domelna40cm  import DomeLNA40cm
-
-#from chimera.drivers.meade        import Meade
-from chimera.drivers.faketelescope import FakeTelescope
-from chimera.instruments.telescope import Telescope
-
-from chimera.util.position import Position
-
-import chimera.core.log
-#chimera.core.log.setConsoleLevel(logging.DEBUG)
+from chimera.interfaces.dome   import InvalidDomePositionException
 
 from nose.tools import assert_raises
 
 
 class TestDome (object):
+
+    DOME = ""
+    TELESCOPE = ""
 
     def setup (self):
 
@@ -56,20 +46,24 @@ class TestDome (object):
                                             "longitude": "-45 34 57",
                                             "altitude": "1896",
                                             "utc_offset": "-3"})
-        
-        #self.manager.addClass(Meade, "meade", {"device": "/dev/ttyUSB0"})
-        #self.manager.addClass(Telescope, "tel", {"driver": "/Meade/meade"})
 
-        #self.manager.addClass(DomeLNA40cm, "lna40", {"device": "/dev/ttyS0"})
-        #self.manager.addClass(Dome, "dome", {"driver": "/DomeLNA40cm/0",
-        #                                     "telescope": "/Telescope/0"})
+        if "REAL" in sys.argv:
+            from chimera.instruments.domelna40cm import DomeLNA40cm
+            from chimera.instruments.meade       import Meade
 
-        self.manager.addClass(FakeTelescope, "fake")
-        self.manager.addClass(Telescope, "tel", {"driver": "/FakeTelescope/0"})
+            self.manager.addClass(Meade, "meade", {"device": "/dev/ttyUSB0"})
+            self.manager.addClass(DomeLNA40cm, "lna40", {"device": "/dev/ttyS0",
+                                                         "telescope": "/Meade/0"})
+            self.DOME = "/DomeLNA40cm/0"
+            self.TELESCOPE = "/Meade/0"
+        else:
+            from chimera.instruments.fakedome      import FakeDome
+            from chimera.instruments.faketelescope import FakeTelescope
 
-        self.manager.addClass(FakeDome, "fake")
-        self.manager.addClass(Dome, "dome", {"driver": "/FakeDome/0",
-                                             "telescope": "/Telescope/0"})
+            self.manager.addClass(FakeTelescope, "fake")
+            self.manager.addClass(FakeDome, "fake", {"telescope": "/FakeTelescope/0"})
+            self.DOME = "/FakeDome/0"
+            self.TELESCOPE = "/FakeTelescope/0"
 
         @callback(self.manager)
         def slewBeginClbk(target):
@@ -101,16 +95,19 @@ class TestDome (object):
             print time.time(), "[dome] Slit closed with dome at at position=%s" % str(position)
             print
 
-        dome = self.manager.getProxy(Dome)
+        dome = self.manager.getProxy(self.DOME)
         dome.slewBegin    += slewBeginClbk
         dome.slewComplete += slewCompleteClbk
         dome.abortComplete+= abortCompleteClbk
         dome.slitOpened   += slitOpenedClbk
         dome.slitClosed   += slitClosedClbk     
 
+    def teardown (self):
+        self.manager.shutdown()
+
     def test_stress_dome_track (self):
-        dome = self.manager.getProxy(Dome)
-        tel  = self.manager.getProxy(Telescope)
+        dome = self.manager.getProxy(self.DOME)
+        tel  = self.manager.getProxy(self.TELESCOPE)
 
         dome.track()
 
@@ -120,11 +117,11 @@ class TestDome (object):
             tel.slewToRaDec((ra, dec))
             time.sleep(random.randint(0,10))
 
-        dome.sync()
+        dome.syncWithTel()
 
     def test_stress_dome_slew (self):
 
-        dome = self.manager.getProxy(Dome)
+        dome = self.manager.getProxy(self.DOME)
 
         for i in range(25):
             az = random.randint(0,359)
@@ -132,12 +129,12 @@ class TestDome (object):
             assert dome.getAz() == az
 
     def test_get_az (self):
-        dome = self.manager.getProxy(Dome)
+        dome = self.manager.getProxy(self.DOME)
         assert dome.getAz() >= 0
 
     def test_slew_to_az (self):
 
-        dome = self.manager.getProxy(Dome)
+        dome = self.manager.getProxy(self.DOME)
 
         start = dome.getAz()
         delta = 20
@@ -146,9 +143,11 @@ class TestDome (object):
         
         assert dome.getAz() == (start+delta)
 
+        assert_raises(InvalidDomePositionException, dome.slewToAz, 9999)
+
     def test_slit (self):
         
-        dome = self.manager.getProxy(Dome)
+        dome = self.manager.getProxy(self.DOME)
 
         dome.openSlit()
         assert dome.isSlitOpen() == True

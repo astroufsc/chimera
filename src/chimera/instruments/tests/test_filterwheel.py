@@ -19,48 +19,35 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 
-import time
-import logging
-import random
+import sys
 
 from chimera.core.manager  import Manager
-from chimera.core.callback import callback
-
-from chimera.instruments.filterwheel import FilterWheel
-
-from chimera.drivers.fakefilterwheel import FakeFilterWheel
-
-#from chimera.drivers.sbig import SBIG
-from chimera.interfaces.cameradriver import Device
-
-
-import chimera.core.log
-#chimera.core.log.setConsoleLevel(logging.DEBUG)
-
-from nose.tools import assert_raises
 
 
 class TestFilterWheel (object):
+
+    FILTER_WHEEL = ""
 
     def setup (self):
 
         self.manager = Manager(port=8000)
 
-        self.manager.addClass(FakeFilterWheel, "fake", {"device": "/dev/ttyS0"})
-        self.manager.addClass(FilterWheel, "filter", {"driver": "/FakeFilterWheel/0",
-                                                      "filters": "U B V R I"})
-
-        #self.manager.addClass(SBIG, "sbig", {"device": Device.USB})
-        #self.manager.addClass(FilterWheel, "filter", {"driver": "/SBIG/0",
-        #                                              "filters": "R G B LUNAR CLEAR"})
-
+        if "REAL" in sys.argv:
+            from chimera.instruments.sbig import SBIG
+            self.manager.addClass(SBIG, "sbig", {"filters": "R G B LUNAR CLEAR"})
+            self.FILTER_WHEEL = "/SBIG/0"
+        else:
+            from chimera.instruments.fakefilterwheel import FakeFilterWheel
+            self.manager.addClass(FakeFilterWheel, "fake", {"device": "/dev/ttyS0",
+                                                            "filters": "U B V R I"})
+            self.FILTER_WHEEL = "/FakeFilterWheel/0"
 
     def teardown (self):
         self.manager.shutdown()
 
     def test_filters (self):
 
-        f = self.manager.getProxy(FilterWheel)
+        f = self.manager.getProxy(self.FILTER_WHEEL)
         
         filters = f.getFilters()
 
@@ -70,7 +57,7 @@ class TestFilterWheel (object):
 
     def test_get_filters (self):
         
-        f = self.manager.getProxy(FilterWheel)
+        f = self.manager.getProxy(self.FILTER_WHEEL)
         filters = f.getFilters()
 
         assert isinstance(filters, tuple) or isinstance(filters, list)

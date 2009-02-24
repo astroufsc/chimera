@@ -21,22 +21,11 @@
 
 import time
 import sys
-import logging
 
 from chimera.core.manager  import Manager
 from chimera.core.callback import callback
 from chimera.core.site     import Site
 from chimera.core.threads  import ThreadPool
-
-from chimera.instruments.telescope import Telescope
-from chimera.drivers.faketelescope import FakeTelescope
-
-from chimera.drivers.meade import Meade
-
-import chimera.core.log
-
-from chimera.util.coord    import Coord
-from chimera.util.position import Position
 
 
 def assertEpsEqual (a, b, e=60):
@@ -47,32 +36,35 @@ def assertEpsEqual (a, b, e=60):
 
 class TestTelescope (object):
 
+    TELESCOPE = ""
+
     def setup (self):
 
         self.manager = Manager(port=8000)
 
-        #self.manager.addClass(Site, "lna", {"name": "LNA",
-        #                                    "latitude": "-22 32 03",
-        #                                    "longitude": "-45 34 57",
-        #                                    "altitude": "1896",
-        #                                    "utc_offset": "-3"})
+        if "LNA" in sys.argv:
+            self.manager.addClass(Site, "lna", {"name": "LNA",
+                                                "latitude": "-22 32 03",
+                                                "longitude": "-45 34 57",
+                                                "altitude": "1896",
+                                                "utc_offset": "-3"})
+        else:
+            self.manager.addClass(Site, "lna", {"name": "UFSC",
+                                                "latitude": "-27 36 13 ",
+                                                "longitude": "-48 31 20",
+                                                "altitude": "20",
+                                                "utc_offset": "-3"})
 
-        self.manager.addClass(Site, "lna", {"name": "UFSC",
-                                            "latitude": "-27 36 13 ",
-                                            "longitude": "-48 31 20",
-                                            "altitude": "20",
-                                            "utc_offset": "-3"})
+        if "REAL" in sys.argv:
+            from chimera.instruments.meade import Meade
+            self.manager.addClass(Meade, "meade", {"device": "/dev/ttyS6"})
+            self.TELESCOPE = "/Meade/0"
+        else:
+            from chimera.instruments.faketelescope import FakeTelescope
+            self.manager.addClass(FakeTelescope, "fake")
+            self.TELESCOPE = "/FakeTelescope/0"
 
-        #self.manager.addClass(Meade, "meade", {"device": "/dev/ttyS6"})
-        #self.manager.addClass(Telescope, "meade", {"driver": "/Meade/meade"})
-
-        self.manager.addClass(FakeTelescope, "fake")
-        self.manager.addClass(Telescope, "fake", {"driver": "/FakeTelescope/fake"})
-
-        #self.manager.addClass(Telescope, "meade",
-        #                      {"driver": "200.131.64.134:7666/TheSkyTelescope/0"})
-
-        self.tel = self.manager.getProxy(Telescope)
+        self.tel = self.manager.getProxy(self.TELESCOPE)
 
     def teardown (self):
         self.manager.shutdown()
@@ -117,8 +109,8 @@ class TestTelescope (object):
 
         # async slew
         def slew():
-            self.tel = self.manager.getProxy(Telescope)
-            self.tel.slewToRaDec((dest_ra, dest_dec))
+            tel = self.manager.getProxy(self.TELESCOPE)
+            tel.slewToRaDec((dest_ra, dest_dec))
 
         pool = ThreadPool()
         pool.queueTask(slew)

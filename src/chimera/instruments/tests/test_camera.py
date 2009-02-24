@@ -23,20 +23,11 @@ import time
 import logging
 import sys
 
-import Pyro.util
-
 from chimera.core.manager  import Manager
 from chimera.core.callback import callback
 from chimera.core.threads  import ThreadPool
 from chimera.core.exceptions import ChimeraValueError
 from chimera.core.proxy import Proxy
-
-from chimera.instruments.camera import Camera
-from chimera.drivers.fakecamera import FakeCamera
-
-#from chimera.drivers.sbig import SBIG
-
-from chimera.interfaces.cameradriver import Device
 
 import chimera.core.log
 #chimera.core.log.setConsoleLevel(logging.DEBUG)
@@ -48,15 +39,20 @@ from nose.tools import assert_raises
 
 class TestCamera (object):
 
+    CAMERA = ""
+
     def setup (self):
 
         self.manager = Manager(port=8000)
 
-        #self.manager.addClass(SBIG, "sbig", {"device": Device.USB})
-        #self.manager.addClass(Camera, "cam", {"driver": "/SBIG/sbig"})
-
-        self.manager.addClass(FakeCamera, "fake", {"device": Device.USB})
-        self.manager.addClass(Camera, "cam", {"driver": "/FakeCamera/fake"})
+        if "REAL" in sys.argv:
+            from chimera.intruments.sbig import SBIG
+            self.manager.addClass(SBIG, "sbig")
+            self.CAMERA = "/SBIG/0"
+        else:
+            from chimera.instruments.fakecamera import FakeCamera
+            self.manager.addClass(FakeCamera, "fake")
+            self.CAMERA = "/FakeCamera/0"
 
         @callback(self.manager)
         def exposeBeginClbk(request):
@@ -72,14 +68,14 @@ class TestCamera (object):
             print time.time(), "Readout begin for request %s." % request["filename"]
 
         @callback(self.manager)
-        def readoutCompleteClbk(request):
-            print time.time(), "Readout complete for request %s." % request["filename"]
+        def readoutCompleteClbk(img):
+            print time.time(), "Readout complete for request %s." % img.filename()
 
         @callback(self.manager)
         def abortCompleteClbk():
             print time.time(), "Abort complete."
 
-        cam = self.manager.getProxy(Camera)
+        cam = self.manager.getProxy(self.CAMERA)
         cam.exposeBegin     += exposeBeginClbk
         cam.exposeComplete  += exposeCompleteClbk        
         cam.readoutBegin    += readoutBeginClbk        
@@ -91,12 +87,12 @@ class TestCamera (object):
 
     def test_simple (self):
 
-        cam = self.manager.getProxy(Camera)
+        cam = self.manager.getProxy(self.CAMERA)
         assert cam.isExposing() == False
 
     def test_expose (self):
 
-        cam = self.manager.getProxy(Camera)
+        cam = self.manager.getProxy(self.CAMERA)
 
         frames = 0
 
@@ -111,7 +107,7 @@ class TestCamera (object):
 
     def test_expose_checkings (self):
 
-        cam = self.manager.getProxy(Camera)
+        cam = self.manager.getProxy(self.CAMERA)
 
         # exp_time ranges
         assert_raises(ChimeraValueError, cam.expose, exptime=-1)
@@ -126,7 +122,7 @@ class TestCamera (object):
 
     def test_expose_lock (self):
 
-        cam = self.manager.getProxy(Camera)
+        cam = self.manager.getProxy(self.CAMERA)
 
         begin_times = []
         end_times = []
@@ -144,7 +140,7 @@ class TestCamera (object):
 
         def doExpose():
             # need to get another Proxy as Proxies cannot be shared among threads
-            cam = self.manager.getProxy(Camera)
+            cam = self.manager.getProxy(self.CAMERA)
             cam.expose(exptime=2, filename="autogen-expose-lock.fits")
 
         pool = ThreadPool()
@@ -166,13 +162,13 @@ class TestCamera (object):
         
     def test_expose_abort (self):
 
-        cam = self.manager.getProxy(Camera)
+        cam = self.manager.getProxy(self.CAMERA)
 
         print
         
         def doExpose():
             # need to get another Proxy as Proxies cannot be shared among threads
-            cam = self.manager.getProxy(Camera)
+            cam = self.manager.getProxy(self.CAMERA)
             cam.expose(exptime=10, filename="autogen-expose-abort.fits")
 
         #
@@ -193,7 +189,7 @@ class TestCamera (object):
 
     def test_cooling (self):
 
-        cam = self.manager.getProxy(Camera)
+        cam = self.manager.getProxy(self.CAMERA)
 
         def eps_equal(a, b, eps):
             return abs(a-b) <= eps

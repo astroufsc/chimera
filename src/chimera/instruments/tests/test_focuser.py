@@ -18,32 +18,33 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-
-import time
-import logging
+import sys
 import random
 
 from chimera.core.manager  import Manager
-from chimera.core.callback import callback
 from chimera.core.site     import Site
 
-from chimera.instruments.focuser  import Focuser
 from chimera.interfaces.focuser   import InvalidFocusPositionException
-
-from chimera.drivers.fakefocuser  import FakeFocuser
-from chimera.drivers.optectcfs    import OptecTCFS
-
-import chimera.core.log
-#chimera.core.log.setConsoleLevel(logging.DEBUG)
 
 from nose.tools import assert_raises
 
 
 class TestFocuser (object):
 
+    FOCUSER = ""
+
     def setup (self):
 
         self.manager = Manager(port=8000)
+
+        if "REAL" in sys.argv:
+            from chimera.instruments.optectcfs import OptecTCFS
+            self.manager.addClass(OptecTCFS, "optec", {"device": "/dev/ttyS0"})
+            self.FOCUSER = "/OptecTCFS/0"
+        else:
+            from chimera.instruments.fakefocuser import FakeFocuser
+            self.manager.addClass(FakeFocuser, "fake", {"device": "/dev/ttyS0"})
+            self.FOCUSER = "/FakeFocuser/0"
 
         self.manager.addClass(Site, "lna", {"name": "LNA",
                                             "latitude": "-22 32 03",
@@ -51,24 +52,18 @@ class TestFocuser (object):
                                             "altitude": "1896",
                                             "utc_offset": "-3"})
 
-        self.manager.addClass(FakeFocuser, "fake", {"device": "/dev/ttyS0"})
-        self.manager.addClass(Focuser, "focus", {"driver": "/FakeFocuser/0"})
-
-        #self.manager.addClass(OptecTCFS, "optec", {"device": "/dev/ttyS0"})
-        #self.manager.addClass(Focuser, "focus", {"driver": "/OptecTCFS/0"})
-
     def teardown (self):
         self.manager.shutdown()
 
     def test_get_position (self):
 
-        focus = self.manager.getProxy(Focuser)
+        focus = self.manager.getProxy(self.FOCUSER)
 
         assert focus.getPosition() >= 0
 
     def test_move (self):
 
-        focus = self.manager.getProxy(Focuser)
+        focus = self.manager.getProxy(self.FOCUSER)
 
         start = focus.getPosition()
         delta = int(random.Random().random()*1000)

@@ -102,24 +102,23 @@ class FakeCamera (CameraBase, FilterWheelBase):
 
     def _expose(self, imageRequest):
         
+        self.__exposing = True
         self.exposeBegin(imageRequest)
 
         t=0
         self.__lastFrameStart = time.time()
         while t < imageRequest["exptime"]:
             if self.abort.isSet():
+                self.__exposing = False
                 return False
             
             time.sleep (0.1)            
             t+=0.1
 
         self.exposeComplete(imageRequest)
+        self.__exposing = False
         return True
     
-    @staticmethod
-    def eps_equal(a, b, eps=0.01):
-        return abs(a-b) <= eps
-
     def gunzip(self, file, newext):
         r_file = gzip.GzipFile(file, 'r')
         write_file = file + '.' + newext
