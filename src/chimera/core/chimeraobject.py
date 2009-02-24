@@ -40,7 +40,6 @@ import chimera.core.log
 import logging
 import time
 import threading
-from types import StringType
 
 
 __all__ = ['ChimeraObject']

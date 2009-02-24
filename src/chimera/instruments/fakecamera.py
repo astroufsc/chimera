@@ -18,16 +18,11 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-#TODO: better simulation
-#TODO: fix interfaces!!!
-
 import time
 import random
-import threading
 import urllib
 import gzip
 import os
-import datetime as dt
 
 import numpy as N
 import pyfits
@@ -38,13 +33,8 @@ from chimera.interfaces.camera import (CCD, CameraFeature,
 from chimera.instruments.camera      import CameraBase
 from chimera.instruments.filterwheel import FilterWheelBase
 
-from chimera.controllers.imageserver.util import getImageServer
-
-from chimera.core.exceptions         import (ChimeraException,
-                                             ObjectNotFoundException)
-
-from chimera.util.image import Image, ImageUtil
-from chimera.core.lock import lock
+from chimera.core.exceptions import ObjectNotFoundException
+from chimera.core.lock       import lock
 
 
 class FakeCamera (CameraBase, FilterWheelBase):

@@ -24,9 +24,7 @@ import chimera.core.log
 import threading
 import logging
 
-from chimera.core.constants import LOCK_ATTRIBUTE_NAME
-
-from time import sleep, time
+from time import sleep
 
 # Ensure booleans exist (not needed for Python 2.2.1 or higher)
 try:

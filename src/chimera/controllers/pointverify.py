@@ -9,8 +9,35 @@ from chimera.util.position import Position
 from chimera.util.coord import Coord
 from chimera.util.image import Image
 
-from chimera.util.astrometrynet import AstrometryNet, AstrometryNetException, NoSolutionAstrometryNetException
+from chimera.util.astrometrynet import AstrometryNet, NoSolutionAstrometryNetException
 
+
+class CantPointScopeException(ChimeraException):
+    """
+    This exception is raised when we cannot center the scope on a field
+    It may happen if there is something funny with our fields like:
+    faint objects, bright objects, extended objects
+    or non-astronomical problems like:
+    clouds, mount misalignment, dust cover, etc
+    When this happens one can simply go on and observe or ask for a checkPoint
+    if checkPoint succeeds then the problem is astronomical
+    if checkPoint fails then the problem is non-astronomical
+    """
+
+
+class CanSetScopeButNotThisField(ChimeraException):
+    pass
+
+class CantSetScopeException(ChimeraException):
+    """
+    This exception is raised to indicate we could not set the telescope 
+    coordinates when trying to do it on a chosen field.  
+    Chosen fields are those known to work for setting the scope.
+    So, if it fails we must have some serious problem.
+    Might be clouds, might be mount misalignment, dust cover, etc, etc
+    Never raise this exception for a science field.  It may be that pointverify 
+    fails there because of bright objects or other more astronomical reasons
+    """
     
 class PointVerify (ChimeraObject):
     """
@@ -102,12 +129,11 @@ class PointVerify (ChimeraObject):
 
         tel = self.getTel()
 
-
         # analyze the previous image using
         # AstrometryNet defined in util
         try:
             wcs_name = AstrometryNet.solveField(image.filename,findstarmethod="sex") 
-        except (NoSolutionAstronomyNetException): 
+        except (NoSolutionAstrometryNetException): 
             # why can't I select this exception?
             # 
             # there was no solution to this field.
@@ -116,11 +142,11 @@ class PointVerify (ChimeraObject):
             # an exception will be raised there
             self.log.error("No WCS solution")
             if not self.checkedpointing:
-                if checkPointing() == True:
+                if self.checkPointing() == True:
                     self.checkedpointing = True
                     tel.slewToRaDec(currentImageCenter)
                     try:
-                        pointVerify()
+                        self.pointVerify()
                         return True
                     except CanSetScopeButNotThisField:
                         pass # let the caller decide whether we go to next 
@@ -248,32 +274,6 @@ class PointVerify (ChimeraObject):
 
         should return a list of standard stars within the limits
         """
-
-class CantPointScopeException(ChimeraException):
-    """
-    This exception is raised when we cannot center the scope on a field
-    It may happen if there is something funny with our fields like:
-    faint objects, bright objects, extended objects
-    or non-astronomical problems like:
-    clouds, mount misalignment, dust cover, etc
-    When this happens one can simply go on and observe or ask for a checkPoint
-    if checkPoint succeeds then the problem is astronomical
-    if checkPoint fails then the problem is non-astronomical
-    """
-    pass
-
-class CantSetScopeException(ChimeraException):
-    """
-    This exception is raised to indicate we could not set the telescope 
-    coordinates when trying to do it on a chosen field.  
-    Chosen fields are those known to work for setting the scope.
-    So, if it fails we must have some serious problem.
-    Might be clouds, might be mount misalignment, dust cover, etc, etc
-    Never raise this exception for a science field.  It may be that pointverify 
-    fails there because of bright objects or other more astronomical reasons
-    """
-
-    pass
 
 if __name__ == "__main__":
     

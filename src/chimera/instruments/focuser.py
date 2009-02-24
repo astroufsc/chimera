@@ -18,41 +18,53 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-
 from chimera.core.chimeraobject import ChimeraObject
+from chimera.core.lock          import lock
 
-from chimera.interfaces.filterwheel import (IFilterWheel,
-                                            InvalidFilterPositionException)
-
-from chimera.core.lock import lock
+from chimera.interfaces.focuser import IFocuser
 
 
-class FilterWheelBase (ChimeraObject, IFilterWheel):
+class FocuserBase (ChimeraObject, IFocuser):
 
     def __init__ (self):
         ChimeraObject.__init__(self)
 
+        self._supports = {}
+
     @lock
-    def setFilter (self, filter):
+    def moveIn (self, n):
         raise NotImplementedError()
 
     @lock
-    def getFilter (self):
+    def moveOut (self, n):
         raise NotImplementedError()
 
-    def getFilters (self):
-        return self["filters"].upper().split()
+    @lock
+    def moveTo (self, position):
+        raise NotImplementedError()
 
-    def _getFilterName (self, index):
-        try:
-            return self.getFilters()[index]
-        except (ValueError, TypeError):
-           raise InvalidFilterPositionException("Unknown filter (%s)."%str(index))
+    @lock
+    def getPosition (self):
+        raise NotImplementedError()
 
-    def _getFilterPosition (self, name):
-        return self.getFilters().index(name)
+    def getRange (self):
+        raise NotImplementedError()
+
+    def supports(self, feature=None):
+        if feature in self._supports:
+            return self._supports[feature]
+        else:
+            self.log.info("Invalid feature: %s" % str(feature))
+            return False
 
     def getMetadata(self, request):
-        return [('FWHEEL', str(self['model']), 'FilterWheel Model'),
-                ('FILTER', str(self.getFilter()),
-                 'Filter used for this observation')]
+        return [('FOCUSER',
+                 str(self['model']), 'Focuser Model'),
+
+                ('FOCUS',   self.getPosition(),
+                 'Focuser position used for this observation')]
+
+    def _inRange (self, n):
+        min_pos, max_pos = self.getRange()
+        return (min_pos <= n <= max_pos)
+

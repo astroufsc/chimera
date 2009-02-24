@@ -11,7 +11,7 @@ import logging
 import chimera.core.log
 log = logging.getLogger(__name__)
 
-class AstrometryNet():
+class AstrometryNet:
     
     # staticmethod allows to use a single method of a class
     @staticmethod

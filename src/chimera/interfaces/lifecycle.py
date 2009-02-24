@@ -20,7 +20,6 @@
 
 
 from chimera.core.interface import Interface
-from chimera.core.state     import State
 
 
 __all__ = ['ILifeCycle']

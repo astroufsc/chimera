@@ -24,8 +24,6 @@ import time
 from math import pi
 import datetime as dt
 
-import Pyro.util
-
 from chimera.core.chimeraobject import ChimeraObject
 from chimera.interfaces.camera  import (ICameraExpose, ICameraTemperature,
                                         ICameraInformation,
@@ -34,7 +32,6 @@ from chimera.interfaces.camera  import (ICameraExpose, ICameraTemperature,
 from chimera.controllers.imageserver.imagerequest import ImageRequest
 from chimera.controllers.imageserver.util import getImageServer
 
-from chimera.core.exceptions import ChimeraValueError
 from chimera.core.lock import lock
 
 from chimera.util.image import Image, ImageUtil

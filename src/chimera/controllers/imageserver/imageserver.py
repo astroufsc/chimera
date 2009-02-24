@@ -1,9 +1,6 @@
 
 
 from chimera.core.chimeraobject import ChimeraObject
-from chimera.core.exceptions import ObjectNotFoundException, ClassLoaderException
-from chimera.core.path import ChimeraPath
-
 from chimera.controllers.imageserver.imageserverhttp import ImageServerHTTP
 
 from chimera.util.image import Image
@@ -11,7 +8,6 @@ from chimera.util.image import Image
 import Pyro.util
 
 import os
-import os.path
 
 
 class ImageServer(ChimeraObject):
@@ -101,11 +97,6 @@ class ImageServer(ChimeraObject):
 
     def getProxyByID (self, id):
         img = self.getImageByID(id)
-        if img:
-            return img.getProxy()
-
-    def getImageByPath (self, path):
-        img = self.getImageByPath(path)
         if img:
             return img.getProxy()
 

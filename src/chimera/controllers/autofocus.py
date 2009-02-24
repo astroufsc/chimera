@@ -4,7 +4,7 @@ from __future__ import division
 from chimera.core.chimeraobject import ChimeraObject
 from chimera.core.lock import lock
 from chimera.core.event import event
-from chimera.core.exceptions import ChimeraException, printException
+from chimera.core.exceptions import ChimeraException
 from chimera.core.constants import SYSTEM_CONFIG_DIRECTORY
 
 from chimera.interfaces.autofocus import IAutofocus, Target, StarNotFoundException, FocusNotFoundException
@@ -13,9 +13,7 @@ from chimera.interfaces.focuser import InvalidFocusPositionException
 from chimera.controllers.imageserver.imagerequest import ImageRequest
 from chimera.controllers.imageserver.util         import getImageServer
 
-from chimera.util.enum import Enum
 from chimera.util.image import Image
-from chimera.util.sextractor import SExtractor
 
 import numpy as N
 import yaml

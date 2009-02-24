@@ -21,12 +21,11 @@
 from __future__ import division
 
 import time
-import logging
+import datetime as dt
 import numpy as N
         
-from chimera.instruments.sbig.sbigdrv import *
+from chimera.instruments.sbig.sbigdrv import (SBIGDrv, SBIGException)
 
-from chimera.core.chimeraobject  import ChimeraObject
 from chimera.interfaces.camera   import (CCD, CameraFeature, Shutter)
 
 from chimera.instruments.camera      import CameraBase

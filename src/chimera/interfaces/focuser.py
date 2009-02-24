@@ -24,7 +24,7 @@ from chimera.core.exceptions import ChimeraException
 from chimera.util.enum import Enum
 
 FocuserFeature = Enum("TEMPERATURE_COMPENSATION",
-                      "ENCODER_BASED",
+                      "ENCODER",
                       "POSITION_FEEDBACK")
 
 class InvalidFocusPositionException (ChimeraException):

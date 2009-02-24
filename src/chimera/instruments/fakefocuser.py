@@ -18,23 +18,24 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-from chimera.core.chimeraobject import ChimeraObject
 from chimera.core.lock          import lock
 
-from chimera.interfaces.focuser import (IFocuser,
-                                        FocuserFeature,
+from chimera.interfaces.focuser import (FocuserFeature,
                                         InvalidFocusPositionException)
 
+from chimera.instruments.focuser import FocuserBase
 
-class FakeFocuser (ChimeraObject, IFocuser):
+
+class FakeFocuser (FocuserBase):
 
     def __init__ (self):
-        ChimeraObject.__init__(self)
+        FocuserBase.__init__(self)
 
         self._position = 0
 
         self._supports = {FocuserFeature.TEMPERATURE_COMPENSATION: False,
-                          FocuserFeature.POSITION_FEEDBACK: True}
+                          FocuserFeature.POSITION_FEEDBACK: True,
+                          FocuserFeature.ENCODER: True}
 
     def __start__ (self):
         self._position = int(self.getRange()[1] / 2.0)
@@ -71,23 +72,7 @@ class FakeFocuser (ChimeraObject, IFocuser):
     def getRange (self):
         return (0, 7000)
 
-    def supports(self, feature=None):
-        if feature in self._supports:
-            return self._supports[feature]
-        else:
-            self.log.info("Invalid feature: %s" % str(feature))
-            return False
-
-    @lock
-    def getMetadata(self, request):
-        return [('FOCUSER', str(self['model']), 'Focuser Model'),
-                ('FOCUS',   self.getPosition(), 'Focuser position used for this observation')]
-
     def _setPosition (self, n):
         self.log.info("Changing focuser to %s" % n)
         self._position = n
-
-    def _inRange (self, n):
-        min_pos, max_pos = self.getRange()
-        return (min_pos <= n <= max_pos)
 

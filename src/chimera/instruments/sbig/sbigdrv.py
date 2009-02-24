@@ -25,8 +25,7 @@ import numpy
 import sbigudrv as udrv
 
 import logging
-from chimera.core.log import logging
-from chimera.util.dumper import dumpObj
+#from chimera.util.dumper import dumpObj
 
 log = logging.getLogger(__name__)
 

@@ -2,7 +2,6 @@ from chimera.core.version   import _chimera_version_, _chimera_description_
 from chimera.core.constants import SYSTEM_CONFIG_DEFAULT_FILENAME
 from chimera.core.location  import Location, InvalidLocationException
 
-from chimera.core.systemconfig import SystemConfig
 from chimera.core.manager      import Manager
 from chimera.core.path         import ChimeraPath
 
@@ -18,7 +17,6 @@ import os.path
 import signal
 import threading
 import socket
-import time
 
 __all__ = ['ChimeraCLI',
            'Action',

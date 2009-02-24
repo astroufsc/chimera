@@ -21,7 +21,6 @@
 import logging
 import logging.handlers
 import sys
-import os
 import os.path
 
 from chimera.core.constants import (SYSTEM_CONFIG_LOG_NAME,

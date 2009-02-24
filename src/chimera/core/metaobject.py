@@ -23,7 +23,6 @@ import threading
 from chimera.core.methodwrapper import MethodWrapper, MethodWrapperDispatcher
 from chimera.core.eventwrapper  import EventWrapperDispatcher
 from chimera.core.lockwrapper   import LockWrapper, LockWrapperDispatcher
-from chimera.core.async         import BeginDispatcher, EndDispatcher
 
 from chimera.core.rwlock        import ReadWriteLock
 

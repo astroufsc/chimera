@@ -24,10 +24,8 @@ try:
 except ImportError, e:
     raise RuntimeError ("You must have Pyro version >= 3.6 installed.")
 
-from chimera.core.remoteobject import RemoteObject
 from chimera.core.constants    import MANAGER_DEFAULT_HOST, MANAGER_DEFAULT_PORT
-from chimera.core.constants    import EVENTS_PROXY_NAME, EVENTS_ATTRIBUTE_NAME
-from chimera.core.constants    import METHODS_ATTRIBUTE_NAME
+from chimera.core.constants    import EVENTS_PROXY_NAME
 from chimera.core.location     import Location
 
 import chimera.core.log

@@ -1,4 +1,6 @@
 
+from chimera.core.chimeraobject import ChimeraObject
+
 class Photometry (ChimeraObject):
 
     def __start__ (self):

@@ -1,8 +1,8 @@
 import time
 
-from sbig import *
+from chimera.instruments.sbig.sbigdrv import SBIGDrv
 
-s = SBIG()
+s = SBIGDrv()
 
 t1 = time.time()
 
@@ -10,7 +10,7 @@ if not s.openDriver():
 	print s.getError()
 	exit(-1)
 
-if not s.openDevice(SBIG.usb):
+if not s.openDevice(SBIGDrv.usb):
 	print s.getError()
 	exit(-1)
 

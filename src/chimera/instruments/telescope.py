@@ -27,7 +27,6 @@ from chimera.interfaces.telescope import (ITelescopeSlew, ITelescopeSync,
 
 from chimera.core.lock import lock
 
-from chimera.util.position import Position
 from chimera.util.simbad import Simbad
 
 

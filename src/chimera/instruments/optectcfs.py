@@ -19,16 +19,14 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 import sys
-
 import serial
 
-from chimera.core.chimeraobject import ChimeraObject
+from chimera.interfaces.focuser import (InvalidFocusPositionException,
+                                        FocuserFeature)
 
-from chimera.interfaces.focuser       import InvalidFocusPositionException
-from chimera.interfaces.focuserdriver import IFocuserDriver
+from chimera.instruments.focuser import FocuserBase
 
 from chimera.core.lock import lock
-
 from chimera.util.enum import Enum
 
 
@@ -39,10 +37,10 @@ Mode      = Enum("Manual", "Free", "Auto_A", "Auto_B")
 Direction = Enum("IN", "OUT")
 
 
-class OptecTCFS (ChimeraObject, IFocuserDriver):
+class OptecTCFS (FocuserBase):
 
     def __init__ (self):
-        ChimeraObject.__init__ (self)
+        FocuserBase.__init__ (self)
 
         self.tty = None
 
@@ -53,6 +51,10 @@ class OptecTCFS (ChimeraObject, IFocuserDriver):
                        Mode.Free  : "F",
                        Mode.Auto_A: "A",
                        Mode.Auto_B: "B"}
+
+        self._supports = {FocuserFeature.TEMPERATURE_COMPENSATION: True,
+                          FocuserFeature.POSITION_FEEDBACK: True,
+                          FocuserFeature.ENCODER: True}
 
     def __start__ (self):
         self.open()
@@ -231,9 +233,9 @@ class OptecTCFS (ChimeraObject, IFocuserDriver):
 
         return True
 
-    def _ping (self):
-        return True
-    
+    #
+    # tty
+    #
     def _read(self, n = 1):
 
         if not self.tty.isOpen():

@@ -19,18 +19,13 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-import logging
-import time
-import sys
 import Queue
 
 from chimera.core.chimeraobject import ChimeraObject
 
 from chimera.interfaces.dome import (IDome, Mode)
 
-from chimera.core.event   import event
 from chimera.core.lock    import lock
-from chimera.core.callback import callback
 
 from chimera.core.exceptions import ObjectNotFoundException
 from chimera.core.exceptions import ChimeraException

@@ -35,7 +35,6 @@ from chimera.core.exceptions   import InvalidLocationException, \
                                       ObjectNotFoundException, \
                                       NotValidChimeraObjectException, \
                                       ChimeraObjectException, \
-                                      ClassLoaderException, \
                                       ChimeraException, \
                                       OptionConversionException
 
@@ -47,7 +46,6 @@ from chimera.core.constants import MANAGER_DEFAULT_HOST, MANAGER_DEFAULT_PORT, M
 
 try:
     import Pyro.core
-    import Pyro.util
     import Pyro.errors
 except ImportError, e:
     raise RuntimeError ("You must have Pyro version >= 3.6 installed.")
@@ -58,8 +56,6 @@ import threading
 import signal
 import time
 import atexit
-import sys
-import SocketServer
 from types import StringType
 
 
