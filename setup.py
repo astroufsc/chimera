@@ -83,7 +83,7 @@ else:
         print >> sys.stderr, "*"*80
         sys.exit(1)
 
-    linux_deps += ["python-sbigudrv == 0.1", "coords"]
+    linux_deps += ["python-sbigudrv == 0.1", "coords", "pyephem == 3.7.3.3"]
     
     if sys.version_info[0:2] >= (2,5):
         linux_deps += ["pywcs"]
@@ -106,7 +106,6 @@ setup(name='chimera-python',
                           "asciidata == 1.1",
                           "SQLAlchemy == 0.4.8",
                           "Elixir == 0.6.1",
-                          "pyephem == 3.7.3.3",
                           "python-dateutil == 1.4.1",
                           "RO == 2.2.8",
                           "pyfits == 1.3",

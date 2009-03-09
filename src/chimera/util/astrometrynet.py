@@ -89,6 +89,7 @@ class AstrometryNet:
         # if it is already there, make sure to delete it 
         if ( os.path.exists(is_solved)):
             os.remove(is_solved)
+	print "SOLVE"  , line
         solve = Popen(line.split()) # ,env=os.environ)
         solve.wait()
         # if solution failed, there will be no file .solved
@@ -154,7 +155,8 @@ if __name__ == "__main__":
 
         # files Paulo and I did with the "extinction machine"
 
-        x = AstrometryNet.solveField("/media/USB2/astindices/demo/lna/2008-08-06/070808-040709-0001.fits",findstarmethod="sex")
+        # x = AstrometryNet.solveField("/media/USB2/astindices/demo/lna/2008-08-06/070808-040709-0001.fits",findstarmethod="sex")
+        x = AstrometryNet.solveField("/home/obs/images/2008-10-02/021008-224939-0001.fits",findstarmethod="sex")
 
 
         # try:

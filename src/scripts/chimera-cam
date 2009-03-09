@@ -214,9 +214,9 @@ class ChimeraCam (ChimeraCLI):
         self.out("Available CCDs: ", end="")
         for ccd in ccds.keys():
             if ccd == currentCCD:
-                self.out("*%s* " % str(ccd), end="")
+                self.out("*%s* " % str(ccds[ccd]), end="")
             else:
-                self.out("%s " % str(ccd), end="")
+                self.out("%s " % str(ccds[ccd]), end="")
         self.out()
 
         self.out("="*40)
@@ -356,7 +356,7 @@ class ChimeraCam (ChimeraCLI):
         self.out("Shutter: %s" % options.shutter)
         self.out("Interval between frames: %.3fs" % options.interval)
         if camera.isCooling():
-            self.out("Cooling enabled, setpoint: %.3f oC" % camera.getSetpoint())
+            self.out("Cooling enabled, setpoint: %.3f oC" % camera.getSetPoint())
         else:
             self.out("Cooling disabled.")
 

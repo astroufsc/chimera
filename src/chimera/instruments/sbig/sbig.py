@@ -62,8 +62,8 @@ class SBIG(CameraBase, FilterWheelBase):
                           CameraFeature.PROGRAMMABLE_LEDS: True,
                           CameraFeature.PROGRAMMABLE_BIAS_LEVEL: False}
 
-        self._ccds = {CCD.IMAGING: SBIGDrv.imaging,
-                      CCD.TRACKING: SBIGDrv.tracking}
+        self._ccds = {SBIGDrv.imaging: CCD.IMAGING,
+                      SBIGDrv.tracking: CCD.TRACKING}
 
         self._adcs = {"12 bits": 0}
 
@@ -76,7 +76,7 @@ class SBIG(CameraBase, FilterWheelBase):
         self._binning_factors = {"1x1": 1,
                                  "2x2": 2,
                                  "3x3": 3,
-                                 "4x4": 4}
+                                 "9x9": 9}
 
     def __start__ (self):
 
@@ -190,7 +190,7 @@ class SBIG(CameraBase, FilterWheelBase):
         return self._ccds
 
     def getCurrentCCD(self):
-        return self["ccd"]
+        return self.ccd
 
     def getBinnings(self):
         return self._binnings
@@ -229,7 +229,7 @@ class SBIG(CameraBase, FilterWheelBase):
             shutter = SBIGDrv.leaveShutter
         
         # ok, start it
-        self.exposeBegin(imageRequest["exptime"])
+        self.exposeBegin(imageRequest)
         
         self.drv.startExposure(self.ccd,
                                int(imageRequest["exptime"]*100), shutter)
@@ -244,16 +244,16 @@ class SBIG(CameraBase, FilterWheelBase):
             if self.abort.isSet():
                 # ok, abort and check if user asked to do a readout anyway
                 if self.isExposing():
-                    self._endExposure()
+                    self._endExposure(imageRequest)
                 
                 return False
 
         # end exposure and returns
-        return self._endExposure()
+        return self._endExposure(imageRequest)
 
-    def _endExposure(self):
+    def _endExposure(self, request):
         self.drv.endExposure(self.ccd)
-        self.exposeComplete()
+        self.exposeComplete(request)
         return True
 
     def _readout(self, imageRequest, aborted=False):
@@ -270,6 +270,7 @@ class SBIG(CameraBase, FilterWheelBase):
         
         for line in range(height):
             img[line] = self.drv.readoutLine(self.ccd, mode.mode, (left, width))
+
 
         proxy = self._saveImage(imageRequest, img,
                                 {"frame_temperature": self.lastFrameTemp,

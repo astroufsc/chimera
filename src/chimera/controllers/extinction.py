@@ -19,9 +19,9 @@ class Extinction (ChimeraObject):
 
         tel = self.getManager().getProxy("/Telescope/0")
         cam = self.getManager().getProxy("/Camera/0")
-        dome = self.getManager().getProxy("/Dome/0")
-        autofocus = self.getManager().getProxy("/Autofocus/0")
-        verify = self.getManager().getProxy("/PointVerify/0")
+        #dome = self.getManager().getProxy("/Dome/0")
+        #autofocus = self.getManager().getProxy("/Autofocus/0")
+        #verify = self.getManager().getProxy("/PointVerify/0")
         
         landolt = Landolt()
         landolt.useTarget(Position.fromRaDec("00:38:00", "-22:00:00"), radius=45)
@@ -36,15 +36,15 @@ class Extinction (ChimeraObject):
             self.log.info("Slewing to %s" % pos)
             tel.slewToRaDec(pos)
 
-            while (tel.isSlewing() or not dome.isSyncWithTel()):
-                self.log.info("Waiting dome...")
+            #while (tel.isSlewing() or not dome.isSyncWithTel()):
+            #    self.log.info("Waiting dome...")
 
-            self.log.info("Doing autofocus on %s" % pos)
-            fit = autofocus.focus(target=Target.CURRENT, mode=Mode.FIT,
-                                  exptime=20, start=0, end=7000, step=1000)
+            #self.log.info("Doing autofocus on %s" % pos)
+            #fit = autofocus.focus(target=Target.CURRENT, mode=Mode.FIT,
+            #                      exptime=20, start=0, end=7000, step=1000)
 
-            self.log.info("Verifyng pointing...")
-            verify.pointVerify()
+            #self.log.info("Verifyng pointing...")
+            #verify.pointVerify()
 
             cam.expose(exp_time=120, shutter="OPEN",
                        frames=1, filename="extincao-%s" % landolt["ID"].replace(" ", "_"))
