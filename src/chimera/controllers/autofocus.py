@@ -4,7 +4,7 @@ from __future__ import division
 from chimera.core.chimeraobject import ChimeraObject
 from chimera.core.lock import lock
 from chimera.core.event import event
-from chimera.core.exceptions import ChimeraException
+from chimera.core.exceptions import ChimeraException, ClassLoaderException
 from chimera.core.constants import SYSTEM_CONFIG_DIRECTORY
 
 from chimera.interfaces.autofocus import IAutofocus, Target, StarNotFoundException, FocusNotFoundException
@@ -21,7 +21,7 @@ import yaml
 plot = True
 try:
     import pylab as P
-except (ImportError, RuntimeError):
+except (ImportError, RuntimeError, ClassLoaderException):
     plot = False
 
 from math import sqrt, ceil
