@@ -20,7 +20,7 @@ class ImageServer(ChimeraObject):
                    # Load existing load_dir images on startup
                    'autoload': True,
                    
-                   'http_host': '0.0.0.0',
+                   'http_host': 'default',
                    'http_port': 7669}
     
     def __init__(self):
@@ -30,6 +30,10 @@ class ImageServer(ChimeraObject):
         self.imagesByPath = {}
 
     def __start__ (self):
+
+        if self["http_host"] == "default":
+            self["http_host"] = self.getManager().getHostname()
+            
         self.http = ImageServerHTTP(self)
         self.http.start()
         

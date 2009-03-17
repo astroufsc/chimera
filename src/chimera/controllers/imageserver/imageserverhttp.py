@@ -20,14 +20,15 @@ class ImageServerHTTP(threading.Thread):
         for handler in logging.getLogger("chimera").handlers:
             cherrypy.log.error_log.addHandler(handler)
         
-        cherrypy.quickstart(self, "chimera",
-                            config={"chimera": {"server.socket_port": self.ctrl['http_port'],
+        cherrypy.config.update({"server.socket_port": self.ctrl['http_port'],
                                                 "server.socket_host": self.ctrl['http_host'],
                                                 "tools.encode.on": True,
                                                 "tools.encode.encoding": "iso-8859-1",
                                                 "tools.decode.on": True,
                                                 "tools.trailing_slash.on": True,
-                                                "engine.autoreload_on": False}})
+                                                "engine.autoreload_on": False})
+
+        cherrypy.quickstart(self, "/", config={"/": {}})
 
     def stop(self):
         cherrypy.engine.stop()
@@ -40,7 +41,6 @@ class ImageServerHTTP(threading.Thread):
     @cherrypy.expose
     def image (self, *args, **kwargs):
         if args:
-
             img = self.ctrl.getImageByID(args[0])
 
             if not img:
