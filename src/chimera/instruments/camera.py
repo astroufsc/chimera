@@ -27,7 +27,7 @@ import datetime as dt
 from chimera.core.chimeraobject import ChimeraObject
 from chimera.interfaces.camera  import (ICameraExpose, ICameraTemperature,
                                         ICameraInformation,
-                                        InvalidReadoutMode)
+                                        InvalidReadoutMode, Shutter)
 
 from chimera.controllers.imageserver.imagerequest import ImageRequest
 from chimera.controllers.imageserver.util import getImageServer
@@ -70,6 +70,14 @@ class CameraBase (ChimeraObject,
         
         frames = imageRequest['frames']
         interval = imageRequest['interval']
+
+	# validate shutter
+        if str(imageRequest["shutter"]).lower() == "open":
+            imageRequest["shutter"] = Shutter.OPEN
+        elif str(imageRequest["shutter"]).lower() == "close":
+            imageRequest["shutter"] = Shutter.CLOSE
+        else:
+            imageRequest["shutter"] = Shutter.LEAVE_AS_IS
 
         # validate readout mode
         self._getReadoutModeInfo(imageRequest["binning"],

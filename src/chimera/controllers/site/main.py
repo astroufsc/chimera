@@ -28,7 +28,7 @@ from chimera.core.location import Location
 from chimera.core.manager import Manager
 from chimera.core.systemconfig import SystemConfig
 from chimera.core.version import _chimera_version_, _chimera_description_, find_dev_version
-from chimera.core.exceptions import printException, InvalidLocationException, ChimeraException
+from chimera.core.exceptions import printException, InvalidLocationException, ChimeraException, ObjectNotFoundException
 from chimera.core.constants import (MANAGER_DEFAULT_HOST,
                                     MANAGER_DEFAULT_PORT,
                                     SYSTEM_CONFIG_DEFAULT_FILENAME,
@@ -170,7 +170,12 @@ class SiteController (object):
             log.info("FIXME: Daemon...")
             
         # system config
-        self.config = SystemConfig.fromFile(self.options.config_file, self.options.use_global)
+        try:
+            self.config = SystemConfig.fromFile(self.options.config_file, self.options.use_global)
+        except (InvalidLocationException, IOError), e:
+            log.exception(e)
+            log.error("There was a problem reading your configuration file. (%s)" % e)
+            sys.exit(1)
         
         # manager
         if not self.options.dry:

@@ -58,13 +58,11 @@ class doStuff:
             chimera.core.log.setConsoleLevel(logging.DEBUG)
     
         self.paths = {"instruments": [],
-                      "controllers": [],
-                      "drivers": []}
+                      "controllers": []}
 
         # add system path
         self.paths["instruments"].append(ChimeraPath.instruments())
         self.paths["controllers"].append(ChimeraPath.controllers())
-        self.paths["drivers"].append(ChimeraPath.drivers())
 
         log.info("Setting objects include path from command line parameters...")
         for _dir in options.inst_dir:
@@ -73,17 +71,12 @@ class doStuff:
         for _dir in options.ctrl_dir:
             self.paths["controllers"].append(_dir)
         
-        for _dir in options.drv_dir:
-            self.paths["drivers"].append(_dir)
-        
-        remSite = options.pyro_host + ':' + options.pyro_port.__str__()
-        remManagerLoc=remSite + '/Manager/0'
+        #remSite = options.pyro_host + ':' + options.pyro_port.__str__()
+        #remManagerLoc=remSite + '/Manager/0'
 
-    
-        log.debug('Attempting to connect to manager on ' + remManagerLoc)
+        #log.debug('Attempting to connect to manager on ' + remManagerLoc)
         try:
-            #Must != MANAGER_DEFAULT_PORT to prevent connecting to self!
-            rm = self.locManager.getProxy(remManagerLoc)
+            rm = self.locManager.getProxy("/Manager/0")
         except ObjectNotFoundException:
             log.error('Unable to connect to remote manager!')
             self.endMe()
@@ -95,14 +88,6 @@ class doStuff:
             rm.shutdown()
             self.endMe()
             
-        
-        for co in options.drivers:
-            log.info('Loading driver ' + co + '...')
-            try:
-                rm.addLocation(co, path=self.paths["drivers"], start=True)
-            except Exception, e:
-                log.warning('Failed to start ' + co + ': ' + e.message)
-                print ''.join(getPyroTraceback(e))
         for co in options.instruments:
             log.info('Loading instrument ' + co + '...')
             try:
@@ -148,7 +133,7 @@ class doStuff:
         if options.list or options.listdetail:
             print rm.URI.__str__()
             for key in rm.getResources():
-                ro = self.locManager.getProxy(remSite + key.__str__())
+                ro = self.locManager.getProxy(key.__str__())
                 try:
                     state = ' [' + ro.getState().__str__() + ']'
                 except Exception, e:
@@ -247,12 +232,6 @@ if __name__ == '__main__':
                           "This option may be set many times to load multiple controllers.",
                      metavar="LOCATION")
 
-    loads.add_option("-d", "--driver", action="callback", callback=check_location,
-                     dest="drivers", type="string",
-                     help="Load the driver defined by LOCATION."
-                          "This option may be set many times to load multiple drivers.",
-                     metavar="LOCATION")
-
     loads.add_option("-I", "--instruments-dir", action="callback", callback=check_includepath,
                      dest="inst_dir", type="string",
                      help="Append PATH to instruments load path.",
@@ -261,11 +240,6 @@ if __name__ == '__main__':
     loads.add_option("-C", "--controllers-dir", action="callback", callback=check_includepath,
                      dest="ctrl_dir", type="string",
                      help="Append PATH to controllers load path.",
-                     metavar="PATH")
-
-    loads.add_option("-D", "--drivers-dir", action="callback", callback=check_includepath,
-                     dest="drv_dir", type="string",
-                     help="Append PATH to drivers load path.",
                      metavar="PATH")
 
     parser.add_option("-v", "--verbose", action="count", dest='verbose',
@@ -277,7 +251,6 @@ if __name__ == '__main__':
 
     parser.set_defaults(instruments = [],
                         controllers = [],
-                        drivers     = [],
                         
                         inst_dir = [],
                         ctrl_dir = [],

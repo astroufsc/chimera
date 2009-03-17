@@ -222,6 +222,10 @@ class SystemConfig (object):
     def _parseLocation (self, type, dic):
 
         name = dic.pop('name', 'noname')
+
+        if type=="site": # keep name
+          dic["name"] = name
+
         cls  = dic.pop('type', None)
 
         if not cls:

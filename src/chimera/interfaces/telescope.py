@@ -57,6 +57,7 @@ class ITelescopeSlew (ITelescope):
     __config__ = {"timeout"             : 30, # s
                   "slew_rate"           : SlewRate.MAX,
                   "auto_align"          : True,
+                  "align_mode"          : AlignMode.POLAR,
                   "slew_idle_time"      : 0.1,  # s
                   "max_slew_time"       : 90.0, # s
                   "stabilization_time"  : 2.0,  # s

@@ -134,6 +134,8 @@ class SBIGDrv(object):
     readoutModes = {imaging: {},
                     tracking: {}}
 
+    cameraNames = {}
+
     filters = {1: udrv.CFWP_1,
                2: udrv.CFWP_2,
                3: udrv.CFWP_3,
@@ -320,6 +322,9 @@ class SBIGDrv(object):
         gcip.request = udrv.CCD_INFO_TRACKING
         self._cmd(udrv.CC_GET_CCD_INFO, gcip, infoTrk)
 
+        self.cameraNames[self.imaging] = infoImg.name
+        self.cameraNames[self.tracking] = infoTrk.name
+
         # imaging ccd readout modes
         for i in range(infoImg.readoutModes):
             mode = infoImg.readoutInfo[i]
@@ -386,7 +391,7 @@ class SBIGDrv(object):
 
     def isFanning(self):
         status = self._status(udrv.CC_MISCELLANEOUS_CONTROL)
-        return (status & 0x8)
+        return bool(int(status & 0x8))
 
     # filter wheel
     def getFilterPosition (self):
@@ -430,7 +435,7 @@ class SBIGDrv(object):
         if err == udrv.CE_NO_ERROR:
             return True
         else:
-            log.error('Got a problem here! Dumping error params')
+            #log.error('Got a problem here! Dumping error params')
             gesp = udrv.GetErrorStringParams()
             gesr = udrv.GetErrorStringResults()
 

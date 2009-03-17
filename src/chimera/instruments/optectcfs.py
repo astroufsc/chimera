@@ -83,6 +83,8 @@ class OptecTCFS (FocuserBase):
         
         self._setMode (Mode.Manual)
 
+	self["focuser_model"] = "Optec NGF-S"
+
         return True
 
     @lock

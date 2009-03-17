@@ -80,10 +80,6 @@ class SBIG(CameraBase, FilterWheelBase):
 
     def __start__ (self):
 
-        # FIXME
-        self["camera_model"] = "SBIG XXX"
-        self["ccd_model"] = "KAF XXX"
-
         if self['ccd'] == CCD.IMAGING:
             self.ccd = SBIGDrv.imaging
         else:
@@ -95,6 +91,8 @@ class SBIG(CameraBase, FilterWheelBase):
         self.setFilter(self.getFilters()[0])
         self.startCooling(self.getSetPoint())
         self.startFan()
+
+        self["camera_model"] = self.drv.cameraNames[self.ccd]
 
     def __stop__ (self):
         self.stopFan()
@@ -158,7 +156,7 @@ class SBIG(CameraBase, FilterWheelBase):
         self._isFanning = False
 
     def isFanning(self):
-        return self.drv.isFanning()
+        return self._isFanning
 
     @lock
     def getFilter (self):
