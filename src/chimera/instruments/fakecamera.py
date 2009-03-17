@@ -41,7 +41,9 @@ class FakeCamera (CameraBase, FilterWheelBase):
 
     __config__ = {"telescope"   : "/FakeTelescope/0",
                   "dome"        : "/FakeDome/0",
-                  "use_dss"     : False}
+                  "use_dss"     : False,
+                  "ccd_width"   : 1024,
+                  "ccd_height"  : 1024}
     
     def __init__ (self):
         CameraBase.__init__ (self)
@@ -303,7 +305,7 @@ class FakeCamera (CameraBase, FilterWheelBase):
         return self._adcs
 
     def getPhysicalSize(self):
-        return (512, 512)
+        return (self["ccd_width"], self["ccd_height"])
 
     def getPixelSize(self):
         return (9,9)
