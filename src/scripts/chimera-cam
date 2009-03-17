@@ -281,7 +281,7 @@ class ChimeraCam (ChimeraCLI):
         if imagetype == "dark":
             options.shutter = "CLOSE"
 
-        if imagetype.contains("flat") or imagetype == "object":
+        if "flat" in imagetype or imagetype == "object":
             options.shutter = "OPEN"
 
         # filter/exptime list support
