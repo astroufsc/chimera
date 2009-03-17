@@ -34,7 +34,7 @@ __all__ = ['Mode',
 
 
 Mode = Enum("Stand", "Track")
-Type = Enum("Rolloff", "Classic", "Other")
+Style = Enum("Rolloff", "Classic", "Other")
 
 
 class InvalidDomePositionException (ChimeraException):
@@ -52,7 +52,7 @@ class IDome (Interface):
                   "mode"     : Mode.Stand,
 
                   "model"    : "Fake Domes Inc.",
-                  "type"     : Type.Classic,
+                  "style"    : Style.Classic,
                   
                   'park_position'    : Coord.fromD(155),
                   'park_on_shutdown' : False,

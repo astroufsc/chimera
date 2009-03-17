@@ -165,6 +165,8 @@ class Enum(object):
         super(Enum, self).__setattr__('_keys', keys)
         super(Enum, self).__setattr__('_values', values)
 
+    def fromStr(self, s): return self.__getattribute__(s)
+
     def __setattr__(self, name, value):
         raise EnumImmutableError(name)
 

@@ -83,9 +83,6 @@ class Meade (TelescopeBase):
             for direction in Direction:
                 self._calibration[rate][direction] = 1
 
-        self._calibrated = False
-
-
     # -- ILifeCycle implementation --
 
     def __start__ (self):
@@ -366,7 +363,7 @@ class Meade (TelescopeBase):
     def isSlewing(self):
         return self._slewing
 
-    def _move (self, direction, duration=1.0, slewRate = None):
+    def _move (self, direction, duration=1.0, slewRate = SlewRate.GUIDE):
 
         if duration <= 0:
             raise ValueError ("Slew duration cannot be less than 0.")
@@ -415,7 +412,7 @@ class Meade (TelescopeBase):
             return True
 
     def isMoveCalibrated (self):
-        return self._calibrated
+        return os.path.exists(self._calibrationFile)
 
     @lock
     def calibrateMove (self):
@@ -454,7 +451,6 @@ class Meade (TelescopeBase):
             self.log.warning("Problems persisting calibration data. (%s)" % e)
 
         self.log.info("Calibration was OK.")
-        self._calibrated = True
 
     def _calcDuration (self, arc, direction, rate):
 
@@ -623,14 +619,14 @@ class Meade (TelescopeBase):
         c = Coord.fromDMS(ret[:-1])
         
         if self['azimuth180Correct']:
-            self.log.debug('Initial azimuth:  %s' % str(c.toDMS()))
+            #self.log.debug('Initial azimuth:  %s' % str(c.toDMS()))
             
             if c.toD() > 180:
                 c = c - Coord.fromD(180)
             else:
                 c = c + Coord.fromD(180)
             
-            self.log.debug('Final azimuth:  %s' % str(c.toDMS()))
+            #self.log.debug('Final azimuth:  %s' % str(c.toDMS()))
     
         return c
 

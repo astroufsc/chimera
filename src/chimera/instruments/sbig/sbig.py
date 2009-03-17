@@ -95,9 +95,11 @@ class SBIG(CameraBase, FilterWheelBase):
         self["camera_model"] = self.drv.cameraNames[self.ccd]
 
     def __stop__ (self):
-        self.stopFan()
-        self.stopCooling()
-        self.close ()
+        try:
+            self.stopFan()
+            self.stopCooling()
+            self.close ()
+        except SBIGException: pass
 
     @lock
     def open(self, device):

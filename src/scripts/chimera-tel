@@ -26,6 +26,7 @@ from chimera.util.position import Position
 
 from chimera.core.callback import callback
 from chimera.core.exceptions import ObjectNotFoundException 
+from chimera.interfaces.telescope import SlewRate
 
 import sys
 
@@ -54,7 +55,7 @@ class ChimeraTel (ChimeraCLI):
         self.addHelpGroup("RATE", "Slew rate")
         self.addParameters(dict(name="rate", type=ParameterType.CHOICE, 
                                 choices=["max", "MAX", "guide", "GUIDE", "center", "CENTER", "find", "FIND"],
-                                default="MAX", helpGroup="RATE",
+                                default="FIND", helpGroup="RATE",
                                 help="Slew rate to be used for --move-* commands. GUIDE, CENTER, FIND or MAX"))
         
 
@@ -207,7 +208,7 @@ class ChimeraTel (ChimeraCLI):
                                                                   direction,
                                                                   self.options.rate), end="")
         try:
-            cmd(offset.AS, self.options.rate)
+            cmd(offset.AS, SlewRate.fromStr(self.options.rate))
             self.out("OK")
         except Exception, e:
             self.err("ERROR. (%s)" % e)

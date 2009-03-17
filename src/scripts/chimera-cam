@@ -272,6 +272,18 @@ class ChimeraCam (ChimeraCLI):
         if not os.path.isabs(options.output):
             options.output = os.path.join(os.getcwd(), options.output)
 
+        imagetype = self._getImageType(options)
+        # adjust exptime and shutter according to Image type
+        if imagetype == "bias":
+            options.exptime = 0.0
+            options.shutter = "CLOSE"
+
+        if imagetype == "dark":
+            options.shutter = "CLOSE"
+
+        if imagetype.contains("flat") or imagetype == "object":
+            options.shutter = "OPEN"
+
         # filter/exptime list support
         filterList = []
 
@@ -307,7 +319,6 @@ class ChimeraCam (ChimeraCLI):
             except IOError:
                 self.err("Problems starting DS9. DIsplay disabled.")
 
-        imagetype = self._getImageType(options)
          
         @callback(self.localManager)
         def exposeBegin(request):
