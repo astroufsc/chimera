@@ -19,7 +19,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 
-import sha
+import hashlib
 import time
 import random
 
@@ -54,7 +54,7 @@ def callback (manager):
     def clbk_deco (f):
         setattr(Callback, 'handler', staticmethod(f))
         return manager.addClass(Callback, 
-                                'h'+sha.sha(str(time.time())+str(random.random())).hexdigest(),
+                                'h'+hashlib.sha1(str(time.time())+str(random.random())).hexdigest(),
                                 start=False).handler
 
     return clbk_deco

@@ -19,12 +19,14 @@ try:
 except ImportError:
     have_pywcs = False
 
-import sys
-import time
 import os
 import string
 import datetime as dt
 import random
+
+import bz2
+import gzip
+import zipfile
 
 from UserDict import DictMixin
 
@@ -120,7 +122,6 @@ class ImageUtil (object):
         return finalname
 
 
-
 class Image (DictMixin, RemoteObject):
     """
     Class to manipulate FITS images with a Pythonic taste.
@@ -184,6 +185,28 @@ class Image (DictMixin, RemoteObject):
         hduList.writeto(filename)
         hduList.close()
 
+        # compression handling
+        if imageRequest["compress"]:
+            if imageRequest["compress_format"].lower() == "bz2":
+                bzfilename = filename + '.bz2'
+                bzfp = bz2.BZ2File(bzfilename, 'wb', compresslevel=4)
+                rawfp = open(filename)
+                bzfp.write(rawfp.read())
+                bzfp.close()
+                rawfp.close()
+            elif imageRequest["compress_format"].lower() == "gzip":
+                gzfilename = filename + '.gz'
+                gzfp = gzip.GzipFile(gzfilename, 'wb', compresslevel=5)
+                rawfp = open(filename)
+                gzfp.write(rawfp.read())
+                gzfp.close()
+                rawfp.close()
+            else: # zip
+                zipfilename = filename + '.zip'
+                zipfp = zipfile.ZipFile(zipfilename, 'w', zipfile.ZIP_DEFLATED)
+                zipfp.write(filename, os.path.basename(filename))
+                zipfp.close()
+
         del hduList
         del hdu
 
@@ -203,6 +226,16 @@ class Image (DictMixin, RemoteObject):
 
 
     filename = lambda self: self._filename
+
+    def compressedFilename(self):
+        if os.path.exists(self._filename+".bz2"):
+            return self._filename+".bz2"
+        elif os.path.exists(self._filename+".gzip"):
+            return self._filename+".gzip"
+        elif os.path.exists(self._filename+".zip"):
+            return self._filename+".zip"
+        else:
+            return self._filename
     
     def http (self, http=None):
         if http:

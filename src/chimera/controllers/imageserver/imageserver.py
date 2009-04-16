@@ -19,7 +19,7 @@ class ImageServer(ChimeraObject):
 
                    # Load existing load_dir images on startup
                    'autoload': True,
-                   
+                   'httpd': True, 
                    'http_host': 'default',
                    'http_port': 7669}
     
@@ -33,9 +33,10 @@ class ImageServer(ChimeraObject):
 
         if self["http_host"] == "default":
             self["http_host"] = self.getManager().getHostname()
-            
-        self.http = ImageServerHTTP(self)
-        self.http.start()
+        
+        if self["httpd"]:    
+            self.http = ImageServerHTTP(self)
+            self.http.start()
         
         if self['autoload']:
             self.log.info('Loading existing images...')
@@ -46,7 +47,8 @@ class ImageServer(ChimeraObject):
 
     def __stop__(self):
 
-        self.http.stop()
+        if self["httpd"]:    
+            self.http.stop()
 
         for image in self.imagesByID.values():
             self.unregister(image)

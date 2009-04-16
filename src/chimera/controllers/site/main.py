@@ -23,12 +23,13 @@ import os.path
 import logging
 import optparse
 import sys
+import platform
 
 from chimera.core.location import Location
 from chimera.core.manager import Manager
 from chimera.core.systemconfig import SystemConfig
 from chimera.core.version import _chimera_version_, _chimera_description_, find_dev_version
-from chimera.core.exceptions import printException, InvalidLocationException, ChimeraException, ObjectNotFoundException
+from chimera.core.exceptions import printException, InvalidLocationException, ChimeraException
 from chimera.core.constants import (MANAGER_DEFAULT_HOST,
                                     MANAGER_DEFAULT_PORT,
                                     SYSTEM_CONFIG_DEFAULT_FILENAME,
@@ -180,8 +181,10 @@ class SiteController (object):
         # manager
         if not self.options.dry:
             log.info("Starting system.")
-            log.info("Chimera version: %s" % find_dev_version() or _chimera_version_)
+            log.info("Chimera: %s" % find_dev_version() or _chimera_version_)
             log.info("Chimera prefix: %s" % ChimeraPath.root())
+            log.info("Python : %s" % platform.release())
+            log.info("System : %s" % ' '.join(platform.uname()))
                 
             try:
                 self.manager = Manager(**self.config.chimera)

@@ -22,6 +22,8 @@ class ImageRequest (dict):
                    'window'  : None,
                    'bitpix'  : Bitpix.uint16,
                    'filename': '$DATE-$TIME',
+                   'compress': True,
+                   'compress_format': "BZ2",
                    'type'    : 'object'}
 
         # Automatically call getMetadata on all instruments + site as long as only

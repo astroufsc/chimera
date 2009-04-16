@@ -214,6 +214,10 @@ class Position (CoordsPosition):
 
     @staticmethod
     def _checkRange(value, lower, upper):
+        # handle -0 problem.
+        if abs(value) == 0.0:
+            value = abs(value)
+
         if not (lower <= value <= upper):
             raise PositionOutsideLimitsError("Value must between %s and %s." % (lower, upper))
         return True

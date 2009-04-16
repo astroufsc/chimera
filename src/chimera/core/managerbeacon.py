@@ -1,6 +1,7 @@
 import threading
 import select
 import SocketServer
+import socket
 
 from chimera.core.exceptions import ChimeraException
 from chimera.core.constants import MANAGER_BEACON_PORT, MANAGER_BEACON_CHALLENGE, MANAGER_BEACON_ERROR
@@ -22,10 +23,12 @@ class ManagerBeacon(SocketServer.ThreadingUDPServer):
     def __init__ (self, manager):
 
         SocketServer.UDPServer.allow_reuse_address = True
-        SocketServer.ThreadingUDPServer.daemon_threads = False
+        SocketServer.ThreadingUDPServer.daemon_threads = True
 
         try:
             SocketServer.ThreadingUDPServer.__init__(self, ("", MANAGER_BEACON_PORT), _ManagerBeaconHandler)
+            # hack! there is no interface to do that right!
+            self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1) 
         except Exception, e:
             raise ChimeraException("Failed to start Manager Beacon.")
 

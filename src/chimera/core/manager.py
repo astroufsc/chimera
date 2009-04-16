@@ -352,7 +352,6 @@ class Manager (RemoteObject):
                 self.adapter.shutdown(disconnect=True)
                 if self.beacon:
                     self.beacon.shutdown()
-                    self.beaconThread.join()
 
                 # die!
                 self.died.set()

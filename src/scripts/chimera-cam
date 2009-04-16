@@ -71,7 +71,10 @@ class ChimeraCam (ChimeraCLI):
                            dict(name="binning", help="Apply the selected binning to all frames", helpGroup="EXPOSE"),
                            dict(name="subframe", 
                                 help="Readout only the selected subframe portion. The notation follows IRAF conventions."
-                                " x1:x2,y1:y2 to specify the corners of the desired subframe", helpGroup="EXPOSE"))
+                                " x1:x2,y1:y2 to specify the corners of the desired subframe", helpGroup="EXPOSE"),
+                           dict(name="compress", help="Compress the output file using FORMAT. Use --compress=no to disable it.",
+                                helpGroup="EXPOSE", type=ParameterType.CHOICE,
+                                choices=["BZ2", "ZIP", "GZIP", "NO", "bz2", "zip", "gzip", "no"], default="BZ2"))
 
         self.addHelpGroup("DISPLAY", "Display configuration")
         self.addParameters(dict(name="no_display", long="no-display", type=ParameterType.BOOLEAN,
@@ -310,6 +313,11 @@ class ChimeraCam (ChimeraCLI):
                 exps = [ expTimes[-1] for x in range(len(filterList)-len(expTimes)) ]
                 expTimes.extend(exps)
 
+        compress_format = options.compress
+        if compress_format.lower() != "no":
+            compress = True
+        else:
+            compress = False
 
         # DS9
         ds9 = None
@@ -343,7 +351,7 @@ class ChimeraCam (ChimeraCLI):
         @callback(self.localManager)
         def readoutComplete(image):
             global currentFrame, currentFrameExposeStart, currentFrameReadoutStart
-            self.out(" (%s) " % image.filename(), end="")
+            self.out(" (%s) " % image.compressedFilename(), end="")
             self.out("OK (took %.3f s)"  % (time.time()-currentFrameReadoutStart))
             self.out("[%03d/%03d] took %.3fs" % (currentFrame, options.frames,
                                               time.time()-currentFrameExposeStart))
@@ -417,7 +425,9 @@ class ChimeraCam (ChimeraCLI):
                                       type=imagetype,
                                       binning=options.binning or None,
                                       window=options.subframe or None,
-                                      shutter=options.shutter)
+                                      shutter=options.shutter,
+                                      compress=compress,
+                                      compress_format=compress_format)
 
                 else:
                     camera.expose(exptime=expTimes[0],
@@ -427,7 +437,10 @@ class ChimeraCam (ChimeraCLI):
                                   type=imagetype,
                                   binning=options.binning or None,
                                   window=options.subframe or None,
-                                  shutter=options.shutter)
+                                  shutter=options.shutter,
+                                  compress=compress,
+                                  compress_format=compress_format)
+
 
             except Exception, e:
                 self.err("Error trying to take exposures. (%s)" % printException(e))
