@@ -25,6 +25,7 @@ from chimera.core.exceptions import ChimeraException
 
 from chimera.interfaces.autofocus import StarNotFoundException, FocusNotFoundException
 from chimera.interfaces.focuser import InvalidFocusPositionException, FocuserFeature
+from chimera.util.sextractor import SExtractorException
 
 from chimera.util.ds9 import DS9
 
@@ -167,6 +168,8 @@ class ChimeraFocus (ChimeraCLI):
                       " See autofocus log for more information.")
         except StarNotFoundException:
             self.exit("Couldn't find a suitable star to focus on.")
+        except SExtractorException:
+            self.exit("Couldn't find SExtractor. If you have it installed, please add it to yout PATH variable.")
 
         time.sleep(1)
 

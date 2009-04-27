@@ -186,7 +186,7 @@ class Image (DictMixin, RemoteObject):
         hduList.close()
 
         # compression handling
-        if imageRequest["compress"]:
+        if imageRequest and imageRequest["compress"]:
             if imageRequest["compress_format"].lower() == "bz2":
                 bzfilename = filename + '.bz2'
                 bzfp = bz2.BZ2File(bzfilename, 'wb', compresslevel=4)
@@ -304,7 +304,7 @@ class Image (DictMixin, RemoteObject):
         if not self._wcs:
             try:
                 self._wcs = pywcs.WCS(self._fd["PRIMARY"].header)
-            except KeyError:
+            except (KeyError, ValueError):
                 raise WCSNotFoundException("Couldn't find WCS information on %s" % (self._filename))
 
         return True

@@ -15,17 +15,22 @@ except ImportError:
 
 def xpaaccess(template="ds9"):
 
-    p = subprocess.Popen("xpaaccess -v %s" % template, stdout=subprocess.PIPE, shell=True)
-    p.wait()
+    try:
+        p = subprocess.Popen("xpaaccess -v %s" % template, stdout=subprocess.PIPE, shell=True)
+        p.wait()
 
-    aps = p.stdout.read()
+        aps = p.stdout.read()
 
-    aps = aps.split("\n")
+        aps = aps.split("\n")
 
-    if len(aps):
-        aps = [x for x in aps if len(x) >= 2]
+        if len(aps):
+            aps = [x for x in aps if len(x) >= 2]
 
-    return aps
+        return aps
+
+    except OSError:
+        # xpaaccess not found
+        return []
 
 class DS9 (object):
     """

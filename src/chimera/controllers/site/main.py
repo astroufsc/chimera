@@ -183,8 +183,8 @@ class SiteController (object):
             log.info("Starting system.")
             log.info("Chimera: %s" % find_dev_version() or _chimera_version_)
             log.info("Chimera prefix: %s" % ChimeraPath.root())
-            log.info("Python : %s" % platform.release())
-            log.info("System : %s" % ' '.join(platform.uname()))
+            log.info("Python: %s" % platform.release())
+            log.info("System: %s" % ' '.join(platform.uname()))
                 
             try:
                 self.manager = Manager(**self.config.chimera)

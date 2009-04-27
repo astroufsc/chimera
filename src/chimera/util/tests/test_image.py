@@ -1,13 +1,9 @@
-
-from chimera.util.image import Image, ImageUtil
-
-from chimera.util.coord    import Coord
-from chimera.util.position import Position
-from chimera.util.sextractor import SExtractorException
+from nose.tools import assert_raises
+from chimera.util.image import Image, ImageUtil, WCSNotFoundException
 
 import numpy as N
-
-import os.path
+import os
+import time
 
 class TestImage (object):
     
@@ -27,34 +23,32 @@ class TestImage (object):
 
     def test_wcs (self):
 
-        for f in ["teste-com-wcs.fits", "teste-sem-wcs.fits"]:
-            img = Image.fromFile(os.path.join(self.base, f), fix=False)
+        img = Image.fromFile(os.path.join(self.base, "teste-com-wcs.fits"), fix=False)
+        world =  img.worldAt(0,0)
+        print "world value at pixel 0,0:", world
+        print "pixel value at world %s:" % world, img.pixelAt(world)
+        print "world value at center pix %s:" % str(img.center()), img.worldAt(img.center())
+        assert world.ra.D != None
+        assert world.dec.D != None
 
-            print f
-            world =  img.worldAt(0,0)
-            print "world value at pixel 0,0:", world
-            print "pixel value at world %s:" % world, img.pixelAt(world)
-            print "world value at center pix %s:" % str(img.center()), img.worldAt(img.center())
-            print
+        img = Image.fromFile(os.path.join(self.base, "teste-sem-wcs.fits"), fix=False)
+        assert_raises(WCSNotFoundException, img.worldAt, 0, 0)
+
 
     def test_extractor (self):
 
         for f in ["teste-com-wcs.fits", "teste-sem-wcs.fits"]:
             
-            try:
-                img = Image.fromFile(os.path.join(self.base, f), fix=False)
+            img = Image.fromFile(os.path.join(self.base, f), fix=False)
 
-                stars = img.extract()
+            stars = img.extract()
 
-                print
-                print "Found %d star(s) on image %s, showing first 10:" % (len(stars), img.filename)
+            print
+            print "Found %d star(s) on image %s, showing first 10:" % (len(stars), img.filename)
 
-                for star in stars[:10]:
-                    print star["NUMBER"], star["XWIN_IMAGE"], star["YWIN_IMAGE"], star["FLUX_BEST"]
+            for star in stars[:10]:
+                print star["NUMBER"], star["XWIN_IMAGE"], star["YWIN_IMAGE"], star["FLUX_BEST"]
                     
-            except SExtractorException:
-                print "You don't have SExtractor... try to install it before"
-        
     def test_make_filename (self):
 
         names = []
