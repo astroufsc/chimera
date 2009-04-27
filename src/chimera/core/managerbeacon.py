@@ -28,7 +28,7 @@ class ManagerBeacon(SocketServer.ThreadingUDPServer):
         try:
             SocketServer.ThreadingUDPServer.__init__(self, ("", MANAGER_BEACON_PORT), _ManagerBeaconHandler)
             # hack! there is no interface to do that right!
-            self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1) 
+            #self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1) 
         except Exception, e:
             raise ChimeraException("Failed to start Manager Beacon.")
 

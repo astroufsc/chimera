@@ -22,12 +22,12 @@ class ManagerLocator (object):
         """
         
         sk = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        sk.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1) 
+        #sk.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1) 
         sk.setblocking(0)
 
         try:
             try:
-                sk.sendto(MANAGER_BEACON_CHALLENGE, ("<broadcast>", MANAGER_BEACON_PORT))
+                sk.sendto(MANAGER_BEACON_CHALLENGE, ("", MANAGER_BEACON_PORT))
             
                 ins, outs, excs = select.select([sk], [], [sk], 1)
             
