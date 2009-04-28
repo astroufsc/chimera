@@ -147,10 +147,8 @@ Example of use:
 
 import __builtin__
 
-import sys
 import os
-import popen2
-import exceptions
+import subprocess
 import re
 import copy
 
@@ -417,7 +415,10 @@ class SExtractor:
         selected=None
         for candidate in candidates:
             try:
-                (_out_err, _in) = popen2.popen4(candidate)
+                p = subprocess.Popen(candidate, shell=True,
+                                     stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                                     stderr=subprocess.STDOUT, close_fds=True)
+                (_out_err, _in) = (p.stdout, p.stdin)
                 versionline = _out_err.read()
                 if (versionline.find("SExtractor") != -1):
                     selected=candidate
