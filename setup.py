@@ -60,11 +60,6 @@ chimera_scripts = ['src/scripts/chimera',
 linux_deps = linux_cdeps = []
 win32_deps = win32_cdeps = []
 
-# FIXME:
-# coords needs an egg to works on Windows, at least without requiring the user to compile TPM
-# on Windows, requires numpy 1.0.4 'cause newer version still doesn't have an egg
-# and older matplotlib which doesn't require numpy >= 1.1.0
-
 # FIXME: pywcs only works on python 2.5
 if sys.platform == "win32":
     win32_cdeps = ["numpy == 1.0.4"]
@@ -83,7 +78,7 @@ else:
         print >> sys.stderr, "*"*80
         sys.exit(1)
 
-    linux_deps += ["python-sbigudrv == 0.1", "coords", "pyephem == 3.7.3.3"]
+    linux_deps += ["python-sbigudrv == 0.1", "pyephem == 3.7.3.3"]
     
     if sys.version_info[0:2] >= (2,5):
         linux_deps += ["pywcs"]

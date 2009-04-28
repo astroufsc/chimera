@@ -1,16 +1,5 @@
 
-have_coords = True
-
-try:
-    from coords import Position as CoordsPosition
-    from coords import astrodate
-    from coords import pytpm
-except ImportError:
-    class CoordsPosition(object): pass
-    have_coords = False
-
 # to allow use outsise chimera
-
 try:
     from chimera.util.coord import Coord, CoordUtil
 except ImportError:
@@ -20,7 +9,6 @@ try:
     from chimera.util.enum  import Enum
 except ImportError:
     from enum import Enum
-
 
 from types import StringType
 
@@ -37,7 +25,7 @@ class PositionOutsideLimitsError (Exception):
     pass
 
 
-class Position (CoordsPosition):
+class Position (object):
     """Position represents a coordinate pair in a reference frame.
 
     There are five factories available, that can be used to create
@@ -238,34 +226,6 @@ class Position (CoordsPosition):
         except:
             self.equinox = equinox #to support arbitrary equinoxes
 
-        if have_coords:
-            self._set_tpmstate()
-
-    def __getinitargs__ (self):
-        return (self._coords, self.equinox, self.system)
-
-    def _set_tpmstate(self):
-        """ Define the state for TPM based on equinox and system """
-        if self.system == 'galactic':
-            self._tpmstate=4
-            self._tpmequinox=astrodate.BesselDate(1958.0).jd
-        elif self.system == 'ecliptic':
-            self._tpmstate=3
-            self._tpmequinox=astrodate.JulianDate(1984.0).jd
-        elif self.system == 'celestial':
-            if self.equinox == 'j2000':
-                self._tpmstate=6
-                self._tpmequinox=pytpm.j2000
-            elif self.equinox == 'b1950':
-                self._tpmstate=5
-                self._tpmequinox=pytpm.b1950
-            else: #arbitrary equinox. assume FK5 for now, but this is bad.
-                self._tpmstate=2
-                self._tpmequinox=astrodate.JulianDate(self.equinox).jd
-        elif self.system == "topocentric":
-            self._tpmstate=19
-            self._tpmequinox=pytpm.j2000
-        
     def __repr__(self):
         """
         @rtype: string
