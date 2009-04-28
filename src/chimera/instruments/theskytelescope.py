@@ -27,6 +27,7 @@ import time
 from chimera.core.site import Site
 
 from chimera.util.coord    import Coord
+from chimera.util.position import Position
 
 from chimera.instruments.telescope import TelescopeBase
 from chimera.instruments.focuser   import FocuserBase
@@ -158,42 +159,37 @@ class TheSkyTelescope (TelescopeBase, FocuserBase):
     @com
     def getRa (self):
         self._telescope.GetRaDec()
-        return Coord.fromHMS(self._telescope.dRa)
+        return Coord.fromH(self._telescope.dRa)
 
     @com
     def getDec (self):
         self._telescope.GetRaDec()
-        return Coord.fromDMS(self._telescope.dDec)
+        return Coord.fromD(self._telescope.dDec)
 
     @com
     def getAz (self):
         self._telescope.GetAzAlt()
-        return Coord.fromDMS(self._telescope.dAz)
+        return Coord.fromD(self._telescope.dAz)
 
     @com
     def getAlt (self):
         self._telescope.GetAzAlt()
-        return Coord.fromDMS(self._telescope.dAlt)
+        return Coord.fromD(self._telescope.dAlt)
 
     @com
     def getPositionRaDec (self):
         self._telescope.GetRaDec()
-        # FIXME: returns Position (pickle error)
-        return (Coord.fromHMS(self._telescope.dRa),
-                Coord.fromDMS(self._telescope.dDec))
+        return Position.fromRaDec(Coord.fromH(self._telescope.dRa), Coord.fromD(self._telescope.dDec))
 
     @com
     def getPositionAltAz (self):
         self._telescope.GetAzAlt ()
-        # FIXME: returns Position (pickle error)
-        return (Coord.fromDMS(self._telescope.dAlt),
-                Coord.fromDMS(self._telescope.dAz))
+        return Position.fromAltAz(Coord.fromD(self._telescope.dAlt), Coord.fromD(self._telescope.dAz))
 
     @com
     def getTargetRaDec (self):
         if not self._target: return (0, 0)
-
-        return (self._target.ra, self._target.dec)
+        return Position.fromRaDec(Coord.fromH(self._target.ra), Coord.fromD(self._target.dec))
 
     @com
     def slewToRaDec (self, position):
