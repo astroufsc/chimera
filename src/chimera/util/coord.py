@@ -332,6 +332,54 @@ class CoordUtil (object):
         #-- 4 --
         return (xt, yt)
 
+    #Great circle distance formulae:
+    # source http://wiki.astrogrid.org/bin/view/Astrogrid/CelestialCoordinates
+
+    @staticmethod
+    def hav(theta):
+        """haversine function, units = radians. Used in calculation of great
+        circle distance
+
+        @param theta: angle in radians
+        @type theta: number
+
+        @rtype: number
+        """
+        ans = (math.sin(0.5*theta))**2
+        return ans
+
+    @staticmethod
+    def ahav(x):
+        """archaversine function, units = radians. Used in calculation of great
+        circle distance
+
+        @type x: number
+        
+        @return: angle in radians
+        @rtype: number
+        """
+        ans = 2.0 * math.asin(math.sqrt(x))
+        return ans
+
+    @staticmethod
+    def gcdist(vec1, vec2):
+        """Input (ra,dec) vectors in radians;
+        output great circle distance in radians.
+
+        @param vec1,vec2: position in radians
+        @type vec1: number
+        @type vec2: number
+        
+        @rtype: great circle distance in radians
+        
+        @see: U{http://wiki.astrogrid.org/bin/view/Astrogrid/CelestialCoordinates}
+        """
+        ra1,dec1=vec1
+        ra2,dec2=vec2
+        ans=CoordUtil.ahav( CoordUtil.hav(dec1-dec2) + math.cos(dec1)*math.cos(dec2)*CoordUtil.hav(ra1-ra2) )
+        return ans
+
+
 class Coord (object):
     """L{Coord} represents a single angular coordinate.
 
@@ -716,6 +764,7 @@ class Coord (object):
                 other = Coord.fromState(other, self.state)
             else:
                 other = Coord.fromState(other, State.D)
+
         return self.D <= other.D
 
     def __eq__ (self, other):

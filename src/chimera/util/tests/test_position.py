@@ -61,3 +61,12 @@ class TestPosition (object):
         
         altAz2 = Position.raDecToAltAz(raDec, lat, lst)
         assert equal(altAz.alt.toR(),altAz2.alt.toR()) & equal(altAz.az.toR(),altAz2.az.toR())
+
+    def test_distances(self):
+
+        p1 = Position.fromRaDec("10:00:00", "0:0:0")
+        p2 = Position.fromRaDec("12:00:00", "0:0:0")
+
+        d = p1.angsep(p2)
+        assert p1.within(p2, Coord.fromD(29.99)) == False
+        assert p1.within(p2, Coord.fromD(30.01)) == True

@@ -216,10 +216,7 @@ class Position (object):
                  system=System.CELESTIAL):
 
         self._coords = coords
-        self._internal = tuple(float(c.toD()) for c in self.coords)
-
         self.system = str(system).lower()
-        self.units  = 'degrees'
 
         try:
             self.equinox = str(equinox).lower()
@@ -239,7 +236,6 @@ class Position (object):
         return "%s %s" % tuple(str(c) for c in self.coords)
 
     # -* conversions -*
-
 
     # Coord conversion
     coords = property(lambda self: self._coords)
@@ -268,8 +264,39 @@ class Position (object):
     def rad (self):
         return self.R
 
-#    #raDecToAltAz and altAzToRaDec adopted from sidereal.py
-#    #http://www.nmt.edu/tcc/help/lang/python/examples/sidereal/ims/
+    #
+    # great circle distance distance
+    #
+    def angsep(self, other):
+        """
+        Calculate the Great Circle Distance from other.
+
+        @param other: position to calculate distance from.
+        @type  other: L{Position}
+
+        @returns: The distance from this point to L{other}.
+        @rtype: L{Coord} in degress (convertable, as this is a Coord).
+        """
+        return Coord.fromR(CoordUtil.gcdist(self.R, other.R)).toD()
+
+    def within(self, other, eps=Coord.fromAS(60)):
+        """
+        Returns wether L{other} is up to L{eps} units from this
+        points. (using great circle distance.
+
+        @param other: Same as in angsep.
+        @type  other: L{Position}.
+
+        @param eps: Limit distance.
+        @type  epc: L{Coord}.
+
+        @returns: Wether L{other} is within {eps} units from this point.
+        @rtype: bool
+        """
+        return (self.angsep(other) <= eps)
+        
+    # raDecToAltAz and altAzToRaDec adopted from sidereal.py
+    # http://www.nmt.edu/tcc/help/lang/python/examples/sidereal/ims/
                 
     @staticmethod
     def raDecToAltAz(raDec, latitude, lst):
