@@ -309,8 +309,12 @@ class Manager (RemoteObject):
         meName = socket.gethostbyname(meHost)
         mePort = self.getPort()
 
-        return (location.host == None or location.host in (meHost, meName)) and \
-               (location.port == None or location.port == self.getPort())
+        # if Manager's binded on (0.0.0.0), just cjeck the port, host doesn't matter.
+        if meHost == "0.0.0.0":
+            return (location.port == None or location.port == self.getPort())
+        else:
+            return (location.host == None or location.host in (meHost, meName)) and \
+                   (location.port == None or location.port == self.getPort())
 
     # shutdown management
 
