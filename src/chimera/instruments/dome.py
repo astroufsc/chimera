@@ -264,6 +264,6 @@ class DomeBase (ChimeraObject, IDome):
             slit = 'Closed'
 
         return [('DOME_MDL', str(self['model']), 'Dome Model'),
-                ('DOME_TYP', str(self['type']), 'Dome Type'),
+                ('DOME_TYP', str(self['style']), 'Dome Type'),
                 ('DOME_TRK', str(self['mode']), 'Dome Tracking/Standing'),
                 ('DOME_SLT', str(slit), 'Dome slit status')]

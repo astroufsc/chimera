@@ -58,6 +58,7 @@ class OptecTCFS (FocuserBase):
 
     def __start__ (self):
         self.open()
+        self["model"] = "Optec NGF-S"
         return True
 
     def __stop__ (self):

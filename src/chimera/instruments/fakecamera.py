@@ -19,6 +19,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 import time
+import datetime as dt
 import random
 import urllib
 import gzip
@@ -108,7 +109,7 @@ class FakeCamera (CameraBase, FilterWheelBase):
         self.exposeBegin(imageRequest)
 
         t=0
-        self.__lastFrameStart = time.time()
+        self.__lastFrameStart = dt.datetime.utcnow()
         while t < imageRequest["exptime"]:
             if self.abort.isSet():
                 self.__exposing = False
@@ -170,6 +171,9 @@ class FakeCamera (CameraBase, FilterWheelBase):
         telescope = None
         dome = None
 
+        (mode, binning, top,  left,
+         width, height) = self._getReadoutModeInfo(imageRequest["binning"],
+                                                   imageRequest["window"])
         self.readoutBegin(imageRequest)
         
         try:
@@ -252,7 +256,9 @@ class FakeCamera (CameraBase, FilterWheelBase):
         if (pix == None):
             pix = N.zeros((100,100), dtype=N.int32)
 
-        proxy = self._saveImage(imageRequest, pix, {"frame_start_time": self.__lastFrameStart})
+        proxy = self._saveImage(imageRequest, pix, {"frame_start_time": self.__lastFrameStart,
+                                                    "frame_temperature": self.getTemperature(),
+                                                    "binning_factor": self._binning_factors[binning]})
 
         self.readoutComplete(proxy)
         return proxy

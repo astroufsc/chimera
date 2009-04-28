@@ -58,10 +58,8 @@ class FocuserBase (ChimeraObject, IFocuser):
             return False
 
     def getMetadata(self, request):
-        return [('FOCUSER',
-                 str(self['model']), 'Focuser Model'),
-
-                ('FOCUS',   self.getPosition(),
+        return [('FOCUSER', str(self['model']), 'Focuser Model'),
+                ('FOCUS',  self.getPosition(),
                  'Focuser position used for this observation')]
 
     def _inRange (self, n):

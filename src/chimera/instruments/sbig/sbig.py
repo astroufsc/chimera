@@ -235,7 +235,7 @@ class SBIG(CameraBase, FilterWheelBase):
                                int(imageRequest["exptime"]*100), shutter)
         
         # save time exposure started
-        self.lastFrameStartTime = dt.datetime.now()
+        self.lastFrameStartTime = dt.datetime.utcnow()
         self.lastFrameTemp = self.getTemperature()
         
         while self.isExposing():

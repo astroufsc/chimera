@@ -166,7 +166,7 @@ class Image (DictMixin, RemoteObject):
 
         hdu = pyfits.PrimaryHDU(data)
                                                                                             
-        headers = [("DATE", ImageUtil.formatDate(dt.datetime.now()), "date of file creation"),
+        headers = [("DATE", ImageUtil.formatDate(dt.datetime.utcnow()), "date of file creation"),
                    ("CREATOR", _chimera_name_, _chimera_long_description_)]
 
         #TODO: Implement BITPIX support

@@ -151,7 +151,7 @@ class CameraBase (ChimeraObject,
         img = Image.create(imageData, imageRequest)
 
         img += [('DATE-OBS',
-                 ImageUtil.formatDate(extra.get("frame_start_time", dt.datetime.now())),
+                 ImageUtil.formatDate(extra.get("frame_start_time", dt.datetime.utcnow())),
                  'Date exposure started'),
                 
                 ('CCD-TEMP', extra.get("frame_temperature", -275.0),
@@ -181,9 +181,6 @@ class CameraBase (ChimeraObject,
                  'CCD X Pixel Size [micrometer]'),
                 ('CCDPXSZY', self.getPixelSize()[1],
                  'CCD Y Pixel Size [micrometer]')]
-
-        # update image request
-        imageRequest["filename"] = img.filename()
 
         # regiter image on ImageServer
         server = getImageServer(self.getManager())

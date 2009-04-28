@@ -53,6 +53,6 @@ class FilterWheelBase (ChimeraObject, IFilterWheel):
         return self.getFilters().index(name)
 
     def getMetadata(self, request):
-        return [('FWHEEL', str(self['model']), 'FilterWheel Model'),
+        return [('FWHEEL', str(self['filter_wheel_model']), 'FilterWheel Model'),
                 ('FILTER', str(self.getFilter()),
                  'Filter used for this observation')]

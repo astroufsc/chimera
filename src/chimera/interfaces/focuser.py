@@ -47,6 +47,7 @@ class IFocuser (Interface):
 
     __config__ = {"focuser_model": "Fake Focus Inc.",
                   "device": "/dev/ttyS1",
+                  "model": "Fake Focuser Inc.",
                   "open_timeout": 10,
                   "move_timeout": 60}
 

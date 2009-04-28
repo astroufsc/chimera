@@ -39,6 +39,7 @@ class FakeFocuser (FocuserBase):
 
     def __start__ (self):
         self._position = int(self.getRange()[1] / 2.0)
+        self["model"] = "Fake Focus v.1"
 
     @lock
     def moveIn (self, n):

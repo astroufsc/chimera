@@ -3,8 +3,6 @@ from chimera.interfaces.camera import (Shutter, Bitpix)
 
 from chimera.core.exceptions import ChimeraValueError
 
-import Pyro.util
-
 import logging
 import chimera.core.log
 log = logging.getLogger(__name__)
@@ -77,6 +75,8 @@ class ImageRequest (dict):
 
         if str(self['shutter']) not in Shutter:
             raise ChimeraValueError('Invalid shutter value: ' + str(self['shutter']))
+        else:
+            self["shutter"] = Shutter.fromStr(str(self["shutter"]))
 
     def __str__(self):
         return ('exptime: %f, frames: %i, shutter: %s, type: %s' % (self['exptime'],
@@ -87,8 +87,8 @@ class ImageRequest (dict):
     def fetchPreHeaders (self, manager):
         auto = []
         if self.auto_collect_metadata:
-            for cls in ('Site', 'Camera', 'Dome', 'FilterWheel', 'Focuser', 'Telescope'):
-                classes = manager.getResourcesByClass(cls)
+            for cls in ('Site', 'ICamera', 'IDome', 'IFilterWheel', 'IFocuser', 'ITelescope'):
+                classes = manager.getResourcesByClass(cls, checkBases=True)
                 if len(classes) == 1:
                     auto.append(str(classes[0]))
 
@@ -98,9 +98,7 @@ class ImageRequest (dict):
         self._getHeaders(manager, self.metadataPost)
         
     def _getHeaders (self, manager, proxies):
-
         for proxyurl in proxies:
-            
             try:
                 proxy = manager.getProxy(proxyurl)
                 proxyLoc = str(proxy.getLocation())
@@ -108,5 +106,4 @@ class ImageRequest (dict):
                     self._accum_from.append(proxyLoc)
                     self.headers += proxy.getMetadata(self)
             except Exception, e:
-                log.warning('Unable to get metadata from %s' % (proxyurl))
-                print ''.join(Pyro.util.getPyroTraceback(e))
+                log.exception('Unable to get metadata from %s' % (proxyurl))

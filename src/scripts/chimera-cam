@@ -65,9 +65,10 @@ class ChimeraCam (ChimeraCLI):
                                      "Use --list-filters to get a list of available filters. "
                                      "You can pass a comma-separated list of filter to get multiple exposure (in the same order as the filter list)."),
                            dict(name="shutter", type=ParameterType.CHOICE, helpGroup="EXPOSE",
-                                choices=["open", "OPEN", "close", "CLOSE", "leave", "LEAVE"],
-                                default="OPEN",
-                                help="What to do with the shutter: open, close, leave (case insensitive)"),
+                                choices=["open", "OPEN", "close", "CLOSE", "leave", "LEAVE", "default", "DEFAULT"],
+                                default="default",
+                                help="What to do with the shutter: open, close, leave (case insensitive) or "
+                                     "default to adjust according to image type (see --object and family"),
                            dict(name="binning", help="Apply the selected binning to all frames", helpGroup="EXPOSE"),
                            dict(name="subframe", 
                                 help="Readout only the selected subframe portion. The notation follows IRAF conventions."
@@ -276,16 +277,24 @@ class ChimeraCam (ChimeraCLI):
             options.output = os.path.join(os.getcwd(), options.output)
 
         imagetype = self._getImageType(options)
-        # adjust exptime and shutter according to Image type
+
         if imagetype == "bias":
             options.exptime = 0.0
-            options.shutter = "CLOSE"
 
-        if imagetype == "dark":
-            options.shutter = "CLOSE"
+        # adjust shutter according to Image type if shutter set to default.
+        if  "default" in options.shutter.lower():
+            if imagetype == "bias":
+                options.shutter = "CLOSE"
 
-        if "flat" in imagetype or imagetype == "object":
-            options.shutter = "OPEN"
+            if imagetype == "dark":
+                options.shutter = "CLOSE"
+
+            if "flat" in imagetype or imagetype == "object":
+                options.shutter = "OPEN"
+
+        else:
+            # make sure we use ALL CAPS here, Enums doesn't like lower case names.
+            options.shutter = options.shutter.upper()
 
         # filter/exptime list support
         filterList = []
