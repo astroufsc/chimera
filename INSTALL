@@ -1,29 +1,12 @@
 Chimera - Observatory Automation System
 =======================================
 
-Requirements:
-
-        Chimera core:
-
-        - GNU/Linux OS with 2.6.x kernel
-        - Python v. 2.4.x or greater
-
-        SBIG drivers:
-
-	- libusb v. xxx
-        - Numpy v. xxx or numarray v. xxx (Numpy is recomended)
-        - pyfits v. xxx
-
-        Meade driver:
-
-        - pyserial v. 2
-
 Installation:
 
 Before install Chimera, install the following packages using the standard way
 on your distribution.
 
-python-numpy python-dev libusb-dev
+python-numpy python-dev python-numpy libusb-dev swig
 
 After that,
 
