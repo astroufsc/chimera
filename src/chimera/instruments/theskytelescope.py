@@ -283,11 +283,11 @@ class TheSkyTelescope (TelescopeBase, FocuserBase):
 
     @com
     def startTracking (self):
-        self._telescope.SetTracking(1,0,1,0)
+        self._telescope.SetTracking(1,1,0,0)
 
     @com
     def stopTracking (self):
-        self._telescope.SetTracking(0,0,0,0)
+        self._telescope.SetTracking(0,1,0,0)
 
 
     def _getSite(self):
