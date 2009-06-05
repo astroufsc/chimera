@@ -25,6 +25,7 @@ import logging
 import time
 
 from chimera.core.site import Site
+from chimera.core.exceptions import ChimeraException
 
 from chimera.util.coord    import Coord
 from chimera.util.position import Position
@@ -64,7 +65,7 @@ def com (func):
         try:
             return func(*args, **kwargs)
         except com_error, e:
-            raise e
+            raise ChimeraException(str(e))
 
     return com_wrapper
 
