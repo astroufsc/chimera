@@ -6,7 +6,7 @@ Installation:
 Before install Chimera, install the following packages using the standard way
 on your distribution.
 
-python-numpy python-dev python-numpy libusb-dev swig
+python-numpy python-dev python-numpy libusb-dev swig saods9 sextractor
 
 After that,
 

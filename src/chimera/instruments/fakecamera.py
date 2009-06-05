@@ -40,9 +40,7 @@ from chimera.core.lock       import lock
 
 class FakeCamera (CameraBase, FilterWheelBase):
 
-    __config__ = {"telescope"   : "/FakeTelescope/0",
-                  "dome"        : "/FakeDome/0",
-                  "use_dss"     : False,
+    __config__ = {"use_dss"     : False,
                   "ccd_width"   : 1024,
                   "ccd_height"  : 1024}
     
@@ -177,14 +175,16 @@ class FakeCamera (CameraBase, FilterWheelBase):
         self.readoutBegin(imageRequest)
         
         try:
-            telescope = self.getManager().getProxy(self['telescope'], lazy=True)
+            telescopes = self.getManager().getResourcesByClass("ITelescope", checkBases=True)
+            telescope = self.getManager().getProxy(telescopes[0])
         except ObjectNotFoundException:
-            pass
+            telescope = None
 
         try:
-            dome = self.getManager().getProxy(self['dome'], lazy=True)
+            domes = self.getManager().getResourcesByClass("IDome", checkBases=True)
+            dome = self.getManager().getProxy(domes[0])
         except ObjectNotFoundException:
-            pass
+            dome = None
         
         if not telescope:
             self.log.debug("FakeCamera couldn't find telescope.")

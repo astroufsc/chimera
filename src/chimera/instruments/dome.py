@@ -54,6 +54,12 @@ class DomeBase (ChimeraObject, IDome):
 
         self.setHz(1/4.0)
 
+        tel = self.getTelescope()
+        if tel:
+            self._connectTelEvents()
+        else:
+            self["mode"] = Mode.Stand
+
         if self["mode"] == Mode.Track:
             self.track ()
         elif self["mode"] == Mode.Stand:
@@ -62,9 +68,6 @@ class DomeBase (ChimeraObject, IDome):
             self.log.warning ("Invalid dome mode: %s. "
                               "Will use Stand mode instead.")
             self.stand ()
-
-        # telescope events
-        self._connectTelEvents()
 
         return True
 
@@ -94,7 +97,7 @@ class DomeBase (ChimeraObject, IDome):
         
         try:
             tel = self.getTelescope()
-
+            if not tel: return
             tel.slewBegin    += self.getProxy()._telSlewBeginClbk
             tel.slewComplete  += self.getProxy()._telSlewCompleteClbk
             tel.abortComplete += self.getProxy()._telAbortCompleteClbk
@@ -108,6 +111,7 @@ class DomeBase (ChimeraObject, IDome):
     def _disconnectTelEvents (self):
         try:
             tel = self.getTelescope()
+            if not tel: return
             
             tel.slewBegin    -= self.getProxy()._telSlewBeginClbk
             tel.slewComplete  -= self.getProxy()._telSlewCompleteClbk
@@ -144,7 +148,9 @@ class DomeBase (ChimeraObject, IDome):
 
     # utilitaries
     def getTelescope(self):
-        return self.getManager().getProxy(self['telescope'], lazy=True)        
+        p = self.getManager().getProxy(self['telescope'], lazy=True)
+        if not p.ping(): return False
+        return p
 
     def control (self):
 

@@ -2,6 +2,7 @@ from chimera.core.version   import _chimera_version_, _chimera_description_
 from chimera.core.constants import SYSTEM_CONFIG_DEFAULT_FILENAME
 from chimera.core.location  import Location, InvalidLocationException
 
+from chimera.core.systemconfig import SystemConfig
 from chimera.core.manager      import Manager
 from chimera.core.path         import ChimeraPath
 
@@ -318,14 +319,13 @@ class ChimeraCLI (object):
                                 help="Host name/IP to bind the local Chimera instance."),
                            dict(name="port", short="P", helpGroup="LOCALMANAGER", default=port or 9000,
                                 help="Port to which the local Chimera instance will listen to."),
-                           dict(name="noautostart", long="no-autostart",
-                                    type=ParameterType.BOOLEAN, default=False,
-                                    help="Don't try to autostart Chimera if it were not running.",
+                           dict(name="config", default=SYSTEM_CONFIG_DEFAULT_FILENAME,
+                                    help="Chimera configuration file to use. default=%default",
                                     helpGroup="LOCALMANAGER"))
-
 
         self.localManager  = None
         self._remoteManager = None
+        self.sysconfig = None
 
         self._needInstrumentsPath = instrument_path
         self._needControllersPath = controllers_path
@@ -432,28 +432,21 @@ class ChimeraCLI (object):
 
         self.__stop__(self.options)
 
-    def _startSystem (self, options, needRemoteManager=True):
+    def _startSystem (self, options):
         
         self.localManager = Manager(getattr(options, 'host', 'localhost'),
-                                    getattr(options, 'port', 9000),
-                                    local=True)
+                                    getattr(options, 'port', 9000))
 
-        # if we need a remote Manager, check if it is up, if not, start it
-        if needRemoteManager:
-            try:
-                self._remoteManager = ManagerLocator.locate()
-                self._remoteManager.ping()
+        try:
+            self.sysconfig = SystemConfig.fromFile(options.config)
+            self._remoteManager = ManagerLocator.locate(self.sysconfig.chimera["host"], self.sysconfig.chimera["port"])
+        except ManagerNotFoundException:
+            # FIXME: better way to start Chimera
+            site = SiteController(wait=False)
+            site.startup()
 
-            except ManagerNotFoundException:
-
-                # FIXME: better way to start Chimera
-                site = SiteController(wait=False)
-                site.startup()
-
-                self._keepRemoteManager = False
-
-                self._remoteManager = ManagerLocator.locate()
-                self._remoteManager.ping()
+            self._keepRemoteManager = False
+            self._remoteManager = ManagerLocator.locate(self.sysconfig.chimera["host"], self.sysconfig.chimera["port"])
 
     def _belongsTo(self, meHost, mePort, location):
         
@@ -469,13 +462,8 @@ class ChimeraCLI (object):
         instruments = dict([(x.name, x) for x in self._parameters.values() if x.type == ParameterType.INSTRUMENT])
         controllers = dict([(x.name, x) for x in self._parameters.values() if x.type == ParameterType.CONTROLLER])
 
-        # we only need to autostart the Manager instance 
-        # if we are using going to use a local intrument (in other cases, the local manager started
-        # by the CLI to handle events can handle everthing).
-        needRemoteManager = (not options.noautostart)
-
         # starts a local Manager (not using sysconfig) or a full sysconfig backed if needed.
-        self._startSystem(self.options, needRemoteManager)
+        self._startSystem(self.options)
 
         # create locations
         for inst in instruments.values() + controllers.values():
@@ -496,7 +484,7 @@ class ChimeraCLI (object):
 
             if not inst.location and inst.required:
                 self.exit("Couldn't find %s configuration. "
-                          "Edit %s or see --help for more information" % (inst.name.capitalize(), SYSTEM_CONFIG_DEFAULT_FILENAME))
+                          "Edit %s or see --help for more information" % (inst.name.capitalize(), os.path.abspath(options.config)))
 
 
         for inst in instruments.values() + controllers.values():

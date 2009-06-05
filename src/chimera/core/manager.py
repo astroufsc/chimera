@@ -28,8 +28,6 @@ from chimera.core.remoteobject  import RemoteObject
 from chimera.core.proxy         import Proxy
 from chimera.core.util          import getManagerURI
 from chimera.core.state         import State
-from chimera.core.managerbeacon import ManagerBeacon
-from chimera.core.managerlocator import ManagerLocator, ManagerNotFoundException
 
 from chimera.core.exceptions   import InvalidLocationException, \
                                       ObjectNotFoundException, \
@@ -125,7 +123,7 @@ class Manager (RemoteObject):
 
     """
     
-    def __init__(self, host = None, port = None, local=False):
+    def __init__(self, host = None, port = None):
         RemoteObject.__init__ (self)
         
         log.info("Starting manager.")
@@ -139,30 +137,11 @@ class Manager (RemoteObject):
         # shutdown event
         self.died = threading.Event()
 
-        if not local:
-            try:
-                ManagerLocator.locate()
-                raise ChimeraException("Chimera is already running"
-                                       " on this system. Use chimera-admin"
-                                       " to manage it.")
-            except ManagerNotFoundException:
-                # ok, we are alone.
-                pass
-
         # our daemon server
         self.adapter = ManagerAdapter (self, host, port)
         self.adapterThread = threading.Thread(target=self.adapter.requestLoop)
         self.adapterThread.setDaemon(True)
         self.adapterThread.start()
-
-        # finder beacon
-        if not local:
-            self.beacon = ManagerBeacon(self)
-            self.beaconThread = threading.Thread(target=self.beacon.run)
-            self.beaconThread.setDaemon(True)
-            self.beaconThread.start()
-        else:
-            self.beacon = None
 
         # register ourself
         self.resources.add(MANAGER_LOCATION, self, getManagerURI(self.getHostname(), self.getPort()))
@@ -278,38 +257,42 @@ class Manager (RemoteObject):
             if not ret:
                 raise ObjectNotFoundException ("Couldn't found an object at the"
                                                " given location %s" % location)
-
-            return Proxy (uri=ret.uri)
-            
+            p = Proxy (uri=ret.uri)
+            if lazy:
+                return p
+            else:
+                p.ping()
+                return p
         else:
 
             if lazy:
                 return Proxy(location)
             else:
-
                 # contact other manager
-                other = Proxy(location=MANAGER_LOCATION,
-                              host=location.host or host,
-                              port=location.port or port)
+                try:
+                    other = Proxy(location=MANAGER_LOCATION,
+                                  host=location.host or host,
+                                  port=location.port or port)
+                except Pyro.errors.URIError, e:
+                    raise InvalidLocationException("Invalid remote location given. '%s' (%s)." % (location, str(e)))
 
                 if not other.ping():
                     raise ObjectNotFoundException ("Can't contact %s manager at %s." % (location, other.URI.address))
 
                 proxy = other.getProxy(location)
-                
+
                 if not proxy:
-                    raise ObjectNotFoundException ("Couldn't found an object at the"
+                    raise ObjectNotFoundException ("Couldn't find an object at the"
                                                    " given location %s" % location)
                 else:
                     return proxy
 
     def _belongsToMe (self, location):
-
         meHost = self.getHostname()
         meName = socket.gethostbyname(meHost)
         mePort = self.getPort()
 
-        # if Manager's binded on (0.0.0.0), just cjeck the port, host doesn't matter.
+        # if Manager's binded on (0.0.0.0), just check the port, host doesn't matter.
         if meHost == "0.0.0.0":
             return (location.port == None or location.port == self.getPort())
         else:
@@ -354,8 +337,6 @@ class Manager (RemoteObject):
             finally:
                 # kill our adapter
                 self.adapter.shutdown(disconnect=True)
-                if self.beacon:
-                    self.beacon.shutdown()
 
                 # die!
                 self.died.set()
@@ -407,11 +388,16 @@ class Manager (RemoteObject):
         if type(location) != Location:
             location = Location(location)
 
+        if not self._belongsToMe(location):
+            # remote object, just add it to resource list.
+            # use a dummy instance to make things easier to Resources Manager getByClass feature.
+            cls = self.classLoader.loadClass(location.cls, path)
+            self.resources.add(location, cls(), None)
+            return True
+
         # get the class
         cls = None
-
         cls = self.classLoader.loadClass(location.cls, path)
-            
         return self.addClass (cls, location.name, location.config, start)
 
 
@@ -446,7 +432,7 @@ class Manager (RemoteObject):
             raise InvalidLocationException ("Invalid instance name: %s (must start with a letter)" % location)
 
         if location in self.resources:
-            raise InvalidLocationException ("Location %s is already in the system. Only one allowed (Tip. change the name!)." % location)
+            raise InvalidLocationException ("Location %s is already in the system. Only one allowed (Tip: change the name!)." % location)
 
         # check if it's a valid ChimeraObject
         if not issubclass(cls, ChimeraObject):
