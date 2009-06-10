@@ -338,7 +338,7 @@ class Meade (TelescopeBase):
             else:
                 position = self.getPositionRaDec()
 
-            if target.within (position, 60, units='arcsec'):
+            if target.within (position, eps=Coord.fromAS(60)):
                 time.sleep (self["stabilization_time"])
                 self._slewing = False
                 return True

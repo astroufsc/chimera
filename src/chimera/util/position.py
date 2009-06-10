@@ -282,13 +282,13 @@ class Position (object):
     def within(self, other, eps=Coord.fromAS(60)):
         """
         Returns wether L{other} is up to L{eps} units from this
-        points. (using great circle distance.
+        points. (using great circle distance).
 
         @param other: Same as in angsep.
         @type  other: L{Position}.
 
         @param eps: Limit distance.
-        @type  epc: L{Coord}.
+        @type  eps: L{Coord}.
 
         @returns: Wether L{other} is within {eps} units from this point.
         @rtype: bool
