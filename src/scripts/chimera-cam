@@ -286,10 +286,13 @@ class ChimeraCam (ChimeraCLI):
             if imagetype == "bias":
                 options.shutter = "CLOSE"
 
-            if imagetype == "dark":
+            elif imagetype == "dark":
                 options.shutter = "CLOSE"
 
-            if "flat" in imagetype or imagetype == "object":
+            elif "flat" in imagetype or imagetype == "object":
+                options.shutter = "OPEN"
+
+            else:
                 options.shutter = "OPEN"
 
         else:
