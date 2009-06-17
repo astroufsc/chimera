@@ -24,17 +24,17 @@ from chimera.core.site     import Site
 
 from chimera.controllers.autofocus import Autofocus
 
-from chimera.instruments.camera import Camera
-from chimera.drivers.fakecamera import FakeCamera
-from chimera.drivers.sbig       import SBIG
+from chimera.instruments.camera import CameraBase
+from chimera.instruments.fakecamera import FakeCamera
+from chimera.instruments.sbig       import SBIG
 
-from chimera.instruments.telescope import Telescope
-from chimera.drivers.faketelescope import FakeTelescope
-from chimera.drivers.meade         import Meade
+from chimera.instruments.telescope import TelescopeBase
+from chimera.instruments.faketelescope import FakeTelescope
+from chimera.instruments.meade         import Meade
 
-from chimera.instruments.dome    import Dome
-from chimera.drivers.fakedome    import FakeDome
-from chimera.drivers.domelna40cm import DomeLNA40cm
+from chimera.instruments.dome    import DomeBase
+from chimera.instruments.fakedome    import FakeDome
+from chimera.instruments.domelna40cm import DomeLNA40cm
 
 from chimera.util.coord import Coord
 from chimera.util.position import Position
