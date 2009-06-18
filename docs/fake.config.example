@@ -1,0 +1,63 @@
+
+chimera:
+  host: 0.0.0.0
+  port: 7666
+
+site:
+  name: MyObservatory
+  latitude: "-25:20:30"
+  longitude: "-48:10:20"
+  altitude: 20
+  utc_offset: -3
+
+telescope:
+  name: fake
+  type: FakeTelescope
+
+  model: Fake Telescope
+  optics: SCT
+  mount: Fake Mount
+  aperture: 280.0 # mm
+  focal_length: 2800.0 # mm
+  focal_reduction: 0.5
+  
+camera:
+  name: fake
+  type: FakeCamera
+  ccd_width: 765
+  ccd_height: 510
+  use_dss: True
+
+  camera_model: Fake Camera
+  ccd_model: KAF XYZ 10
+  telescope_focal_length: 2800.0 # mm
+ 
+  filter_wheel_model: Fake Filters
+  filters: "U B V R I"
+  
+focuser:
+  name: fake
+  type: FakeFocuser
+
+  model: Fake Focuser
+    
+dome:
+  name: fake
+  type: FakeDome
+
+  model: Fake Dome
+  style: Rolloff
+
+  mode: track
+  telescope: /FakeTelescope/fake
+
+controller:
+  - type: Autofocus
+    name: fake
+    camera: /FakeCamera/fake
+    filterwheel: /FakeFilterWheel/fake
+
+  - type: ImageServer
+    name: fake
+    httpd: True
+    autoload: False

@@ -62,7 +62,7 @@ class FakeCamera (CameraBase, FilterWheelBase):
         self._MY_ADC = 1 << 2
         self._MY_READOUT_MODE = 1 << 3
 
-        self._ccds = {CCD.IMAGING: self._MY_CCD}
+        self._ccds = {self._MY_CCD: CCD.IMAGING}
 
         self._adcs = {"12 bits": self._MY_ADC}
 
