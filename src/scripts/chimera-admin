@@ -33,6 +33,7 @@ from chimera.core.exceptions import ObjectNotFoundException, InvalidLocationExce
 from chimera.core.path import ChimeraPath
 from chimera.core.state import State
 from chimera.core.managerlocator import ManagerLocator, ManagerNotFoundException
+from chimera.core.systemconfig import SystemConfig
 
 from Pyro.util import getPyroTraceback
 
@@ -44,9 +45,17 @@ chimera.core.log.setConsoleLevel(logging.WARNING)
 
 class doStuff:
     def __init__(self, options, args):
- 
+
         try:
-            self.locManager = ManagerLocator.locate(options.host, options.port)
+            sysconfig = SystemConfig.fromDefault()
+            host, port = sysconfig.chimera["host"], sysconfig.chimera["port"]
+
+            if options.host != MANAGER_DEFAULT_HOST:
+                host = options.host
+            if options.port != MANAGER_DEFAULT_PORT:
+                port = options.port
+            
+            self.locManager = ManagerLocator.locate(host, port)
         except ManagerNotFoundException:
             print >> sys.stderr, "Couldn't find current Chimera instance. Is Chimera running?"
             sys.exit(1)
