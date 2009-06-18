@@ -31,7 +31,6 @@ class FakeFilterWheel (FilterWheelBase):
 
         self._lastFilter = 0
 
-    @lock
     def getFilter (self):
         return self._getFilterName(self._lastFilter)
 

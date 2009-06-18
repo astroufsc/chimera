@@ -160,7 +160,6 @@ class SBIG(CameraBase, FilterWheelBase):
     def isFanning(self):
         return self._isFanning
 
-    @lock
     def getFilter (self):
         # SBIG support for this is very poor, we just keep track mannualy
         return self.lastFilter

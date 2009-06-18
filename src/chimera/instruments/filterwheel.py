@@ -36,7 +36,6 @@ class FilterWheelBase (ChimeraObject, IFilterWheel):
     def setFilter (self, filter):
         raise NotImplementedError()
 
-    @lock
     def getFilter (self):
         raise NotImplementedError()
 
