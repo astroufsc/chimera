@@ -69,9 +69,9 @@ class DS9 (object):
 
     def displayImage (self, image, frame=1):
         try:
-            self.displayFile(image.filename())
+            self.displayFile(filename=image.filename())
         except IOError:
-            self.displayFile(image.http())
+            self.displayFile(url=image.http())
 
     def displayFile (self, filename=None, url=None, frame=1):
         """
