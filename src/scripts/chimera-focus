@@ -19,12 +19,13 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 
-from chimera.core.cli import ChimeraCLI, action, parameter
+from chimera.core.cli import ChimeraCLI, action, parameter, ParameterType
 from chimera.core.callback import callback
 from chimera.core.exceptions import ChimeraException
 
 from chimera.interfaces.autofocus import StarNotFoundException, FocusNotFoundException
 from chimera.interfaces.focuser import InvalidFocusPositionException, FocuserFeature
+from chimera.interfaces.filterwheel import InvalidFilterPositionException
 from chimera.util.sextractor import SExtractorException
 
 from chimera.util.ds9 import DS9
@@ -32,6 +33,7 @@ from chimera.util.ds9 import DS9
 import sys
 import time    
 import os
+import re
 
 class ChimeraFocus (ChimeraCLI):
     
@@ -39,8 +41,10 @@ class ChimeraFocus (ChimeraCLI):
         ChimeraCLI.__init__(self, "chimera-focus", "Focuser controller", 0.1)
         
         self.addHelpGroup("FOCUS", "Focus")
-        self.addInstrument(name="focuser", cls="IFocuser", required=True, helpGroup="FOCUS", help="Focuser instrument to be used")
-        self.addController(name="autofocus", cls="Autofocus", required=False, helpGroup="FOCUS", help="Autofocus controller to be used")
+        self.addInstrument(name="focuser", cls="IFocuser", required=True, helpGroup="FOCUS",
+                           help="Focuser instrument to be used")
+        self.addController(name="autofocus", cls="Autofocus", required=False, helpGroup="FOCUS",
+                           help="Autofocus controller to be used")
         
         self.addHelpGroup("AUTOFOCUS", "Autofocus")
         self.addParameters(dict(name="autofocus_step", long="step", type="int", helpGroup="AUTOFOCUS",
@@ -49,7 +53,12 @@ class ChimeraFocus (ChimeraCLI):
                                 help="Defines autofocus frame exposure time.", metavar="EXPTIME", default=10.0),
                            dict(name="autofocus_debug", long="debug", helpGroup="AUTOFOCUS",
                                 help="Run an autofocus debug session using data from PREVIOUS_RUN_DIR.",
-                                metavar="PREVIOUS_RUN_DIR", default=""))
+                                metavar="PREVIOUS_RUN_DIR", default=""),
+                           dict(name="autofocus_nodisplay", long="disable-display", type=ParameterType.BOOLEAN,
+                                helpGroup="AUTOFOCUS",
+                                help="Disable interactive display during autofocus", default=False),
+                           dict(name="autofocus_filter", long="filter", helpGroup="AUTOFOCUS",
+                                help="Which filter to use in the autofocus run.", default="use-current-filter"))
 
         self.addHelpGroup("COMMANDS", "Commands")        
 
@@ -57,13 +66,15 @@ class ChimeraFocus (ChimeraCLI):
                help="Defines autofocus focuser range to be covered. Use start-end, "
                "as in 1000-6000 to run from 1000 to 6000.", metavar="START-END")
     def autofocus_range(self, value):
-        try:
-            start, end = value.split("-")
-            start = int(start)
-            end = int(start)
-            return (start, end)
-        except ValueError:
-            raise ValuError("Invalid start-end range")
+        r = re.compile("(?P<start>\d+)-(?P<end>\d+)")
+        m = r.match(value)
+        if not m:
+            raise ValueError("Invalid start-end range")
+
+        start, end = m.groups()
+        start = int(start)
+        end = int(end)
+        return (start, end)
         
     @action(long="in", type="int", help="Move N steps IN", metavar="N", helpGroup="COMMANDS")
     def move_in (self, options):
@@ -133,10 +144,12 @@ class ChimeraFocus (ChimeraCLI):
             self.exit("No Autofocus controller available. Try --autofocus=..., or --help.")
 
         ds9 = None
-        try:
-            ds9 = DS9(open=True)
-        except IOError:
-            pass
+        
+        if not options.autofocus_nodisplay:
+            try:
+                ds9 = DS9(open=True)
+            except IOError:
+                pass
 
         @callback(self.localManager)
         def stepComplete (position, star, frame):
@@ -153,23 +166,39 @@ class ChimeraFocus (ChimeraCLI):
         self.autofocus.stepComplete += stepComplete
         
         start, end = options.autofocus_range
+        
+        if options.autofocus_debug is "":
+            debug = False
+        else:
+            debug = os.path.realpath(options.autofocus_debug)
+
+        if options.autofocus_filter == "use-current-filter":
+            filter = False
+        else:
+            filter = options.autofocus_filter
 
         try:
+            if not debug:
+                self.out("Looking for a star to focus on... (will try up to %d times) ..." % self.autofocus["max_tries"])
+                
             best_focus = self.autofocus.focus(exptime=options.autofocus_exptime,
                                               start=start, end=end, step=options.autofocus_step,
-                                              minmax=(0,30), debug=False or os.path.realpath(options.autofocus_debug))
-            print "Best focus position:", best_focus[-1][0]
+                                              minmax=(0,30), debug=debug,
+                                              filter=filter)
+            self.out("Best focus position: %d" % int(best_focus[-1][0]))
 
         except IOError, e:
-            self.exit("Invalid debug directory %s." % options.autofocus_debug)
+            self.exit(str(e))
 
         except FocusNotFoundException:
             self.exit("Couldn't find the best focus position."
                       " See autofocus log for more information.")
-        except StarNotFoundException:
-            self.exit("Couldn't find a suitable star to focus on.")
+        except StarNotFoundException, e:
+            self.exit(str(e))
         except SExtractorException:
             self.exit("Couldn't find SExtractor. If you have it installed, please add it to yout PATH variable.")
+        except InvalidFilterPositionException, e:
+            self.exit(str(e))
 
         time.sleep(1)
 

@@ -7,7 +7,7 @@ from chimera.core.event import event
 from chimera.core.exceptions import ChimeraException, ClassLoaderException
 from chimera.core.constants import SYSTEM_CONFIG_DIRECTORY
 
-from chimera.interfaces.autofocus import IAutofocus, Target, StarNotFoundException, FocusNotFoundException
+from chimera.interfaces.autofocus import IAutofocus, StarNotFoundException, FocusNotFoundException
 from chimera.interfaces.focuser import InvalidFocusPositionException
 
 from chimera.controllers.imageserver.imagerequest import ImageRequest
@@ -137,18 +137,9 @@ class Autofocus (ChimeraObject, IAutofocus):
     fit a parabola to a curve made of a star FWHM versus focus
     positions.
 
-    1. determine target telescope position.
-       if CURRENT, will use current telescope position.
-       
-       if AUTO: get site details and ask catalog manager to give us a
-       list of stars available to focus now.
-    
-    2) take exposure to find focus star.
+    1) take exposure to find focus star.
 
-       If no star was found and in AUTO target mode, try another
-       one. otherwise, abort the process.
-
-    3) set window and binning if necessary and start iteration:
+    2) set window and binning if necessary and start iteration:
 
        Get n points starting at min_pos and ending at max_pos focus positions,
        and for each position measure FWHM of a target star (currently the
@@ -156,14 +147,14 @@ class Autofocus (ChimeraObject, IAutofocus):
 
        Fit a parabola to the FWHM points measured.
 
-    4) Leave focuser at best focus point (parabola vertice)
+    3) Leave focuser at best focus point (parabola vertice)
 
     """
 
     def __init__ (self):
         ChimeraObject.__init__ (self)
 
-        self.imageRequest = ImageRequest()
+        self.imageRequest = None
         self.filter = None
         
         self.currentRun = None
@@ -181,9 +172,6 @@ class Autofocus (ChimeraObject, IAutofocus):
         """Raised after every step in the focus sequence with
         information about the last step.
         """
-
-    def getTel(self):
-        return self.getManager().getProxy(self["telescope"])
 
     def getCam(self):
         return self.getManager().getProxy(self["camera"])
@@ -213,8 +201,7 @@ class Autofocus (ChimeraObject, IAutofocus):
             self._log_handler.close()
 
     @lock
-    def focus (self, target=Target.CURRENT,
-               filter=None, exptime=None, binning=None, window=None,
+    def focus (self, filter=None, exptime=None, binning=None, window=None,
                start=2000, end=6000, step=500, points=None,
                minmax=None, debug=False):
 
@@ -265,44 +252,33 @@ class Autofocus (ChimeraObject, IAutofocus):
             self._debug_images = [ "%s/image-%02d.fits" % (debug, i)
                                    for i in range(len(positions)+1)]
 
+        self.imageRequest = ImageRequest()
         self.imageRequest["exp_time"] = exptime or 10
         self.imageRequest["frames"] = 1
         self.imageRequest["shutter"] = "OPEN"
         
         if filter:
             self.filter = filter
+            self.log.debug("Using filter %s." % self.filter)
+        else:
+            self.filter = False
+            self.log.debug("Using current filter.")
+
         if binning:
             self.imageRequest["binning"] = binning
+
         if window:
             self.imageRequest["window"] = window
         
-        # 1. Find star to focus
-
-        if target == Target.AUTO:
-            raise NotImplementedError()
-            # FIXME: impelemnt this!
-            target_position = self._findStarToFocus()
-
-            self.log.debug("Trying to move to the focus star at %s." % target_position)
-
-            tel = self.getTel()
-            tel.slewToRaDec(target_position)
-            
-        else:
-            self.log.debug("Will look for stars in the current telescope position")
-
-        # 2. Find best star to focus on this field
+        # 1. Find best star to focus on this field
 
         star_found = self._findBestStarToFocus(self._takeImageAndResolveStars())
 
         if not star_found:
 
-            if not target == Target.AUTO:
-                raise StarNotFoundException("Couldn't find a suitable star to focus on.")
+            tries = 0
 
-            tries = 1
-
-            while not star_found and tries <= self["max_stars_to_try"]:
+            while not star_found and tries < self["max_tries"]:
                 star_found = self._findBestStarToFocus(self._takeImageAndResolveStars())
                 tries += 1
                 
@@ -427,7 +403,9 @@ class Autofocus (ChimeraObject, IAutofocus):
                                      "FLUX_BEST", "FWHM_IMAGE",
                                      "FLAGS"]
 
-        return frame.extract(config)
+        catalogName = os.path.splitext(frame.filename())[0] + ".catalog"
+        configName = os.path.splitext(frame.filename())[0] + ".config"
+        return frame.extract(config, saveCatalog=catalogName, saveConfig=configName)
 
     def _findBestStarToFocus (self, catalog):
 

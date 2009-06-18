@@ -5,7 +5,6 @@ from chimera.util.image import Image
 
 import os
 import shutil
-from pyraf import iraf
 
 import logging
 import chimera.core.log
@@ -59,13 +58,9 @@ class AstrometryNet:
         if findstarmethod == "astrometry.net":
             #line = "solve-field --guess-scale %s --overwrite -o %s" %(fullfilename, outfilename)
             line = "solve-field %s --overwrite -o %s --ra %f --dec %f --radius %f"  %(fullfilename, outfilename, ra, dec, radius)
-            print line
-
-
         elif findstarmethod == "sex":
             sexoutfilename = pathname + outfilename + ".xyls"
             line = "solve-field %s --overwrite -o %s --x-column X_IMAGE --y-column Y_IMAGE --sort-column MAG_ISO --sort-ascending --width %d --height %d --ra %f --dec %f --radius %f"  %(sexoutfilename, outfilename, width, height, ra, dec, radius)
-            print "Sextractor command line %s" %line
             # using --guess-scale
             # line = "solve-field %s --overwrite -o %s --x-column X_IMAGE --y-column Y_IMAGE --sort-column MAG_ISO --sort-ascending --width %d --height %d --guess-scale"  %(sexoutfilename, outfilename, width, height)
 
@@ -101,14 +96,14 @@ class AstrometryNet:
         wcs_imgname = pathname + outfilename + "-wcs" + ".fits"
         wcs_solution = pathname + outfilename + ".wcs"
         shutil.copyfile(wcs_solution,wcs_solution+".fits")
-        if ( os.path.exists(wcs_imgname) == True ):
-            iraf.imdelete(wcs_imgname)
+        #if ( os.path.exists(wcs_imgname) == True ):
+        #    iraf.imdelete(wcs_imgname)
 
         # create a separate image with new header
-        iraf.artdata()
-        iraf.imcopy(fullfilename,wcs_imgname)
-        iraf.mkheader(images=wcs_imgname,headers=wcs_solution+".fits",
-                      append="no",verbose="no",mode="al")
+        #iraf.artdata()
+        #iraf.imcopy(fullfilename,wcs_imgname)
+        #iraf.mkheader(images=wcs_imgname,headers=wcs_solution+".fits",
+        #              append="no",verbose="no",mode="al")
         return(wcs_imgname)
   
     
@@ -156,7 +151,9 @@ if __name__ == "__main__":
         # files Paulo and I did with the "extinction machine"
 
         # x = AstrometryNet.solveField("/media/USB2/astindices/demo/lna/2008-08-06/070808-040709-0001.fits",findstarmethod="sex")
-        x = AstrometryNet.solveField("/home/obs/images/2008-10-02/021008-224939-0001.fits",findstarmethod="sex")
+        #x = AstrometryNet.solveField("/home/obs/images/2008-10-02/021008-224939-0001.fits",findstarmethod="sex")
+        x = AstrometryNet.solveField("/home/henrique/ph/chimera/landolt-0001.fits",findstarmethod="sex")
+        x = AstrometryNet.solveField("/home/henrique/landolt-com-header.fits",findstarmethod="sex")        
 
 
         # try:
@@ -418,6 +415,6 @@ if __name__ == "__main__":
         #    print "Failed"
 
 
-    except Exception,e:
-        pass
+    except Exception, e:
+        print e
         

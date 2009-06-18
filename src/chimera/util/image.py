@@ -28,6 +28,8 @@ import bz2
 import gzip
 import zipfile
 
+import shutil
+
 from UserDict import DictMixin
 
 import logging
@@ -340,7 +342,7 @@ class Image (DictMixin, RemoteObject):
     # Source extraction
     #
     
-    def extract (self, params={}):
+    def extract (self, params={}, saveCatalog=False, saveConfig=False):
 
         sex = SExtractor ()
 
@@ -360,10 +362,15 @@ class Image (DictMixin, RemoteObject):
 
         # ok, here we go!
         try:
-            sex.run(self._filename)
+            sex.run(self._filename, clean=False)
             result = sex.catalog()
             return result
         finally:
+            if saveCatalog:
+                shutil.move(sex.config['CATALOG_NAME'], saveCatalog)
+            if saveConfig:
+                shutil.move(sex.config['CONFIG_FILE'], saveConfig)
+                
             sex.clean(config=True, catalog=True, check=True)
 
     #

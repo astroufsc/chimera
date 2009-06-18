@@ -531,8 +531,7 @@ class SExtractor:
 
         self.program, self.version = self.setup(path)
 
-        commandline = (
-            self.program + " -c " + self.config['CONFIG_FILE'] + " " + file)
+        commandline = (self.program + " -c " + self.config['CONFIG_FILE'] + " " + file)
         # print commandline
 
         rcode = os.system(commandline)

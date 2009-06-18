@@ -32,18 +32,14 @@ class StarNotFoundException (ChimeraException):
 class FocusNotFoundException (ChimeraException):
     pass
 
-Target = Enum("CURRENT", "AUTO")
-
 class IAutofocus (Interface):
 
-    __config__ = {"telescope"          : "/FakeTelescope/0",
-                  "camera"             : "/FakeCamera/0",
+    __config__ = {"camera"             : "/FakeCamera/0",
                   "filterwheel"        : "/FakeFilterWheel/0",
                   "focuser"            : "/FakeFocuser/0",
-                  "max_stars_to_try"   : 5}
+                  "max_tries"          : 3}
 
-    def focus (self, target=Target.CURRENT,
-               filter=None, exptime=None, binning=None, window=None,
+    def focus (self, filter=None, exptime=None, binning=None, window=None,
                start=2000, end=6000, step=500, points=None,
                minmax=None, debug=False):
         """
