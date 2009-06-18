@@ -27,6 +27,8 @@ from chimera.core.callback import callback
 from chimera.core.site     import Site
 from chimera.core.threads  import ThreadPool
 
+from chimera.util.coord import Coord
+from chimera.interfaces.telescope import SlewRate
 
 def assertEpsEqual (a, b, e=60):
     """Assert wether a equals b withing eps precision, in
@@ -56,9 +58,10 @@ class TestTelescope (object):
                                                 "utc_offset": "-3"})
 
         if "REAL" in sys.argv:
-            from chimera.instruments.meade import Meade
-            self.manager.addClass(Meade, "meade", {"device": "/dev/ttyS6"})
-            self.TELESCOPE = "/Meade/0"
+            #from chimera.instruments.meade import Meade
+            #self.manager.addClass(Meade, "meade", {"device": "/dev/ttyS6"})
+            #self.TELESCOPE = "/Meade/0"
+            self.TELESCOPE = "150.162.110.3:7666/TheSkyTelescope/0"
         else:
             from chimera.instruments.faketelescope import FakeTelescope
             self.manager.addClass(FakeTelescope, "fake")
@@ -191,8 +194,45 @@ class TestTelescope (object):
             printPosition()
             time.sleep(0.5)
 
-        
-        
-    
+    def test_jog(self):
 
-        
+        print
+
+        dt = Coord.fromDMS("00:20:00")
+
+        start = self.tel.getPositionRaDec()
+        self.tel.moveNorth(dt, SlewRate.FIND)
+        print "North:", (start.ra - self.tel.getPositionRaDec().ra).AS, (start.dec - self.tel.getPositionRaDec().dec).AS
+
+        start = self.tel.getPositionRaDec()
+        self.tel.moveSouth(dt, SlewRate.FIND)
+        print "South:", (start.ra - self.tel.getPositionRaDec().ra).AS, (start.dec - self.tel.getPositionRaDec().dec).AS
+
+        start = self.tel.getPositionRaDec()
+        self.tel.moveWest(dt, SlewRate.FIND)
+        print "West :", (start.ra - self.tel.getPositionRaDec().ra).AS, (start.dec - self.tel.getPositionRaDec().dec).AS
+
+        start = self.tel.getPositionRaDec()
+        self.tel.moveEast(dt, SlewRate.FIND)
+        print "East :", (start.ra - self.tel.getPositionRaDec().ra).AS, (start.dec - self.tel.getPositionRaDec().dec).AS
+
+        start = self.tel.getPositionRaDec()
+        self.tel.moveNorth(dt, SlewRate.FIND)
+        self.tel.moveEast(dt, SlewRate.FIND)
+        print "NE   :", (start.ra - self.tel.getPositionRaDec().ra).AS, (start.dec - self.tel.getPositionRaDec().dec).AS
+
+        start = self.tel.getPositionRaDec()
+        self.tel.moveSouth(dt, SlewRate.FIND)
+        self.tel.moveEast(dt, SlewRate.FIND)
+        print "SE   :", (start.ra - self.tel.getPositionRaDec().ra).AS, (start.dec - self.tel.getPositionRaDec().dec).AS
+
+        start = self.tel.getPositionRaDec()
+        self.tel.moveNorth(dt, SlewRate.FIND)
+        self.tel.moveWest(dt, SlewRate.FIND)
+        print "NW   :", (start.ra - self.tel.getPositionRaDec().ra).AS, (start.dec - self.tel.getPositionRaDec().dec).AS
+
+        start = self.tel.getPositionRaDec()
+        self.tel.moveSouth(dt, SlewRate.FIND)
+        self.tel.moveWest(dt, SlewRate.FIND)
+        print "SW   :", (start.ra - self.tel.getPositionRaDec().ra).AS, (start.dec - self.tel.getPositionRaDec().dec).AS
+
