@@ -3,7 +3,7 @@ Chimera - Observatory Automation System
 
 Installation:
 
-Before install Chimera, install the following packages using the standard way
+Before installing Chimera, install the following packages using the standard way
 on your distribution.
 
 python-numpy python-dev python-numpy libusb-dev swig saods9 sextractor astrometry.net
@@ -15,6 +15,7 @@ developer extras:
 After that,
 
 $ cd <uncompressed_chimera_dir>
+# su
 # python setup.py install 
 
 setup.py must be run as root user to install Chimera in a system-wide basis.
