@@ -53,8 +53,10 @@ def callback (manager):
 
     def clbk_deco (f):
         setattr(Callback, 'handler', staticmethod(f))
-        return manager.addClass(Callback, 
-                                'h'+hashlib.sha1(str(time.time())+str(random.random())).hexdigest(),
-                                start=False).handler
+        p = manager.addClass(Callback, 
+                             'h'+hashlib.sha1(str(time.time())+str(random.random())).hexdigest(),
+                             start=False)
+        print p
+        return p.handler
 
     return clbk_deco

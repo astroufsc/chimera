@@ -71,7 +71,7 @@ class DS9 (object):
         try:
             self.displayFile(image.filename())
         except IOError:
-            self.dipslayFile(image.http())
+            self.displayFile(image.http())
 
     def displayFile (self, filename=None, url=None, frame=1):
         """

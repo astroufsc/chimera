@@ -40,7 +40,7 @@ currentFrameReadoutStart = 0
 class ChimeraCam (ChimeraCLI):
     
     def __init__ (self):
-        ChimeraCLI.__init__(self, "chimera-cam", "Camera controller", 0.1)
+        ChimeraCLI.__init__(self, "chimera-cam", "Camera controller", 0.1, port=9000)
         
         self.addHelpGroup("CAM", "Camera and Filter Wheel configuration")
         self.addInstrument(name="camera", cls="ICamera",
@@ -194,6 +194,7 @@ class ChimeraCam (ChimeraCLI):
     def info(self, options):
         camera = self.camera
 
+        print camera
         self.out("="*40)        
         self.out("Camera: %s (%s)." % (camera.getLocation(), camera["device"]))
 

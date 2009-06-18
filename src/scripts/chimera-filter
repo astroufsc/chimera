@@ -34,7 +34,7 @@ import warnings
 class ChimeraFilter (ChimeraCLI):
     
     def __init__ (self):
-        ChimeraCLI.__init__(self, "chimera-filter", "Filter Wheel Controller", 0.1)
+        ChimeraCLI.__init__(self, "chimera-filter", "Filter Wheel Controller", 0.1, port=9002)
         
         self.addHelpGroup("INFO", "Filter Wheel Information")
         self.addHelpGroup("FILTER_CHANGE", "Filter Position")

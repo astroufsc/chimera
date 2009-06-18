@@ -282,7 +282,7 @@ class ChimeraCLI (object):
     """
             
     def __init__ (self, prog, description, version,
-                  host=None, port=None, verbosity=True,
+                  port=None, verbosity=True,
                   instrument_path=True, controllers_path=True):
 
         self.parser = optparse.OptionParser(prog=prog,
@@ -315,9 +315,7 @@ class ChimeraCLI (object):
                                     help="Display information while working"))
 
         self.addHelpGroup("LOCALMANAGER", "Client Configuration")
-        self.addParameters(dict(name="host", short="H", helpGroup="LOCALMANAGER", default=host or 'localhost',
-                                help="Host name/IP to bind the local Chimera instance."),
-                           dict(name="port", short="P", helpGroup="LOCALMANAGER", default=port or 9000,
+        self.addParameters(dict(name="port", short="P", helpGroup="LOCALMANAGER", default=port or 9000,
                                 help="Port to which the local Chimera instance will listen to."),
                            dict(name="config", default=SYSTEM_CONFIG_DEFAULT_FILENAME,
                                     help="Chimera configuration file to use. default=%default",
@@ -434,11 +432,9 @@ class ChimeraCLI (object):
 
     def _startSystem (self, options):
         
-        self.localManager = Manager(getattr(options, 'host', 'localhost'),
-                                    getattr(options, 'port', 9000))
-
         try:
             self.sysconfig = SystemConfig.fromFile(options.config)
+            self.localManager = Manager(self.sysconfig.chimera["host"], getattr(options, 'port', 9000))
             self._remoteManager = ManagerLocator.locate(self.sysconfig.chimera["host"], self.sysconfig.chimera["port"])
         except ManagerNotFoundException:
             # FIXME: better way to start Chimera

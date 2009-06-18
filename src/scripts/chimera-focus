@@ -38,7 +38,7 @@ import re
 class ChimeraFocus (ChimeraCLI):
     
     def __init__ (self):
-        ChimeraCLI.__init__(self, "chimera-focus", "Focuser controller", 0.1)
+        ChimeraCLI.__init__(self, "chimera-focus", "Focuser controller", 0.1, port=9003)
         
         self.addHelpGroup("FOCUS", "Focus")
         self.addInstrument(name="focuser", cls="IFocuser", required=True, helpGroup="FOCUS",
