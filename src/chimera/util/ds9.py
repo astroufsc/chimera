@@ -67,13 +67,13 @@ class DS9 (object):
         if self.isOpen():
             self.set("exit")            
 
-    def displayImage (self, image):
+    def displayImage (self, image, frame=1):
         try:
             self.displayFile(image.filename())
         except IOError:
             self.dipslayFile(image.http())
 
-    def displayFile (self, filename=None, url=None):
+    def displayFile (self, filename=None, url=None, frame=1):
         """
         Display a file either from a local file or from a remote URL.
 
@@ -89,6 +89,8 @@ class DS9 (object):
         if not filename and not url:
             raise TypeError("You must pass either a filename or a url.")
 
+        self.set("frame %d" % frame)
+
         if filename:
             if not os.path.exists(filename):
                 raise IOError("%s doesn't exists" % filename)
@@ -98,14 +100,18 @@ class DS9 (object):
         if url:
             self.set("file url '%s'" % url)
 
-    def displayArray (self, array):
+    def displayArray (self, array, frame=1):
         pass
 
     def set(self, cmd, data=None):
         self.ds9.xpaset(cmd, data)
 
     def get(self, cmd):
-        return self.ds9.xpaget(cmd)
+        ret = self.ds9.xpaget(cmd)
+        if ret:
+            return ret[:-1]
+        else:
+            return None
 
     def id (self):
         return self.ds9.template
