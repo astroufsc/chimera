@@ -272,10 +272,6 @@ class ChimeraCam (ChimeraCLI):
             if options.binning not in binnings.keys():
                 self.exit("Invalid binning mode. See --info for available binning modes")
 
-        # make files in the current directory if path is not absolute
-        if not os.path.isabs(options.output):
-            options.output = os.path.join(os.getcwd(), options.output)
-
         imagetype = self._getImageType(options)
 
         if imagetype == "bias":
@@ -454,6 +450,8 @@ class ChimeraCam (ChimeraCLI):
                                   compress_format=compress_format)
 
 
+            except IOError, e:
+                self.err("Error trying to take exposures (%s)" % str(e))
             except Exception, e:
                 self.err("Error trying to take exposures. (%s)" % printException(e))
         finally:

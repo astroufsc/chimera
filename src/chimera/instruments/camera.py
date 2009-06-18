@@ -21,8 +21,9 @@
 
 import threading
 import time
-from math import pi
+import os
 import datetime as dt
+from math import pi
 
 from chimera.core.chimeraobject import ChimeraObject
 from chimera.interfaces.camera  import (ICameraExpose, ICameraTemperature,
@@ -147,7 +148,12 @@ class CameraBase (ChimeraObject,
         full_width, full_height = self.getPhysicalSize()
         CRPIX1 = ((int(full_width/2.0)) - left) - 1
         CRPIX2 = ((int(full_height/2.0)) - top) - 1
-        
+
+        # use image server if any and save image on server's default dir if filename given as a relative path.
+        server = getImageServer(self.getManager())
+        if not os.path.isabs(imageRequest["filename"]):
+            imageRequest["filename"] = os.path.join(server["save_dir"], imageRequest["filename"])
+
         img = Image.create(imageData, imageRequest)
 
         img += [('DATE-OBS',
@@ -183,7 +189,6 @@ class CameraBase (ChimeraObject,
                  'CCD Y Pixel Size [micrometer]')]
 
         # regiter image on ImageServer
-        server = getImageServer(self.getManager())
         proxy = server.register(img)
 
         return proxy

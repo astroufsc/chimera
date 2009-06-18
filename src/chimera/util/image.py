@@ -50,7 +50,7 @@ class ImageUtil (object):
         return datetime.strftime("%Y-%m-%dT%H:%M:%S")
 
     @staticmethod
-    def makeFilename (path='$DATE-$TIME', subs={}, dateFormat="%d%m%y", timeFormat="%H%M%S"):
+    def makeFilename (path='$DATE-$TIME', subs={}, dateFormat="%Y%m%d", timeFormat="%H%M%S"):
         """Helper method to create filenames with increasing sequence number appended.
 
         It can do variable substitution in the given path. Standard
@@ -80,25 +80,25 @@ class ImageUtil (object):
         @rtype: str
         """
 
-        now = dt.datetime.now()
+        localtime = dt.datetime.now()
+        utctime = dt.datetime.utcnow()
 
-        subs_dict = {"DATE" : now.strftime(dateFormat),
-                     "TIME" : now.strftime(timeFormat)}
+        if localtime.hour < 12:
+            jd_day = localtime - dt.timedelta(days=1)
+        else:
+            jd_day = localtime
+
+        subs_dict = {"LAST_NOON_DATE": jd_day.strftime(dateFormat),
+                     "DATE" : utctime.strftime(dateFormat),
+                     "TIME" : utctime.strftime(timeFormat)}
 
         # add any user-specific keywords
         subs_dict.update(subs)
 
         dirname, filename = os.path.split(path)
-
-        dirname = os.path.realpath(dirname)
         dirname = os.path.expanduser(dirname)
         dirname = os.path.expandvars(dirname)
-            
-        if not os.path.exists(dirname):
-            os.makedirs(dirname)
-
-        if not os.path.isdir(dirname):
-            raise OSError("A file with the same name as the desired directory already exists. ('%s')" % dirname)
+        dirname = os.path.realpath(dirname)
 
         basename, ext = os.path.splitext(filename)
         if not ext:
@@ -113,11 +113,15 @@ class ImageUtil (object):
         ext = string.Template(ext).safe_substitute(subs_dict)
 
         fullpath = os.path.join(dirname, basename)
-
-        seq_num = FilenameSequence(fullpath, extension=ext).next()
-    
+        seq_num = FilenameSequence(fullpath, extension=ext).next()   
         finalname = os.path.join(dirname, "%s-%04d%s%s" % (basename, seq_num, os.path.extsep, ext))
-            
+
+        if not os.path.exists(dirname):
+            os.makedirs(dirname)
+
+        if not os.path.isdir(dirname):
+            raise OSError("A file with the same name as the desired directory already exists. ('%s')" % dirname)
+
         if os.path.exists(finalname):
             finalname = os.path.join(dirname, "%s-%04d%s%s" % (filename, int (random.random()*1000), os.path.extsep, ext))    
             
