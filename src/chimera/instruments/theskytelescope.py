@@ -189,7 +189,7 @@ class TheSkyTelescope (TelescopeBase, FocuserBase):
 
     @com
     def getTargetRaDec (self):
-        if not self._target: return (0, 0)
+        if not self._target: return Position.fromRaDec(0, 0)
         return self._target
 
     @com
