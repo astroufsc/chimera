@@ -190,7 +190,7 @@ class TheSkyTelescope (TelescopeBase, FocuserBase):
     @com
     def getTargetRaDec (self):
         if not self._target: return (0, 0)
-        return Position.fromRaDec(Coord.fromDMS(self._target.ra).toHMS(), Coord.fromD(self._target.dec))
+        return self._target
 
     @com
     def slewToRaDec (self, position):
