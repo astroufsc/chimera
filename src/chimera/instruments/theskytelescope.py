@@ -160,7 +160,7 @@ class TheSkyTelescope (TelescopeBase, FocuserBase):
     @com
     def getRa (self):
         self._telescope.GetRaDec()
-        return Coord.fromH(self._telescope.dRa)
+        return Coord.fromDMS(self._telescope.dRa).HMS
 
     @com
     def getDec (self):
@@ -180,7 +180,7 @@ class TheSkyTelescope (TelescopeBase, FocuserBase):
     @com
     def getPositionRaDec (self):
         self._telescope.GetRaDec()
-        return Position.fromRaDec(Coord.fromH(self._telescope.dRa), Coord.fromD(self._telescope.dDec))
+        return Position.fromRaDec(Coord.fromDMS(self._telescope.dRa).HMS, Coord.fromD(self._telescope.dDec))
 
     @com
     def getPositionAltAz (self):
@@ -190,7 +190,7 @@ class TheSkyTelescope (TelescopeBase, FocuserBase):
     @com
     def getTargetRaDec (self):
         if not self._target: return (0, 0)
-        return Position.fromRaDec(Coord.fromH(self._target.ra), Coord.fromD(self._target.dec))
+        return Position.fromRaDec(Coord.fromDMS(self._target.ra).HMS, Coord.fromD(self._target.dec))
 
     @com
     def slewToRaDec (self, position):

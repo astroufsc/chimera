@@ -39,7 +39,7 @@ from chimera.drivers.optectcfs   import OptecTCFS
 import chimera.core.log
 chimera.core.log.setConsoleLevel(logging.DEBUG)
 
-class TestAutofocus (object):
+class TestPointVerify (object):
 
     def setup (self):
 

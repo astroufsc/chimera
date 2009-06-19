@@ -86,7 +86,8 @@ class ChimeraTel (ChimeraCLI):
         def slewBegin(target):
             self.out(40*"=")
             if options.objectName:
-                self.out("slewing to %s (%s) ... " % (options.objectName, target), end="")
+                # FIXME
+                self.out("slewing to %s (%s) ... " % (options.objectName, str(target)), end="")
             else:
                 self.out("slewing to %s ... " % target, end="")
 
