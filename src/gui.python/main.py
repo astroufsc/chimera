@@ -28,14 +28,18 @@ from chimera.core.manager import Manager
 from chimera.core.managerlocator   import ManagerLocator, ManagerNotFoundException
 from chimera.interfaces.filterwheel import InvalidFilterPositionException
 from chimera.core.constants import SYSTEM_CONFIG_DEFAULT_FILENAME
-from chimera.core.exceptions import InvalidLocationException
-
+from chimera.core.exceptions import InvalidLocationException, printException
 from chimera.util.ds9 import DS9
 
 import subprocess
 
-import pyfits
 
+def toggle_shutter_button(widget):
+
+ if widget.get_label() == "open":
+  widget.set_label("closed")
+ else:
+  widget.set_label("open")
 
 class ChimeraGUI:
 
@@ -48,7 +52,8 @@ class ChimeraGUI:
         
         dic = {"on_button_clicked" : self.on_button_clicked,
                "onStopExposeClicked": self.onStopExposeClicked,
-               "on_window_destroy" : gtk.main_quit
+               "on_window_destroy" : gtk.main_quit,
+               "on_shutter_toggle": toggle_shutter_button
               }
         
         self.builder.connect_signals(dic)
@@ -106,13 +111,13 @@ class ChimeraGUI:
             self.currentFrameReadoutStart = 0
 
         def getFirst(type):
-            objs = self.manager.getResourcesByClass(type, checkBases=True)
+            objs = self.manager.getResourcesByClass(type)
             if objs:
                 return self.manager.getProxy(objs[0])
             else:
                 raise Exception("ERRO")
 
-        self.camera = getFirst("ICamera")
+        self.camera = getFirst("Camera")
         self.camera.exposeBegin     += exposeBegin
         self.camera.exposeComplete  += exposeComplete
         self.camera.abortComplete   += abortComplete
@@ -121,7 +126,7 @@ class ChimeraGUI:
 
         #wheelName = "150.162.110.2:7666/%s/%s" % (self.sysconfig.filterwheels[0].cls, self.sysconfig.filterwheels[0].name)
         #wheelName = "150.162.110.2:7666/IFilterWheel/0"
-        self.wheel = getFirst("IFilterWheel")
+        self.wheel = getFirst("FilterWheel")
 
     def on_button_clicked(self, button):
         threading.Thread(target=self.doExpose).start()
@@ -138,12 +143,11 @@ class ChimeraGUI:
         framesSpin = self.builder.get_object("framesSpin")
         self.totalFrames = framesSpin.get_value()
         
-        shutterOpen = self.builder.get_object("shutterOpen")
-        getActive = shutterOpen.get_active()
-        if(shutterOpen.get_active()):
-          shutterState = "OPEN"
-        else: 
+        shutterButton = self.builder.get_object("shutterButton")
+        if(shutterButton.get_active()):
           shutterState = "CLOSE"
+        else: 
+          shutterState = "OPEN"
         
         self.currentFrame = 0
         self.currentFrameExposeStart = 0
@@ -162,8 +166,12 @@ class ChimeraGUI:
 #                         gobject.idle_add(self.showDialog,gtk.MESSAGE_ERROR, gtk.BUTTONS_CLOSE, "Couldn't move filter wheel to %s. (%s)" % (f.get_name(), e))
 #                         return
 #                     break
-        
-        imgs = self.camera.expose({"exptime": duration, "frames": self.totalFrames, "shutter": shutterState})
+       
+        imgs = None
+        try: 
+            imgs = self.camera.expose({"exptime": duration, "frames": self.totalFrames, "shutter": shutterState})
+        except Exception, e:
+            printException(e)
 
         if(imgs):
             frames = 1
@@ -171,7 +179,9 @@ class ChimeraGUI:
                 imgUrl = img.http()
                 if not self.ds9:
                     self.ds9 = DS9(open=True)
-                self.ds9.set("file url %s " % imgUrl)
+                try:
+                 self.ds9.set("file url %s " % imgUrl)
+                except Exception: pass
                 # = subprocess.Popen("ds9 -url %s" % imgUrl, shell=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
         
         gobject.idle_add(self.setProgressBar, 1, "Downloading images. Please wait...")
@@ -183,7 +193,7 @@ class ChimeraGUI:
     
     def doStopExpose(self):
         print("doStopExpose")
-        cameraName = "150.162.110.2:7666/%s/%s" % (self.sysconfig.cameras[0].cls, self.sysconfig.cameras[0].name)
+        cameraName = "%s:%d/%s/%s" % (self.sysconfig.chimera["host"], self.sysconfig.chimera["port"], self.sysconfig.cameras[0].cls, self.sysconfig.cameras[0].name)
         camera = self.manager.getProxy(cameraName)
         if(camera):
             fraction = 0.0
