@@ -23,7 +23,7 @@ import Queue
 
 from chimera.core.chimeraobject import ChimeraObject
 
-from chimera.interfaces.dome import (IDome, Mode)
+from chimera.interfaces.dome import Dome, Mode
 
 from chimera.core.lock    import lock
 
@@ -36,7 +36,7 @@ from chimera.util.coord import Coord
 __all__ = ['DomeBase']
 
 
-class DomeBase (ChimeraObject, IDome):
+class DomeBase (ChimeraObject, Dome):
 
     def __init__(self):
         ChimeraObject.__init__(self)
@@ -46,6 +46,7 @@ class DomeBase (ChimeraObject, IDome):
 
         # to reuse telescope proxy on control method
         self._tel = None
+        self._telChanged = False
 
         # to cache for az_resolution of the dome
         self.controlAzRes = None
@@ -58,6 +59,8 @@ class DomeBase (ChimeraObject, IDome):
         if tel:
             self._connectTelEvents()
         else:
+            self.log.warning("Couldn't find telescope. Telescope events would"
+                             " not be monitored. Dome will stay in Stand mode.")
             self["mode"] = Mode.Stand
 
         if self["mode"] == Mode.Track:
@@ -74,7 +77,6 @@ class DomeBase (ChimeraObject, IDome):
     def __stop__ (self):
 
         if self['park_on_shutdown']:
-
             try:
                 self.stand()
                 self.log.info("Parking the dome...")
@@ -94,33 +96,28 @@ class DomeBase (ChimeraObject, IDome):
         return True
 
     def _connectTelEvents (self):
-        
-        try:
-            tel = self.getTelescope()
-            if not tel: return
-            tel.slewBegin    += self.getProxy()._telSlewBeginClbk
-            tel.slewComplete  += self.getProxy()._telSlewCompleteClbk
-            tel.abortComplete += self.getProxy()._telAbortCompleteClbk
 
-        except ObjectNotFoundException:
-            self.log.warning("Couldn't found telescope."
-                                "Telescope events would not be monitored.")
+        tel = self.getTelescope()
+        if not tel:
+            self.log.warning("Couldn't find telescope. Telescope events would"
+                             " not be monitored. Dome will stay in Stand mode.")
+            self['mode'] == Mode.Stand
+            return False
 
+        tel.slewBegin     += self.getProxy()._telSlewBeginClbk
+        tel.slewComplete  += self.getProxy()._telSlewCompleteClbk
+        tel.abortComplete += self.getProxy()._telAbortCompleteClbk
         return True
 
     def _disconnectTelEvents (self):
-        try:
-            tel = self.getTelescope()
-            if not tel: return
-            
-            tel.slewBegin    -= self.getProxy()._telSlewBeginClbk
+
+        tel = self.getTelescope()
+        if tel:
+            tel.slewBegin     -= self.getProxy()._telSlewBeginClbk
             tel.slewComplete  -= self.getProxy()._telSlewCompleteClbk
             tel.abortComplete -= self.getProxy()._telAbortCompleteClbk
-
-        except ObjectNotFoundException:
-            pass
-
-        return True
+            return True
+        return False
 
     def _reconnectTelEvents (self):
         self._disconnectTelEvents()
@@ -128,29 +125,24 @@ class DomeBase (ChimeraObject, IDome):
 
     # telescope callbacks
     def _telSlewBeginClbk (self, target):
-        if self.getMode() != Mode.Track: return
-
         self.log.debug("[event] telescope slewing to %s." % target)
         
     def _telSlewCompleteClbk (self, target):
-        if self.getMode() != Mode.Track: return
-
-        tel = self.getTelescope()
-        self.log.debug("[event] telescope slew complete, "
-                       "new position=%s." % target)
+        self.log.debug("[event] telescope slew complete, new position=%s." % target)
 
     def _telAbortCompleteClbk (self, position):
-        if self.getMode() != Mode.Track: return
-
-        tel = self.getTelescope()
-        self.log.debug("[event] telescope aborted last slew, "
-                       "new position=%s." % position)
+        self.log.debug("[event] telescope aborted last slew, new position=%s." % position)
 
     # utilitaries
     def getTelescope(self):
-        p = self.getManager().getProxy(self['telescope'], lazy=True)
-        if not p.ping(): return False
-        return p
+        try:
+            p = self.getManager().getProxy(self['telescope'], lazy=True)
+            if not p.ping():
+                return False
+            else:
+                return p
+        except ObjectNotFoundException:
+            return False
 
     def control (self):
 
@@ -163,19 +155,20 @@ class DomeBase (ChimeraObject, IDome):
             return True
 
         try:
-
-            if not self._tel:
+            if not self._tel or self._telChanged:
                 self._tel = self.getTelescope()
-
+                self._telChanged = False
+                if not self._tel: return True
+                
             if self._tel.isSlewing():
-                    self.log.debug("[control] telescope slewing... not checking az.")
-                    return True
+                self.log.debug("[control] telescope slewing... not checking az.")
+                return True
 
             self._telescopeChanged(self._tel.getAz())
 
         except ObjectNotFoundException:
             raise ChimeraException("Couldn't found the selected telescope."
-                                    " Dome cannnot track.")
+                                   " Dome cannnot track.")
 
         return True
 
@@ -189,7 +182,7 @@ class DomeBase (ChimeraObject, IDome):
             self.queue.put(az)
         else:
             self.log.debug("[control] telescope still in the slit, standing"
-                            " (dome az=%.2f, tel az=%.2f, delta=%.2f.)" % (self.getAz(), az, abs(self.getAz()-az)))
+                           " (dome az=%.2f, tel az=%.2f, delta=%.2f.)" % (self.getAz(), az, abs(self.getAz()-az)))
 
 
     def _needToMove (self, az):
@@ -213,13 +206,16 @@ class DomeBase (ChimeraObject, IDome):
     def track(self):
         if self.getMode() == Mode.Track: return
 
-        self._reconnectTelEvents()
-        
         tel = self.getTelescope()
-        self.log.debug("[mode] tracking...")
-        self._telescopeChanged(tel.getAz())
-
-        self._mode = Mode.Track
+        
+        if tel:
+            self._reconnectTelEvents()
+            self._telChanged = True
+            self.log.debug("[mode] tracking...")
+            self._telescopeChanged(tel.getAz())
+            self._mode = Mode.Track
+        else:
+            self.log.warning("Could not contact the given telescope, staying in Stand mode.")
 
     @lock
     def stand(self):

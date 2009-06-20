@@ -41,7 +41,7 @@ class ChimeraFocus (ChimeraCLI):
         ChimeraCLI.__init__(self, "chimera-focus", "Focuser controller", 0.1, port=9003)
         
         self.addHelpGroup("FOCUS", "Focus")
-        self.addInstrument(name="focuser", cls="IFocuser", required=True, helpGroup="FOCUS",
+        self.addInstrument(name="focuser", cls="Focuser", required=True, helpGroup="FOCUS",
                            help="Focuser instrument to be used")
         self.addController(name="autofocus", cls="Autofocus", required=False, helpGroup="FOCUS",
                            help="Autofocus controller to be used")

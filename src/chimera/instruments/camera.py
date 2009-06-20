@@ -26,8 +26,8 @@ import datetime as dt
 from math import pi
 
 from chimera.core.chimeraobject import ChimeraObject
-from chimera.interfaces.camera  import (ICameraExpose, ICameraTemperature,
-                                        ICameraInformation,
+from chimera.interfaces.camera  import (CameraExpose, CameraTemperature,
+                                        CameraInformation,
                                         InvalidReadoutMode, Shutter)
 
 from chimera.controllers.imageserver.imagerequest import ImageRequest
@@ -39,7 +39,7 @@ from chimera.util.image import Image, ImageUtil
 
 
 class CameraBase (ChimeraObject,
-                  ICameraExpose, ICameraTemperature, ICameraInformation):
+                  CameraExpose, CameraTemperature, CameraInformation):
 
     def __init__(self):
         ChimeraObject.__init__(self)
@@ -125,7 +125,7 @@ class CameraBase (ChimeraObject,
     def _saveImage(self, imageRequest, imageData, extra):
 
         try:
-            telLocation = self.getManager().getResourcesByClass("ITelescope", True)
+            telLocation = self.getManager().getResourcesByClass("Telescope")
             if telLocation:
                 tel = self.getManager().getProxy(telLocation[0])
                 imageRequest.metadataPost.append(tel.getLocation())

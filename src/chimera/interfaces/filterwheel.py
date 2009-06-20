@@ -42,7 +42,7 @@ class InvalidFilterPositionException (ChimeraException):
     pass
 
 
-class IFilterWheel (Interface):
+class FilterWheel (Interface):
     """ An interface for electromechanical filter wheels.
 
     Allow simple control and monitor filter changes    

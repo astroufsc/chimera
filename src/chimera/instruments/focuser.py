@@ -21,10 +21,10 @@
 from chimera.core.chimeraobject import ChimeraObject
 from chimera.core.lock          import lock
 
-from chimera.interfaces.focuser import IFocuser
+from chimera.interfaces.focuser import Focuser
 
 
-class FocuserBase (ChimeraObject, IFocuser):
+class FocuserBase (ChimeraObject, Focuser):
 
     def __init__ (self):
         ChimeraObject.__init__(self)

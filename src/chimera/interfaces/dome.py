@@ -29,7 +29,7 @@ from chimera.util.coord import Coord
 
 __all__ = ['Mode',
            'Type',
-           'IDome',
+           'Dome',
            'InvalidDomePositionException']
 
 
@@ -43,7 +43,7 @@ class InvalidDomePositionException (ChimeraException):
     """
 
 
-class IDome (Interface):
+class Dome (Interface):
     """A Roll-off or classic dome.
     """
 

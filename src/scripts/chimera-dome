@@ -34,7 +34,7 @@ class ChimeraDome (ChimeraCLI):
     
 
         self.addHelpGroup("DOME", "Dome")
-        self.addInstrument(name="dome", cls="IDome", required=True,
+        self.addInstrument(name="dome", cls="Dome", required=True,
                            help="Dome instrument to be used", helpGroup="DOME")
 
         self.addHelpGroup("TELESCOPE", "Telescope Tracking Configuration")

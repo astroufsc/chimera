@@ -108,9 +108,13 @@ class TestResources:
         assert self.res.add ("/A/a", A(), "a-uri") == 0
         assert self.res.add ("/B/b", B(), "b-uri") == 0
 
-        entries = [self.res.get ("/A/a"), self.res.get ("/B/b")]
+        assert self.res.add ("/A/aa", A(), "a-uri") == 1
+        assert self.res.add ("/B/bb", B(), "b-uri") == 1
+
+        entries = [self.res.get ("/A/a"), self.res.get ("/B/b"), self.res.get ("/A/aa"), self.res.get ("/B/bb")]
 
         # get by class
-        found = self.res.getAllByClass ("Base", checkBases=True)
+        found = self.res.getByClass ("Base", checkBases=True)
         
         assert (entries == found)
+

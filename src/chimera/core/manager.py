@@ -181,9 +181,9 @@ class Manager (RemoteObject):
         """
         return self.resources.keys()
     
-    def getResourcesByClass(self, cls, checkBases=False):
-        r = self.resources.getAllByClass(cls, checkBases)
-        return [ x.location for x in r ]
+    def getResourcesByClass(self, cls):
+        ret = self.resources.getByClass(cls)
+        return [ x.location for x in ret ]
         
     # helpers
     
@@ -253,7 +253,8 @@ class Manager (RemoteObject):
         # who manages this location?
         if self._belongsToMe(location):
 
-            ret = self.resources.get (location)
+            ret = self.resources.get(location)
+            
             if not ret:
                 raise ObjectNotFoundException ("Couldn't found an object at the"
                                                " given location %s" % location)

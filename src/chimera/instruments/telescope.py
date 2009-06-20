@@ -21,8 +21,8 @@
 
 from chimera.core.chimeraobject import ChimeraObject
 
-from chimera.interfaces.telescope import (ITelescopeSlew, ITelescopeSync,
-                                          ITelescopePark, ITelescopeTracking,
+from chimera.interfaces.telescope import (TelescopeSlew, TelescopeSync,
+                                          TelescopePark, TelescopeTracking,
                                           SlewRate)
 
 from chimera.core.lock import lock
@@ -34,8 +34,8 @@ __all__ = ["TelescopeBase"]
 
 
 class TelescopeBase(ChimeraObject,
-                    ITelescopeSlew, ITelescopeSync,
-                    ITelescopePark, ITelescopeTracking):
+                    TelescopeSlew, TelescopeSync,
+                    TelescopePark, TelescopeTracking):
 
     def __init__(self):
         ChimeraObject.__init__(self)

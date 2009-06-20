@@ -43,7 +43,7 @@ class ChimeraCam (ChimeraCLI):
         ChimeraCLI.__init__(self, "chimera-cam", "Camera controller", 0.1, port=9000)
         
         self.addHelpGroup("CAM", "Camera and Filter Wheel configuration")
-        self.addInstrument(name="camera", cls="ICamera",
+        self.addInstrument(name="camera", cls="Camera",
                            help="Camera instrument to be used. If blank, try to guess from chimera.config",
                            helpGroup="CAM", required=True)
         

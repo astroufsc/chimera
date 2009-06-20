@@ -40,7 +40,7 @@ class ChimeraFilter (ChimeraCLI):
         self.addHelpGroup("FILTER_CHANGE", "Filter Position")
 
         self.addHelpGroup("FILTER", "Filter Wheel configuration")
-        self.addInstrument(name="wheel", cls="IFilterWheel", required=True,
+        self.addInstrument(name="wheel", cls="FilterWheel", required=True,
                            help="Filter Wheel instrument to be used. If blank, try to guess from chimera.config",
                            helpGroup="FILTER")
         

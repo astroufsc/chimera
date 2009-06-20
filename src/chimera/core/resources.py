@@ -32,15 +32,17 @@ class Resource (object):
 
     def __init__ (self):
         self._location = None
-        self._instance = None        
+        self._instance = None
+        self._bases    = []
         self._created  = time.time ()
         self._loop     = None
         self._uri      = None        
 
     location = property (lambda self: self._location, lambda self, value: setattr (self, '_location', value))
-    instance = property (lambda self: self._instance, lambda self, value: setattr (self, '_instance', value))    
-    created  = property (lambda self: self._created, lambda self, value: setattr (self, '_created', value))
-    loop     = property (lambda self: self._loop, lambda self, value: setattr (self, '_loop', value))    
+    instance = property (lambda self: self._instance, lambda self, value: setattr (self, '_instance', value))
+    bases    = property (lambda self: self._bases,    lambda self, value: setattr (self, '_bases', value))
+    created  = property (lambda self: self._created,  lambda self, value: setattr (self, '_created', value))
+    loop     = property (lambda self: self._loop,     lambda self, value: setattr (self, '_loop', value))    
     uri      = property (lambda self: self._uri,      lambda self, value: setattr (self, '_uri', value))
     
     def __str__ (self):
@@ -62,19 +64,21 @@ class ResourcesManager (object):
         entry = Resource ()
         entry.location = location
         entry.instance = instance
+        if entry.instance is not None:
+            entry.bases = [ b.__name__ for b in type(entry.instance).mro() ]
         entry.loop     = loop
         entry.uri = uri
 
         self._res[location] = entry
 
-        # get the number of instances of this class (counting this one) (minus 1 to start couting at 0)
-        return len(self.getByClass(location.cls)) - 1
+        # get the number of instances of this specific class, counting this one
+        # and not including parents (minus 1 to start couting at 0)
+        return len(self.getByClass(location.cls, checkBases=False)) - 1
 
     def remove (self, location):
         entry = self.get(location)
         del self._res[entry.location]
         return True
-
 
     def get (self, item):
 
@@ -89,45 +93,33 @@ class ResourcesManager (object):
 
         return self._get (location)
 
-    def getByClass(self, cls):
+    def getByClass(self, cls, checkBases=True):
         
-        entries = filter(lambda location: location.cls == cls, self.keys())
-
-        ret = []
-        for entry in entries:
-            ret.append (self.get (entry))
-
-        ret.sort (key=lambda entry: entry.created)
-
-        return ret
-
-    def getAllByClass(self, cls, checkBases=False):
-
-        toRet=[]
+        toRet = []
 
         for k, v in self.items():
 
             if not checkBases:
                 if k.cls == cls:
-                    toRet.append(self.get(k))
+                    toRet.append(self._res[k])
             else:
-                if (v.instance):
-                    bases = [ b.__name__ for b in type(v.instance).mro() ]
-                    if cls in bases:
-                        toRet.append(self.get(k))
+                # return if class or any base matches
+                if cls == k.cls or cls in v.bases:
+                    toRet.append(self._res[k])
 
         toRet.sort (key=lambda entry: entry.created)
         return toRet
-        
+
     def _get (self, item):
 
         location = self._validLocation (item)
-
-        if location in self:
+        locations = [x.location for x in self.getByClass(location.cls)]
+        
+        if location in locations:
             ret = filter(lambda x: x == location, self.keys())
             return self._res[ret[0]]
         else:
-            raise ObjectNotFoundException("Couldn't found %s." % location)
+            raise ObjectNotFoundException("Couldn't find %s." % location)
 
 
     def _getByIndex(self, item, index):
@@ -140,9 +132,9 @@ class ResourcesManager (object):
             try:
                 return self._res[insts[index].location]
             except IndexError:
-                raise ObjectNotFoundException("Couldn't found %s instance #%d." % (location, index))
+                raise ObjectNotFoundException("Couldn't find %s instance #%d." % (location, index))
         else:
-            raise ObjectNotFoundException("Couldn't found %s." % location)
+            raise ObjectNotFoundException("Couldn't find %s." % location)
 
 
     def _validLocation (self, item):
@@ -159,7 +151,7 @@ class ResourcesManager (object):
         try:
             return self.get(item)
         except ChimeraException:
-            raise KeyError("Couldn't found %s" % item), None, sys.exc_info()[2]
+            raise KeyError("Couldn't find %s" % item), None, sys.exc_info()[2]
 
     def __contains__ (self, item):
 

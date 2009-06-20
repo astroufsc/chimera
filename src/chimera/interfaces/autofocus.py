@@ -32,7 +32,7 @@ class StarNotFoundException (ChimeraException):
 class FocusNotFoundException (ChimeraException):
     pass
 
-class IAutofocus (Interface):
+class Autofocus (Interface):
 
     __config__ = {"camera"             : "/FakeCamera/0",
                   "filterwheel"        : "/FakeFilterWheel/0",

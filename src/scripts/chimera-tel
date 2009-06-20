@@ -40,7 +40,7 @@ class ChimeraTel (ChimeraCLI):
         self.localSlew = False
         
         self.addHelpGroup("TELESCOPE", "Telescope")
-        self.addInstrument(name="telescope", cls="ITelescope", required=True,
+        self.addInstrument(name="telescope", cls="Telescope", required=True,
                            help="Telescope instrument to be used. If blank, try to guess from chimera.config",
                            helpGroup="TELESCOPE")
         
@@ -86,8 +86,8 @@ class ChimeraTel (ChimeraCLI):
         def slewBegin(target):
             self.out(40*"=")
             if options.objectName:
-                # FIXME
-                self.out("slewing to %s (%s) ... " % (options.objectName, str(target)), end="")
+                coords = tuple(target)
+                self.out("slewing to %s (%s %s)... " % (options.objectName, coords[0], coords[1]), end="")
             else:
                 self.out("slewing to %s ... " % target, end="")
 
@@ -125,11 +125,14 @@ class ChimeraTel (ChimeraCLI):
         telescope.slewComplete  -= slewComplete
         telescope.abortComplete -= abortComplete    
 
-    @action(help="Sync on the given --ra --dec", helpGroup="SYNC")
+    @action(help="Sync on the given --ra --dec or --object", helpGroup="SYNC")
     def sync(self, options):
         telescope = self.telescope
         
-        target = self._validateCoords(options)
+        if options.objectName is not None:
+            target = options.objectName
+        else:
+            target = self._validateCoords(options)
         
         self.out(40*"=")
         self.out("current position ra/dec: %s" % telescope.getPositionRaDec())
@@ -138,7 +141,10 @@ class ChimeraTel (ChimeraCLI):
 
         self.out("syncing on %s ... " % target, end="")
         
-        telescope.syncRaDec(target)
+        if options.objectName:
+            telescope.syncObject(options.objectName)
+        else:
+            telescope.syncRaDec(target)
 
         self.out("OK")
 

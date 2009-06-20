@@ -474,9 +474,10 @@ class ChimeraCLI (object):
             else:
                 # no instrument selected, ask remote Chimera instance for the newest
                 if self._remoteManager:
-                    insts = self._remoteManager.getResourcesByClass(inst.cls, checkBases=True)
+                    insts = self._remoteManager.getResourcesByClass(inst.cls)
                     if insts:
-                        inst.location = insts[-1]
+                        # get the older
+                        inst.location = insts[0]
 
             if not inst.location and inst.required:
                 self.exit("Couldn't find %s configuration. "

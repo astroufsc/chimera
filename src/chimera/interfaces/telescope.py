@@ -35,7 +35,7 @@ class PositionOutsideLimitsException (ChimeraException):
     pass
 
 
-class ITelescope (Interface):
+class Telescope (Interface):
     """
     Telescope base interface.
     """
@@ -50,7 +50,7 @@ class ITelescope (Interface):
                   }
 
 
-class ITelescopeSlew (ITelescope):
+class TelescopeSlew (Telescope):
     """Basic interface for telescopes.
     """
 
@@ -286,7 +286,7 @@ class ITelescopeSlew (ITelescope):
         """
 
 
-class ITelescopeSync (ITelescope):
+class TelescopeSync (Telescope):
     """Telescope with sync support.
     """
 
@@ -326,7 +326,7 @@ class ITelescopeSync (ITelescope):
         """
 
 
-class ITelescopePark (ITelescope):
+class TelescopePark (Telescope):
     """Telescope with park/unpark support.
     """
 
@@ -386,7 +386,7 @@ class ITelescopePark (ITelescope):
         successfuly.
         """
 
-class ITelescopeTracking (ITelescope):
+class TelescopeTracking (Telescope):
     """
     Telescope with support to start/stop tracking.
     """

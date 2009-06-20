@@ -29,7 +29,7 @@ Bitpix  = Enum("char8", "uint16", "int16", "int32", "int64", "float32", "float64
 CCD     = Enum("IMAGING", "TRACKING")
 
 # Special features parameters can be passed as ImageRequest
-# parameters. The ICamera.supports(feature) method can be used
+# parameters. The Camera.supports(feature) method can be used
 # to ask if the current camera support a given feature (useful for
 # interfaces, to decides when to display options to the user).
 
@@ -92,7 +92,7 @@ class InvalidReadoutMode (ChimeraException):
     pass
 
 
-class ICamera (Interface):
+class Camera (Interface):
     """Base camera interface.
     """
 
@@ -107,7 +107,7 @@ class ICamera (Interface):
                   }
 
 
-class ICameraExpose (ICamera):
+class CameraExpose (Camera):
     """Basic camera that can expose and abort exposures.
     """
 
@@ -192,7 +192,7 @@ class ICameraExpose (ICamera):
         """
 
 
-class ICameraTemperature (ICamera):
+class CameraTemperature (Camera):
     """A camera that supports temperature monitoring and control.
     """
 
@@ -258,7 +258,7 @@ class ICameraTemperature (ICamera):
         @type  delta: float
         """
 
-class ICameraInformation (ICamera):
+class CameraInformation (Camera):
 
     # for getCCDs, getBinnings and getADCs, the instrument should return a
     # hash with keys as Human readable strings, which could be later passed as a

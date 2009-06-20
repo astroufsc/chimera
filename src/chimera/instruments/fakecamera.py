@@ -174,16 +174,16 @@ class FakeCamera (CameraBase, FilterWheelBase):
                                                    imageRequest["window"])
         self.readoutBegin(imageRequest)
         
-        try:
-            telescopes = self.getManager().getResourcesByClass("ITelescope", checkBases=True)
+        telescopes = self.getManager().getResourcesByClass("Telescope")
+        if telescopes:
             telescope = self.getManager().getProxy(telescopes[0])
-        except ObjectNotFoundException:
+        else:
             telescope = None
 
-        try:
-            domes = self.getManager().getResourcesByClass("IDome", checkBases=True)
+        domes = self.getManager().getResourcesByClass("Dome")
+        if domes:
             dome = self.getManager().getProxy(domes[0])
-        except ObjectNotFoundException:
+        else:
             dome = None
         
         if not telescope:

@@ -7,7 +7,7 @@ from chimera.core.event import event
 from chimera.core.exceptions import ChimeraException, ClassLoaderException
 from chimera.core.constants import SYSTEM_CONFIG_DIRECTORY
 
-from chimera.interfaces.autofocus import IAutofocus, StarNotFoundException, FocusNotFoundException
+from chimera.interfaces.autofocus import Autofocus, StarNotFoundException, FocusNotFoundException
 from chimera.interfaces.focuser import InvalidFocusPositionException
 
 from chimera.controllers.imageserver.imagerequest import ImageRequest
@@ -127,7 +127,7 @@ class FocusFit (object):
 
         return fit
     
-class Autofocus (ChimeraObject, IAutofocus):
+class Autofocus (ChimeraObject, Autofocus):
     
     """
     Auto focuser

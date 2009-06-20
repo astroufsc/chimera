@@ -33,7 +33,7 @@ class InvalidFocusPositionException (ChimeraException):
     """
 
 
-class IFocuser (Interface):
+class Focuser (Interface):
     """Instrument interface for an electromechanical focuser for
        astronomical telescopes.
        

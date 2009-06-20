@@ -52,7 +52,7 @@ Unit = Enum ("PERCENTUAL", # Humidity
              )
 
 
-class IWeatherStation (Interface):
+class WeatherStation (Interface):
 
     __config__ = {"device": "/dev/ttyS0",
                   
