@@ -310,8 +310,8 @@ class Image (DictMixin, RemoteObject):
         if not self._wcs:
             try:
                 self._wcs = pywcs.WCS(self._fd["PRIMARY"].header)
-            except (KeyError, ValueError):
-                raise WCSNotFoundException("Couldn't find WCS information on %s" % (self._filename))
+            except (KeyError, ValueError), e:
+                raise WCSNotFoundException("Couldn't find WCS information on %s ('%s')" % (self._filename, e))
 
         return True
 

@@ -20,10 +20,10 @@ class TestPosition (object):
 
         assert_raises(ValueError, Position.fromRaDec, "xyz", "abc")
 
-    def test_az_alt (self):
+    def test_alt_az (self):
 
         p = Position.fromAltAz("60", "200")
-        assert p.dd() == (200, 60)
+        assert p.dd() == (60, 200)
 
         assert_raises(ValueError, Position.fromAltAz, "xyz", "abc")        
 

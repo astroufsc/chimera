@@ -156,7 +156,7 @@ class Position (object):
         except PositionOutsideLimitsError:
             raise ValueError("Invalid ALT range %s. Must be between 0-180 deg or -90 - +90 deg." % str(alt))
 
-        return Position((az, alt), system=System.TOPOCENTRIC)
+        return Position((alt, az), system=System.TOPOCENTRIC)
 
     @staticmethod
     def fromLongLat (long, lat):
@@ -240,14 +240,14 @@ class Position (object):
     # Coord conversion
     coords = property(lambda self: self._coords)
 
-    def __tuple__ (self):
-        return tuple(self.coords)
+    def __iter__ (self):
+        return self.coords.__iter__()
 
     ra  = property(lambda self: self._coords[0])
     dec = property(lambda self: self._coords[1])
-    
-    az  = property(lambda self: self._coords[0])
-    alt = property(lambda self: self._coords[1])
+
+    alt = property(lambda self: self._coords[0])
+    az  = property(lambda self: self._coords[1])
 
     long = property(lambda self: self._coords[0])
     lat  = property(lambda self: self._coords[1])
@@ -265,7 +265,7 @@ class Position (object):
         return self.R
 
     #
-    # great circle distance distance
+    # great circle distance
     #
     def angsep(self, other):
         """
