@@ -92,7 +92,7 @@ class FakeDome (DomeBase):
 
     @lock
     def getAz(self):
-        return self._position
+        return Coord.fromD(self._position)
 
     @lock
     def openSlit (self):

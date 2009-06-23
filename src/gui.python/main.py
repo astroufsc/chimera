@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-
 import sys
 import time
+import os
 
 try:
     import pygtk
@@ -17,6 +17,7 @@ try:
     import gobject
     import time
     import threading, thread
+    from canvas import FITS, FITSCanvas
 except:
     sys.exit(1)
 
@@ -29,10 +30,9 @@ from chimera.core.managerlocator   import ManagerLocator, ManagerNotFoundExcepti
 from chimera.interfaces.filterwheel import InvalidFilterPositionException
 from chimera.core.constants import SYSTEM_CONFIG_DEFAULT_FILENAME
 from chimera.core.exceptions import InvalidLocationException, printException
-from chimera.util.ds9 import DS9
+#from chimera.util.ds9 import DS9
 
 import subprocess
-
 
 def toggle_shutter_button(widget):
 
@@ -45,7 +45,7 @@ class ChimeraGUI:
 
     def __init__(self):
         
-        self.ds9 = None;
+        #self.ds9 = None;
         
         self.builder = gtk.Builder()
         self.builder.add_from_file("chimera.xml")
@@ -59,7 +59,11 @@ class ChimeraGUI:
         self.builder.connect_signals(dic)
         self.imageWdg = self.builder.get_object("image1")
         self.mainWindow = self.builder.get_object("mainWindow")
-        self.mainWindow.maximize()
+
+        self.notebook = self.builder.get_object("imagesNotebook")
+        self.notebook.append_page(gtk.Label("No images"))
+
+        #self.mainWindow.maximize()
         self.mainWindow.show()
 
         # system config
@@ -78,34 +82,31 @@ class ChimeraGUI:
         def exposeBegin(request):
             self.currentFrameExposeStart = time.time()
             self.currentFrame += 1
-            #print(40*"=")
-            #print("exposeBegin [%03d] [%s]" % (self.currentFrame, time.strftime("%c")))
-            #self.out("exposing (%.3fs) ..." % request["exptime"], end="")
             
         @callback(self.localManager)
         def exposeComplete(request):
-            #print("expose OK (took %.3f s)" % (time.time()-self.currentFrameExposeStart))
             pass
+
         @callback(self.localManager)
         def readoutBegin(request):
             self.currentFrameReadoutStart = time.time()
-            #print("readoutBegin")
                 
         @callback(self.localManager)
         def readoutComplete(image):
-            print(" (%s) " % image.compressedFilename())
-            print(" readoutComplete OK (took %.3f s)"  % (time.time()-self.currentFrameReadoutStart))
-            print("[%03d] took %.3fs" % (self.currentFrame, time.time()-self.currentFrameExposeStart))
-            print(40*"=")
             if (self.totalFrames > 0):
                 fraction = self.currentFrame/self.totalFrames
-                gobject.idle_add(self.setProgressBar, fraction,  "wait...") 
+                gobject.idle_add(self.setProgressBar, fraction,  "wait...")
+
+            try:
+                fits = FITS(image.filename())
+                canvas = FITSCanvas(fits.frame)
+                tab_num = self.notebook.append_page(canvas.window, gtk.Label(os.path.basename(image.filename())))
+                self.notebook.set_current_page(tab_num)
+            except Exception, e:
+                printException(e)
         
         @callback(self.localManager)
         def abortComplete():
-            print(40*"@")
-            print("abortComplete OK (took %.3f s)"  % (time.time()-self.currentFrameExposeStart))
-            print(40*"@")
             self.currentFrame = 0
             self.currentFrameExposeStart = 0
             self.currentFrameReadoutStart = 0
@@ -124,8 +125,6 @@ class ChimeraGUI:
         self.camera.readoutBegin    += readoutBegin
         self.camera.readoutComplete += readoutComplete
 
-        #wheelName = "150.162.110.2:7666/%s/%s" % (self.sysconfig.filterwheels[0].cls, self.sysconfig.filterwheels[0].name)
-        #wheelName = "150.162.110.2:7666/IFilterWheel/0"
         self.wheel = getFirst("FilterWheel")
 
     def on_button_clicked(self, button):
@@ -173,17 +172,6 @@ class ChimeraGUI:
         except Exception, e:
             printException(e)
 
-        if(imgs):
-            frames = 1
-            for img in imgs:
-                imgUrl = img.http()
-                if not self.ds9:
-                    self.ds9 = DS9(open=True)
-                try:
-                 self.ds9.set("file url %s " % imgUrl)
-                except Exception: pass
-                # = subprocess.Popen("ds9 -url %s" % imgUrl, shell=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-        
         gobject.idle_add(self.setProgressBar, 1, "Downloading images. Please wait...")
         self.currentFrame = 0
         self.currentFrameExposeStart = 0
@@ -215,6 +203,7 @@ class ChimeraGUI:
             progressBar.set_text(text);
         else:
             progressBar.hide()
+
     def showDialog(self, gtkMessageType, gtkButtons, message):
         dialog = gtk.MessageDialog(self.mainWindow, gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT, gtkMessageType, gtkButtons, message)
         #dialog.show_all()
