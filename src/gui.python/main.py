@@ -110,9 +110,10 @@ class CameraController:
 
         self.main.cameraView.begin(duration, frames)
 
-        self.main.cameraView.beginFilterChange(filterName)        
-        self.getWheel().setFilter(filterName)
-        self.main.cameraView.endFilterChange(filterName)                
+        if self.getWheel().getFilter() != filterName:
+            self.main.cameraView.beginFilterChange(filterName)        
+            self.getWheel().setFilter(filterName)
+            self.main.cameraView.endFilterChange(filterName)                
 
         try:
             camera.expose({"exptime": duration,
@@ -240,8 +241,6 @@ class CameraView:
             self.main.builder.get_object("exposeButton").set_sensitive(True)
         glib.idle_add(ui)
 
-        print time.time()
-        
     def abort(self):
 
         def ui():
@@ -259,14 +258,14 @@ class CameraView:
 
     def beginFilterChange(self, filterName):
 
+        def filterTimer():
+            self.exposureProgress.pulse()
+            return True
+        self.filterTimer = glib.timeout_add(50, filterTimer)
+
         def ui():
             self.exposureProgress.set_text("switching to filter %s ..." % filterName)
         
-            def filterTimer():
-                self.exposureProgress.pulse()
-                return True
-            self.filterTimer = glib.timeout_add(50, filterTimer)
-
         glib.idle_add(ui)
 
     def endFilterChange(self, filterName):
@@ -363,7 +362,6 @@ class ChimeraGUI:
         self.mainWindow.show()
 
     def camera_expose_action(self, action):
-        print time.time()
         self.builder.get_object("abortExposureButton").set_sensitive(True)
         self.builder.get_object("exposeButton").set_sensitive(False)
         threading.Thread(target=self.cameraController.expose).start()
