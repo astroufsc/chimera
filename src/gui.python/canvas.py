@@ -21,7 +21,6 @@ class FITSCanvas(object):
 
         w, h = self.frame.get_image().get_width(), self.frame.get_image().get_height()
 
-        self.canvas.set_size_request(w, h)
         self.canvas.set_bounds(0, 0, w, h)
         canvasItem = goocanvas.Image(pixbuf=frame.get_pixbuf(), x=0, y=0)
         self.canvas.get_root_item().add_child(canvasItem)
@@ -30,6 +29,7 @@ class FITSCanvas(object):
         self.window.show_all()
 
 class FITS(object):
+
     def __init__(self, filename):
         self.img = bip.Image(filename)
 
@@ -52,7 +52,9 @@ if __name__ == "__main__":
     fits = FITS(sys.argv[1])
     canvas = FITSCanvas(fits.frame)
 
-    window.add(canvas.canvas)
+    canvas.window.set_policy(gtk.POLICY_NEVER, gtk.POLICY_NEVER)
+    window.set_size_request(fits.img.get_width(), fits.img.get_height())
+    window.add(canvas.window)
     window.show_all()
     gtk.main()
     

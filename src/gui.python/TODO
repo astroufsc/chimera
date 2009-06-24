@@ -1,0 +1,7 @@
+Visualizador:
+ - zoom in/out, fit
+ - contraste DS9-like.
+ - paletas
+ - barra de status com coordenadas (x,y,ra,dec) e contagens
+ - pan, rotacao
+
