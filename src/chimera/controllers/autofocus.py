@@ -422,3 +422,9 @@ class Autofocus (ChimeraObject, Autofocus):
 
         return max(fluxes, key=lambda star: star["FLUX_BEST"])
         
+
+if __name__ == "__main__":
+    
+    x = Autofocus()
+    # x.checkPointing()
+    x._takeImage()

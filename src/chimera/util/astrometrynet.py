@@ -152,8 +152,11 @@ if __name__ == "__main__":
 
         # x = AstrometryNet.solveField("/media/USB2/astindices/demo/lna/2008-08-06/070808-040709-0001.fits",findstarmethod="sex")
         #x = AstrometryNet.solveField("/home/obs/images/2008-10-02/021008-224939-0001.fits",findstarmethod="sex")
-        x = AstrometryNet.solveField("/home/henrique/ph/chimera/landolt-0001.fits",findstarmethod="sex")
-        x = AstrometryNet.solveField("/home/henrique/landolt-com-header.fits",findstarmethod="sex")        
+        # x = AstrometryNet.solveField("/home/henrique/ph/chimera/landolt-0001.fits",findstarmethod="sex")
+        # x = AstrometryNet.solveField("/home/henrique/landolt-com-header.fits",findstarmethod="sex")        
+	# missing HEADER keywords:
+        # x = AstrometryNet.solveField("/home/kanaan/data/chimera/20090618/20090619-013107-0001.fits",findstarmethod="sex")        
+        x = AstrometryNet.solveField("/home/kanaan/data/chimera/20090629/20090629-234418-0001.fits",findstarmethod="sex")        
 
 
         # try:

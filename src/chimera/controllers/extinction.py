@@ -1,7 +1,8 @@
 
 from chimera.core.chimeraobject import ChimeraObject
 from chimera.core.event import event
-from chimera.controllers.autofocus import Target, Mode
+#from chimera.controllers.autofocus import Target, Mode
+from chimera.controllers.autofocus import Target
 
 from chimera.util.catalogs.landolt import Landolt
 from chimera.util.position import Position
@@ -64,3 +65,11 @@ class ExtinctionHTTPServer (object):
 
 class ExtinctionDatabase (object):
     pass
+
+
+if __name__ == "__main__":
+
+    x = Extinction()
+    x.__main__()
+    # x.pointVerify()
+

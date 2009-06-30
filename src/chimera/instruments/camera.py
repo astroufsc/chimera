@@ -255,6 +255,7 @@ class CameraBase (ChimeraObject,
         return (mode, binning, top, left, width, height)
 
     def isExposing (self):
+        return
         raise NotImplementedError()
 
     @lock

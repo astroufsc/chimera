@@ -120,7 +120,7 @@ class Meade (TelescopeBase):
         self._tty.timeout = tmp
 
         if align < 0:
-            raise MeadeException ("Couldn't found a Meade telescope on '%s'." % self["device"])
+            raise MeadeException ("Couldn't find a Meade telescope on '%s'." % self["device"])
 
         return True
 
@@ -453,6 +453,10 @@ class Meade (TelescopeBase):
         self.log.info("Calibration was OK.")
 
     def _calcDuration (self, arc, direction, rate):
+        """
+        Calculates the time spent (returned number) to move by arc in a 
+        given direction at a given rate
+        """
 
         if not self.isMoveCalibrated():
             self.log.info("Telescope fine movement not calibrated. Calibrating now...")

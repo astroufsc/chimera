@@ -3,6 +3,7 @@ from __future__ import division
 from chimera.util.catalogs.landolt import Landolt
 from chimera.core.chimeraobject import ChimeraObject
 from chimera.core.exceptions import ChimeraException
+from chimera.core.managerlocator import *
 
 from chimera.interfaces.camera import Shutter
 from chimera.util.position import Position
@@ -10,6 +11,8 @@ from chimera.util.coord import Coord
 from chimera.util.image import Image
 
 from chimera.util.astrometrynet import AstrometryNet, NoSolutionAstrometryNetException
+
+import time
 
 
 class CantPointScopeException(ChimeraException):
@@ -23,6 +26,7 @@ class CantPointScopeException(ChimeraException):
     if checkPoint succeeds then the problem is astronomical
     if checkPoint fails then the problem is non-astronomical
     """
+    pass
 
 
 class CanSetScopeButNotThisField(ChimeraException):
@@ -38,6 +42,7 @@ class CantSetScopeException(ChimeraException):
     Never raise this exception for a science field.  It may be that pointverify 
     fails there because of bright objects or other more astronomical reasons
     """
+    pass
     
 class PointVerify (ChimeraObject):
     """
@@ -48,8 +53,8 @@ class PointVerify (ChimeraObject):
     """
 
     # set of parameters and their defaults
-    __config__ = {"telescope"          : "/Telescope/0",
-                  "camera"             : "/Camera/0",
+    __config__ = {"telescope"          : "/FakeTelescope/0",
+                  "camera"             : "/FakeCamera/0",
                   "filterwheel"        : "/FilterWheel/0",
                   "tolra"              : 0.0166666666667,
                   "toldec"             : 0.0166666666667,
@@ -76,6 +81,8 @@ class PointVerify (ChimeraObject):
 
     def getCam(self):
         return self.getManager().getProxy(self["camera"])
+        # manager = ManagerLocator.locate()
+	# return manager.getProxy(self["camera"])
 
     def getFilter(self):
         return self.getManager().getProxy(self["filterwheel"])
@@ -83,11 +90,14 @@ class PointVerify (ChimeraObject):
     def _takeImage (self):
 
         cam = self.getCam()
-        #filename = time.strftime("pointverify-%Y%m%d%H%M%S")
-        frame = cam.expose(exp_time=self["exptime"],
+        filename = time.strftime("pointverify-%Y%m%d%H%M%S")
+#        return("/media/USB1/astindices/demo/lna/2008-08-06/landolt-SA112223-0005.fits")
+        print "Lala "
+        return("/home/kanaan/data/20080822/m6-dss.fits")
+        frame = cam.expose(exptime=self["exptime"],
                            frames=1, shutter=Shutter.OPEN,
-                           filename="pointverify-$DATE")
-        #                   filename=filename)
+        #                   filename="pointverify-$DATE")
+                           filename=filename)
  
         if frame:
             imageserver = self.getManager().getProxy(frame[0])
@@ -127,11 +137,12 @@ class PointVerify (ChimeraObject):
         currentImageCenter = Position.fromRaDec(Coord.fromD(ra_img_center), 
                                                 Coord.fromD(dec_img_center))  
 
-        tel = self.getTel()
 
+        tel = self.getTel()
         # analyze the previous image using
         # AstrometryNet defined in util
         try:
+            print image.filename
             wcs_name = AstrometryNet.solveField(image.filename,findstarmethod="sex") 
         except (NoSolutionAstrometryNetException): 
             # why can't I select this exception?
