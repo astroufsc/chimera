@@ -90,20 +90,18 @@ class PointVerify (ChimeraObject):
     def _takeImage (self):
 
         cam = self.getCam()
-        filename = time.strftime("pointverify-%Y%m%d%H%M%S")
-#        return("/media/USB1/astindices/demo/lna/2008-08-06/landolt-SA112223-0005.fits")
-        print "Lala "
-        return("/home/kanaan/data/20080822/m6-dss.fits")
+        # filename = time.strftime("pointverify-%Y%m%d%H%M%S")
+        # return("/media/USB1/astindices/demo/lna/2008-08-06/landolt-SA112223-0005.fits")
+        # return("/home/kanaan/data/20080822/m6-dss.fits")
         frame = cam.expose(exptime=self["exptime"],
-                           frames=1, shutter=Shutter.OPEN,
+                           frames=1, shutter=Shutter.OPEN)
         #                   filename="pointverify-$DATE")
-                           filename=filename)
  
         if frame:
             imageserver = self.getManager().getProxy(frame[0])
             img = imageserver.getProxyByURI(frame[0])
-            return("/media/USB2/astindices/demo/dss/NH1_a10d30.fits")
-            #return img.getPath()
+            # return("/media/USB2/astindices/demo/dss/NH1_a10d30.fits")
+            return img.getPath()
 
         else:
             raise Exception("Could not take an image")
@@ -126,6 +124,7 @@ class PointVerify (ChimeraObject):
         # take an image and read its coordinates off the header
         try:
             image_name = self._takeImage()
+            print "image name %s", image_name
             # for testing purposes uncomment line below and specify some image
         except:
             self.log.error( "Can't take image" )
@@ -137,13 +136,11 @@ class PointVerify (ChimeraObject):
         currentImageCenter = Position.fromRaDec(Coord.fromD(ra_img_center), 
                                                 Coord.fromD(dec_img_center))  
 
-
         tel = self.getTel()
         # analyze the previous image using
         # AstrometryNet defined in util
         try:
-            print image.filename
-            wcs_name = AstrometryNet.solveField(image.filename,findstarmethod="sex") 
+            wcs_name = AstrometryNet.solveField(image.filename(),findstarmethod="sex") 
         except (NoSolutionAstrometryNetException): 
             # why can't I select this exception?
             # 
@@ -165,9 +162,6 @@ class PointVerify (ChimeraObject):
             else:
                 self.checkedpointing = False
                 raise CanSetScopeButNotThisField("Able to set scope, but unable to verify this field %s" %(currentImageCenter))
-
-
-
         wcs = Image.fromFile(wcs_name)
         ra_wcs_center = wcs["CRVAL1"] + (wcs["NAXIS1"]/2.0 - wcs["CRPIX1"]) * wcs["CD1_1"]
         dec_wcs_center= wcs["CRVAL2"] + (wcs["NAXIS2"]/2.0 - wcs["CRPIX2"]) * wcs["CD2_2"]
@@ -240,7 +234,9 @@ class PointVerify (ChimeraObject):
         tel = self.getTel()
 
         # use the Vizier catalogs to see what Landolt field is closest to zenith
+        print "lala" , "Calling landolt" 
         fld = Landolt()
+        print "lala2" , "Calling landolt" 
         fld.useTarget(coords,radius=45)
         obj = fld.find(limit=1)
 
