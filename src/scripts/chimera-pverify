@@ -77,7 +77,7 @@ class ChimeraPointVerify (ChimeraCLI):
     def checkPointing (self,options):
         self.out("Choosing a field in the sky, moving scope and taking images")
         try:
-            options.pverify.checkPointing()
+            self.pverify.checkPointing()
 	# what is this e for ???
         except CantSetScopeException, e:
             self.exit("Can't set scope")
