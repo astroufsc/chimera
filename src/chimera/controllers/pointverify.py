@@ -53,8 +53,8 @@ class PointVerify (ChimeraObject):
     """
 
     # set of parameters and their defaults
-    __config__ = {"telescope"          : "/FakeTelescope/0",
-                  "camera"             : "/FakeCamera/0",
+    __config__ = {"telescope"          : "/Telescope/0",
+                  "camera"             : "/Camera/0",
                   "filterwheel"        : "/FilterWheel/0",
                   "tolra"              : 0.0166666666667,
                   "toldec"             : 0.0166666666667,
@@ -81,8 +81,6 @@ class PointVerify (ChimeraObject):
 
     def getCam(self):
         return self.getManager().getProxy(self["camera"])
-        # manager = ManagerLocator.locate()
-	# return manager.getProxy(self["camera"])
 
     def getFilter(self):
         return self.getManager().getProxy(self["filterwheel"])
@@ -91,7 +89,6 @@ class PointVerify (ChimeraObject):
 
         cam = self.getCam()
         # filename = time.strftime("pointverify-%Y%m%d%H%M%S")
-        # return("/media/USB1/astindices/demo/lna/2008-08-06/landolt-SA112223-0005.fits")
         # return("/home/kanaan/data/20080822/m6-dss.fits")
         frame = cam.expose(exptime=self["exptime"],
                            frames=1, shutter=Shutter.OPEN)
@@ -201,7 +198,7 @@ class PointVerify (ChimeraObject):
             tel.moveOffset(delta_ra, delta_dec)
             self.pointVerify()
         else:
-            # if we got here, we were succesfull reset trials counter
+            # if we got here, we were succesfull, reset trials counter
             self.ntrials = 0
             # and save final position
             # write down the two positions for later use in mount models
