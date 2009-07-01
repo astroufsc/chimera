@@ -63,16 +63,10 @@ class PointVerify (ChimeraObject, PointVerify):
         cam = self.getCam()
         # filename = time.strftime("pointverify-%Y%m%d%H%M%S")
         # return("/home/kanaan/data/20080822/m6-dss.fits")
-        frame = cam.expose(exptime=self["exptime"],
-                           frames=1, shutter=Shutter.OPEN)
-        #                   filename="pointverify-$DATE")
- 
-        if frame:
-            imageserver = self.getManager().getProxy(frame[0])
-            img = imageserver.getProxyByURI(frame[0])
-            # return("/media/USB2/astindices/demo/dss/NH1_a10d30.fits")
-            return img.getPath()
-
+        frames = cam.expose(exptime=self["exptime"], frames=1, shutter=Shutter.OPEN, filename="pointverify-$DATE")
+        
+        if frames:
+            return frames[0]
         else:
             raise Exception("Could not take an image")
         
@@ -92,16 +86,15 @@ class PointVerify (ChimeraObject, PointVerify):
         """
 
         # take an image and read its coordinates off the header
-        image_name = None
+        image = None
         try:
-            image_name = self._takeImage()
-            print "image name %s", image_name
+            image = self._takeImage()
+            print "image name %s", image.filename()
             # for testing purposes uncomment line below and specify some image
         except:
             self.log.error( "Can't take image" )
             raise
 
-        image = Image.fromFile(image_name) # Image defined in util
         ra_img_center = image["CRVAL1"]    # expects to see this in image
         dec_img_center= image["CRVAL2"]
         currentImageCenter = Position.fromRaDec(Coord.fromD(ra_img_center), 
