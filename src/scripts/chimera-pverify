@@ -22,9 +22,7 @@
 from chimera.core.cli import ChimeraCLI, action, parameter
 from chimera.core.callback import callback
 from chimera.core.exceptions import ChimeraException
-
-from chimera.interfaces.autofocus import StarNotFoundException, FocusNotFoundException
-from chimera.interfaces.focuser import InvalidFocusPositionException, FocuserFeature
+from chimera.interfaces.pointverify import CantPointScopeException, CanSetScopeButNotThisField, CantSetScopeException, PointVerify
 from chimera.util.sextractor import SExtractorException
 
 from chimera.util.ds9 import DS9
@@ -38,61 +36,56 @@ class ChimeraPointVerify (ChimeraCLI):
     def __init__ (self):
 	# are these entities being created or am I referring to existing things?
         ChimeraCLI.__init__(self, "chimera-pverify", "Point Verifier", 0.1)
-        
         self.addHelpGroup("PVERIFY", "PVerify")
-	# there is no instrument in this case, should I just remove
-	# the next line?
-        # self.addInstrument(name="pverify", cls="IPointverify", required=True, helpGroup="PVERIFY", help="Controller to verify pointing")
-        self.addController(name="pverify", cls="PointVerify", required=False, helpGroup="PVERIFY", help="Pointing verification controller to be used")
+        self.addController(name="pverify", cls="PointVerify", required=True, helpGroup="PVERIFY", help="Pointing verification controller to be used")
 	# add here :
 	# do point verification @ (stuff passed to the telescope)
 	# --slew --object m7
 	# exposure time, filter (stuff passed to the camera)
 	# --exptime 10 --filter V
-	
-        self.addParameters(dict(name="autofocus_step", long="step", type="int", helpGroup="AUTOFOCUS",
-                                help="Defines autofocus step.", metavar="STEP", default=500),
-                           dict(name="autofocus_exptime", long="exptime", type="float", helpGroup="AUTOFOCUS",
-                                help="Defines autofocus frame exposure time.", metavar="EXPTIME", default=10.0),
-                           dict(name="autofocus_debug", long="debug", helpGroup="AUTOFOCUS",
-                                help="Run an autofocus debug session using data from PREVIOUS_RUN_DIR.",
-                                metavar="PREVIOUS_RUN_DIR", default=""))
+        # self.addParameters(dict(name="autofocus_step", long="step", type="int", helpGroup="AUTOFOCUS",
+        #                         help="Defines autofocus step.", metavar="STEP", default=500),
+        #                    dict(name="autofocus_exptime", long="exptime", type="float", helpGroup="AUTOFOCUS",
+        #                         help="Defines autofocus frame exposure time.", metavar="EXPTIME", default=10.0),
+        #                    dict(name="autofocus_debug", long="debug", helpGroup="AUTOFOCUS",
+        #                         help="Run an autofocus debug session using data from PREVIOUS_RUN_DIR.",
+        #                         metavar="PREVIOUS_RUN_DIR", default=""))
 
-	# another help group?  should this go away?
+	# another help group?  
+        # yes, 
         self.addHelpGroup("COMMANDS", "Commands")        
 
-    # hmmm, adding a parameter at the last minute?
-    # don't get it...
-    @parameter(long="range", helpGroup="AUTOFOCUS", default="1000-6000",
-               help="Defines autofocus focuser range to be covered. Use start-end, "
-               "as in 1000-6000 to run from 1000 to 6000.", metavar="START-END")
-    def autofocus_range(self, value):
-        try:
-            start, end = value.split("-")
-            start = int(start)
-            end = int(start)
-            return (start, end)
-        except ValueError:
-            raise ValuError("Invalid start-end range")
+    # used to validate the range parameters
+    # @parameter(long="range", helpGroup="AUTOFOCUS", default="1000-6000",
+    #           help="Defines autofocus focuser range to be covered. Use start-end, "
+    #           "as in 1000-6000 to run from 1000 to 6000.", metavar="START-END")
+    #def autofocus_range(self, value):
+    #    try:
+    #        start, end = value.split("-")
+    #        start = int(start)
+    #        end = int(start)
+    #        return (start, end)
+    #    except ValueError:
+    #        raise ValueError("Invalid start-end range")
 
 
     # ok, looks like action establishes that the following method is some 
     # action performed by this script    
     @action(long="check", 
-            help="Chooses a field to point the scope to", 
+            help="Chooses a field to point the scope to, moves the scope, takes an image and verifies the pointing", 
            helpGroup="PVERIFY")
     def checkPointing (self,options):
         self.out("Choosing a field in the sky, moving scope and taking images")
         try:
-            self.pverify.checkPointing()
+            options.pverify.checkPointing()
 	# what is this e for ???
         except CantSetScopeException, e:
             self.exit("Can't set scope")
         self.out("OK")
         
 
-    def _currentPosition(self, options):
-        return self.out("Current focuser position: %s" % self.focuser.getPosition())
+    #def _currentPosition(self, options):
+    #    return self.out("Current telescope position: %s" % self.focuser.getPosition())
     
 
 def main():
