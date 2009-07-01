@@ -42,6 +42,7 @@ class PointVerify (ChimeraObject, PointVerify):
     def __init__ (self):
         ChimeraObject.__init__ (self)
         self.ntrials = 0
+        self.checkedpointing = False
 
     #def __start__ (self):
         #self.pointVerify()
