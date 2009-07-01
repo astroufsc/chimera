@@ -2,10 +2,13 @@ from __future__ import division
 
 from chimera.util.catalogs.landolt import Landolt
 from chimera.core.chimeraobject import ChimeraObject
-from chimera.core.exceptions import ChimeraException
+from chimera.core.exceptions import (ChimeraException, CantPointScopeException,
+                                     CanSetScopeButNotThisField, CantSetScopeException,
+                                     printException)
 from chimera.core.managerlocator import *
 
 from chimera.interfaces.camera import Shutter
+from chimera.interfaces.pointverify import PointVerify
 from chimera.util.position import Position
 from chimera.util.coord import Coord
 from chimera.util.image import Image
@@ -13,38 +16,8 @@ from chimera.util.image import Image
 from chimera.util.astrometrynet import AstrometryNet, NoSolutionAstrometryNetException
 
 import time
-
-
-class CantPointScopeException(ChimeraException):
-    """
-    This exception is raised when we cannot center the scope on a field
-    It may happen if there is something funny with our fields like:
-    faint objects, bright objects, extended objects
-    or non-astronomical problems like:
-    clouds, mount misalignment, dust cover, etc
-    When this happens one can simply go on and observe or ask for a checkPoint
-    if checkPoint succeeds then the problem is astronomical
-    if checkPoint fails then the problem is non-astronomical
-    """
-    pass
-
-
-class CanSetScopeButNotThisField(ChimeraException):
-    pass
-
-class CantSetScopeException(ChimeraException):
-    """
-    This exception is raised to indicate we could not set the telescope 
-    coordinates when trying to do it on a chosen field.  
-    Chosen fields are those known to work for setting the scope.
-    So, if it fails we must have some serious problem.
-    Might be clouds, might be mount misalignment, dust cover, etc, etc
-    Never raise this exception for a science field.  It may be that pointverify 
-    fails there because of bright objects or other more astronomical reasons
-    """
-    pass
     
-class PointVerify (ChimeraObject):
+class PointVerify (ChimeraObject, PointVerify):
     """
     If the telescope can't point:
 
@@ -119,6 +92,7 @@ class PointVerify (ChimeraObject):
         """
 
         # take an image and read its coordinates off the header
+        image_name = None
         try:
             image_name = self._takeImage()
             print "image name %s", image_name
@@ -126,12 +100,12 @@ class PointVerify (ChimeraObject):
         except:
             self.log.error( "Can't take image" )
             raise
-            
+
         image = Image.fromFile(image_name) # Image defined in util
         ra_img_center = image["CRVAL1"]    # expects to see this in image
         dec_img_center= image["CRVAL2"]
         currentImageCenter = Position.fromRaDec(Coord.fromD(ra_img_center), 
-                                                Coord.fromD(dec_img_center))  
+                                                Coord.fromD(dec_img_center))
 
         tel = self.getTel()
         # analyze the previous image using
@@ -245,7 +219,8 @@ class PointVerify (ChimeraObject):
         tel.slewToRaDec(Position.fromRaDec(ra,dec))
         try:
             self.pointVerify()
-        except:
+        except Exception, e:
+            printException(e)
             raise CantSetScopeException("Can't set scope on field %s %f %f we are in trouble, call for help" %(name, ra, dec))
         return True
             

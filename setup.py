@@ -53,6 +53,7 @@ chimera_scripts = ['src/scripts/chimera',
                    'src/scripts/chimera-tel',
                    'src/scripts/chimera-dome',
                    'src/scripts/chimera-focus',
+                   'src/scripts/chimera-pverify',
                    'src/scripts/chimera-console']
 
 # setup

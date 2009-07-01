@@ -91,3 +91,30 @@ class ChimeraValueError (ChimeraException):
 
 class NotImplementedException(ChimeraException):
     pass
+
+class CantPointScopeException(ChimeraException):
+    """
+    This exception is raised when we cannot center the scope on a field
+    It may happen if there is something funny with our fields like:
+    faint objects, bright objects, extended objects
+    or non-astronomical problems like:
+    clouds, mount misalignment, dust cover, etc
+    When this happens one can simply go on and observe or ask for a checkPoint
+    if checkPoint succeeds then the problem is astronomical
+    if checkPoint fails then the problem is non-astronomical
+    """
+
+
+class CanSetScopeButNotThisField(ChimeraException):
+    pass
+
+class CantSetScopeException(ChimeraException):
+    """
+    This exception is raised to indicate we could not set the telescope 
+    coordinates when trying to do it on a chosen field.  
+    Chosen fields are those known to work for setting the scope.
+    So, if it fails we must have some serious problem.
+    Might be clouds, might be mount misalignment, dust cover, etc, etc
+    Never raise this exception for a science field.  It may be that pointverify 
+    fails there because of bright objects or other more astronomical reasons
+    """

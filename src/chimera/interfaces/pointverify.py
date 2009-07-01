@@ -36,7 +36,7 @@ class CantSetScopeException(ChimeraException):
 
 Target = Enum("CURRENT", "AUTO")
 
-class IPointVerify (Interface):
+class PointVerify (Interface):
 
     __config__ = {"telescope"          : "/FakeTelescope/0",
                   "camera"             : "/FakeCamera/0",

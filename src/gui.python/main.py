@@ -95,11 +95,12 @@ class CameraController:
         framesSpin = self.main.builder.get_object("framesSpin")
         frames = framesSpin.get_value()
         
-        shutterButton = self.main.builder.get_object("shutterButton")
-        if(shutterButton.get_active()):
-          shutterState = "CLOSE"
-        else: 
+        shutterOpen = self.main.builder.get_object("shutterOpen")
+
+        if(shutterOpen.get_active()):
           shutterState = "OPEN"
+        else: 
+          shutterState = "CLOSE"
 
         filters = self.main.builder.get_object("filtersBox").get_children()[1].get_children()
         current = None
