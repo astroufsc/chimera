@@ -333,7 +333,7 @@ class VOTable (object):
 				data = getData (x)
 				#data = [values ...]
 		"""
-		tableData = self.root.VOTABLE.RESOURCE.TABLE.DATA.TABLEDATA
+		tableData = self.root.VOTABLE.RESOURCE.TABLE.DATA.BINARY.STREAM
 		return tableData._nodeList
 
 	def getData (self, row):
