@@ -80,7 +80,7 @@ class TelescopeBase(ChimeraObject,
 
     @lock
     def moveOffset(self, offsetRA, offsetDec, rate=SlewRate.GUIDE):
-        drv = self.getDriver()
+
         if offsetRA == 0 :
             pass
         elif offsetRA > 0 :
