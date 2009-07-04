@@ -5,10 +5,10 @@ from chimera.core.chimeraobject import ChimeraObject
 from chimera.core.exceptions import (ChimeraException, CantPointScopeException,
                                      CanSetScopeButNotThisField, CantSetScopeException,
                                      printException)
-from chimera.core.managerlocator import *
+from chimera.core.managerlocator import ManagerLocator
 
 from chimera.interfaces.camera import Shutter
-from chimera.interfaces.pointverify import PointVerify
+from chimera.interfaces.pointverify import PointVerify as IPointVerify
 from chimera.util.position import Position
 from chimera.util.coord import Coord
 from chimera.util.image import Image
@@ -17,7 +17,7 @@ from chimera.util.astrometrynet import AstrometryNet, NoSolutionAstrometryNetExc
 
 import time
     
-class PointVerify (ChimeraObject, PointVerify):
+class PointVerify (ChimeraObject, IPointVerify):
     """
     If the telescope can't point:
 
@@ -25,24 +25,14 @@ class PointVerify (ChimeraObject, PointVerify):
 
     """
 
-    # set of parameters and their defaults
-    __config__ = {"telescope"          : "/Telescope/0",
-                  "camera"             : "/Camera/0",
-                  "filterwheel"        : "/FilterWheel/0",
-                  "tolra"              : 0.0166666666667,
-                  "toldec"             : 0.0166666666667,
-                  "exptime"            :  10.0,
-                  "filter"             :  "R",
-                  "max_trials"         :  10
-
-                  }
-
     # normal constructor
     # initialize the relevant variables
     def __init__ (self):
         ChimeraObject.__init__ (self)
         self.ntrials = 0
+        self.nfields = 0
         self.checkedpointing = False
+        self.currentField = 0
 
     #def __start__ (self):
         #self.pointVerify()
@@ -86,8 +76,10 @@ class PointVerify (ChimeraObject, PointVerify):
                 False if not
         """
 
+
         # take an image and read its coordinates off the header
         image = None
+
         try:
             image = self._takeImage()
             print "image name %s", image.filename()
@@ -105,7 +97,8 @@ class PointVerify (ChimeraObject, PointVerify):
         # analyze the previous image using
         # AstrometryNet defined in util
         try:
-            wcs_name = AstrometryNet.solveField(image.filename(),findstarmethod="sex") 
+            #wcs_name = AstrometryNet.solveField(image.filename(),findstarmethod="sex") 
+            wcs_name = AstrometryNet.solveField(image.filename()) 
         except (NoSolutionAstrometryNetException): 
             # why can't I select this exception?
             # 
@@ -115,18 +108,26 @@ class PointVerify (ChimeraObject, PointVerify):
             # an exception will be raised there
             self.log.error("No WCS solution")
             if not self.checkedpointing:
-                if self.checkPointing() == True:
+                self.nfields += 1
+                self.currentField += 1
+                if self.nfields <= self["max_fields"] and self.checkPointing() == True:
                     self.checkedpointing = True
                     tel.slewToRaDec(currentImageCenter)
                     try:
                         self.pointVerify()
                         return True
                     except CanSetScopeButNotThisField:
-                        pass # let the caller decide whether we go to next 
-                             # field or stay on this with no verification
+                        raise
+
+                else:
+                    self.checkedpointing = False
+                    self.currentField = 0
+                    raise Exception("max fields")
+
             else:
                 self.checkedpointing = False
                 raise CanSetScopeButNotThisField("Able to set scope, but unable to verify this field %s" %(currentImageCenter))
+
         wcs = Image.fromFile(wcs_name)
         ra_wcs_center = wcs["CRVAL1"] + (wcs["NAXIS1"]/2.0 - wcs["CRPIX1"]) * wcs["CD1_1"]
         dec_wcs_center= wcs["CRVAL2"] + (wcs["NAXIS2"]/2.0 - wcs["CRPIX2"]) * wcs["CD2_2"]
@@ -146,15 +147,13 @@ class PointVerify (ChimeraObject, PointVerify):
         delta_ra = ra_img_center - ra_wcs_center
         delta_dec = dec_img_center - dec_wcs_center
 
-        self.log.debug("%s %s" %(delta_ra, delta_dec))
-        self.log.debug("%s %s" %(ra_img_center, ra_wcs_center))
-        self.log.debug("%s %s" %(dec_img_center, dec_wcs_center))
+        self.log.debug("delta_ra: %s delta_dec: %s" %(delta_ra, delta_dec))
+        self.log.debug("ra_img_center: %s ra_wcs_center: %s" %(ra_img_center, ra_wcs_center))
+        self.log.debug("dec_img_center: %s dec_wcs_center: %s" %(dec_img_center, dec_wcs_center))
         
         # *** need to do real logging here
         logstr = "%s %f %f %f %f %f %f" %(image["DATE-OBS"],ra_img_center,dec_img_center,ra_wcs_center,dec_wcs_center,delta_ra,delta_dec)
         self.log.debug(logstr)
-
-
 
         if ( delta_ra > self["tolra"] ) or ( delta_dec > self["toldec"]):
             print "Telescope not there yet."
@@ -162,12 +161,14 @@ class PointVerify (ChimeraObject, PointVerify):
             self.ntrials += 1
             if (self.ntrials > self["max_trials"]):
                 self.ntrials = 0
-                raise CantPointScopeException("Scope does not point with a precision of %f (RA) or %f (DEC) after %d trials\n" % self["tolra"] % self["toldec"] % self["max_trials"])
-            tel.moveOffset(delta_ra, delta_dec)
+                raise CantPointScopeException("Scope does not point with a precision of %f (RA) or %f (DEC) after %d trials\n" % (self["tolra"], self["toldec"], self["max_trials"]))
+            time.sleep(5)
+            tel.moveOffset(Coord.fromD(delta_ra), Coord.fromD(delta_dec))
             self.pointVerify()
         else:
             # if we got here, we were succesfull, reset trials counter
             self.ntrials = 0
+            self.currentField = 0
             # and save final position
             # write down the two positions for later use in mount models
             logstr = "Pointing: final solution %s %s %s" %(image["DATE-OBS"],
@@ -203,14 +204,16 @@ class PointVerify (ChimeraObject, PointVerify):
         fld = Landolt()
         print "lala2" , "Calling landolt" 
         fld.useTarget(coords,radius=45)
-        obj = fld.find(limit=1)
+        obj = fld.find(limit=self["max_fields"])
 
         # get ra, dec to call pointVerify
-        ra = obj[0]["RA"]
-        dec = obj[0]["DEC"]
-        name = obj[0]["ID"]
+        ra = obj[self.currentField]["RA"]
+        dec = obj[self.currentField]["DEC"]
+        name = obj[self.currentField]["ID"]
+
         self.log.info("Chose %s %f %f" %(name, ra, dec))
         tel.slewToRaDec(Position.fromRaDec(ra,dec))
+        #tel.slewToObject("M7")
         try:
             self.pointVerify()
         except Exception, e:

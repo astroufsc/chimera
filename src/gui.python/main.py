@@ -9,18 +9,24 @@ try:
     import pygtk
     pygtk.require("2.0")
 except:
-    pass
+    raise Exception("No PyGTK+ available!")
 
 try:
     import gtk
     import gtk.glade
     import gobject
-    import glib
     import time
     import threading, thread
     from canvas import FITS, FITSCanvas
-except:
+except Exception, e:
+    print e
     sys.exit(1)
+
+try:
+    import glib
+except ImportError:
+    # Ubuntu 8.04?
+    glib = gobject
 
 # DON'T REMOVE THE NEXT LINE!
 gtk.gdk.threads_init()

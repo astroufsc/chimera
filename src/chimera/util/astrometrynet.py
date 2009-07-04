@@ -10,6 +10,8 @@ import logging
 import chimera.core.log
 log = logging.getLogger(__name__)
 
+from pyraf import iraf
+
 class AstrometryNet:
     
     # staticmethod allows to use a single method of a class
@@ -96,14 +98,14 @@ class AstrometryNet:
         wcs_imgname = pathname + outfilename + "-wcs" + ".fits"
         wcs_solution = pathname + outfilename + ".wcs"
         shutil.copyfile(wcs_solution,wcs_solution+".fits")
-        #if ( os.path.exists(wcs_imgname) == True ):
-        #    iraf.imdelete(wcs_imgname)
+        if ( os.path.exists(wcs_imgname) == True ):
+            iraf.imdelete(wcs_imgname)
 
         # create a separate image with new header
-        #iraf.artdata()
-        #iraf.imcopy(fullfilename,wcs_imgname)
-        #iraf.mkheader(images=wcs_imgname,headers=wcs_solution+".fits",
-        #              append="no",verbose="no",mode="al")
+        iraf.artdata()
+        iraf.imcopy(fullfilename,wcs_imgname)
+        iraf.mkheader(images=wcs_imgname,headers=wcs_solution+".fits",
+                      append="no",verbose="no",mode="al")
         return(wcs_imgname)
   
     
@@ -156,8 +158,8 @@ if __name__ == "__main__":
         # x = AstrometryNet.solveField("/home/henrique/landolt-com-header.fits",findstarmethod="sex")        
 	# missing HEADER keywords:
         # x = AstrometryNet.solveField("/home/kanaan/data/chimera/20090618/20090619-013107-0001.fits",findstarmethod="sex")        
-        x = AstrometryNet.solveField("/home/kanaan/data/chimera/20090629/20090629-234418-0001.fits",findstarmethod="sex")        
-
+        #x = AstrometryNet.solveField("/home/kanaan/data/chimera/20090629/20090629-234418-0001.fits",findstarmethod="sex")        
+        x = AstrometryNet.solveField("/home/obs/images/20090703/pointverify-20090703-0012.fits")        
 
         # try:
         #     x = AstrometryNet.solveField("/media/USB2/astindices/demo/lna/2008-08-06/070808-033129-0001.fits",findstarmethod="sex")

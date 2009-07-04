@@ -38,11 +38,15 @@ Target = Enum("CURRENT", "AUTO")
 
 class PointVerify (Interface):
 
-    __config__ = {"telescope"          : "/FakeTelescope/0",
-                  "camera"             : "/FakeCamera/0",
-                  "filterwheel"        : "/FakeFilterWheel/0",
-                  "focuser"            : "/FakeFocuser/0",
-                  "max_trials"         : 10}
+    __config__ = {"telescope"          : "/Telescope/0",
+                  "camera"             : "/Camera/0",
+                  "filterwheel"        : "/FilterWheel/0",
+                  "tolra"              : 0.0166666666667,
+                  "toldec"             : 0.0166666666667,
+                  "exptime"            :  10.0,
+                  "filter"             :  "R",
+                  "max_trials"         : 5,
+                  "max_fields"         : 5}
 
     def checkPointing (self, debug=False):
         """
