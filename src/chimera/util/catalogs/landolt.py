@@ -9,7 +9,10 @@ from chimera.util.coord import Coord
 from chimera.util.catalog import Catalog
 
 class Landolt (VizQuery, Catalog):
-
+    """
+    class Landolt is used to query the landolt II/183A catalog in vizier
+    it inherits from VizQuery and has all its methods
+    """
     # Landolt inherited VizQuery, its init should be the same as the 
     # parent class.  to do that I call VizQuery.__init__(self)
     def __init__(self):
@@ -21,7 +24,6 @@ class Landolt (VizQuery, Catalog):
     def find (self, near=None, limit=9999, **conditions):
 
         self.useCat("II/183A/")
-        #self.useCat("II/118/")
 
         if conditions.get("closest", False):
             limit = 1
@@ -46,3 +48,13 @@ class Landolt (VizQuery, Catalog):
             i.pop("_r")
 
         return x 
+
+if __name__ == '__main__':
+
+    lst = "12:00:00"
+    lat = "00:00:00"
+    coords = Position.fromRaDec(lst,lat)
+    test = Landolt()
+    test.useTarget(coords,radius=45)
+    obj = test.find(limit=1)
+    print obj
