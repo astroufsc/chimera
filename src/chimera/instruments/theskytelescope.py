@@ -307,25 +307,33 @@ class TheSkyTelescope (TelescopeBase, FocuserBase):
     def moveEast (self, offset, slewRate = None):
 #        newRa = self.getRa() + Coord.fromH(offset/3600)
 #        self.slewToRaDec(Position.fromRaDec(newRa, self.getDec()))
-        self._telescope.Jog(offset / 60, 'East')
+        self._telescope.Asynchronous = 0
+        self._telescope.Jog(offset.AS / 60.0, 'East')
+        self._telescope.Asynchronous = 1        
 
     @com
     def moveWest (self, offset, slewRate = None):
 #        newRa = self.getRa() - Coord.fromH(offset/3600)
 #        self.slewToRaDec(Position.fromRaDec(newRa, self.getDec()))
-        self._telescope.Jog(offset / 60, 'West')
+        self._telescope.Asynchronous = 0
+        self._telescope.Jog(offset.AS / 60.0, 'West')
+        self._telescope.Asynchronous = 1        
 
     @com
     def moveNorth (self, offset, slewRate = None):
 #        newDec = self.getDec() + Coord.fromD(offset/3600)
 #        self.slewToRaDec(Position.fromRaDec(self.getRa(),newDec))
-        self._telescope.Jog(offset / 60, 'North')
+        self._telescope.Asynchronous = 0
+        self._telescope.Jog(offset.AS / 60.0, 'North')
+        self._telescope.Asynchronous = 1        
 
     @com
     def moveSouth (self, offset, slewRate = None):
 #        newDec = self.getDec() - Coord.fromD(offset/3600)
 #        self.slewToRaDec(Position.fromRaDec(self.getRa(),newDec))
-        self._telescope.Jog(offset / 60, 'South')
+        self._telescope.Asynchronous = 0
+        self._telescope.Jog(offset.AS / 60.0, 'South')
+        self._telescope.Asynchronous = 1
     
     def moveIn (self, n):
         """
