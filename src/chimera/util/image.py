@@ -444,4 +444,6 @@ class Image (DictMixin, RemoteObject):
         for header in headers:
             self._fd["PRIMARY"].header.update(*header)
 
+        self.save()
+
         return self
