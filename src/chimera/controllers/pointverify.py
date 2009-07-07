@@ -1,4 +1,5 @@
 from __future__ import division
+from math import fabs
 
 from chimera.util.catalogs.landolt import Landolt
 from chimera.core.chimeraobject import ChimeraObject
@@ -19,20 +20,20 @@ import time
     
 class PointVerify (ChimeraObject, IPointVerify):
     """
-    If the telescope can't point:
-
-    raise exception CantPointScopeException
-
+    Verifies telescope pointing.
+    There are two ways of doing this:
+       - verify the field the scope has been pointed to
+       - choose a field (from a list of certified fields) and try verification
     """
 
     # normal constructor
     # initialize the relevant variables
     def __init__ (self):
         ChimeraObject.__init__ (self)
-        self.ntrials = 0
-        self.nfields = 0
-        self.checkedpointing = False
-        self.currentField = 0
+        self.ntrials = 0             # number times we try to center on a field
+        self.nfields = 0             # number of fields we try to center on 
+        self.checkedpointing = False # True = Standard field is verified
+        self.currentField = 0        # counts fields tried to verify
 
     #def __start__ (self):
         #self.pointVerify()
@@ -52,8 +53,6 @@ class PointVerify (ChimeraObject, IPointVerify):
     def _takeImage (self):
 
         cam = self.getCam()
-        # filename = time.strftime("pointverify-%Y%m%d%H%M%S")
-        # return("/home/kanaan/data/20080822/m6-dss.fits")
         frames = cam.expose(exptime=self["exptime"], frames=1, shutter=Shutter.OPEN, filename="pointverify-$DATE")
         
         if frames:
@@ -155,7 +154,7 @@ class PointVerify (ChimeraObject, IPointVerify):
         logstr = "%s %f %f %f %f %f %f" %(image["DATE-OBS"],ra_img_center,dec_img_center,ra_wcs_center,dec_wcs_center,delta_ra,delta_dec)
         self.log.debug(logstr)
 
-        if ( delta_ra > self["tolra"] ) or ( delta_dec > self["toldec"]):
+        if ( fabs(delta_ra) > self["tolra"] ) or ( fabs(delta_dec) > self["toldec"]):
             print "Telescope not there yet."
             print "Trying again"
             self.ntrials += 1
@@ -224,6 +223,14 @@ class PointVerify (ChimeraObject, IPointVerify):
 
 
     def findStandards(self):
+        """
+	Not yet implemented.
+        The idea is to find the best standard field to do automatic setting of
+        the telescope coordinates.
+        It seems that for telescopes > 40cm Landolt fields suffice.
+        For scopes < 40 cm on bright skies we may need to build a list of 
+        compact open clusters.
+        """
         site =  self.getManager().getProxy("/Site/0")
         lst = site.LST()
         # *** need to come from config file
