@@ -35,6 +35,8 @@ class ChimeraPointVerify (ChimeraCLI):
     
     def __init__ (self):
 	# are these entities being created or am I referring to existing things?
+        # the first entry is how the script will be called
+        # the second entry is an English language description of the script
         ChimeraCLI.__init__(self, "chimera-pverify", "Point Verifier", 0.1)
         self.addHelpGroup("PVERIFY", "PVerify")
         self.addController(name="pverify", cls="PointVerify", required=True, helpGroup="PVERIFY", help="Pointing verification controller to be used")
@@ -71,7 +73,7 @@ class ChimeraPointVerify (ChimeraCLI):
 
     # ok, looks like action establishes that the following method is some 
     # action performed by this script    
-    @action(long="check", 
+    @action(long="choose", 
             help="Chooses a field to point the scope to, moves the scope, takes an image and verifies the pointing", 
            helpGroup="PVERIFY")
     def checkPointing (self,options):
@@ -82,6 +84,17 @@ class ChimeraPointVerify (ChimeraCLI):
         except CantSetScopeException, e:
             self.exit("Can't set scope")
         self.out("OK")
+
+    @action(long="here",
+            help="Takes an image where telescope is pointed to, tries to find image RA, DEC, and tries to rececnter the telescope",
+            helpGroup="PVERIFY")
+    def checkHere(self,options):
+        self.out("Centering scope on current field")
+        try:
+            self.pverify.pointVerify()
+        except CanSetScopeButNotThisField, e:
+            self.out("The scope has been set on a standard field but it is impossible to set on this - either spotty clouds or too faint stars")
+        self.out("OK")		
         
 
     #def _currentPosition(self, options):
