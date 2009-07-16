@@ -34,7 +34,6 @@ from chimera.interfaces.camera import (CCD, CameraFeature,
 from chimera.instruments.camera      import CameraBase
 from chimera.instruments.filterwheel import FilterWheelBase
 
-from chimera.core.exceptions import ObjectNotFoundException
 from chimera.core.lock       import lock
 
 
@@ -198,26 +197,28 @@ class FakeCamera (CameraBase, FilterWheelBase):
             pix = self.make_dark((ccd_height, ccd_width), N.float, imageRequest['exptime'])
 
         else:
-
             if telescope and dome:
-                # use telescope/dome to get a real image from DSS if slit in right position
-
                 self.log.debug("Dome open? "+ str(dome.isSlitOpen()))
 
                 if dome.isSlitOpen() and self["use_dss"]:
                     domeAZ=dome.getAz().toD()
                     telAZ=telescope.getAz().toD()
-                    if (telAZ < 3 and domeAZ > 357):
-                        domeAZ-=360     #take care of wrap-around
 
                     self.log.debug("Dome AZ: "+str(domeAZ)+"  Tel AZ: "+str(telAZ))
                     if (abs(domeAZ-telAZ) <= 3):
                         self.log.debug("Dome & Slit aligned -- getting DSS")
-                        url = "http://stdatu.stsci.edu/cgi-bin/dss_search?v=poss1_red&r=" + \
-                              urllib.quote(telescope.getRa().strfcoord().replace(":"," ")) + \
-                              "&d=" + urllib.quote(telescope.getDec().strfcoord().replace(":"," ")) + \
-                              "&h=29&w=43.5&f=fits&c=gz&fov=NONE&v3="
-                        self.log.debug("Attempting URL: "+url)
+                        url = "http://stdatu.stsci.edu/cgi-bin/dss_search?"
+                        query_args = {"v": "poss1_red",
+                                      "r": str(telescope.getRa().D),
+                                      "d": "'%s'" % str(telescope.getDec().D),
+                                      "h": ccd_height / 35.3, # 35.3 pix/arcmin is the plate scale of DSS images
+                                      "w": ccd_width / 35.3,
+                                      "f": "fits",
+                                      "c": "gz",
+                                      "fov": "NONE"}
+                        url += urllib.urlencode(query_args)
+                        
+                        self.log.debug("Attempting URL: " + url)
                         try:
                             dssfile=urllib.urlretrieve(url)[0]
                             self.gunzip(dssfile,'fits')
@@ -229,32 +230,27 @@ class FakeCamera (CameraBase, FilterWheelBase):
                             os.remove(dssfile)
                         except Exception, e:
                             self.log.warning("General error getting DSS image: " + str(e))
-                        self.log.debug("Making flat...")
+
+                    # dome not aligned, take a 'dome flat'
+                    else:
+                        self.log.debug("Dome not aligned... making flat image...")
                         try:
-                            pix *= (self.make_flat(pix.shape, N.float)/1000)
+                            pix = (self.make_flat((ccd_height,ccd_width), N.float)/1000)
                         except Exception, e:
                             self.log.warning("Error generating flat: " + str(e))
-                        self.log.debug("Generating dark...")
-                        try:
-                            pix += self.make_dark(pix.shape, N.float, imageRequest['exptime'])
-                        except Exception, e:
-                            self.log.warning("Error generating dark: " + str(e))
 
-            # without telescope/dome, or if dome/telescope aren't aligned, or the dome is closed
-            # or we otherwise failed, just make a flat pattern with dark noise
-            if (pix == None):
-                try:
-                    self.log.info("Making simulated flat image: " + str(ccd_height) + "x" + str(ccd_width))
-                    self.log.debug("Generating dark...")
-                    pix = self.make_dark((ccd_height,ccd_width), N.float, imageRequest['exptime'])
-                    self.log.debug("Making flat...")
-                    pix += self.make_flat((ccd_height,ccd_width), N.float)
-                except Exception, e:
-                    self.log.warning("MakekFlat error: " + str(e))
+        # without telescope/dome, or if dome/telescope aren't aligned, or the dome is closed
+        # or we otherwise failed, just make a flat pattern with dark noise
+        if (pix == None):
+            try:
+                self.log.info("Making flat image: " + str(ccd_height) + "x" + str(ccd_width))
+                pix = self.make_flat((ccd_height,ccd_width), N.float)
+            except Exception, e:
+                self.log.warning("Make flat error: " + str(e))
         
         # Last resort if nothing else could make a picture
         if (pix == None):
-            pix = N.zeros((100,100), dtype=N.int32)
+            pix = N.zeros((ccd_height,ccd_width), dtype=N.int32)
 
         proxy = self._saveImage(imageRequest, pix, {"frame_start_time": self.__lastFrameStart,
                                                     "frame_temperature": self.getTemperature(),
