@@ -44,8 +44,7 @@ class TelescopeBase(ChimeraObject,
         
     @lock
     def slewToObject(self, name):
-        simbad = Simbad()
-        target = simbad.lookup(name)
+        target = Simbad.lookup(name)
         self.slewToRaDec(target)
 
     @lock
@@ -121,8 +120,7 @@ class TelescopeBase(ChimeraObject,
 
     @lock
     def syncObject(self, name):
-        simbad = Simbad()
-        target = simbad.lookup(name)
+        target = Simbad.lookup(name)
         self.syncRaDec(target)
 
     @lock

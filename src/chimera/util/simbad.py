@@ -36,20 +36,33 @@ from suds.client import Client
 class Simbad (object):
 
     WSDL = 'http://cdsws.u-strasbg.fr/axis/services/Sesame?wsdl'
-    
-    def __init__ (self):
-        self.client = Client(Simbad.WSDL)
 
-    def lookup (self, name):
-        res = self.client.service.Sesame.sesame(name, 'x', True)
-        target = self._parseSesame(res)
+    __cache = {}
+    __client = None
+
+    @staticmethod
+    def lookup (name):
+
+        if not Simbad.__client:
+            Simbad.__client = Client(Simbad.WSDL)
+
+        client = Simbad.__client
+        
+        if name in Simbad.__cache:
+            return Simbad.__cache[name]
+        
+        res = client.service.Sesame.sesame(name, 'x', True)
+        target = Simbad._parseSesame(res)
 
         if not target:
             raise ObjectNotFoundException("Cound't found %s on SIMBAD" % name)
+
+        Simbad.__cache[name] = target
         
         return target
 
-    def _parseSesame (self, xml):
+    @staticmethod
+    def _parseSesame (xml):
        
         sesame = ET.fromstring(xml.replace("&", "&amp;"))
 
