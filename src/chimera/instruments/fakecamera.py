@@ -210,12 +210,17 @@ class FakeCamera (CameraBase, FilterWheelBase):
                         url = "http://stdatu.stsci.edu/cgi-bin/dss_search?"
                         query_args = {"v": "poss1_red",
                                       "r": str(telescope.getRa().D),
-                                      "d": "'%s'" % str(telescope.getDec().D),
                                       "h": ccd_height / 35.3, # 35.3 pix/arcmin is the plate scale of DSS images
                                       "w": ccd_width / 35.3,
                                       "f": "fits",
                                       "c": "gz",
                                       "fov": "NONE"}
+
+                        if telescope.getDec().D < 0:
+                            query_args["d"] = "'%s'" % str(telescope.getDec().D)
+                        else:
+                            query_args["d"] = str(telescope.getDec().D)
+
                         url += urllib.urlencode(query_args)
                         
                         self.log.debug("Attempting URL: " + url)

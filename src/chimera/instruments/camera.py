@@ -88,13 +88,14 @@ class CameraBase (ChimeraObject,
         self.abort.clear()
 
         images = []
+        manager = self.getManager()
 
         for frame_num in range(frames):
             
             if self.abort.isSet():
                 return images
-            
-            imageRequest.fetchPreHeaders(self.getManager())
+
+            imageRequest.beginExposure(manager)
 
             if self._expose(imageRequest):
                 image = self._readout(imageRequest, aborted=False)
@@ -102,6 +103,8 @@ class CameraBase (ChimeraObject,
             else:
                 return False
 
+            imageRequest.endExposure(manager)
+            
             if (interval > 0 and frame_num < frames) and (not frames == 1):
                 time.sleep(interval)
 

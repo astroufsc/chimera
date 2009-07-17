@@ -225,7 +225,9 @@ class DomeBase (ChimeraObject, Dome):
 
     @lock
     def syncWithTel(self):
+        self.syncBegin()
         self._processQueue()
+        self.syncComplete()
 
     @lock
     def isSyncWithTel(self):

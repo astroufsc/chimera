@@ -21,17 +21,15 @@
 
 from chimera.core.cli import ChimeraCLI, action, ParameterType
 from chimera.core.callback import callback
-from chimera.core.exceptions import printException
+from chimera.core.exceptions import printException, ObjectNotFoundException
 
 from chimera.interfaces.filterwheel import InvalidFilterPositionException
 from chimera.interfaces.camera import CameraFeature
 
 from chimera.util.ds9 import DS9
 
-import os
 import sys
 import time
-import warnings
 
 currentFrame = 0
 currentFrameExposeStart = 0
@@ -75,7 +73,10 @@ class ChimeraCam (ChimeraCLI):
                                 " x1:x2,y1:y2 to specify the corners of the desired subframe", helpGroup="EXPOSE"),
                            dict(name="compress", help="Compress the output file using FORMAT. Use --compress=no to disable it.",
                                 helpGroup="EXPOSE", type=ParameterType.CHOICE,
-                                choices=["BZ2", "ZIP", "GZIP", "NO", "bz2", "zip", "gzip", "no"], default="BZ2"))
+                                choices=["BZ2", "ZIP", "GZIP", "NO", "bz2", "zip", "gzip", "no"], default="BZ2"),
+                           dict(name="ignore_dome", long="ignore-dome", type=ParameterType.BOOLEAN, default=False,
+                                helpGroup="EXPOSE",
+                                help="Ignore if the dome is slewing, take an image anyway."))
 
         self.addHelpGroup("DISPLAY", "Display configuration")
         self.addParameters(dict(name="no_display", long="no-display", type=ParameterType.BOOLEAN,
@@ -378,6 +379,26 @@ class ChimeraCam (ChimeraCLI):
         camera.abortComplete   += abortComplete
         camera.readoutBegin    += readoutBegin
         camera.readoutComplete += readoutComplete
+
+        # do we have a Dome?
+        dome = None
+        try:
+            dome = camera.getManager().getProxy("/Dome/0")
+        except ObjectNotFoundException:
+            pass
+
+        if dome:
+            @callback(self.localManager)
+            def syncBegin():
+                self.out("="*40)
+                self.out("synchronizing dome slit ...", end="")
+
+            @callback(self.localManager)
+            def syncComplete():
+                self.out("OK")
+
+            dome.syncBegin += syncBegin
+            dome.syncComplete += syncComplete
         
         self.out(40*"=")
         self.out("Taking %d %s frame[s]" % (options.frames, imagetype.upper()))
@@ -436,7 +457,8 @@ class ChimeraCam (ChimeraCLI):
                                       window=options.subframe or None,
                                       shutter=options.shutter,
                                       compress=compress,
-                                      compress_format=compress_format)
+                                      compress_format=compress_format,
+                                      wait_dome=not options.ignore_dome)
 
                 else:
                     camera.expose(exptime=expTimes[0],
@@ -448,7 +470,8 @@ class ChimeraCam (ChimeraCLI):
                                   window=options.subframe or None,
                                   shutter=options.shutter,
                                   compress=compress,
-                                  compress_format=compress_format)
+                                  compress_format=compress_format,
+                                  wait_dome=not options.ignore_dome)                                  
 
 
             except IOError, e:

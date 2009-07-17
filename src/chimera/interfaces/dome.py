@@ -156,6 +156,18 @@ class Dome (Interface):
         """
 
     @event
+    def syncBegin (self):
+        """
+        Indicates that the dome was asked and is starting to sync with the telescope (if any).
+        """
+
+    @event
+    def syncComplete (self):
+        """
+        Indicates that the dome was asked and finished the sync with the telescope (if any).
+        """
+
+    @event
     def slewBegin (self, position):
         """Indicates that the a new slew operation started.
 

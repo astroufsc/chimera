@@ -1,7 +1,7 @@
 
 from chimera.interfaces.camera import (Shutter, Bitpix)
 
-from chimera.core.exceptions import ChimeraValueError
+from chimera.core.exceptions import ChimeraValueError, ObjectNotFoundException
 
 import logging
 import chimera.core.log
@@ -22,7 +22,8 @@ class ImageRequest (dict):
                    'filename': '$DATE-$TIME',
                    'compress': True,
                    'compress_format': "BZ2",
-                   'type'    : 'object'}
+                   'type'    : 'object',
+                   'wait_dome': True}
 
         # Automatically call getMetadata on all instruments + site as long as only
         # one instance of each is listed by the manager.
@@ -36,6 +37,8 @@ class ImageRequest (dict):
         
         # Headers accumulated during processing of each frame (=headers+metadatapre+metadatapost)
         self.headers = []
+
+        self._proxies = {}
 
         self.update(default)
 
@@ -56,9 +59,6 @@ class ImageRequest (dict):
 
         self.update(kwargs)
 
-        # Used so that we don't take metadata twice from the same object
-        self._accum_from = []  
-    
         # do some checkings
         if self['exptime'] < 0.0:
             raise ChimeraValueError('Invalid exposure length (<0 seconds).')
@@ -83,27 +83,41 @@ class ImageRequest (dict):
                                                                     self['frames'],
                                                                     self['shutter'],
                                                                     self['type']))
-    
+    def beginExposure (self, manager):
+
+        self.fetchPreHeaders(manager)
+
+        if self["wait_dome"]:
+            try:
+                dome = manager.getProxy("/Dome/0")
+                dome.syncWithTel()
+            except ObjectNotFoundException:
+                log.info("No dome present, taking exposure without dome sync.")
+
+    def endExposure(self, manager):
+        self.fetchPostHeaders(manager)
+
     def fetchPreHeaders (self, manager):
         auto = []
         if self.auto_collect_metadata:
             for cls in ('Site', 'Camera', 'Dome', 'FilterWheel', 'Focuser', 'Telescope'):
-                classes = manager.getResourcesByClass(cls)
-                if len(classes) == 1:
-                    auto.append(str(classes[0]))
+                locations = manager.getResourcesByClass(cls)
+                if len(locations) == 1:
+                    auto.append(str(locations[0]))
 
-        self._getHeaders(manager, auto+self.metadataPre)
+            self._getHeaders(manager, auto+self.metadataPre)
 
     def fetchPostHeaders (self, manager):
         self._getHeaders(manager, self.metadataPost)
         
-    def _getHeaders (self, manager, proxies):
-        for proxyurl in proxies:
-            try:
-                proxy = manager.getProxy(proxyurl)
-                proxyLoc = str(proxy.getLocation())
-                if proxyLoc not in self._accum_from:
-                    self._accum_from.append(proxyLoc)
-                    self.headers += proxy.getMetadata(self)
-            except Exception, e:
-                log.exception('Unable to get metadata from %s' % (proxyurl))
+    def _getHeaders (self, manager, locations):
+
+        for location in locations:
+
+            if not location in self._proxies:
+                try:
+                    self._proxies[location] = manager.getProxy(location)
+                except Exception, e:
+                    log.exception('Unable to get metadata from %s' % (location))
+
+            self.headers += self._proxies[location].getMetadata(self)
