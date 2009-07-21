@@ -70,3 +70,12 @@ class TestPosition (object):
         d = p1.angsep(p2)
         assert p1.within(p2, Coord.fromD(29.99)) == False
         assert p1.within(p2, Coord.fromD(30.01)) == True
+
+    def test_precession(self):
+
+        sirius_j2000 = Position.fromRaDec("06 45 08.9173", "-16 42 58.017")
+        sirius_now = sirius_j2000.precess()
+
+        print
+        print sirius_j2000
+        print sirius_now

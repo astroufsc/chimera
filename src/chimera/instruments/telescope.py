@@ -28,6 +28,7 @@ from chimera.interfaces.telescope import (TelescopeSlew, TelescopeSync,
 from chimera.core.lock import lock
 
 from chimera.util.simbad import Simbad
+from chimera.util.position import Epoch
 
 
 __all__ = ["TelescopeBase"]
@@ -50,6 +51,19 @@ class TelescopeBase(ChimeraObject,
     @lock
     def slewToRaDec(self, position):
         raise NotImplementedError()
+
+    def _getFinalPosition(self, position):
+
+        if str(position.epoch).lower() != str(Epoch.NOW).lower():
+            self.log.info("Precessing position (%s) from %s to current epoch." % (str(position), position.epoch))
+            position_now = position.precess(Epoch.NOW)
+        else:
+            self.log.info("Current position (%s), no precession needed." % str(position))
+            position_now = position
+            
+        self.log.info("Final precessed position %s" % str(position_now))
+
+        return position_now
        
     @lock
     def slewToAltAz(self, position):

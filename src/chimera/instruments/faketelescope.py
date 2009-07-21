@@ -28,7 +28,7 @@ from chimera.core.lock import lock
 from chimera.core.site import Site
 
 from chimera.util.coord    import Coord
-from chimera.util.position import Position
+from chimera.util.position import Position, Epoch
 
 
 class FakeTelescope (TelescopeBase):
@@ -94,14 +94,16 @@ class FakeTelescope (TelescopeBase):
     def slewToRaDec(self, position):
 
         if not isinstance(position, Position):
-            position = Position.fromRaDec(*position)
+            position = Position.fromRaDec(*position, epoch=Epoch.J2000)
 
-        self.slewBegin(position)
+        position_now = self._getFinalPosition(position)
 
-        ra_steps = position.ra - self.getRa()
+        self.slewBegin(position_now)
+
+        ra_steps = position_now.ra - self.getRa()
         ra_steps = float(ra_steps/10.0)
 
-        dec_steps = position.dec - self.getDec()
+        dec_steps = position_now.dec - self.getDec()
         dec_steps = float(dec_steps/10.0)
 
         self._slewing = True

@@ -25,23 +25,9 @@ from chimera.util.coord import Coord, CoordUtil
 from chimera.util.position import Position
 
 from dateutil import tz
-
-try:
-    from coords import AstroDate
-except ImportError:
-
-    # FIXME: we still doesn`t have coords on Windows, so fake it.
-    class AstroDate:
-        def __init__ (self, t):
-            pass
-        
-        jd = 0
-        mjd = 0
-
 import ephem
 
 import datetime as dt
-
 
 __all__ = ['Site']
 
@@ -87,16 +73,17 @@ class Site (ChimeraObject):
     def getEphemSite (self, date):
         return self._getEphem(date)
 
-    def JD (self):
-        return AstroDate(self.ut()).jd
+    def JD (self, t=None):
+        if not t:
+            t = self.ut()
+        return ephem.julian_date(t)
 
     def MJD (self, t=None):
         # JD - julian date at November 17, 1858 (thanks Sputinik!)
         # http://www.slac.stanford.edu/~rkj/crazytime.txt
         if not t:
-            return AstroDate(self.ut()).mjd
-        else:
-            return AstroDate(t).mjd
+            t = self.ut()
+        return self.JD(t) - 2400000.5
 
     def localtime (self):
         return dt.datetime.now(self.local_tz)
@@ -121,7 +108,7 @@ class Site (ChimeraObject):
         Mean Greenwhich Sidereal Time
         """
         lst = self.LST()
-        gst = lst - self["longitude"].toH()
+        gst = (lst - self["longitude"].toH()) % Coord.fromH(24)
         return gst
 
     def sunrise (self, date=None):

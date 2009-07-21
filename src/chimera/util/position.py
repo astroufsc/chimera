@@ -10,6 +10,7 @@ try:
 except ImportError:
     from enum import Enum
 
+import ephem
 from types import StringType
 
 
@@ -86,7 +87,7 @@ class Position (object):
     """
 
     @staticmethod
-    def fromRaDec (ra, dec, equinox=Equinox.J2000):
+    def fromRaDec (ra, dec, equinox=Equinox.J2000, epoch=Epoch.J2000):
 
         try:
             if type(ra) == StringType:
@@ -126,7 +127,7 @@ class Position (object):
         except PositionOutsideLimitsError:
             raise ValueError("Invalid DEC range %s. Must be between 0-360 deg or -90 - +90 deg." % str(dec))
 
-        return Position((ra, dec), system=System.CELESTIAL, equinox=equinox)
+        return Position((ra, dec), system=System.CELESTIAL, equinox=equinox, epoch=epoch)
 
     @staticmethod
     def fromAltAz (alt, az):
@@ -213,10 +214,12 @@ class Position (object):
 
     def __init__(self, coords,
                  equinox=Equinox.J2000,
+                 epoch=Epoch.J2000,
                  system=System.CELESTIAL):
 
         self._coords = coords
         self.system = str(system).lower()
+        self.epoch = epoch
 
         try:
             self.equinox = str(equinox).lower()
@@ -228,6 +231,14 @@ class Position (object):
         @rtype: string
         """
         return self.__str__()
+
+    def epochString(self):
+        if self.epoch == Epoch.J2000:
+            return "J2000.0"
+        elif self.epoch == Epoch.B1950:
+            return "B1950.0"
+        else:
+            return "J%.2f" % (2000.0 + (ephem.julian_date() - 2451545.0) / 365.25)
 
     def __str__(self):
         """
@@ -263,6 +274,28 @@ class Position (object):
 
     def rad (self):
         return self.R
+
+    def toEphem(self):
+        if str(self.epoch).lower() == str(Epoch.J2000).lower():
+            epoch = ephem.J2000
+        elif str(self.epoch).lower() == str(Epoch.B1950).lower():
+            epoch = ephem.B1950
+        else:
+            epoch = ephem.now()
+            
+        return ephem.Equatorial(self.ra.R, self.dec.R, epoch=epoch)
+
+    def precess(self, epoch=Epoch.NOW):
+        if str(epoch).lower() == str(Epoch.J2000).lower():
+            epoch = ephem.J2000
+        elif str(epoch).lower() == str(Epoch.B1950).lower():
+            epoch = ephem.B1950
+        elif str(epoch).lower() == str(Epoch.NOW).lower():
+            epoch = ephem.now()
+
+        j2000 = self.toEphem()
+        now = ephem.Equatorial(j2000, epoch=epoch)
+        return Position.fromRaDec(Coord.fromR(now.ra), Coord.fromR(now.dec), epoch=Epoch.NOW)
 
     #
     # great circle distance

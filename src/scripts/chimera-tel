@@ -87,9 +87,9 @@ class ChimeraTel (ChimeraCLI):
             self.out(40*"=")
             if options.objectName:
                 coords = tuple(target)
-                self.out("slewing to %s (%s %s)... " % (options.objectName, coords[0], coords[1]), end="")
+                self.out("slewing to %s (%s %s %s)... " % (options.objectName, coords[0], coords[1], target.epochString()), end="")
             else:
-                self.out("slewing to %s ... " % target, end="")
+                self.out("slewing to %s (%s)... " % (target, target.epochString()), end="")
 
         @callback(self.localManager)
         def slewComplete(position):
@@ -256,7 +256,7 @@ class ChimeraTel (ChimeraCLI):
 
         if (options.ra != None) and (options.dec != None):
             try:
-                target = Position.fromRaDec(options.ra, options.dec, options.epoch)
+                target = Position.fromRaDec(options.ra, options.dec, epoch=options.epoch)
             except Exception, e:
                 self.exit(str(e))
 
