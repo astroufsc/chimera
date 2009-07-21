@@ -94,7 +94,7 @@ class FakeTelescope (TelescopeBase):
     def slewToRaDec(self, position):
 
         if not isinstance(position, Position):
-            position = Position.fromRaDec(*position, epoch=Epoch.J2000)
+            position = Position.fromRaDec(position[0], position[1], epoch=Epoch.J2000)
 
         position_now = self._getFinalPosition(position)
 
