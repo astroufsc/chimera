@@ -39,12 +39,7 @@ from chimera.util.position import Position
 from chimera.util.enum     import Enum
 
 from chimera.core.lock  import lock
-
-from chimera.core.exceptions import ChimeraException, ObjectNotFoundException
-
-
-class MeadeException(ChimeraException):
-    pass
+from chimera.core.exceptions import ObjectNotFoundException, MeadeException
 
 
 Direction = Enum("E", "W", "N", "S")

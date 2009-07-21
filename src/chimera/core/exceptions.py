@@ -118,3 +118,6 @@ class CantSetScopeException(ChimeraException):
     Never raise this exception for a science field.  It may be that pointverify 
     fails there because of bright objects or other more astronomical reasons
     """
+
+class MeadeException(ChimeraException):
+    pass
