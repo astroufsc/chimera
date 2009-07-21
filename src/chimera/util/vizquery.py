@@ -98,6 +98,8 @@ class VizQuery(object):
 
         """
 
+        assert "-c.rd" in self.args or "-c.bd" in self.args, "No target selected, use useTarget method first."
+
         self.args["-out.max"] = limit
         
         results = tempfile.NamedTemporaryFile(mode='w+', 
@@ -120,7 +122,7 @@ class VizQuery(object):
         obj = []
 
         votable = VOTable(results.name)
-        
+
         for linha in votable.getDataRows():
             v = [c.getContent() for c in linha.getNodeList()]
             obj.append(dict(zip(self.columns, v)))
