@@ -40,7 +40,7 @@ class Autofocus (Interface):
                   "max_tries"          : 3}
 
     def focus (self, filter=None, exptime=None, binning=None, window=None,
-               start=2000, end=6000, step=500, points=None,
+               start=2000, end=6000, step=500,
                minmax=None, debug=False):
         """
         Focus

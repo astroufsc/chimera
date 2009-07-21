@@ -154,10 +154,10 @@ class ChimeraFocus (ChimeraCLI):
         @callback(self.localManager)
         def stepComplete (position, star, frame):
 
-            self.out("#%04d (%4d, %4d) FWHM=%.3f FLUX=%.3f" % (position,
-                                                               star["XWIN_IMAGE"], star["YWIN_IMAGE"],
-                                                               star["FWHM_IMAGE"], star["FLUX_BEST"]))
-                
+            self.out("#%04d (%4d, %4d) FWHM: %8.3f FLUX: %-9.3f (%s)" % (position,
+                                                                         star["XWIN_IMAGE"], star["YWIN_IMAGE"],
+                                                                         star["FWHM_IMAGE"], star["FLUX_BEST"],
+                                                                         star["CHIMERA_FLAGS"]))
             if ds9:
                 ds9.displayFile(frame.filename())
                 ds9.set("regions command { circle %d %d %d}" % (int(star["XWIN_IMAGE"]), int(star["YWIN_IMAGE"]), int(star["FWHM_IMAGE"])))
@@ -190,9 +190,8 @@ class ChimeraFocus (ChimeraCLI):
         except IOError, e:
             self.exit(str(e))
 
-        except FocusNotFoundException:
-            self.exit("Couldn't find the best focus position."
-                      " See autofocus log for more information.")
+        except FocusNotFoundException, e:
+            self.exit(str(e))
         except StarNotFoundException, e:
             self.exit(str(e))
         except SExtractorException:

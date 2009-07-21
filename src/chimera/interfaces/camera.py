@@ -101,6 +101,8 @@ class Camera (Interface):
                   "ccd"        : CCD.IMAGING,
                   "temp_delta" : 2.0,
 
+                  "ccd_saturation_level": 60000,
+
                   "camera_model"    : "Fake camera Inc.",
                   "ccd_model"       : "KAF XYZ 10",
                   "telescope_focal_length": 4000 # milimeter

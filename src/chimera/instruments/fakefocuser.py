@@ -65,7 +65,7 @@ class FakeFocuser (FocuserBase):
             self._setPosition(position)
         else:
             raise InvalidFocusPositionException("%d is outside focuser "
-                                                "boundaries." % position)
+                                                "boundaries." % int(position))
     @lock
     def getPosition (self):
         return self._position
@@ -77,3 +77,6 @@ class FakeFocuser (FocuserBase):
         self.log.info("Changing focuser to %s" % n)
         self._position = n
 
+    def _inRange (self, n):
+        min_pos, max_pos = self.getRange()
+        return (min_pos <= n <= max_pos)
