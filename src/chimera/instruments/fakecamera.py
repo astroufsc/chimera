@@ -208,19 +208,24 @@ class FakeCamera (CameraBase, FilterWheelBase):
                     if (abs(domeAZ-telAZ) <= 3):
                         self.log.debug("Dome & Slit aligned -- getting DSS")
                         url = "http://stdatu.stsci.edu/cgi-bin/dss_search?"
-                        query_args = {"v": "poss1_red",
-                                      "r": str(telescope.getRa().D),
-                                      "h": ccd_height / 35.3, # 35.3 pix/arcmin is the plate scale of DSS images
-                                      "w": ccd_width / 35.3,
+                        query_args = {"r": telescope.getRa().strfcoord('%(h)02d:%(m)02d:%(s)04d'),
+                                      "d": telescope.getDec().strfcoord('%(d)02d:%(m)02d:%(s)04d', signed=True),
                                       "f": "fits",
+                                      "e": "j2000",
                                       "c": "gz",
                                       "fov": "NONE"}
 
-                        if telescope.getDec().D < 0:
-                            query_args["d"] = "'%s'" % str(telescope.getDec().D)
+                        # use POSS2-Red surbey ( -90 < d < -20 ) if below -25 deg declination, else use POSS1-Red (-30 < d < +90)
+                        # http://www-gsss.stsci.edu/SkySurveys/Surveys.htm
+                        if telescope.getDec().D < -25:
+                            query_args["v"] = "poss2ukstu_red"
+                            query_args["h"] = ccd_height / 59.5 # ~1"/pix (~60 pix/arcmin) is the plate scale of DSS POSS2-Red
+                            query_args["w"] = ccd_width / 59.5                            
                         else:
-                            query_args["d"] = str(telescope.getDec().D)
-
+                            query_args["v"] = "poss1_red"
+                            query_args["h"] = ccd_height / 35.3 # 1.7"/pix (35.3 pix/arcmin) is the plate scale of DSS POSS1-Red
+                            query_args["w"] = ccd_width / 35.3
+                            
                         url += urllib.urlencode(query_args)
                         
                         self.log.debug("Attempting URL: " + url)
