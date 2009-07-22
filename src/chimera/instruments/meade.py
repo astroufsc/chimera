@@ -433,7 +433,7 @@ class Meade (TelescopeBase):
                 total = 0
 
                 for i in range(3):
-                    total += calibrate(direction, rate).arcsec()
+                    total += calibrate(direction, rate).AS
                 
                 self._calibration[rate][direction] = total/3.0
 

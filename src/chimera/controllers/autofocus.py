@@ -319,7 +319,7 @@ class Autofocus (ChimeraObject, IAutofocus):
                 self.log.debug("Ignoring star at (X,Y)=(%d,%d) FWHM magic number=%.3f, FLUX=%.3f" % (star["XWIN_IMAGE"], star["YWIN_IMAGE"],
                                                                                                      star["FWHM_IMAGE"], star["FLUX_BEST"]))
                 star["CHIMERA_FLAGS"] = red("Ignoring, SExtractor FWHM magic number.")
-            elif minmax[0] <= star["FWHM_IMAGE"] <= minmax[1]:
+            elif star["FWHM_IMAGE"] <= minmax[0] or star["FWHM_IMAGE"] >= minmax[1]:
                 self.log.debug("Ignoring star at (X,Y)=(%d,%d) FWHM magic number=%.3f, FLUX=%.3f" % (star["XWIN_IMAGE"], star["YWIN_IMAGE"],
                                                                                                      star["FWHM_IMAGE"], star["FLUX_BEST"]))
                 star["CHIMERA_FLAGS"] = red("Ignoring, FWHM above/below minmax limits.")
