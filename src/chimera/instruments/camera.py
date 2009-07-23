@@ -84,6 +84,11 @@ class CameraBase (ChimeraObject,
         self._getReadoutModeInfo(imageRequest["binning"],
                                  imageRequest["window"])
 
+        # use image server if any and save image on server's default dir if filename given as a relative path.
+        server = getImageServer(self.getManager())
+        if not os.path.isabs(imageRequest["filename"]):
+            imageRequest["filename"] = os.path.join(server["save_dir"], imageRequest["filename"])
+
         # clear abort setting
         self.abort.clear()
 
@@ -143,11 +148,6 @@ class CameraBase (ChimeraObject,
         CRPIX1 = ((int(full_width/2.0)) - left) - 1
         CRPIX2 = ((int(full_height/2.0)) - top) - 1
 
-        # use image server if any and save image on server's default dir if filename given as a relative path.
-        server = getImageServer(self.getManager())
-        if not os.path.isabs(imageRequest["filename"]):
-            imageRequest["filename"] = os.path.join(server["save_dir"], imageRequest["filename"])
-
         img = Image.create(imageData, imageRequest)
 
         img += [('DATE-OBS',
@@ -182,7 +182,8 @@ class CameraBase (ChimeraObject,
                 ('CCDPXSZY', self.getPixelSize()[1],
                  'CCD Y Pixel Size [micrometer]')]
 
-        # regiter image on ImageServer
+        # register image on ImageServer
+        server = getImageServer(self.getManager())
         proxy = server.register(img)
 
         # and finally compress the image
