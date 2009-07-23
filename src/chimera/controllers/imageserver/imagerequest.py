@@ -89,7 +89,7 @@ class ImageRequest (dict):
                                                                     self['type']))
     def beginExposure (self, manager):
 
-        self.fetchPreHeaders(manager)
+        self._fetchPreHeaders(manager)
 
         if self["wait_dome"]:
             try:
@@ -99,19 +99,23 @@ class ImageRequest (dict):
                 log.info("No dome present, taking exposure without dome sync.")
 
     def endExposure(self, manager):
-        self.fetchPostHeaders(manager)
+        self._fetchPostHeaders(manager)
 
-    def fetchPreHeaders (self, manager):
+    def _fetchPreHeaders (self, manager):
         auto = []
         if self.auto_collect_metadata:
             for cls in ('Site', 'Camera', 'Dome', 'FilterWheel', 'Focuser', 'Telescope'):
                 locations = manager.getResourcesByClass(cls)
                 if len(locations) == 1:
                     auto.append(str(locations[0]))
-
+                elif len(location) == 0:
+                    self.log.warning("No %s available, header would be incomplete." % cls)
+                else:
+                    self.log.warning("More than one %s available, header may be incorrect. Using the first %s." % (cls, cls))
+                    
             self._getHeaders(manager, auto+self.metadataPre)
 
-    def fetchPostHeaders (self, manager):
+    def _fetchPostHeaders (self, manager):
         self._getHeaders(manager, self.metadataPost)
         
     def _getHeaders (self, manager, locations):

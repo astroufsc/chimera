@@ -127,15 +127,6 @@ class CameraBase (ChimeraObject,
 
     def _saveImage(self, imageRequest, imageData, extra):
 
-        try:
-            telLocation = self.getManager().getResourcesByClass("Telescope")
-            if telLocation:
-                tel = self.getManager().getProxy(telLocation[0])
-                imageRequest.metadataPost.append(tel.getLocation())
-        except Exception:
-            self.log.info("Couldn't find a telescope, "
-                          "WCS info will be incomplete")
-
         (mode, binning, top, left,
          width, height) = self._getReadoutModeInfo(imageRequest["binning"],
                                                    imageRequest["window"])
@@ -193,6 +184,9 @@ class CameraBase (ChimeraObject,
 
         # regiter image on ImageServer
         proxy = server.register(img)
+
+        # and finally compress the image
+        img.compress()
 
         return proxy
 
