@@ -79,7 +79,7 @@ class ChimeraCam (ChimeraCLI):
                                 help="Ignore if the dome is slewing, take an image anyway."))
 
         self.addHelpGroup("DISPLAY", "Display configuration")
-        self.addParameters(dict(name="no_display", long="no-display", type=ParameterType.BOOLEAN,
+        self.addParameters(dict(name="disable_display", long="disable-display", type=ParameterType.BOOLEAN,
                                 helpGroup="DISPLAY",
                                 help="Don't try to display image on DS9. default is display for exptime >= 5"),
                            dict(name="force_display", long="force-display", type=ParameterType.BOOLEAN,
@@ -339,7 +339,7 @@ class ChimeraCam (ChimeraCLI):
 
         # DS9
         ds9 = None
-        if (not self.options.no_display and expTimes[0] >= 5) or options.force_display:
+        if (not self.options.disable_display and expTimes[0] >= 5) or options.force_display:
             try:
                 ds9 = DS9(open=True)
             except IOError:
