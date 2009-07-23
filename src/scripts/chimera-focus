@@ -181,15 +181,16 @@ class ChimeraFocus (ChimeraCLI):
             if not debug:
                 self.out("Looking for a star to focus on... (will try up to %d times) ..." % self.autofocus["max_tries"])
                 
-            best_focus = self.autofocus.focus(exptime=options.autofocus_exptime,
-                                              start=start, end=end, step=options.autofocus_step,
-                                              minmax=(0,30), debug=debug,
-                                              filter=filter)
-            self.out("Best focus position: %d" % int(best_focus[-1][0]))
+            result = self.autofocus.focus(exptime=options.autofocus_exptime,
+                                          start=start, end=end, step=options.autofocus_step,
+                                          minmax=(0,30), debug=debug,
+                                          filter=filter)
+            
+            self.out("Best focus position found at %d." % result["best"])
+            self.out("Moving focuser to %d .. OK" % result["best"])
 
         except IOError, e:
             self.exit(str(e))
-
         except FocusNotFoundException, e:
             self.exit(str(e))
         except StarNotFoundException, e:

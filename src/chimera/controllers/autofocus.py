@@ -288,7 +288,11 @@ class Autofocus (ChimeraObject, IAutofocus):
             if not self.best_fit or fit < self.best_fit:
                 self.best_fit = fit
                 
-            return (self.currentRun, fit.A, fit.B, fit.C, fit.best_focus)
+            return {"current_run": self.currentRun,
+                    "A": fit.A,
+                    "B": fit.B,
+                    "C": fit.C,
+                    "best": int(fit.best_focus[0])}
 
         finally:
             # reset debug counter
@@ -352,8 +356,8 @@ class Autofocus (ChimeraObject, IAutofocus):
             
             focuser.moveTo(int(fit.best_focus[0]))
             self.log.debug("Best focus position: %.3f" % fit.best_focus[0])
-        except InvalidFocusPositionException:
-            self.log.debug("Coundt' find best focus position. Check logs.")
+        except InvalidFocusPositionException, e:
+            raise FocusNotFoundException("Best guess was %d, but could not the focuser (%s)" % (fit.best_focus[0], e))
 
         return fit
     
