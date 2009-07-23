@@ -61,8 +61,3 @@ class FocuserBase (ChimeraObject, Focuser):
         return [('FOCUSER', str(self['model']), 'Focuser Model'),
                 ('FOCUS',  self.getPosition(),
                  'Focuser position used for this observation')]
-
-    def _inRange (self, n):
-        min_pos, max_pos = self.getRange()
-        return (min_pos <= n <= max_pos)
-
