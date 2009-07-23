@@ -36,19 +36,19 @@ currentFrameExposeStart = 0
 currentFrameReadoutStart = 0
 
 class ChimeraCam (ChimeraCLI):
-    
+
     def __init__ (self):
         ChimeraCLI.__init__(self, "chimera-cam", "Camera controller", 0.1, port=9000)
-        
+
         self.addHelpGroup("CAM", "Camera and Filter Wheel configuration")
         self.addInstrument(name="camera", cls="Camera",
                            help="Camera instrument to be used. If blank, try to guess from chimera.config",
                            helpGroup="CAM", required=True)
-        
+
         self.addInstrument(name="wheel", cls="FilterWheel",
                            help="Filter Wheel instrument to be used. If blank, try to guess from chimera.config",
                            helpGroup="CAM")
-        
+
         self.addHelpGroup("EXPOSE", "Exposure control")
         self.addParameters(dict(name="frames", short="n", type="int", default=1, helpGroup="EXPOSE", help="Number of frames"),
                            dict(name="exptime", short="t", type="string", default=1, helpGroup="EXPOSE",
@@ -68,7 +68,7 @@ class ChimeraCam (ChimeraCLI):
                                 help="What to do with the shutter: open, close, leave (case insensitive) or "
                                      "default to adjust according to image type (see --object and family"),
                            dict(name="binning", help="Apply the selected binning to all frames", helpGroup="EXPOSE"),
-                           dict(name="subframe", 
+                           dict(name="subframe",
                                 help="Readout only the selected subframe portion. The notation follows IRAF conventions."
                                 " x1:x2,y1:y2 to specify the corners of the desired subframe", helpGroup="EXPOSE"),
                            dict(name="compress", help="Compress the output file using FORMAT. Use --compress=no to disable it.",
@@ -85,7 +85,7 @@ class ChimeraCam (ChimeraCLI):
                            dict(name="force_display", long="force-display", type=ParameterType.BOOLEAN,
                                 helpGroup="DISPLAY",
                                 help="Always display image on DS9 regardless of exptime."))
-    
+
         self.addHelpGroup("TEMP", "Temperature control")
         self.addParameters(dict(name="wait", short="w", type=ParameterType.BOOLEAN,
                                 default=False,
@@ -103,57 +103,58 @@ class ChimeraCam (ChimeraCLI):
                                 help="Mark this frame as a SKY FLAT frame.", helpGroup="IMAGETYPE"),
                            dict(name="isDark", long="dark", type=ParameterType.CONSTANT, const="dark",
                                 help="Mark this frame as a DARK frame.", helpGroup="IMAGETYPE"),
-                           dict(name="isObject", long="object", type=ParameterType.CONSTANT, const="object",
-                                help="Mark this frame as a OBJECT frame.", helpGroup="IMAGETYPE"))
+                           dict(name="isObject", long="object", type="string", default="object",
+                                help="Mark this frame as a OBJECT frame and add OBJECT keyword to the FITS file using OBJECTNAME.",
+                                helpGroup="IMAGETYPE", metavar="OBJECTNAME"))
 
     @action(short="F", long="--list-filters", helpGroup="INFO", help="Print available filter names.")
     def filters(self, options):
         if not self.wheel:
             self.exit("No Filter Wheel found. Edit chimera.config or pass --wheel (see --help)")
-        
+
         self.out("Available filters:", end="")
-        
+
         for i,f in enumerate(self.wheel.getFilters()):
             self.out(str(f), end="")
-        
+
         self.out()
         self.exit()
-        
+
     @action(name="setpoint", short="T", long="start-cooling", actionGroup="TEMP",
             type="float",
             helpGroup="TEMP", help="Start camera cooling, using the defined TEMP",
             metavar="TEMP")
     def startCooling (self, options):
-        
+
         def eps_equal(a, b, eps=0.01):
             return abs(a-b) <= eps
 
         camera = self.camera
-        
+
         if options.wait:
             timeout = 4*60 # FIXME: configurable?
-        
+
         start = time.time()
 
         self.out(40*"=")
-        
+
         camera.startCooling(options.setpoint)
         self.out("setting camera setpoint to %.3f." % options.setpoint)
-        
+
         if options.wait:
             while not eps_equal(camera.getTemperature(), camera.getSetPoint(), 0.2):
                 self.out("\rwaiting setpoint temperature %.3f oC, current: %.3f oC" \
                     % (camera.getSetPoint(), camera.getTemperature()), end="")
                 time.sleep(1)
-    
+
                 if time.time() > (start+timeout):
                     self.out("giving up after wait for %d seconds" % timeout)
                     break
-    
+
             self.out("OK (took %.3fs)" % (time.time()-start))
-    
+
         self.out(40*"=")
-        self.exit()        
+        self.exit()
 
     @action(long="stop-cooling", actionGroup="TEMP",
             helpGroup="TEMP", help="Stop camera cooling")
@@ -163,7 +164,7 @@ class ChimeraCam (ChimeraCLI):
         self.out(40*"=")
         self.out("stopping camera cooling...", end="")
         camera.stopCooling()
-        self.out("OK")        
+        self.out("OK")
         self.out(40*"=")
         self.exit()
 
@@ -175,7 +176,7 @@ class ChimeraCam (ChimeraCLI):
         self.out(40*"=")
         self.out("stopping cooler fan...", end="")
         camera.stopFan()
-        self.out("OK")        
+        self.out("OK")
         self.out(40*"=")
         self.exit()
 
@@ -187,7 +188,7 @@ class ChimeraCam (ChimeraCLI):
         self.out(40*"=")
         self.out("starting cooler fan...", end="")
         camera.startFan()
-        self.out("OK")        
+        self.out("OK")
         self.out(40*"=")
         self.exit()
 
@@ -196,7 +197,7 @@ class ChimeraCam (ChimeraCLI):
         camera = self.camera
 
         print camera
-        self.out("="*40)        
+        self.out("="*40)
         self.out("Camera: %s (%s)." % (camera.getLocation(), camera["device"]))
 
         if camera.isCooling() == True:
@@ -236,7 +237,7 @@ class ChimeraCam (ChimeraCLI):
         self.out("CCD size (pixel)       : %d x %d" % camera.getPhysicalSize())
         self.out("Pixel size (micrometer): %.2f x %.2f" % camera.getPixelSize())
         self.out("Overscan size (pixel)  : %d x %d" % camera.getOverscanSize())
-        
+
         self.out("="*40)
         self.out("Available binnings: ", end="")
         sortedBins = camera.getBinnings().keys()
@@ -247,12 +248,12 @@ class ChimeraCam (ChimeraCLI):
         self.out()
 
         self.out("="*40)
-        
+
         self.exit()
-    
+
     def _getImageType(self, options):
-        types = (options.isBias, options.isDomeFlat, options.isSkyFlat, options.isDark, options.isObject)
-        for t in types:
+        special_types = (options.isBias, options.isDomeFlat, options.isSkyFlat, options.isDark)
+        for t in special_types:
             if t: return t
         return "object"
 
@@ -261,12 +262,12 @@ class ChimeraCam (ChimeraCLI):
 
         if self.camera.isExposing():
             self.camera.abortExposure()
-        
+
     @action(default=True, helpGroup="EXPOSE", help="Take an exposure with selected parameters")
     def expose(self, options):
-        
+
         camera = self.camera
-    
+
         # first check binning
         binnings = camera.getBinnings()
 
@@ -275,13 +276,20 @@ class ChimeraCam (ChimeraCLI):
                 self.exit("Invalid binning mode. See --info for available binning modes")
 
         imagetype = self._getImageType(options)
+        if imagetype == "object":
+            object_name = options.isObject
+        else:
+            object_name = None
 
-        if imagetype == "bias":
+        if imagetype == "zero":
+            if options.exptime > 0:
+                self.out("="*40)
+                self.out("WARNING: Bias image requested, forcing exptime=0 and shutter closed")
             options.exptime = 0.0
 
         # adjust shutter according to Image type if shutter set to default.
         if  "default" in options.shutter.lower():
-            if imagetype == "bias":
+            if imagetype == "zero":
                 options.shutter = "CLOSE"
 
             elif imagetype == "dark":
@@ -337,7 +345,7 @@ class ChimeraCam (ChimeraCLI):
             except IOError:
                 self.err("Problems starting DS9. DIsplay disabled.")
 
-         
+
         @callback(self.localManager)
         def exposeBegin(request):
             global currentFrame, currentFrameExposeStart
@@ -346,18 +354,18 @@ class ChimeraCam (ChimeraCLI):
             self.out(40*"=")
             self.out("[%03d/%03d] [%s]" % (currentFrame, options.frames, time.strftime("%c")))
             self.out("exposing (%.3fs) ..." % request["exptime"], end="")
-        
+
         @callback(self.localManager)
         def exposeComplete(request):
             global currentFrameExposeStart
             self.out("OK (took %.3f s)" % (time.time()-currentFrameExposeStart))
-    
+
         @callback(self.localManager)
         def readoutBegin(request):
             global currentFrameReadoutStart
             currentFrameReadoutStart = time.time()
             self.out("reading out and saving ...", end="")
-                
+
         @callback(self.localManager)
         def readoutComplete(image):
             global currentFrame, currentFrameExposeStart, currentFrameReadoutStart
@@ -365,10 +373,10 @@ class ChimeraCam (ChimeraCLI):
             self.out("OK (took %.3f s)"  % (time.time()-currentFrameReadoutStart))
             self.out("[%03d/%03d] took %.3fs" % (currentFrame, options.frames,
                                               time.time()-currentFrameExposeStart))
-            
+
             if ds9:
                 ds9.displayImage(image)
-    
+
         @callback(self.localManager)
         def abortComplete():
             global currentFrameExposeStart
@@ -399,7 +407,7 @@ class ChimeraCam (ChimeraCLI):
 
             dome.syncBegin += syncBegin
             dome.syncComplete += syncComplete
-        
+
         self.out(40*"=")
         self.out("Taking %d %s frame[s]" % (options.frames, imagetype.upper()))
         self.out("Shutter: %s" % options.shutter)
@@ -432,10 +440,10 @@ class ChimeraCam (ChimeraCLI):
                     self.out("ERROR. Couldn't move filter wheel to %s. (%s)" % (f, e))
                     time.sleep(3)
 
-        
+
         # finally, expose
         start = time.time()
-        
+
         try:
             try:
 
@@ -458,7 +466,8 @@ class ChimeraCam (ChimeraCLI):
                                       shutter=options.shutter,
                                       compress=compress,
                                       compress_format=compress_format,
-                                      wait_dome=not options.ignore_dome)
+                                      wait_dome=not options.ignore_dome,
+                                      object_name=object_name)
 
                 else:
                     camera.expose(exptime=expTimes[0],
@@ -471,7 +480,8 @@ class ChimeraCam (ChimeraCLI):
                                   shutter=options.shutter,
                                   compress=compress,
                                   compress_format=compress_format,
-                                  wait_dome=not options.ignore_dome)                                  
+                                  wait_dome=not options.ignore_dome,
+                                  object_name=object_name)
 
 
             except IOError, e:
@@ -483,12 +493,12 @@ class ChimeraCam (ChimeraCLI):
             self.out(40*"=")
             self.out("Total time: %.3fs" % (time.time()-start))
             self.out(40*"=")
-            self.out("%s" % time.strftime("%c"))            
+            self.out("%s" % time.strftime("%c"))
             self.out(40*"=")
 
 def main():
     cli = ChimeraCam()
     return cli.run(sys.argv)
-    
+
 if __name__ == '__main__':
     main()

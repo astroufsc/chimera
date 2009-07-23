@@ -23,7 +23,8 @@ class ImageRequest (dict):
                    'compress': True,
                    'compress_format': "BZ2",
                    'type'    : 'object',
-                   'wait_dome': True}
+                   'wait_dome': True,
+                   'object_name': ''}
 
         # Automatically call getMetadata on all instruments + site as long as only
         # one instance of each is listed by the manager.
@@ -77,6 +78,9 @@ class ImageRequest (dict):
             raise ChimeraValueError('Invalid shutter value: ' + str(self['shutter']))
         else:
             self["shutter"] = Shutter.fromStr(str(self["shutter"]))
+
+        if self["object_name"]:
+            self.headers.append(("OBJECT", str(self["object_name"]), "name of observed object"))
 
     def __str__(self):
         return ('exptime: %f, frames: %i, shutter: %s, type: %s' % (self['exptime'],
