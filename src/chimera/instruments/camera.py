@@ -248,7 +248,7 @@ class CameraBase (ChimeraObject,
                 width, height = mode.getSize()
 
         if not binning:
-            binning = self.getBinnings().keys()[0]
+            binning = self.getBinnings().keys().pop(self.getBinnings().keys().index("1x1"))
             
         return (mode, binning, top, left, width, height)
 
