@@ -108,10 +108,11 @@ class ImageRequest (dict):
                 locations = manager.getResourcesByClass(cls)
                 if len(locations) == 1:
                     auto.append(str(locations[0]))
-                elif len(location) == 0:
-                    self.log.warning("No %s available, header would be incomplete." % cls)
+                elif len(locations) == 0:
+                    log.warning("No %s available, header would be incomplete." % cls)
                 else:
-                    self.log.warning("More than one %s available, header may be incorrect. Using the first %s." % (cls, cls))
+                    log.warning("More than one %s available, header may be incorrect. Using the first %s." % (cls, cls))
+                    auto.append(str(locations[0]))
                     
             self._getHeaders(manager, auto+self.metadataPre)
 

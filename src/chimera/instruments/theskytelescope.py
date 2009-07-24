@@ -423,3 +423,10 @@ class TheSkyTelescope (TelescopeBase, FocuserBase):
         @return: Start and end positions of the focuser (start, end)
         """
         return (0,0)
+
+    def getMetadata (self, request):
+        headers = []
+        headers += super(TelescopeBase, self).getMetadata(request)
+        headers += super(FocuserBase, self).getMetadata(request)
+        return headers
+

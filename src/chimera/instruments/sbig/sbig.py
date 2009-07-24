@@ -284,3 +284,9 @@ class SBIG(CameraBase, FilterWheelBase):
         self.readoutComplete(proxy)
         return proxy
 
+    def getMetadata(self, request):
+        headers = []
+        headers += super(CameraBase, self).getMetadata(request)
+        headers += super(FilterWheelBase, self).getMetadata(request)
+        return headers
+
