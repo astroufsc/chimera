@@ -97,7 +97,7 @@ class PointVerify (ChimeraObject, IPointVerify):
         # AstrometryNet defined in util
         try:
             #wcs_name = AstrometryNet.solveField(image.filename(),findstarmethod="sex") 
-            wcs_name = AstrometryNet.solveField(image.filename()) 
+            wcs_name = AstrometryNet.solveField(image.filename(),findstarmethod="sex") 
         except (NoSolutionAstrometryNetException): 
             # why can't I select this exception?
             # 
@@ -201,18 +201,18 @@ class PointVerify (ChimeraObject, IPointVerify):
         # use the Vizier catalogs to see what Landolt field is closest to zenith
         print "lala" , "Calling landolt" 
         fld = Landolt()
-        print "lala2" , "Calling landolt" 
         fld.useTarget(coords,radius=45)
         obj = fld.find(limit=self["max_fields"])
 
+        print "Objects returned from Landolt", obj
         # get ra, dec to call pointVerify
         ra = obj[self.currentField]["RA"]
         dec = obj[self.currentField]["DEC"]
         name = obj[self.currentField]["ID"]
+        print "Current object ", ra, dec, name
 
         self.log.info("Chose %s %f %f" %(name, ra, dec))
         tel.slewToRaDec(Position.fromRaDec(ra,dec))
-        #tel.slewToObject("M7")
         try:
             self.pointVerify()
         except Exception, e:
