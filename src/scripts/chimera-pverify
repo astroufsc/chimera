@@ -74,10 +74,8 @@ class ChimeraPointVerify (ChimeraCLI):
         Returns a new image with new WCS
         """
         self.out("Doing astrometry on file : %s\n",options.file)
-        print "LIXO", options.file
         try:
             AstrometryNet.solveField(options.file)
-	# what is this e for ???
         except CantSetScopeException, e:
             self.exit("Can't set scope")
         self.out("OK")
