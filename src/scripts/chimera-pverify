@@ -26,6 +26,7 @@ from chimera.interfaces.pointverify import CantPointScopeException, CanSetScopeB
 from chimera.util.sextractor import SExtractorException
 
 from chimera.util.ds9 import DS9
+from chimera.util.astrometrynet import AstrometryNet
 
 import sys
 import time    
@@ -40,36 +41,10 @@ class ChimeraPointVerify (ChimeraCLI):
         ChimeraCLI.__init__(self, "chimera-pverify", "Point Verifier", 0.1)
         self.addHelpGroup("PVERIFY", "PVerify")
         self.addController(name="pverify", cls="PointVerify", required=True, helpGroup="PVERIFY", help="Pointing verification controller to be used")
-	# add here :
-	# do point verification @ (stuff passed to the telescope)
-	# --slew --object m7
-	# exposure time, filter (stuff passed to the camera)
-	# --exptime 10 --filter V
-        # self.addParameters(dict(name="autofocus_step", long="step", type="int", helpGroup="AUTOFOCUS",
-        #                         help="Defines autofocus step.", metavar="STEP", default=500),
-        #                    dict(name="autofocus_exptime", long="exptime", type="float", helpGroup="AUTOFOCUS",
-        #                         help="Defines autofocus frame exposure time.", metavar="EXPTIME", default=10.0),
-        #                    dict(name="autofocus_debug", long="debug", helpGroup="AUTOFOCUS",
-        #                         help="Run an autofocus debug session using data from PREVIOUS_RUN_DIR.",
-        #                         metavar="PREVIOUS_RUN_DIR", default=""))
+        self.addParameters(dict(name="pverify_file",long="fname",type="string",
+                                helpGroup="PVERIFY",help="Does astrometry on file",metavar="FILE"))
 
-	# another help group?  
-        # yes, 
-        self.addHelpGroup("COMMANDS", "Commands")        
-
-    # used to validate the range parameters
-    # @parameter(long="range", helpGroup="AUTOFOCUS", default="1000-6000",
-    #           help="Defines autofocus focuser range to be covered. Use start-end, "
-    #           "as in 1000-6000 to run from 1000 to 6000.", metavar="START-END")
-    #def autofocus_range(self, value):
-    #    try:
-    #        start, end = value.split("-")
-    #        start = int(start)
-    #        end = int(start)
-    #        return (start, end)
-    #    except ValueError:
-    #        raise ValueError("Invalid start-end range")
-
+    
 
     # ok, looks like action establishes that the following method is some 
     # action performed by this script    
@@ -77,6 +52,10 @@ class ChimeraPointVerify (ChimeraCLI):
             help="Chooses a field to point the scope to, moves the scope, takes an image and verifies the pointing", 
            helpGroup="PVERIFY")
     def checkPointing (self,options):
+        """
+        Chooses a field to point the scope to, moves the scope, 
+        takes an image and verifies the pointing
+        """
         self.out("Choosing a field in the sky, moving scope and taking images")
         try:
             self.pverify.checkPointing()
@@ -85,10 +64,34 @@ class ChimeraPointVerify (ChimeraCLI):
             self.exit("Can't set scope")
         self.out("OK")
 
+
+    @action(long="file",
+            type="string",
+            help="Does astrometry on file" ,
+            helpGroup="PVERIFY")
+    def file(self,options):
+        """
+        Returns a new image with new WCS
+        """
+        self.out("Doing astrometry on file : %s\n",options.file)
+        print "LIXO", options.file
+        try:
+            AstrometryNet.solveField(options.file)
+	# what is this e for ???
+        except CantSetScopeException, e:
+            self.exit("Can't set scope")
+        self.out("OK")
+
+
     @action(long="here",
-            help="Takes an image where telescope is pointed to, tries to find image RA, DEC, and tries to rececnter the telescope",
+            help="Takes an image where telescope is pointed to, tries to find image RA, DEC, and tries to recenter the telescope",
             helpGroup="PVERIFY")
     def checkHere(self,options):
+        """
+        Takes an image where telescope is pointed to, 
+        tries to find image RA, DEC, 
+        and tries to recenter the telescope
+        """
         self.out("Centering scope on current field")
         try:
             self.pverify.pointVerify()
@@ -96,11 +99,6 @@ class ChimeraPointVerify (ChimeraCLI):
             self.out("The scope has been set on a standard field but it is impossible to set on this - either spotty clouds or too faint stars")
         self.out("OK")		
         
-
-    #def _currentPosition(self, options):
-    #    return self.out("Current telescope position: %s" % self.focuser.getPosition())
-    
-
 def main():
     cli = ChimeraPointVerify()
     return cli.run(sys.argv)
