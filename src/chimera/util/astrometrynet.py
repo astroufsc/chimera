@@ -56,14 +56,14 @@ class AstrometryNet:
         width = image["NAXIS1"]
         height = image["NAXIS2"] 
         radius = 5.0 * abs(image["CD1_1"]) * width
-
+        
         if findstarmethod == "astrometry.net":
-            #line = "solve-field --guess-scale %s --overwrite -o %s" %(fullfilename, outfilename)
             line = "solve-field %s --overwrite -o %s --ra %f --dec %f --radius %f"  %(fullfilename, outfilename, ra, dec, radius)
         elif findstarmethod == "sex":
             sexoutfilename = pathname + outfilename + ".xyls"
             line = "solve-field %s --overwrite -o %s --x-column X_IMAGE --y-column Y_IMAGE --sort-column MAG_ISO --sort-ascending --width %d --height %d --ra %f --dec %f --radius %f"  %(sexoutfilename, outfilename, width, height, ra, dec, radius)
-            # using --guess-scale
+            # line = "solve-field %s --overwrite -o %s --x-column X_IMAGE --y-column Y_IMAGE --sort-column MAG_ISO --sort-ascending --width %d --height %d"  %(sexoutfilename, outfilename,width, height)
+            # could use --guess-scale for unreliable mounts:
             # line = "solve-field %s --overwrite -o %s --x-column X_IMAGE --y-column Y_IMAGE --sort-column MAG_ISO --sort-ascending --width %d --height %d --guess-scale"  %(sexoutfilename, outfilename, width, height)
 
             sex = SExtractor()
@@ -87,6 +87,9 @@ class AstrometryNet:
         if ( os.path.exists(is_solved)):
             os.remove(is_solved)
 	print "SOLVE"  , line
+        # *** it would be nice to add a test here to check 
+        # whether astrometrynet is running OK, if not raise a new exception 
+        # like AstrometryNetInstallProblem
         solve = Popen(line.split()) # ,env=os.environ)
         solve.wait()
         # if solution failed, there will be no file .solved
@@ -104,8 +107,11 @@ class AstrometryNet:
         # create a separate image with new header
         iraf.artdata()
         iraf.imcopy(fullfilename,wcs_imgname)
+        iraf.hedit(wcs_imgname,"CD1_1,CD1_2,CD2_1,CD2_2,CRPIX1,CRPIX2,CRVAL1,CRVAL2,RA,DEC,ALT,AZ",
+                   add="no",addonly="no",delete="yes",
+                   verify="no",show="no",update="yes")
         iraf.mkheader(images=wcs_imgname,headers=wcs_solution+".fits",
-                      append="no",verbose="no",mode="al")
+                      append="yes",verbose="no",mode="al")
         return(wcs_imgname)
   
     
@@ -138,9 +144,11 @@ if __name__ == "__main__":
         #x =  AstrometryNet.solveField("/media/USB2/astindices/demo/lna/landolt-point/test-point-dss-300x300.fits",findstarmethod="sex")
         #x =  AstrometryNet.solveField("/media/USB2/astindices/demo/lna/landolt-point/test-point-dss-same.fits",findstarmethod="sex")
         # x = AstrometryNet.solveField("/media/USB2/astindices/demo/dss/bpm37093.fits",findstarmethod="sex") # works
-        #  = AstrometryNet.solveField("/media/USB2/astindices/demo/lna/landolt-point/test-point-subdss.fits",findstarmethod="sex") # works
+        # x  = AstrometryNet.solveField("/home/kanaan/images/20090721/lna/20090721/20090721-234033-0001.fits",findstarmethod="sex") 
         # tests of fields selected by hand by Paulo and I:
-        #x = AstrometryNet.solveField("/media/USB2/astindices/demo/lna/2008-08-06/landolt-109231-0003.fits",findstarmethod="sex") # works
+        # x = AstrometryNet.solveField("/media/K2/astindices/demo/lna/2008-08-06/landolt-109231-0003.fits",findstarmethod="sex") # works
+        # x = AstrometryNet.solveField("/media/K2/astindices/demo/lna/2008-08-06/lixo.fits",findstarmethod="sex") # works
+        # x = AstrometryNet.solveField("/media/K2/astindices/demo/lna/2008-08-06/landolt-109231-0003.fits") # doesn't work
         #x = AstrometryNet.solveField("/media/USB2/astindices/demo/lna/2008-08-06/M6-0003.fits",findstarmethod="sex")  # works 
         #x = AstrometryNet.solveField("/media/USB2/astindices/demo/lna/2008-08-06/landolt-SA111773-0002.fits",findstarmethod="sex")  # works
         #x = AstrometryNet.solveField("/media/USB2/astindices/demo/lna/2008-08-06/landolt-SA112223-0001.fits",findstarmethod="sex")  # no stars, doesn work
@@ -159,7 +167,7 @@ if __name__ == "__main__":
 	# missing HEADER keywords:
         # x = AstrometryNet.solveField("/home/kanaan/data/chimera/20090618/20090619-013107-0001.fits",findstarmethod="sex")        
         #x = AstrometryNet.solveField("/home/kanaan/data/chimera/20090629/20090629-234418-0001.fits",findstarmethod="sex")        
-        x = AstrometryNet.solveField("/home/obs/images/20090703/pointverify-20090703-0012.fits")        
+        # x = AstrometryNet.solveField("/home/obs/images/20090703/pointverify-20090703-0012.fits")        
 
         # try:
         #     x = AstrometryNet.solveField("/media/USB2/astindices/demo/lna/2008-08-06/070808-033129-0001.fits",findstarmethod="sex")
@@ -418,6 +426,8 @@ if __name__ == "__main__":
         #     x = AstrometryNet.solveField("/media/USB2/astindices/demo/lna/2008-08-06/070808-053826-0001.fits",findstarmethod="sex")
         # except:
         #    print "Failed"
+        # x = AstrometryNet.solveField("/home/kanaan/images/20090721/lna/20090721/20090722-013518-0001.fits",findstarmethod="sex")
+        x = AstrometryNet.solveField("/home/kanaan/images/20090721/lna/20090721/20090722-021624-0001.fits",findstarmethod="sex")
 
 
     except Exception, e:
