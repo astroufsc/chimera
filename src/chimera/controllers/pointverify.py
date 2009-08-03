@@ -65,7 +65,7 @@ class PointVerify (ChimeraObject, IPointVerify):
         """ Checks telescope pointing
 
         Checks the pointing.
-        If telescope coordinates - image coordinates > tolerance
+        If abs ( telescope coordinates - image coordinates ) > tolerance
            move the scope
            take a new image
            test again
@@ -82,7 +82,6 @@ class PointVerify (ChimeraObject, IPointVerify):
         try:
             image = self._takeImage()
             print "image name %s", image.filename()
-            # for testing purposes uncomment line below and specify some image
         except:
             self.log.error( "Can't take image" )
             raise
@@ -96,7 +95,6 @@ class PointVerify (ChimeraObject, IPointVerify):
         # analyze the previous image using
         # AstrometryNet defined in util
         try:
-            #wcs_name = AstrometryNet.solveField(image.filename(),findstarmethod="sex") 
             wcs_name = AstrometryNet.solveField(image.filename(),findstarmethod="sex") 
         except (NoSolutionAstrometryNetException): 
             # why can't I select this exception?
@@ -173,6 +171,11 @@ class PointVerify (ChimeraObject, IPointVerify):
             logstr = "Pointing: final solution %s %s %s" %(image["DATE-OBS"],
                                                            currentImageCenter,
                                                            currentWCS)
+            # *** should we sync the scope ???
+            # maybe there should be an option of syncing or not
+            # the first pointing in the night should sync I believe
+            # subsequent pointings should not.
+            # another idea is to sync if the delta_coords at first trial were larger than some value
             self.log.info(logstr)
 
         return(True)
@@ -199,7 +202,7 @@ class PointVerify (ChimeraObject, IPointVerify):
         tel = self.getTel()
 
         # use the Vizier catalogs to see what Landolt field is closest to zenith
-        print "lala" , "Calling landolt" 
+        self.log.debug("Calling landolt" )
         fld = Landolt()
         fld.useTarget(coords,radius=45)
         obj = fld.find(limit=self["max_fields"])
@@ -234,20 +237,20 @@ class PointVerify (ChimeraObject, IPointVerify):
         site =  self.getManager().getProxy("/Site/0")
         lst = site.LST()
         # *** need to come from config file
-        min_mag = 11.0
-        max_mag = 15.0
+        min_mag = 6.0
+        max_mag = 11.0
         self.searchStandards(lst-3,lst+3,min_mag,max_mag)
 
-    def searchStandards(self, max_z, max_ha,min_mag,max_mag):
+    def searchStandards(self, min_ra, max_ra,min_mag,max_mag):
         """
         Searches a catalog of standards for good standards to use
         They should be good for focusing, pointing and extinction
 
-        @param max_z: maximum zenith distance of observable standard
-        @type  max_z: L{float}
+        @param min_ra: minimum RA of observable standard
+        @type  min_ra: L{float}
 
-        @param max_ha: maximum hour angle of observable standard 
-        @type  max_ha: L{float}
+        @param max_ra: maximum RA of observable standard 
+        @type  max_ra: L{float}
 
         @param min_mag: minimum magnitude of standard
         @type  min_mag: L{float}
