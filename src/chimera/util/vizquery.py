@@ -7,7 +7,7 @@ import urllib
 
 class VizQuery(object):
     """
-    Queries A catalog in Vizier for limit Landolt fields
+    Queries A catalog in Vizier 
     within a given radius or box of the zenith
     """
     def __init__(self):
