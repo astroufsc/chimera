@@ -75,7 +75,7 @@ class ChimeraPointVerify (ChimeraCLI):
         """
         self.out("Doing astrometry on file : %s\n",options.file)
         try:
-            AstrometryNet.solveField(options.file)
+            AstrometryNet.solveField(options.file,findstarmethod="sex")
         except CantSetScopeException, e:
             self.exit("Can't set scope")
         self.out("OK")
