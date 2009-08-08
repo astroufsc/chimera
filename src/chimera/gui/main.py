@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from chimera.gui.canvas import FITS, FITSCanvas
+
 import sys
 import time
 import os
@@ -17,7 +19,6 @@ try:
     import gobject
     import time
     import threading, thread
-    from canvas import FITS, FITSCanvas
 except Exception, e:
     print e
     sys.exit(1)
@@ -515,7 +516,7 @@ class ChimeraGUI:
     def __init__(self):
         
         self.builder = gtk.Builder()
-        self.builder.add_from_file("chimera.xml")
+        self.builder.add_from_file(os.path.join(os.path.dirname(__file__), "chimera.xml"))
              
         def toggle_shutter_button(widget):
             if widget.get_label() == "open":
@@ -636,7 +637,10 @@ class ChimeraGUI:
     def telescope_tracking_action(self, action):
         if(self.telescopeInit):
             threading.Thread(target=self.telescopeController.toggleTracking).start()
-    
+
+    def run(self, args=[]):
+        gtk.main()
+            
 if __name__ == "__main__":
     ChimeraGUI()
     gtk.main()
