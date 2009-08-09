@@ -1,0 +1,718 @@
+<?xml version="1.0"?>
+<interface>
+  <requires lib="gtk+" version="2.16"/>
+  <!-- interface-naming-policy project-wide -->
+  <object class="GtkWindow" id="window">
+    <child>
+      <object class="GtkVBox" id="gui">
+        <property name="visible">True</property>
+        <property name="orientation">vertical</property>
+        <child>
+          <object class="GtkVBox" id="vbox6">
+            <property name="visible">True</property>
+            <property name="orientation">vertical</property>
+            <child>
+              <object class="GtkFrame" id="frame2">
+                <property name="visible">True</property>
+                <property name="label_xalign">0</property>
+                <property name="shadow_type">none</property>
+                <child>
+                  <object class="GtkVBox" id="vbox9">
+                    <property name="visible">True</property>
+                    <property name="orientation">vertical</property>
+                    <child>
+                      <object class="GtkHBox" id="hbox3">
+                        <property name="visible">True</property>
+                        <property name="orientation">vertical</property>
+                        <child>
+                          <object class="GtkLabel" id="label11">
+                            <property name="visible">True</property>
+                            <property name="label" translatable="yes">Slew Rate:</property>
+                            <property name="justify">right</property>
+                            <attributes>
+                              <attribute name="weight" value="bold"/>
+                              <attribute name="gravity" value="east"/>
+                            </attributes>
+                          </object>
+                          <packing>
+                            <property name="position">0</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkVBox" id="slewRateBox">
+                            <property name="visible">True</property>
+                            <property name="orientation">vertical</property>
+                            <child>
+                              <placeholder/>
+                            </child>
+                          </object>
+                          <packing>
+                            <property name="expand">False</property>
+                            <property name="fill">False</property>
+                            <property name="position">1</property>
+                          </packing>
+                        </child>
+                      </object>
+                      <packing>
+                        <property name="expand">False</property>
+                        <property name="fill">False</property>
+                        <property name="position">0</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkHBox" id="hbox4">
+                        <property name="visible">True</property>
+                        <child>
+                          <object class="GtkTable" id="table1">
+                            <property name="visible">True</property>
+                            <property name="n_rows">3</property>
+                            <property name="n_columns">3</property>
+                            <property name="homogeneous">True</property>
+                            <child>
+                              <object class="GtkButton" id="northButton">
+                                <property name="label" translatable="yes">N</property>
+                                <property name="visible">True</property>
+                                <property name="can_focus">True</property>
+                                <property name="receives_default">True</property>
+                                <property name="related_action">telescope.moveNorth</property>
+                                <property name="use_underline">True</property>
+                              </object>
+                              <packing>
+                                <property name="left_attach">1</property>
+                                <property name="right_attach">2</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkButton" id="westButton">
+                                <property name="label" translatable="yes">W</property>
+                                <property name="visible">True</property>
+                                <property name="can_focus">True</property>
+                                <property name="receives_default">True</property>
+                                <property name="related_action">telescope.moveWest</property>
+                                <property name="use_underline">True</property>
+                              </object>
+                              <packing>
+                                <property name="top_attach">1</property>
+                                <property name="bottom_attach">2</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkButton" id="eastButton">
+                                <property name="label" translatable="yes">E</property>
+                                <property name="visible">True</property>
+                                <property name="can_focus">True</property>
+                                <property name="receives_default">True</property>
+                                <property name="related_action">telescope.moveEast</property>
+                                <property name="use_underline">True</property>
+                              </object>
+                              <packing>
+                                <property name="left_attach">2</property>
+                                <property name="right_attach">3</property>
+                                <property name="top_attach">1</property>
+                                <property name="bottom_attach">2</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkButton" id="southButton">
+                                <property name="label" translatable="yes">S</property>
+                                <property name="visible">True</property>
+                                <property name="can_focus">True</property>
+                                <property name="receives_default">True</property>
+                                <property name="related_action">telescope.moveSouth</property>
+                                <property name="use_underline">True</property>
+                              </object>
+                              <packing>
+                                <property name="left_attach">1</property>
+                                <property name="right_attach">2</property>
+                                <property name="top_attach">2</property>
+                                <property name="bottom_attach">3</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkSpinButton" id="speedSpin">
+                                <property name="visible">True</property>
+                                <property name="can_focus">True</property>
+                                <property name="invisible_char">&#x25CF;</property>
+                                <property name="numeric">True</property>
+                              </object>
+                              <packing>
+                                <property name="left_attach">1</property>
+                                <property name="right_attach">2</property>
+                                <property name="top_attach">1</property>
+                                <property name="bottom_attach">2</property>
+                                <property name="x_options"></property>
+                                <property name="y_options"></property>
+                              </packing>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                          </object>
+                          <packing>
+                            <property name="padding">5</property>
+                            <property name="position">0</property>
+                          </packing>
+                        </child>
+                      </object>
+                      <packing>
+                        <property name="position">1</property>
+                      </packing>
+                    </child>
+                  </object>
+                </child>
+                <child type="label">
+                  <object class="GtkLabel" id="label10">
+                    <property name="visible">True</property>
+                    <property name="label" translatable="yes">&lt;b&gt;Move&lt;/b&gt;</property>
+                    <property name="use_markup">True</property>
+                  </object>
+                </child>
+              </object>
+              <packing>
+                <property name="position">0</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkHSeparator" id="hseparator1">
+                <property name="visible">True</property>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="position">1</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkVBox" id="vbox7">
+                <property name="visible">True</property>
+                <property name="orientation">vertical</property>
+                <child>
+                  <object class="GtkFrame" id="frame1">
+                    <property name="visible">True</property>
+                    <property name="label_xalign">0</property>
+                    <property name="shadow_type">none</property>
+                    <child>
+                      <object class="GtkAlignment" id="alignment1">
+                        <property name="visible">True</property>
+                        <property name="left_padding">12</property>
+                        <child>
+                          <object class="GtkVBox" id="vbox10">
+                            <property name="visible">True</property>
+                            <property name="orientation">vertical</property>
+                            <child>
+                              <object class="GtkTable" id="table2">
+                                <property name="visible">True</property>
+                                <property name="n_rows">4</property>
+                                <property name="n_columns">2</property>
+                                <child>
+                                  <object class="GtkLabel" id="raLabel">
+                                    <property name="visible">True</property>
+                                    <property name="label" translatable="yes">R.A.</property>
+                                    <attributes>
+                                      <attribute name="weight" value="bold"/>
+                                    </attributes>
+                                  </object>
+                                </child>
+                                <child>
+                                  <object class="GtkLabel" id="decLabel">
+                                    <property name="visible">True</property>
+                                    <property name="label" translatable="yes">Dec</property>
+                                    <attributes>
+                                      <attribute name="weight" value="bold"/>
+                                    </attributes>
+                                  </object>
+                                  <packing>
+                                    <property name="top_attach">1</property>
+                                    <property name="bottom_attach">2</property>
+                                  </packing>
+                                </child>
+                                <child>
+                                  <object class="GtkLabel" id="epochLabel">
+                                    <property name="visible">True</property>
+                                    <property name="label" translatable="yes">Epoch</property>
+                                    <attributes>
+                                      <attribute name="weight" value="bold"/>
+                                    </attributes>
+                                  </object>
+                                  <packing>
+                                    <property name="top_attach">2</property>
+                                    <property name="bottom_attach">3</property>
+                                  </packing>
+                                </child>
+                                <child>
+                                  <object class="GtkComboBox" id="epochCombo">
+                                    <property name="visible">True</property>
+                                    <property name="model">liststore1</property>
+                                  </object>
+                                  <packing>
+                                    <property name="left_attach">1</property>
+                                    <property name="right_attach">2</property>
+                                    <property name="top_attach">2</property>
+                                    <property name="bottom_attach">3</property>
+                                  </packing>
+                                </child>
+                                <child>
+                                  <object class="GtkHBox" id="hbox8">
+                                    <property name="visible">True</property>
+                                    <child>
+                                      <object class="GtkAlignment" id="alignment4">
+                                        <property name="visible">True</property>
+                                        <child>
+                                          <placeholder/>
+                                        </child>
+                                      </object>
+                                      <packing>
+                                        <property name="position">0</property>
+                                      </packing>
+                                    </child>
+                                    <child>
+                                      <object class="GtkButton" id="slewButton">
+                                        <property name="label" translatable="yes">Slew</property>
+                                        <property name="visible">True</property>
+                                        <property name="can_focus">True</property>
+                                        <property name="receives_default">True</property>
+                                        <property name="related_action">telescope.slew</property>
+                                        <property name="use_underline">True</property>
+                                      </object>
+                                      <packing>
+                                        <property name="expand">False</property>
+                                        <property name="fill">False</property>
+                                        <property name="position">1</property>
+                                      </packing>
+                                    </child>
+                                  </object>
+                                  <packing>
+                                    <property name="right_attach">2</property>
+                                    <property name="top_attach">3</property>
+                                    <property name="bottom_attach">4</property>
+                                    <property name="y_options"></property>
+                                  </packing>
+                                </child>
+                                <child>
+                                  <object class="GtkHBox" id="hbox11">
+                                    <property name="visible">True</property>
+                                    <child>
+                                      <object class="GtkSpinButton" id="raHourSpin">
+                                        <property name="visible">True</property>
+                                        <property name="can_focus">True</property>
+                                        <property name="max_length">2</property>
+                                        <property name="invisible_char">&#x25CF;</property>
+                                        <property name="caps_lock_warning">False</property>
+                                        <property name="adjustment">raHourAdjustment</property>
+                                        <property name="numeric">True</property>
+                                      </object>
+                                      <packing>
+                                        <property name="position">0</property>
+                                      </packing>
+                                    </child>
+                                    <child>
+                                      <object class="GtkSpinButton" id="raMinuteSpin">
+                                        <property name="visible">True</property>
+                                        <property name="can_focus">True</property>
+                                        <property name="max_length">2</property>
+                                        <property name="invisible_char">&#x25CF;</property>
+                                        <property name="adjustment">raMinAdjustment</property>
+                                        <property name="numeric">True</property>
+                                      </object>
+                                      <packing>
+                                        <property name="position">1</property>
+                                      </packing>
+                                    </child>
+                                    <child>
+                                      <object class="GtkSpinButton" id="raSecSpin">
+                                        <property name="visible">True</property>
+                                        <property name="can_focus">True</property>
+                                        <property name="max_length">5</property>
+                                        <property name="invisible_char">&#x25CF;</property>
+                                        <property name="adjustment">raSecAdjustment</property>
+                                        <property name="numeric">True</property>
+                                      </object>
+                                      <packing>
+                                        <property name="position">2</property>
+                                      </packing>
+                                    </child>
+                                  </object>
+                                  <packing>
+                                    <property name="left_attach">1</property>
+                                    <property name="right_attach">2</property>
+                                  </packing>
+                                </child>
+                                <child>
+                                  <object class="GtkHBox" id="hbox12">
+                                    <property name="visible">True</property>
+                                    <child>
+                                      <object class="GtkSpinButton" id="decDegreeSpin">
+                                        <property name="visible">True</property>
+                                        <property name="can_focus">True</property>
+                                        <property name="max_length">3</property>
+                                        <property name="invisible_char">&#x25CF;</property>
+                                        <property name="adjustment">decAdjustment</property>
+                                        <property name="numeric">True</property>
+                                      </object>
+                                      <packing>
+                                        <property name="position">0</property>
+                                      </packing>
+                                    </child>
+                                    <child>
+                                      <object class="GtkSpinButton" id="decMinuteSpin">
+                                        <property name="visible">True</property>
+                                        <property name="can_focus">True</property>
+                                        <property name="max_length">2</property>
+                                        <property name="invisible_char">&#x25CF;</property>
+                                        <property name="adjustment">decMinAdjustment</property>
+                                        <property name="numeric">True</property>
+                                      </object>
+                                      <packing>
+                                        <property name="position">1</property>
+                                      </packing>
+                                    </child>
+                                    <child>
+                                      <object class="GtkSpinButton" id="decSecSpin">
+                                        <property name="visible">True</property>
+                                        <property name="can_focus">True</property>
+                                        <property name="max_length">5</property>
+                                        <property name="invisible_char">&#x25CF;</property>
+                                        <property name="adjustment">decSecAdjustment</property>
+                                        <property name="numeric">True</property>
+                                      </object>
+                                      <packing>
+                                        <property name="position">2</property>
+                                      </packing>
+                                    </child>
+                                  </object>
+                                  <packing>
+                                    <property name="left_attach">1</property>
+                                    <property name="right_attach">2</property>
+                                    <property name="top_attach">1</property>
+                                    <property name="bottom_attach">2</property>
+                                  </packing>
+                                </child>
+                              </object>
+                              <packing>
+                                <property name="position">0</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkHSeparator" id="hseparator3">
+                                <property name="visible">True</property>
+                              </object>
+                              <packing>
+                                <property name="expand">False</property>
+                                <property name="padding">10</property>
+                                <property name="position">1</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkHBox" id="raBox">
+                                <property name="visible">True</property>
+                                <property name="homogeneous">True</property>
+                                <child>
+                                  <object class="GtkLabel" id="label1">
+                                    <property name="visible">True</property>
+                                    <property name="label" translatable="yes">RA</property>
+                                  </object>
+                                  <packing>
+                                    <property name="position">0</property>
+                                  </packing>
+                                </child>
+                                <child>
+                                  <placeholder/>
+                                </child>
+                              </object>
+                              <packing>
+                                <property name="position">2</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkHBox" id="decBox">
+                                <property name="visible">True</property>
+                                <property name="homogeneous">True</property>
+                                <child>
+                                  <object class="GtkLabel" id="label2">
+                                    <property name="visible">True</property>
+                                    <property name="label" translatable="yes">DEC</property>
+                                  </object>
+                                  <packing>
+                                    <property name="position">0</property>
+                                  </packing>
+                                </child>
+                                <child>
+                                  <placeholder/>
+                                </child>
+                              </object>
+                              <packing>
+                                <property name="position">3</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkHBox" id="altBox">
+                                <property name="visible">True</property>
+                                <property name="homogeneous">True</property>
+                                <child>
+                                  <object class="GtkLabel" id="label3">
+                                    <property name="visible">True</property>
+                                    <property name="label" translatable="yes">ALT</property>
+                                  </object>
+                                  <packing>
+                                    <property name="position">0</property>
+                                  </packing>
+                                </child>
+                                <child>
+                                  <placeholder/>
+                                </child>
+                              </object>
+                              <packing>
+                                <property name="position">4</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkHBox" id="azBox">
+                                <property name="visible">True</property>
+                                <property name="homogeneous">True</property>
+                                <child>
+                                  <object class="GtkLabel" id="label4">
+                                    <property name="visible">True</property>
+                                    <property name="label" translatable="yes">AZ</property>
+                                  </object>
+                                  <packing>
+                                    <property name="position">0</property>
+                                  </packing>
+                                </child>
+                                <child>
+                                  <placeholder/>
+                                </child>
+                              </object>
+                              <packing>
+                                <property name="position">5</property>
+                              </packing>
+                            </child>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
+                    <child type="label">
+                      <object class="GtkLabel" id="label6">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">&lt;b&gt;Coordinate&lt;/b&gt;</property>
+                        <property name="use_markup">True</property>
+                      </object>
+                    </child>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="fill">False</property>
+                    <property name="position">0</property>
+                  </packing>
+                </child>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">False</property>
+                <property name="position">2</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkHSeparator" id="hseparator2">
+                <property name="visible">True</property>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="position">3</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkHBox" id="hbox7">
+                <property name="visible">True</property>
+                <property name="homogeneous">True</property>
+                <child>
+                  <object class="GtkVBox" id="vbox11">
+                    <property name="visible">True</property>
+                    <property name="orientation">vertical</property>
+                    <child>
+                      <object class="GtkLabel" id="trackingLabel">
+                        <property name="visible">True</property>
+                        <attributes>
+                          <attribute name="weight" value="bold"/>
+                        </attributes>
+                      </object>
+                      <packing>
+                        <property name="expand">False</property>
+                        <property name="fill">False</property>
+                        <property name="padding">15</property>
+                        <property name="position">0</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkToggleButton" id="trackingButton">
+                        <property name="label" translatable="yes">Tracking</property>
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                        <property name="receives_default">True</property>
+                        <property name="related_action">telescope.tracking</property>
+                        <property name="use_underline">True</property>
+                      </object>
+                      <packing>
+                        <property name="expand">False</property>
+                        <property name="fill">False</property>
+                        <property name="position">1</property>
+                      </packing>
+                    </child>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="fill">False</property>
+                    <property name="position">0</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkVBox" id="vbox12">
+                    <property name="visible">True</property>
+                    <property name="orientation">vertical</property>
+                    <child>
+                      <object class="GtkLabel" id="parkingLabel">
+                        <property name="visible">True</property>
+                        <attributes>
+                          <attribute name="weight" value="bold"/>
+                        </attributes>
+                      </object>
+                      <packing>
+                        <property name="expand">False</property>
+                        <property name="fill">False</property>
+                        <property name="padding">15</property>
+                        <property name="position">0</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkToggleButton" id="togglebutton2">
+                        <property name="label" translatable="yes">Park</property>
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                        <property name="receives_default">True</property>
+                      </object>
+                      <packing>
+                        <property name="expand">False</property>
+                        <property name="fill">False</property>
+                        <property name="position">1</property>
+                      </packing>
+                    </child>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="fill">False</property>
+                    <property name="padding">15</property>
+                    <property name="position">1</property>
+                  </packing>
+                </child>
+              </object>
+              <packing>
+                <property name="position">4</property>
+              </packing>
+            </child>
+          </object>
+          <packing>
+            <property name="position">0</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkStatusbar" id="statusbar1">
+            <property name="visible">True</property>
+            <property name="spacing">2</property>
+            <child>
+              <object class="GtkProgressBar" id="telescopeProgress">
+                <property name="activity_mode">True</property>
+              </object>
+              <packing>
+                <property name="position">0</property>
+              </packing>
+            </child>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="position">1</property>
+          </packing>
+        </child>
+      </object>
+    </child>
+  </object>
+  <object class="GtkAdjustment" id="offsetAdjustment">
+    <property name="upper">100</property>
+    <property name="step_increment">1</property>
+    <property name="page_increment">1</property>
+    <property name="page_size">1</property>
+  </object>
+  <object class="GtkAdjustment" id="decSecAdjustment">
+    <property name="upper">60</property>
+    <property name="step_increment">1</property>
+    <property name="page_increment">1</property>
+    <property name="page_size">1</property>
+  </object>
+  <object class="GtkAdjustment" id="decMinAdjustment">
+    <property name="upper">60</property>
+    <property name="step_increment">1</property>
+    <property name="page_increment">1</property>
+    <property name="page_size">1</property>
+  </object>
+  <object class="GtkAdjustment" id="raMinAdjustment">
+    <property name="upper">60</property>
+    <property name="step_increment">1</property>
+    <property name="page_increment">1</property>
+    <property name="page_size">1</property>
+  </object>
+  <object class="GtkAdjustment" id="decAdjustment">
+    <property name="lower">-90</property>
+    <property name="upper">90</property>
+    <property name="step_increment">1</property>
+    <property name="page_increment">1</property>
+    <property name="page_size">1</property>
+  </object>
+  <object class="GtkAdjustment" id="raSecAdjustment">
+    <property name="upper">60</property>
+    <property name="step_increment">1</property>
+    <property name="page_increment">1</property>
+    <property name="page_size">1</property>
+  </object>
+  <object class="GtkAdjustment" id="raHourAdjustment">
+    <property name="upper">24</property>
+    <property name="step_increment">1</property>
+    <property name="page_increment">1</property>
+    <property name="page_size">1</property>
+  </object>
+  <object class="GtkToggleAction" id="telescope.tracking">
+    <signal name="toggled" handler="telescope_tracking_action"/>
+  </object>
+  <object class="GtkAction" id="telescope.moveSouth">
+    <signal name="activate" handler="telescope_move_south_action"/>
+  </object>
+  <object class="GtkAction" id="telescope.moveNorth">
+    <signal name="activate" handler="telescope_move_north_action"/>
+  </object>
+  <object class="GtkAction" id="telescope.moveWest">
+    <signal name="activate" handler="telescope_move_west_action"/>
+  </object>
+  <object class="GtkAction" id="telescope.moveEast">
+    <property name="label">E</property>
+    <property name="short_label">E</property>
+    <signal name="activate" handler="telescope_move_east_action"/>
+  </object>
+  <object class="GtkAction" id="telescope.slew">
+    <property name="label">Slew</property>
+    <property name="short_label">Slew</property>
+    <signal name="activate" handler="telescope_slew_action"/>
+  </object>
+  <object class="GtkListStore" id="liststore1">
+    <columns>
+      <!-- column-name 2000.0 -->
+      <column type="gchararray"/>
+      <!-- column-name Now -->
+      <column type="gchararray"/>
+    </columns>
+  </object>
+</interface>

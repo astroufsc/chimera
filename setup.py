@@ -54,7 +54,8 @@ chimera_scripts = ['src/scripts/chimera',
                    'src/scripts/chimera-dome',
                    'src/scripts/chimera-focus',
                    'src/scripts/chimera-pverify',
-                   'src/scripts/chimera-console']
+                   'src/scripts/chimera-console',
+                   'src/scripts/chimera-gui']
 
 # setup
 
@@ -79,7 +80,7 @@ else:
         print >> sys.stderr, "*"*80
         sys.exit(1)
 
-    linux_deps += ["python-sbigudrv == 0.2", "pyephem == 3.7.3.3"]
+    linux_deps += ["python-sbigudrv == 0.2"]
     
     if sys.version_info[0:2] >= (2,5):
         linux_deps += ["pywcs"]
@@ -90,7 +91,8 @@ setup(name='chimera-python',
       packages         = find_packages("src", exclude=["*.tests"]),
       scripts          = chimera_scripts,
       data_files       = [("chimera/core", ["src/chimera/core/chimera.global.config",
-                                            "src/chimera/core/chimera.sample.config"])],
+                                            "src/chimera/core/chimera.sample.config"],
+                           "chimera/gui", ["src/chimera/gui/chimera.xml"])],
 
       zip_safe         = False,
 
@@ -101,6 +103,7 @@ setup(name='chimera-python',
                           "asciidata == 1.1",
                           #"SQLAlchemy == 0.4.8",
                           #"Elixir == 0.6.1",
+                          "pyephem == 3.7.3.4",
                           "python-dateutil == 1.4.1",
                           "RO == 2.2.8",
                           "pyfits == 1.3",

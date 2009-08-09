@@ -1,0 +1,354 @@
+<?xml version="1.0"?>
+<interface>
+  <requires lib="gtk+" version="2.16"/>
+  <!-- interface-naming-policy project-wide -->
+  <object class="GtkWindow" id="window">
+    <child>
+      <object class="GtkVBox" id="gui">
+        <property name="visible">True</property>
+        <property name="orientation">vertical</property>
+        <child>
+          <object class="GtkToolbar" id="commandBar">
+            <property name="visible">True</property>
+            <property name="show_arrow">False</property>
+            <child>
+              <object class="GtkToolItem" id="toolbutton3">
+                <property name="visible">True</property>
+                <child>
+                  <object class="GtkVBox" id="vbox4">
+                    <property name="visible">True</property>
+                    <property name="orientation">vertical</property>
+                    <child>
+                      <object class="GtkLabel" id="label7">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">Exposure</property>
+                        <attributes>
+                          <attribute name="weight" value="bold"/>
+                        </attributes>
+                      </object>
+                      <packing>
+                        <property name="position">0</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkHBox" id="hbox5">
+                        <property name="visible">True</property>
+                        <property name="homogeneous">True</property>
+                        <child>
+                          <object class="GtkLabel" id="label8">
+                            <property name="visible">True</property>
+                            <property name="label" translatable="yes">Duration</property>
+                          </object>
+                          <packing>
+                            <property name="padding">3</property>
+                            <property name="position">0</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkSpinButton" id="durationSpin">
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                            <property name="max_length">5</property>
+                            <property name="invisible_char">&#x25CF;</property>
+                            <property name="adjustment">durationAdjustment</property>
+                            <property name="climb_rate">1</property>
+                            <property name="digits">2</property>
+                          </object>
+                          <packing>
+                            <property name="position">1</property>
+                          </packing>
+                        </child>
+                      </object>
+                      <packing>
+                        <property name="position">1</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkHBox" id="hbox6">
+                        <property name="visible">True</property>
+                        <property name="homogeneous">True</property>
+                        <child>
+                          <object class="GtkLabel" id="label9">
+                            <property name="visible">True</property>
+                            <property name="label" translatable="yes">Frames</property>
+                          </object>
+                          <packing>
+                            <property name="position">0</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkSpinButton" id="framesSpin">
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                            <property name="max_length">5</property>
+                            <property name="invisible_char">&#x25CF;</property>
+                            <property name="adjustment">framesAdjustment</property>
+                            <property name="climb_rate">1</property>
+                            <property name="numeric">True</property>
+                          </object>
+                          <packing>
+                            <property name="position">1</property>
+                          </packing>
+                        </child>
+                      </object>
+                      <packing>
+                        <property name="position">2</property>
+                      </packing>
+                    </child>
+                  </object>
+                </child>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="homogeneous">True</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkSeparatorToolItem" id="toolbutton1">
+                <property name="visible">True</property>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="homogeneous">True</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkToolItem" id="toolbutton5">
+                <property name="visible">True</property>
+                <child>
+                  <object class="GtkVBox" id="vbox5">
+                    <property name="visible">True</property>
+                    <property name="orientation">vertical</property>
+                    <child>
+                      <object class="GtkVBox" id="filtersBox">
+                        <property name="visible">True</property>
+                        <property name="orientation">vertical</property>
+                        <child>
+                          <object class="GtkLabel" id="label1">
+                            <property name="visible">True</property>
+                            <property name="label" translatable="yes">Filter</property>
+                            <attributes>
+                              <attribute name="weight" value="bold"/>
+                            </attributes>
+                          </object>
+                          <packing>
+                            <property name="position">0</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <placeholder/>
+                        </child>
+                      </object>
+                      <packing>
+                        <property name="position">0</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkVBox" id="vbox8">
+                        <property name="visible">True</property>
+                        <property name="orientation">vertical</property>
+                        <child>
+                          <object class="GtkLabel" id="label2">
+                            <property name="visible">True</property>
+                            <property name="label" translatable="yes">Shutter</property>
+                            <attributes>
+                              <attribute name="weight" value="bold"/>
+                            </attributes>
+                          </object>
+                          <packing>
+                            <property name="position">0</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkHBox" id="hbox2">
+                            <property name="visible">True</property>
+                            <property name="homogeneous">True</property>
+                            <child>
+                              <object class="GtkRadioButton" id="shutterOpen">
+                                <property name="label" translatable="yes">open</property>
+                                <property name="visible">True</property>
+                                <property name="can_focus">True</property>
+                                <property name="receives_default">False</property>
+                                <property name="draw_indicator">True</property>
+                                <property name="group">shutterClose</property>
+                              </object>
+                              <packing>
+                                <property name="position">0</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkRadioButton" id="shutterClose">
+                                <property name="label" translatable="yes">close</property>
+                                <property name="visible">True</property>
+                                <property name="can_focus">True</property>
+                                <property name="receives_default">False</property>
+                                <property name="active">True</property>
+                                <property name="draw_indicator">True</property>
+                              </object>
+                              <packing>
+                                <property name="position">1</property>
+                              </packing>
+                            </child>
+                          </object>
+                          <packing>
+                            <property name="position">1</property>
+                          </packing>
+                        </child>
+                      </object>
+                      <packing>
+                        <property name="position">1</property>
+                      </packing>
+                    </child>
+                  </object>
+                </child>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="homogeneous">True</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkSeparatorToolItem" id="toolbutton4">
+                <property name="visible">True</property>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="homogeneous">True</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkToolButton" id="exposeButton">
+                <property name="visible">True</property>
+                <property name="related_action">camera.expose</property>
+                <property name="label" translatable="yes">Take Image</property>
+                <property name="use_underline">True</property>
+                <property name="stock_id">gtk-yes</property>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="homogeneous">True</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkToolButton" id="abortExposureButton">
+                <property name="visible">True</property>
+                <property name="related_action">camera.abortExposure</property>
+                <property name="label" translatable="yes">Abort</property>
+                <property name="use_underline">True</property>
+                <property name="stock_id">gtk-stop</property>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="homogeneous">True</property>
+              </packing>
+            </child>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="position">0</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkHBox" id="hbox1">
+            <property name="visible">True</property>
+            <child>
+              <object class="GtkNotebook" id="imagesNotebook">
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <child>
+                  <placeholder/>
+                </child>
+                <child type="tab">
+                  <placeholder/>
+                </child>
+                <child>
+                  <placeholder/>
+                </child>
+                <child type="tab">
+                  <placeholder/>
+                </child>
+                <child>
+                  <placeholder/>
+                </child>
+                <child type="tab">
+                  <placeholder/>
+                </child>
+              </object>
+              <packing>
+                <property name="position">0</property>
+              </packing>
+            </child>
+          </object>
+          <packing>
+            <property name="position">1</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkStatusbar" id="exposureStatus">
+            <property name="width_request">5</property>
+            <property name="visible">True</property>
+            <property name="spacing">2</property>
+            <child>
+              <object class="GtkHBox" id="exposureStatusContainter">
+                <property name="visible">True</property>
+                <child>
+                  <object class="GtkLabel" id="exposureLabel">
+                    <property name="visible">True</property>
+                    <property name="use_markup">True</property>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="padding">10</property>
+                    <property name="position">0</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkProgressBar" id="exposureProgress">
+                    <property name="pulse_step">0.11</property>
+                    <property name="discrete_blocks">9</property>
+                  </object>
+                  <packing>
+                    <property name="position">1</property>
+                  </packing>
+                </child>
+              </object>
+              <packing>
+                <property name="position">0</property>
+              </packing>
+            </child>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="position">2</property>
+          </packing>
+        </child>
+      </object>
+    </child>
+  </object>
+  <object class="GtkAdjustment" id="framesAdjustment">
+    <property name="lower">1</property>
+    <property name="upper">100</property>
+    <property name="step_increment">1</property>
+    <property name="page_increment">10</property>
+    <property name="page_size">10</property>
+  </object>
+  <object class="GtkAdjustment" id="durationAdjustment">
+    <property name="lower">0.01</property>
+    <property name="upper">2400</property>
+    <property name="step_increment">1</property>
+    <property name="page_increment">10</property>
+    <property name="page_size">10</property>
+  </object>
+  <object class="GtkAction" id="camera.abortExposure">
+    <property name="label">Abort</property>
+    <property name="short_label">Abort</property>
+    <property name="stock_id">gtk-stop</property>
+    <signal name="activate" handler="camera_abort_action"/>
+  </object>
+  <object class="GtkAction" id="camera.expose">
+    <property name="label">Take Image</property>
+    <property name="short_label">Take Image</property>
+    <property name="stock_id">gtk-yes</property>
+    <signal name="activate" handler="camera_expose_action"/>
+  </object>
+</interface>
