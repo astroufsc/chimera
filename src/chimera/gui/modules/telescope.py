@@ -1,6 +1,9 @@
-from chimera.util.position import Position, Epoch
+
 from chimera.util.coord import Coord
 from chimera.core.callback import callback
+from chimera.core.exceptions import ObjectNotFoundException, printException
+
+from chimera.util.position import Position, Epoch
 
 from chimera.gui.module import ChimeraGUIModule
 from chimera.gui.modules.lcd import LCDWidget
@@ -28,18 +31,58 @@ class TelescopeController:
         return self.telescope
     
     def slew(self):
-        raHour = self.main.view.raHourSpin.get_value()
-        raMinute = self.main.view.raMinuteSpin.get_value()
-        raSec = self.main.view.raSecSpin.get_value()
+
+        slewFunction = None
+        target = None
         
-        decDegree = self.main.view.decDegreeSpin.get_value()
-        decMinute = self.main.view.decMinuteSpin.get_value()
-        decSec = self.main.view.decSecSpin.get_value()
+        currentPage = self.main.view.slewOptions.get_current_page()
+
+        if currentPage == 0:
+            raHour = self.main.view.raHourSpin.get_value()
+            raMinute = self.main.view.raMinuteSpin.get_value()
+            raSec = self.main.view.raSecSpin.get_value()
         
-        ra = "%2d:%2d:%2d" %(raHour, raMinute, raSec)
-        dec = "%2d:%2d:%2d" %(decDegree, decMinute, decSec)
+            decDegree = self.main.view.decDegreeSpin.get_value()
+            decMinute = self.main.view.decMinuteSpin.get_value()
+            decSec = self.main.view.decSecSpin.get_value()
         
-        target = Position.fromRaDec(ra, dec, equinox=Epoch.J2000)
+            ra = "%2d:%2d:%2d" %(raHour, raMinute, raSec)
+            dec = "%2d:%2d:%2d" %(decDegree, decMinute, decSec)
+
+            epochStr = str(self.main.view.epochCombo.get_active()).lower()
+
+            if epochStr == "j2000":
+                epoch = Epoch.J2000
+            elif epochStr == "b1950":
+                epoch = Epoch.B1950
+            elif epochStr == "now":
+                epoch = Epoch.Now
+            else:
+                # FIXME
+                epoch = epochStr
+        
+            target = Position.fromRaDec(ra, dec, equinox=epoch)
+            slewFunction = self.telescope.slewToRaDec
+
+        elif currentPage == 1:
+
+            altDegree = self.main.view.altDegreeSpin.get_value()
+            altMinute = self.main.view.altMinuteSpin.get_value()
+            altSec = self.main.view.altSecSpin.get_value()
+        
+            azDegree = self.main.view.azDegreeSpin.get_value()
+            azMinute = self.main.view.azMinuteSpin.get_value()
+            azSec = self.main.view.azSecSpin.get_value()
+            
+            alt = "%2d:%2d:%2d" %(altDegree, altMinute, altSec)
+            az = "%2d:%2d:%2d" %(azDegree, azMinute, azSec)
+        
+            target = Position.fromAltAz(alt, az)
+            slewFunction = self.telescope.slewToAltAz
+
+        elif currentPage == 2:
+            target =  str(self.main.view.objectNameCombo.child.get_text())
+            slewFunction = self.telescope.slewToObject
         
         self.main.view.slewBeginUi()
         
@@ -58,41 +101,46 @@ class TelescopeController:
         self.telescope.slewComplete += slewBegin
         self.telescope.slewComplete += slewComplete
         self.telescope.abortComplete += abortComplete
-        
-        self.telescope.slewToRaDec(target)
-        
-        self.telescope.slewComplete -= slewBegin
-        self.telescope.slewComplete -= slewComplete
-        self.telescope.abortComplete -= abortComplete
 
-        self.main.view.slewComplete(target)
+        try:
+            slewFunction(target)
+        except ObjectNotFoundException, e:
+            self.main.view.showError("Object %s was not found on our catalogs." % target)
+        except Exception, e:
+            printException(e)
+            
+        finally:
+            self.telescope.slewComplete -= slewBegin
+            self.telescope.slewComplete -= slewComplete
+            self.telescope.abortComplete -= abortComplete
+
+            self.main.view.slewComplete(target)
 
     def isSlewing(self):
         return self.telescope.isSlewing()
         
     def moveEast(self):
-        offset = 5
-        offset = self._validateOffset(offset)
-        
-        self.telescope.moveEast(offset)
+        offset = self.main.view.offsetCombo.child.get_text()
+        self._move(self.telescope.moveEast, offset)
         
     def moveWest(self):
-        offset = 5
-        offset = self._validateOffset(offset)
-        
-        self.telescope.moveWest(offset.AS)
+        offset = self.main.view.offsetCombo.child.get_text()
+        self._move(self.telescope.moveWest, offset)
     
     def moveNorth(self):
-        offset = 5
-        offset = self._validateOffset(offset)
-        
-        self.telescope.moveNorth(offset.AS)
+        offset = self.main.view.offsetCombo.child.get_text()
+        self._move(self.telescope.moveNorth, offset)
     
     def moveSouth(self):
-        offset = 5
-        offset = self._validateOffset(offset)
-        
-        self.telescope.moveSouth(offset.AS)
+        offset = self.main.view.offsetCombo.child.get_text()
+        self._move(self.telescope.moveSouth, offset)
+
+    def _move(self, method, offset):
+        try:
+            offset = float(offset)
+            method(offset)
+        except Exception, e:
+            printException(e)
     
     def toggleTracking(self):
         if(self.isTracking()):
@@ -114,19 +162,10 @@ class TelescopeController:
         telescope = self.getTelescope()
         return telescope.isTracking()
     
-    def _validateOffset(self, value):
-        try:
-            offset = Coord.fromAS(int(value))
-            print("Hey")
-        except ValueError:
-            offset = Coord.fromDMS(value)
-        
-        return offset
-
 class TelescopeView:
     def __init__ (self, main):
         self.main = main
-        
+
         self.raHourSpin = self.main.builder.get_object("raHourSpin")
         self.raMinuteSpin = self.main.builder.get_object("raMinuteSpin")
         self.raSecSpin = self.main.builder.get_object("raSecSpin")
@@ -135,17 +174,34 @@ class TelescopeView:
         self.decMinuteSpin = self.main.builder.get_object("decMinuteSpin")
         self.decSecSpin = self.main.builder.get_object("decSecSpin")       
         
+        self.azDegreeSpin = self.main.builder.get_object("azDegreeSpin")
+        self.azMinuteSpin = self.main.builder.get_object("azMinuteSpin")
+        self.azSecSpin = self.main.builder.get_object("azSecSpin")
+        
+        self.altDegreeSpin = self.main.builder.get_object("altDegreeSpin")
+        self.altMinuteSpin = self.main.builder.get_object("altMinuteSpin")
+        self.altSecSpin = self.main.builder.get_object("altSecSpin")
+
+        self.objectNameCombo = self.main.builder.get_object("objectNameCombo")
+        self.slewOptions = self.main.builder.get_object("slewOptions")
+
         self.epochCombo = self.main.builder.get_object("epochCombo")
         listStore = gtk.ListStore(str)
         listStore.insert(0,["J2000"])
         listStore.insert(1,["B1950"])
         listStore.insert(2, ["Now"])
-        
         self.epochCombo.set_model(listStore)
-        self.epochCombo.show_all()        
+        self.epochCombo.set_text_column(0)
+        self.epochCombo.set_active(0)
         
-        #self.raDecLabel = self.main.builder.get_object("raDecLabel")
-        #self.altAzLabel = self.main.builder.get_object("altAzLabel")
+        self.offsetCombo = self.main.builder.get_object("offsetCombo")
+        listStore = gtk.ListStore(str)
+        listStore.insert(0,["10 arcsec"])
+        listStore.insert(1,["20 arcsec"])
+        listStore.insert(2, ["30 arcsec"])
+        self.offsetCombo.set_model(listStore)
+        self.offsetCombo.set_text_column(0)
+        self.offsetCombo.set_active(0)
 
         self.raLCDWidget = gtk.DrawingArea()
         self.raLCD = LCDWidget(self.raLCDWidget, 1, 14)
@@ -165,8 +221,14 @@ class TelescopeView:
         self.azLCDWidget = gtk.DrawingArea()
         self.azLCD = LCDWidget(self.azLCDWidget, 1, 14)
         self.azLCD.set_zoom_factor(1)
-
         self.main.builder.get_object("azBox").pack_end(self.azLCDWidget)
+
+    def showError(self, message):
+        #md = gtk.MessageDialog(None, gtk.DIALOG_DESTROY_WITH_PARENT, gtk.MESSAGE_ERROR,
+        #                       gtk.BUTTONS_CLOSE, message)
+        #md.run()
+        #md.destroy()
+        pass
 
     def updateStatusView(self):
 
@@ -191,13 +253,11 @@ class TelescopeView:
         self.status_timeout = glib.timeout_add(1500, self.updateStatusView, priority=glib.PRIORITY_LOW)
         
     def updateTrackingStatus(self):
+
         if(self.main.controller.isTracking()):
-            status = "On"
+            self.main.builder.get_object("trackingCheckbox").set_active(True)
         else:
-            status = "Off"
-        def ui():
-            self.main.builder.get_object("trackingLabel").set_text(status)
-        glib.idle_add(ui)
+            self.main.builder.get_object("trackingCheckbox").set_active(False)
         
     def slewBeginUi(self):
         def ui():
@@ -265,11 +325,6 @@ class TelescopeGUIModule(ChimeraGUIModule):
 
         # Query telescope tracking status and adjust UI accordingly
         self.view.updateTrackingStatus()
-        if(telescope.isTracking()):
-            self.builder.get_object("trackingButton").set_active(True)
-        else:
-            self.builder.get_object("trackingButton").set_active(False)
-        
         self.telescopeInit = True
 
         #Slew Rate box

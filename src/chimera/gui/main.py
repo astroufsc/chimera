@@ -50,6 +50,10 @@ class ChimeraGUI:
         self.dock = gdl.Dock()
         self.dock_layout = gdl.DockLayout(self.dock)
 
+        if os.path.exists("chimera_gui_layout.xml"):
+            self.dock_layout.load_from_file("chimera_gui_layout.xml")
+            self.dock_layout.load_layout("_-default__")
+
         self.builder.get_object("main_area").pack_end(self.dock)
 
         self.mainWindow.set_default_size(640, 480)
@@ -138,12 +142,7 @@ class ChimeraGUI:
                     
         return modules
 
-    def run(self, args=[]):
-
-        #if os.path.exists("chimera_gui_layout.xml"):
-        #    self.dock_layout.load_from_file("chimera_gui_layout.xml")
-        #    #self.dock_layout.load_layout("__default__")
-        
+    def run(self, args=[]):        
         self.mainWindow.show_all()
         gtk.main()
             
