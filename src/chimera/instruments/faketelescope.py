@@ -90,7 +90,6 @@ class FakeTelescope (TelescopeBase):
                 self._setRaDecFromAltAz()                                                          
         return True
 
-    @lock
     def slewToRaDec(self, position):
 
         if not isinstance(position, Position):
@@ -178,7 +177,7 @@ class FakeTelescope (TelescopeBase):
         self._slewing = True
 
         pos = self.getPositionRaDec()
-        pos.ra += Coord.fromAS(offset)
+        pos = Position.fromRaDec(pos.ra + Coord.fromAS(offset), pos.dec)
         self.slewBegin(pos)
         
         self._ra += Coord.fromAS(offset)
@@ -192,7 +191,7 @@ class FakeTelescope (TelescopeBase):
         self._slewing = True
 
         pos = self.getPositionRaDec()
-        pos.ra += Coord.fromAS(-offset)
+        pos = Position.fromRaDec(pos.ra + Coord.fromAS(-offset), pos.dec)
         self.slewBegin(pos)
         
         self._ra += Coord.fromAS(-offset)
@@ -206,7 +205,7 @@ class FakeTelescope (TelescopeBase):
         self._slewing = True
 
         pos = self.getPositionRaDec()
-        pos.ra += Coord.fromAS(offset)
+        pos = Position.fromRaDec(pos.ra, pos.dec + Coord.fromAS(offset))
         self.slewBegin(pos)
         
         self._dec += Coord.fromAS(offset)
@@ -220,7 +219,7 @@ class FakeTelescope (TelescopeBase):
         self._slewing = True
 
         pos = self.getPositionRaDec()
-        pos.dec += Coord.fromAS(-offset)
+        pos = Position.fromRaDec(pos.ra, pos.dec + Coord.fromAS(-offset))
         self.slewBegin(pos)
         
         self._dec += Coord.fromAS(-offset)

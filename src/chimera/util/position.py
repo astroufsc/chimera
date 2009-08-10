@@ -347,8 +347,8 @@ class Position (object):
         altR = CoordUtil.coordToR(altAz.alt)
         latR = CoordUtil.coordToR(latitude)
         azR = CoordUtil.coordToR(altAz.az)
-        
-        decR,haR = CoordUtil.coordRotate(altR, latR, azR)
+
+        decR, haR = CoordUtil.coordRotate(altR, latR, azR)
         
         ra = CoordUtil.haToRa(haR, lst)
         

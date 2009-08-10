@@ -22,11 +22,9 @@ from chimera.util.position import Position
 
 import chimera.util.etree.ElementTree as ET
 from chimera.core.exceptions import ObjectNotFoundException
+from xml.parsers.expat import ExpatError
 
 import chimera.core.log
-
-#import suds
-#suds.logger('suds').setLevel(logging.DEBUG)
 
 from suds.xsd.sxbasic import Import
 Import.bind('http://schemas.xmlsoap.org/soap/encoding/')
@@ -63,17 +61,19 @@ class Simbad (object):
 
     @staticmethod
     def _parseSesame (xml):
-       
-        sesame = ET.fromstring(xml.replace("&", "&amp;"))
 
-        target = sesame.findall("Target")
-        if target:
-            for resolver in target[0].findall("Resolver"):
-                jpos  = resolver.find("jpos")
-                if jpos is None:
-                    continue
-
-                return Position.fromRaDec(*jpos.text.split())
+        try:
+            sesame = ET.fromstring(xml.replace("&", "&amp;"))
+            target = sesame.findall("Target")
+            
+            if target:
+                for resolver in target[0].findall("Resolver"):
+                    jpos  = resolver.find("jpos")
+                    if jpos is None:
+                        continue
+                    return Position.fromRaDec(*jpos.text.split())
+        except ExpatError, e:
+            return False
 
         return False
         
