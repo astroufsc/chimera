@@ -118,7 +118,7 @@ class ChimeraGUI:
 
             for name, widget, position in view["widgets"]:
                 
-                item = gdl.DockItem(name, name, gtk.STOCK_EXECUTE, gdl.DOCK_ITEM_BEH_NORMAL)
+                item = gdl.DockItem(name, name, gtk.STOCK_EXECUTE, gdl.DOCK_ITEM_BEH_CANT_ICONIFY)
                 item.add(widget)
                 item.show_all()
                 self.dock.add_item(item, gdl.DOCK_CENTER)

@@ -98,11 +98,13 @@ class FakeDome (DomeBase):
     def openSlit (self):
         self.log.info("Opening slit")
         self._slitOpen = True
+        self.slitOpened(self.getAz())
 
     @lock
     def closeSlit (self):
         self.log.info("Closing slit")
         self._slitOpen = False
+        self.slitClosed(self.getAz())
 
     def isSlitOpen (self):
         return self._slitOpen

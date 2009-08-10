@@ -392,7 +392,7 @@
                     <property name="spacing">10</property>
                     <property name="homogeneous">True</property>
                     <child>
-                      <object class="GtkButton" id="abortSlewButton">
+                      <object class="GtkButton" id="abortButton">
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
@@ -806,16 +806,49 @@
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkButton" id="parkButton">
-                    <property name="label" translatable="yes">Park</property>
+                  <object class="GtkHSeparator" id="hseparator4">
                     <property name="visible">True</property>
-                    <property name="can_focus">True</property>
-                    <property name="receives_default">True</property>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="padding">5</property>
+                    <property name="position">1</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkHBox" id="hbox7">
+                    <property name="visible">True</property>
+                    <property name="spacing">5</property>
+                    <child>
+                      <object class="GtkButton" id="unparkButton">
+                        <property name="label" translatable="yes">Unpark</property>
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                        <property name="receives_default">True</property>
+                        <property name="related_action">telescope.unpark</property>
+                      </object>
+                      <packing>
+                        <property name="position">0</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkButton" id="parkButton">
+                        <property name="label" translatable="yes">Park</property>
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                        <property name="receives_default">True</property>
+                        <property name="related_action">telescope.park</property>
+                      </object>
+                      <packing>
+                        <property name="position">1</property>
+                      </packing>
+                    </child>
                   </object>
                   <packing>
                     <property name="expand">False</property>
                     <property name="fill">False</property>
-                    <property name="position">1</property>
+                    <property name="padding">2</property>
+                    <property name="position">2</property>
                   </packing>
                 </child>
               </object>
@@ -916,6 +949,7 @@
   </object>
   <object class="GtkAction" id="telescope.abort">
     <property name="short_label">Abort</property>
+    <signal name="activate" handler="telescope_abort_action"/>
   </object>
   <object class="GtkAdjustment" id="altDegreeAdj">
     <property name="upper">100</property>
@@ -952,5 +986,11 @@
     <property name="step_increment">1</property>
     <property name="page_increment">10</property>
     <property name="page_size">10</property>
+  </object>
+  <object class="GtkAction" id="telescope.park">
+    <signal name="activate" handler="telescope_park_action"/>
+  </object>
+  <object class="GtkAction" id="telescope.unpark">
+    <signal name="activate" handler="telescope_unpark_action"/>
   </object>
 </interface>

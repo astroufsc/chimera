@@ -269,12 +269,16 @@ class FakeTelescope (TelescopeBase):
         self._dec = position.dec
 
     @lock
-    def park(self, position):
+    def park(self):
+        self.log.info("Parking...")
         self._parked = True
+        self.parkComplete()
 
     @lock
     def unpark(self):
+        self.log.info("Unparking...")
         self._parked = False
+        self.unparkComplete()        
 
     def isParked(self):
         return self._parked
