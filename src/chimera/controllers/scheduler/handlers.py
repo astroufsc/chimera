@@ -27,9 +27,11 @@ class ActionHandler(object):
 class PointHandler(ActionHandler):
 
     @staticmethod
-    @requires("telescope")    
+    @requires("telescope")
+    @requires("dome")
     def process(action):
         telescope = PointHandler.telescope
+        dome = PointHandler.dome
 
         if action.targetRaDec is not None:
             log.debug("[slewing telescope to %s]" % action.targetRaDec)
@@ -44,6 +46,10 @@ class PointHandler(ActionHandler):
             raise ProgramExecutionException("Invalid slew action.")
 
         log.debug('[slew complete]')
+
+        log.debug("[making sure dome is open]")
+        dome.openSlit()
+        log.debug("[dome open complete]")
         
 class ExposeHandler(ActionHandler):
 

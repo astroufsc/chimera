@@ -30,7 +30,7 @@ class ProgramExecutor(object):
         
         for action in program.actions:
             try:
-                self.actionHandlers[type(action)].process(self.controller.getManager(), action)
+                self.actionHandlers[type(action)].process(action)
             except KeyError:
                 log.debug("No handler to %s action. Skipping it" % action)
 
