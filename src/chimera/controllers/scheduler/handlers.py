@@ -36,10 +36,10 @@ class PointHandler(ActionHandler):
         if action.targetRaDec is not None:
             log.debug("[slewing telescope to %s]" % action.targetRaDec)
             telescope.slewToRaDec(action.targetRaDec)
-        if action.targetAltAz is not None:
+        elif action.targetAltAz is not None:
             log.debug("[slewing telescope to %s]" % action.targetRaDec)
             telescope.slewToAltAz(action.targetAltAz)
-        elif action.targetName:
+        elif action.targetName is not None:
             log.debug("[slewing telescope to %s]" % action.targetName)
             telescope.slewToObject(action.targetName)
         else:

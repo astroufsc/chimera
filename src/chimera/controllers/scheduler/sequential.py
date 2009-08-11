@@ -49,8 +49,8 @@ class SequentialScheduler (IScheduler):
             log.debug("Error processing program %s." % str(program))
             log.exception(error)
         else:
-            #program.finished = True
-            #program.flush()
+            program.finished = True
+            program.flush()
             session.commit()
         
         self.rq.task_done()

@@ -1,15 +1,99 @@
+#! /usr/bin/env python
+# -*- coding: iso-8859-1 -*-
 
-"""
-chimera-sched
+# chimera - observatory automation system
+# Copyright (C) 2006-2009  P. Henrique Silva <henrique@astro.ufsc.br>
 
- --list
- --new [filename]
- --add [filename]
- --clear
- --remove program-name
- 
- --start [program-name]
- --stop
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
 
-"""
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+from elixir import *
+
+import re
+import sys
+
+from chimera.util.position import Position
+from chimera.controllers.scheduler.model import *
+
+if __name__ == '__main__':
+
+    # RA Dec  Epoch TYPE   NAME   N*(f1:t1:n1, f2:t2:n2, ......)
+    #0   0    2000 FLAT   flat1  3*(RED:10:1, BLUE:8:2, GREEN:9:3)
+    #0   0    2000 ZERO   zero1  1*(CLEAR:10:10)
+    #0   0    2000 DARK   dark1  4*(RED:10:1, RED:20:1, RED:30:1)
+    #14:00:00 -30:00:00  2000 OBJECT  obj1 2*(RED:7:1, BLUE:6:2, GREEN:5:2)
+    #15:00:00 -30:00:00  2000 OBJECT  obj1 2*(RED:7:1, BLUE:6:2, GREEN:5:2)
+    
+    if len(sys.argv) < 2:
+        print "Usage: %s program.txt" % sys.argv[0]
+        sys.exit(1)
+
+    f = open(sys.argv[1], "r")
+
+    lineRe = re.compile(r'(?P<ra>[\d:-]+)\s+(?P<dec>[\d:-]+)\s+(?P<epoch>[\d]+)\s+(?P<imagetype>[\w]+)'
+                         '\s+(?P<objname>[\w-]+)\s+(?P<exposures>[\w\d\s:\*\(\),]*)')
+
+    programs = []
+
+    for i, line in enumerate(f):
+
+        if line.startswith("#"): continue
+        if len(line) == 1: continue
+
+        matchs = lineRe.search(line)
+
+        if not matchs:
+            print "Couldn't process line #%d" % i
+
+        params = matchs.groupdict()
+
+        position  = Position.fromRaDec(params['ra'], params['dec'], params['epoch'])
+        imagetype = params['imagetype']
+        objname   = params['objname']
+
+        multiplier, exps = params['exposures'].split("*")
+        try:
+            multiplier = int(multiplier)
+        except ValueErro:
+            multiplier = 1
+
+        exps = exps.replace("(", "").replace(")", "").split(",")
+       
+        for i in range(multiplier):
+
+            program = Program(name="program-%03d" % i)
+            program.actions.append(Point(targetRaDec=position))
+
+            for exp in exps:
+                filter, exptime, frames = exp.strip().split(":")
+                print multiplier, "*", imagetype, objname, position, filter, exptime, frames
+
+                if imagetype.upper() in ("OBJECT", "FLAT"):
+                    shutter = "OPEN"
+                else:
+                    shutter = "CLOSE"
+
+                program.actions.append(Expose(shutter=shutter,
+                                              filter=filter,
+                                              frames=frames,
+                                              exptime=exptime,
+                                              imageType=imagetype,
+                                              objectName=objname))
+            programs.append(program)
+
+    for program in programs:
+        program.flush()
+
+    session.commit()
 
