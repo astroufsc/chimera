@@ -1,5 +1,7 @@
 import chimera.core.log
+
 from chimera.controllers.scheduler.states import State
+from chimera.core.exceptions import ProgramExecutionException
 
 import threading
 import logging
@@ -52,12 +54,12 @@ class Machine(threading.Thread):
                 log.debug("[idle] looking for something to do...")
 
                 # find something to do
-                exposure = self.scheduler.next()
+                program = self.scheduler.next()
 
-                if exposure:
+                if program:
                     log.debug("[idle] there is something to do, processing...")
                     self.state(State.BUSY)
-                    self._process(exposure)
+                    self._process(program)
                     continue
 
                 # should'nt get here if any task was executed
@@ -88,15 +90,16 @@ class Machine(threading.Thread):
         self.__wakeUpCall.notifyAll()
         self.__wakeUpCall.release()
         
-    def _process(self, exp):
+    def _process(self, program):
 
-        log.debug("Starting to process exposure: "+exp.__str__()) 
+        log.debug("Starting to process program: %s" % str(program)) 
         def process ():
             try:
-                self.controller.process(exp)
-                #FIXME: We should only set done with exposure upon some callback from the imagesave routine
-                log.debug("Done with exposure: "+exp.__str__()) 
-                self.scheduler.done(exp)
+                self.controller.executor.execute(program)
+                log.debug("Done with program: %s" % str(program)) 
+                self.scheduler.done(program)
+            except ProgramExecutionException, e:
+                self.scheduler.done(program, error=e)
             finally:
                 self.state(State.IDLE)
                 

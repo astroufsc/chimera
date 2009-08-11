@@ -1,13 +1,15 @@
 
 from chimera.controllers.scheduler.ischeduler import IScheduler
-from chimera.controllers.scheduler.model import *
+from chimera.controllers.scheduler.model import Program
+
+from sqlalchemy import desc
+from elixir import session
 
 import chimera.core.log
 import logging
 
 log = logging.getLogger(__name__)
 
-from threading import Timer
 from Queue import Queue
 
 
@@ -22,11 +24,15 @@ class SequentialScheduler (IScheduler):
         self.machine = machine
         self.rq = Queue(-1)
 
-        exps = Exposure.query.filter_by(finished = False).all()
+        programs = Program.query.order_by(desc(Program.priority)).filter(Program.finished == False)
         
-        log.debug("rescheduling, found %d exposures." % len(exps))
-        for exp in exps:
-            self.rq.put(exp)
+        if not programs:
+            return
+
+        log.debug("rescheduling, found %d runnable programs" % len(list(programs)))
+
+        for program in programs:
+            self.rq.put(program)
 
         machine.wakeup()
 
@@ -34,8 +40,18 @@ class SequentialScheduler (IScheduler):
         if not self.rq.empty():
             return self.rq.get()
 
-    def done (self, task):
-        task.finished=True
-        task.flush()
+    def done (self, task, error=None):
+        # we could not reuse the Program object because we don't know which thread created it
+        # and sqlite doesn't like multiple threads touching the same objects.
+        program = Program.query.filter_by(id=task.id).one()
+
+        if error:
+            log.debug("Error processing program %s." % str(program))
+            log.exception(error)
+        else:
+            #program.finished = True
+            #program.flush()
+            session.commit()
+        
         self.rq.task_done()
         self.machine.wakeup()

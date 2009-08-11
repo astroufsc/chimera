@@ -1,85 +1,75 @@
 from elixir import Entity, Field, using_options
 from elixir import DateTime, Float, Integer, PickleType, Boolean, Text
 from elixir import OneToMany, ManyToOne
-from elixir import metadata, setup_all
+from elixir import metadata, setup_all, create_all
 
+from chimera.core.constants import DEFAULT_PROGRAM_DATABASE
 
 class Program(Entity):
-    using_options(tablename='programs')
+    using_options(tablename="programs")
     
-    caption     = Field(Text, default='Program')
-    pi          = Field(Text, default='Anonymous Investigator')
+    name   = Field(Text, default="Program")
+    pi     = Field(Text, default="Anonymous Investigator")
 
     priority = Field(Integer, default=0)
-    lastObservedAt = Field(DateTime)
+
+    createdAt = Field(DateTime)
+    finished  = Field(Boolean, default=False)
     
-    constraints  = OneToMany('Constraint', inverse='program')
-    blocks       = OneToMany('Block', inverse='program')
+    actions      = OneToMany("Action", inverse="program")
 
-class Constraint(Entity):
-    using_options(tablename='constraints')
-    
-    type    = Field(Text)            
-    min     = Field(Float, default=0)
-    max     = Field(Float, default=0)
-    
-    program = ManyToOne('Program', inverse='constraints')
-    block   = ManyToOne('Block', inverse='constraints')
-
-class Block(Entity):
-    using_options(tablename='blocks')
-
-    program = ManyToOne('Program', inverse='blocks')
-
-    begin = OneToMany('Action', inverse='block')
-    end   = OneToMany('Action', inverse='block')
-
-    constraints  = OneToMany('Constraint', inverse='block')    
-    actions      = OneToMany('Action', inverse='block')
+    def __str__ (self):
+        return "<Program #%d %s pi:%s #actions: %d>" % (self.id, self.name,
+                                                        self.pi, len(self.actions))
 
 class Action(Entity):
-    using_options(tablename='action')
+    using_options(tablename="action")
 
-    block = ManyToOne('Block', inverse='actions')
-    finished = Field(Boolean, default=False)
+    program  = ManyToOne("Program", inverse="actions")
 
-class Focus(Action):
-    using_options(tablename='action_focus', inheritance='multi')
+class AutoFocus(Action):
+    using_options(tablename="action_focus", inheritance="multi")
 
-class Reduce(Action):
-    using_options(tablename='action_reduce', inheritance='multi')
+    start   = Field(Integer, default=0)
+    end     = Field(Integer, default=1)
+    step    = Field(Integer, default=1)
+    filter  = Field(Text, default=None)
+    exptime = Field(Float, default=1.0)
+    binning = Field(Text, default=None)
+    window  = Field(Text, default=None)
+    
+class PointVerify(Action):
+    using_options(tablename="action_pv", inheritance="multi")
+
+    here   = Field(Boolean, default=None)
+    choose = Field(Boolean, default=None) 
 
 class Point(Action):
-    using_options(tablename='action_point', inheritance='multi')
+    using_options(tablename="action_point", inheritance="multi")
 
-    targetPos   = Field(PickleType, required=True)
-    targetName  = Field(Text, default='Sky')            #(object FITS header)
+    targetRaDec = Field(PickleType, default=None)
+    targetAltAz = Field(PickleType, default=None)
+    targetName  = Field(Text, default=None)
     
 class Expose(Action):
-    using_options(tablename='action_expose', inheritance='multi')   
+    using_options(tablename="action_expose", inheritance="multi")   
 
-    filter      = Field(Text, default='CLEAR')      # ASCII value of filter to use
-    frames      = Field(Integer, default=1)         # Frames to take
+    filter     = Field(Text, default=None)
+    frames     = Field(Integer, default=1)
     
-    exptime     = Field(Integer, default=5)                #Seconds per frame
+    exptime    = Field(Integer, default=5)
 
-    binX        = Field(Integer, default=1)                #X CCD Binning
-    binY        = Field(Integer, default=1)                #Y CCD Binning
-    
-    windowX1 = Field(Float, default=0.0)
-    windowX2 = Field(Float, default=1.0)
-    windowY1 = Field(Float, default=0.0)
-    windowY2 = Field(Float, default=1.0)
-    
-    shutterOpen = Field(Boolean, default=True)
-    
-    imageType   = Field(Text, default='object')    
-    filename    = Field(Text, default='$DATE-$TIME')
+    binning    = Field(Integer, default=None)
+    window     = Field(Float, default=None)
 
-# TODO: Better database creation scheme needed. Today, when model is
-# imported, it will create all entities and tables as needed. We
-# probably need to check if the database exists before trying to
-# create it, to don't loose user's data.
-metadata.bind = "sqlite:///program.db"
-metadata.bind.echo = True
-setup_all(create_tables=True)
+    shutter    = Field(Text, default="OPEN")
+    
+    imageType  = Field(Text, default="")    
+    filename   = Field(Text, default="$DATE-$TIME")
+    objectName = Field(Text, default="")
+
+db_file = DEFAULT_PROGRAM_DATABASE
+metadata.bind = "sqlite:///%s" % db_file
+metadata.bind.echo = False
+setup_all()
+create_all()

@@ -19,7 +19,7 @@ class IScheduler (object):
         reschedule and cut non-runnable items or reschedule again.
         """
 
-    def done (self, task):
+    def done (self, task, error=None):
         """
         Called to change runnable state of 'task'. When called, will
         remove 'task' from the runqueue (task can be either completed

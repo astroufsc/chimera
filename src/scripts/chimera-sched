@@ -1,0 +1,15 @@
+
+"""
+chimera-sched
+
+ --list
+ --new [filename]
+ --add [filename]
+ --clear
+ --remove program-name
+ 
+ --start [program-name]
+ --stop
+
+"""
+

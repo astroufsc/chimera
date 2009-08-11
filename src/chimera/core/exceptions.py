@@ -121,3 +121,6 @@ class CantSetScopeException(ChimeraException):
 
 class MeadeException(ChimeraException):
     pass
+
+class ProgramExecutionException(ChimeraException):
+    pass
