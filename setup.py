@@ -99,7 +99,9 @@ setup(name='chimera-python',
 
       # dependencies are installed bottom up, so put important things last
       install_requires = linux_deps + win32_deps + \
-                         ["PyYAML == 3.08",
+                         ["simplejson == 2.0.9",
+                          "CherryPy == 3.1.2",
+                          "PyYAML == 3.08",
                           "suds == 0.3.4",
                           "asciidata == 1.1",
                           "SQLAlchemy == 0.4.8",

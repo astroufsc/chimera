@@ -1,0 +1,69 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+
+<html>
+  <head>
+    <title>Chimera</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <style type="text/css">
+
+      body {
+       font-familiy: "Arial, Verdana, Sans";
+       font-size: 14pt;
+      }
+
+      h1 { font-size: 1.5em; color: #3366cc;}
+
+      div {
+       text-align: center;
+       width: 50%;
+       margin-left: auto;
+       margin-right: auto;;
+      }
+
+      div#status { margin-top: 30px; }
+
+    </style>
+
+    <script type="text/javascript" src="/jquery-1.3.2.js"></script>
+
+    <script type="text/javascript">
+
+      function updateDomeState() {
+        $.ajax({type: "GET", url: "/is_dome_open", dataType: "json", async: false,
+               success: function (isDomeOpen) { if (isDomeOpen) $("#action").val("Fechar cúpula!"); else $("#action").val("Abrir cúpula!");}
+        });
+      }
+
+      function toggleDome() {
+        $.ajax({type: "GET", url: "/toggle_dome", dataType: "text",
+               beforeSend: function() { $("#action").attr("disabled", true); $("#status").text("Aguarde ...").fadeIn("fast"); },
+               success: function (msg) { $("#action").attr("disabled", false); $("#status").text(msg).fadeOut(3000); updateDomeState(); }});
+      }
+
+      $(document).ready(function() {
+      
+        updateDomeState();
+        setInterval(updateDomeState, 15000);
+
+        $("#action").click(function() {
+         toggleDome();
+        });
+      
+      });
+
+    </script>
+
+  </head>
+
+  <body>
+
+    <div id="control">
+      <h1>Chimera</h1>
+      <input type="button" id="action" value="Fechar a cúpula!"/>
+    </div>
+
+    <div id="status">
+    </div>
+
+  </body>
+</html>
