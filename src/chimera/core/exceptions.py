@@ -124,3 +124,6 @@ class MeadeException(ChimeraException):
 
 class ProgramExecutionException(ChimeraException):
     pass
+
+class ObjectTooLowException(ChimeraException):
+    pass
