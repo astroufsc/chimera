@@ -62,7 +62,8 @@ class TelescopeSlew (Telescope):
                   "max_slew_time"       : 90.0, # s
                   "stabilization_time"  : 2.0,  # s
                   "position_sigma_delta": 60.0, # arcseconds
-                  "skip_init"           : False} 
+                  "skip_init"           : False,
+                  "min_altitude"        : 20} 
 
     def slewToObject (self, name):
         """Slew the scope to the the coordinates of the given

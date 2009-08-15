@@ -26,9 +26,10 @@ from chimera.interfaces.telescope import (TelescopeSlew, TelescopeSync,
                                           SlewRate)
 
 from chimera.core.lock import lock
+from chimera.core.exceptions import ObjectTooLowException
 
 from chimera.util.simbad import Simbad
-from chimera.util.position import Epoch
+from chimera.util.position import Epoch, Position
 
 
 __all__ = ["TelescopeBase"]
@@ -51,6 +52,26 @@ class TelescopeBase(ChimeraObject,
     @lock
     def slewToRaDec(self, position):
         raise NotImplementedError()
+
+    def _validateRaDec(self, position):
+        
+        site = self.getManager().getProxy("/Site/0")
+        lst = site.LST()
+        latitude = site["latitude"]
+        
+        altAz = Position.raDecToAltAz(position,
+                                      latitude,
+                                      lst)
+
+        return self._validateAltAz(altAz)
+
+    def _validateAltAz(self, position):
+
+        if position.alt <= self["min_altitude"]:
+            raise ObjectTooLowException("Object too close to horizon (alt=%d limit=%d)" % (position.alt,
+                                                                                           self["min_altitude"]))
+
+        return True
 
     def _getFinalPosition(self, position):
 
