@@ -33,10 +33,12 @@ class Controller(ChimeraObject):
 
     def __start__ (self):
         self.executor.__start__()
+        return True
         
     def __stop__ (self):
         self.log.debug('Attempting to stop machine')
         self.machine.state(State.SHUTDOWN)
         self.log.debug('Machine stopped')
         session.commit()
+        return True
         

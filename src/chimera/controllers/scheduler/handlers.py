@@ -33,17 +33,18 @@ class PointHandler(ActionHandler):
         telescope = PointHandler.telescope
         dome = PointHandler.dome
 
-        if action.targetRaDec is not None:
-            log.debug("[slewing telescope to %s]" % action.targetRaDec)
-            telescope.slewToRaDec(action.targetRaDec)
-        elif action.targetAltAz is not None:
-            log.debug("[slewing telescope to %s]" % action.targetRaDec)
-            telescope.slewToAltAz(action.targetAltAz)
-        elif action.targetName is not None:
-            log.debug("[slewing telescope to %s]" % action.targetName)
-            telescope.slewToObject(action.targetName)
-        else:
-            raise ProgramExecutionException("Invalid slew action.")
+        try:
+            if action.targetRaDec is not None:
+                log.debug("[slewing telescope to %s]" % action.targetRaDec)
+                telescope.slewToRaDec(action.targetRaDec)
+            elif action.targetAltAz is not None:
+                log.debug("[slewing telescope to %s]" % action.targetRaDec)
+                telescope.slewToAltAz(action.targetAltAz)
+            elif action.targetName is not None:
+                log.debug("[slewing telescope to %s]" % action.targetName)
+                telescope.slewToObject(action.targetName)
+        except Exception, e:
+            raise ProgramExecutionException(str(e))
 
         log.debug('[slew complete]')
 
@@ -61,10 +62,10 @@ class ExposeHandler(ActionHandler):
         camera = ExposeHandler.camera
         filterwheel = ExposeHandler.filterwheel
 
-        if action.filter is not None:
-            log.debug("[setting filter to %s]" % action.filter)
-            filterwheel.setFilter(str(action.filter))
-            log.debug("[filter set complete]")
+        #if action.filter is not None:
+        #    log.debug("[setting filter to %s]" % action.filter)
+        #    filterwheel.setFilter(str(action.filter))
+        #    log.debug("[filter set complete]")
             
         ir = ImageRequest(frames   = int(action.frames),
                           exptime  = float(action.exptime),
@@ -97,8 +98,8 @@ class AutoFocusHandler(ActionHandler):
         autofocus = AutoFocusHandler.autofocus
 
         try:
-            autofocus.focus (filter=action.filter,
-                             exptime=action.exptime,
+            # TODO: filter=action.filter,
+            autofocus.focus (exptime=action.exptime,
                              binning=action.binning,
                              window=action.window,
                              start=action.start,
@@ -117,9 +118,11 @@ class PointVerifyHandler(ActionHandler):
         # FIXME: better pv interface
         pv = PointVerifyHandler.point_verify
 
-        if action.here is not None:
-            pv.here()
-        elif action.choose is not None:
-            pv.choose()
-        else:
-            raise ProgramExecutionException("Invalid point verify action.")
+        try:
+            if action.here is not None:
+                pv.pointVerify()
+            elif action.choose is not None:
+                pv.choose()
+        except Exception, e:
+            raise ProgramExecutionException(str(e))
+
