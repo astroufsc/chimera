@@ -7,4 +7,4 @@
 20:00:00 -45:30:00 2000  OBJECT opencluster6 2*(B:10:1,V:10:1)
 20:00:00 -50:30:00 2000  OBJECT opencluster7 1*(B:10:1,V:10:1)
 20:00:00 -55:30:00 2000  OBJECT opencluster8 1*(B:10:1,V:10:1)
-20:00:00 -60:30:00 2000  OBJECT opencluster9 1*(B:10:1,V:10:1)
+20:00:00 +60:30:00 2000  OBJECT opencluster9 1*(B:10:1,V:10:1)

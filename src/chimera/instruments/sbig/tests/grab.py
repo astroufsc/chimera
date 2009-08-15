@@ -3,6 +3,9 @@ import numpy
 
 from chimera.instruments.sbig.sbigdrv import SBIGDrv
 
+#ccd = SBIGDrv.imaging
+ccd = SBIGDrv.tracking
+
 s = SBIGDrv()
 
 t1 = time.time()
@@ -14,32 +17,33 @@ t2 = time.time()
 t_init = t2 -t1
 
 t1 = time.time()
-s.startExposure(SBIGDrv.imaging, 100, SBIGDrv.openShutter)
+s.startExposure(ccd, 100, SBIGDrv.openShutter)
 t2 = time.time()
 t_start_exposure = t2 -t1
 
-while s.exposing(SBIGDrv.imaging):
+while s.exposing(ccd):
 	pass
 
 print "exposure complete"
 
-s.endExposure(SBIGDrv.imaging)
+s.endExposure(ccd)
 
 t3 = time.time()
 
 t_expose = t3 -t2
 
-img = numpy.zeros(s.readoutModes[SBIGDrv.imaging][0].getSize())
+size = s.readoutModes[ccd][0].getSize()
+img = numpy.zeros((size[1], size[0]))
 
 t1 = time.time()
-s.startReadout(SBIGDrv.imaging, 0)
+s.startReadout(ccd, 0)
 
 i = 0
-for line in range(s.readoutModes[SBIGDrv.imaging][0].height):
-	img[i] = s.readoutLine(SBIGDrv.imaging, 0)
+for line in range(s.readoutModes[ccd][0].height):
+	img[i] = s.readoutLine(ccd, 0)
 	i = i + 1
 
-s.endReadout(SBIGDrv.imaging)
+s.endReadout(ccd)
 t2 = time.time()
 
 t_readout = t2 -t1
