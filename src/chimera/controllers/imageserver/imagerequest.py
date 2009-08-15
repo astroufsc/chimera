@@ -10,21 +10,29 @@ log = logging.getLogger(__name__)
 
 class ImageRequest (dict):
     
+    valid_keys = ['exptime', 'frames',
+                  'interval', 'shutter', 
+                  'binning', 'window', 
+                  'bitpix', 'filename',
+                  'compress', 'compress_format',
+                  'type', 'wait_dome',
+                  'object_name']
+
     def __init__(self, **kwargs):
 
-        default = {'exptime' : 1.0,
-                   'frames'  : 1,
-                   'interval': 0.0,
-                   'shutter' : Shutter.OPEN,
-                   'binning' : "1x1",
-                   'window'  : None,
-                   'bitpix'  : Bitpix.uint16,
-                   'filename': '$DATE-$TIME',
-                   'compress': True,
-                   'compress_format': "BZ2",
-                   'type'    : 'object',
-                   'wait_dome': True,
-                   'object_name': ''}
+        defaults = {'exptime' : 1.0,
+                    'frames'  : 1,
+                    'interval': 0.0,
+                    'shutter' : Shutter.OPEN,
+                    'binning' : "1x1",
+                    'window'  : None,
+                    'bitpix'  : Bitpix.uint16,
+                    'filename': '$DATE-$TIME',
+                    'compress': True,
+                    'compress_format': "BZ2",
+                    'type'    : 'object',
+                    'wait_dome': True,
+                    'object_name': ''}
 
         # Automatically call getMetadata on all instruments + site as long as only
         # one instance of each is listed by the manager.
@@ -41,10 +49,10 @@ class ImageRequest (dict):
 
         self._proxies = {}
 
-        self.update(default)
+        self.update(defaults)
 
         # validate keywords passed
-        not_valid = [k for k in kwargs.keys() if k not in default.keys()]
+        not_valid = [k for k in kwargs.keys() if k not in defaults.keys()]
 
         if any(not_valid):
             if len(not_valid) > 1:
@@ -82,6 +90,13 @@ class ImageRequest (dict):
         if self["object_name"]:
             self.headers.append(("OBJECT", str(self["object_name"]), "name of observed object"))
 
+    def __setitem__ (self, key, value):
+
+        if not key in ImageRequest.valid_keys:
+            raise KeyError("%s is not a valid key for ImageRequest" % key)
+
+        self.update({key: value})
+
     def __str__(self):
         return ('exptime: %f, frames: %i, shutter: %s, type: %s' % (self['exptime'],
                                                                     self['frames'],
@@ -95,6 +110,7 @@ class ImageRequest (dict):
             try:
                 dome = manager.getProxy("/Dome/0")
                 dome.syncWithTel()
+                log.debug("Dome sync with telescope")
             except ObjectNotFoundException:
                 log.info("No dome present, taking exposure without dome sync.")
 
