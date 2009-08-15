@@ -1,0 +1,23 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+import sys
+
+from chimera.util.simbad import Simbad
+
+
+fd = open(sys.argv[1])
+
+for name in fd.readlines():
+    name = name[:-1]
+    try:
+        position = Simbad.lookup(name)
+    except Exception:
+        pass
+
+    print "%s %s 2000 OBJECT %s (R:30:1)" % (position.ra,
+                                             position.dec,
+                                             name.replace(" ", "_"))
+    sys.stdout.flush()
+
+    

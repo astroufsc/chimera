@@ -41,9 +41,8 @@ if __name__ == '__main__':
 
     f = open(sys.argv[1], "r")
 
-    lineRe = re.compile(r'(?P<ra>[\d:-]+)\s+(?P<dec>[\d:-]+)\s+(?P<epoch>[\d]+)\s+(?P<imagetype>[\w]+)'
-                         '\s+(?P<objname>[\w-]+)\s+(?P<exposures>[\w\d\s:\*\(\),]*)')
-
+    lineRe = re.compile('(?P<ra>[\d:-]+)\s+(?P<dec>\+?[\d:-]+)\s+(?P<epoch>[\d]+)\s+(?P<imagetype>[\w]+)'
+                        '\s+(?P<objname>[\w-]+)\s+(?P<exposures>[\w\d\s:\*\(\),]*)')
     programs = []
 
     for i, line in enumerate(f):
@@ -53,8 +52,9 @@ if __name__ == '__main__':
 
         matchs = lineRe.search(line)
 
-        if not matchs:
+        if matchs is None:
             print "Couldn't process line #%d" % i
+            continue
 
         params = matchs.groupdict()
 
@@ -72,8 +72,12 @@ if __name__ == '__main__':
        
         for i in range(multiplier):
 
-            program = Program(name="program-%03d" % i)
+            program = Program(name="program-%s-%03d" % (objname, i))
             program.actions.append(Point(targetRaDec=position))
+
+            if i == 0:
+                program.actions.append(AutoFocus(start=2500, end=4000, step=250, filter="R", exptime=10))
+                program.actions.append(PointVerify(here=True))
 
             for exp in exps:
                 filter, exptime, frames = exp.strip().split(":")
@@ -85,7 +89,8 @@ if __name__ == '__main__':
                     shutter = "CLOSE"
 
                 program.actions.append(Expose(shutter=shutter,
-                                              filter=filter,
+                                              filename="%s-$DATE-$TIME" % objname,
+                                              #filter=filter,
                                               frames=frames,
                                               exptime=exptime,
                                               imageType=imagetype,
