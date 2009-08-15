@@ -25,10 +25,11 @@ from chimera.util.coord import Coord
 from chimera.util.position import Position
 
 from chimera.core.callback import callback
-from chimera.core.exceptions import ObjectNotFoundException 
+from chimera.core.exceptions import ObjectTooLowException
 from chimera.interfaces.telescope import SlewRate
 
 import sys
+import copy
 
 #TODO: Abort, skip_init/init
 
@@ -55,7 +56,7 @@ class ChimeraTel (ChimeraCLI):
         self.addHelpGroup("RATE", "Slew rate")
         self.addParameters(dict(name="rate", type=ParameterType.CHOICE, 
                                 choices=["max", "MAX", "guide", "GUIDE", "center", "CENTER", "find", "FIND"],
-                                default="FIND", helpGroup="RATE",
+                                default="CENTER", helpGroup="RATE",
                                 help="Slew rate to be used for --move-* commands. GUIDE, CENTER, FIND or MAX"))
         
 
@@ -110,13 +111,17 @@ class ChimeraTel (ChimeraCLI):
         self.out("current position ra/dec: %s" % telescope.getPositionRaDec())
         self.out("current position:alt/az: %s" % telescope.getPositionAltAz())
     
-        if options.objectName:
-            telescope.slewToObject(target)
-        else:
-            if self.localSlew:
-                telescope.slewToAltAz(target)
+        try:
+            if options.objectName:
+                telescope.slewToObject(target)
             else:
-                telescope.slewToRaDec(target)
+                if self.localSlew:
+                    telescope.slewToAltAz(target)
+                else:
+                    telescope.slewToRaDec(target)
+        except ObjectTooLowException, e:
+            self.err("ERROR: %s" % str(e))
+            self.exit()
     
         self.out("new position ra/dec: %s" % telescope.getPositionRaDec())
         self.out("new position:alt/az: %s" % telescope.getPositionAltAz())
@@ -202,13 +207,19 @@ class ChimeraTel (ChimeraCLI):
             self.out("tracking: enabled.")
         else:
             self.out("tracking: disabled.")
-            
+
         self.out(40*"=")
 
     def _move(self, direction, cmd, offset):
         
         offset = self._validateOffset(offset)
-        
+
+        telescope = self.telescope
+
+        self.out(40*"=")
+        self.out("current position ra/dec: %s" % telescope.getPositionRaDec())
+        self.out("current position:alt/az: %s" % telescope.getPositionAltAz())
+
         self.out(40*"=")
         self.out("moving %s arcseconds (%s) %s at %s rate... " % (offset.AS,
                                                                   offset.strfcoord(),
@@ -217,6 +228,10 @@ class ChimeraTel (ChimeraCLI):
         try:
             cmd(offset.AS, SlewRate.fromStr(self.options.rate))
             self.out("OK")
+            self.out(40*"=")
+            self.out("new position ra/dec: %s" % telescope.getPositionRaDec())
+            self.out("new position:alt/az: %s" % telescope.getPositionAltAz())
+
         except Exception, e:
             self.err("ERROR. (%s)" % e)
         
@@ -276,7 +291,7 @@ class ChimeraTel (ChimeraCLI):
         print >> sys.stdout, "aborting... ",
         sys.stdout.flush()
 
-        tel = copy.copy(telescope)
+        tel = copy.copy(self.telescope)
         if tel.isSlewing():
             tel.abortSlew()
 
