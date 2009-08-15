@@ -9,7 +9,9 @@ from chimera.core.exceptions import (ChimeraException, CantPointScopeException,
 from chimera.core.managerlocator import ManagerLocator
 
 from chimera.interfaces.camera import Shutter
+from chimera.interfaces.telescope import SlewRate
 from chimera.interfaces.pointverify import PointVerify as IPointVerify
+
 from chimera.util.position import Position
 from chimera.util.coord import Coord
 from chimera.util.image import Image
@@ -96,35 +98,35 @@ class PointVerify (ChimeraObject, IPointVerify):
         # AstrometryNet defined in util
         try:
             wcs_name = AstrometryNet.solveField(image.filename(),findstarmethod="sex") 
-        except (NoSolutionAstrometryNetException): 
+        except NoSolutionAstrometryNetException, e: 
+            raise e
             # why can't I select this exception?
             # 
             # there was no solution to this field.
             # send the telescope back to checkPointing
             # if that fails, clouds or telescope problem
             # an exception will be raised there
-            self.log.error("No WCS solution")
-            if not self.checkedpointing:
-                self.nfields += 1
-                self.currentField += 1
-                if self.nfields <= self["max_fields"] and self.checkPointing() == True:
-                    self.checkedpointing = True
-                    tel.slewToRaDec(currentImageCenter)
-                    try:
-                        self.pointVerify()
-                        return True
-                    except CanSetScopeButNotThisField:
-                        raise
-
-                else:
-                    self.checkedpointing = False
-                    self.currentField = 0
-                    raise Exception("max fields")
-
-            else:
-                self.checkedpointing = False
-                raise CanSetScopeButNotThisField("Able to set scope, but unable to verify this field %s" %(currentImageCenter))
-
+            #self.log.error("No WCS solution")
+            #if not self.checkedpointing:
+            #    self.nfields += 1
+            #    self.currentField += 1
+            #    if self.nfields <= self["max_fields"] and self.checkPointing() == True:
+            #        self.checkedpointing = True
+            #        tel.slewToRaDec(currentImageCenter)
+            #        try:
+            #            self.pointVerify()
+            #            return True
+            #        except CanSetScopeButNotThisField:
+            #            raise
+            #
+            #    else:
+            #        self.checkedpointing = False
+            #        self.currentField = 0
+            #        raise Exception("max fields")
+            #
+            #else:
+            #    self.checkedpointing = False
+            #    raise CanSetScopeButNotThisField("Able to set scope, but unable to verify this field %s" %(currentImageCenter))
         wcs = Image.fromFile(wcs_name)
         ra_wcs_center = wcs["CRVAL1"] + (wcs["NAXIS1"]/2.0 - wcs["CRPIX1"]) * wcs["CD1_1"]
         dec_wcs_center= wcs["CRVAL2"] + (wcs["NAXIS2"]/2.0 - wcs["CRPIX2"]) * wcs["CD2_2"]
@@ -138,7 +140,10 @@ class PointVerify (ChimeraObject, IPointVerify):
 
         # write down the two positions for later use in mount models
         if ( self.ntrials == 0 ):
-            logstr = "Pointing Info for Mount Model: %s %s %s" %(image["DATE-OBS"], initialPosition, currentWCS)
+            site = self.getManager().getProxy("/Site/0")
+            logstr = "Pointing Info for Mount Model: %s %s %s %s %s" %(site.LST(),
+                                                                       site.MJD(),
+                                                                       image["DATE-OBS"], initialPosition, currentWCS)
             self.log.info(logstr)
         
         delta_ra = ra_img_center - ra_wcs_center
@@ -160,7 +165,7 @@ class PointVerify (ChimeraObject, IPointVerify):
                 self.ntrials = 0
                 raise CantPointScopeException("Scope does not point with a precision of %f (RA) or %f (DEC) after %d trials\n" % (self["tolra"], self["toldec"], self["max_trials"]))
             time.sleep(5)
-            tel.moveOffset(Coord.fromD(delta_ra), Coord.fromD(delta_dec))
+            tel.moveOffset(Coord.fromD(delta_ra).AS, Coord.fromD(delta_dec).AS, rate=SlewRate.CENTER)
             self.pointVerify()
         else:
             # if we got here, we were succesfull, reset trials counter
@@ -171,6 +176,9 @@ class PointVerify (ChimeraObject, IPointVerify):
             logstr = "Pointing: final solution %s %s %s" %(image["DATE-OBS"],
                                                            currentImageCenter,
                                                            currentWCS)
+            #self.log.debug("Synchronizing telescope on %s" % currentWCS)
+            #tel.syncRaDec(currentWCS)
+            
             # *** should we sync the scope ???
             # maybe there should be an option of syncing or not
             # the first pointing in the night should sync I believe
