@@ -20,7 +20,10 @@
        margin-right: auto;;
       }
 
-      div#status { margin-top: 30px; }
+      div#status { margin-top: 30px; font-size: 1.3em; }
+
+      input#open { background-color: green; }
+      input#close{ background-color: red; }
 
     </style>
 
@@ -28,27 +31,28 @@
 
     <script type="text/javascript">
 
-      function updateDomeState() {
-        $.ajax({type: "GET", url: "/is_dome_open", dataType: "json", async: false,
-               success: function (isDomeOpen) { if (isDomeOpen) $("#action").val("Fechar cúpula!"); else $("#action").val("Abrir cúpula!");}
-        });
+      function openDome() {
+        $.ajax({type: "GET", url: "/open_dome", dataType: "text",
+          beforeSend: function() { $("input").attr("disabled", true); $("#status").text("Aguarde ...").fadeIn("fast"); },
+          success: function (msg) { $("input").attr("disabled", false); $("#status").text(msg).fadeOut(3000); }});
       }
 
-      function toggleDome() {
-        $.ajax({type: "GET", url: "/toggle_dome", dataType: "text",
-               beforeSend: function() { $("#action").attr("disabled", true); $("#status").text("Aguarde ...").fadeIn("fast"); },
-               success: function (msg) { $("#action").attr("disabled", false); $("#status").text(msg).fadeOut(3000); updateDomeState(); }});
+      function closeDome() {
+        $.ajax({type: "GET", url: "/close_dome", dataType: "text",
+          beforeSend: function() { $("input").attr("disabled", true); $("#status").text("Aguarde ...").fadeIn("fast"); },
+          success: function (msg) { $("input").attr("disabled", false); $("#status").text(msg).fadeOut(3000); }});
       }
 
       $(document).ready(function() {
       
-        updateDomeState();
-        setInterval(updateDomeState, 15000);
-
-        $("#action").click(function() {
-         toggleDome();
+        $("#open").click(function() {
+         openDome();
         });
       
+        $("#close").click(function() {
+         closeDome();
+        });
+
       });
 
     </script>
@@ -59,7 +63,8 @@
 
     <div id="control">
       <h1>Chimera</h1>
-      <input type="button" id="action" value="Fechar a cúpula!"/>
+      <input type="button" id="open" value="Abrir a cúpula!"/>
+      <input type="button" id="close" value="Fechar a cúpula!"/>
     </div>
 
     <div id="status">

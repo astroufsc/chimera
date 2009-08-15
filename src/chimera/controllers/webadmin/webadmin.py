@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 from chimera.core.chimeraobject import ChimeraObject
 from chimera.core.constants import SYSTEM_CONFIG_DIRECTORY
 
@@ -23,15 +26,22 @@ class WebAdminRoot (object):
         return simplejson.dumps(self.controller.dome.isSlitOpen())
 
     @cherrypy.expose
-    def toggle_dome (self):
+    def open_dome (self):
 
         try:
-            if self.controller.dome.isSlitOpen():
-                self.controller.dome.closeSlit()
-            else:
-                self.controller.dome.openSlit()
+            self.controller.dome.openSlit()
         except Exception:
-            return "Erro ao tentar mover a trapeira!"
+            return "Erro ao tentar abrir a cúpula!"
+
+        return "Sucesso!"
+
+    @cherrypy.expose
+    def close_dome (self):
+
+        try:
+            self.controller.dome.closeSlit()
+        except Exception:
+            return "Erro ao tentar fechar a cúpula!"
 
         return "Sucesso!"
     
@@ -51,14 +61,15 @@ class WebAdmin (ChimeraObject):
             return False
 
         cherrypy.config.update({"engine.autoreload_on": False,
+                                "server.socket_host": self.getManager().getHostname(),
+                                "server.socket_port": 8080,
                                 "log.screen": False,
                                 "log.error_file": os.path.join(SYSTEM_CONFIG_DIRECTORY, "webadmin_error.log"),
                                 "log.access_file": os.path.join(SYSTEM_CONFIG_DIRECTORY, "webadmin_access.log")})                                
 
         current_dir = os.path.dirname(os.path.abspath(__file__))
                                       
-        app_config = {"/": {"server.socket_host": self.getManager().getHostname(),
-                            "server.socket_port": 8080},
+        app_config = {"/": {},
                       "/jquery-1.3.2.js": {"tools.staticfile.on": True,
                                            "tools.staticfile.filename": os.path.join(current_dir, "jquery-1.3.2.js")}                      
                       }
