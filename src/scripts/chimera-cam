@@ -375,6 +375,7 @@ class ChimeraCam (ChimeraCLI):
                                               time.time()-currentFrameExposeStart))
 
             if ds9:
+                ds9.set("scale mode 99.5")
                 ds9.displayImage(image)
 
         @callback(self.localManager)
