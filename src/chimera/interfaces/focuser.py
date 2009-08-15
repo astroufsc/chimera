@@ -125,6 +125,11 @@ class Focuser (Interface):
         @return: Start and end positions of the focuser (start, end)
         """
 
+    def getTemperature (self):
+        """Retusn the temperature of the focuser probe
+        @rtype: float
+        """
+
     def supports (self, feature=None):
         """Ask Focuser if it supports the given feature. Feature list
         is availble on L{FocuserFeature} enum.

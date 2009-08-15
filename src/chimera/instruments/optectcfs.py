@@ -18,8 +18,10 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-import sys
+import os
 import serial
+import time
+import threading
 
 from chimera.interfaces.focuser import (InvalidFocusPositionException,
                                         FocuserFeature)
@@ -27,6 +29,8 @@ from chimera.interfaces.focuser import (InvalidFocusPositionException,
 from chimera.instruments.focuser import FocuserBase
 
 from chimera.core.lock import lock
+from chimera.core.constants import SYSTEM_CONFIG_DIRECTORY
+
 from chimera.util.enum import Enum
 
 
@@ -55,6 +59,13 @@ class OptecTCFS (FocuserBase):
         self._supports = {FocuserFeature.TEMPERATURE_COMPENSATION: True,
                           FocuserFeature.POSITION_FEEDBACK: True,
                           FocuserFeature.ENCODER: True}
+
+        # debug log
+        self._debugLog = None
+        try:
+            self._debugLog = open(os.path.join(SYSTEM_CONFIG_DIRECTORY, "optec-debug.log"), "w")
+        except IOError, e:
+            self.log.warning("Could not create meade debug file (%s)" % str(e))
 
     def __start__ (self):
         self.open()
@@ -96,6 +107,27 @@ class OptecTCFS (FocuserBase):
             return True
 
     @lock
+    def getTemperature(self):
+        
+        cmd = "FTMPRO"
+        
+        self.tty.timeout = self["open_timeout"]
+
+        self._write (cmd)
+
+        temp = self._readline (eol="\r")
+
+        if not temp:
+            raise IOError("Error getting focuser temperature (read timeout).")
+
+        temp = temp[2:-1]
+        try:
+            temp = float(temp)
+            return temp
+        except:
+            return -300
+
+    @lock
     def moveIn (self, n):
         return self._move (Direction.IN, n)
 
@@ -113,12 +145,15 @@ class OptecTCFS (FocuserBase):
         #   0 ------- 7000
         #  IN          OUT
         
-        if delta > 0:
-            return self._move (Direction.OUT, abs(delta))
-        elif delta < 0:
-            return self._move (Direction.IN, abs(delta))
-        else:
-            return True
+        try:
+            if delta > 0:
+                return self._move (Direction.OUT, abs(delta))
+            elif delta < 0:
+                return self._move (Direction.IN, abs(delta))
+            else:
+                return True
+        except InvalidFocusPositionException:
+            raise InvalidFocusPositionException("Moving to %s is outside the limits" % position)
 
     def _inRange (self, direction, n):
 
@@ -136,24 +171,18 @@ class OptecTCFS (FocuserBase):
     def _move (self, direction, steps):
 
         if not self._inRange(direction, steps):
-            raise InvalidFocusPositionException("%d is outside focuser limits." % steps)
+            raise InvalidFocusPositionException("Moving %d steps %s is outside focuser limits." % (steps, direction))
         
         if direction not in Direction:
             raise ValueError("Invalid direction '%s'." % direction)
 
         cmd = "%s%04d" % (self._directions[direction], steps)
 
-        self.log.debug ("  move sent: %s" % cmd)
-        sys.stdout.flush ()
-
         self.tty.timeout = self["move_timeout"]
         
         self._write (cmd)
 
         ack = self._readline (eol="\r")
-
-        self.log.debug ("  move ack: %s " % ack[:-2])
-        sys.stdout.flush ()
 
         if not ack:
             raise IOError("Error moving the focuser (read timeout).")
@@ -163,9 +192,6 @@ class OptecTCFS (FocuserBase):
             #ER=2 is returned and the usual * ack comes later
             ack = ack = self._readline (eol="\r")
 
-            self.log.debug ("  move ack: %s " % ack[:-2])
-            sys.stdout.flush ()
-            
             if not ack:
                 raise IOError("Error moving the focuser (read timeout).")
 
@@ -181,18 +207,14 @@ class OptecTCFS (FocuserBase):
         
         self.tty.timeout = self["open_timeout"]
 
-        self.log.debug ("  getPosition sent: %s" % cmd)
-        sys.stdout.flush ()
-        
         self._write (cmd)
 
         ack = self._readline (eol="\r")
 
-        self.log.debug ("  getPosition ack: %s" % ack)
-        sys.stdout.flush ()
-
         if not ack:
-            raise IOError("Error getting focuser position (read timeout).")
+            # try again
+            return self.getPosition()
+            #raise IOError("Error getting focuser position (read timeout).")
 
         # parse ack and returns
         try:
@@ -217,15 +239,9 @@ class OptecTCFS (FocuserBase):
 
         self.tty.timeout = self["open_timeout"]
 
-        self.log.debug ("  setMode sent: %s" % cmd)
-        sys.stdout.flush ()
-       
         self._write (cmd)
 
         ack = self._readline (eol="\r")
-
-        self.log.debug ("  setMode ack: %s" % ack)
-        sys.stdout.flush ()
 
         if not ack:
             raise IOError("Error trying to set focuser mode"
@@ -239,6 +255,12 @@ class OptecTCFS (FocuserBase):
     #
     # tty
     #
+
+    def _debug(self, msg):
+        if self._debugLog:
+            print >> self._debugLog, time.time(), threading.currentThread().getName(), msg
+            self._debugLog.flush()
+
     def _read(self, n = 1):
 
         if not self.tty.isOpen():
@@ -256,6 +278,7 @@ class OptecTCFS (FocuserBase):
         self.tty.flushInput()
         
         ret = self.tty.readline(None, eol)
+        self._debug("[read ] %s" % repr(ret))
 
         if ret:
             return ret
@@ -275,6 +298,8 @@ class OptecTCFS (FocuserBase):
             raise IOError("Device not open")
 
         self.tty.flushOutput()
-        
+
+        self._debug("[write] %s" % (repr(data+eol)))
+
         return self.tty.write("%s%s" % (data, eol))
 

@@ -49,7 +49,7 @@ class ChimeraFocus (ChimeraCLI):
         self.addHelpGroup("AUTOFOCUS", "Autofocus")
         self.addParameters(dict(name="autofocus_step", long="step", type="int", helpGroup="AUTOFOCUS",
                                 help="Defines autofocus step.", metavar="STEP", default=500),
-                           dict(name="autofocus_exptime", long="exptime", type="float", helpGroup="AUTOFOCUS",
+                           dict(name="autofocus_exptime", short="-t", long="exptime", type="float", helpGroup="AUTOFOCUS",
                                 help="Defines autofocus frame exposure time.", metavar="EXPTIME", default=10.0),
                            dict(name="autofocus_debug", long="debug", helpGroup="AUTOFOCUS",
                                 help="Run an autofocus debug session using data from PREVIOUS_RUN_DIR.",
@@ -126,6 +126,10 @@ class ChimeraFocus (ChimeraCLI):
         self.out("Focuser: %s (%s)" % (self.focuser.getLocation(), self.focuser["device"]))
         self._currentPosition(options)
         self.out("Valid range: %d-%d" % self.focuser.getRange())
+
+        if self.focuser.supports(FocuserFeature.TEMPERATURE_COMPENSATION):
+            self.out("Temperature: %.2f oC" % self.focuser.getTemperature())
+
         if self.options.verbose:
             self.out("="*40)
             self.out("Supports:")
@@ -161,6 +165,7 @@ class ChimeraFocus (ChimeraCLI):
             if ds9:
                 ds9.displayFile(frame.filename())
                 ds9.set("regions command { circle %d %d %d}" % (int(star["XWIN_IMAGE"]), int(star["YWIN_IMAGE"]), int(star["FWHM_IMAGE"])))
+                ds9.set("scale mode 99.5")
                 #ds9.xpaset("pan to %d %d physical" % (int(star["XWIN_IMAGE"]), int(star["YWIN_IMAGE"])))
                         
         self.autofocus.stepComplete += stepComplete
