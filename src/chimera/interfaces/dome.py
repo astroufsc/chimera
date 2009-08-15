@@ -148,6 +148,18 @@ class Dome (Interface):
         @rtype: bool
         """
 
+    def lightsOn (self):
+        """Ask the dome to turn on flat lights, if any.
+        @return: None
+        @rtype: None
+        """
+
+    def lightsOff (self):
+        """Ask the dome to turn off flat lights, if any.
+        @return: None
+        @rtype: None
+        """
+
     def getAz (self):
         """Get the current dome Azimuth (Az)
 

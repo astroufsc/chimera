@@ -22,10 +22,14 @@
 import time
 import sys
 import random
+import threading
 
 from chimera.core.manager  import Manager
 from chimera.core.callback import callback
 from chimera.core.site     import Site
+
+from chimera.util.coord import Coord
+from chimera.util.position import Position
 
 from chimera.interfaces.dome   import InvalidDomePositionException
 
@@ -47,60 +51,62 @@ class TestDome (object):
                                             "altitude": "1896",
                                             "utc_offset": "-3"})
 
-        if "REAL" in sys.argv:
-            from chimera.instruments.domelna40cm import DomeLNA40cm
-            from chimera.instruments.meade       import Meade
-
-            self.manager.addClass(Meade, "meade", {"device": "/dev/ttyUSB0"})
-            self.manager.addClass(DomeLNA40cm, "lna40", {"device": "/dev/ttyS0",
-                                                         "telescope": "/Meade/0"})
-            self.DOME = "/DomeLNA40cm/0"
-            self.TELESCOPE = "/Meade/0"
-        else:
-            from chimera.instruments.fakedome      import FakeDome
-            from chimera.instruments.faketelescope import FakeTelescope
-
-            self.manager.addClass(FakeTelescope, "fake")
-            self.manager.addClass(FakeDome, "fake", {"telescope": "/FakeTelescope/0"})
-            self.DOME = "/FakeDome/0"
-            self.TELESCOPE = "/FakeTelescope/0"
+        from chimera.instruments.domelna40cm import DomeLNA40cm
+        from chimera.instruments.meade       import Meade
+        
+        self.manager.addClass(Meade, "meade", {"device": "/dev/ttyS6"})
+        self.manager.addClass(DomeLNA40cm, "lna40", {"device": "/dev/ttyS9",
+                                                     "telescope": "/Meade/0",
+                                                     "mode": "Track"})
+        self.DOME = "/DomeLNA40cm/0"
+        self.TELESCOPE = "/Meade/0"
 
         @callback(self.manager)
         def slewBeginClbk(target):
-            print
             print time.time(), "[dome] Slew begin. target=%s" % str(target)
-            print
+            sys.stdout.flush()
 
         @callback(self.manager)
         def slewCompleteClbk(position):
-            print
             print time.time(), "[dome] Slew complete. position=%s" % str(position)
-            print
+            sys.stdout.flush()
 
         @callback(self.manager)
         def abortCompleteClbk(position):
-            print
             print time.time(), "[dome] Abort slew at position=%s" % str(position)
-            print
+            sys.stdout.flush()
 
         @callback(self.manager)
         def slitOpenedClbk(position):
-            print
             print time.time(), "[dome] Slit opened with dome at at position=%s" % str(position)
-            print
+            sys.stdout.flush()
 
         @callback(self.manager)
         def slitClosedClbk(position):
-            print
             print time.time(), "[dome] Slit closed with dome at at position=%s" % str(position)
-            print
+            sys.stdout.flush()
+
+        @callback(self.manager)
+        def slewBeginTel(target):
+            print time.time(), "[tel] Slew begin. target=%s" % str(target)
+            sys.stdout.flush()
+
+        @callback(self.manager)
+        def slewCompleteTel(position):
+            print time.time(), "[tel] Slew complete. position=%s" % str(position)
+            sys.stdout.flush()
 
         dome = self.manager.getProxy(self.DOME)
         dome.slewBegin    += slewBeginClbk
         dome.slewComplete += slewCompleteClbk
         dome.abortComplete+= abortCompleteClbk
         dome.slitOpened   += slitOpenedClbk
-        dome.slitClosed   += slitClosedClbk     
+        dome.slitClosed   += slitClosedClbk
+
+        tel = self.manager.getProxy(self.TELESCOPE)
+        tel.slewBegin    += slewBeginTel
+        tel.slewComplete += slewCompleteTel
+     
 
     def teardown (self):
         self.manager.shutdown()
@@ -111,22 +117,38 @@ class TestDome (object):
 
         dome.track()
 
-        for i in range(25):
-            ra  = "%d %d 00" % (random.randint(0,23), random.randint(0,59))
+        for i in range(10):
+            ra  = "%d %d 00" % (random.randint(7,15), random.randint(0,59))
             dec = "%d %d 00" % (random.randint(-90,0), random.randint(0,59))
-            tel.slewToRaDec((ra, dec))
-            time.sleep(random.randint(0,10))
+            tel.slewToRaDec(Position.fromRaDec(ra, dec))
+            dome.syncWithTel()
 
-        dome.syncWithTel()
+            time.sleep(random.randint(0,10))
 
     def test_stress_dome_slew (self):
 
         dome = self.manager.getProxy(self.DOME)
 
-        for i in range(25):
+        print
+
+        quit = threading.Event()
+
+        def get_az_stress ():
+            while not quit.isSet():
+                dome.getAz()
+                time.sleep(0.5)
+
+        az_thread = threading.Thread(target=get_az_stress)
+        az_thread.start()
+
+        for i in range(10):
             az = random.randint(0,359)
-            dome.slewToAz(az)
-            assert dome.getAz() == az
+            dome.slewToAz(Coord.fromD(az))
+            time.sleep(5)
+
+        quit.set()
+        az_thread.join()
+
 
     def test_get_az (self):
         dome = self.manager.getProxy(self.DOME)

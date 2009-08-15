@@ -44,6 +44,9 @@ class ChimeraDome (ChimeraCLI):
         
         self.addHelpGroup("COMMANDS", "Commands")
 
+        self.addHelpGroup("LIGHT", "Dome lights control")
+
+
     @action(help="Open dome slit", helpGroup="COMMANDS", actionGroup="SLIT")
     def open(self, options):
         self.out("Opening dome slit ... ", end="")
@@ -54,6 +57,18 @@ class ChimeraDome (ChimeraCLI):
     def close(self, options):
         self.out("Closing dome slit ... ", end="")
         self.dome.closeSlit()
+        self.out("OK")
+
+    @action(long="lights-off", help="Turn flat light off", helpGroup="LIGHT", actionGroup="LIGHT")
+    def lightsOff(self, options):
+        self.out("Turning flat lights off ... ", end="")
+        self.dome.lightsOff()
+        self.out("OK")
+
+    @action(long="lights-on", help="Turn flat light on", helpGroup="LIGHT", actionGroup="LIGHT")
+    def lightsOn(self, options):
+        self.out("Turning flat lights on ... ", end="")
+        self.dome.lightsOn()
         self.out("OK")
 
     @action(help="Track the telescope", helpGroup="COMMANDS", actionGroup="TRACKING")

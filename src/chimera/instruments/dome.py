@@ -20,6 +20,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 import Queue
+import threading
 
 from chimera.core.chimeraobject import ChimeraObject
 
@@ -51,9 +52,12 @@ class DomeBase (ChimeraObject, Dome):
         # to cache for az_resolution of the dome
         self.controlAzRes = None
 
-    def __start__(self):
+        self._waitAfterSlew = threading.Event()
+        self._waitAfterSlew.clear()
 
-        self.setHz(1/4.0)
+    def __start__ (self):
+
+        self.setHz(1/4.)
 
         tel = self.getTelescope()
         if tel:
@@ -71,6 +75,8 @@ class DomeBase (ChimeraObject, Dome):
             self.log.warning ("Invalid dome mode: %s. "
                               "Will use Stand mode instead.")
             self.stand ()
+
+        self.log.debug("Dome started in %s mode." % self.getMode())
 
         return True
 
@@ -150,7 +156,6 @@ class DomeBase (ChimeraObject, Dome):
             return True
 
         if not self.queue.empty():
-            self.log.debug("[control] processing queue... %d item(s)." % self.queue.qsize())
             self._processQueue()
             return True
 
@@ -162,9 +167,13 @@ class DomeBase (ChimeraObject, Dome):
                 
             if self._tel.isSlewing():
                 self.log.debug("[control] telescope slewing... not checking az.")
+                self._waitAfterSlew.set()
                 return True
 
             self._telescopeChanged(self._tel.getAz())
+            # flag all waiting threads that the control loop already checked the new telescope position
+            # probably adding new azimuth to the queue
+            self._waitAfterSlew.clear()
 
         except ObjectNotFoundException:
             raise ChimeraException("Couldn't found the selected telescope."
@@ -178,10 +187,10 @@ class DomeBase (ChimeraObject, Dome):
             az = Coord.fromDMS(az)
 
         if self._needToMove(az):
-            self.log.debug("[control] adding %s to the queue." % az)
+            self.log.debug("[control] adding %s to the queue (delta=%.2f)" % (az, abs(self.getAz()-az)))
             self.queue.put(az)
         else:
-            self.log.debug("[control] telescope still in the slit, standing"
+            self.log.debug("[control] standing"
                            " (dome az=%.2f, tel az=%.2f, delta=%.2f.)" % (self.getAz(), az, abs(self.getAz()-az)))
 
 
@@ -189,9 +198,14 @@ class DomeBase (ChimeraObject, Dome):
         return abs(az - self.getAz()) >= self["az_resolution"]
 
     def _processQueue (self):
-        
+
+        if self._waitAfterSlew.isSet():
+            self._telescopeChanged(self._tel.getAz())
+
         if self.queue.empty(): return
 
+        self.log.debug("[control] processing queue... %d item(s)." % self.queue.qsize())
+            
         while not self.queue.empty():
 
             target = self.queue.get()
@@ -226,12 +240,15 @@ class DomeBase (ChimeraObject, Dome):
     @lock
     def syncWithTel(self):
         self.syncBegin()
-        self._processQueue()
+
+        if self.getMode() != Mode.Stand:
+            self._processQueue()
+
         self.syncComplete()
 
     @lock
     def isSyncWithTel(self):
-        return self.queue.empty()
+        return self._needToMove(self._tel.getAz())
 
     def getMode(self):
         return self._mode
