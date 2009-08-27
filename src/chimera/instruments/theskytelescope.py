@@ -24,21 +24,16 @@ import subprocess
 import logging
 import time
 
-from chimera.core.site import Site
 from chimera.core.exceptions import ChimeraException
 
 from chimera.util.coord    import Coord
 from chimera.util.position import Position
 
 from chimera.instruments.telescope import TelescopeBase
-from chimera.instruments.focuser   import FocuserBase
-
+from chimera.instruments.dcfocuser import DCFocuser
 from chimera.interfaces.telescope  import PositionOutsideLimitsException
-from chimera.interfaces.focuser    import FocuserFeature
-
 
 log = logging.getLogger(__name__)
-
 
 if sys.platform == "win32":
     # handle COM multithread support
@@ -70,14 +65,13 @@ def com (func):
     return com_wrapper
 
 
-class TheSkyTelescope (TelescopeBase, FocuserBase):
+class TheSkyTelescope (TelescopeBase, DCFocuser):
 
-    __config__ = {"thesky": [5, 6],
-                  'site':   '/Site/0'}
+    __config__ = {"thesky": [5, 6]}
 
     def __init__ (self):
         TelescopeBase.__init__ (self)
-        FocuserBase.__init__ (self)
+        DCFocuser.__init__(self)
 
         self._thesky = None
         self._telescope = None
@@ -85,25 +79,16 @@ class TheSkyTelescope (TelescopeBase, FocuserBase):
         self._idle_time = 0.2
         self._target = None
 
-        self._supports = {FocuserFeature.TEMPERATURE_COMPENSATION: False,
-                          FocuserFeature.POSITION_FEEDBACK: False,
-                          FocuserFeature.ENCODER: False}
-
-        try:
-            self._site = self.getManager().getProxy(self['site'])
-            self._gotSite=True
-        except:
-            self._site = Site()
-            self._gotSite=False
-
     @com
     def __start__ (self):
         self.open()
+        super(TheSkyTelescope, self).__start__()
         return True
 
     @com
     def __stop__ (self):
         self.close()
+        super(TheSkyTelescope, self).__stop__()        
         return True
 
     @com
@@ -203,8 +188,11 @@ class TheSkyTelescope (TelescopeBase, FocuserBase):
 
         try:
             self._telescope.Asynchronous = 1
-            self.slewBegin((position.ra, position.dec))
-            self._telescope.SlewToRaDec (position.ra.H, position.dec.D, "chimera")
+
+            position_now = self._getFinalPosition(position)
+            
+            self.slewBegin((position_now.ra, position_now.dec))
+            self._telescope.SlewToRaDec (position_now.ra.H, position_now.dec.D, "chimera")
 
             while not self._telescope.IsSlewComplete:
 
@@ -290,132 +278,50 @@ class TheSkyTelescope (TelescopeBase, FocuserBase):
     def stopTracking (self):
         self._telescope.SetTracking(0,1,0,0)
 
-
-    def _getSite(self):
-        if self._gotSite:
-            self._site._transferThread()
-            return self._site
-        else:
-            try:
-                self._site = self.getManager().getProxy(self['site'])
-                self._gotSite=True
-            except:
-                pass
-        return self._site
-    
     @com
     def moveEast (self, offset, slewRate = None):
-#        newRa = self.getRa() + Coord.fromH(offset/3600)
-#        self.slewToRaDec(Position.fromRaDec(newRa, self.getDec()))
         self._telescope.Asynchronous = 0
         self._telescope.Jog(offset.AS / 60.0, 'East')
         self._telescope.Asynchronous = 1        
 
     @com
     def moveWest (self, offset, slewRate = None):
-#        newRa = self.getRa() - Coord.fromH(offset/3600)
-#        self.slewToRaDec(Position.fromRaDec(newRa, self.getDec()))
         self._telescope.Asynchronous = 0
         self._telescope.Jog(offset.AS / 60.0, 'West')
         self._telescope.Asynchronous = 1        
 
     @com
     def moveNorth (self, offset, slewRate = None):
-#        newDec = self.getDec() + Coord.fromD(offset/3600)
-#        self.slewToRaDec(Position.fromRaDec(self.getRa(),newDec))
         self._telescope.Asynchronous = 0
         self._telescope.Jog(offset.AS / 60.0, 'North')
         self._telescope.Asynchronous = 1        
 
     @com
     def moveSouth (self, offset, slewRate = None):
-#        newDec = self.getDec() - Coord.fromD(offset/3600)
-#        self.slewToRaDec(Position.fromRaDec(self.getRa(),newDec))
         self._telescope.Asynchronous = 0
         self._telescope.Jog(offset.AS / 60.0, 'South')
         self._telescope.Asynchronous = 1
+
+    @lock
+    def syncRaDec(self, position):
+        self._telescope.Sync (position.ra.H, position.dec.D, "chimera")
+        self.syncComplete(position)            
+
+    #
+    # focuser implementation
+    #
     
-    def moveIn (self, n):
-        """
-        Move the focuser IN by n steps.
+    def _move (self, direction, steps):
 
-        Driver should interpret n as whatever it support (time pulse
-        or absolute encoder positions).  if only time pulse is
-        available, driver must use pulse_in_multiplier as a multiple
-        to determine how much time the focuser will move
-        IN. pulse_in_multiplier and n will be in miliseconds.
+        pulses = int(steps * self["dt"])
 
-        @note: Drivers must raise InvalidFocusPositionException if the
-        request position couldn't be achived.
-
-        @type  n: int
-        @param n: Number of steps to move IN.
-
-        @rtype   : None
-        """
-        while(n > 1000):
-            n-=1000
-            self._telescope.FocusInFast()
-        while(n > 0):
-            n-=1
-            self._telescope.FocusInSlow()
-        
-
-
-    def moveOut (self, n):
-        """
-        Move the focuser OUT by n steps.
-
-        Driver should interpret n as whatever it support (time pulse
-        or absolute encoder positions).  if only time pulse is
-        available, driver must use pulse_out_multiplier as a multiple
-        to determine how much time the focuser will move
-        OUT. pulse_out_multiplier and n will be in miliseconds.
-
-        @note: Drivers must raise InvalidFocusPositionException if the
-        request position couldn't be achived.
-
-        @type  n: int
-        @param n: Number of steps to move OUT.
-
-        @rtype   : None
-        """
-        while(n > 1000):
-            n-=1000
-            self._telescope.FocusOutFast()
-        while(n > 0):
-            n-=1
-            self._telescope.FocusOutSlow()
-
-    def moveTo (self, position):
-        """
-        Move the focuser to the select position.
-
-        If the focuser doesn't support absolute position movement, it
-        MUST return False.
-
-        @note: Drivers must raise InvalidFocusPositionException if the
-        request position couldn't be achived.
-
-        @type  position: int
-        @param position: Position to move the focuser.
-
-        @rtype   : None
-        """
-        return False
-
-    def getPosition (self):
-        """
-        Gets the current focuser position.
-
-        @note: If the driver doesn't support position readout it MUST
-        raise NotImplementedError.
-
-        @rtype   : int
-        @return  : Current focuser position.
-        """
-        raise NotImplementedError()
-        
+        if direction == Direction.IN:
+            method = self._telescope.FocusInSlow
+        else:
+            method = self._telescope.FocusOutSlow
+            
+        for i in pulses:
+            method()
     
     def getRange (self):
         """Gets the focuser total range
