@@ -87,19 +87,21 @@ class DCFocuser (FocuserBase):
         # assume focuser is at the end of course
         self._position = self.getRange()[1]
 
-        # move focuser to 0 and restore last time position from there.
-        self.moveTo(0)
-
         # restore last position
+        lastPosition = 0
+
         filename = os.path.join(SYSTEM_CONFIG_DIRECTORY, "dc_focuser.memory")
         if os.path.exists(filename):
             try:
-                self.moveTo(int(open(filename, 'r').read()))
+                lastPosition = int(open(filename, 'r').read())
             except ValueError:
                 self.log.warning("Content of dc_focuser.memory file is invalid. Removing it.")
                 os.unlink(filename)
 
         self._lastPositionLog = open(filename, 'w')
+
+        # move focuser to our "zero"
+        self.moveTo(lastPosition)
 
         return True
 
@@ -129,8 +131,9 @@ class DCFocuser (FocuserBase):
             elif delta < 0:
                 self._move (Direction.IN, abs(delta))
         except:
-            pass
+            return
 
+        self._savePosition(position)
         self._position = position
         
         return True
