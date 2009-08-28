@@ -323,9 +323,9 @@ class TheSkyTelescope (TelescopeBase, DCFocuser):
         self.log.debug("asked to move %d steps %s. applying %d pulses" % (steps, str(direction), pulses))
 
         if direction == Direction.IN:
-            method = self._telescope.FocusInSlow
-        else:
             method = self._telescope.FocusOutSlow
+        else:
+            method = self._telescope.FocusInSlow
             
         for i in range(pulses):
             method()

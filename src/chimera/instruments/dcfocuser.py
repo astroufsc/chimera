@@ -105,7 +105,9 @@ class DCFocuser (FocuserBase):
 
         # move focuser to our "zero" if needed
         if lastPosition is None:
+            self.log.info("Focuser not calibrated. Wait ...")
             self.moveTo(0)
+            self.log.info("Calibration DONE")
 
         return True
 
