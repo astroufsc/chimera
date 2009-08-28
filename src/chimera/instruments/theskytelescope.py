@@ -196,7 +196,8 @@ class TheSkyTelescope (TelescopeBase, DCFocuser):
 
             position_now = self._getFinalPosition(position)
             
-            self.slewBegin((position_now.ra, position_now.dec))
+            self.slewBegin(positionNow)
+            #self.slewBegin((position_now.ra, position_now.dec))
             self._telescope.SlewToRaDec (position_now.ra.H, position_now.dec.D, "chimera")
 
             while not self._telescope.IsSlewComplete:
