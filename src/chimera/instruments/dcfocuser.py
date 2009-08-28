@@ -104,7 +104,7 @@ class DCFocuser (FocuserBase):
             self._position = lastPosition
 
         # move focuser to our "zero" if needed
-        if lastPosition is not None:
+        if lastPosition is None:
             self.moveTo(0)
 
         return True
