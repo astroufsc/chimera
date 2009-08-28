@@ -89,8 +89,8 @@ class DCFocuser (FocuserBase):
 
         self._lastPositionLog = open(filename, 'w')
 
-        self._range = int(self["dt"]/float(self["pulse_dt"]))
-        if self._range <= 0:
+        self._range = (0, int(self["dt"]/float(self["pulse_dt"])))
+        if self._range[1] <= 0:
             self.log.warning("Invalid dt and pulse_dt constants, focuser range negative.")
             return False
 
