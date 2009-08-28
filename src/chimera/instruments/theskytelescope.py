@@ -86,12 +86,14 @@ class TheSkyTelescope (TelescopeBase, DCFocuser):
     def __start__ (self):
         self.open()
         super(TheSkyTelescope, self).__start__()
+        super(DCFocuser, self).__start__()
         return True
 
     @com
     def __stop__ (self):
         self.close()
         super(TheSkyTelescope, self).__stop__()        
+        super(DCFocuser, self).__stop__()
         return True
 
     @com
