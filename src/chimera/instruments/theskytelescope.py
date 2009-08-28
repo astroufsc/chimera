@@ -327,7 +327,7 @@ class TheSkyTelescope (TelescopeBase, DCFocuser):
         else:
             method = self._telescope.FocusOutSlow
             
-        for i in pulses:
+        for i in range(pulses):
             method()
     
     def getMetadata (self, request):

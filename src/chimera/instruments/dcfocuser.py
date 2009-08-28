@@ -60,7 +60,9 @@ class DCFocuser (FocuserBase):
     give this number for you.
     """
 
-    __config__ = {"dt": 1000,     # how many milliseconds should I pulse to traverse the whole focus range (end-to-end).
+    __config__ = {"dt": 1000, # how many milliseconds/pulses should I
+                              # use to traverse the whole focus range
+                              # (end-to-end).
                   "pulse_dt": 10} # unit pulse length (ms)
 
     def __init__ (self):
