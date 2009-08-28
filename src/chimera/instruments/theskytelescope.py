@@ -316,7 +316,7 @@ class TheSkyTelescope (TelescopeBase, DCFocuser):
     # focuser implementation
     #
     
-    def _move (self, direction, steps):
+    def _moveTo (self, direction, steps):
 
         pulses = int(steps * self["pulse_dt"])
 

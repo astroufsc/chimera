@@ -123,12 +123,17 @@ class DCFocuser (FocuserBase):
 
         delta = position - current
 
-        if delta > 0:
-            return self._move (Direction.OUT, abs(delta))
-        elif delta < 0:
-            return self._move (Direction.IN, abs(delta))
-        else:
-            return True
+        try:
+            if delta > 0:
+                self._move (Direction.OUT, abs(delta))
+            elif delta < 0:
+                self._move (Direction.IN, abs(delta))
+        except:
+            pass
+
+        self._position = position
+        
+        return True
 
     def _move (self, direction, steps):
 
@@ -137,6 +142,8 @@ class DCFocuser (FocuserBase):
         
         if direction not in Direction:
             raise ValueError("Invalid direction '%s'." % direction)
+
+        self._moveTo(direction, steps)
 
         return True
 
