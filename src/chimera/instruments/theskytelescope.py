@@ -1,3 +1,4 @@
+
 #! /usr/bin/env python
 # -*- coding: iso-8859-1 -*-
 
@@ -25,9 +26,11 @@ import logging
 import time
 
 from chimera.core.exceptions import ChimeraException
+from chimera.core.lock     import lock
 
 from chimera.util.coord    import Coord
 from chimera.util.position import Position
+from chimera.util.enum     import Enum
 
 from chimera.instruments.telescope import TelescopeBase
 from chimera.instruments.dcfocuser import DCFocuser
@@ -63,6 +66,9 @@ def com (func):
             raise ChimeraException(str(e))
 
     return com_wrapper
+
+
+Direction = Enum("IN", "OUT")
 
 
 class TheSkyTelescope (TelescopeBase, DCFocuser):
@@ -333,6 +339,6 @@ class TheSkyTelescope (TelescopeBase, DCFocuser):
     def getMetadata (self, request):
         headers = []
         headers += super(TelescopeBase, self).getMetadata(request)
-        headers += super(FocuserBase, self).getMetadata(request)
+        headers += super(DCFocuser, self).getMetadata(request)
         return headers
 
