@@ -86,14 +86,14 @@ class TheSkyTelescope (TelescopeBase, DCFocuser):
     def __start__ (self):
         self.open()
         super(TheSkyTelescope, self).__start__()
-        super(DCFocuser, self).__start__()
+        #super(DCFocuser, self).__start__()
         return True
 
     @com
     def __stop__ (self):
         self.close()
         super(TheSkyTelescope, self).__stop__()        
-        super(DCFocuser, self).__stop__()
+        #super(DCFocuser, self).__stop__()
         return True
 
     @com
@@ -196,7 +196,7 @@ class TheSkyTelescope (TelescopeBase, DCFocuser):
 
             position_now = self._getFinalPosition(position)
             
-            self.slewBegin(positionNow)
+            self.slewBegin(position_now)
             #self.slewBegin((position_now.ra, position_now.dec))
             self._telescope.SlewToRaDec (position_now.ra.H, position_now.dec.D, "chimera")
 
