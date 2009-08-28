@@ -30,10 +30,9 @@ from chimera.core.lock     import lock
 
 from chimera.util.coord    import Coord
 from chimera.util.position import Position
-from chimera.util.enum     import Enum
 
 from chimera.instruments.telescope import TelescopeBase
-from chimera.instruments.dcfocuser import DCFocuser
+from chimera.instruments.dcfocuser import DCFocuser, Direction
 from chimera.interfaces.telescope  import PositionOutsideLimitsException
 
 log = logging.getLogger(__name__)
@@ -67,8 +66,6 @@ def com (func):
 
     return com_wrapper
 
-
-Direction = Enum("IN", "OUT")
 
 
 class TheSkyTelescope (TelescopeBase, DCFocuser):
@@ -329,13 +326,6 @@ class TheSkyTelescope (TelescopeBase, DCFocuser):
         for i in pulses:
             method()
     
-    def getRange (self):
-        """Gets the focuser total range
-        @rtype: tuple
-        @return: Start and end positions of the focuser (start, end)
-        """
-        return (0,0)
-
     def getMetadata (self, request):
         headers = []
         headers += super(TelescopeBase, self).getMetadata(request)
