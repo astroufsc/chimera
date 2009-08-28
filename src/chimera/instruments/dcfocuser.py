@@ -84,11 +84,8 @@ class DCFocuser (FocuserBase):
             self.log.warning("Invalid dt and pulse_dt constants, focuser range negative.")
             return False
 
-        # assume focuser is at the end of course
-        self._position = self.getRange()[1]
-
         # restore last position
-        lastPosition = 0
+        lastPosition = None
 
         filename = os.path.join(SYSTEM_CONFIG_DIRECTORY, "dc_focuser.memory")
         if os.path.exists(filename):
@@ -100,6 +97,12 @@ class DCFocuser (FocuserBase):
 
         self._lastPositionLog = open(filename, 'w')
 
+        # assume focuser is at the same position last time unless it was zero
+        if lastPosition is None:
+            self._position = self.getRange()[1]
+        else:
+            self._position = lastPosition
+
         # move focuser to our "zero"
         self.moveTo(lastPosition)
 
@@ -107,7 +110,7 @@ class DCFocuser (FocuserBase):
 
     def _savePosition(self, position):
         self._lastPositionLog.truncate()
-        self._lastPositionLog.write(position)
+        self._lastPositionLog.write(str(position))
         self._lastPositionLog.flush()
         
     @lock
