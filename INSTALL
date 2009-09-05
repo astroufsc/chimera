@@ -8,9 +8,15 @@ on your distribution.
 
 python-numpy python-dev python-numpy libusb-dev swig saods9 sextractor astrometry.net
 
+python-sqlalchemy (it doesn't install automatically for me)
+
 developer extras:
 
  nosetests
+
+documentation extras:
+
+epydoc (it doesn't install automatically for me)
 
 After that,
 
@@ -18,7 +24,7 @@ $ cd <uncompressed_chimera_dir>
 # su
 # python setup.py install 
 
-setup.py must be run as root user to install Chimera in a system-wide basis.
+setup.py must be run as root user to install Chimera on a system-wide basis.
 
 Windows install:
 
@@ -27,6 +33,18 @@ Use SVN Checkout and download the code.
 If you use the normal (not develop) install, after checking out do 
 
 python setup.py install
+
+The following has happened:
+
+No locale packages or download links found for pywin32==210
+error: Could not find suitable distribution for Requirement.parse('pywin32==210')
+
+PH suggestion:
+
+Na página http://sourceforge.net/projects/pywin32/files/, procure pelo
+Build 210 e baixe o executavel apropriado ao Python instalado na
+máquina e execute-o. Depois disso rode o setup.py do Chimera
+novamente. Deve ser o suficiente.
 
 just like the unix version
 
