@@ -3,12 +3,14 @@ from chimera.core.exceptions import printException
 
 from chimera.gui.modules.canvas import FITS, FITSCanvas
 from chimera.gui.module import ChimeraGUIModule
+from chimera.util.image import Image
 
 import gtk
 import glib
 import gdl
 
 import time
+import urllib
 import os
 import threading
 
@@ -220,7 +222,10 @@ class CameraView:
         def ui():
             self.exposureProgress.set_fraction(1.0)
             self.exposureProgress.set_text("readout and save complete ...")
-            self.module.imageViewer.newImage(image)
+            url = image.http()
+            imageFileName = urllib.urlretrieve(url, filename=os.path.basename(image.filename()))[0]
+            imageFile = Image.fromFile(imageFileName)
+            self.module.imageViewer.newImage(imageFile)
         glib.idle_add(ui)
 
     def end(self):
