@@ -27,7 +27,7 @@ class Machine(threading.Thread):
         self.__stateLock.acquire()
         try:
             if not state: return self.__state
-            log.debug("Chaning state, from %s to %s." % (self.__state, state))
+            log.debug("Changing state, from %s to %s." % (self.__state, state))
             self.__state = state
             self.wakeup()
         finally:
@@ -35,7 +35,7 @@ class Machine(threading.Thread):
 
     def run(self):
         log.info("Starting scheduler machine")
-        self.state(State.DIRTY)
+        self.state(State.PAUSED)
 
         while self.state() != State.SHUTDOWN:
 
@@ -68,6 +68,9 @@ class Machine(threading.Thread):
             elif self.state() == State.BUSY:
                 log.debug("[busy] waiting tasks to finish..")
                 pass
+
+            elif self.state() == State.PAUSED:
+                log.debug("[paused] waiting for someone to make me idle or dirty")
 
             elif self.state() == State.SHUTDOWN:
                 log.debug("[shutdown] should die soon.")

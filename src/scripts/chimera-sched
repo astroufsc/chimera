@@ -18,87 +18,151 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-from elixir import *
+from chimera.core.cli import ChimeraCLI, action
+from chimera.util.position import Position
+from chimera.core.constants import DEFAULT_PROGRAM_DATABASE
 
 import re
 import sys
+import os
+import shutil
 
-from chimera.util.position import Position
-from chimera.controllers.scheduler.model import *
-
-if __name__ == '__main__':
-
-    # RA Dec  Epoch TYPE   NAME   N*(f1:t1:n1, f2:t2:n2, ......)
-    #0   0    2000 FLAT   flat1  3*(RED:10:1, BLUE:8:2, GREEN:9:3)
-    #0   0    2000 ZERO   zero1  1*(CLEAR:10:10)
-    #0   0    2000 DARK   dark1  4*(RED:10:1, RED:20:1, RED:30:1)
-    #14:00:00 -30:00:00  2000 OBJECT  obj1 2*(RED:7:1, BLUE:6:2, GREEN:5:2)
-    #15:00:00 -30:00:00  2000 OBJECT  obj1 2*(RED:7:1, BLUE:6:2, GREEN:5:2)
+class ChimeraSched (ChimeraCLI):
     
-    if len(sys.argv) < 2:
-        print "Usage: %s program.txt" % sys.argv[0]
-        sys.exit(1)
+    def __init__ (self):
+        ChimeraCLI.__init__(self, "chimera-sched", "Scheduler controller", 0.1, port=9010)
+    
 
-    f = open(sys.argv[1], "r")
+        self.addHelpGroup("SCHEDULER", "Scheduler")
+        self.addController(name="scheduler", cls="Scheduler", required=True,
+                           help="Scheduler controller to be used", helpGroup="SCHEDULER")
 
-    lineRe = re.compile('(?P<ra>[\d:-]+)\s+(?P<dec>\+?[\d:-]+)\s+(?P<epoch>[\d]+)\s+(?P<imagetype>[\w]+)'
-                        '\s+(?P<objname>[\w-]+)\s+(?P<exposures>[\w\d\s:\*\(\),]*)')
-    programs = []
+        databaseHelp = """Database options\n\tThe file must have the following format:
 
-    for i, line in enumerate(f):
+        RA Dec  Epoch TYPE   NAME   N*(f1:t1:n1, f2:t2:n2, ......)
+        0   0    2000 FLAT   flat1  3*(RED:10:1, BLUE:8:2, GREEN:9:3)
+        0   0    2000 ZERO   zero1  1*(CLEAR:10:10)
+        0   0    2000 DARK   dark1  4*(RED:10:1, RED:20:1, RED:30:1)
+        14:00:00 -30:00:00  2000 OBJECT  obj1 2*(RED:7:1, BLUE:6:2, GREEN:5:2)
+        15:00:00 -30:00:00  2000 OBJECT  obj1 2*(RED:7:1, BLUE:6:2, GREEN:5:2)
+        """
 
-        if line.startswith("#"): continue
-        if len(line) == 1: continue
+        self.addHelpGroup("DB" , databaseHelp)
+        self.addHelpGroup("RUN" , "Start/Stop/Info")
 
-        matchs = lineRe.search(line)
+        self.addParameters(dict(name="filename", long="file", short="f", helpGroup="DB", default="",
+                                help="Filename of the input database.", metavar="FILENAME"))
 
-        if matchs is None:
-            print "Couldn't process line #%d" % i
-            continue
+    @action(long="new", help="Generate a new database from a text file",
+            helpGroup="DB", actionGroup="DB")
+    def generateDatabase(self, options):
 
-        params = matchs.groupdict()
-
-        position  = Position.fromRaDec(params['ra'], params['dec'], params['epoch'])
-        imagetype = params['imagetype']
-        objname   = params['objname']
-
-        multiplier, exps = params['exposures'].split("*")
+        f = None
         try:
-            multiplier = int(multiplier)
-        except ValueErro:
-            multiplier = 1
+            f = open(options.filename, "r")
+        except:
+            self.exit("Could not find '%s'." % options.filename)
+    
 
-        exps = exps.replace("(", "").replace(")", "").split(",")
-       
-        for i in range(multiplier):
+        # check if database exists
+        if os.path.exists(DEFAULT_PROGRAM_DATABASE):
+            shutil.copy(DEFAULT_PROGRAM_DATABASE, DEFAULT_PROGRAM_DATABASE+".bak")
+            os.unlink(DEFAULT_PROGRAM_DATABASE)
 
-            program = Program(name="program-%s-%03d" % (objname, i))
-            program.actions.append(Point(targetRaDec=position))
+        from elixir import session
+        from chimera.controllers.scheduler.model import (Program, Point,
+                                                         Expose, PointVerify, AutoFocus)
 
-            if i == 0:
-                program.actions.append(AutoFocus(start=2500, end=4000, step=250, filter="R", exptime=10))
-                program.actions.append(PointVerify(here=True))
+        lineRe = re.compile('(?P<ra>[\d:-]+)\s+(?P<dec>\+?[\d:-]+)\s+(?P<epoch>[\d]+)\s+(?P<imagetype>[\w]+)'
+                            '\s+(?P<objname>[\w-]+)\s+(?P<exposures>[\w\d\s:\*\(\),]*)')
+        programs = []
+    
+        for i, line in enumerate(f):
+    
+            if line.startswith("#"): continue
+            if len(line) == 1: continue
+    
+            matchs = lineRe.search(line)
+    
+            if matchs is None:
+                print "Couldn't process line #%d" % i
+                continue
+    
+            params = matchs.groupdict()
+    
+            position  = Position.fromRaDec(params['ra'], params['dec'], params['epoch'])
+            imagetype = params['imagetype']
+            objname   = params['objname']
+    
+            multiplier, exps = params['exposures'].split("*")
+            try:
+                multiplier = int(multiplier)
+            except ValueError:
+                multiplier = 1
+    
+            exps = exps.replace("(", "").replace(")", "").split(",")
+            
+            for i in range(multiplier):
+    
+                program = Program(name="program-%s-%03d" % (objname, i))
+                program.actions.append(Point(targetRaDec=position))
+    
+                if i == 0:
+                    program.actions.append(AutoFocus(start=1500, end=3000, step=250, filter="R", exptime=10))
+                    program.actions.append(PointVerify(here=True))
+    
+                for exp in exps:
+                    filter, exptime, frames = exp.strip().split(":")
+                    print multiplier, "*", imagetype, objname, position, filter, exptime, frames
+    
+                    if imagetype.upper() in ("OBJECT", "FLAT"):
+                        shutter = "OPEN"
+                    else:
+                        shutter = "CLOSE"
+    
+                    program.actions.append(Expose(shutter=shutter,
+                                                  filename="%s-$DATE-$TIME" % objname,
+                                                  #filter=filter,
+                                                  frames=frames,
+                                                  exptime=exptime,
+                                                  imageType=imagetype,
+                                                  objectName=objname))
+                programs.append(program)
+    
+        for program in programs:
+            program.flush()
+    
+        session.commit()
 
-            for exp in exps:
-                filter, exptime, frames = exp.strip().split(":")
-                print multiplier, "*", imagetype, objname, position, filter, exptime, frames
+        self.out("Database created. Restart the scheduler to run it with the new database.")
 
-                if imagetype.upper() in ("OBJECT", "FLAT"):
-                    shutter = "OPEN"
-                else:
-                    shutter = "CLOSE"
+    
+    @action(help="Start the scheduler", helpGroup="RUN", actionGroup="RUN")
+    def start(self, options):
+        self.scheduler.start()
+        self.out("OK")
 
-                program.actions.append(Expose(shutter=shutter,
-                                              filename="%s-$DATE-$TIME" % objname,
-                                              #filter=filter,
-                                              frames=frames,
-                                              exptime=exptime,
-                                              imageType=imagetype,
-                                              objectName=objname))
-            programs.append(program)
+    @action(help="Stop the scheduler", helpGroup="RUN", actionGroup="RUN")
+    def stop(self, options):
+        self.scheduler.pause()
+        self.out("OK")
 
-    for program in programs:
-        program.flush()
+    @action(help="Restart the scheduler", helpGroup="RUN", actionGroup="RUN")
+    def restart(self, options):
+        self.scheduler.pause()
+        self.scheduler.start()
+        self.out("OK")
 
-    session.commit()
+    @action(help="Print scheduler information", helpGroup="RUN")
+    def info(self, options):
+        self.out("="*40)
+        self.out("Scheduler: %s" % self.scheduler.getLocation())
+        self.out("State: %s" % self.scheduler.state())
+        self.out("="*40)
 
+def main():
+    cli = ChimeraSched()
+    return cli.run(sys.argv)
+    
+if __name__ == '__main__':
+    main()

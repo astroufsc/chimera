@@ -7,7 +7,7 @@ from chimera.controllers.scheduler.executor import ProgramExecutor
 
 from elixir import session
 
-class Controller(ChimeraObject):
+class Scheduler(ChimeraObject):
     
     __config__ = {"telescope"   : "/Telescope/0",
                   "camera"      : "/Camera/0",
@@ -41,4 +41,20 @@ class Controller(ChimeraObject):
         self.log.debug('Machine stopped')
         session.commit()
         return True
+
+    def start(self):
+        if self.machine:
+            self.machine.state(State.DIRTY)
+
+
+    def pause(self):
+        if self.machine:
+            self.machine.state(State.PAUSED)
+
+    def stop(self):
+        if self.machine:
+            self.machine.state(State.SHUTDOWN)
+
+    def state(self):
+        return self.machine.state()
         

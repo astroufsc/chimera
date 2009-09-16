@@ -1,1 +1,1 @@
-from chimera.controllers.scheduler.controller import Controller as Scheduler
+from chimera.controllers.scheduler.controller import Scheduler

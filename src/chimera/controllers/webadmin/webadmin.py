@@ -30,6 +30,8 @@ class WebAdminRoot (object):
 
         try:
             self.controller.dome.openSlit()
+            self.controller.telescope.unpark()
+            self.controller.scheduler.start()
         except Exception:
             return "Erro ao tentar abrir a cúpula!"
 
@@ -39,6 +41,8 @@ class WebAdminRoot (object):
     def close_dome (self):
 
         try:
+            self.controller.scheduler.pause()
+            self.controller.telescope.park()
             self.controller.dome.closeSlit()
         except Exception:
             return "Erro ao tentar fechar a cúpula!"
@@ -47,7 +51,9 @@ class WebAdminRoot (object):
     
 class WebAdmin (ChimeraObject):
 
-    __config__ = {"dome": "/Dome/0"}
+    __config__ = {"dome": "/Dome/0",
+                  "scheduler": "/Scheduler/0",
+                  "telescope": "/Telescope/0"}
     
     def __init__ (self):
         ChimeraObject.__init__(self)
@@ -56,8 +62,10 @@ class WebAdmin (ChimeraObject):
 
         try: 
             self.dome = self.getManager().getProxy(self["dome"])
+            self.scheduler = self.getManager().getProxy(self["scheduler"])
+            self.telescope = self.getManager().getProxy(self["telescope"])
         except Exception:
-            self.log.warning("No dome available, Web Admin would be disabled.")
+            self.log.warning("No dome, scheduler or telescope available, Web Admin would be disabled.")
             return False
 
         cherrypy.config.update({"engine.autoreload_on": False,
