@@ -26,7 +26,7 @@ from chimera.util.position import Position
 
 from chimera.core.callback import callback
 from chimera.core.exceptions import ObjectTooLowException
-from chimera.interfaces.telescope import SlewRate
+from chimera.interfaces.telescope import SlewRate, TelescopeStatus
 
 import sys
 import copy
@@ -93,19 +93,14 @@ class ChimeraTel (ChimeraCLI):
                 self.out("slewing to %s (%s)... " % (target, target.epochString()), end="")
 
         @callback(self.localManager)
-        def slewComplete(position):
+        def slewComplete(position, status):
             global telescope
-            self.out("OK.")
-            self.out(40*"=")
+            if status == TelescopeStatus.OK:
+                self.out("OK.")
+                self.out(40*"=")
     
-        @callback(self.localManager)
-        def abortComplete(position):
-            global telescope
-            self.out("OK.")
-            
         telescope.slewBegin     += slewBegin
         telescope.slewComplete  += slewComplete
-        telescope.abortComplete += abortComplete    
     
         self.out(40*"=")
         self.out("current position ra/dec: %s" % telescope.getPositionRaDec())
@@ -128,7 +123,6 @@ class ChimeraTel (ChimeraCLI):
         
         telescope.slewBegin     -= slewBegin
         telescope.slewComplete  -= slewComplete
-        telescope.abortComplete -= abortComplete    
 
     @action(help="Sync on the given --ra --dec or --object", helpGroup="SYNC")
     def sync(self, options):
@@ -288,12 +282,11 @@ class ChimeraTel (ChimeraCLI):
         return target
         
     def __abort__ (self):
-        print >> sys.stdout, "aborting... ",
-        sys.stdout.flush()
+        self.out("\naborting... ", end="")
 
+        # create a copy of telescope proxy
         tel = copy.copy(self.telescope)
-        if tel.isSlewing():
-            tel.abortSlew()
+        tel.abortSlew()
 
     def _validateOffset(self, value):
         try:
@@ -303,10 +296,12 @@ class ChimeraTel (ChimeraCLI):
         
         return offset
 
+
 def main():
     cli = ChimeraTel()
-    return cli.run(sys.argv)
+    cli.run(sys.argv)
+    cli.wait()
     
 if __name__ == '__main__':
-    main()
 
+    main()

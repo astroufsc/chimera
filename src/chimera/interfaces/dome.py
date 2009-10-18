@@ -35,6 +35,7 @@ __all__ = ['Mode',
 
 Mode = Enum("Stand", "Track")
 Style = Enum("Rolloff", "Classic", "Other")
+DomeStatus = Enum("OK", "ABORTED")
 
 
 class InvalidDomePositionException (ChimeraException):
@@ -188,19 +189,15 @@ class Dome (Interface):
         """
 
     @event
-    def slewComplete (self, position):
-        """Indicates that the last slew operation finished (with or without success).
+    def slewComplete (self, position, status):
+        """Indicates that the last slew operation finished (with or
+        without success, check L{status} field for more information.).
 
         @param position: The dome current position when the slew finished in decimal degrees.
         @type  position: Coord
-        """
 
-    @event
-    def abortComplete (self, position):
-        """Indicates that the last slew operation was aborted.
-
-        @param position: The dome position when the slew aborted in decimal degrees).
-        @type  position: Coord
+        @param status: Status of the slew command
+        @type  status: L{DomeStatus}
         """
 
     @event

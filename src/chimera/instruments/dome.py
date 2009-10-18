@@ -112,7 +112,6 @@ class DomeBase (ChimeraObject, Dome):
 
         tel.slewBegin     += self.getProxy()._telSlewBeginClbk
         tel.slewComplete  += self.getProxy()._telSlewCompleteClbk
-        tel.abortComplete += self.getProxy()._telAbortCompleteClbk
         return True
 
     def _disconnectTelEvents (self):
@@ -121,7 +120,6 @@ class DomeBase (ChimeraObject, Dome):
         if tel:
             tel.slewBegin     -= self.getProxy()._telSlewBeginClbk
             tel.slewComplete  -= self.getProxy()._telSlewCompleteClbk
-            tel.abortComplete -= self.getProxy()._telAbortCompleteClbk
             return True
         return False
 
@@ -133,11 +131,8 @@ class DomeBase (ChimeraObject, Dome):
     def _telSlewBeginClbk (self, target):
         self.log.debug("[event] telescope slewing to %s." % target)
         
-    def _telSlewCompleteClbk (self, target):
-        self.log.debug("[event] telescope slew complete, new position=%s." % target)
-
-    def _telAbortCompleteClbk (self, position):
-        self.log.debug("[event] telescope aborted last slew, new position=%s." % position)
+    def _telSlewCompleteClbk (self, target, status):
+        self.log.debug("[event] telescope slew complete, position=%s status=%s." % (target, status))
 
     # utilitaries
     def getTelescope(self):

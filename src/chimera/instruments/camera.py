@@ -47,15 +47,22 @@ class CameraBase (ChimeraObject,
         self.abort = threading.Event()
         self.abort.clear()
 
+        self.__isExposing = threading.Event()
+
     def __stop__ (self):
-        
-        if self.isExposing():
-            self.abortExposure(False)
-            while self.isExposing():
-                time.sleep(1)
+        self.abortExposure(readout=False)
         
     @lock
     def expose(self, request=None, **kwargs):
+
+        self.__isExposing.set()
+
+        try:
+            return self._baseExpose(request, **kwargs)
+        finally:
+            self.__isExposing.clear()
+
+    def _baseExpose(self, request, **kwargs):
 
         if request:
 
@@ -72,7 +79,7 @@ class CameraBase (ChimeraObject,
         frames = imageRequest['frames']
         interval = imageRequest['interval']
 
-	# validate shutter
+        # validate shutter
         if str(imageRequest["shutter"]).lower() == "open":
             imageRequest["shutter"] = Shutter.OPEN
         elif str(imageRequest["shutter"]).lower() == "close":
@@ -96,19 +103,26 @@ class CameraBase (ChimeraObject,
         manager = self.getManager()
 
         for frame_num in range(frames):
-            
+
+            # [ABORT POINT]
             if self.abort.isSet():
                 return images
 
             imageRequest.beginExposure(manager)
+            self._expose(imageRequest)
 
-            if self._expose(imageRequest):
-                image = self._readout(imageRequest, aborted=False)
+            # [ABORT POINT]
+            if self.abort.isSet():
+                return images
+            
+            image = self._readout(imageRequest)
+            if image is not None:
                 images.append(image)
-            else:
-                return False
+                imageRequest.endExposure(manager)
 
-            imageRequest.endExposure(manager)
+            # [ABORT POINT]
+            if self.abort.isSet():
+                return images
             
             if (interval > 0 and frame_num < frames) and (not frames == 1):
                 time.sleep(interval)
@@ -123,10 +137,9 @@ class CameraBase (ChimeraObject,
         # set our event, so current exposure know that it must abort
         self.abort.set()
 
+        # then wait
         while self.isExposing():
             time.sleep (0.1)
-
-        self.abortComplete()
 
         return True
 
@@ -253,9 +266,8 @@ class CameraBase (ChimeraObject,
         return (mode, binning, top, left, width, height)
 
     def isExposing (self):
-        return
-        raise NotImplementedError()
-
+        return self.__isExposing.isSet()
+    
     @lock
     def startCooling (self, tempC):
         raise NotImplementedError()

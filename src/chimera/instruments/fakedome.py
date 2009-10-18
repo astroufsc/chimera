@@ -21,7 +21,7 @@
 from chimera.core.lock import lock
 from chimera.util.coord import Coord
 
-from chimera.interfaces.dome import InvalidDomePositionException
+from chimera.interfaces.dome import InvalidDomePositionException, DomeStatus
 from chimera.instruments.dome import DomeBase
 
 import time
@@ -65,20 +65,28 @@ class FakeDome (DomeBase):
         slew_time = distance*self._maxSlewTime
 
         self.log.info("Slew time ~ %.3f s" % slew_time)
+
+        status = DomeStatus.OK
         
         t=0
         while t < slew_time:
             
             if self._abort.isSet():
                 self._slewing = False
-                return
+                status = DomeStatus.ABORTED
+                break
 
             time.sleep (0.1)            
             t+=0.1
 
-        self._position = az # move :)
+        if status == DomeStatus.OK:
+            self._position = az # move :)
+        else:
+            # assume half movement in case of abort
+            self._position = self.position + distance/2.0
+            
         self._slewing = False
-        self.slewComplete(self.getAz())
+        self.slewComplete(self.getAz(), status)
 
     def isSlewing (self):
         return self._slewing
@@ -87,8 +95,8 @@ class FakeDome (DomeBase):
         if not self.isSlewing(): return
 
         self._abort.set()
-        while self.isSlewing(): time.sleep(0.1)
-        self.abortComplete(self.getAz())
+        while self.isSlewing():
+            time.sleep(0.1)
 
     @lock
     def getAz(self):

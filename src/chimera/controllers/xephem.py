@@ -58,7 +58,6 @@ class XEphem (ChimeraObject):
 
         tel = self._getTel()
         tel.slewComplete  += self.getProxy()._updateSlewPosition
-        tel.abortComplete += self.getProxy()._updateSlewPosition
 
         self._updateSlewPosition(tel.getPositionRaDec())
 

@@ -107,9 +107,9 @@ class ChimeraSched (ChimeraCLI):
                 program = Program(name="program-%s-%03d" % (objname, i))
                 program.actions.append(Point(targetRaDec=position))
     
-                if i == 0:
-                    program.actions.append(AutoFocus(start=1500, end=3000, step=250, filter="R", exptime=10))
-                    program.actions.append(PointVerify(here=True))
+                #if i == 0:
+                #    program.actions.append(AutoFocus(start=1500, end=3000, step=250, filter="R", exptime=10))
+                #    program.actions.append(PointVerify(here=True))
     
                 for exp in exps:
                     filter, exptime, frames = exp.strip().split(":")
@@ -122,7 +122,7 @@ class ChimeraSched (ChimeraCLI):
     
                     program.actions.append(Expose(shutter=shutter,
                                                   filename="%s-$DATE-$TIME" % objname,
-                                                  #filter=filter,
+                                                  filter=filter,
                                                   frames=frames,
                                                   exptime=exptime,
                                                   imageType=imagetype,
@@ -162,7 +162,9 @@ class ChimeraSched (ChimeraCLI):
 
 def main():
     cli = ChimeraSched()
-    return cli.run(sys.argv)
+    cli.run(sys.argv)
+    cli.wait()
     
 if __name__ == '__main__':
+
     main()

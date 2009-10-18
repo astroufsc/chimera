@@ -21,7 +21,7 @@
 import time
 import threading
 
-from chimera.interfaces.telescope  import SlewRate
+from chimera.interfaces.telescope  import SlewRate, TelescopeStatus
 from chimera.instruments.telescope import TelescopeBase
 
 from chimera.core.lock import lock
@@ -108,12 +108,15 @@ class FakeTelescope (TelescopeBase):
         self._slewing = True
         self._abort.clear()
 
+        status = TelescopeStatus.OK
+
         t = 0
         while t < 5:
 
             if self._abort.isSet():
                 self._slewing = False
-                return
+                status = TelescopeStatus.ABORTED
+                break
 
             self._ra  += ra_steps
             self._dec += dec_steps
@@ -124,7 +127,7 @@ class FakeTelescope (TelescopeBase):
         
         self._slewing = False
             
-        self.slewComplete(self.getPositionRaDec())
+        self.slewComplete(self.getPositionRaDec(), status)
 
     @lock
     def slewToAltAz(self, position):
@@ -143,12 +146,14 @@ class FakeTelescope (TelescopeBase):
         self._slewing = True
         self._abort.clear()
 
+        status = TelescopeStatus.OK
         t = 0
         while t < 5:
 
             if self._abort.isSet():
                 self._slewing = False
-                return
+                status = TelescopeStatus.ABORTED
+                break
 
             self._alt  += alt_steps
             self._az += az_steps
@@ -159,14 +164,12 @@ class FakeTelescope (TelescopeBase):
         
         self._slewing = False
             
-        self.slewComplete(self.getPositionRaDec())
+        self.slewComplete(self.getPositionRaDec(), status)
 
     def abortSlew(self):
         self._abort.set()
         while self.isSlewing():
             time.sleep(0.1)
-
-        self.abortComplete(self.getPositionRaDec())
 
     def isSlewing (self):
         return self._slewing
@@ -184,7 +187,7 @@ class FakeTelescope (TelescopeBase):
         self._setAltAzFromRaDec()
 
         self._slewing = False
-        self.slewComplete(self.getPositionRaDec())
+        self.slewComplete(self.getPositionRaDec(), TelescopeStatus.OK)
 
     @lock
     def moveWest(self, offset, rate=SlewRate.MAX):
@@ -198,7 +201,7 @@ class FakeTelescope (TelescopeBase):
         self._setAltAzFromRaDec()
 
         self._slewing = False
-        self.slewComplete(self.getPositionRaDec())
+        self.slewComplete(self.getPositionRaDec(), TelescopeStatus.OK)
 
     @lock
     def moveNorth(self, offset, rate=SlewRate.MAX):
@@ -212,7 +215,7 @@ class FakeTelescope (TelescopeBase):
         self._setAltAzFromRaDec()
 
         self._slewing = False
-        self.slewComplete(self.getPositionRaDec())
+        self.slewComplete(self.getPositionRaDec(), TelescopeStatus.OK)
 
     @lock
     def moveSouth(self, offset, rate=SlewRate.MAX):
@@ -226,7 +229,7 @@ class FakeTelescope (TelescopeBase):
         self._setAltAzFromRaDec()
 
         self._slewing = False
-        self.slewComplete(self.getPositionRaDec())
+        self.slewComplete(self.getPositionRaDec(), TelescopeStatus.OK)
 
     @lock
     def getRa(self):

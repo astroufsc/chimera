@@ -33,7 +33,7 @@ class DomeController:
             self.module.view.slewBegin(az)
             
         @callback(self.module.manager)
-        def on_slew_complete(az):
+        def on_slew_complete(az, status):
             self.module.view.slewComplete(az)
 
         self.dome.slitOpened   += on_slit_open

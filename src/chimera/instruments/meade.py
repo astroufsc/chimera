@@ -32,7 +32,7 @@ except ImportError:
 import serial
 
 from chimera.instruments.telescope import TelescopeBase
-from chimera.interfaces.telescope  import SlewRate, AlignMode
+from chimera.interfaces.telescope  import SlewRate, AlignMode, TelescopeStatus
 
 from chimera.util.coord    import Coord
 from chimera.util.position import Position
@@ -251,9 +251,13 @@ class Meade (TelescopeBase):
 
         self.setTargetRaDec(position.ra, position.dec)
 
-        if self._slewToRaDec():
-            self.slewComplete(self.getPositionRaDec())
+        status = TelescopeStatus.OK
+        
+        try:
+            status = self._slewToRaDec()
             return True
+        finally:
+            self.slewComplete(self.getPositionRaDec(), status)
 
         return False
 
@@ -297,12 +301,14 @@ class Meade (TelescopeBase):
 
         self.setTargetAltAz (position.alt, position.az)
 
+        status = TelescopeStatus.OK
+
         try:
             self.setAlignMode(AlignMode.ALT_AZ)
-            if self._slewToAltAz():
-                self.slewComplete(self.getPositionRaDec())
-                return True
+            status = self._slewToAltAz()
+            return True
         finally:
+            self.slewComplete(self.getPositionRaDec(), status)
             self.setAlignMode(lastAlignMode)
 
         return False
@@ -339,7 +345,7 @@ class Meade (TelescopeBase):
             # check slew abort event
             if self._abort.isSet ():
                 self._slewing = False
-                return False
+                return TelescopeStatus.ABORTED
 
             # check timeout
             if time.time () >= (start_time + self["max_slew_time"]):
@@ -371,8 +377,6 @@ class Meade (TelescopeBase):
         self.stopMoveAll()
 
         time.sleep (self["stabilization_time"])
-
-        self.abortComplete(self.getPositionRaDec())
 
     def isSlewing(self):
         return self._slewing

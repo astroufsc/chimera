@@ -40,6 +40,8 @@ CameraFeature = Enum("TEMPERATURE_CONTROL",
                      "PROGRAMMABLE_LEDS",
                      "PROGRAMMABLE_BIAS_LEVEL")
 
+CameraStatus = Enum("OK", "ERROR", "ABORTED")
+
 
 class ReadoutMode(object):
     """
@@ -131,15 +133,16 @@ class CameraExpose (Camera):
 
         @param readout: Whether to readout the current frame after
                         abort, otherwise the current photons will be
-                        lost forever. Default is True @type readout:
-                        bool
+                        lost forever. Default is True
+        @type readout: bool
 
         @return: True if successful, False otherwise.
         @rtype: bool
         """
 
     def isExposing (self):
-        """Ask if camera is exposing right now.
+        """Ask if camera is exposing right now.(where exposing
+        includes both integration time and readout).
 
         @return: The currently exposing ImageRequest if the camera is
         exposing, False otherwise.  
@@ -159,7 +162,7 @@ class CameraExpose (Camera):
         """
 
     @event
-    def exposeComplete (self, request):
+    def exposeComplete (self, request, status):
         """Indicates that new exposure frame was taken.
 
         When multiple frames are taken in a single shot, multiple
@@ -167,6 +170,10 @@ class CameraExpose (Camera):
 
         @param request: The image request.
         @type  request: L{ImageRequest}
+
+        @param status: The status of the current expose.
+        @type  status: L{CameraStatus}
+        
         """
 
     @event
@@ -181,16 +188,15 @@ class CameraExpose (Camera):
         """
 
     @event
-    def readoutComplete (self, proxy):
+    def readoutComplete (self, proxy, status):
         """Indicates that a new frame was exposed and saved.
 
-        @param request: The just taken Image (as a Proxy).
-        @type  request: L{Proxy}
-        """
+        @param request: The just taken Image (as a Proxy) or None is status=[ERROR or ABORTED]..
+        @type  request: L{Proxy} or None
 
-    @event
-    def abortComplete (self):
-        """Indicates that a frame exposure was aborted.
+        @param status: current exposure status
+        @type  status: L{CameraStatus}
+        
         """
 
 

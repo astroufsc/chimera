@@ -23,6 +23,7 @@ import time
 import sys
 import random
 import threading
+import logging
 
 from chimera.core.manager  import Manager
 from chimera.core.callback import callback
@@ -30,88 +31,59 @@ from chimera.core.site     import Site
 
 from chimera.util.coord import Coord
 from chimera.util.position import Position
+from chimera.util.enum import EnumValue
 
-from chimera.interfaces.dome   import InvalidDomePositionException
+from chimera.interfaces.dome import InvalidDomePositionException, DomeStatus
 
+from nose import SkipTest
 from nose.tools import assert_raises
 
+import chimera.core.log
+chimera.core.log.setConsoleLevel(1e10)
+log = logging.getLogger("chimera.tests")
 
-class TestDome (object):
+# hack for event  triggering asserts
+FiredEvents = {}
+
+
+class DomeTest(object):
 
     DOME = ""
     TELESCOPE = ""
+    manager = None
 
-    def setup (self):
+    def assertEvents(self, slewStatus):
 
-        self.manager = Manager()
-
-        self.manager.addClass(Site, "lna", {"name": "LNA",
-                                            "latitude": "-22 32 03",
-                                            "longitude": "-45 34 57",
-                                            "altitude": "1896",
-                                            "utc_offset": "-3"})
-
-        from chimera.instruments.domelna40cm import DomeLNA40cm
-        from chimera.instruments.meade       import Meade
+        # for every exposure, we need to check if all events were fired in the right order
+        # and with the right parameters
         
-        self.manager.addClass(Meade, "meade", {"device": "/dev/ttyS6"})
-        self.manager.addClass(DomeLNA40cm, "lna40", {"device": "/dev/ttyS9",
-                                                     "telescope": "/Meade/0",
-                                                     "mode": "Track"})
-        self.DOME = "/DomeLNA40cm/0"
-        self.TELESCOPE = "/Meade/0"
+        assert "slewBegin" in FiredEvents
+        assert isinstance(FiredEvents["slewBegin"][1], Coord)
+
+        assert "slewComplete" in FiredEvents
+        assert FiredEvents["slewComplete"][0] > FiredEvents["slewBegin"][0]
+        assert isinstance(FiredEvents["slewComplete"][1], Coord)
+        assert isinstance(FiredEvents["slewComplete"][2], EnumValue) and FiredEvents["slewComplete"][2] in DomeStatus
+        assert FiredEvents["slewComplete"][2] == slewStatus
+
+    def setupEvents(self):
 
         @callback(self.manager)
-        def slewBeginClbk(target):
-            print time.time(), "[dome] Slew begin. target=%s" % str(target)
-            sys.stdout.flush()
+        def slewBeginClbk(position):
+            FiredEvents["slewBegin"] = (time.time(), position)
 
         @callback(self.manager)
-        def slewCompleteClbk(position):
-            print time.time(), "[dome] Slew complete. position=%s" % str(position)
-            sys.stdout.flush()
-
-        @callback(self.manager)
-        def abortCompleteClbk(position):
-            print time.time(), "[dome] Abort slew at position=%s" % str(position)
-            sys.stdout.flush()
-
-        @callback(self.manager)
-        def slitOpenedClbk(position):
-            print time.time(), "[dome] Slit opened with dome at at position=%s" % str(position)
-            sys.stdout.flush()
-
-        @callback(self.manager)
-        def slitClosedClbk(position):
-            print time.time(), "[dome] Slit closed with dome at at position=%s" % str(position)
-            sys.stdout.flush()
-
-        @callback(self.manager)
-        def slewBeginTel(target):
-            print time.time(), "[tel] Slew begin. target=%s" % str(target)
-            sys.stdout.flush()
-
-        @callback(self.manager)
-        def slewCompleteTel(position):
-            print time.time(), "[tel] Slew complete. position=%s" % str(position)
-            sys.stdout.flush()
+        def slewCompleteClbk(position, status):
+            FiredEvents["slewComplete"] = (time.time(), position, status)
 
         dome = self.manager.getProxy(self.DOME)
-        dome.slewBegin    += slewBeginClbk
+        dome.slewBegin += slewBeginClbk
         dome.slewComplete += slewCompleteClbk
-        dome.abortComplete+= abortCompleteClbk
-        dome.slitOpened   += slitOpenedClbk
-        dome.slitClosed   += slitClosedClbk
-
-        tel = self.manager.getProxy(self.TELESCOPE)
-        tel.slewBegin    += slewBeginTel
-        tel.slewComplete += slewCompleteTel
-     
-
-    def teardown (self):
-        self.manager.shutdown()
-
+        
     def test_stress_dome_track (self):
+        # just for manual and visual testing
+        raise SkipTest()
+
         dome = self.manager.getProxy(self.DOME)
         tel  = self.manager.getProxy(self.TELESCOPE)
 
@@ -126,6 +98,9 @@ class TestDome (object):
             time.sleep(random.randint(0,10))
 
     def test_stress_dome_slew (self):
+
+        # just for manual and visual testing
+        raise SkipTest()
 
         dome = self.manager.getProxy(self.DOME)
 
@@ -167,6 +142,9 @@ class TestDome (object):
 
         assert_raises(InvalidDomePositionException, dome.slewToAz, 9999)
 
+        # event check
+        self.assertEvents(DomeStatus.OK)
+
     def test_slit (self):
         
         dome = self.manager.getProxy(self.DOME)
@@ -179,6 +157,63 @@ class TestDome (object):
 
 
 
-        
+#
+# setup real and fake tests
+#
+
+from chimera.instruments.tests.base import FakeHardwareTest, RealHardwareTest
+
+class TestFakeDome(FakeHardwareTest, DomeTest):
+
+    def setup (self):
+
+        self.manager = Manager()
+
+        self.manager.addClass(Site, "lna", {"name": "UFSC",
+                                            "latitude": "-27 36 13 ",
+                                            "longitude": "-48 31 20",
+                                            "altitude": "20",
+                                            "utc_offset": "-3"})
+
+        from chimera.instruments.faketelescope import FakeTelescope
+        from chimera.instruments.fakedome import FakeDome
+        self.manager.addClass(FakeTelescope, "fake")
+        self.manager.addClass(FakeDome, "dome", {"telescope": "/FakeTelescope/0",
+                                                 "mode": "Track"})
+        self.TELESCOPE = "/FakeTelescope/0"
+        self.DOME = "/FakeDome/0"
+
+        FiredEvents = {}
+        self.setupEvents()
+
+    def teardown (self):
+        self.manager.shutdown()
 
 
+class TestRealDome(RealHardwareTest, DomeTest):
+    
+    def setup (self):
+
+        self.manager = Manager()
+
+        self.manager.addClass(Site, "lna", {"name": "UFSC",
+                                            "latitude": "-27 36 13 ",
+                                            "longitude": "-48 31 20",
+                                            "altitude": "20",
+                                            "utc_offset": "-3"})
+
+        from chimera.instruments.domelna40cm import DomeLNA40cm
+        from chimera.instruments.meade       import Meade
+        self.manager.addClass(Meade, "meade", {"device": "/dev/ttyS6"})
+        self.manager.addClass(DomeLNA40cm, "lna40", {"device": "/dev/ttyS9",
+                                                     "telescope": "/Meade/0",
+                                                     "mode": "Track"})
+
+        self.TELESCOPE = "/Meade/meade"
+        self.DOME = "/DomeLNA40CM/0"
+       
+        FiredEvents = {}
+        self.setupEvents()
+
+    def teardown (self):
+        self.manager.shutdown()

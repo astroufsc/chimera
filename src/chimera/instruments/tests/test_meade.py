@@ -42,7 +42,10 @@ from chimera.util.position import Position
 
 from chimera.util.output import update_scroll_spinner
 
-class TestMeade (object):
+from chimera.instruments.tests.base import RealHardwareTest
+
+
+class TestMeade (RealHardwareTest):
 
     def setup (self):
 

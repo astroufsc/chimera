@@ -20,6 +20,7 @@
 
 
 import logging
+import time
 
 from chimera.core.methodwrapper  import MethodWrapper, MethodWrapperDispatcher
 
@@ -54,8 +55,10 @@ class LockWrapperDispatcher (MethodWrapperDispatcher):
 
         lock = getattr(self.instance, INSTANCE_MONITOR_ATTRIBUTE_NAME)
 
-        #log.debug("[acquire monitor] %s %s" % (self.instance, self.func.__name__))
+        t0 = time.time()
+        #log.debug("[trying to acquire monitor] %s %s" % (self.instance, self.func.__name__))
         lock.acquire()
+        #log.debug("[acquired monitor] %s %s after %f" % (self.instance, self.func.__name__, time.time()-t0))        
 
         ret = None
         

@@ -87,7 +87,9 @@ class ChimeraFilter (ChimeraCLI):
 
 def main():
     cli = ChimeraFilter()
-    return cli.run(sys.argv)
+    cli.run(sys.argv)
+    cli.wait()
     
 if __name__ == '__main__':
+
     main()

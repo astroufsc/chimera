@@ -68,7 +68,6 @@ class ChimeraGUI:
     def showConnectDialog (self):
         dialog = self.builder.get_object("chimera_connect_dialog")
         response = dialog.run()
-        print response
         dialog.hide()
         dialog.destroy()
 

@@ -31,13 +31,13 @@
                             <property name="column_spacing">3</property>
                             <property name="row_spacing">3</property>
                             <child>
-                              <object class="GtkLabel" id="raLabel">
+                              <object class="GtkLabel" id="raLabelSlew">
                                 <property name="visible">True</property>
                                 <property name="label" translatable="yes">RA</property>
                               </object>
                             </child>
                             <child>
-                              <object class="GtkLabel" id="decLabel">
+                              <object class="GtkLabel" id="decLabelSlew">
                                 <property name="visible">True</property>
                                 <property name="label" translatable="yes">Dec</property>
                               </object>
@@ -196,13 +196,13 @@
                             <property name="n_columns">2</property>
                             <property name="row_spacing">2</property>
                             <child>
-                              <object class="GtkLabel" id="altLabel">
+                              <object class="GtkLabel" id="altLabelSlew">
                                 <property name="visible">True</property>
                                 <property name="label" translatable="yes">Altitude</property>
                               </object>
                             </child>
                             <child>
-                              <object class="GtkLabel" id="azLabel">
+                              <object class="GtkLabel" id="azLabelSlew">
                                 <property name="visible">True</property>
                                 <property name="label" translatable="yes">Azimuth</property>
                               </object>
@@ -327,7 +327,7 @@
                     <child type="tab">
                       <object class="GtkLabel" id="label121">
                         <property name="visible">True</property>
-                        <property name="label" translatable="yes">Altaz</property>
+                        <property name="label" translatable="yes">Altazimutal</property>
                       </object>
                       <packing>
                         <property name="position">1</property>
@@ -396,8 +396,8 @@
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
-                        <property name="related_action">telescope.abort</property>
                         <property name="use_action_appearance">True</property>
+                        <property name="related_action">telescope.abort</property>
                       </object>
                       <packing>
                         <property name="position">0</property>
@@ -408,8 +408,8 @@
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
-                        <property name="related_action">telescope.slew</property>
                         <property name="use_action_appearance">True</property>
+                        <property name="related_action">telescope.slew</property>
                       </object>
                       <packing>
                         <property name="position">1</property>
@@ -680,98 +680,154 @@
               </packing>
             </child>
             <child>
-              <object class="GtkHBox" id="statusBox">
+              <object class="GtkTable" id="statusTable">
                 <property name="visible">True</property>
-                <property name="orientation">vertical</property>
+                <property name="n_rows">6</property>
+                <property name="n_columns">2</property>
                 <child>
-                  <object class="GtkHBox" id="raBox">
+                  <object class="GtkLabel" id="label4">
                     <property name="visible">True</property>
-                    <child>
-                      <object class="GtkLabel" id="label1">
-                        <property name="visible">True</property>
-                        <property name="label" translatable="yes">RA</property>
-                        <property name="width_chars">4</property>
-                      </object>
-                      <packing>
-                        <property name="position">0</property>
-                      </packing>
-                    </child>
-                    <child>
-                      <placeholder/>
-                    </child>
+                    <property name="label" translatable="yes">AZ</property>
+                    <property name="width_chars">3</property>
                   </object>
                   <packing>
-                    <property name="position">0</property>
+                    <property name="top_attach">3</property>
+                    <property name="bottom_attach">4</property>
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkHBox" id="decBox">
+                  <object class="GtkLabel" id="label3">
                     <property name="visible">True</property>
-                    <child>
-                      <object class="GtkLabel" id="label2">
-                        <property name="visible">True</property>
-                        <property name="label" translatable="yes">DEC</property>
-                        <property name="width_chars">4</property>
-                      </object>
-                      <packing>
-                        <property name="position">0</property>
-                      </packing>
-                    </child>
-                    <child>
-                      <placeholder/>
-                    </child>
+                    <property name="label" translatable="yes">ALT</property>
+                    <property name="width_chars">3</property>
                   </object>
                   <packing>
-                    <property name="position">1</property>
+                    <property name="top_attach">2</property>
+                    <property name="bottom_attach">3</property>
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkHBox" id="altBox">
+                  <object class="GtkLabel" id="label1">
                     <property name="visible">True</property>
-                    <child>
-                      <object class="GtkLabel" id="label3">
-                        <property name="visible">True</property>
-                        <property name="label" translatable="yes">ALT</property>
-                        <property name="width_chars">4</property>
-                      </object>
-                      <packing>
-                        <property name="position">0</property>
-                      </packing>
-                    </child>
-                    <child>
-                      <placeholder/>
-                    </child>
+                    <property name="label" translatable="yes">RA</property>
+                    <property name="width_chars">3</property>
+                  </object>
+                </child>
+                <child>
+                  <object class="GtkLabel" id="label2">
+                    <property name="visible">True</property>
+                    <property name="label" translatable="yes">DEC</property>
+                    <property name="width_chars">3</property>
                   </object>
                   <packing>
-                    <property name="position">2</property>
+                    <property name="top_attach">1</property>
+                    <property name="bottom_attach">2</property>
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkHBox" id="azBox">
+                  <object class="GtkLabel" id="raLabel">
                     <property name="visible">True</property>
-                    <child>
-                      <object class="GtkLabel" id="label4">
-                        <property name="visible">True</property>
-                        <property name="label" translatable="yes">AZ</property>
-                        <property name="width_chars">4</property>
-                      </object>
-                      <packing>
-                        <property name="position">0</property>
-                      </packing>
-                    </child>
-                    <child>
-                      <placeholder/>
-                    </child>
+                    <property name="use_markup">True</property>
+                    <property name="selectable">True</property>
+                    <property name="width_chars">14</property>
                   </object>
                   <packing>
-                    <property name="position">3</property>
+                    <property name="left_attach">1</property>
+                    <property name="right_attach">2</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkLabel" id="decLabel">
+                    <property name="visible">True</property>
+                    <property name="use_markup">True</property>
+                    <property name="selectable">True</property>
+                    <property name="width_chars">14</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">1</property>
+                    <property name="right_attach">2</property>
+                    <property name="top_attach">1</property>
+                    <property name="bottom_attach">2</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkLabel" id="altLabel">
+                    <property name="visible">True</property>
+                    <property name="use_markup">True</property>
+                    <property name="selectable">True</property>
+                    <property name="width_chars">14</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">1</property>
+                    <property name="right_attach">2</property>
+                    <property name="top_attach">2</property>
+                    <property name="bottom_attach">3</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkLabel" id="azLabel">
+                    <property name="visible">True</property>
+                    <property name="use_markup">True</property>
+                    <property name="selectable">True</property>
+                    <property name="width_chars">14</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">1</property>
+                    <property name="right_attach">2</property>
+                    <property name="top_attach">3</property>
+                    <property name="bottom_attach">4</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkLabel" id="label8">
+                    <property name="visible">True</property>
+                    <property name="label" translatable="yes">Local</property>
+                  </object>
+                  <packing>
+                    <property name="top_attach">4</property>
+                    <property name="bottom_attach">5</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkLabel" id="localtimeLabel">
+                    <property name="visible">True</property>
+                    <property name="use_markup">True</property>
+                    <property name="selectable">True</property>
+                    <property name="width_chars">14</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">1</property>
+                    <property name="right_attach">2</property>
+                    <property name="top_attach">4</property>
+                    <property name="bottom_attach">5</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkLabel" id="label9">
+                    <property name="visible">True</property>
+                    <property name="label" translatable="yes">LST</property>
+                  </object>
+                  <packing>
+                    <property name="top_attach">5</property>
+                    <property name="bottom_attach">6</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkLabel" id="lstLabel">
+                    <property name="visible">True</property>
+                    <property name="use_markup">True</property>
+                    <property name="selectable">True</property>
+                    <property name="width_chars">14</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">1</property>
+                    <property name="right_attach">2</property>
+                    <property name="top_attach">5</property>
+                    <property name="bottom_attach">6</property>
                   </packing>
                 </child>
               </object>
               <packing>
-                <property name="expand">False</property>
-                <property name="fill">False</property>
-                <property name="padding">5</property>
                 <property name="position">4</property>
               </packing>
             </child>
@@ -861,6 +917,8 @@
             </child>
           </object>
           <packing>
+            <property name="expand">False</property>
+            <property name="fill">False</property>
             <property name="position">0</property>
           </packing>
         </child>

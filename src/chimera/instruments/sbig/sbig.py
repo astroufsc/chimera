@@ -122,10 +122,6 @@ class SBIG(CameraBase, FilterWheelBase):
         return self.drv.isLinked()
 
     @lock
-    def isExposing(self):
-        return self.drv.exposing(self.ccd)
-
-    @lock
     def startCooling(self, tempC):
         self.drv.setTemperature (True, tempC)
         return True
@@ -236,13 +232,13 @@ class SBIG(CameraBase, FilterWheelBase):
         # save time exposure started
         self.lastFrameStartTime = dt.datetime.utcnow()
         self.lastFrameTemp = self.getTemperature()
-        
-        while self.isExposing():
+
+        while self.drv.exposing(self.ccd):
                                         
             # check if user asked to abort
             if self.abort.isSet():
                 # ok, abort and check if user asked to do a readout anyway
-                if self.isExposing():
+                if self.drv.exposing(self.ccd):
                     self._endExposure(imageRequest)
                 
                 return False
@@ -255,7 +251,7 @@ class SBIG(CameraBase, FilterWheelBase):
         self.exposeComplete(request)
         return True
 
-    def _readout(self, imageRequest, aborted=False):
+    def _readout(self, imageRequest):
 
         (mode, binning, top,  left,
          width, height) = self._getReadoutModeInfo(imageRequest["binning"],

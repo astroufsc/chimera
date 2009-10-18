@@ -1,0 +1,151 @@
+<?xml version="1.0"?>
+<interface>
+  <requires lib="gtk+" version="2.16"/>
+  <!-- interface-naming-policy project-wide -->
+  <object class="GtkMenu" id="popup">
+    <property name="visible">True</property>
+    <property name="accel_group">canvasAcceleratorGroup</property>
+    <child>
+      <object class="GtkImageMenuItem" id="contrastItem">
+        <property name="visible">True</property>
+        <property name="use_action_appearance">True</property>
+        <property name="related_action">contrastAction</property>
+        <property name="use_underline">True</property>
+        <property name="use_stock">True</property>
+      </object>
+    </child>
+    <child>
+      <object class="GtkImageMenuItem" id="zoomItem">
+        <property name="visible">True</property>
+        <property name="use_action_appearance">True</property>
+        <property name="related_action">zoomAction</property>
+        <property name="accel_path">&lt;canvas&gt;/Zoom</property>
+        <property name="use_underline">True</property>
+        <property name="use_stock">True</property>
+      </object>
+    </child>
+    <child>
+      <object class="GtkImageMenuItem" id="panItem">
+        <property name="visible">True</property>
+        <property name="use_action_appearance">True</property>
+        <property name="related_action">panAction</property>
+        <property name="use_underline">True</property>
+        <property name="use_stock">True</property>
+      </object>
+    </child>
+    <child>
+      <object class="GtkSeparatorMenuItem" id="sep2">
+        <property name="visible">True</property>
+      </object>
+    </child>
+    <child>
+      <object class="GtkMenuItem" id="_98Item">
+        <property name="visible">True</property>
+        <property name="use_action_appearance">True</property>
+        <property name="related_action">_98Action</property>
+      </object>
+    </child>
+    <child>
+      <object class="GtkMenuItem" id="minMaxItem">
+        <property name="visible">True</property>
+        <property name="use_action_appearance">True</property>
+        <property name="related_action">minmaxAction</property>
+      </object>
+    </child>
+    <child>
+      <object class="GtkSeparatorMenuItem" id="sep3">
+        <property name="visible">True</property>
+      </object>
+    </child>
+    <child>
+      <object class="GtkImageMenuItem" id="linearItem">
+        <property name="visible">True</property>
+        <property name="use_action_appearance">True</property>
+        <property name="related_action">linearAction</property>
+        <property name="use_underline">True</property>
+        <property name="use_stock">True</property>
+      </object>
+    </child>
+    <child>
+      <object class="GtkImageMenuItem" id="logItem">
+        <property name="visible">True</property>
+        <property name="use_action_appearance">True</property>
+        <property name="related_action">logAction</property>
+        <property name="use_underline">True</property>
+        <property name="use_stock">True</property>
+      </object>
+    </child>
+    <child>
+      <object class="GtkSeparatorMenuItem" id="sep4">
+        <property name="visible">True</property>
+      </object>
+    </child>
+    <child>
+      <object class="GtkImageMenuItem" id="invertMenuItem">
+        <property name="visible">True</property>
+        <property name="use_action_appearance">True</property>
+        <property name="related_action">invertAction</property>
+        <property name="use_underline">True</property>
+        <property name="use_stock">True</property>
+      </object>
+    </child>
+    <child>
+      <object class="GtkSeparatorMenuItem" id="sep5">
+        <property name="visible">True</property>
+      </object>
+    </child>
+    <child>
+      <object class="GtkImageMenuItem" id="resetContrast">
+        <property name="visible">True</property>
+        <property name="use_action_appearance">True</property>
+        <property name="related_action">resetContrastAction</property>
+        <property name="use_underline">True</property>
+        <property name="use_stock">True</property>
+      </object>
+    </child>
+  </object>
+  <object class="GtkAction" id="zoomAction">
+    <property name="label">Zoom</property>
+    <property name="icon_name">stock-tool-zoom-16</property>
+    <signal name="activate" handler="zoom_activate_cb"/>
+  </object>
+  <object class="GtkAction" id="panAction">
+    <property name="label">Pan</property>
+    <property name="icon_name">stock-tool-move-16</property>
+    <signal name="activate" handler="pan_activate_cb"/>
+  </object>
+  <object class="GtkAction" id="contrastAction">
+    <property name="label">Contrast</property>
+    <property name="icon_name">stock-gradient-linear-16</property>
+    <signal name="activate" handler="contrast_activate_cb"/>
+  </object>
+  <object class="GtkAction" id="_98Action">
+    <property name="label">98%</property>
+    <signal name="activate" handler="_98_activate_cb"/>
+  </object>
+  <object class="GtkAction" id="minmaxAction">
+    <property name="label">Minmax</property>
+    <signal name="activate" handler="minmax_activate_cb"/>
+  </object>
+  <object class="GtkAction" id="linearAction">
+    <property name="label">Linear</property>
+    <property name="icon_name">stock-histogram-linear-16</property>
+    <signal name="activate" handler="linear_activate_cb"/>
+  </object>
+  <object class="GtkAction" id="logAction">
+    <property name="label">Log</property>
+    <property name="icon_name">stock-histogram-logarithmic-16</property>
+    <signal name="activate" handler="log_activate_cb"/>
+  </object>
+  <object class="GtkAction" id="invertAction">
+    <property name="label">Invert</property>
+    <property name="icon_name">stock-invert-16</property>
+    <signal name="activate" handler="invert_activate_cb"/>
+  </object>
+  <object class="GtkAction" id="resetContrastAction">
+    <property name="label">Reset contrast</property>
+    <property name="icon_name">edit-undo</property>
+    <signal name="activate" handler="reset_contrast_activate_cb"/>
+  </object>
+  <object class="GtkAccelGroup" id="canvasAcceleratorGroup"/>
+</interface>

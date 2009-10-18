@@ -24,12 +24,14 @@ from chimera.core.callback import callback
 from chimera.core.exceptions import printException, ObjectNotFoundException
 
 from chimera.interfaces.filterwheel import InvalidFilterPositionException
-from chimera.interfaces.camera import CameraFeature
+from chimera.interfaces.camera import CameraFeature, CameraStatus
 
 from chimera.util.ds9 import DS9
 
 import sys
 import time
+import threading
+import copy
 
 currentFrame = 0
 currentFrameExposeStart = 0
@@ -196,7 +198,6 @@ class ChimeraCam (ChimeraCLI):
     def info(self, options):
         camera = self.camera
 
-        print camera
         self.out("="*40)
         self.out("Camera: %s (%s)." % (camera.getLocation(), camera["device"]))
 
@@ -258,10 +259,11 @@ class ChimeraCam (ChimeraCLI):
         return "object"
 
     def __abort__ (self):
-        self.out("aborting... ", endl="")
+        self.out("\naborting... ", endl="")
 
-        if self.camera.isExposing():
-            self.camera.abortExposure()
+        # copy self.camera Proxy because we are running from a differente thread (yes, Pyro is tricky!)
+        cam = copy.copy(self.camera)
+        cam.abortExposure()
 
     @action(default=True, helpGroup="EXPOSE", help="Take an exposure with selected parameters")
     def expose(self, options):
@@ -356,9 +358,10 @@ class ChimeraCam (ChimeraCLI):
             self.out("exposing (%.3fs) ..." % request["exptime"], end="")
 
         @callback(self.localManager)
-        def exposeComplete(request):
+        def exposeComplete(request, status):
             global currentFrameExposeStart
-            self.out("OK (took %.3f s)" % (time.time()-currentFrameExposeStart))
+            if status == CameraStatus.OK:
+                self.out("OK (took %.3f s)" % (time.time()-currentFrameExposeStart))
 
         @callback(self.localManager)
         def readoutBegin(request):
@@ -367,25 +370,23 @@ class ChimeraCam (ChimeraCLI):
             self.out("reading out and saving ...", end="")
 
         @callback(self.localManager)
-        def readoutComplete(image):
+        def readoutComplete(image, status):
             global currentFrame, currentFrameExposeStart, currentFrameReadoutStart
-            self.out(" (%s) " % image.compressedFilename(), end="")
-            self.out("OK (took %.3f s)"  % (time.time()-currentFrameReadoutStart))
-            self.out("[%03d/%03d] took %.3fs" % (currentFrame, options.frames,
+
+            if status == CameraStatus.OK:
+                self.out("OK (took %.3f s)" % (time.time()-currentFrameExposeStart))
+            
+                self.out(" (%s) " % image.compressedFilename(), end="")
+                self.out("OK (took %.3f s)"  % (time.time()-currentFrameReadoutStart))
+                self.out("[%03d/%03d] took %.3fs" % (currentFrame, options.frames,
                                               time.time()-currentFrameExposeStart))
 
-            if ds9:
-                ds9.set("scale mode 99.5")
-                ds9.displayImage(image)
-
-        @callback(self.localManager)
-        def abortComplete():
-            global currentFrameExposeStart
-            self.out("OK (took %.3f s)"  % (time.time()-currentFrameExposeStart))
+                if ds9:
+                    ds9.set("scale mode 99.5")
+                    ds9.displayImage(image)
 
         camera.exposeBegin     += exposeBegin
         camera.exposeComplete  += exposeComplete
-        camera.abortComplete   += abortComplete
         camera.readoutBegin    += readoutBegin
         camera.readoutComplete += readoutComplete
 
@@ -499,7 +500,10 @@ class ChimeraCam (ChimeraCLI):
 
 def main():
     cli = ChimeraCam()
-    return cli.run(sys.argv)
-
+    cli.run(sys.argv)
+    cli.wait()
+    
 if __name__ == '__main__':
+
     main()
+    

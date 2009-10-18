@@ -1,0 +1,70 @@
+#! /usr/bin/env python
+# -*- coding: iso-8859-1 -*-
+
+# chimera - observatory automation system
+# Copyright (C) 2006-2007  P. Henrique Silva <henrique@astro.ufsc.br>
+
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+
+from chimera.core.cli import ChimeraCLI, action
+
+import sys
+import time
+import threading
+
+
+class ChimeraExample (ChimeraCLI):
+    
+    def __init__ (self):
+        ChimeraCLI.__init__(self, "chimera-example", "Example controller", 0.1, port=9020)
+
+        self.abortEvent = threading.Event()
+
+    @action
+    def do(self, options):
+        
+        self.abortEvent.clear()
+
+        self.out("Doing...", end="")
+        
+        t0 = time.time()
+        while time.time() < t0+10:
+            if self.abortEvent.isSet():
+                return
+
+        self.out("OK")
+
+    def abortDo(self):
+        self.out("\nAborting...", end="")
+        self.abortEvent.set()
+        self.out("OK")
+
+    def __abort__(self):
+        # if you need to use any proxies here, make sure you create
+        # your own copy (using copy.copy if you already have one), as
+        # __abort__ is going to run on different thred and Pyro
+        # doesn't like threads sharing Proxies.
+        self.abortDo()
+
+def main():
+    cli = ChimeraExample()
+    cli.run(sys.argv)
+    cli.wait()
+    
+if __name__ == '__main__':
+
+    main()
+    

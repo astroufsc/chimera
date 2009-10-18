@@ -213,7 +213,9 @@ class ChimeraFocus (ChimeraCLI):
 
 def main():
     cli = ChimeraFocus()
-    return cli.run(sys.argv)
+    cli.run(sys.argv)
+    cli.wait()
     
 if __name__ == '__main__':
+
     main()

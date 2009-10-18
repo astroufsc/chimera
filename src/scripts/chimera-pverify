@@ -99,7 +99,9 @@ class ChimeraPointVerify (ChimeraCLI):
         
 def main():
     cli = ChimeraPointVerify()
-    return cli.run(sys.argv)
+    cli.run(sys.argv)
+    cli.wait()
     
 if __name__ == '__main__':
+
     main()

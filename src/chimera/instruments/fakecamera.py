@@ -29,7 +29,8 @@ import numpy as N
 import pyfits
 
 from chimera.interfaces.camera import (CCD, CameraFeature,
-                                       ReadoutMode, Shutter)
+                                       ReadoutMode, Shutter,
+                                       CameraStatus)
 
 from chimera.instruments.camera      import CameraBase
 from chimera.instruments.filterwheel import FilterWheelBase
@@ -47,7 +48,6 @@ class FakeCamera (CameraBase, FilterWheelBase):
         CameraBase.__init__ (self)
         FilterWheelBase.__init__ (self)
 
-        self.__exposing = False
         self.__cooling  = False
 
         self.__lastFilter = self._getFilterName(0)
@@ -102,22 +102,22 @@ class FakeCamera (CameraBase, FilterWheelBase):
 
     def _expose(self, imageRequest):
         
-        self.__exposing = True
         self.exposeBegin(imageRequest)
+
+        status = CameraStatus.OK
 
         t=0
         self.__lastFrameStart = dt.datetime.utcnow()
         while t < imageRequest["exptime"]:
+            # [ABORT POINT]
             if self.abort.isSet():
-                self.__exposing = False
-                return False
-            
+                status = CameraStatus.ABORTED
+                break
+                
             time.sleep (0.1)            
             t+=0.1
 
-        self.exposeComplete(imageRequest)
-        self.__exposing = False
-        return True
+        self.exposeComplete(imageRequest, status)
     
     def gunzip(self, file, newext):
         r_file = gzip.GzipFile(file, 'r')
@@ -162,7 +162,7 @@ class FakeCamera (CameraBase, FilterWheelBase):
 
         return ret
         
-    def _readout(self, imageRequest, aborted=False):
+    def _readout(self, imageRequest):
         
         pix = None
         telescope = None
@@ -266,11 +266,13 @@ class FakeCamera (CameraBase, FilterWheelBase):
                                                     "frame_temperature": self.getTemperature(),
                                                     "binning_factor": self._binning_factors[binning]})
 
-        self.readoutComplete(proxy)
+        # [ABORT POINT]
+        if self.abort.isSet():
+            self.readoutComplete(None, CameraStatus.ABORTED)
+            return None
+    
+        self.readoutComplete(proxy, CameraStatus.OK)
         return proxy
-
-    def isExposing(self):
-        return self.__exposing
 
     @lock
     def startCooling(self, setpoint):

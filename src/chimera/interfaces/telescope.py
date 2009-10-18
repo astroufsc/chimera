@@ -30,6 +30,8 @@ from chimera.util.enum import Enum
 AlignMode = Enum("ALT_AZ", "POLAR", "LAND")
 SlewRate  = Enum("GUIDE", "CENTER", "FIND", "MAX")
 
+TelescopeStatus = Enum("OK", "ABORTED", "OBJECT_TOO_LOW", "OBJECT_TOO_HIGH")
+
 
 class PositionOutsideLimitsException (ChimeraException):
     pass
@@ -269,23 +271,18 @@ class TelescopeSlew (Telescope):
         """
 
     @event
-    def slewComplete (self, position):
-        """Indicates that the last slew operation finished without
-        being aborted. This event will be fired even when problems
-        impedes complete slew (altitude limits, for example).
+    def slewComplete (self, position, status):
+        """Indicates that the last slew operation finished. This event
+        will be fired even when problems impedes complete slew
+        (altitude limits, for example). Check L{status} field if you
+        need more information.
 
         @param position: The telescope current position when the slew finished..
         @type  position: L{Position}
+
+        @param status: The status of the slew operation.
+        @type  status: L{TelescopeStatus}
         """
-
-    @event
-    def abortComplete (self, position):
-        """Indicates that the last slew operation was aborted.
-
-        @param position: The telescope position when the scope aborted.
-        @type  position: L{Position}
-        """
-
 
 class TelescopeSync (Telescope):
     """Telescope with sync support.

@@ -51,9 +51,7 @@ except ImportError, e:
 import logging
 import socket
 import threading
-import signal
 import time
-import atexit
 from types import StringType
 
 
@@ -146,20 +144,12 @@ class Manager (RemoteObject):
         # register ourself
         self.resources.add(MANAGER_LOCATION, self, getManagerURI(self.getHostname(), self.getPort()))
 
-        # signals
-        signal.signal(signal.SIGTERM, self._sighandler)
-        signal.signal(signal.SIGINT, self._sighandler)
-        atexit.register (self._sighandler)
-
     # private
     def __repr__ (self):
         if hasattr(self, 'adapter') and self.adapter:
             return "<Manager for %s:%d at %s>" % (self.adapter.hostname, self.adapter.port, hex(id(self)))
         else:
             return "<Manager at %s>" % hex(id(self))
-
-    def _sighandler(self, sig = None, frame = None):
-        self.shutdown()
 
     # adapter host/port
     def getHostname (self):
@@ -355,12 +345,17 @@ class Manager (RemoteObject):
         """
 
         try:
-            while not self.died.isSet():
-                time.sleep (1)
-        except IOError:
+            try:
+                while not self.died.isSet():
+                    time.sleep (1)
+            except IOError:
+                # On Windows, Ctrl+C on a sleep call raise IOError 'cause
+                # of the interrupted syscall
+                pass
+        except KeyboardInterrupt:
             # On Windows, Ctrl+C on a sleep call raise IOError 'cause
             # of the interrupted syscall
-            pass
+            self.shutdown()
 
 
     # objects lifecycle

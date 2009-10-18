@@ -21,6 +21,9 @@
 
 import time
 import sys
+import logging
+
+from nose import SkipTest
 
 from chimera.core.manager  import Manager
 from chimera.core.callback import callback
@@ -28,7 +31,10 @@ from chimera.core.site     import Site
 from chimera.core.threads  import ThreadPool
 
 from chimera.util.coord import Coord
-from chimera.interfaces.telescope import SlewRate
+from chimera.util.enum import EnumValue
+from chimera.util.position import Position
+
+from chimera.interfaces.telescope import SlewRate, TelescopeStatus
 
 def assertEpsEqual (a, b, e=60):
     """Assert wether a equals b withing eps precision, in
@@ -36,42 +42,45 @@ def assertEpsEqual (a, b, e=60):
     """
     assert abs(a.AS-b.AS) <= e
 
-class TestTelescope (object):
+import chimera.core.log
+chimera.core.log.setConsoleLevel(1e10)
+log = logging.getLogger("chimera.tests")
+
+# hack for event  triggering asserts
+FiredEvents = {}
+
+class TelescopeTest (object):
 
     TELESCOPE = ""
 
-    def setup (self):
+    def assertEvents(self, slewStatus):
 
-        self.manager = Manager(port=8000)
+        # for every exposure, we need to check if all events were fired in the right order
+        # and with the right parameters
+        
+        assert "slewBegin" in FiredEvents
+        assert isinstance(FiredEvents["slewBegin"][1], Position)
 
-        if "LNA" in sys.argv:
-            self.manager.addClass(Site, "lna", {"name": "LNA",
-                                                "latitude": "-22 32 03",
-                                                "longitude": "-45 34 57",
-                                                "altitude": "1896",
-                                                "utc_offset": "-3"})
-        else:
-            self.manager.addClass(Site, "lna", {"name": "UFSC",
-                                                "latitude": "-27 36 13 ",
-                                                "longitude": "-48 31 20",
-                                                "altitude": "20",
-                                                "utc_offset": "-3"})
+        assert "slewComplete" in FiredEvents
+        assert FiredEvents["slewComplete"][0] > FiredEvents["slewBegin"][0]
+        assert isinstance(FiredEvents["slewComplete"][1], Position)
+        assert isinstance(FiredEvents["slewComplete"][2], EnumValue) and FiredEvents["slewComplete"][2] in TelescopeStatus
+        assert FiredEvents["slewComplete"][2] == slewStatus
 
-        if "REAL" in sys.argv:
-            #from chimera.instruments.meade import Meade
-            #self.manager.addClass(Meade, "meade", {"device": "/dev/ttyS6"})
-            #self.TELESCOPE = "/Meade/0"
-            self.TELESCOPE = "150.162.110.3:7666/TheSkyTelescope/0"
-        else:
-            from chimera.instruments.faketelescope import FakeTelescope
-            self.manager.addClass(FakeTelescope, "fake")
-            self.TELESCOPE = "/FakeTelescope/0"
+    def setupEvents(self):
 
-        self.tel = self.manager.getProxy(self.TELESCOPE)
+        @callback(self.manager)
+        def slewBeginClbk(position):
+            FiredEvents["slewBegin"] = (time.time(), position)
 
-    def teardown (self):
-        self.manager.shutdown()
+        @callback(self.manager)
+        def slewCompleteClbk(position, status):
+            FiredEvents["slewComplete"] = (time.time(), position, status)
 
+        tel = self.manager.getProxy(self.TELESCOPE)
+        tel.slewBegin += slewBeginClbk
+        tel.slewComplete += slewCompleteClbk
+        
     def test_slew (self):
 
         ra  = self.tel.getRa()
@@ -86,7 +95,7 @@ class TestTelescope (object):
             assert target.dec == dest_dec
 
         @callback(self.manager)
-        def slewCompleteClbk(position):
+        def slewCompleteClbk(position, status):
             assertEpsEqual(position.ra, dest_ra, 60)
             assertEpsEqual(position.dec, dest_dec, 60)
 
@@ -94,6 +103,10 @@ class TestTelescope (object):
         self.tel.slewComplete += slewCompleteClbk
 
         self.tel.slewToRaDec((dest_ra, dest_dec))
+
+        # event checkings
+        self.assertEvents(TelescopeStatus.OK)
+        
 
     def test_slew_abort (self):
 
@@ -104,11 +117,11 @@ class TestTelescope (object):
         dest_dec = last_dec + "10 00 00"
 
         @callback(self.manager)
-        def abortCompleteClbk(position):
+        def slewCompleteClbk(position, status):
             assert last_ra  < position.ra  < dest_ra
             assert last_dec < position.dec < dest_dec
 
-        self.tel.abortComplete += abortCompleteClbk
+        self.tel.slewComplete += slewCompleteClbk
 
         # async slew
         def slew():
@@ -121,10 +134,14 @@ class TestTelescope (object):
         # wait thread to be scheduled
         time.sleep(2)
 
-        # abort and test (on abortCompleteClbk).
+        # abort and test
         self.tel.abortSlew()
 
         pool.joinAll()
+
+        # event checkings
+        self.assertEvents(TelescopeStatus.ABORTED)
+        
 
     def test_sync (self):
 
@@ -149,7 +166,7 @@ class TestTelescope (object):
     def test_park (self):
         
         # FIXME: make a real test.
-        return
+        raise SkipTest()
 
         def printPosition():
             print self.tel.getPositionRaDec(), self.tel.getPositionAltAz()
@@ -196,6 +213,9 @@ class TestTelescope (object):
 
     def test_jog(self):
 
+        # FIXME: make a real test.
+        raise SkipTest()
+
         print
 
         dt = Coord.fromDMS("00:20:00")
@@ -235,4 +255,62 @@ class TestTelescope (object):
         self.tel.moveSouth(dt, SlewRate.FIND)
         self.tel.moveWest(dt, SlewRate.FIND)
         print "SW   :", (start.ra - self.tel.getPositionRaDec().ra).AS, (start.dec - self.tel.getPositionRaDec().dec).AS
+
+
+#
+# setup real and fake tests
+#
+
+from chimera.instruments.tests.base import FakeHardwareTest, RealHardwareTest
+
+class TestFakeTelescope(FakeHardwareTest, TelescopeTest):
+
+    def setup(self):
+
+        self.manager = Manager(port=8000)
+
+        self.manager.addClass(Site, "lna", {"name": "UFSC",
+                                            "latitude": "-27 36 13 ",
+                                            "longitude": "-48 31 20",
+                                            "altitude": "20",
+                                            "utc_offset": "-3"})
+
+        from chimera.instruments.faketelescope import FakeTelescope
+        self.manager.addClass(FakeTelescope, "fake")
+        self.TELESCOPE = "/FakeTelescope/0"
+
+        self.tel = self.manager.getProxy(self.TELESCOPE)
+
+        FiredEvents = {}
+        self.setupEvents()
+
+    def teardown (self):
+        self.manager.shutdown()
+
+    
+class TestRealTelescope(RealHardwareTest, TelescopeTest):
+    
+    def setup (self):
+
+        self.manager = Manager(port=8000)
+
+        self.manager.addClass(Site, "lna", {"name": "UFSC",
+                                            "latitude": "-27 36 13 ",
+                                            "longitude": "-48 31 20",
+                                            "altitude": "20",
+                                            "utc_offset": "-3"})
+
+        from chimera.instruments.meade import Meade
+        self.manager.addClass(Meade, "meade", {"device": "/dev/ttyS6"})
+        self.TELESCOPE = "/Meade/0"
+        #self.TELESCOPE = "150.162.110.3:7666/TheSkyTelescope/0"
+        self.tel = self.manager.getProxy(self.TELESCOPE)
+
+        FiredEvents = {}
+        self.setupEvents()
+
+    def teardown (self):
+        self.manager.shutdown()
+
+
 

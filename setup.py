@@ -23,6 +23,7 @@ use_setuptools()
 
 import os
 import sys
+import glob
 
 from setuptools import setup, find_packages
 
@@ -35,7 +36,6 @@ sys.path.insert (0, src_dir)
 
 from chimera.core.version import  _chimera_version_,		\
                                   _chimera_description_,	\
-                                  _chimera_long_description_,	\
                                   _chimera_author,		\
                                   _chimera_author_email_,	\
                                   _chimera_license_,		\
@@ -92,9 +92,10 @@ setup(name='chimera-python',
       packages         = find_packages("src", exclude=["*.tests"]),
       scripts          = chimera_scripts,
       data_files       = [("chimera/core", ["src/chimera/core/chimera.global.config",
-                                            "src/chimera/core/chimera.sample.config"],
-                           "chimera/gui", ["src/chimera/gui/chimera.xml"])],
-
+                                            "src/chimera/core/chimera.sample.config"]),
+                          ("chimera/gui", ["src/chimera/gui/chimera.xml"]),
+                          ("chimera/gui/modules", ["src/chimera/gui/modules/lcd_chars.txt"] + glob.glob("src/chimera/gui/modules/*.xml") + \
+                                                                                              glob.glob("src/chimera/gui/modules/*.png"))],
       zip_safe         = False,
 
       # dependencies are installed bottom up, so put important things last

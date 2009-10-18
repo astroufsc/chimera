@@ -21,26 +21,11 @@
 
 from chimera.core.interface import Interface
 from chimera.core.event import event
-from chimera.util.enum  import Enum
 
 from chimera.core.exceptions import ChimeraException
 
-
-Filter = Enum ("U", "B", "V", "R", "I",  # Johnson-Cousins
-               "C", "M", "T1", "T2",     # Washington
-               "u", "g", "r", "i", "z",  # SDSS
-               "J", "H", "K", "Kp",      # MKO
-               "Z", "Y", "J", "H", "K",  # UKIDSS design
-
-               "R", "G", "B", "RGB",
-               "RED", "GREEN", "BLUE",
-               "H_ALPHA", "H_BETA",
-               "CLEAR", "LUNAR",
-               )
-
 class InvalidFilterPositionException (ChimeraException):
     pass
-
 
 class FilterWheel (Interface):
     """ An interface for electromechanical filter wheels.
@@ -59,7 +44,7 @@ class FilterWheel (Interface):
         """Set the current filter.
 
         @param filter: The filter to use.
-        @type  filter: L{Filter} or str
+        @type  filter: str
 
         @rtype: None
         """
@@ -67,9 +52,8 @@ class FilterWheel (Interface):
     def getFilter (self):
         """Return the current filter.
 
-
         @return: Current filter.
-        @rtype: L{Filter}
+        @rtype: str
         """
 
     def getFilters (self):
@@ -84,8 +68,8 @@ class FilterWheel (Interface):
         """Fired when the wheel changes the current filter.
 
         @param newFilter: The new current filter.
-        @type  newFilter: L{Filter}
+        @type  newFilter: str
 
         @param oldFilter: The last filter.
-        @type  oldFilter: L{Filter}
+        @type  oldFilter: str
         """

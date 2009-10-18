@@ -20,10 +20,8 @@
 
 
 from chimera.core.chimeraobject import ChimeraObject
-
 from chimera.interfaces.filterwheel import (FilterWheel,
                                             InvalidFilterPositionException)
-
 from chimera.core.lock import lock
 
 
@@ -46,7 +44,7 @@ class FilterWheelBase (ChimeraObject, FilterWheel):
         try:
             return self.getFilters()[index]
         except (ValueError, TypeError):
-           raise InvalidFilterPositionException("Unknown filter (%s)."%str(index))
+           raise InvalidFilterPositionException("Unknown filter (%s)." % str(index))
 
     def _getFilterPosition (self, name):
         return self.getFilters().index(name)

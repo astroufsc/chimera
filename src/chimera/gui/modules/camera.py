@@ -3,6 +3,8 @@ from chimera.core.exceptions import printException
 
 from chimera.gui.modules.canvas import FITS, FITSCanvas
 from chimera.gui.module import ChimeraGUIModule
+
+from chimera.interfaces.camera import CameraStatus
 from chimera.util.image import Image
 
 import gtk
@@ -13,6 +15,7 @@ import time
 import urllib
 import os
 import threading
+import copy
 
 class ImageViewer:
     
@@ -21,11 +24,18 @@ class ImageViewer:
         
         self.notebook = self.main.builder.get_object("imagesNotebook")
         self.notebook.append_page(gtk.Label("No images"))
+        self.first_image = True
 
     def newImage(self, image):
         fits = FITS(image.filename())
         canvas = FITSCanvas(fits.frame)
+
+        if self.first_image:
+            self.notebook.remove_page(0)
+            self.first_image = False            
+
         tab_num = self.notebook.append_page(canvas.window, gtk.Label(os.path.basename(image.filename())))
+            
         self.notebook.set_current_page(tab_num)
 
 
@@ -44,31 +54,31 @@ class CameraController:
             self.module.view.exposeBegin(request)
             
         @callback(self.module.manager)
-        def exposeComplete(request):
-            self.module.view.exposeComplete(request)
+        def exposeComplete(request, status):
+            if status == CameraStatus.OK:           
+                self.module.view.exposeComplete(request)
+            else:
+                self.module.view.abort()
 
         @callback(self.module.manager)
         def readoutBegin(request):
             self.module.view.readoutBegin(request)
                 
         @callback(self.module.manager)
-        def readoutComplete(image):
-            self.module.view.readoutComplete(image)
-            
-        @callback(self.module.manager)
-        def abortComplete():
-            self.module.view.abort()
-            
+        def readoutComplete(image, status):
+            if status == CameraStatus.OK:
+                self.module.view.readoutComplete(image)
+            else:
+                self.module.view.abort()
+                                    
         self.camera.exposeBegin     += exposeBegin
         self.camera.exposeComplete  += exposeComplete
-        self.camera.abortComplete   += abortComplete
         self.camera.readoutBegin    += readoutBegin
         self.camera.readoutComplete += readoutComplete
 
     def getCamera(self):
-        # transfer to current thread and return (a hacky way to reuse Proxies)
-        self.camera._transferThread()
-        return self.camera
+        # create a copy of Proxy to make sure multiple threads don't reuse it
+        return copy.copy(self.camera)
 
     def setFilterWheel(self, wheel):
         self.wheel = wheel
@@ -250,6 +260,14 @@ class CameraView:
                 self.exposureProgress.hide()
                 return False
             glib.timeout_add(2000, abortTimer)
+
+            if self.exposeTimer:
+                glib.source_remove(self.exposeTimer)
+                self.exposeTimer = 0
+            
+            if self.readoutTimer:
+                glib.source_remove(self.readoutTimer)
+                self.readoutTimer = 0
             
         glib.idle_add(ui)
 

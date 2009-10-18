@@ -22,6 +22,7 @@
 import time
 import logging
 import sys
+import threading
 
 from chimera.core.manager  import Manager
 from chimera.core.callback import callback
@@ -29,62 +30,81 @@ from chimera.core.threads  import ThreadPool
 from chimera.core.exceptions import ChimeraValueError
 from chimera.core.proxy import Proxy
 
+from chimera.controllers.imageserver.imagerequest import ImageRequest
+
+from chimera.interfaces.camera import CameraStatus
+
+from chimera.util.enum import EnumValue
+
 import chimera.core.log
-#chimera.core.log.setConsoleLevel(logging.DEBUG)
+chimera.core.log.setConsoleLevel(1e10)
 log = logging.getLogger("chimera.tests")
 
 
 from nose.tools import assert_raises
 
+# hack for event  triggering asserts
+FiredEvents = {}
 
-class TestCamera (object):
+class CameraTest (object):
 
-    CAMERA = ""
+    manager = None
+    CAMERA = ''
 
-    def setup (self):
+    def assertEvents(self, exposeStatus, readoutStatus):
 
-        self.manager = Manager(port=8000)
+        # for every exposure, we need to check if all events were fired in the right order
+        # and with the right parameters
+        
+        assert "exposeBegin" in FiredEvents
+        assert isinstance(FiredEvents["exposeBegin"][1], ImageRequest)
 
-        if "REAL" in sys.argv:
-            from chimera.intruments.sbig import SBIG
-            self.manager.addClass(SBIG, "sbig")
-            self.CAMERA = "/SBIG/0"
-        else:
-            from chimera.instruments.fakecamera import FakeCamera
-            self.manager.addClass(FakeCamera, "fake")
-            self.CAMERA = "/FakeCamera/0"
+        assert "exposeComplete" in FiredEvents
+        assert FiredEvents["exposeComplete"][0] > FiredEvents["exposeBegin"][0]
+        assert isinstance(FiredEvents["exposeComplete"][1], ImageRequest)
+        assert isinstance(FiredEvents["exposeComplete"][2], EnumValue) and FiredEvents["exposeComplete"][2] in CameraStatus
+        assert FiredEvents["exposeComplete"][2] == exposeStatus
+
+        if readoutStatus:
+
+            assert "readoutBegin" in FiredEvents
+            assert FiredEvents["readoutBegin"][0] > FiredEvents["exposeComplete"][0]
+            assert isinstance(FiredEvents["readoutBegin"][1], ImageRequest)
+
+            assert "readoutComplete" in FiredEvents
+            assert FiredEvents["readoutComplete"][0] > FiredEvents["readoutBegin"][0]
+            if readoutStatus == CameraStatus.OK:
+                assert isinstance(FiredEvents["readoutComplete"][1], Proxy)
+            else:
+                assert isinstance(FiredEvents["readoutComplete"][1], type(None))
+            
+            assert isinstance(FiredEvents["readoutComplete"][2], EnumValue) and FiredEvents["readoutComplete"][2] in CameraStatus
+            assert FiredEvents["readoutComplete"][2] == readoutStatus
+
+    def setupEvents(self):
 
         @callback(self.manager)
         def exposeBeginClbk(request):
-            print
-            print time.time(), "Expose begin for request %s." % request
+            FiredEvents["exposeBegin"] = (time.time(), request)
 
         @callback(self.manager)
-        def exposeCompleteClbk(request):
-            print time.time(), "Expose complete for request %s." % request
+        def exposeCompleteClbk(request, status):
+            FiredEvents["exposeComplete"] = (time.time(), request, status)
 
         @callback(self.manager)
         def readoutBeginClbk(request):
-            print time.time(), "Readout begin for request %s." % request["filename"]
+            FiredEvents["readoutBegin"] = (time.time(), request)
 
         @callback(self.manager)
-        def readoutCompleteClbk(img):
-            print time.time(), "Readout complete for request %s." % img.filename()
-
-        @callback(self.manager)
-        def abortCompleteClbk():
-            print time.time(), "Abort complete."
+        def readoutCompleteClbk(proxy, status):
+            FiredEvents["readoutComplete"] = (time.time(), proxy, status)
 
         cam = self.manager.getProxy(self.CAMERA)
         cam.exposeBegin     += exposeBeginClbk
         cam.exposeComplete  += exposeCompleteClbk        
         cam.readoutBegin    += readoutBeginClbk        
         cam.readoutComplete += readoutCompleteClbk
-        cam.abortComplete   += abortCompleteClbk
         
-    def teardown (self):
-        self.manager.shutdown()
-
     def test_simple (self):
 
         cam = self.manager.getProxy(self.CAMERA)
@@ -104,6 +124,8 @@ class TestCamera (object):
         assert len(frames) == 2  
         assert isinstance(frames[0], Proxy)
         assert isinstance(frames[1], Proxy)
+
+        self.assertEvents(CameraStatus.OK, CameraStatus.OK)
 
     def test_expose_checkings (self):
 
@@ -132,7 +154,7 @@ class TestCamera (object):
             begin_times.append(time.time())
 
         @callback(self.manager)
-        def readoutCompleteClbk(request):
+        def readoutCompleteClbk(request, status):
             end_times.append(time.time())
 
         cam.exposeBegin     += exposeBeginClbk
@@ -159,6 +181,8 @@ class TestCamera (object):
         assert (end_times[1] > begin_times[0])
 
         pool.joinAll()
+
+        self.assertEvents(CameraStatus.OK, CameraStatus.OK)        
         
     def test_expose_abort (self):
 
@@ -187,6 +211,50 @@ class TestCamera (object):
 
         pool.joinAll()
 
+        self.assertEvents(CameraStatus.ABORTED, False)
+
+    def test_readout_abort (self):
+
+        cam = self.manager.getProxy(self.CAMERA)
+        exposeComplete = threading.Event()
+
+        print
+        
+        def doExpose():
+            # need to get another Proxy as Proxies cannot be shared among threads
+            cam = self.manager.getProxy(self.CAMERA)
+            cam.expose(exptime=5, filename="autogen-readout-abort.fits")
+
+        @callback(self.manager)
+        def exposeCompleteCallback(request, status):
+            exposeComplete.set()
+
+        cam.exposeComplete += exposeCompleteCallback
+
+        #
+        # abort exposure while reading out
+        #
+
+        pool = ThreadPool()
+        pool.queueTask(doExpose)
+
+        # thread scheduling
+        time.sleep(2)
+
+        assert cam.isExposing() == True
+
+        while not exposeComplete.isSet():
+            time.sleep(0.1)
+
+        assert cam.isExposing() == True
+        cam.abortExposure()
+        assert cam.isExposing() == False
+
+        pool.joinAll()
+
+        self.assertEvents(CameraStatus.OK, CameraStatus.ABORTED)
+        
+
     def test_cooling (self):
 
         cam = self.manager.getProxy(self.CAMERA)
@@ -209,3 +277,40 @@ class TestCamera (object):
 
         cam.stopCooling()
         assert cam.isCooling() == False
+
+
+#
+# setup real and fake tests
+#
+
+from chimera.instruments.tests.base import FakeHardwareTest, RealHardwareTest
+
+class TestFakeCamera(FakeHardwareTest, CameraTest):
+
+    def setup (self):
+        self.manager = Manager(port=8000)
+        from chimera.instruments.fakecamera import FakeCamera
+        self.manager.addClass(FakeCamera, "fake")
+        self.CAMERA = "/FakeCamera/0"
+
+        FiredEvents = {}
+        self.setupEvents()
+
+    def teardown (self):
+        self.manager.shutdown()
+    
+class TestRealCamera(RealHardwareTest, CameraTest):
+    
+    def setup (self):
+
+        self.manager = Manager(port=8000)
+
+        from chimera.intruments.sbig import SBIG
+        self.manager.addClass(SBIG, "sbig")
+        self.CAMERA = "/SBIG/0"
+
+        FiredEvents = {}
+        self.setupEvents()
+
+    def teardown (self):
+        self.manager.shutdown()

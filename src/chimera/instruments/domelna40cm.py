@@ -26,7 +26,7 @@ import os
 import select
 
 from chimera.instruments.dome import DomeBase
-from chimera.interfaces.dome  import InvalidDomePositionException
+from chimera.interfaces.dome  import InvalidDomePositionException, DomeStatus
 
 from chimera.core.exceptions import ChimeraException
 from chimera.core.lock import lock
@@ -195,7 +195,7 @@ class DomeLNA40cm (DomeBase):
         if fin.startswith ("CUPULA="):
             self._slewing = False
             time.sleep (0.3) # FIXME: how much sleep we need?
-            self.slewComplete(self.getAz())
+            self.slewComplete(self.getAz(), DomeStatus.OK)
         else:
             self._slewing = False
             self.log.warning("Unknow error while slewing. "
@@ -221,8 +221,6 @@ class DomeLNA40cm (DomeBase):
 
         if ack != "PARADO":
             raise IOError("Error while trying to stop the dome.")
-
-        self.abortComplete(self.getAz())
 
     @lock
     def getAz(self):

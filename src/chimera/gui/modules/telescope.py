@@ -5,7 +5,6 @@ from chimera.core.exceptions import ObjectNotFoundException, printException
 from chimera.util.position import Position, Epoch
 
 from chimera.gui.module import ChimeraGUIModule
-from chimera.gui.modules.lcd import LCDWidget
 
 import gtk
 import glib
@@ -18,8 +17,13 @@ import os
 class TelescopeController:
     def __init__ (self, module):
         self.telescope = None
+        self.site = None
+        
         self.module = module
     
+    def setSite(self, site):
+        self.site = site
+
     def setTelescope(self, telescope):
         self.telescope = telescope
         self.module.view.startStatusUpdate()
@@ -29,13 +33,9 @@ class TelescopeController:
             self.module.view.slewBegin(target)
         
         @callback(self.module.manager)
-        def slewComplete(target):
+        def slewComplete(target, status):
             self.module.view.slewComplete(target)
         
-        @callback(self.module.manager)
-        def abortComplete(target):
-            self.module.view.abortComplete(target)
-
         @callback(self.module.manager)
         def parkComplete():
             self.module.view.updateParkStatus()
@@ -46,11 +46,15 @@ class TelescopeController:
         
         self.telescope.slewComplete   += slewBegin
         self.telescope.slewComplete   += slewComplete
-        self.telescope.abortComplete  += abortComplete
         self.telescope.parkComplete   += parkComplete
         self.telescope.unparkComplete += unparkComplete
 
         
+    def getSite(self):
+        # transfer to current thread and return (a hacky way to reuse Proxies)
+        self.site._transferThread()
+        return self.site
+
     def getTelescope(self):
         # transfer to current thread and return (a hacky way to reuse Proxies)
         self.telescope._transferThread()
@@ -173,6 +177,12 @@ class TelescopeController:
     def getCurrentAltAz(self):
         telescope = self.getTelescope()
         return telescope.getPositionAltAz()
+
+    def getLocaltime(self):
+        return self.getSite().localtime()
+
+    def getLST(self):
+        return self.getSite().LST()
     
     def isTracking(self):
         telescope = self.getTelescope()
@@ -230,26 +240,13 @@ class TelescopeView:
         self.offsetCombo.set_text_column(0)
         self.offsetCombo.set_active(0)
 
-        self.raLCDWidget = gtk.DrawingArea()
-        self.raLCD = LCDWidget(self.raLCDWidget, 1, 14)
-        self.raLCD.set_zoom_factor(1)
-        self.module.builder.get_object("raBox").pack_end(self.raLCDWidget)
-
-        self.decLCDWidget = gtk.DrawingArea()
-        self.decLCD = LCDWidget(self.decLCDWidget, 1, 14)
-        self.decLCD.set_zoom_factor(1)
-        self.module.builder.get_object("decBox").pack_end(self.decLCDWidget)
-
-        self.altLCDWidget = gtk.DrawingArea()
-        self.altLCD = LCDWidget(self.altLCDWidget, 1, 14)
-        self.altLCD.set_zoom_factor(1)
-        self.module.builder.get_object("altBox").pack_end(self.altLCDWidget)
-
-        self.azLCDWidget = gtk.DrawingArea()
-        self.azLCD = LCDWidget(self.azLCDWidget, 1, 14)
-        self.azLCD.set_zoom_factor(1)
-        self.module.builder.get_object("azBox").pack_end(self.azLCDWidget)
-
+        self.raLabel = self.module.builder.get_object("raLabel")
+        self.decLabel = self.module.builder.get_object("decLabel")
+        self.altLabel = self.module.builder.get_object("altLabel")
+        self.azLabel = self.module.builder.get_object("azLabel")        
+        self.localtimeLabel = self.module.builder.get_object("localtimeLabel")
+        self.lstLabel = self.module.builder.get_object("lstLabel")        
+        
     def showError(self, message):
         #md = gtk.MessageDialog(None, gtk.DIALOG_DESTROY_WITH_PARENT, gtk.MESSAGE_ERROR,
         #                       gtk.BUTTONS_CLOSE, message)
@@ -262,11 +259,37 @@ class TelescopeView:
         if not self.module.controller.isSlewing():
             raDec = self.module.controller.getCurrentRaDec()
             altAz = self.module.controller.getCurrentAltAz()
+            localtime = self.module.controller.getLocaltime()
+            lst = self.module.controller.getLST()
 
-            self.raLCD.print_line("%14s" % str(raDec.ra))
-            self.decLCD.print_line("%14s" % str(raDec.dec))
-            self.altLCD.print_line("%14s" % str(altAz.alt))
-            self.azLCD.print_line("%14s" % str(altAz.az))
+            raStr = str(raDec.ra)
+            raInt  = raStr[:raStr.find(".")]
+            raFrac = raStr[raStr.rfind("."):]
+
+            decStr = str(raDec.dec)
+            decInt  = decStr[:decStr.find(".")]
+            decFrac = decStr[decStr.rfind("."):]
+
+            altStr = str(altAz.alt)
+            altInt  = altStr[:altStr.find(".")]
+            altFrac = altStr[altStr.rfind("."):]
+
+            azStr = str(altAz.az)
+            azInt  = azStr[:azStr.find(".")]
+            azFrac = azStr[azStr.rfind("."):]
+
+            lstStr = str(lst)
+            lstInt  = lstStr[:lstStr.find(".")]
+            lstFrac = lstStr[lstStr.rfind("."):]
+
+            localtimeInt = localtime.strftime("%H:%M:%S")
+            
+            self.raLabel.set_markup ("<span font-family='monospace' size='14000'>%10s<span size='9000'>%4s</span></span>" % (raInt, raFrac))
+            self.decLabel.set_markup("<span font-family='monospace' size='14000'>%10s<span size='9000'>%4s</span></span>" % (decInt, decFrac))
+            self.altLabel.set_markup("<span font-family='monospace' size='14000'>%10s<span size='9000'>%4s</span></span>" % (altInt, altFrac))
+            self.azLabel.set_markup ("<span font-family='monospace' size='14000'>%10s<span size='9000'>%4s</span></span>" % (azInt, azFrac))
+            self.lstLabel.set_markup ("<span font-family='monospace' size='14000'>%10s<span size='9000'>%4s</span></span>" % (lstInt, lstFrac))
+            self.localtimeLabel.set_markup ("<span font-family='monospace' size='14000'>%10s<span size='9000'>.000</span></span>" % localtimeInt)
 
             self.updateTrackingStatus()
             
@@ -341,12 +364,6 @@ class TelescopeView:
         
         self.startStatusUpdate()
     
-    def abortComplete(self, target = None):
-        def ui():
-            self.slewComplete()
-            
-        glib.idle_add(ui)
-
     def slewCompleteUI(self):
         def ui():
             self.slewButton.set_sensitive(True)
@@ -362,7 +379,8 @@ class TelescopeView:
 
 class TelescopeGUIModule(ChimeraGUIModule):
 
-    module_controls = {"telescope": "Telescope"}
+    module_controls = {"telescope": "Telescope",
+                       "site": "Site"}
 
     def __init__ (self,  manager):
         ChimeraGUIModule.__init__(self, manager)
@@ -373,6 +391,7 @@ class TelescopeGUIModule(ChimeraGUIModule):
     def setupGUI (self, objects):
 
         telescope = objects.get("telescope", None)
+        site = objects.get("site", None)
 
         self.builder = gtk.Builder()
         self.builder.add_from_file(os.path.join(os.path.dirname(__file__), "telescope.xml"))
@@ -382,6 +401,7 @@ class TelescopeGUIModule(ChimeraGUIModule):
         self.telescopeInit = False
         
         self.controller.setTelescope(telescope)
+        self.controller.setSite(site)        
 
         # Query telescope tracking status and adjust UI accordingly
         self.view.updateTrackingStatus()

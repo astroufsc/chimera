@@ -12,12 +12,14 @@ from chimera.core.managerlocator   import ManagerLocator, ManagerNotFoundExcepti
 
 from chimera.util.enum      import Enum
 
+import Pyro.errors
+
 import sys
 import optparse
 import os.path
-import signal
 import threading
 import socket
+import time
 
 __all__ = ['ChimeraCLI',
            'Action',
@@ -286,8 +288,14 @@ class ChimeraCLI (object):
                   instrument_path=True, controllers_path=True):
 
         self.parser = optparse.OptionParser(prog=prog,
-                                             description=_chimera_description_ + " - " + description,
-                                             version="Chimera: %s\n%s: %s" % (_chimera_version_, prog, version))
+                                            description=_chimera_description_ + " - " + description,
+                                            version="Chimera: %s\n%s: %s" % (_chimera_version_, prog, version))
+
+        # hack to inject our exit funciton into the parser
+        def parser_exit(status=0, msg=None):
+            return self.exit(msg=msg, ret=status)
+
+        self.parser.exit = parser_exit
 
         self.options = None
 
@@ -300,9 +308,9 @@ class ChimeraCLI (object):
 
         self._keepRemoteManager = True
 
-        signal.signal(signal.SIGTERM, self._sighandler)
-        signal.signal(signal.SIGINT, self._sighandler)
-
+        # shutdown event
+        self.died = threading.Event()
+        
         # base actions and parameters
 
         if verbosity:
@@ -347,14 +355,6 @@ class ChimeraCLI (object):
         kwargs["file"] = sys.stderr
         self._print(*args, **kwargs)
         
-    def exit(self, msg=None, ret=1):
-        self.__stop__(self.options)
-
-        if msg:
-            self.err(msg)
-            
-        sys.exit(ret)
-
     def addParameters(self, *params):
         for param in params:
             p = Parameter(**param)
@@ -401,7 +401,22 @@ class ChimeraCLI (object):
                                     metavar="PATH"))
             self._needControllersPath = False
 
+    def exit(self, msg=None, ret=1):
+        self.__stop__(self.options)
+
+        if msg:
+            self.err(msg)
+
+        self.died.set()
+        
+        sys.exit(ret)
+
     def run (self, cmdlineArgs):
+        t = threading.Thread(target=self._run, args=(cmdlineArgs,))
+        t.setDaemon(True)
+        t.start()
+
+    def _run(self, cmdlineArgs):
 
         # create parser from defined actions and parameters
         self._createParser()
@@ -429,6 +444,15 @@ class ChimeraCLI (object):
                 self.exit(ret=1)
 
         self.__stop__(self.options)
+        
+        self.died.set()
+
+    def wait(self):
+        try:
+            while not self.died.isSet():
+                time.sleep(0.1)
+        except KeyboardInterrupt:
+            self.abort()
 
     def _startSystem (self, options):
         
@@ -504,8 +528,11 @@ class ChimeraCLI (object):
         if self.localManager:
             self.localManager.shutdown()
 
-        if self._remoteManager and not self._keepRemoteManager:
-            self._remoteManager.shutdown()
+        try:
+            if self._remoteManager and not self._keepRemoteManager:
+                self._remoteManager.shutdown()
+        except Pyro.errors.ConnectionClosedError:
+            pass
 
     def _createParser (self):
 
@@ -674,8 +701,8 @@ class ChimeraCLI (object):
 
         return True
     
-    def _sighandler(self, sig=None, frame=None):
-        
+    def abort(self):
+
         if self._aborting == False:
             self._aborting = True
         else:

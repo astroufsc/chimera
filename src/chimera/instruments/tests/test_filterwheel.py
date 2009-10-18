@@ -19,32 +19,34 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 
-import sys
+import time
 
 from chimera.core.manager  import Manager
+from chimera.core.callback import callback
+
+# hack for event  triggering asserts
+FiredEvents = {}
 
 
-class TestFilterWheel (object):
+class FilterWheelTest (object):
 
     FILTER_WHEEL = ""
 
-    def setup (self):
+    def assertEvents(self):
 
-        self.manager = Manager(port=8000)
+        assert "filterChange" in FiredEvents
+        assert isinstance(FiredEvents["filterChange"][1], str)
+        assert isinstance(FiredEvents["filterChange"][2], str)
+        
+    def setupEvents(self):
 
-        if "REAL" in sys.argv:
-            from chimera.instruments.sbig import SBIG
-            self.manager.addClass(SBIG, "sbig", {"filters": "R G B LUNAR CLEAR"})
-            self.FILTER_WHEEL = "/SBIG/0"
-        else:
-            from chimera.instruments.fakefilterwheel import FakeFilterWheel
-            self.manager.addClass(FakeFilterWheel, "fake", {"device": "/dev/ttyS0",
-                                                            "filters": "U B V R I"})
-            self.FILTER_WHEEL = "/FakeFilterWheel/0"
+        @callback(self.manager)
+        def filterChangeClbk(newFilter, oldFilter):
+            FiredEvents["filterChange"] = (time.time(), newFilter, oldFilter)
 
-    def teardown (self):
-        self.manager.shutdown()
-
+        fw = self.manager.getProxy(self.FILTER_WHEEL)
+        fw.filterChange += filterChangeClbk
+        
     def test_filters (self):
 
         f = self.manager.getProxy(self.FILTER_WHEEL)
@@ -54,6 +56,7 @@ class TestFilterWheel (object):
         for filter in filters:
             f.setFilter(filter)
             assert f.getFilter() == filter
+            self.assertEvents()            
 
     def test_get_filters (self):
         
@@ -62,6 +65,43 @@ class TestFilterWheel (object):
 
         assert isinstance(filters, tuple) or isinstance(filters, list)
 
-        
-        
 
+#
+# setup real and fake tests
+#
+
+from chimera.instruments.tests.base import FakeHardwareTest, RealHardwareTest
+
+class TestFakeFilterWheel(FakeHardwareTest, FilterWheelTest):
+
+    def setup (self):
+
+        self.manager = Manager(port=8000)
+
+        from chimera.instruments.fakefilterwheel import FakeFilterWheel
+        self.manager.addClass(FakeFilterWheel, "fake", {"device": "/dev/ttyS0",
+                                                        "filters": "U B V R I"})
+        self.FILTER_WHEEL = "/FakeFilterWheel/0"
+
+        FiredEvents = {}
+        self.setupEvents()
+
+    def teardown (self):
+        self.manager.shutdown()
+
+
+class TestRealFilterWheel(RealHardwareTest, FilterWheelTest):
+    
+    def setup (self):
+
+        self.manager = Manager()
+
+        from chimera.instruments.sbig import SBIG
+        self.manager.addClass(SBIG, "sbig", {"filters": "R G B LUNAR CLEAR"})
+        self.FILTER_WHEEL = "/SBIG/0"
+
+        FiredEvents = {}
+        self.setupEvents()
+
+    def teardown (self):
+        self.manager.shutdown()

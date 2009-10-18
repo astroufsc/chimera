@@ -117,9 +117,18 @@ class ChimeraDome (ChimeraCLI):
             self.out("Dome slit is closed.")
         self.out("="*40)
 
+    def __abort__ (self):
+        self.out("\naborting... ", endl="")
+
+        # copy self.dome Proxy because we are running from a differente thread (yes, Pyro is tricky!)
+        dome = copy.copy(self.dome)
+        dome.abortSlew()
+
 def main():
     cli = ChimeraDome()
-    return cli.run(sys.argv)
+    cli.run(sys.argv)
+    cli.wait()
     
 if __name__ == '__main__':
+
     main()

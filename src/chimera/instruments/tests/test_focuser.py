@@ -18,7 +18,6 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-import sys
 import random
 
 from chimera.core.manager  import Manager
@@ -29,31 +28,9 @@ from chimera.interfaces.focuser   import InvalidFocusPositionException
 from nose.tools import assert_raises
 
 
-class TestFocuser (object):
+class FocuserTest (object):
 
     FOCUSER = ""
-
-    def setup (self):
-
-        self.manager = Manager(port=8000)
-
-        if "REAL" in sys.argv:
-            from chimera.instruments.optectcfs import OptecTCFS
-            self.manager.addClass(OptecTCFS, "optec", {"device": "/dev/ttyS0"})
-            self.FOCUSER = "/OptecTCFS/0"
-        else:
-            from chimera.instruments.fakefocuser import FakeFocuser
-            self.manager.addClass(FakeFocuser, "fake", {"device": "/dev/ttyS0"})
-            self.FOCUSER = "/FakeFocuser/0"
-
-        self.manager.addClass(Site, "lna", {"name": "LNA",
-                                            "latitude": "-22 32 03",
-                                            "longitude": "-45 34 57",
-                                            "altitude": "1896",
-                                            "utc_offset": "-3"})
-
-    def teardown (self):
-        self.manager.shutdown()
 
     def test_get_position (self):
 
@@ -85,6 +62,44 @@ class TestFocuser (object):
         assert_raises(InvalidFocusPositionException, focus.moveTo, 1e9)
 
 
-        
+#
+# setup real and fake tests
+#
 
-        
+from chimera.instruments.tests.base import FakeHardwareTest, RealHardwareTest
+
+class TestFakeFocuser(FakeHardwareTest, FocuserTest):
+
+    def setup(self):
+
+        self.manager = Manager(port=8000)
+        self.manager.addClass(Site, "lna", {"name": "LNA",
+                                            "latitude": "-22 32 03",
+                                            "longitude": "-45 34 57",
+                                            "altitude": "1896",
+                                            "utc_offset": "-3"})
+
+        from chimera.instruments.fakefocuser import FakeFocuser
+        self.manager.addClass(FakeFocuser, "fake", {"device": "/dev/ttyS0"})
+        self.FOCUSER = "/FakeFocuser/0"
+
+    def teardown (self):
+        self.manager.shutdown()
+
+    
+class TestRealFocuser(RealHardwareTest, FocuserTest):
+    
+    def setup (self):
+        self.manager = Manager(port=8000)
+        self.manager.addClass(Site, "lna", {"name": "LNA",
+                                            "latitude": "-22 32 03",
+                                            "longitude": "-45 34 57",
+                                            "altitude": "1896",
+                                            "utc_offset": "-3"})
+        from chimera.instruments.optectcfs import OptecTCFS
+        self.manager.addClass(OptecTCFS, "optec", {"device": "/dev/ttyS0"})
+        self.FOCUSER = "/OptecTCFS/0"
+
+    def teardown (self):
+        self.manager.shutdown()
+
