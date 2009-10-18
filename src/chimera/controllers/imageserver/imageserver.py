@@ -18,8 +18,8 @@ class ImageServer(ChimeraObject):
                    'load_dir': '$HOME/images',
 
                    # Load existing load_dir images on startup
-                   'autoload': True,
-                   'httpd': True, 
+                   'autoload': False,
+                   'httpd': False, 
                    'http_host': 'default',
                    'http_port': 7669}
     
