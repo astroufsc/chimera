@@ -82,11 +82,8 @@ class TelescopeSlew (Telescope):
     def slewToRaDec (self, position):
         """Slew the scope to the given equatorial coordinates.
 
-        @param position: the equatorial coordinates to slew to. It can
-        be given as a Position object or as a tuple with arguments to
-        Position.fromRaDec factory.
-
-        @type position: L{Position} or tuple
+        @param position: the equatorial coordinates to slew to.
+        @type position: L{Position}
 
         @returns: Nothing.
         @rtype: None
@@ -95,11 +92,9 @@ class TelescopeSlew (Telescope):
     def slewToAltAz (self, position):
         """Slew the scope to the given local coordinates.
 
-        @param position: the local coordinates to slew to. It can be
-        given as a Position object or as a tuple with arguments to
-        Position.fromAltAz factory.
+        @param position: the local coordinates to slew to.
 
-        @type position: L{Position} or tuple
+        @type position: L{Position}
 
         @returns: Nothing.
         @rtype: None

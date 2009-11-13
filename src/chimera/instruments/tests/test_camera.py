@@ -305,7 +305,7 @@ class TestRealCamera(RealHardwareTest, CameraTest):
 
         self.manager = Manager(port=8000)
 
-        from chimera.intruments.sbig import SBIG
+        from chimera.instruments.sbig import SBIG
         self.manager.addClass(SBIG, "sbig")
         self.CAMERA = "/SBIG/0"
 

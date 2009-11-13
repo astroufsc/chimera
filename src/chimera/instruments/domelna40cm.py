@@ -157,6 +157,9 @@ class DomeLNA40cm (DomeBase):
 
         self._checkQuirk()
 
+        if not isinstance(az, Coord):
+            az = Coord.fromDMS(az)
+
         # correct dome/telescope phase difference
         dome_az = az.D + self._az_shift
 

@@ -55,7 +55,7 @@ class LockWrapperDispatcher (MethodWrapperDispatcher):
 
         lock = getattr(self.instance, INSTANCE_MONITOR_ATTRIBUTE_NAME)
 
-        t0 = time.time()
+        #t0 = time.time()
         #log.debug("[trying to acquire monitor] %s %s" % (self.instance, self.func.__name__))
         lock.acquire()
         #log.debug("[acquired monitor] %s %s after %f" % (self.instance, self.func.__name__, time.time()-t0))        

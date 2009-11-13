@@ -97,7 +97,7 @@ class TestRealFocuser(RealHardwareTest, FocuserTest):
                                             "altitude": "1896",
                                             "utc_offset": "-3"})
         from chimera.instruments.optectcfs import OptecTCFS
-        self.manager.addClass(OptecTCFS, "optec", {"device": "/dev/ttyS0"})
+        self.manager.addClass(OptecTCFS, "optec", {"device": "/dev/ttyS4"})
         self.FOCUSER = "/OptecTCFS/0"
 
     def teardown (self):

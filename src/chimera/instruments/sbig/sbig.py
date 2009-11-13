@@ -26,7 +26,7 @@ import numpy as N
         
 from chimera.instruments.sbig.sbigdrv import (SBIGDrv, SBIGException)
 
-from chimera.interfaces.camera   import (CCD, CameraFeature, Shutter)
+from chimera.interfaces.camera   import (CCD, CameraFeature, Shutter, CameraStatus)
 
 from chimera.instruments.camera      import CameraBase
 from chimera.instruments.filterwheel import FilterWheelBase
@@ -233,22 +233,25 @@ class SBIG(CameraBase, FilterWheelBase):
         self.lastFrameStartTime = dt.datetime.utcnow()
         self.lastFrameTemp = self.getTemperature()
 
+        status = CameraStatus.OK
+        print "begin", time.time()
         while self.drv.exposing(self.ccd):
-                                        
-            # check if user asked to abort
+            # [ABORT POINT]
             if self.abort.isSet():
-                # ok, abort and check if user asked to do a readout anyway
-                if self.drv.exposing(self.ccd):
-                    self._endExposure(imageRequest)
-                
-                return False
+                status = CameraStatus.ABORTED
+                print time.time(), "abort"
+                break
+            # this sleep is EXTREMELY important: without it, Python would stuck on this
+            # thread and abort will not work.
+            time.sleep(0.01)
 
         # end exposure and returns
-        return self._endExposure(imageRequest)
+        print time.time(), "end"
+        return self._endExposure(imageRequest, status)
 
-    def _endExposure(self, request):
+    def _endExposure(self, request, status):
         self.drv.endExposure(self.ccd)
-        self.exposeComplete(request)
+        self.exposeComplete(request, status)
         return True
 
     def _readout(self, imageRequest):
@@ -264,6 +267,11 @@ class SBIG(CameraBase, FilterWheelBase):
         self.drv.startReadout(self.ccd, mode.mode, (top, left, width, height))
         
         for line in range(height):
+            # [ABORT POINT]
+            if self.abort.isSet():
+                self._endReadout(None, CameraStatus.ABORTED)
+                return False
+ 
             img[line] = self.drv.readoutLine(self.ccd, mode.mode, (left, width))
 
 
@@ -272,12 +280,11 @@ class SBIG(CameraBase, FilterWheelBase):
                                  "frame_start_time": self.lastFrameStartTime,
                                  "binning_factor":self._binning_factors[binning]})
 
-        return self._endReadout(proxy)
+        return self._endReadout(proxy, CameraStatus.OK)
 
-    def _endReadout(self, proxy):
-        
+    def _endReadout(self, proxy, status):
         self.drv.endReadout(self.ccd)
-        self.readoutComplete(proxy)
+        self.readoutComplete(proxy, status)
         return proxy
 
     def getMetadata(self, request):

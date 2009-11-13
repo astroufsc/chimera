@@ -713,7 +713,9 @@ class ChimeraCLI (object):
             if hasattr(abort, '__call__'):
                 t = threading.Thread(target=abort)
                 t.start()
-                t.join()
+                try:
+                    t.join()
+                except KeyboardInterrupt: pass
                 
         self.exit(ret=2)
         

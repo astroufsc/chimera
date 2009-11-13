@@ -94,17 +94,18 @@ class ChimeraTel (ChimeraCLI):
 
         @callback(self.localManager)
         def slewComplete(position, status):
-            global telescope
             if status == TelescopeStatus.OK:
                 self.out("OK.")
                 self.out(40*"=")
+            else:
+                self.out("")
     
         telescope.slewBegin     += slewBegin
         telescope.slewComplete  += slewComplete
     
         self.out(40*"=")
         self.out("current position ra/dec: %s" % telescope.getPositionRaDec())
-        self.out("current position:alt/az: %s" % telescope.getPositionAltAz())
+        self.out("current position alt/az: %s" % telescope.getPositionAltAz())
     
         try:
             if options.objectName:
@@ -119,7 +120,7 @@ class ChimeraTel (ChimeraCLI):
             self.exit()
     
         self.out("new position ra/dec: %s" % telescope.getPositionRaDec())
-        self.out("new position:alt/az: %s" % telescope.getPositionAltAz())
+        self.out("new position alt/az: %s" % telescope.getPositionAltAz())
         
         telescope.slewBegin     -= slewBegin
         telescope.slewComplete  -= slewComplete

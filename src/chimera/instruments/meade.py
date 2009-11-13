@@ -35,7 +35,7 @@ from chimera.instruments.telescope import TelescopeBase
 from chimera.interfaces.telescope  import SlewRate, AlignMode, TelescopeStatus
 
 from chimera.util.coord    import Coord
-from chimera.util.position import Position
+from chimera.util.position import Position, Epoch
 from chimera.util.enum     import Enum
 
 from chimera.core.lock  import lock
@@ -361,11 +361,11 @@ class Meade (TelescopeBase):
             if target.within (position, eps=Coord.fromAS(60)):
                 time.sleep (self["stabilization_time"])
                 self._slewing = False
-                return True
+                return TelescopeStatus.OK
 
             time.sleep (self["slew_idle_time"])
 
-        return True
+        return TelescoopeStatus.ERROR
 
     def abortSlew(self):
 

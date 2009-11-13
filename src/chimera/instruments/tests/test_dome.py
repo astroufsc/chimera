@@ -207,10 +207,10 @@ class TestRealDome(RealHardwareTest, DomeTest):
         self.manager.addClass(Meade, "meade", {"device": "/dev/ttyS6"})
         self.manager.addClass(DomeLNA40cm, "lna40", {"device": "/dev/ttyS9",
                                                      "telescope": "/Meade/0",
-                                                     "mode": "Track"})
+                                                     "mode": "Stand"})
 
         self.TELESCOPE = "/Meade/meade"
-        self.DOME = "/DomeLNA40CM/0"
+        self.DOME = "/DomeLNA40cm/0"
        
         FiredEvents = {}
         self.setupEvents()

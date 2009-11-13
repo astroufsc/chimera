@@ -83,26 +83,25 @@ class TelescopeTest (object):
         
     def test_slew (self):
 
-        ra  = self.tel.getRa()
-        dec = self.tel.getDec()
-
-        dest_ra  = (ra+"1 00 00")
-        dest_dec = (dec+"15 00 00")
+        site = self.manager.getProxy("/Site/0")
+        
+        dest = Position.fromRaDec(site.LST(), site["latitude"])
+        real_dest = None
 
         @callback(self.manager)
         def slewBeginClbk(target):
-            assert target.ra == dest_ra
-            assert target.dec == dest_dec
+            global real_dest
+            real_dest = target
 
         @callback(self.manager)
         def slewCompleteClbk(position, status):
-            assertEpsEqual(position.ra, dest_ra, 60)
-            assertEpsEqual(position.dec, dest_dec, 60)
+            assertEpsEqual(position.ra, real_dest.ra, 60)
+            assertEpsEqual(position.dec, real_dest.dec, 60)
 
         self.tel.slewBegin += slewBeginClbk
         self.tel.slewComplete += slewCompleteClbk
 
-        self.tel.slewToRaDec((dest_ra, dest_dec))
+        self.tel.slewToRaDec(dest)
 
         # event checkings
         self.assertEvents(TelescopeStatus.OK)
@@ -110,23 +109,36 @@ class TelescopeTest (object):
 
     def test_slew_abort (self):
 
-        last_ra  = self.tel.getRa()
-        last_dec = self.tel.getDec()
+        site = self.manager.getProxy("/Site/0")
 
-        dest_ra  = last_ra  + "01 00 00"
-        dest_dec = last_dec + "10 00 00"
+        # go to know position
+        self.tel.slewToRaDec(Position.fromRaDec(site.LST(), site["latitude"]))
+        last = self.tel.getPositionRaDec()
+
+        # clear event checkings
+        FiredEvents = {}
+
+        # drift it
+        dest = Position.fromRaDec(last.ra+Coord.fromH(1), last.dec+Coord.fromD(10))
+        real_dest = None
+
+        @callback(self.manager)
+        def slewBeginClbk(target):
+            global real_dest
+            real_dest = target
 
         @callback(self.manager)
         def slewCompleteClbk(position, status):
-            assert last_ra  < position.ra  < dest_ra
-            assert last_dec < position.dec < dest_dec
+            assert last.ra  < position.ra  < real_dest.ra
+            assert last.dec < position.dec < real_dest.dec
 
+        self.tel.slewBegin += slewBeginClbk
         self.tel.slewComplete += slewCompleteClbk
 
         # async slew
         def slew():
             tel = self.manager.getProxy(self.TELESCOPE)
-            tel.slewToRaDec((dest_ra, dest_dec))
+            tel.slewToRaDec(dest)
 
         pool = ThreadPool()
         pool.queueTask(slew)
@@ -148,20 +160,22 @@ class TelescopeTest (object):
         # get current position, drift the scope, and sync on the first
         # position (like done when aligning the telescope).
 
-        real_ra  = self.tel.getRa()
-        real_dec = self.tel.getDec()
+        real = self.tel.getPositionRaDec()
 
         @callback(self.manager)
         def syncCompleteClbk(position):
-            assert position.ra == real_ra
-            assert position.dec == real_dec
+            assert position.ra == real.ra
+            assert position.dec == real.dec
 
         self.tel.syncComplete += syncCompleteClbk
 
         # drift to "real" object coordinate
-        self.tel.slewToRaDec((real_ra+"01 00 00", real_dec+"01 00 00"))
+        drift = Position.fromRaDec(real.ra+Coord.fromH(1), real.dec+Coord.fromD(1))
+        self.tel.slewToRaDec(drift)
 
-        self.tel.syncRaDec((real_ra, real_dec))
+        self.tel.syncRaDec(real)
+
+        time.sleep(2)
 
     def test_park (self):
         
@@ -180,7 +194,7 @@ class TelescopeTest (object):
         print "current position:", self.tel.getPositionRaDec()
         print "moving to:", (ra-"01 00 00"), (dec-"01 00 00")
 
-        self.tel.slewToRaDec((ra-"01 00 00", dec-"01 00 00"))
+        self.tel.slewToRaDec(Position.fromRaDec(ra-Coord.fromH(1), dec-Coord.fromD(1)))
 
         for i in range(10):
             printPosition()
