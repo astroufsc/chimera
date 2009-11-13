@@ -141,9 +141,9 @@ class Meade (TelescopeBase):
 
             self.setLat(site["latitude"])
             self.setLong(site["longitude"])
-            self.setDate(dt.date.today())
             self.setLocalTime(dt.datetime.now().time())
             self.setUTCOffset(site["utc_offset"])
+            self.setDate(dt.date.today())
         except ObjectNotFoundException:
             self.log.warning("Cannot initialize telescope. "
                              "Site object not available. Telescope"

@@ -234,19 +234,16 @@ class SBIG(CameraBase, FilterWheelBase):
         self.lastFrameTemp = self.getTemperature()
 
         status = CameraStatus.OK
-        print "begin", time.time()
         while self.drv.exposing(self.ccd):
             # [ABORT POINT]
             if self.abort.isSet():
                 status = CameraStatus.ABORTED
-                print time.time(), "abort"
                 break
             # this sleep is EXTREMELY important: without it, Python would stuck on this
             # thread and abort will not work.
             time.sleep(0.01)
 
         # end exposure and returns
-        print time.time(), "end"
         return self._endExposure(imageRequest, status)
 
     def _endExposure(self, request, status):
