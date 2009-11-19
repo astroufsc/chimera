@@ -65,8 +65,8 @@ win32_deps = win32_cdeps = []
 
 # FIXME: pywcs only works on python 2.5
 if sys.platform == "win32":
-    win32_cdeps = ["numpy == 1.0.4"]
-    win32_deps += ["pywin32 == 210"]
+    win32_cdeps = ["numpy == 1.3.0"]
+    win32_deps += ["pywin32 == 214"]
 else:
 
     import pkg_resources
@@ -94,8 +94,7 @@ setup(name='chimera-python',
       data_files       = [("chimera/core", ["src/chimera/core/chimera.global.config",
                                             "src/chimera/core/chimera.sample.config"]),
                           ("chimera/gui", ["src/chimera/gui/chimera.xml"]),
-                          ("chimera/gui/modules", ["src/chimera/gui/modules/lcd_chars.txt"] + glob.glob("src/chimera/gui/modules/*.xml") + \
-                                                                                              glob.glob("src/chimera/gui/modules/*.png"))],
+                          ("chimera/gui/modules", glob.glob("src/chimera/gui/modules/*.xml")+glob.glob("src/chimera/gui/modules/*.png"))],
       zip_safe         = False,
 
       # dependencies are installed bottom up, so put important things last

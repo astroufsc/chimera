@@ -32,8 +32,7 @@ from chimera.util.coord    import Coord
 from chimera.util.position import Position
 
 from chimera.instruments.telescope import TelescopeBase
-from chimera.instruments.dcfocuser import DCFocuser, Direction
-from chimera.interfaces.telescope  import PositionOutsideLimitsException
+from chimera.interfaces.telescope  import PositionOutsideLimitsException, TelescopeStatus
 
 log = logging.getLogger(__name__)
 
@@ -68,17 +67,17 @@ def com (func):
 
 
 
-class TheSkyTelescope (TelescopeBase, DCFocuser):
+class TheSkyTelescope (TelescopeBase):
 
     __config__ = {"thesky": [5, 6]}
 
     def __init__ (self):
         TelescopeBase.__init__ (self)
-        DCFocuser.__init__(self)
+
+        self._abort = threading.Event()
 
         self._thesky = None
         self._telescope = None
-        self._term = threading.Event ()
         self._idle_time = 0.2
         self._target = None
 
@@ -86,14 +85,12 @@ class TheSkyTelescope (TelescopeBase, DCFocuser):
     def __start__ (self):
         self.open()
         super(TheSkyTelescope, self).__start__()
-        #super(DCFocuser, self).__start__()
         return True
 
     @com
     def __stop__ (self):
         self.close()
         super(TheSkyTelescope, self).__stop__()        
-        #super(DCFocuser, self).__stop__()
         return True
 
     @com
@@ -189,7 +186,7 @@ class TheSkyTelescope (TelescopeBase, DCFocuser):
             return False
 
         self._target = position
-        self._term.clear ()
+        self._abort.clear ()
 
         try:
             self._telescope.Asynchronous = 1
@@ -197,17 +194,20 @@ class TheSkyTelescope (TelescopeBase, DCFocuser):
             position_now = self._getFinalPosition(position)
             
             self.slewBegin(position_now)
-            #self.slewBegin((position_now.ra, position_now.dec))
             self._telescope.SlewToRaDec (position_now.ra.H, position_now.dec.D, "chimera")
 
+            status = TelescopeStatus.OK
+            
             while not self._telescope.IsSlewComplete:
 
-                if self._term.isSet ():
-                    return True
+                # [ABORT POINT]
+                if self._abort.isSet():
+                    status = TelescopeStatus.ABORTED
+                    break
 
                 time.sleep (self._idle_time)
 
-            self.slewComplete(self.getPositionRaDec())
+            self.slewComplete(self.getPositionRaDec(), status)
 
         except com_error:
             raise PositionOutsideLimitsException("Position outside limits.")
@@ -244,11 +244,8 @@ class TheSkyTelescope (TelescopeBase, DCFocuser):
 
     @com
     def abortSlew (self):
-
         if self.isSlewing ():
-            
-            #TODO:Where do we use this?! We are failing lint since self.term is undefined
-            self.term.set ()
+            self._abort.set ()
             time.sleep (self._idle_time)
             self._telescope.Abort ()
             return True
@@ -313,27 +310,8 @@ class TheSkyTelescope (TelescopeBase, DCFocuser):
         self._telescope.Sync (position.ra.H, position.dec.D, "chimera")
         self.syncComplete(position)            
 
-    #
-    # focuser implementation
-    #
-    
-    def _moveTo (self, direction, steps):
-
-        pulses = int(steps * self["pulse_dt"])
-
-        self.log.debug("asked to move %d steps %s. applying %d pulses" % (steps, str(direction), pulses))
-
-        if direction == Direction.IN:
-            method = self._telescope.FocusOutSlow
-        else:
-            method = self._telescope.FocusInSlow
-            
-        for i in range(pulses):
-            method()
-    
     def getMetadata (self, request):
         headers = []
         headers += super(TelescopeBase, self).getMetadata(request)
-        headers += super(DCFocuser, self).getMetadata(request)
         return headers
 
