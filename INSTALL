@@ -18,6 +18,9 @@ To run unit tests also install python-nose.
 
 To generate API documentation also install python-epydoc.
 
+Ubuntu 9.10
+===========
+
 Here is the full command line to use on Ubuntu 9.10 to get all the requirements:
 
 sudo apt-get install python-dev python-numpy saods9 sextractor libusb-dev swig \
@@ -32,7 +35,26 @@ saods9 packages is broken, so remove it from the list and install
 it manually. Chimera needs xpa tools too, it's available on DS9 site as well.
 Make sure all this binaries are anywhere on your $PATH.
 
-After that,
+libbip
+======
+
+Chimera uses libbip image display library, unfortunately this packages doesn't have
+an Ubuntu package yet, so you'll need to install it manually.
+
+Checkout the source and do a standard .configure; make; make install.
+
+See INSTALL file on fits-display source for more information.
+
+Step by step:
+
+$ svn co http://fits-display.googlecode.com/svn/trunk fits-display
+$ cd fits-display
+$ ./configure --prefix=/usr/local --enable-python
+$ make
+$ sudo make install
+
+Chimera on Linux
+================
 
 $ cd <uncompressed_chimera_dir>
 # su
@@ -40,7 +62,8 @@ $ cd <uncompressed_chimera_dir>
 
 setup.py must be run as root user to install Chimera on a system-wide basis.
 
-Windows install:
+Chimera on Windows
+==================
 
 Install Tortoise SVN
 Use SVN Checkout and download the code.
@@ -48,4 +71,3 @@ Then run on command line (on the same directory where you checked out chimera)
 
 python setup.py install
 
-just like the unix version
