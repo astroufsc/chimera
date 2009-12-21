@@ -6,17 +6,23 @@ Installation:
 Before installing Chimera, install the following packages using the standard way
 on your distribution.
 
-python-numpy python-dev python-numpy libusb-dev swig saods9 sextractor astrometry.net
+For basic chimera: python-dev python-numpy saods9 sextractor
+For SBIG support: libusb-dev swig
+For chimera-gui: libcfitsio3-dev python-gtk2-dev python-gobject-dev python-pygoocanvas python-gdl
 
-python-sqlalchemy (it doesn't install automatically for me)
+To enable WCS and pointing verification, install astrometry.net and the required
+indices (see www.astrometry.net for information about the indices, which we could
+not redistribute).
 
-developer extras:
+To run unit tests also install python-nose.
 
- nosetests
+To generate API documentation also install python-epydoc.
 
-documentation extras:
+Here is the full command line to use on Ubuntu to get all the requirements:
 
-epydoc (it doesn't install automatically for me)
+sudo apt-get install python-dev python-numpy saods9 sextractor libusb-dev swig \
+libcfitsio3-dev python-gtk2-dev python-gobject-dev python-pygoocanvas python-gdl \
+python-node python-epydoc
 
 After that,
 
@@ -30,21 +36,8 @@ Windows install:
 
 Install Tortoise SVN
 Use SVN Checkout and download the code.
-If you use the normal (not develop) install, after checking out do 
+Then run on command line (on the same directory where you checked out chimera) 
 
 python setup.py install
 
-The following has happened:
-
-No locale packages or download links found for pywin32==210
-error: Could not find suitable distribution for Requirement.parse('pywin32==210')
-
-PH suggestion:
-
-Na página http://sourceforge.net/projects/pywin32/files/, procure pelo
-Build 210 e baixe o executavel apropriado ao Python instalado na
-máquina e execute-o. Depois disso rode o setup.py do Chimera
-novamente. Deve ser o suficiente.
-
 just like the unix version
-
