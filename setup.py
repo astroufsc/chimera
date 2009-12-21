@@ -81,7 +81,7 @@ else:
         print >> sys.stderr, "*"*80
         sys.exit(1)
 
-    linux_deps += ["python-sbigudrv == 0.2"]
+    linux_deps += ["python-sbigudrv == 0.3"]
     
     if sys.version_info[0:2] >= (2,5):
         linux_deps += ["pywcs"]
