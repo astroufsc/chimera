@@ -17,7 +17,6 @@ from types import StringType
 __all__ = ['Position']
 
 
-Equinox = Enum("J2000", "B1950")
 Epoch   = Enum("J2000", "B1950", "NOW")
 System  = Enum("CELESTIAL", "GALACTIC", "ECLIPTIC", "TOPOCENTRIC")
 
@@ -49,7 +48,7 @@ class Position (object):
     Examples:
 
     >>> # assumes ra in hms and declination in dms
-    >>> p = Position.fromRaDec('10:00:00', '20:20:20', equinox=Equinox.J2000)
+    >>> p = Position.fromRaDec('10:00:00', '20:20:20', epoch=Epoch.J2000)
     >>> p = Position.fromRaDec(10, 20) # assume ra in hours and dec in decimal degress
     >>> # don't want assumptions? ok, give me a real Coord
     >>> # ok, If you want ra in radians and dec in hours (very strange), use:
@@ -87,7 +86,7 @@ class Position (object):
     """
 
     @staticmethod
-    def fromRaDec (ra, dec, equinox=Equinox.J2000, epoch=Epoch.J2000):
+    def fromRaDec (ra, dec, epoch=Epoch.J2000):
 
         try:
             if type(ra) == StringType:
@@ -127,7 +126,7 @@ class Position (object):
         except PositionOutsideLimitsError:
             raise ValueError("Invalid DEC range %s. Must be between 0-360 deg or -90 - +90 deg." % str(dec))
 
-        return Position((ra, dec), system=System.CELESTIAL, equinox=equinox, epoch=epoch)
+        return Position((ra, dec), system=System.CELESTIAL, epoch=epoch)
 
     @staticmethod
     def fromAltAz (alt, az):
@@ -213,18 +212,18 @@ class Position (object):
 
 
     def __init__(self, coords,
-                 equinox=Equinox.J2000,
                  epoch=Epoch.J2000,
                  system=System.CELESTIAL):
 
         self._coords = coords
         self.system = str(system).lower()
-        self.epoch = epoch
+        self.epoch = Epoch.fromStr(str(epoch).upper())
 
-        try:
-            self.equinox = str(equinox).lower()
-        except:
-            self.equinox = equinox #to support arbitrary equinoxes
+    def __str__(self):
+        """
+        @rtype: string
+        """
+        return "%s %s" % tuple(str(c) for c in self.coords)
 
     def __repr__(self):
         """
@@ -240,11 +239,13 @@ class Position (object):
         else:
             return "J%.2f" % (2000.0 + (ephem.julian_date() - 2451545.0) / 365.25)
 
-    def __str__(self):
-        """
-        @rtype: string
-        """
-        return "%s %s" % tuple(str(c) for c in self.coords)
+    def __eq__(self, other):
+        if isinstance(other, Position):
+            return (self._coords == other._coords)
+        return False
+
+    def __neq__(self, other):
+        return not (self == other)
 
     # -* conversions -*
 

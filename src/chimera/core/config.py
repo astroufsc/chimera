@@ -328,12 +328,12 @@ class PositionOption (Option):
         Option.__init__(self, name, value, checker)
 
         self._system = value.system
-        self._equinox = value.equinox
+        self._epoch  = value.epoch
 
     def set (self, value):
         try:
             oldvalue = self._value
-            self._value = self._checker.check(value, self._system, self._equinox)
+            self._value = self._checker.check(value, self._system, self._epoch)
             return oldvalue
         except OptionConversionException, e:
             log.debug ("Error setting %s: %s." % (self._name, str (e)))
