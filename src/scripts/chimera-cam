@@ -317,6 +317,12 @@ class ChimeraCam (ChimeraCLI):
             else:
                 filterList.append(options.filter)
 
+            # validate filters
+            for filter in filterList:
+                if self.wheel and filter not in self.wheel.getFilters():
+                    self.err("Invalid filter '%s'" % filter)
+                    self.exit()
+            
             self.out("Filters: %s" % ' '.join(filterList))
 
         expTimes = []
@@ -439,9 +445,8 @@ class ChimeraCam (ChimeraCLI):
                     self.wheel.setFilter(f)
                     self.out("OK")
                 except InvalidFilterPositionException, e:
-                    self.out("ERROR. Couldn't move filter wheel to %s. (%s)" % (f, e))
-                    time.sleep(3)
-
+                    self.err("ERROR. Couldn't move filter wheel to %s. (%s)" % (f, e))
+                    self.exit()
 
         # finally, expose
         start = time.time()
