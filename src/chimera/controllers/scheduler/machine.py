@@ -1,7 +1,10 @@
 import chimera.core.log
 
 from chimera.controllers.scheduler.states import State
-from chimera.core.exceptions import ProgramExecutionException
+from chimera.controllers.scheduler.model import Session
+from chimera.controllers.scheduler.status import SchedulerStatus
+
+from chimera.core.exceptions import ProgramExecutionException, ProgramExecutionAborted
 
 import threading
 import logging
@@ -14,19 +17,23 @@ class Machine(threading.Thread):
     __stateLock = threading.Lock()
     __wakeUpCall = threading.Condition()
     
-    def __init__(self, scheduler, controller):
+    def __init__(self, scheduler, executor, controller):
         threading.Thread.__init__(self)
 
         self.scheduler = scheduler
+        self.executor = executor
         self.controller = controller
+
+        self.currentProgram = None
+
         self.setDaemon(False)
 
-        self.state(State.OFF)
-    
     def state(self, state=None):
         self.__stateLock.acquire()
         try:
             if not state: return self.__state
+            if state == self.__state: return
+            self.controller.stateChanged(state, self.__state)
             log.debug("Changing state, from %s to %s." % (self.__state, state))
             self.__state = state
             self.wakeup()
@@ -35,19 +42,21 @@ class Machine(threading.Thread):
 
     def run(self):
         log.info("Starting scheduler machine")
-        self.state(State.PAUSED)
+        self.state(State.OFF)
+
+        # inject instruments on handlers
+        self.executor.__start__()
 
         while self.state() != State.SHUTDOWN:
 
             if self.state() == State.OFF:
                 log.debug("[off] will just sleep..")
-                pass
+                self.sleep()
 
-            if self.state() == State.DIRTY:
-                log.debug("[dirty] database changed, rescheduling...")
+            if self.state() == State.START:
+                log.debug("[start] database changed, rescheduling...")
                 self.scheduler.reschedule(self)
                 self.state(State.IDLE)
-                continue
 
             if self.state() == State.IDLE:
 
@@ -59,26 +68,30 @@ class Machine(threading.Thread):
                 if program:
                     log.debug("[idle] there is something to do, processing...")
                     self.state(State.BUSY)
+                    self.currentProgram = program
                     self._process(program)
                     continue
 
                 # should'nt get here if any task was executed
-                log.debug("[idle] there is nothing to do, sleeping...")
+                log.debug("[idle] there is nothing to do, going offline...")
+                self.currentProgram = None
+                self.state(State.OFF)
 
             elif self.state() == State.BUSY:
                 log.debug("[busy] waiting tasks to finish..")
-                pass
+                self.sleep()
 
-            elif self.state() == State.PAUSED:
-                log.debug("[paused] waiting for someone to make me idle or dirty")
+            elif self.state() == State.STOP:
+                log.debug("[stop] trying to stop current program")
+                self.executor.stop()
+                self.state(State.OFF)
 
             elif self.state() == State.SHUTDOWN:
+                log.debug("[shutdown] trying to stop current program")
+                self.executor.stop()
                 log.debug("[shutdown] should die soon.")
                 break
 
-            # Rest In Pieces/Let Sleeping Dogs Lie
-            self.sleep()
-        
         log.debug('[shutdown] thread ending...')
 
     def sleep(self):
@@ -95,17 +108,36 @@ class Machine(threading.Thread):
         
     def _process(self, program):
 
-        log.debug("Starting to process program: %s" % str(program)) 
         def process ():
+
+            # session to be used by executor and handlers
+            session = Session()
+
+            task = session.merge(program)
+
+            log.debug("[start] %s" % str(task))
+
+            self.controller.programBegin(program)
+
             try:
-                self.controller.executor.execute(program)
-                log.debug("Done with program: %s" % str(program)) 
-                self.scheduler.done(program)
-            except ProgramExecutionException, e:
-                self.scheduler.done(program, error=e)
-            finally:
+                self.executor.execute(task)
+                log.debug("[finish] %s" % str(task)) 
+                self.scheduler.done(task)
+                self.controller.programComplete(program, SchedulerStatus.OK)
                 self.state(State.IDLE)
-                
+            except ProgramExecutionException, e:
+                self.scheduler.done(task, error=e)
+                self.controller.programComplete(program, SchedulerStatus.ERROR)
+                self.state(State.IDLE)
+                log.debug("[error] %s (%s)" (str(task), str(e)))
+            except ProgramExecutionAborted, e:
+                self.scheduler.done(task, error=e)
+                self.controller.programComplete(program, SchedulerStatus.ABORTED)
+                self.state(State.OFF)
+                log.debug("[aborted by user] %s" % str(task))
+
+            session.commit()
+
         t = threading.Thread(target=process)
         t.setDaemon(False)
         t.start()

@@ -1,75 +1,117 @@
-from elixir import Entity, Field, using_options
-from elixir import DateTime, Float, Integer, PickleType, Boolean, Text
-from elixir import OneToMany, ManyToOne
-from elixir import metadata, setup_all, create_all
-
 from chimera.core.constants import DEFAULT_PROGRAM_DATABASE
 
-class Program(Entity):
-    using_options(tablename="programs")
-    
-    name   = Field(Text, default="Program")
-    pi     = Field(Text, default="Anonymous Investigator")
+from sqlalchemy import (Column, String, Integer, DateTime, Boolean, ForeignKey,
+                        Float, PickleType, MetaData, create_engine)
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker, relation, backref
 
-    priority = Field(Integer, default=0)
+engine = create_engine('sqlite:///%s' % DEFAULT_PROGRAM_DATABASE, echo=False)
+metaData = MetaData()
+metaData.bind = engine
 
-    createdAt = Field(DateTime)
-    finished  = Field(Boolean, default=False)
+Session = sessionmaker(bind=engine)
+Base = declarative_base(metadata=metaData)
+
+import datetime as dt
+
+class Program(Base):
+    __tablename__ = "program"
     
-    actions      = OneToMany("Action", inverse="program")
+    id     = Column(Integer, primary_key=True)
+    name   = Column(String, default="Program")
+    pi     = Column(String, default="Anonymous Investigator")
+
+    priority = Column(Integer, default=0)
+
+    createdAt = Column(DateTime, default=dt.datetime.today())
+    finished  = Column(Boolean, default=False)
+    
+    actions   = relation("Action", backref=backref("program", order_by="Action.id"),
+                         cascade="all, delete, delete-orphan")
 
     def __str__ (self):
-        return "<Program #%d %s pi:%s #actions: %d>" % (self.id, self.name,
-                                                        self.pi, len(self.actions))
+        return "#%d %s pi:%s #actions: %d" % (self.id, self.name,
+                                              self.pi, len(self.actions))
 
-class Action(Entity):
-    using_options(tablename="action")
+class Action(Base):
 
-    program  = ManyToOne("Program", inverse="actions")
+    id         = Column(Integer, primary_key=True)
+    program_id = Column(Integer, ForeignKey("program.id"))
+    action_type = Column('type', String(100))
 
+    __tablename__ = "action"
+    __mapper_args__ = {'polymorphic_on': action_type}
+    
 class AutoFocus(Action):
-    using_options(tablename="action_focus", inheritance="multi")
+    __tablename__ = "action_focus"
+    __mapper_args__ = {'polymorphic_identity': 'AutoFocus'}
 
-    start   = Field(Integer, default=0)
-    end     = Field(Integer, default=1)
-    step    = Field(Integer, default=1)
-    filter  = Field(Text, default=None)
-    exptime = Field(Float, default=1.0)
-    binning = Field(Text, default=None)
-    window  = Field(Text, default=None)
+    id     = Column(Integer, ForeignKey('action.id'), primary_key=True)
+    start   = Column(Integer, default=0)
+    end     = Column(Integer, default=1)
+    step    = Column(Integer, default=1)
+    filter  = Column(String, default=None)
+    exptime = Column(Float, default=1.0)
+    binning = Column(String, default=None)
+    window  = Column(String, default=None)
+
+    def __str__ (self):
+        return "autofocus: start=%d end=%d step=%d exptime=%d" % (self.start, self.end, self.step, self.exptime)
     
 class PointVerify(Action):
-    using_options(tablename="action_pv", inheritance="multi")
+    __tablename__ = "action_pv"
+    __mapper_args__ = {'polymorphic_identity': 'PointVerify'}
 
-    here   = Field(Boolean, default=None)
-    choose = Field(Boolean, default=None) 
+    id     = Column(Integer, ForeignKey('action.id'), primary_key=True)
+    here   = Column(Boolean, default=None)
+    choose = Column(Boolean, default=None) 
+
+    def __str__ (self):
+        if self.choose is True:
+            return "pointing verification: system defined field"
+        elif self.here is True:
+            return "pointing verification: current field"
 
 class Point(Action):
-    using_options(tablename="action_point", inheritance="multi")
+    __tablename__ = "action_point"
+    __mapper_args__ = {'polymorphic_identity': 'Point'}
 
-    targetRaDec = Field(PickleType, default=None)
-    targetAltAz = Field(PickleType, default=None)
-    targetName  = Field(Text, default=None)
+    id          = Column(Integer, ForeignKey('action.id'), primary_key=True)
+    targetRaDec = Column(PickleType, default=None)
+    targetAltAz = Column(PickleType, default=None)
+    targetName  = Column(String, default=None)
+
+    def __str__ (self):
+        if self.targetRaDec is not None:
+            return "point: (ra,dec) %s" % self.targetRaDec
+        elif self.targetAltAz is not None:
+            return "point: (alt,az) %s" % self.targetAltAz
+        elif self.targetName is not None:
+            return "point: (object) %s" % self.targetName
     
 class Expose(Action):
-    using_options(tablename="action_expose", inheritance="multi")   
+    __tablename__ = "action_expose"
+    __mapper_args__ = {'polymorphic_identity': 'Expose'}
 
-    filter     = Field(Text, default=None)
-    frames     = Field(Integer, default=1)
+    id         = Column(Integer, ForeignKey('action.id'), primary_key=True)
+    filter     = Column(String, default=None)
+    frames     = Column(Integer, default=1)
     
-    exptime    = Field(Integer, default=5)
+    exptime    = Column(Integer, default=5)
 
-    binning    = Field(Integer, default=None)
-    window     = Field(Float, default=None)
+    binning    = Column(Integer, default=None)
+    window     = Column(Float, default=None)
 
-    shutter    = Field(Text, default="OPEN")
+    shutter    = Column(String, default="OPEN")
     
-    imageType  = Field(Text, default="")    
-    filename   = Field(Text, default="$DATE-$TIME")
-    objectName = Field(Text, default="")
+    imageType  = Column(String, default="")    
+    filename   = Column(String, default="$DATE-$TIME")
+    objectName = Column(String, default="")
 
-db_file = DEFAULT_PROGRAM_DATABASE
-metadata.bind = "sqlite:///%s" % db_file
-metadata.bind.echo = False
-setup_all()
-create_all()
+    def __str__ (self):
+        return "expose: exptime=%d frames=%d type=%s" % (self.exptime, self.frames, self.imageType)
+
+###
+    
+metaData.create_all(engine)
+

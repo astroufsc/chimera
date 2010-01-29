@@ -1,9 +1,8 @@
 
 from chimera.controllers.scheduler.ischeduler import IScheduler
-from chimera.controllers.scheduler.model import Program
+from chimera.controllers.scheduler.model import Session, Program
 
 from sqlalchemy import desc
-from elixir import session
 
 import chimera.core.log
 import logging
@@ -24,7 +23,8 @@ class SequentialScheduler (IScheduler):
         self.machine = machine
         self.rq = Queue(-1)
 
-        programs = Program.query.order_by(desc(Program.priority)).filter(Program.finished == False)
+        session = Session()
+        programs = session.query(Program).order_by(desc(Program.priority)).filter(Program.finished == False).all()
         
         if not programs:
             return
@@ -41,17 +41,12 @@ class SequentialScheduler (IScheduler):
             return self.rq.get()
 
     def done (self, task, error=None):
-        # we could not reuse the Program object because we don't know which thread created it
-        # and sqlite doesn't like multiple threads touching the same objects.
-        program = Program.query.filter_by(id=task.id).one()
 
         if error:
-            log.debug("Error processing program %s." % str(program))
+            log.debug("Error processing program %s." % str(task))
             log.exception(error)
         else:
-            program.finished = True
-            program.flush()
-            session.commit()
+            task.finished = True
         
         self.rq.task_done()
         self.machine.wakeup()

@@ -1,8 +1,7 @@
 
 if __name__ == '__main__':
 
-    from chimera.controllers.scheduler.model import Program, Expose, Point    
-    from elixir import session
+    from chimera.controllers.scheduler.model import Program, Expose, Point, Session
 
     dark = Expose()
     dark.shutter = "CLOSE"
@@ -26,4 +25,8 @@ if __name__ == '__main__':
     for i in range(10):
         science.actions.append(Expose(filter="U", exptime=i, shutter="OPEN"))
 
+    session = Session()
+
+    session.add(calibration)
+    session.add(science)    
     session.commit()    

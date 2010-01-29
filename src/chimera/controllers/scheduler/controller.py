@@ -1,11 +1,11 @@
 from chimera.core.chimeraobject import ChimeraObject
+from chimera.core.event import event
 
 from chimera.controllers.scheduler.machine import Machine
 from chimera.controllers.scheduler.sequential import SequentialScheduler
-from chimera.controllers.scheduler.states import State
 from chimera.controllers.scheduler.executor import ProgramExecutor
-
-from elixir import session
+from chimera.controllers.scheduler.states import State
+from chimera.controllers.scheduler.model import Session
 
 class Scheduler(ChimeraObject):
     
@@ -21,40 +21,61 @@ class Scheduler(ChimeraObject):
     def __init__(self):
         ChimeraObject.__init__(self)
         
-        self.machine = Machine(SequentialScheduler(), self)
         self.executor = ProgramExecutor(self)
+        self.scheduler = SequentialScheduler()
+
+        self.machine = Machine(self.scheduler, self.executor, self)
 
     def control(self):
         if not self.machine.isAlive():
             self.machine.start()
-        else:
-            self.machine.state(State.DIRTY)
-            return False # that's all folks; control is only run once
+            return False
 
-    def __start__ (self):
-        self.executor.__start__()
-        return True
-        
     def __stop__ (self):
         self.log.debug('Attempting to stop machine')
-        self.machine.state(State.SHUTDOWN)
+        self.shutdown()
         self.log.debug('Machine stopped')
-        session.commit()
+        Session().commit()
         return True
+
+    def currentProgram(self):
+        return self.machine.currentProgram
+
+    def currentAction(self):
+        return self.executor.currentAction
 
     def start(self):
         if self.machine:
-            self.machine.state(State.DIRTY)
-
-
-    def pause(self):
-        if self.machine:
-            self.machine.state(State.PAUSED)
+            self.machine.state(State.START)
 
     def stop(self):
+        if self.machine:
+            self.machine.state(State.STOP)
+
+    def shutdown(self):
         if self.machine:
             self.machine.state(State.SHUTDOWN)
 
     def state(self):
         return self.machine.state()
+
+    @event
+    def programBegin(self, program):
+        pass
+
+    @event
+    def programComplete(self, program, status):
+        pass
+
+    @event
+    def actionBegin(self, action):
+        pass
+
+    @event
+    def actionComplete(self, action, status):
+        pass
+
+    @event
+    def stateChanged(self, newState, oldState):
+        pass
         

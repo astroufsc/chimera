@@ -23,16 +23,20 @@ Ubuntu 9.10
 
 Here is the full command line to use on Ubuntu 9.10 to get all the requirements:
 
-sudo apt-get install python-dev python-numpy saods9 sextractor libusb-dev swig \
+sudo apt-get install python-dev python-numpy sextractor libusb-dev swig \
 libcfitsio3-dev python-gtk2-dev python-gobject-dev python-pygoocanvas python-gdl \
 python-nose python-epydoc
 
-Notes for Ubuntu 9.04:
+Ubuntu 9.04
+===========
 
 Replace python-gdl by python-gnome2-extras.
 
-saods9 packages is broken, so remove it from the list and install
-it manually. Chimera needs xpa tools too, it's available on DS9 site as well.
+DS9 and XPA
+===========
+
+Ubuntu's saods9 package is broken, you'll need to  install it manually.
+Chimera needs xpa tools too, it's available on DS9 site as well.
 Make sure all this binaries are anywhere on your $PATH.
 
 libbip

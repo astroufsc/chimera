@@ -1,10 +1,7 @@
 from chimera.core.exceptions import ProgramExecutionException, printException
 from chimera.controllers.imageserver.imagerequest import ImageRequest
 
-import chimera.core.log
-import logging
-
-log = logging.getLogger(__name__)
+import copy
 
 def requires(instrument):
     """Simple dependecy injection mechanism. See ProgramExecutor"""
@@ -24,6 +21,14 @@ class ActionHandler(object):
     def process(action):
         pass
 
+    @staticmethod
+    def abort(action):
+        pass
+
+    @staticmethod
+    def log(action):
+        return ActionHandler.__name__
+
 class PointHandler(ActionHandler):
 
     @staticmethod
@@ -35,23 +40,35 @@ class PointHandler(ActionHandler):
 
         try:
             if action.targetRaDec is not None:
-                log.debug("[slewing telescope to %s]" % action.targetRaDec)
                 telescope.slewToRaDec(action.targetRaDec)
             elif action.targetAltAz is not None:
-                log.debug("[slewing telescope to %s]" % action.targetRaDec)
                 telescope.slewToAltAz(action.targetAltAz)
             elif action.targetName is not None:
-                log.debug("[slewing telescope to %s]" % action.targetName)
                 telescope.slewToObject(action.targetName)
+                
+            dome.openSlit()
+            
         except Exception, e:
             raise ProgramExecutionException(str(e))
 
-        log.debug('[slew complete]')
+    @staticmethod
+    def abort(action):
+        # use newer Proxies as Proxies cannot be shared between threads
+        telescope = copy.copy(PointHandler.telescope)
+        dome = copy.copy(PointHandler.dome)
 
-        log.debug("[making sure dome is open]")
-        dome.openSlit()
-        log.debug("[dome open complete]")
+        telescope.abortSlew()
+        dome.abortSlew()
         
+    @staticmethod
+    def log(action):
+        if action.targetRaDec is not None:
+            return "slewing telescope to (ra dec) %s" % action.targetRaDec
+        elif action.targetAltAz is not None:
+            return "slewing telescope to (alt az) %s" % action.targetAltAz
+        elif action.targetName is not None:
+            return "slewing telescope to (object) %s" % action.targetName
+
 class ExposeHandler(ActionHandler):
 
     @staticmethod
@@ -62,10 +79,9 @@ class ExposeHandler(ActionHandler):
         camera = ExposeHandler.camera
         filterwheel = ExposeHandler.filterwheel
 
-        #if action.filter is not None:
-        #    log.debug("[setting filter to %s]" % action.filter)
-        #    filterwheel.setFilter(str(action.filter))
-        #    log.debug("[filter set complete]")
+        # not considered in abort handling (should be fast enough to wait!)
+        if action.filter is not None:
+            filterwheel.setFilter(str(action.filter))
             
         ir = ImageRequest(frames   = int(action.frames),
                           exptime  = float(action.exptime),
@@ -80,15 +96,32 @@ class ExposeHandler(ActionHandler):
         ir.headers += [("PROGRAM", str(action.program.name), "Program Name"),
                        ("PROG_PI", str(action.program.pi), "Principal Investigator")]
 
-        log.info("[exposing: %s]" % ir)
-
         try:
             camera.expose(ir)
         except Exception, e:
             printException(e)
             raise ProgramExecutionException("Error while exposing")
-            
-        log.info("[expose complete]")    
+
+    @staticmethod
+    def abort(action):
+        camera = copy.copy(ExposeHandler.camera)
+        camera.abortExposure()
+
+    @staticmethod
+    def log(action):
+        ir = ImageRequest(frames   = int(action.frames),
+                          exptime  = float(action.exptime),
+                          shutter  = str(action.shutter),
+                          type     = str(action.imageType),
+                          filename = str(action.filename),
+                          object_name = str(action.objectName),
+                          window = action.window,
+                          binning = action.binning,
+                          wait_dome = True)
+
+        return "exposing: %s" % str(ir)
+
+
 
 class AutoFocusHandler(ActionHandler):
 
@@ -109,6 +142,10 @@ class AutoFocusHandler(ActionHandler):
             printException(e)
             raise ProgramExecutionException("Error while autofocusing")
 
+    @staticmethod
+    def abort(action):
+        pass
+
 class PointVerifyHandler(ActionHandler):
 
     @staticmethod
@@ -125,4 +162,9 @@ class PointVerifyHandler(ActionHandler):
                 pv.choose()
         except Exception, e:
             raise ProgramExecutionException(str(e))
+
+    @staticmethod
+    def abort(action):
+        pass
+        
 

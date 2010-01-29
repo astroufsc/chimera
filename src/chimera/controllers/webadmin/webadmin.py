@@ -41,7 +41,7 @@ class WebAdminRoot (object):
     def close_dome (self):
 
         try:
-            self.controller.scheduler.pause()
+            self.controller.scheduler.stop()
             self.controller.telescope.park()
             self.controller.dome.closeSlit()
         except Exception:
