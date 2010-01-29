@@ -23,9 +23,10 @@ from chimera.core.cli import ChimeraCLI, action, ParameterType
 
 from chimera.util.coord import Coord
 from chimera.util.position import Position
+from chimera.util.simbad import Simbad
 
 from chimera.core.callback import callback
-from chimera.core.exceptions import ObjectTooLowException
+from chimera.core.exceptions import ObjectTooLowException, ObjectNotFoundException
 from chimera.interfaces.telescope import SlewRate, TelescopeStatus
 
 import sys
@@ -102,6 +103,13 @@ class ChimeraTel (ChimeraCLI):
     
         telescope.slewBegin     += slewBegin
         telescope.slewComplete  += slewComplete
+
+        if options.objectName:
+            try:
+                target = Simbad.lookup(target)
+            except ObjectNotFoundException:
+                self.err("Object '%s' not found on Simbad database." % target)
+                self.exit()
     
         self.out(40*"=")
         self.out("current position ra/dec: %s" % telescope.getPositionRaDec())
