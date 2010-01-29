@@ -26,10 +26,14 @@ from xml.parsers.expat import ExpatError
 
 import chimera.core.log
 
+import logging
+logging.getLogger("suds").setLevel(1e9)
+
 from suds.xsd.sxbasic import Import
 Import.bind('http://schemas.xmlsoap.org/soap/encoding/')
 
 from suds.client import Client
+
 
 class Simbad (object):
 
@@ -49,11 +53,11 @@ class Simbad (object):
         if name in Simbad.__cache:
             return Simbad.__cache[name]
         
-        res = client.service.Sesame.sesame(name, 'x', True)
+        res = client.service.sesame(name, 'x', True)
         target = Simbad._parseSesame(res)
 
         if not target:
-            raise ObjectNotFoundException("Cound't found %s on SIMBAD" % name)
+            raise ObjectNotFoundException("Couldn't find %s on SIMBAD" % name)
 
         Simbad.__cache[name] = target
         
