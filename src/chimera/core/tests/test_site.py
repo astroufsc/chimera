@@ -44,14 +44,12 @@ class TestSite (object):
         #self.manager.addClass(Site, "lna", {"name": "LNA",
         #                                    "latitude": "-22 32 03",
         #                                    "longitude": "-45 34 57",
-        #                                    "altitude": "1896",
-        #                                    "utc_offset": "-3"})
+        #                                    "altitude": "1896"}
 
         self.manager.addClass(Site, "lna", {"name": "UFSC",
                                             "latitude": "-27 36 13 ",
                                             "longitude": "-48 31 20",
-                                            "altitude": "20",
-                                            "utc_offset": "-3"})
+                                            "altitude": "20"})
 
     def teardown (self):
         self.manager.shutdown()

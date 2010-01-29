@@ -172,8 +172,7 @@ class TestFakeDome(FakeHardwareTest, DomeTest):
         self.manager.addClass(Site, "lna", {"name": "UFSC",
                                             "latitude": "-27 36 13 ",
                                             "longitude": "-48 31 20",
-                                            "altitude": "20",
-                                            "utc_offset": "-3"})
+                                            "altitude": "20"})
 
         from chimera.instruments.faketelescope import FakeTelescope
         from chimera.instruments.fakedome import FakeDome
@@ -199,8 +198,7 @@ class TestRealDome(RealHardwareTest, DomeTest):
         self.manager.addClass(Site, "lna", {"name": "UFSC",
                                             "latitude": "-27 36 13 ",
                                             "longitude": "-48 31 20",
-                                            "altitude": "20",
-                                            "utc_offset": "-3"})
+                                            "altitude": "20"})
 
         from chimera.instruments.domelna40cm import DomeLNA40cm
         from chimera.instruments.meade       import Meade

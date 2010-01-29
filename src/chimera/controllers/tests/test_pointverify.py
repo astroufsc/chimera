@@ -52,8 +52,7 @@ class TestPointVerify (object):
         self.manager.addClass(Site, "lna", {"name": "UFSC",
                                             "latitude": "-27 36 13 ",
                                             "longitude": "-48 31 20",
-                                            "altitude": "20",
-                                            "utc_offset": "-3"})
+                                            "altitude": "20"})
 
         self.manager.addClass(Meade, "meade", {"device": "/dev/ttyS6"})
         self.manager.addClass(Telescope, "meade", {"driver": "/Meade/meade"})

@@ -286,8 +286,7 @@ class TestFakeTelescope(FakeHardwareTest, TelescopeTest):
         self.manager.addClass(Site, "lna", {"name": "UFSC",
                                             "latitude": "-27 36 13 ",
                                             "longitude": "-48 31 20",
-                                            "altitude": "20",
-                                            "utc_offset": "-3"})
+                                            "altitude": "20"})
 
         from chimera.instruments.faketelescope import FakeTelescope
         self.manager.addClass(FakeTelescope, "fake")
@@ -311,8 +310,7 @@ class TestRealTelescope(RealHardwareTest, TelescopeTest):
         self.manager.addClass(Site, "lna", {"name": "UFSC",
                                             "latitude": "-27 36 13 ",
                                             "longitude": "-48 31 20",
-                                            "altitude": "20",
-                                            "utc_offset": "-3"})
+                                            "altitude": "20"})
 
         from chimera.instruments.meade import Meade
         self.manager.addClass(Meade, "meade", {"device": "/dev/ttyS6"})

@@ -38,7 +38,8 @@ class Site (ChimeraObject):
                       latitude   = Coord.fromDMS("-23 00 00"),
                       longitude  = Coord.fromDMS(-48.5),
                       altitude   = 20,
-                      utc_offset = -3)
+                      flat_alt   = Coord.fromDMS(80),
+                      flat_az    = Coord.fromDMS(0))
 
     def __init__ (self):
         ChimeraObject.__init__(self)
@@ -67,7 +68,7 @@ class Site (ChimeraObject):
         # then return it in local timezone
         return d_utc.astimezone(self.local_tz)
         
-    local_tz = property(lambda self: tz.tzoffset(None, self["utc_offset"]*3600))
+    local_tz = property(lambda self: tz.tzlocal())
     utc_tz   = property(lambda self: tz.tzutc())
 
     def getEphemSite (self, date):

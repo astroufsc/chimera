@@ -76,8 +76,7 @@ class TestFakeFocuser(FakeHardwareTest, FocuserTest):
         self.manager.addClass(Site, "lna", {"name": "LNA",
                                             "latitude": "-22 32 03",
                                             "longitude": "-45 34 57",
-                                            "altitude": "1896",
-                                            "utc_offset": "-3"})
+                                            "altitude": "1896"})
 
         from chimera.instruments.fakefocuser import FakeFocuser
         self.manager.addClass(FakeFocuser, "fake", {"device": "/dev/ttyS0"})
@@ -94,8 +93,8 @@ class TestRealFocuser(RealHardwareTest, FocuserTest):
         self.manager.addClass(Site, "lna", {"name": "LNA",
                                             "latitude": "-22 32 03",
                                             "longitude": "-45 34 57",
-                                            "altitude": "1896",
-                                            "utc_offset": "-3"})
+                                            "altitude": "1896"})
+
         from chimera.instruments.optectcfs import OptecTCFS
         self.manager.addClass(OptecTCFS, "optec", {"device": "/dev/ttyS4"})
         self.FOCUSER = "/OptecTCFS/0"
