@@ -28,6 +28,7 @@ import bz2
 import gzip
 import zipfile
 
+import sys
 import shutil
 
 from UserDict import DictMixin
@@ -370,28 +371,35 @@ class Image (DictMixin, RemoteObject):
             
         return True
 
-    def compress (self, format="bz2"):
-        filename = self.filename()
-        
-        if format.lower() == "bz2":
-            bzfilename = filename + '.bz2'
-            bzfp = bz2.BZ2File(bzfilename, 'wb', compresslevel=4)
-            rawfp = open(filename)
-            bzfp.write(rawfp.read())
-            bzfp.close()
-            rawfp.close()
-        elif format.lower() == "gzip":
-            gzfilename = filename + '.gz'
-            gzfp = gzip.GzipFile(gzfilename, 'wb', compresslevel=5)
-            rawfp = open(filename)
-            gzfp.write(rawfp.read())
-            gzfp.close()
-            rawfp.close()
-        else: # zip
-            zipfilename = filename + '.zip'
-            zipfp = zipfile.ZipFile(zipfilename, 'w', zipfile.ZIP_DEFLATED)
-            zipfp.write(filename, os.path.basename(filename))
-            zipfp.close()
+    def compress (self, format="bz2", multiprocess=False):
+
+        def processCompress(filename):
+            if format.lower() == "bz2":
+                bzfilename = filename + '.bz2'
+                bzfp = bz2.BZ2File(bzfilename, 'wb', compresslevel=4)
+                rawfp = open(filename)
+                bzfp.write(rawfp.read())
+                bzfp.close()
+                rawfp.close()
+            elif format.lower() == "gzip":
+                gzfilename = filename + '.gz'
+                gzfp = gzip.GzipFile(gzfilename, 'wb', compresslevel=5)
+                rawfp = open(filename)
+                gzfp.write(rawfp.read())
+                gzfp.close()
+                rawfp.close()
+            else: # zip
+                zipfilename = filename + '.zip'
+                zipfp = zipfile.ZipFile(zipfilename, 'w', zipfile.ZIP_DEFLATED)
+                zipfp.write(filename, os.path.basename(filename))
+                zipfp.close()
+
+        if multiprocess and sys.version_info[0:2] >= (2,6):
+            from multiprocessing import Process
+            p = Process(target=processCompress, args=(self.filename(),))
+            p.start()
+        else:
+            processCompress(self.filename())
 
     # dict mixin implementation for headers
     def __getitem__ (self, key):
