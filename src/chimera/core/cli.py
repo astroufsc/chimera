@@ -447,12 +447,12 @@ class ChimeraCLI (object):
         
         self.died.set()
 
-    def wait(self):
+    def wait(self, abort=True):
         try:
             while not self.died.isSet():
                 time.sleep(0.1)
         except KeyboardInterrupt:
-            self.abort()
+            if abort: self.abort()
 
     def _startSystem (self, options):
         

@@ -566,7 +566,11 @@ class Manager (RemoteObject):
             # stop control loop
             if resource.loop and resource.loop.isAlive():
                 resource.instance.__abort_loop__()
-                resource.loop.join()
+                try:
+                    resource.loop.join()
+                except KeyboardInterrupt:
+                    # ignore Ctrl+C on shutdown
+                    pass
 
             if resource.instance.getState() != State.STOPPED:
                 resource.instance.__stop__ ()
