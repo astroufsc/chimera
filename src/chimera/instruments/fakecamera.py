@@ -33,7 +33,7 @@ from chimera.interfaces.camera import (CCD, CameraFeature,
                                        CameraStatus)
 
 from chimera.instruments.camera      import CameraBase
-from chimera.instruments.filterwheel import FilterWheelBase
+from chimera.instruments.filterwheel import FilterWheelBase, InvalidFilterPositionException
 
 from chimera.core.lock       import lock
 
@@ -192,10 +192,15 @@ class FakeCamera (CameraBase, FilterWheelBase):
 
         ccd_width, ccd_height = self.getPhysicalSize()
         
-        if (imageRequest["shutter"]==Shutter.CLOSE):
-            self.log.info("Shutter closed -- making dark")
+        if (imageRequest["type"].upper() == "DARK"):
+            self.log.info("making dark")
             pix = self.make_dark((ccd_height, ccd_width), N.float, imageRequest['exptime'])
-
+        elif (imageRequest["type"].upper() == "FLAT"):
+            self.log.info("making flat")
+            pix = (self.make_flat((ccd_height,ccd_width), N.float)/1000)
+        elif (imageRequest["type"].upper() == "BIAS"):
+            self.log.info("making bias")
+            pix = self.make_dark((ccd_height, ccd_width), N.float, 0)
         else:
             if telescope and dome:
                 self.log.debug("Dome open? "+ str(dome.isSlitOpen()))
@@ -341,6 +346,9 @@ class FakeCamera (CameraBase, FilterWheelBase):
 
     @lock
     def setFilter (self, filter):
+        if filter not in self.getFilters():
+            raise InvalidFilterPositionException("%s is not a valid filter" % filter)
+
         self.filterChange(filter, self.__lastFilter)
         self.__lastFilter = filter
 
