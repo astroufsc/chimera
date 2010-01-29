@@ -35,7 +35,7 @@ class FilterWheel (Interface):
 
     __config__ = {"device": "/dev/ttyS0",
                   "filter_wheel_model"   : "Fake Filters Inc.",
-                  "filters" : "R G B LUNAR CLEAR" # space or comma separated
+                  "filters" : "R G B LUNAR CLEAR" # space separated
                                                   # filter names (in position order)
                   }
     

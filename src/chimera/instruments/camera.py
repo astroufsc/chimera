@@ -106,14 +106,14 @@ class CameraBase (ChimeraObject,
 
             # [ABORT POINT]
             if self.abort.isSet():
-                return images
+                return tuple(images)
 
             imageRequest.beginExposure(manager)
             self._expose(imageRequest)
 
             # [ABORT POINT]
             if self.abort.isSet():
-                return images
+                return tuple(images)
             
             image = self._readout(imageRequest)
             if image is not None:
@@ -122,7 +122,7 @@ class CameraBase (ChimeraObject,
 
             # [ABORT POINT]
             if self.abort.isSet():
-                return images
+                return tuple(images)
             
             if (interval > 0 and frame_num < frames) and (not frames == 1):
                 time.sleep(interval)
@@ -161,6 +161,7 @@ class CameraBase (ChimeraObject,
         CRPIX1 = ((int(full_width/2.0)) - left) - 1
         CRPIX2 = ((int(full_height/2.0)) - top) - 1
 
+        t0 = time.time()
         img = Image.create(imageData, imageRequest)
 
         img += [('DATE-OBS',
@@ -200,7 +201,7 @@ class CameraBase (ChimeraObject,
         proxy = server.register(img)
 
         # and finally compress the image
-        img.compress()
+        img.compress(multiprocess=True)
 
         return proxy
 

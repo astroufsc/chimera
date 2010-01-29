@@ -123,8 +123,8 @@ class CameraExpose (Camera):
         @param request: ImageRequest containing details of the image to be taken
         @type  request: ImageRequest
 
-        @return: L{Image} proxy if exposure succeeds; False otherwise
-        @rtype: bool or L{Proxy}
+        @return: tuple of L{Image} proxies (empty if no one was taken)
+        @rtype: tuple(L{Proxy})
         """
 
     def abortExposure (self, readout=True):

@@ -110,7 +110,8 @@ class ImageRequest (dict):
             try:
                 dome = manager.getProxy("/Dome/0")
                 dome.syncWithTel()
-                log.debug("Dome sync with telescope")
+                log.debug("Dome slit position synchronized with telescope position.")
+                
             except ObjectNotFoundException:
                 log.info("No dome present, taking exposure without dome sync.")
 
