@@ -52,7 +52,6 @@ else:
     
 SYSTEM_CONFIG_DEFAULT_FILENAME = os.path.join(SYSTEM_CONFIG_DIRECTORY, 'chimera.config')
 SYSTEM_CONFIG_DEFAULT_SAMPLE   = os.path.join(os.path.dirname(__file__), 'chimera.sample.config')
-SYSTEM_CONFIG_DEFAULT_GLOBAL   = os.path.join(os.path.dirname(__file__), 'chimera.global.config')
 
 SYSTEM_CONFIG_LOG_NAME = os.path.join(SYSTEM_CONFIG_DIRECTORY, 'chimera.log')
 

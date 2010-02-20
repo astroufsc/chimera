@@ -94,7 +94,7 @@ class CameraBase (ChimeraObject,
         # use image server if any and save image on server's default dir if filename given as a relative path.
         server = getImageServer(self.getManager())
         if not os.path.isabs(imageRequest["filename"]):
-            imageRequest["filename"] = os.path.join(server["save_dir"], imageRequest["filename"])
+            imageRequest["filename"] = os.path.join(server.defaultNightDir(), imageRequest["filename"])
 
         # clear abort setting
         self.abort.clear()

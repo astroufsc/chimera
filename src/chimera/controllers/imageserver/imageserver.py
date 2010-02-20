@@ -12,14 +12,17 @@ import os
 
 class ImageServer(ChimeraObject):
 
-    __config__  = {'save_dir': '$HOME/images/$LAST_NOON_DATE',
-                   
-                   # Root directory where images are stored for use when autoloading existing
-                   'load_dir': '$HOME/images',
+    __config__  = { # root directory where images are stored
+                   'images_dir': '$HOME/images',    
+                   # path relative to images_dir where images for a
+                   # night will be stored, use "" to save all images
+                   # on the same directory
+                   'night_dir' : '$LAST_NOON_DATE', 
 
-                   # Load existing load_dir images on startup
+                   # Load existing images on startup?
                    'autoload': False,
-                   'httpd': False, 
+
+                   'httpd': True, 
                    'http_host': 'default',
                    'http_port': 7669}
     
@@ -40,7 +43,7 @@ class ImageServer(ChimeraObject):
         
         if self['autoload']:
             self.log.info('Loading existing images...')
-            loaddir = os.path.expanduser(self['load_dir'])
+            loaddir = os.path.expanduser(self['images_dir'])
             loaddir = os.path.expandvars(loaddir)
             loaddir = os.path.realpath(loaddir)
             self._loadImageDir(loaddir)
@@ -108,4 +111,7 @@ class ImageServer(ChimeraObject):
 
     def getHTTPByID (self, id):
         return "http://%s:%d/image/%s" % (self["http_host"], int(self["http_port"]), str(id))
+
+    def defaultNightDir(self):
+        return os.path.join(self["images_dir"], self["night_dir"])
         

@@ -2,8 +2,7 @@
 from chimera.core.location   import Location
 from chimera.core.exceptions import ChimeraException
 from chimera.core.constants  import (SYSTEM_CONFIG_DEFAULT_FILENAME,
-                                     MANAGER_DEFAULT_HOST, MANAGER_DEFAULT_PORT,
-                                     SYSTEM_CONFIG_DEFAULT_GLOBAL)
+                                     MANAGER_DEFAULT_HOST, MANAGER_DEFAULT_PORT)
 
 import yaml
 
@@ -103,19 +102,28 @@ class SystemConfig (object):
     """
 
     @staticmethod
-    def fromDefault (loadGlobal=True):
-        return SystemConfig.fromFile(SYSTEM_CONFIG_DEFAULT_FILENAME,
-                                     loadGlobal=loadGlobal)
-
-    @staticmethod
-    def fromFile (filename, loadGlobal=True):
-        s = SystemConfig(open(filename, 'r').read(), loadGlobal=loadGlobal)
+    def fromString (string):
+        s = SystemConfig()
+        s.add(string)
         return s
 
-    def __init__ (self, buffer, loadGlobal=True):
+    @staticmethod
+    def fromFile (filename):
+        s = SystemConfig()
+        s.add(open(filename, "r").read())
+        return s
+
+    @staticmethod
+    def fromDefault ():
+        return SystemConfig.fromFile(SYSTEM_CONFIG_DEFAULT_FILENAME)
+
+
+    def __init__ (self):
 
         # primitives
         self.chimera = {}
+
+        self.sites = []
         self.instruments = []
         self.controllers = []
 
@@ -124,25 +132,19 @@ class SystemConfig (object):
                           "camera",
                           "filterwheel",
                           "dome",
-                          "focuser",
-                          "site"]
-        
-        self.telescopes   = []
-        self.cameras      = []
-        self.filterwheels = []
-        self.domes        = []
-        self.focusers     = []
-        self.sites        = []
+                          "focuser"]
 
+        self._instrumentsSections = self._specials + ["instrument"]
+        self._controllersSections = ["controller"]
+        self._sections = self._instrumentsSections + self._controllersSections + ["site", "chimera"]
+
+        # to create nice numbered names for objects without a name
+        self._useCount = {}
+        
         self.chimera["host"] = MANAGER_DEFAULT_HOST
         self.chimera["port"] = MANAGER_DEFAULT_PORT
-        
-        if loadGlobal:
-            self._loadConfig(open(SYSTEM_CONFIG_DEFAULT_GLOBAL, 'r').read())
-            
-        self._loadConfig(buffer)
 
-    def _loadConfig (self, buffer):
+    def add(self, buffer):
         
         try:
             config = yaml.load(buffer)
@@ -152,12 +154,23 @@ class SystemConfig (object):
             s = None
             if hasattr(e, 'problem_mark'):
                 mark = e.problem_mark
-                s = "Error position: (%s:%s)" % (mark.line+1, mark.column+1)
+                s = "error at line %s column %s" % (mark.line+1, mark.column+1)
             else:
                 s = str(e)
 
             raise SystemConfigSyntaxException(s)
-        
+
+
+        # scan the buffer to determine section order, which would be
+        # used to guarantee instrument initialization order
+        sectionsOrder = []
+        for token in yaml.scan(buffer):
+            # get all ScalarTokens
+            if isinstance(token, yaml.ScalarToken):
+                # add to order if is a known section and unique to order
+                if token.value in self._sections and token.value not in sectionsOrder:
+                    sectionsOrder.append(token.value)
+
         # parse chimera section first, to get host/port or set defaults
         for type, values in config.items():
             if type.lower() == "chimera":
@@ -180,9 +193,12 @@ class SystemConfig (object):
         if "port" not in self.chimera:
             self.chimera["port"] = MANAGER_DEFAULT_PORT
         
+        objects = {}
+
         for type, values in config.items():
 
             key = type.lower()
+            objects[key] = []
 
             if not isinstance(values, list):
                 values = [values]
@@ -190,38 +206,39 @@ class SystemConfig (object):
             for instance in values:
 
                 loc = self._parseLocation(key, instance)
+                objects[key].append(loc)
 
-                if key == "telescope":
-                    self.telescopes.append(loc)
-                    self.instruments.append(loc)                    
-                elif key == "camera":
-                    self.cameras.append(loc)
-                    self.instruments.append(loc)                    
-                elif key == "filterwheel":
-                    self.filterwheels.append(loc)
-                    self.instruments.append(loc)                    
-                elif key == "dome":
-                    self.domes.append(loc)
-                    self.instruments.append(loc)                    
-                elif key == "focuser":
-                    self.focusers.append(loc)
-                    self.instruments.append(loc)
-                elif key == "site":
-                    # just one site allowed
-                    self.sites.insert(0, loc)
+        # create instruments list ordered by sectionsOrder list created above
+        for section in sectionsOrder:
 
-                elif key == "instrument":
-                    self.instruments.append(loc)
-                elif key == "controller":
-                    self.controllers.append(loc)
-                else:
-                    self.controllers.append(loc)
-                    
+            if section in self._instrumentsSections:
+                self.instruments += objects[section]
+
+            if section in self._controllersSections:
+                self.controllers += objects[section]
+
+        # always use a single site from the last added file
+        if "site" in objects:
+            self.sites = [objects["site"][0]]
+        
         return True
+
+    def _getDefaultName(self, type):
+        if not type in self._useCount:
+            self._useCount[type] = 0
+
+        name = "%s_%d" % (str(type), self._useCount[type])
+        self._useCount[type] += 1
+        return name
     
     def _parseLocation (self, type, dic):
 
-        name = dic.pop('name', 'noname')
+        name = dic.pop('name', self._getDefaultName(type))
+
+        # replace some invalid chars from object name
+        name = name.replace(" ", "_")
+        name = name.replace('"', "_")
+        name = name.replace("'", "_")
 
         if type=="site": # keep name
           dic["name"] = name
@@ -229,7 +246,7 @@ class SystemConfig (object):
         cls  = dic.pop('type', None)
 
         if not cls:
-            if type in self._specials:
+            if type in self._specials or type == "site":
                 cls = type.capitalize()
             else:
                 raise TypeNotFoundException("%s %s must have a type." % (type,
@@ -239,28 +256,4 @@ class SystemConfig (object):
         port = dic.pop('port', self.chimera["port"])
 
         return Location(name=name, cls=cls, host=host, port=port, config=dic)
-
-    def dump (self):
-
-        def printIt (kind, sequence):
-            if not sequence: return
-            print
-            print len(kind)*"="            
-            print kind
-            print len(kind)*"="
-
-            for item in sequence:
-                print "\t", item, item.config
-
-
-        printIt("Sites", self.sites)
-        
-        printIt("Controllers", self.controllers)
-        printIt("Instruments", self.instruments)        
-
-        printIt("Telescopes", self.telescopes)
-        printIt("Cameras", self.cameras)
-        printIt("FilterWheels", self.cameras)        
-        printIt("Focusers", self.focusers)
-        printIt("Domes", self.domes)        
 

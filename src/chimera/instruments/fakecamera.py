@@ -29,7 +29,7 @@ import numpy as N
 import pyfits
 
 from chimera.interfaces.camera import (CCD, CameraFeature,
-                                       ReadoutMode, Shutter,
+                                       ReadoutMode,
                                        CameraStatus)
 
 from chimera.instruments.camera      import CameraBase
@@ -40,7 +40,7 @@ from chimera.core.lock       import lock
 
 class FakeCamera (CameraBase, FilterWheelBase):
 
-    __config__ = {"use_dss"     : False,
+    __config__ = {"use_dss"     : True,
                   "ccd_width"   : 1024,
                   "ccd_height"  : 1024}
     

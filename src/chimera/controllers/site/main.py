@@ -32,8 +32,7 @@ from chimera.core.version import _chimera_version_, _chimera_description_, find_
 from chimera.core.exceptions import printException, InvalidLocationException, ChimeraException
 from chimera.core.constants import (MANAGER_DEFAULT_HOST,
                                     MANAGER_DEFAULT_PORT,
-                                    SYSTEM_CONFIG_DEFAULT_FILENAME,
-                                    SYSTEM_CONFIG_DEFAULT_GLOBAL)
+                                    SYSTEM_CONFIG_DEFAULT_FILENAME)
 
 from chimera.core.site import Site
 from chimera.core.path import ChimeraPath
@@ -104,10 +103,6 @@ class SiteController (object):
         config_group.add_option("--config", dest="config_file",
                               help="Start Chimera using configuration from FILE.", metavar="FILE")
 
-        config_group.add_option("--skip-global", action="store_false", 
-                              dest="use_global",
-                              help="Don't use global coniguration file.")
-
         config_group.add_option("--daemon", action="store_true", dest='daemon',
                               help="Run Chimera in Daemon mode (will detach from current terminal).")
 
@@ -156,7 +151,6 @@ class SiteController (object):
                             ctrl_dir = [],
                             drv_dir = [],
                             dry=False,
-                            use_global=True,
                             verbose = 0,
                             daemon=False,
                             pyro_host=MANAGER_DEFAULT_HOST,
@@ -172,7 +166,7 @@ class SiteController (object):
             
         # system config
         try:
-            self.config = SystemConfig.fromFile(self.options.config_file, self.options.use_global)
+            self.config = SystemConfig.fromFile(self.options.config_file)
         except (InvalidLocationException, IOError), e:
             log.exception(e)
             log.error("There was a problem reading your configuration file. (%s)" % e)
@@ -193,8 +187,6 @@ class SiteController (object):
                 sys.exit(1)
 
             log.info("Chimera: running on "+ self.manager.getHostname() + ":" + str(self.manager.getPort()))
-            if self.options.use_global:
-                log.info("Chimera: reading configuration from %s" % SYSTEM_CONFIG_DEFAULT_GLOBAL)            
             log.info("Chimera: reading configuration from %s" % os.path.realpath(self.options.config_file))
 
         # add site object
