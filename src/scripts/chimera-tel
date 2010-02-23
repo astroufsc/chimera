@@ -106,7 +106,7 @@ class ChimeraTel (ChimeraCLI):
 
         if options.objectName:
             try:
-                target = Simbad.lookup(target)
+                Simbad.lookup(target)
             except ObjectNotFoundException:
                 self.err("Object '%s' not found on Simbad database." % target)
                 self.exit()

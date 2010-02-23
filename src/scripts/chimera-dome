@@ -25,6 +25,7 @@ from chimera.util.coord import Coord
 from chimera.interfaces.dome import Mode
 
 import sys
+import copy
 
 
 class ChimeraDome (ChimeraCLI):

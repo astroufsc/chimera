@@ -128,14 +128,14 @@ class SystemConfig (object):
         self.controllers = []
 
         # specials
-        self._specials = ["telescope",
-                          "camera",
-                          "filterwheel",
-                          "dome",
-                          "focuser"]
+        self._specials = ["telescope", "telescopes",
+                          "camera", "cameras",
+                          "filterwheel", "filterwheels",
+                          "dome", "domes",
+                          "focuser", "focusers"]
 
-        self._instrumentsSections = self._specials + ["instrument"]
-        self._controllersSections = ["controller"]
+        self._instrumentsSections = self._specials + ["instrument", "instruments"]
+        self._controllersSections = ["controller", "controllers"]
         self._sections = self._instrumentsSections + self._controllersSections + ["site", "chimera"]
 
         # to create nice numbered names for objects without a name
@@ -211,10 +211,10 @@ class SystemConfig (object):
         # create instruments list ordered by sectionsOrder list created above
         for section in sectionsOrder:
 
-            if section in self._instrumentsSections:
+            if section in self._instrumentsSections and section in objects:
                 self.instruments += objects[section]
 
-            if section in self._controllersSections:
+            if section in self._controllersSections and section in objects:
                 self.controllers += objects[section]
 
         # always use a single site from the last added file
