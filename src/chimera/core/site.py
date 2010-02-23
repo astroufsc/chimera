@@ -92,6 +92,10 @@ class Site (ChimeraObject):
     def ut (self):
         return dt.datetime.now(self.utc_tz)
     
+    def utcoffset(self):
+	offset = self.localtime().utcoffset()
+        return (offset.days*86400 + offset.seconds)/3600.0
+    
     def LST_inRads(self):
         return float(self._getEphem(date=self.ut()).sidereal_time())
 
