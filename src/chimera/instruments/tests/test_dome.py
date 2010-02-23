@@ -45,6 +45,8 @@ log = logging.getLogger("chimera.tests")
 # hack for event  triggering asserts
 FiredEvents = {}
 
+def assertDomeAz(domeAz, otherAz, eps):
+    assert abs(domeAz - otherAz) <= eps, "dome az=%s other az=%s (eps=%s)" % (domeAz, otherAz, eps)
 
 class DomeTest(object):
 
@@ -52,19 +54,25 @@ class DomeTest(object):
     TELESCOPE = ""
     manager = None
 
-    def assertEvents(self, slewStatus):
+    def assertEvents(self, slewStatus=None, sync=False):
 
         # for every exposure, we need to check if all events were fired in the right order
         # and with the right parameters
         
-        assert "slewBegin" in FiredEvents
-        assert isinstance(FiredEvents["slewBegin"][1], Coord)
+        if slewStatus:
+            assert "slewBegin" in FiredEvents
+            assert isinstance(FiredEvents["slewBegin"][1], Coord)
 
-        assert "slewComplete" in FiredEvents
-        assert FiredEvents["slewComplete"][0] > FiredEvents["slewBegin"][0]
-        assert isinstance(FiredEvents["slewComplete"][1], Coord)
-        assert isinstance(FiredEvents["slewComplete"][2], EnumValue) and FiredEvents["slewComplete"][2] in DomeStatus
-        assert FiredEvents["slewComplete"][2] == slewStatus
+            assert "slewComplete" in FiredEvents
+            assert FiredEvents["slewComplete"][0] > FiredEvents["slewBegin"][0]
+            assert isinstance(FiredEvents["slewComplete"][1], Coord)
+            assert isinstance(FiredEvents["slewComplete"][2], EnumValue) and FiredEvents["slewComplete"][2] in DomeStatus
+            assert FiredEvents["slewComplete"][2] == slewStatus
+
+        if sync:
+            assert "syncBegin" in FiredEvents
+            assert "syncComplete" in FiredEvents
+            assert FiredEvents["syncComplete"][0] > FiredEvents["syncBegin"][0]
 
     def setupEvents(self):
 
@@ -76,13 +84,21 @@ class DomeTest(object):
         def slewCompleteClbk(position, status):
             FiredEvents["slewComplete"] = (time.time(), position, status)
 
+        @callback(self.manager)
+        def syncBeginClbk():
+            FiredEvents["syncBegin"] = (time.time(),)
+
+        @callback(self.manager)
+        def syncCompleteClbk():
+            FiredEvents["syncComplete"] = (time.time(),)
+
         dome = self.manager.getProxy(self.DOME)
         dome.slewBegin += slewBeginClbk
         dome.slewComplete += slewCompleteClbk
+        dome.syncBegin += syncBeginClbk
+        dome.syncComplete += syncCompleteClbk
         
     def test_stress_dome_track (self):
-        # just for manual and visual testing
-        raise SkipTest()
 
         dome = self.manager.getProxy(self.DOME)
         tel  = self.manager.getProxy(self.TELESCOPE)
@@ -90,21 +106,26 @@ class DomeTest(object):
         dome.track()
 
         for i in range(10):
+
+            FiredEvents = {}
+            self.setupEvents()
+
             ra  = "%d %d 00" % (random.randint(7,15), random.randint(0,59))
             dec = "%d %d 00" % (random.randint(-90,0), random.randint(0,59))
             tel.slewToRaDec(Position.fromRaDec(ra, dec))
+
             dome.syncWithTel()
+            assertDomeAz(dome.getAz(), tel.getAz(), dome["az_resolution"])
+            self.assertEvents(sync=True)
 
             time.sleep(random.randint(0,10))
 
     def test_stress_dome_slew (self):
-
-        # just for manual and visual testing
+        
+        # just for visual testing
         raise SkipTest()
 
         dome = self.manager.getProxy(self.DOME)
-
-        print
 
         quit = threading.Event()
 
@@ -138,7 +159,7 @@ class DomeTest(object):
         
         dome.slewToAz(start+delta)
         
-        assert dome.getAz() == (start+delta)
+        assertDomeAz(dome.getAz(), (start+delta), dome["az_resolution"])
 
         assert_raises(InvalidDomePositionException, dome.slewToAz, 9999)
 
@@ -215,3 +236,8 @@ class TestRealDome(RealHardwareTest, DomeTest):
 
     def teardown (self):
         self.manager.shutdown()
+
+    def test_stress_dome_track (self):
+        # just for manual and visual testing
+        raise SkipTest()
+

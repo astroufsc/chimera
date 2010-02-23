@@ -22,8 +22,8 @@ import time
 import datetime as dt
 import random
 import urllib
-import gzip
 import os
+import shutil
 
 import numpy as N
 import pyfits
@@ -41,8 +41,8 @@ from chimera.core.lock       import lock
 class FakeCamera (CameraBase, FilterWheelBase):
 
     __config__ = {"use_dss"     : True,
-                  "ccd_width"   : 1024,
-                  "ccd_height"  : 1024}
+                  "ccd_width"   : 512,
+                  "ccd_height"  : 512}
     
     def __init__ (self):
         CameraBase.__init__ (self)
@@ -119,14 +119,6 @@ class FakeCamera (CameraBase, FilterWheelBase):
 
         self.exposeComplete(imageRequest, status)
     
-    def gunzip(self, file, newext):
-        r_file = gzip.GzipFile(file, 'r')
-        write_file = file + '.' + newext
-        w_file = open(write_file, 'w')
-        w_file.write(r_file.read())
-        w_file.close()
-        r_file.close()
-                
     def make_dark(self, shape, dtype, exptime):
         ret = N.zeros(shape, dtype=dtype)
         #Taken from specs for KAF-1603ME as found in ST-8XME
@@ -235,14 +227,15 @@ class FakeCamera (CameraBase, FilterWheelBase):
                         
                         self.log.debug("Attempting URL: " + url)
                         try:
+                            t0 = time.time()
                             dssfile=urllib.urlretrieve(url)[0]
-                            self.gunzip(dssfile,'fits')
-                            os.remove(dssfile)
-                            dssfile+='.fits'
-                            hdulist=pyfits.open(dssfile)
+                            self.log.debug("download took: %.3f s" % time.time()-t0)
+                            fitsfile = dssfile+".fits.gz"
+                            shutil.copy(dssfile, fitsfile)
+                            hdulist=pyfits.open(fitsfile)
                             pix = hdulist[0].data
                             hdulist.close()
-                            os.remove(dssfile)
+                            os.remove(fitsfile)
                         except Exception, e:
                             self.log.warning("General error getting DSS image: " + str(e))
 

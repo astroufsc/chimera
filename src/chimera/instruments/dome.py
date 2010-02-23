@@ -237,6 +237,7 @@ class DomeBase (ChimeraObject, Dome):
         self.syncBegin()
 
         if self.getMode() != Mode.Stand:
+            self._telescopeChanged(self._tel.getAz())
             self._processQueue()
 
         self.syncComplete()

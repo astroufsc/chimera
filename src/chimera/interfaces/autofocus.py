@@ -34,9 +34,9 @@ class FocusNotFoundException (ChimeraException):
 
 class Autofocus (Interface):
 
-    __config__ = {"camera"             : "/FakeCamera/0",
-                  "filterwheel"        : "/FakeFilterWheel/0",
-                  "focuser"            : "/FakeFocuser/0",
+    __config__ = {"camera"             : "/Camera/0",
+                  "filterwheel"        : "/FilterWheel/0",
+                  "focuser"            : "/Focuser/0",
                   "max_tries"          : 3}
 
     def focus (self, filter=None, exptime=None, binning=None, window=None,

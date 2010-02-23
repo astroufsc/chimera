@@ -237,29 +237,29 @@ class ChimeraSched (ChimeraCLI):
             self.out("%s %s" % (blue("[program]"), program.name))
 
         @callback(self.localManager)
-        def programCompleteClbk(program, status):
+        def programCompleteClbk(program, status, message=None):
             session = Session()
             program = session.merge(program)
             if status == SchedulerStatus.OK:
                 self.out("%s %s %s" % (blue("[program]"), program.name, green(str(status))))
             else:
-                self.out("%s %s %s" % (blue("[program]"), program.name, red(str(status))))
+                self.out("%s %s %s (%s)" % (blue("[program]"), program.name, red(str(status)), red(str(message))))
 
         @callback(self.localManager)
-        def actionBeginClbk(action):
+        def actionBeginClbk(action, message):
             session = Session()
             action = session.merge(action)
-            self.out("%s %s ..." % (blue("[action] "), str(action)), end="")
+            self.out("%s %s ..." % (blue("[action] "), message), end="")
 
         @callback(self.localManager)
-        def actionCompleteClbk(action, status):
+        def actionCompleteClbk(action, status, message=None):
             session = Session()
             action = session.merge(action)
 
             if status == SchedulerStatus.OK:
                 self.out("%s" % green(str(status)))
             else:
-                self.out("%s" % red(str(status)))
+                self.out("%s (%s)" % (red(str(status)), red(str(message))))
 
         @callback(self.localManager)
         def stateChangedClbk(newState, oldState):

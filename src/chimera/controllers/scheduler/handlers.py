@@ -27,7 +27,7 @@ class ActionHandler(object):
 
     @staticmethod
     def log(action):
-        return ActionHandler.__name__
+        return str(action)
 
 class PointHandler(ActionHandler):
 
@@ -109,19 +109,10 @@ class ExposeHandler(ActionHandler):
 
     @staticmethod
     def log(action):
-        ir = ImageRequest(frames   = int(action.frames),
-                          exptime  = float(action.exptime),
-                          shutter  = str(action.shutter),
-                          type     = str(action.imageType),
-                          filename = str(action.filename),
-                          object_name = str(action.objectName),
-                          window = action.window,
-                          binning = action.binning,
-                          wait_dome = True)
-
-        return "exposing: %s" % str(ir)
-
-
+        return "exposing: filter=%s exptime=%s frames=%s type=%s" % (str(action.filter),
+                                                                     str(action.exptime),
+                                                                     str(action.frames),
+                                                                     str(action.imageType))
 
 class AutoFocusHandler(ActionHandler):
 

@@ -127,12 +127,12 @@ class Machine(threading.Thread):
                 self.state(State.IDLE)
             except ProgramExecutionException, e:
                 self.scheduler.done(task, error=e)
-                self.controller.programComplete(program, SchedulerStatus.ERROR)
+                self.controller.programComplete(program, SchedulerStatus.ERROR, str(e))
                 self.state(State.IDLE)
-                log.debug("[error] %s (%s)" (str(task), str(e)))
+                log.debug("[error] %s (%s)" % (str(task), str(e)))
             except ProgramExecutionAborted, e:
                 self.scheduler.done(task, error=e)
-                self.controller.programComplete(program, SchedulerStatus.ABORTED)
+                self.controller.programComplete(program, SchedulerStatus.ABORTED, "Aborted by user.")
                 self.state(State.OFF)
                 log.debug("[aborted by user] %s" % str(task))
 

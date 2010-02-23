@@ -50,8 +50,9 @@ class ProgramExecutor(object):
                 self.currentAction = action
                 self.currentHandler = self.actionHandlers[type(action)]
 
-                log.debug("[start] %s " % str(self.currentHandler.log(action)))
-                self.controller.actionBegin(action)
+                logMsg = str(self.currentHandler.log(action))
+                log.debug("[start] %s " % logMsg)
+                self.controller.actionBegin(action, logMsg)
 
                 self.currentHandler.process(action)
 

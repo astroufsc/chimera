@@ -64,15 +64,15 @@ class Scheduler(ChimeraObject):
         pass
 
     @event
-    def programComplete(self, program, status):
+    def programComplete(self, program, status, message=None):
         pass
 
     @event
-    def actionBegin(self, action):
+    def actionBegin(self, action, message):
         pass
 
     @event
-    def actionComplete(self, action, status):
+    def actionComplete(self, action, status, message=None):
         pass
 
     @event

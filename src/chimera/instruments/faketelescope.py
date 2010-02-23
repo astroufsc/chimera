@@ -171,6 +171,8 @@ class FakeTelescope (TelescopeBase):
         while self.isSlewing():
             time.sleep(0.1)
 
+        self._slewing = False
+
     def isSlewing (self):
         return self._slewing
 
