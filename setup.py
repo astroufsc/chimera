@@ -62,11 +62,14 @@ chimera_scripts = ['src/scripts/chimera',
 
 linux_deps = linux_cdeps = []
 win32_deps = win32_cdeps = []
+mac_deps = mac_cdeps = []
 
 # FIXME: pywcs only works on python 2.5
 if sys.platform == "win32":
     win32_cdeps = ["numpy == 1.3.0"]
     win32_deps += ["pywin32 == 214"]
+elif sys.platform == "darwin":
+    pass
 else:
 
     import pkg_resources
@@ -97,7 +100,7 @@ setup(name='chimera-python',
       zip_safe         = False,
 
       # dependencies are installed bottom up, so put important things last
-      install_requires = linux_deps + win32_deps + \
+      install_requires = linux_deps + win32_deps + mac_deps + \
                          ["simplejson == 2.0.9",
                           "CherryPy == 3.1.2",
                           "PyYAML == 3.08",
@@ -109,7 +112,7 @@ setup(name='chimera-python',
                           "RO == 2.2.8",
                           "pyfits == 1.3",
                           "pyserial == 2.4",
-                          "Pyro == 3.8.1"] + linux_cdeps + win32_cdeps,
+                          "Pyro == 3.8.1"] + linux_cdeps + win32_cdeps + mac_cdeps,
 
       dependency_links = [os.path.join(os.path.dirname(__file__), "contrib")],
 
