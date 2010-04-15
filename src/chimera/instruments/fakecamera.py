@@ -229,7 +229,7 @@ class FakeCamera (CameraBase, FilterWheelBase):
                         try:
                             t0 = time.time()
                             dssfile=urllib.urlretrieve(url)[0]
-                            self.log.debug("download took: %.3f s" % time.time()-t0)
+                            self.log.debug("download took: %.3f s" % (time.time() - t0))
                             fitsfile = dssfile+".fits.gz"
                             shutil.copy(dssfile, fitsfile)
                             hdulist=pyfits.open(fitsfile)
