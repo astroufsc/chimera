@@ -40,6 +40,8 @@ class SequentialScheduler (IScheduler):
         if not self.rq.empty():
             return self.rq.get()
 
+        return None
+
     def done (self, task, error=None):
 
         if error:

@@ -3,9 +3,20 @@ from chimera.core.event import event
 
 from chimera.controllers.scheduler.machine import Machine
 from chimera.controllers.scheduler.sequential import SequentialScheduler
+from chimera.controllers.scheduler.circular import CircularScheduler
 from chimera.controllers.scheduler.executor import ProgramExecutor
 from chimera.controllers.scheduler.states import State
 from chimera.controllers.scheduler.model import Session
+
+from chimera.util.enum import Enum
+
+
+SchedulingAlgorithm = Enum("SEQUENTIAL", "CIRCULAR")
+
+
+SchedulingAlgorithms = {SchedulingAlgorithm.SEQUENTIAL: SequentialScheduler(),
+                        SchedulingAlgorithm.CIRCULAR  : CircularScheduler()}
+
 
 class Scheduler(ChimeraObject):
     
@@ -16,15 +27,22 @@ class Scheduler(ChimeraObject):
                   "dome"        : "/Dome/0",
                   "autofocus"   : "/Autofocus/0",
                   "point_verify": "/PointVerify/0",
-                  'site'        : '/Site/0'}
+                  'site'        : '/Site/0',
+                  'algorithm'   : SchedulingAlgorithm.SEQUENTIAL}
     
     def __init__(self):
         ChimeraObject.__init__(self)
         
-        self.executor = ProgramExecutor(self)
-        self.scheduler = SequentialScheduler()
+        self.executor = None
+        self.scheduler = None
+        self.machine = None
 
+    def __start__ (self):
+        self.executor = ProgramExecutor(self)
+        self.scheduler = SchedulingAlgorithms[self["algorithm"]]
         self.machine = Machine(self.scheduler, self.executor, self)
+
+        self.log.debug("Using %s algorithm" % self["algorithm"])
 
     def control(self):
         if not self.machine.isAlive():
