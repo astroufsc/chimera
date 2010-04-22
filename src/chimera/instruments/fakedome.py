@@ -38,6 +38,9 @@ class FakeDome (DomeBase):
         self._slitOpen  = False
         self._abort = threading.Event()
         self._maxSlewTime = 5/180.0
+        
+    def __start__ (self):
+        self.setHz(1.0/30.0)
 
     @lock
     def slewToAz (self, az):

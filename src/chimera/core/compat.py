@@ -33,3 +33,8 @@ if sys.version_info[:2] < (2,5):
             if not element: return False
         return True
 
+if sys.version_info[:2] >= (2,6):
+    from multiprocessing import freeze_support
+else:
+    def freeze_support():
+        pass

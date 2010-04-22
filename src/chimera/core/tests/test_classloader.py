@@ -33,4 +33,3 @@ class TestClassLoader:
         assert_raises (ClassLoaderException, loader.loadClass, "ClassLoaderHelperNotFound")       
         assert_raises (ClassLoaderException, loader.loadClass, "ClassLoaderHelperFoundWithoutClass")
         assert_raises (ClassLoaderException, loader.loadClass, "ClassLoaderHelperFoundNotWorking1")
-        assert_raises (ClassLoaderException, loader.loadClass, "ClassLoaderHelperFoundNotWorking2")

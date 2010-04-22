@@ -95,14 +95,12 @@ class FakeTelescope (TelescopeBase):
         if not isinstance(position, Position):
             position = Position.fromRaDec(position[0], position[1], epoch=Epoch.J2000)
 
-        position_now = self._getFinalPosition(position)
+        self.slewBegin(position)
 
-        self.slewBegin(position_now)
-
-        ra_steps = position_now.ra - self.getRa()
+        ra_steps = position.ra - self.getRa()
         ra_steps = float(ra_steps/10.0)
 
-        dec_steps = position_now.dec - self.getDec()
+        dec_steps = position.dec - self.getDec()
         dec_steps = float(dec_steps/10.0)
 
         self._slewing = True

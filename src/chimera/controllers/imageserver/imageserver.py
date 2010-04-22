@@ -13,7 +13,7 @@ import os
 class ImageServer(ChimeraObject):
 
     __config__  = { # root directory where images are stored
-                   'images_dir': '$HOME/images',    
+                   'images_dir': '~/images',    
                    # path relative to images_dir where images for a
                    # night will be stored, use "" to save all images
                    # on the same directory

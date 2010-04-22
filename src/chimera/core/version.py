@@ -44,16 +44,3 @@ _chimera_classifiers_      = [ 'Development Status :: 3 - Alpha',
                                'Operating System :: POSIX :: Linux',
                                'Programming Language :: Python',
                                'Topic :: Scientific/Engineering :: Astronomy']
-
-def find_dev_version ():
-
-    try:
-        import pkg_resources
-        pkgs = pkg_resources.require("chimera-python")
-        if pkgs:
-            return pkgs[0].version
-        else:
-            return ""
-    except pkg_resources.DistributionNotFound:
-        return ""
-

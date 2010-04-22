@@ -51,7 +51,11 @@ else:
     SYSTEM_CONFIG_DIRECTORY        = os.path.expanduser('~/.chimera')
     
 SYSTEM_CONFIG_DEFAULT_FILENAME = os.path.join(SYSTEM_CONFIG_DIRECTORY, 'chimera.config')
-SYSTEM_CONFIG_DEFAULT_SAMPLE   = os.path.join(os.path.dirname(__file__), 'chimera.sample.config')
+
+if hasattr(sys, 'frozen'):
+    SYSTEM_CONFIG_DEFAULT_SAMPLE   = os.path.join(os.path.dirname(sys.executable), 'samples', 'chimera.sample.config')
+else:
+    SYSTEM_CONFIG_DEFAULT_SAMPLE   = os.path.join(os.path.dirname(__file__), 'chimera.sample.config')
 
 SYSTEM_CONFIG_LOG_NAME = os.path.join(SYSTEM_CONFIG_DIRECTORY, 'chimera.log')
 

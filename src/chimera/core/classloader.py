@@ -71,7 +71,7 @@ class ClassLoader (object):
 
             # ImportError above
             if tb_size == 1:
-                raise ClassLoaderException ("Couldn't found module %s (%s)." % (clsname, path))
+                raise ClassLoaderException ("Couldn't find module %s (%s)." % (clsname, path))
 
             # ImportError on loaded module
             else:
