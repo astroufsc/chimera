@@ -22,6 +22,7 @@
 from chimera.core.cli import ChimeraCLI, action, ParameterType
 from chimera.core.callback import callback
 from chimera.core.exceptions import printException, ObjectNotFoundException
+from chimera.core.compat import freeze_support
 
 from chimera.interfaces.filterwheel import InvalidFilterPositionException
 from chimera.interfaces.camera import CameraFeature, CameraStatus
@@ -509,6 +510,6 @@ def main():
     cli.wait()
     
 if __name__ == '__main__':
-
+    freeze_support()
     main()
     

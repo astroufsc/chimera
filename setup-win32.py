@@ -18,14 +18,14 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-from ez_setup import use_setuptools
-use_setuptools()
+from distutils.core import setup
+from setuptools import find_packages
 
+import py2exe
 import os
 import sys
 import glob
 
-from setuptools import setup, find_packages
 
 # append chimera to sys.path to get current version
 build_dir = os.getcwd ()
@@ -54,67 +54,26 @@ chimera_scripts = ['src/scripts/chimera',
                    'src/scripts/chimera-dome',
                    'src/scripts/chimera-focus',
                    'src/scripts/chimera-pverify',
-                   'src/scripts/chimera-console',
                    'src/scripts/chimera-sched']
+                   
+
+chimera_gui = ['src/scripts/chimera-gui']
 
 # setup
 
-linux_deps = linux_cdeps = []
-win32_deps = win32_cdeps = []
-mac_deps = mac_cdeps = []
-
-# FIXME: pywcs only works on python 2.5
-if sys.platform == "win32":
-    win32_cdeps = ["numpy == 1.3.0"]
-    win32_deps += ["pywin32 == 214"]
-elif sys.platform == "darwin":
-    pass
-else:
-
-    import pkg_resources
-    
-    # check if user have Numpy, we don't try to install it, please use your distro default installation
-    # method.
-    try:
-        pkg_resources.require("numpy >= 1.1.0")
-    except pkg_resources.DistributionNotFound:
-        print >> sys.stderr, "*"*80
-        print >> sys.stderr, "You don't seem to have Numpy installed. Please install Numpy >= 1.1.0 and try again."
-        print >> sys.stderr, "*"*80
-        sys.exit(1)
-
-    linux_deps += ["python-sbigudrv == 0.4"]
-    
-    if sys.version_info[0:2] >= (2,5):
-        linux_deps += ["pywcs"]
-
 setup(name='chimera-python',
-      package_dir      = {"": "src"},
+      data_files       = [("samples", ["src/chimera/core/chimera.sample.config"])],
       
-      packages         = find_packages("src", exclude=["*.tests"]),
-      scripts          = chimera_scripts,
-      data_files       = [("chimera/core", ["src/chimera/core/chimera.sample.config"])],
-      zip_safe         = False,
-
-      # dependencies are installed bottom up, so put important things last
-      install_requires = linux_deps + win32_deps + mac_deps + \
-                         ["simplejson == 2.0.9",
-                          "CherryPy == 3.1.2",
-                          "PyYAML == 3.08",
-                          "suds == 0.3.8",
-                          "asciidata == 1.1",
-                          "SQLAlchemy == 0.5.6",
-                          "pyephem == 3.7.3.4",
-                          "python-dateutil == 1.4.1",
-                          "RO == 2.2.8",
-                          "pyfits == 1.3",
-                          "pyserial == 2.4",
-                          "Pyro == 3.8.1"] + linux_cdeps + win32_cdeps + mac_cdeps,
-
-      dependency_links = [os.path.join(os.path.dirname(__file__), "contrib")],
-
-      tests_require    = ["nose", "coverage"],
-
+      console          = chimera_scripts,
+      
+      options          = {'py2exe': {'packages': 'encodings, chimera',
+                                     'excludes': 'Tkconstants, Tkinter, FixTk, tcl, tk, email, _ssl, win32ui',
+                                     'optimize': 2,
+                                     'bundle_files': 2,
+                                     'compressed': True
+                                    }
+                         },
+      
       version          = _chimera_version_,
       description      = _chimera_description_,
       long_description = open("docs/site/index.rst").read(),
@@ -124,5 +83,5 @@ setup(name='chimera-python',
       url              = _chimera_url_,
       download_url     = _chimera_download_url_,
       classifiers      = _chimera_classifiers_,
-      platforms        = _chimera_platform_)
-
+      platforms        = _chimera_platform_
+)

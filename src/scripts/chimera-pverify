@@ -22,6 +22,8 @@
 from chimera.core.cli import ChimeraCLI, action, parameter
 from chimera.core.callback import callback
 from chimera.core.exceptions import ChimeraException
+from chimera.core.compat import freeze_support
+
 from chimera.interfaces.pointverify import CantPointScopeException, CanSetScopeButNotThisField, CantSetScopeException, PointVerify
 from chimera.util.sextractor import SExtractorException
 
@@ -103,5 +105,5 @@ def main():
     cli.wait()
     
 if __name__ == '__main__':
-
+    freeze_support()
     main()

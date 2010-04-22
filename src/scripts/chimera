@@ -18,6 +18,8 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+from chimera.core.compat import freeze_support
+
 def main ():
 
     import sys
@@ -26,6 +28,6 @@ def main ():
 
     SiteController(sys.argv).startup()
 
-
 if __name__ == '__main__':
+    freeze_support()
     main()
