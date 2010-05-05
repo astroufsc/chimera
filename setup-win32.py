@@ -67,9 +67,9 @@ setup(name='chimera-python',
       console          = chimera_scripts,
       
       options          = {'py2exe': {'packages': 'encodings, chimera',
-                                     'excludes': 'Tkconstants, Tkinter, FixTk, tcl, tk, email, _ssl, win32ui',
+                                     'excludes': 'Tkconstants, Tkinter, FixTk, tcl, tk, email, _ssl, win32ui, gtk, glib, gobject, cairo',
                                      'optimize': 2,
-                                     'bundle_files': 2,
+                                     'bundle_files': 3,
                                      'compressed': True
                                     }
                          },

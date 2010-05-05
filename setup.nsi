@@ -15,7 +15,7 @@ InstallDir "$PROGRAMFILES\${CHIMERA}"
 CRCCheck On
 RequestExecutionLevel user
 
-OutFile "Chimera.exe"
+OutFile "chimera.exe"
 
 ShowInstDetails "hide"
 ShowUninstDetails "hide"
