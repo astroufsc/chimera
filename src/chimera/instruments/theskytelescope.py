@@ -309,9 +309,3 @@ class TheSkyTelescope (TelescopeBase):
     def syncRaDec(self, position):
         self._telescope.Sync (position.ra.H, position.dec.D, "chimera")
         self.syncComplete(position)            
-
-    def getMetadata (self, request):
-        headers = []
-        headers += super(TelescopeBase, self).getMetadata(request)
-        return headers
-
