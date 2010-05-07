@@ -74,6 +74,10 @@ class Scheduler(ChimeraObject):
         if self.machine:
             self.machine.state(State.SHUTDOWN)
 
+    def restartAllPrograms(self):
+        if self.machine:
+            self.machine.restartAllPrograms()
+
     def state(self):
         return self.machine.state()
 

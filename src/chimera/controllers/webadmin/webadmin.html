@@ -22,8 +22,9 @@
 
       div#status { margin-top: 30px; font-size: 1.3em; }
 
-      input#open { background-color: green; }
-      input#close{ background-color: red; }
+      input#start { background-color: green; }
+      input#stop{ background-color: red; }
+      input#pause{ background-color: yellow; }
 
     </style>
 
@@ -31,26 +32,36 @@
 
     <script type="text/javascript">
 
-      function openDome() {
-        $.ajax({type: "GET", url: "/open_dome", dataType: "text",
+      function do_start() {
+        $.ajax({type: "GET", url: "/start", dataType: "text",
           beforeSend: function() { $("input").attr("disabled", true); $("#status").text("Aguarde ...").fadeIn("fast"); },
           success: function (msg) { $("input").attr("disabled", false); $("#status").text(msg).fadeOut(3000); }});
       }
 
-      function closeDome() {
-        $.ajax({type: "GET", url: "/close_dome", dataType: "text",
+      function do_stop() {
+        $.ajax({type: "GET", url: "/stop", dataType: "text",
+          beforeSend: function() { $("input").attr("disabled", true); $("#status").text("Aguarde ...").fadeIn("fast"); },
+          success: function (msg) { $("input").attr("disabled", false); $("#status").text(msg).fadeOut(3000); }});
+      }
+
+      function do_pause() {
+        $.ajax({type: "GET", url: "/pause", dataType: "text",
           beforeSend: function() { $("input").attr("disabled", true); $("#status").text("Aguarde ...").fadeIn("fast"); },
           success: function (msg) { $("input").attr("disabled", false); $("#status").text(msg).fadeOut(3000); }});
       }
 
       $(document).ready(function() {
       
-        $("#open").click(function() {
-         openDome();
+        $("#start").click(function() {
+         do_start();
         });
       
-        $("#close").click(function() {
-         closeDome();
+        $("#stop").click(function() {
+         do_stop();
+        });
+
+        $("#pause").click(function() {
+         do_pause();
         });
 
       });
@@ -63,8 +74,19 @@
 
     <div id="control">
       <h1>Chimera</h1>
-      <input type="button" id="open" value="Abrir a cúpula!"/>
-      <input type="button" id="close" value="Fechar a cúpula!"/>
+
+      <div>
+	<input type="button" id="start" value="Iniciar!"/>
+      </div>
+
+      <div>
+	<input type="button" id="pause" value="Continuar!"/>
+      </div>
+
+      <div>
+	<input type="button" id="stop" value="Parar!"/>
+      </div>
+
     </div>
 
     <div id="status">

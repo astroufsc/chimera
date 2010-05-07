@@ -20,34 +20,42 @@ class WebAdminRoot (object):
         return open(os.path.join(os.path.dirname(__file__), "webadmin.html")).read()
 
     @cherrypy.expose
-    def is_dome_open (self):
-        response = cherrypy.response
-        response.headers['Content-Type'] = 'application/json'
-        return simplejson.dumps(self.controller.dome.isSlitOpen())
-
-    @cherrypy.expose
-    def open_dome (self):
+    def start (self):
 
         try:
             self.controller.dome.openSlit()
             self.controller.telescope.unpark()
+            # clean scheduler database
+            self.controller.scheduler.restartAllPrograms()
             self.controller.scheduler.start()
         except Exception:
-            return "Erro ao tentar abrir a cúpula!"
+            return "Erro ao tentar iniciar o sistema!"
 
         return "Sucesso!"
 
     @cherrypy.expose
-    def close_dome (self):
+    def stop (self):
 
         try:
             self.controller.scheduler.stop()
             self.controller.telescope.park()
             self.controller.dome.closeSlit()
         except Exception:
-            return "Erro ao tentar fechar a cúpula!"
+            return "Erro ao tentar parar o sistema!"
 
         return "Sucesso!"
+
+    @cherrypy.expose
+    def pause (self):
+        try:
+            self.controller.dome.openSlit()
+            self.controller.telescope.unpark()
+            self.controller.scheduler.start()
+        except Exception:
+            return "Erro ao tentar continuar os trabalhos!"
+
+        return "Sucesso!"
+
     
 class WebAdmin (ChimeraObject):
 

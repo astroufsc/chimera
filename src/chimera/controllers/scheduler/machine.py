@@ -1,7 +1,7 @@
 import chimera.core.log
 
 from chimera.controllers.scheduler.states import State
-from chimera.controllers.scheduler.model import Session
+from chimera.controllers.scheduler.model import Session, Program
 from chimera.controllers.scheduler.status import SchedulerStatus
 
 from chimera.core.exceptions import ProgramExecutionException, ProgramExecutionAborted
@@ -105,6 +105,15 @@ class Machine(threading.Thread):
         log.debug("Waking up")
         self.__wakeUpCall.notifyAll()
         self.__wakeUpCall.release()
+
+    def restartAllPrograms(self):
+        session = Session()
+
+        programs = session.query(Program).all()
+        for program in programs:
+            program.finished = False
+
+        session.commit()
         
     def _process(self, program):
 
