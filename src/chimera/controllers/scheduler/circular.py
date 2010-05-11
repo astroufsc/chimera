@@ -15,6 +15,14 @@ class CircularScheduler (SequentialScheduler):
 
     def next (self):
         if self.rq.empty():
+            session = Session()
+            programs = session.query(Program).all()
+
+            for program in programs:
+                program.finished = False
+
+            session.commit()
+            
             self.reschedule(self.machine)
 
         if not self.rq.empty():
@@ -22,10 +30,3 @@ class CircularScheduler (SequentialScheduler):
         
         return None
 
-    def done (self, task, error=None):
-        if error:
-            log.debug("Error processing program %s." % str(task))
-            log.exception(error)
-        
-        self.rq.task_done()
-        self.machine.wakeup()
