@@ -44,7 +44,7 @@ class TelescopeController:
         def unparkComplete():
             self.module.view.updateParkStatus()
         
-        self.telescope.slewComplete   += slewBegin
+        self.telescope.slewBegin      += slewBegin
         self.telescope.slewComplete   += slewComplete
         self.telescope.parkComplete   += parkComplete
         self.telescope.unparkComplete += unparkComplete
@@ -79,7 +79,7 @@ class TelescopeController:
             ra = "%2d:%2d:%2d" %(raHour, raMinute, raSec)
             dec = "%2d:%2d:%2d" %(decDegree, decMinute, decSec)
 
-            epochStr = str(self.module.view.epochCombo.get_active()).lower()
+            epochStr = str(self.module.view.epochCombo.child.get_text()).lower()
 
             if epochStr == "j2000":
                 epoch = Epoch.J2000
@@ -90,8 +90,8 @@ class TelescopeController:
             else:
                 # FIXME
                 epoch = epochStr
-        
-            target = Position.fromRaDec(ra, dec, equinox=epoch)
+        	
+            target = Position.fromRaDec(ra, dec, epoch=epoch)
             slewFunction = self.telescope.slewToRaDec
 
         elif currentPage == 1:
