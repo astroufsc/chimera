@@ -146,7 +146,7 @@ class TelescopeController:
 
     def _move(self, method, offset):
         try:
-            offset = float(offset)
+            offset = float(offset.replace("arcsec", ""))
             method(offset)
         except Exception, e:
             printException(e)
@@ -354,7 +354,7 @@ class TelescopeView:
             telescopeProgress = self.module.builder.get_object("telescopeProgress")
             telescopeProgress.hide()
             
-            if self.telescopeTimer:
+            if getattr(self, "telescopeTimer", 0) !=  0:
                 glib.source_remove(self.telescopeTimer)
                 self.telescopeTimer = 0
             
