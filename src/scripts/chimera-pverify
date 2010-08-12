@@ -25,6 +25,7 @@ from chimera.core.exceptions import ChimeraException
 from chimera.core.compat import freeze_support
 
 from chimera.interfaces.pointverify import CantPointScopeException, CanSetScopeButNotThisField, CantSetScopeException, PointVerify
+from chimera.util.astrometrynet import NoSolutionAstrometryNetException
 from chimera.util.sextractor import SExtractorException
 
 from chimera.util.ds9 import DS9
@@ -78,8 +79,11 @@ class ChimeraPointVerify (ChimeraCLI):
         self.out("Doing astrometry on file : %s\n",options.file)
         try:
             AstrometryNet.solveField(options.file,findstarmethod="sex")
-        except CantSetScopeException, e:
-            self.exit("Can't set scope")
+        except NoSolutionAstrometryNetException, e:
+           try:
+              AstrometryNet.solveField(options.file,findstarmethod="astrometry.net")
+           except NoSolutionAstrometryNetException, e:
+              self.exit("Can't set scope")
         self.out("OK")
 
 
