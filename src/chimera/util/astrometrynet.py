@@ -58,10 +58,10 @@ class AstrometryNet:
         radius = 5.0 * abs(image["CD1_1"]) * width
         
         if findstarmethod == "astrometry.net":
-            line = "solve-field %s -d 10,20,30,40,50 --overwrite -o %s --ra %f --dec %f --radius %f"  %(fullfilename, outfilename, ra, dec, radius)
+            line = "solve-field %s -d 10,20,30,40,50,60,70,80,90,100 --overwrite -o %s --ra %f --dec %f --radius %f"  %(fullfilename, outfilename, ra, dec, radius)
         elif findstarmethod == "sex":
             sexoutfilename = pathname + outfilename + ".xyls"
-            line = "solve-field %s  -d 10,20,30,40,50 --overwrite -o %s --x-column X_IMAGE --y-column Y_IMAGE --sort-column MAG_ISO --sort-ascending --width %d --height %d --ra %f --dec %f --radius %f"  %(sexoutfilename, outfilename, width, height, ra, dec, radius)
+            line = "solve-field %s  -d 10,20,30,40,50,60,70,80,90,100 --overwrite -o %s --x-column X_IMAGE --y-column Y_IMAGE --sort-column MAG_ISO --sort-ascending --width %d --height %d --ra %f --dec %f --radius %f"  %(sexoutfilename, outfilename, width, height, ra, dec, radius)
             # line = "solve-field %s --overwrite -o %s --x-column X_IMAGE --y-column Y_IMAGE --sort-column MAG_ISO --sort-ascending --width %d --height %d"  %(sexoutfilename, outfilename,width, height)
             # could use --guess-scale for unreliable mounts:
             # line = "solve-field %s --overwrite -o %s --x-column X_IMAGE --y-column Y_IMAGE --sort-column MAG_ISO --sort-ascending --width %d --height %d --guess-scale"  %(sexoutfilename, outfilename, width, height)
