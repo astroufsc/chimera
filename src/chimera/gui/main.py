@@ -48,7 +48,7 @@ class ChimeraGUI:
                                       "chimera_quit_handler": self.chimera_quit})
 
         self.dock = gdl.Dock()
-        self.dock_layout = gdl.DockLayout(self.dock)
+        self.dock_layout = gdl.DockLayout()
 
         if os.path.exists("chimera_gui_layout.xml"):
             self.dock_layout.load_from_file("chimera_gui_layout.xml")
@@ -57,6 +57,7 @@ class ChimeraGUI:
         self.builder.get_object("main_area").pack_end(self.dock)
 
         self.mainWindow.set_default_size(640, 480)
+	self.mainWindow.show_all()
 
     def chimera_quit (self, *arga, **kwargs):
         #self.dock_layout.save_to_file("chimera_gui_layout.xml")
@@ -117,7 +118,7 @@ class ChimeraGUI:
 
             for name, widget, position in view["widgets"]:
                 
-                item = gdl.DockItem(name, name, gtk.STOCK_EXECUTE, gdl.DOCK_ITEM_BEH_CANT_ICONIFY)
+                item = gdl.DockItem(name, name, gdl.DOCK_ITEM_BEH_CANT_ICONIFY)
                 item.add(widget)
                 item.show_all()
                 self.dock.add_item(item, gdl.DOCK_CENTER)
