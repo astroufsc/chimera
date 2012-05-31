@@ -55,7 +55,8 @@ chimera_scripts = ['src/scripts/chimera',
                    'src/scripts/chimera-focus',
                    'src/scripts/chimera-pverify',
                    'src/scripts/chimera-console',
-                   'src/scripts/chimera-sched']
+                   'src/scripts/chimera-sched',
+                   'src/scripts/chimera-ppsched']
 
 # setup
 
