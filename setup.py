@@ -24,6 +24,7 @@ use_setuptools()
 import os
 import sys
 import glob
+import re
 
 from setuptools import setup, find_packages
 
@@ -56,7 +57,8 @@ chimera_scripts = ['src/scripts/chimera',
                    'src/scripts/chimera-pverify',
                    'src/scripts/chimera-console',
                    'src/scripts/chimera-sched',
-                   'src/scripts/chimera-ppsched']
+                   'src/scripts/chimera-ppsched',
+                   'src/scripts/chimera-gui']
 
 # setup
 
@@ -89,12 +91,20 @@ else:
     if sys.version_info[0:2] >= (2,5):
         linux_deps += ["pywcs"]
 
+modulefiles=os.listdir("src/chimera/gui/modules/")
+guifiles=[]
+for file in modulefiles:
+      if re.match('(.+\.png)|(.+\.xml)',file):
+         guifiles.append("src/chimera/gui/modules/"+file)
+  
 setup(name='chimera-python',
       package_dir      = {"": "src"},
       
       packages         = find_packages("src", exclude=["*.tests"]),
       scripts          = chimera_scripts,
-      data_files       = [("chimera/core", ["src/chimera/core/chimera.sample.config"])],
+      data_files       = [("chimera/core", ["src/chimera/core/chimera.sample.config"]),
+                          ("chimera/gui", ["src/chimera/gui/chimera.xml"]),
+                          ("chimera/gui/modules", guifiles)],
       zip_safe         = False,
 
       # dependencies are installed bottom up, so put important things last
