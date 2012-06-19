@@ -3,7 +3,7 @@ Created on Jan 4, 2012
 
 @author: penteado
 '''
-from TPL2.TPL2 import TPL2
+from chimera.util.TPL2.TPL2 import TPL2
 class TSI(TPL2):
     '''
     classdocs
