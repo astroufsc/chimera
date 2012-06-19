@@ -27,7 +27,7 @@ from xml.parsers.expat import ExpatError
 import chimera.core.log
 
 import logging
-logging.getLogger("suds").setLevel(1e9)
+logging.getLogger("suds").setLevel(1000000000)
 
 from suds.xsd.sxbasic import Import
 Import.bind('http://schemas.xmlsoap.org/soap/encoding/')
