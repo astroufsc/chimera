@@ -42,7 +42,8 @@ from chimera.core.exceptions import ObjectNotFoundException,ChimeraException
 from chimera.core.constants import SYSTEM_CONFIG_DIRECTORY
 
 from chimera.util.TSI.TSI import TSI
-from chimera.util.TPL2.TPL2 import TPL2
+import chimera.util.TPL2.TPL2 as TPL2
+
 
 Direction = Enum("E", "W", "N", "S")
 
@@ -177,7 +178,7 @@ class Astelco (TelescopeBase): #converted to Astelco
             self._tsi.debug=False
             return True
 
-        except (TPL2.TPL2.SocketError, IOError), e:
+        except (TPL2.SocketError, IOError), e:
             raise AstelcoException("Error while opening %s." % self["device"])
 
     @lock
