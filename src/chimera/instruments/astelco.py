@@ -42,7 +42,7 @@ from chimera.core.exceptions import ObjectNotFoundException,ChimeraException
 from chimera.core.constants import SYSTEM_CONFIG_DIRECTORY
 
 from chimera.util.TSI.TSI import TSI
-import chimera.util.TPL2.TPL2
+from chimera.util.TPL2.TPL2 import TPL2
 
 Direction = Enum("E", "W", "N", "S")
 
@@ -157,7 +157,7 @@ class Astelco (TelescopeBase): #converted to Astelco
 
         print 'Connecting to Astelco server ',self._aahost,':',int(self._aaport)
         self._tsi=TSI(user=self._user,password=self._password,
-                      host=self._aahost,port=int(self._aaport),echo=False,verbose=False)
+                      host=self._aahost,port=int(self._aaport),echo=False,verbose=False,debug=True)
         print self._tsi.log
 
         try:
@@ -173,7 +173,8 @@ class Astelco (TelescopeBase): #converted to Astelco
                 self.log.info("Skipping init as requested.")
             else:
                 self._initTelescope()
-
+            
+            self._tsi.debug=False
             return True
 
         except (TPL2.TPL2.SocketError, IOError), e:

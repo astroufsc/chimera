@@ -252,12 +252,12 @@ class TPL2(object):
         ocmid=self.get(object+'!TYPE',wait=True)
         st=self.commands_sent[ocmid]['status']
         if st!='COMPLETE':
-            print st 
+            print 'TPL2 getobject: got status "',st,'"' 
             return None
         ocmid=self.get(object,wait=True)
         st=self.commands_sent[ocmid]['status']
         if st!='COMPLETE':
-            print st 
+            print 'TPL2 getobject: got status "',st,'"'
             return None
         if self.debug:
             print self.received_objects
@@ -299,7 +299,7 @@ class TPL2(object):
         else:
             return res
     
-    def sendcomm(self,comm,object,wait=False):
+    def sendcomm(self,comm,object,wait=False,maxtries=10):
         ocmid=self.next_command_id
         command=str(ocmid)+' '+comm+' '+object+'\r\n'
         self.send(command)
@@ -314,13 +314,17 @@ class TPL2(object):
                 time.sleep(self.sleep)
         return ocmid
         
-    def get(self,object,wait=False):
+    def get(self,object,wait=False,maxtries=10):
         ret=self.sendcomm('GET',object,wait)
+        tries=1
         if wait:
-            while not self.commands_sent[ret]['data']:
+            while (not self.commands_sent[ret]['data']) and (tries != maxtries):
                 if self.debug:
-                    print 'Waiting for command completion'
+                    print 'Waiting for command completion (',tries,'/',maxtries,')'
+                    tries+=1
                 time.sleep(self.sleep)
+            if not self.commands_sent[ret]['data']:
+                print 'TPL2 get: maxtries reached, still no answer; giving up'
         return ret
     
     def set(self,object,value,wait=False,binary=False):
