@@ -35,18 +35,22 @@ focusers and domes in a very integrated way.
 Getting started
 ---------------
 
-To try out Chimera, follow the installation instructions and make sure
-that you have at least one `supported devices`_.
+.. To try out Chimera, follow the installation instructions and make sure
+.. that you have at least one `supported devices`_.
 
-The easiest way to install Chimera is to use `easy_install
-<http://peak.telecommunity.com/DevCenter/EasyInstall>`_::
+.. The easiest way to install Chimera is to use `easy_install
+.. <http://peak.telecommunity.com/DevCenter/EasyInstall>`_::
 
-   sudo easy_install chimera-python
+..    sudo easy_install chimera-python
 
-... and that's it! All dependencies are automagically installed.
+.. ... and that's it! All dependencies are automagically installed.
 
-You can also download the sources at `Chimera Development page
-<http://code.google.com/p/chimera>`_ and try to install it *by hands*.
+.. You can also download the sources at `Chimera Development page
+.. <http://code.google.com/p/chimera>`_ and try to install it *by hands*.
+
+To install chimera, you just have to download it at `Chimera github page
+<http://github.com/astroufsc/chimera>`_ and install it by following the
+INSTALL document.
 
 Use our `Quickstart <http://chimera.sf.net/quick-start>`_ document
 to guide yout through the first steps of using Chimera. There is also a
@@ -89,12 +93,20 @@ Supported Devices
 In Development 
 ^^^^^^^^^^^^^^
 
+**Controllers**
+
 **CCD Cameras**
    `Apogee <http://www.ccd.com>`_  USB/Ethernet cameras.
+   
+   `Finger Lake Instruments Cameras <http://www.flicamera.com>`_
 
 .. note::
    If you need support for any device which Chimera's doesn't
    support, call us and we can try to develop it or help you to do it.
+   
+For more information, take a look on our `Development wiki 
+<https://github.com/astroufsc/chimera/wik>`_ or contact us at
+chimera@astro.ufsc.br.
 
 License
 -------
@@ -106,12 +118,14 @@ Chimera is Free/Open Software licensed by `GPL v2
 Authors
 -------
 
-Chimera is mainly developed by Paulo Henrique Silva
-<ph.silva@gmail.com> at `Universidade Federal de Santa Catarina
-<http://www.ufsc.br>`_ in collaboration with his advisor Antonio
-Kanaan.
+Chimera was designed  by Paulo Henrique Silva at `Universidade Federal
+de Santa Catarina <http://www.ufsc.br>`_ in collaboration with his
+advisor Antonio Kanaan and other contributors.
+
+Contact us at chimera@astro.ufsc.br.
 
 Chimera is sponsored by `Laboratorio Nacional de Astrofisica
 <http://www.lna.br>`_ through a `CNPq <http://www.cnpq.br>`_ grant.
+Chimera is also supported by Brazilian INCT-A and FAPESP. 
 
 

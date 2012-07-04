@@ -36,7 +36,8 @@ master_doc = 'index'
 
 # General substitutions.
 project = 'Chimera'
-copyright = '2008, P. Henrique Silva'
+#copyright = '2008, P. Henrique Silva'
+copyright = '2012, GAS - UFSC'
 
 # The default replacements for |version| and |release|, also used in various
 # other places throughout the built documents.
