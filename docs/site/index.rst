@@ -105,7 +105,7 @@ In Development
    support, call us and we can try to develop it or help you to do it.
    
 For more information, take a look on our `Development wiki 
-<https://github.com/astroufsc/chimera/wik>`_ or contact us at
+<https://github.com/astroufsc/chimera/wiki>`_ or contact us at
 chimera@astro.ufsc.br.
 
 License
