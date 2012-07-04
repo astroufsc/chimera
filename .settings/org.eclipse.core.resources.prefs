@@ -1,0 +1,9 @@
+eclipse.preferences.version=1
+encoding//docs/quickstart/conf.py=utf-8
+encoding//docs/site/conf.py=utf-8
+encoding//src/chimera/controllers/webadmin/webadmin.py=utf-8
+encoding//src/chimera/gui/main.py=utf-8
+encoding//src/chimera/instruments/focuser.py=iso-8859-1
+encoding//src/chimera/interfaces/weatherstation.py=iso-8859-1
+encoding//src/scripts/chimera-ppsched=iso-8859-1
+encoding//src/scripts/chimera-sched=iso-8859-1
