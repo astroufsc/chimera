@@ -60,3 +60,10 @@ controller:
     name: fake
     httpd: True
     autoload: False
+  
+  - name: sched
+    type: Scheduler
+    camera: /FakeCamera/fake
+    dome: /FakeDome/fake
+    autofocus: /FakeDome/fake
+    telescope: /FakeTelescope/fake
