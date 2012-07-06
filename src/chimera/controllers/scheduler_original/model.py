@@ -5,7 +5,7 @@ from sqlalchemy import (Column, String, Integer, DateTime, Boolean, ForeignKey,
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relation, backref
 
-engine = create_engine('sqlite:///%s' % DEFAULT_PROGRAM_DATABASE, echo=False)
+engine = create_engine('sqlite:///%s' % DEFAULT_PROGRAM_DATABASE, pool_size=20, echo=False)
 metaData = MetaData()
 metaData.bind = engine
 
