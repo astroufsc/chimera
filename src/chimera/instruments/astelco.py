@@ -52,7 +52,10 @@ class AstelcoException(ChimeraException):
 
 class Astelco (TelescopeBase): #converted to Astelco
     
-    __config__ = {'azimuth180Correct'   : False}
+    __config__ = {'azimuth180Correct'   : False,\
+                  'device':'sim.tt-data.eu:65443',\
+                  'user':'admin','password':'a8zfuoad1',\
+                  'echo':False,'verbose':False,'debug':False}
 
     def __init__(self):
 
@@ -90,10 +93,6 @@ class Astelco (TelescopeBase): #converted to Astelco
             for direction in Direction:
                 self._calibration[rate][direction] = 1
         
-        self._user="admin"
-        self._password="a8zfuoad1"
-        self._aahost="sim.tt-data.eu"
-        self._aaport="65443"
 
     # -- ILifeCycle implementation --
 
@@ -156,9 +155,13 @@ class Astelco (TelescopeBase): #converted to Astelco
     @lock
     def open(self): #converted to Astelco
 
-        print 'Connecting to Astelco server ',self._aahost,':',int(self._aaport)
-        self._tsi=TSI(user=self._user,password=self._password,
-                      host=self._aahost,port=int(self._aaport),echo=False,verbose=False,debug=True)
+        devicepart=self['device'].partition(':')
+        self._host=devicepart[0]
+        self._port=int(devicepart[-1]) if devicepart[-1] else 65443
+        print 'Connecting to Astelco server ',self._host,':',self._port
+        self._tsi=TSI(user=self['user'],password=self['password'],
+                      host=self._host,port=self._port,echo=self['echo'],\
+                      verbose=self['verbose'],debug=self['debug'])
         print self._tsi.log
 
         try:
@@ -179,7 +182,7 @@ class Astelco (TelescopeBase): #converted to Astelco
             return True
 
         except (TPL2.SocketError, IOError), e:
-            raise AstelcoException("Error while opening %s." % self["device"])
+            raise AstelcoException("Error while opening telescope%s." % self["device"])
 
     @lock
     def close(self): #converted to Astelco

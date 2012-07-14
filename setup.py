@@ -118,7 +118,7 @@ setup(name='chimera-python',
                           "pyephem == 3.7.3.4",
                           "python-dateutil == 1.4.1",
                           "RO == 2.2.8",
-                          "pyfits == 1.3",
+                          "pyfits >= 1.3",
                           "pyserial == 2.4",
                           "Pyro == 3.8.1"] + linux_cdeps + win32_cdeps + mac_cdeps,
 
