@@ -146,4 +146,4 @@ class ImageRequest (dict):
                 except Exception, e:
                     log.exception('Unable to get metadata from %s' % (location))
 
-            self.headers += self._proxies[location].getMetadata(self)
+            self.headers += self._proxies[location].getMetadata(0) #was getMetadata(self), which I do not think makes sense, and was crashing when called on paramount (Paulo Penteado, 20121221)
