@@ -21,6 +21,7 @@
 
 import Queue
 import threading
+import math
 
 from chimera.core.chimeraobject import ChimeraObject
 
@@ -38,6 +39,13 @@ __all__ = ['DomeBase']
 
 
 class DomeBase (ChimeraObject, Dome):
+    __config__ = {"offset" : False,
+                  "ra_length" : 0.0,
+                  "dec_length" : 0.0,
+                  "ra_azimuth" : 180.0,
+                  "dome_radius" : 0.0,
+                  "dome_flat_az" : 0.0,
+                  "polar_axis_az" : 0.0}
 
     def __init__(self):
         ChimeraObject.__init__(self)
@@ -58,6 +66,7 @@ class DomeBase (ChimeraObject, Dome):
     def __start__ (self):
 
         self.setHz(1/4.)
+        self["mode"]=Mode.Stand #By default, start up with dome standing
 
         tel = self.getTelescope()
         if tel:
@@ -145,6 +154,16 @@ class DomeBase (ChimeraObject, Dome):
         except ObjectNotFoundException:
             return False
 
+    def getSite(self):
+        try:
+            p = self.getManager().getProxy(self['site'], lazy=True)
+            if not p.ping():
+                return False
+            else:
+                return p
+        except ObjectNotFoundException:
+            return False
+
     def control (self):
 
         if self.getMode() == Mode.Stand:
@@ -176,8 +195,44 @@ class DomeBase (ChimeraObject, Dome):
 
         return True
 
+    def domeparallax2d (self,tel_az) :
+        #calculate the dome azimuth given the telescope's azimuth
+        if not self["offset"] : return tel_az #No difference if mount is taken to be always in the dome center
+        tel_ha=self.getSite().LST().R-self._tel.getRa().R
+        print("tel_az,tel_ha:",tel_az*180.0/math.pi,tel_ha*180.0/math.pi)
+        paz=self["polar_axis_az"]*math.pi/180.
+        lat=self.getSite()["latitude"].R
+        dy=(self["ra_length"]*math.cos(lat)-self["dec_length"]*math.cos(tel_ha)*math.sin(lat))*math.cos(paz)
+        dx=(self["dec_length"]*math.sin(tel_ha)*math.sin(lat))*math.sin(paz) 
+        d=math.sqrt(dx**2+dy**2)
+        ad=math.pi*0.5-math.atan2(dy,dx)
+        print("dx,dy,d,ad",dx,dy,d,ad*180./math.pi)
+        ta=tel_az.R
+        A=ta-ad+math.pi
+        dcosA=d*math.cos(A)
+        R=self["dome_radius"]
+        c=dcosA+math.sqrt(dcosA**2-d**2+R**2)
+        I=math.acos((d**2+R**2-c**2)/(2.0*d*R))*180.0/math.pi
+        ad=ad*180.0/math.pi
+        ta=ta*180.0/math.pi
+        if (ta < (ad-180.)):
+          d_az=ad+I
+        elif (ta > (ad-180.)) and (ta < ad):
+          d_az=ad-I
+        elif (ta > ad) and (ta < (ad+180.0)):
+          d_az=ad+I
+        else:
+          d_az=ad-I
+
+        print("ta,ad,I,d_az",ta,ad,I,d_az)
+        
+        return d_az*math.pi/180.
+
     def _telescopeChanged (self, az):
 
+        new_az=Coord.fromR(self.domeparallax2d(az))
+        print("az,new_az",az.D,new_az.D)
+        az=new_az
         if not isinstance(az, Coord):
             az = Coord.fromDMS(az)
 

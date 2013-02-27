@@ -214,33 +214,41 @@ class TheSkyTelescope (TelescopeBase):
 
         return True
 
-#    @com
-#    def slewToAltAz (self, position):
-#
-#        if self.isSlewing ():
-#            return False
-#
-#        #self._target = position
-#        self._term.clear ()
-#
-#        try:
-#            self._telescope.Asynchronous = 1
-#            self.slewBegin((position.ra, position.dec))
-#            self._telescope.SlewToAltAz (position.alt.D, position.az.D, "chimera")
-#
-#            while not self._telescope.IsSlewComplete:
-#
-#                if self._term.isSet ():
-#                    return True
-#
-#                time.sleep (self._idle_time)
-#
-#            self.slewComplete(self.getPositionRaDec())
-#
-#        except com_error:
-#            raise PositionOutsideLimitsException("Position outside limits.")
-#
-#        return True
+    @com
+    def slewToAltAz (self, position):
+
+        if self.isSlewing ():
+            return False
+
+        self._target = position
+        self._abort.clear ()
+
+        try:
+            self._telescope.Asynchronous = 1
+
+            position_now = self._getFinalPosition(position)
+            
+            self.slewBegin(position_now)
+            self._telescope.SlewToAzAlt (position_now.alt.D, position_now.az.D, "chimera")
+            #self._telescope.SlewToRaDec (position_now.ra.H, position_now.dec.D, "chimera")
+
+            status = TelescopeStatus.OK
+            
+            while not self._telescope.IsSlewComplete:
+
+                # [ABORT POINT]
+                if self._abort.isSet():
+                    status = TelescopeStatus.ABORTED
+                    break
+
+                time.sleep (self._idle_time)
+
+            self.slewComplete(self.getPositionRaDec())
+
+        except com_error:
+            raise PositionOutsideLimitsException("Position outside limits.")
+
+        return True
 
     @com
     def abortSlew (self):

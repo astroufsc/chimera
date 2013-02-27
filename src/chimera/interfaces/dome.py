@@ -50,6 +50,7 @@ class Dome (Interface):
 
     __config__ = {"device"   : "/dev/ttyS1",
                   "telescope": "/Telescope/0",
+                  "site": "/Site/0",
                   "mode"     : Mode.Stand,
 
                   "model"    : "Fake Domes Inc.",
