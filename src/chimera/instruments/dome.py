@@ -198,7 +198,7 @@ class DomeBase (ChimeraObject, Dome):
     def domeparallax2d (self,tel_az) :
         #calculate the dome azimuth given the telescope's azimuth
         if not self["offset"] : return tel_az #No difference if mount is taken to be always in the dome center
-        tel_ha=self.getSite().LST().R-self._tel.getRa().R
+        tel_ha=self.getSite().LST().R-self.getTelescope().getRa().R
         print("tel_az,tel_ha:",tel_az*180.0/math.pi,tel_ha*180.0/math.pi)
         paz=self["polar_axis_az"]*math.pi/180.
         lat=self.getSite()["latitude"].R
