@@ -73,7 +73,7 @@ class DomeBase (ChimeraObject, Dome):
         self.setHz(1/4.)
         self["mode"]=Mode.Stand #By default, start up with dome standing
 
-        if self["offset"] and math.isnan(self["polar_axis_az"]):
+        if self["offset"] and isnan(self["polar_axis_az"]):
           self["polar_axis_az"]=180.0 if self.getSite()["latitude"] < 0.0 else 0.0
         tel = self.getTelescope()
         if tel:
