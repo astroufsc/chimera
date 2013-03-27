@@ -153,6 +153,9 @@ class TelescopeBase(ChimeraObject,
     def getTargetAltAz(self):
         raise NotImplementedError()
 
+    def getSite(self):
+        return self.getManager().getProxy("/Site/0")
+
     @lock
     def syncObject(self, name):
         target = Simbad.lookup(name)

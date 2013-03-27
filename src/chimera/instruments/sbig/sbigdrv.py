@@ -150,9 +150,20 @@ class SBIGDrv(object):
     _trkInProgress = 0x8
     _trkComplete   = 0xc
 
-    def __init__(self):
+    def __init__(self,filter_wheel_model='CFW8'):
+        self.filter_wheel_model=filter_wheel_model
+        print('bbbbbbbbbbbbbbbbbb ',self.filter_wheel_model)
         #FIXME: check device permissions and module status
         pass
+
+    def setfilterwheelmodel(self,filter_wheel_model='CFW8'):
+
+        try:
+          self.filter_wheel_model=getattr(udrv,'CFWSEL_'+filter_wheel_model)
+        except AttributeError, e:
+          self.filter_wheel_model=getattr(udrv,'CFWSEL_CFW8')
+        #print("filter_wheel_model: ",filter_wheel_model,self.filter_wheel_model)
+
 
     def openDriver(self):
 
@@ -396,7 +407,7 @@ class SBIGDrv(object):
     # filter wheel
     def getFilterPosition (self):
         cfwp = udrv.CFWParams()
-        cfwp.cfwModel   = udrv.CFWSEL_CFW8
+        cfwp.cfwModel   = self.filter_wheel_model # udrv.CFWSEL_CFW8
         cfwp.cfwCommand = udrv.CFWC_QUERY
 
         cfwr = udrv.CFWResults()
@@ -407,7 +418,7 @@ class SBIGDrv(object):
 
     def setFilterPosition (self, position):
         cfwp = udrv.CFWParams()
-        cfwp.cfwModel = udrv.CFWSEL_CFW8
+        cfwp.cfwModel = self.filter_wheel_model # udrv.CFWSEL_CFW8
         cfwp.cfwCommand = udrv.CFWC_GOTO
         cfwp.cfwParam1 = position
 
@@ -417,7 +428,7 @@ class SBIGDrv(object):
 
     def getFilterStatus (self):
         cfwp = udrv.CFWParams()
-        cfwp.cfwModel = udrv.CFWSEL_CFW8
+        cfwp.cfwModel = self.filter_wheel_model # udrv.CFWSEL_CFW8
         cfwp.cfwCommand = udrv.CFWC_QUERY
 
         cfwr = udrv.CFWResults()

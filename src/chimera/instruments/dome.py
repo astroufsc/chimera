@@ -21,7 +21,7 @@
 
 import Queue
 import threading
-import math
+from math import sin,cos,sqrt,pi,atan2,acos,isnan,asin,fabs
 
 from chimera.core.chimeraobject import ChimeraObject
 
@@ -34,18 +34,22 @@ from chimera.core.exceptions import ChimeraException
 
 from chimera.util.coord import Coord
 
+import numpy as np
+
 
 __all__ = ['DomeBase']
 
 
 class DomeBase (ChimeraObject, Dome):
-    __config__ = {"offset" : False,
-                  "ra_length" : 0.0,
-                  "dec_length" : 0.0,
-                  "ra_azimuth" : 180.0,
-                  "dome_radius" : 0.0,
-                  "dome_flat_az" : 0.0,
-                  "polar_axis_az" : 0.0}
+    __config__ = {"dome_flat_az" : 0.0, #Azimuth the dome must be to make dome flats
+                  "offset" : False, #if True, the following parameters are used to calculate the dome azimuth considering the parallax to the telescope position
+                  "ra_length" : 0.0, #length of the RA axis
+                  "dec_length" : 0.0, #length of Dec axis (up to the center of telescope tube)
+                  "dome_radius" : 0.0, #radius of the dome
+                  "polar_axis_az" : float('nan'), #azimuth the polar axis points to
+                  "base_z" : 0.0, #position of the base of the RA axis relative to the dome center (z)
+                  "base_x" : 0.0, #position of the base of the RA axis relative to the dome center (x - east)
+                  "base_y" : 0.0} #position of the base of the RA axis relative to the dome center (y - north)
 
     def __init__(self):
         ChimeraObject.__init__(self)
@@ -68,6 +72,8 @@ class DomeBase (ChimeraObject, Dome):
         self.setHz(1/4.)
         self["mode"]=Mode.Stand #By default, start up with dome standing
 
+        if self["offset"] and math.isnan(self["polar_axis_az"]):
+          self["polar_axis_az"]=180.0 if self.getSite()["latitude"] < 0.0 else 0.0
         tel = self.getTelescope()
         if tel:
             self._connectTelEvents()
@@ -195,53 +201,74 @@ class DomeBase (ChimeraObject, Dome):
 
         return True
 
-    def domeparallax2d (self,tel_az) :
-        #calculate the dome azimuth given the telescope's azimuth
-        if not self["offset"] : return tel_az #No difference if mount is taken to be always in the dome center
+    def domeparallax3d (self):
+        #calculate the dome azimuth the telescope points at
+        if not self["offset"] : return None #No difference if mount is taken to be always in the dome center
         tel_ha=self.getSite().LST().R-self.getTelescope().getRa().R
-        print("tel_az,tel_ha:",tel_az*180.0/math.pi,tel_ha*180.0/math.pi)
-        paz=self["polar_axis_az"]*math.pi/180.
-        lat=self.getSite()["latitude"].R
-        dy=(self["ra_length"]*math.cos(lat)-self["dec_length"]*math.cos(tel_ha)*math.sin(lat))*math.cos(paz)
-        dx=(self["dec_length"]*math.sin(tel_ha)*math.sin(lat))*math.sin(paz) 
-        d=math.sqrt(dx**2+dy**2)
-        ad=math.pi*0.5-math.atan2(dy,dx)
-        print("dx,dy,d,ad",dx,dy,d,ad*180./math.pi)
-        ta=tel_az.R
-        A=ta-ad+math.pi
-        dcosA=d*math.cos(A)
+        tel_az=self.getTelescope().getAz().R
+        tel_alt=self.getTelescope().getAlt().R
+        signaz=-1.0 if tel_az > pi/2. else 1.0
+        tel_ma=tel_ha+(pi/2.)*signaz
+        print("tel_az,tel_ha,tel_ma: ",tel_az*180.0/pi,tel_ha*180.0/pi,tel_ma*180.0/pi)
+        paz=self["polar_axis_az"]*pi/180.
+        lat=fabs(self.getSite()["latitude"].R)
+        decl=self["dec_length"]
         R=self["dome_radius"]
-        c=dcosA+math.sqrt(dcosA**2-d**2+R**2)
-        I=math.acos((d**2+R**2-c**2)/(2.0*d*R))*180.0/math.pi
-        ad=ad*180.0/math.pi
-        ta=ta*180.0/math.pi
-        if (ta < (ad-180.)):
-          d_az=ad+I
-        elif (ta > (ad-180.)) and (ta < ad):
-          d_az=ad-I
-        elif (ta > ad) and (ta < (ad+180.0)):
-          d_az=ad+I
-        else:
-          d_az=ad-I
+        #Telescope axis origin, z component (height above dome center)
+        dz=self["base_z"]+decl*cos(lat)*cos(tel_ma)
+        #Telescope axis origin, y0 component (distance from dome center towards polar axis azimuth)
+        dy0=-decl*sin(lat)*cos(tel_ma)
+        print("dy0 ",dy0,decl,sin(lat),cos(-tel_ha))
+        #Telescope axis origin, x0 component (distance from dome center perpendicular to polar axis azimuth, with x0,y0,z right-handed)
+        dx0=decl*sin(-tel_ma)
+        #Rotate dx0,dy0 by polar_axis_az
+        dx=dx0*cos(paz)+dy0*sin(paz)+self["base_x"]
+        dy=dx0*sin(paz)+dy0*cos(paz)+self["base_y"]
+        #Make an array of points along the telescope's axis
+        axisline=np.linspace(0.,2.0*R,1001)
+        axisline_x0=axisline*cos(tel_alt)*cos(pi/2.-tel_az)
+        axisline_y0=axisline*cos(tel_alt)*sin(pi/2.-tel_az)
+        axisline_z0=axisline*sin(tel_alt)
+        print("axisline: ",cos(tel_alt)*cos(pi/2.-tel_az),cos(tel_alt)*sin(pi/2.-tel_az),sin(tel_alt))
+        print("x,y,z: ",dx,dy,dz)
+        #Translate this array of points into the dome's center reference frame
+        axisline=np.array([axisline_x0+dx,axisline_y0+dy,axisline_z0+dz])
+        #Find the intersection between telescope's optical axis and dome
+        axislengths=np.sqrt((axisline**2).sum(axis=0))
+        ind=np.argmin(np.absolute(axislengths-R))
+        intersection=axisline[:,ind]/R
+        print intersection
+        int_alt=asin(intersection[2])
+        int_az=pi/2.0-atan2(intersection[1],intersection[0])
+        int_az=int_az % (2.0*pi)
+        print int_alt*180.0/pi,int_az*180.0/pi
+        #import atpy
+        #t=atpy.Table()
+        #t.add_column('x',axisline_x0)
+        #t.add_column('y',axisline_y0)
+        #t.add_column('z',axisline_z0)
+        #t.add_column('x2',axisline_x0+dx)
+        #t.add_column('y2',axisline_y0+dy)
+        #t.add_column('z2',axisline_z0+dy)
+        #t.write('/tmp/test.fits',overwrite=True)
+        return Coord.fromR(int_az)        
 
-        print("ta,ad,I,d_az",ta,ad,I,d_az)
-        
-        return d_az*math.pi/180.
+
 
     def _telescopeChanged (self, az):
 
-        new_az=Coord.fromR(self.domeparallax2d(az))
+        new_az=self.domeparallax3d()
         print("az,new_az",az.D,new_az.D)
         az=new_az
         if not isinstance(az, Coord):
             az = Coord.fromDMS(az)
 
         if self._needToMove(az):
-            self.log.debug("[control] adding %s to the queue (delta=%.2f)" % (az, abs(self.getAz()-az)))
+            self.log.debug("[control] adding %s to the queue (delta=%.2f)" % (az.D, abs((self.getAz()-az).D)))
             self.queue.put(az)
         else:
             self.log.debug("[control] standing"
-                           " (dome az=%.2f, tel az=%.2f, delta=%.2f.)" % (self.getAz(), az, abs(self.getAz()-az)))
+                           " (dome az=%.2f, tel az=%.2f, delta=%.2f.)" % (self.getAz().D, az.D, abs((self.getAz()-az)).D))
 
 
     def _needToMove (self, az):
@@ -260,10 +287,10 @@ class DomeBase (ChimeraObject, Dome):
 
             target = self.queue.get()
             try:
-                self.log.debug("[queue] slewing to %s" % target)
+                self.log.debug("[queue] slewing to %s" % target.D)
                 self.slewToAz(target)
             finally:
-                self.log.debug("[queue] slew to %s complete" % target)                
+                self.log.debug("[queue] slew to %s complete" % target.D)                
                 self.queue.task_done()
         
     @lock

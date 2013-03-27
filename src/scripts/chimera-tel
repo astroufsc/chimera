@@ -206,6 +206,10 @@ class ChimeraTel (ChimeraCLI):
 
         self.out("current position ra/dec: %s" % telescope.getPositionRaDec())
         self.out("current position alt/az: %s" % telescope.getPositionAltAz())
+        lst=self.telescope.getSite().LST()
+        ha=lst-self.telescope.getRa()
+        self.out("current position hour angle: %s (%s°) " % (ha,ha.D))
+        self.out("LST: %s" % lst)
         if telescope.isTracking():
             self.out("tracking: enabled.")
         else:

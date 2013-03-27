@@ -88,6 +88,7 @@ class SBIG(CameraBase, FilterWheelBase):
         self.open(self.dev)
 
         # make sure filter wheel is in the right position
+        self.drv.setfilterwheelmodel(self["filter_wheel_model"])
         self.setFilter(self.getFilters()[0])
         self.startCooling(self.getSetPoint())
         self.startFan()

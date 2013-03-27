@@ -48,18 +48,20 @@ class FakeDome (DomeBase):
         if not isinstance(az, Coord):
             az = Coord.fromDMS(az)
 
-        if az > 360:
+        if az.D > 360:
             raise InvalidDomePositionException("Cannot slew to %s. "
-                                               "Outside azimuth limits." % az)
+                                               "Outside azimuth limits." % az.D)
 
         self._abort.clear()
         self._slewing = True
         
         self.slewBegin(az)
-        self.log.info("Slewing to %s" % az)
+        self.log.info("Slewing to %s" % az.D)
         
         # slew time ~ distance from current position
-        distance = abs(float(az-self._position))
+        #print ("position ",self._position)
+        distance = abs(float((az-self._position).D))
+        #print ("distance",distance)
         if distance > 180:
             distance = 360-distance
 

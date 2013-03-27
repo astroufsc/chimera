@@ -229,7 +229,7 @@ class TheSkyTelescope (TelescopeBase):
             position_now = self._getFinalPosition(position)
             
             self.slewBegin(position_now)
-            self._telescope.SlewToAzAlt (position_now.alt.D, position_now.az.D, "chimera")
+            self._telescope.SlewToAzAlt (position_now.az.D, position_now.alt.D, "chimera")
             #self._telescope.SlewToRaDec (position_now.ra.H, position_now.dec.D, "chimera")
 
             status = TelescopeStatus.OK
