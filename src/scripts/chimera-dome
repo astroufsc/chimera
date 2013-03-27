@@ -39,7 +39,7 @@ class ChimeraDome (ChimeraCLI):
                            help="Dome instrument to be used", helpGroup="DOME")
 
         self.addHelpGroup("TELESCOPE", "Telescope Tracking Configuration")
-        self.addParameters(dict(name="telescope", default="/Telescope/0", helpGroup="TELESCOPE",
+        self.addParameters(dict(name="telescope", default=None, helpGroup="TELESCOPE",
                                 help="Tell the dome to follow TELESCOPE when tracking (only "
                                 "utilized when using --track"))
         
