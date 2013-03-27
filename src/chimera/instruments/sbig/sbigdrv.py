@@ -150,9 +150,7 @@ class SBIGDrv(object):
     _trkInProgress = 0x8
     _trkComplete   = 0xc
 
-    def __init__(self,filter_wheel_model='CFW8'):
-        self.filter_wheel_model=filter_wheel_model
-        print('bbbbbbbbbbbbbbbbbb ',self.filter_wheel_model)
+    def __init__(self):
         #FIXME: check device permissions and module status
         pass
 
