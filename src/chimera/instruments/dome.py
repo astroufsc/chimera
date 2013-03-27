@@ -21,7 +21,8 @@
 
 import Queue
 import threading
-from math import sin,cos,sqrt,pi,atan2,acos,isnan,asin,fabs
+from math import sin,cos,sqrt,pi,atan2,acos,asin,fabs
+from numpy import isnan
 
 from chimera.core.chimeraobject import ChimeraObject
 
@@ -242,15 +243,6 @@ class DomeBase (ChimeraObject, Dome):
         int_az=pi/2.0-atan2(intersection[1],intersection[0])
         int_az=int_az % (2.0*pi)
         print int_alt*180.0/pi,int_az*180.0/pi
-        #import atpy
-        #t=atpy.Table()
-        #t.add_column('x',axisline_x0)
-        #t.add_column('y',axisline_y0)
-        #t.add_column('z',axisline_z0)
-        #t.add_column('x2',axisline_x0+dx)
-        #t.add_column('y2',axisline_y0+dy)
-        #t.add_column('z2',axisline_z0+dy)
-        #t.write('/tmp/test.fits',overwrite=True)
         return Coord.fromR(int_az)        
 
 
