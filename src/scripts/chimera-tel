@@ -45,6 +45,9 @@ class ChimeraTel (ChimeraCLI):
         self.addInstrument(name="telescope", cls="Telescope", required=True,
                            help="Telescope instrument to be used. If blank, try to guess from chimera.config",
                            helpGroup="TELESCOPE")
+        self.addInstrument(name="site", cls="Site", required=True,
+                           help="Site to be used. If blank, try to guess from chimera.config",
+                           helpGroup="SITE")
         
         self.addHelpGroup("COORDS", "Coordinates")
         self.addParameters(dict(name="ra", type="string", helpGroup="COORDS", help="Right Ascension."),
@@ -63,6 +66,7 @@ class ChimeraTel (ChimeraCLI):
 
         self.addHelpGroup("INIT", "Initialization")
         self.addHelpGroup("SLEW", "Slew")
+        self.addHelpGroup("FLAT", "Move to Flat position")
         self.addHelpGroup("PARK", "Park")
         self.addHelpGroup("TRACKING", "Tracking")                
         self.addHelpGroup("HANDLE", "Virtual Handle",
@@ -78,7 +82,6 @@ class ChimeraTel (ChimeraCLI):
     def slew(self, options):
         
         telescope = self.telescope
-        
         if options.objectName is not None:
             target = options.objectName
         else:
@@ -159,6 +162,18 @@ class ChimeraTel (ChimeraCLI):
         self.out(40*"=")
         self.out("new position ra/dec: %s" % telescope.getPositionRaDec())
         self.out("new position alt/az: %s" % telescope.getPositionAltAz())
+        self.out(40*"=")
+
+    @action(help="Move to Flat field position", helpGroup="FLAT", actionGroup="FLAT")
+    def flat(self, options):
+        self.out(40*"=")
+        self.out("moving to flat field alt/az ... ")
+        options.az=str(self.site["flat_az"])
+        options.alt=str(self.site["flat_alt"])
+        self.slew(options)
+        self.out("stopping telescope tracking... ", end="")
+        self.telescope.stopTracking()
+        self.out("OK")
         self.out(40*"=")        
 
     
