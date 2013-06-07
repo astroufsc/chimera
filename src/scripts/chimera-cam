@@ -171,6 +171,45 @@ class ChimeraCam (ChimeraCLI):
         self.out(40*"=")
         self.exit()
 
+    @action(long="stop-camera", actionGroup="CAMERA",
+            helpGroup="CAMERA", help="Stop the camera")
+    def stopCamera (self, options):
+        camera = self.camera
+
+        self.out(40*"=")
+        self.out("stopping the camera ...", end="")
+        camera.__stop__()
+        self.out("OK")
+        self.out(40*"=")
+        self.exit()
+
+    @action(long="start-camera", actionGroup="CAMERA",
+            helpGroup="CAMERA", help="Start the camera")
+    def startCamera (self, options):
+        camera = self.camera
+
+        self.out(40*"=")
+        self.out("starting the camera ...", end="")
+        camera.__start__()
+        self.out("OK")
+        self.out(40*"=")
+        self.exit()
+
+    @action(long="restart-camera", actionGroup="CAMERA",
+            helpGroup="CAMERA", help="Stop and restart the camera")
+    def restartCamera (self, options):
+        camera = self.camera
+
+        self.out(40*"=")
+        self.out("stopping the camera ...", end="")
+        camera.__stop__()
+        self.out("OK")
+        self.out("starting the camera ...", end="")
+        camera.__start__()
+        self.out("OK")
+        self.out(40*"=")
+        self.exit()
+
     @action(long="stop-fan", actionGroup="TEMP_FAN",
             helpGroup="TEMP", help="Stop the cooler fan.")
     def stopFan (self, options):
@@ -197,6 +236,7 @@ class ChimeraCam (ChimeraCLI):
 
     @action(help="Print camera information and exit", helpGroup="INFO")
     def info(self, options):
+        print self.camera
         camera = self.camera
 
         self.out("="*40)

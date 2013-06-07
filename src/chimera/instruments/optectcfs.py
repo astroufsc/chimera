@@ -207,20 +207,25 @@ class OptecTCFS (FocuserBase):
         
         self.tty.timeout = self["open_timeout"]
 
-        self._write (cmd)
+        for i in range(3):
+          self._write (cmd)
 
-        ack = self._readline (eol="\r")
+          ack = self._readline (eol="\r")
 
-        if not ack:
-            # try again
-            return self.getPosition()
-            #raise IOError("Error getting focuser position (read timeout).")
+          if not ack:
+              # try again
+              return self.getPosition()
+              #raise IOError("Error getting focuser position (read timeout).")
 
-        # parse ack and returns
-        try:
-            return int (ack[2:-2])
-        except ValueError, e:
-            raise IOError("Error getting focuser position. Invalid position returned '%s'" % ack)
+          # parse ack and returns
+          try:
+             return int (ack[2:-2])
+             break
+          except ValueError, e:
+              if i < 2:
+                print "Opteccfs: failed too get valid position; trying again"
+              else:
+                raise IOError("Error getting focuser position. Invalid position returned '%s'" % ack)
 
     def getRange (self):
         return (0, 7000)

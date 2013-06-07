@@ -115,6 +115,9 @@ class SBIG(CameraBase, FilterWheelBase):
         try:
             self.drv.closeDevice()
             self.drv.closeDriver()
+            self.drv = SBIGDrv()
+            self.ccd = SBIGDrv.imaging
+            self.dev = SBIGDrv.usb
         except SBIGException:
             pass
 
