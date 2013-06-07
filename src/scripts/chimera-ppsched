@@ -24,10 +24,14 @@ from chimera.core.callback import callback
 from chimera.util.position import Position
 from chimera.util.output import blue, green, red
 
+
 from chimera.controllers.scheduler.status import SchedulerStatus
 from chimera.controllers.scheduler.states import State
 from chimera.controllers.scheduler.model import (Session, Program, Point,
                                                  Expose, PointVerify, AutoFocus)
+
+from chimera.util.simbad import Simbad
+
 
 import re
 import sys
@@ -47,7 +51,7 @@ class ChimeraSched (ChimeraCLI):
         self.addController(name="ppscheduler", cls="Scheduler", required=True,
                            help="Scheduler controller to be used", helpGroup="SCHEDULER")
 
-        databaseHelp = """Database options\n\tThe file must have the following format:
+        databaseHelp = """Database options\n\tA chimera-style file must have the following format:
 
         # RA      dec       epoch  type    name  N*(f1:t1:n1, f2:t2:n2, ......)
         14:00:00 -30:00:00  J2000  OBJECT  obj1  2*(V:7, R:6:2, B:5:2)
@@ -61,6 +65,41 @@ class ChimeraSched (ChimeraCLI):
         BIAS   bias       1*(V:0)  
         DARK   dark       1*(V:1:4)
         OBJECT \"NGC 5272\" 1*(B:10:10)
+
+        To use TAO's output, two files created by TAO's scheduler are needed. Ex:
+
+        chimera-ppsched -f example.sch -s example_shoot.txt --new
+
+        Where example.sch is a TAO output such as:
+
+        OBSERVING SCHEDULE:
+
+        Start: 2012-01-24 23:06 UT (MJD 55950.96250)
+        End:   2012-01-25 07:34 UT (MJD 55951.31528)
+
+        User  Images     Total time used    Exp. time used
+        PRH      32     59.9 min ( 11.79%)     48.5 min
+        CGD       0      0.0 min (  0.00%)      0.0 min
+        Focus     0      0.0 min (  0.00%)
+        Idle           448.1 min ( 88.21%)
+        Total    32    508.0 min (100.00%)     48.5 min
+
+        Observation requests:       28
+        Waiting time after slews:  2.0 sec
+
+           Slew      Exposure                                              Exp.  Idle
+        Start (MJD) Start (MJD)  UT    Object         RA  dec   HA  alt   (sec)  (sec)    Type     Field       dRA (h)     ddec (deg)  User Res. Mode Size    Filter       Req. ID   File
+
+        1  55950.96500 55950.96500 23:10  Star 3        06.3 -05  -119  56    98.00   216 E  FIXED (   0,   0)  0.000000E+00  0.00000E+00  PRH  1    d    1      6 (clear   )           Fixed.txt
+        2  55950.96613 55950.97324 23:21  Star 3        06.3 -05  -107  59    98.00   592 E  FIXED (   0,   0)  0.000000E+00  0.00000E+00  PRH  1    d    1      6 (clear   )           Fixed.txt
+        3  55950.97437 55950.98144 23:33  Star 3        06.3 -05   -95  61    98.00   588 E  FIXED (   0,   0)  0.000000E+00  0.00000E+00  PRH  1    d    1      6 (clear   )           Fixed.txt
+ 
+        And example_shoot.txt is a TAO shoot file such as:
+
+         6.26074064   -5.3304621 Star 3        HF1   216.0    -98.00  6 55950.96500  0.000000E+00  0.00000E+00          PRH/D0000001.fit
+         6.26072887   -5.3294560 Star 3        HF1   592.0    -98.00  6 55950.96613  0.000000E+00  0.00000E+00          PRH/D0000002.fit
+         6.26050623   -5.3309409 Star 3        HF1   588.0    -98.00  6 55950.97437  0.000000E+00  0.00000E+00          PRH/D0000003.fit
+
         """
 
         self.addHelpGroup("DB" , databaseHelp)
@@ -69,7 +108,10 @@ class ChimeraSched (ChimeraCLI):
         self.addParameters(dict(name="filename", long="file", short="f", helpGroup="DB", default="",
                                 help="Filename of the input database.", metavar="FILENAME"))
         self.addParameters(dict(name="shootfile", long="shootfile", short="s", helpGroup="DB", default="",
-                                help="Filename of the TAO shoot file.", metavar="SHHOTFILE",))
+                                help="Filename of the TAO shoot file.", metavar="SHOOTFILE",))
+
+        #self.addParameters(dict(name="simulated", long="simulated", short="sim", helpGroup="DB", default="",
+                           #     help="Run scheduler with no waiting, using simulated dates/times", metavar="SIMULATED",))
 
     @action(long="new", help="Generate a new database from a text file (excluding all programs already in database)",
             helpGroup="DB", actionGroup="DB")
@@ -204,12 +246,37 @@ class ChimeraSched (ChimeraCLI):
         lineRe = re.compile('(?P<coord>(?P<ra>[\d:-]+)\s+(?P<dec>\+?[\d:-]+)\s+(?P<epoch>[\dnowNOWJjBb\.]+)\s+)?(?P<imagetype>[\w]+)'
                             '\s+(?P<objname>\'([^\\n\'\\\\]|\\\\.)*\'|"([^\\n"\\\\]|\\\\.)*"|([^ \\n"\\\\]|\\\\.)*)\s+(?P<exposures>[\w\d\s:\*,\(]*\))'
                             '(?:\s+(?P<slewstart>'+fpexpr+'))?(?:\s+(?P<exposurestart>'+fpexpr+'))?')
+        
+        whilestart=re.compile('while\s+\((?P<whilecond>.+)\)')
+        whileend=re.compile('endwhile')
+        whilecond=None
+        inwhile=False
+        
         programs = []
     
         for i, line in enumerate(f):
     
             if line.startswith("#"): continue
             if len(line) == 1: continue
+            #print line
+    
+            if (not inwhile):
+                inwhile=whilestart.search(line)
+                if inwhile:
+                    whileprograms=[]
+                    whilecond=inwhile.groupdict()['whilecond']
+                    continue
+            else:
+                if whileend.search(line):
+                    inwhile=False
+                    lp=len(whileprograms)
+                    lindex=0
+                    for program in whileprograms:
+                        program.whilecond=whilecond
+                        program.whileindex=lindex-lp
+                        programs.append(program)
+                    continue
+                            
     
             matchs = lineRe.search(line)
     
@@ -241,7 +308,8 @@ class ChimeraSched (ChimeraCLI):
             for i in range(multiplier):
 
                 program = Program(name="%s-%03d" % (objname.replace(" ", ""), i),
-                                  slewAt=params['slewstart'],exposeAt=params['exposurestart'])
+                                  slewAt=params['slewstart'],exposeAt=params['exposurestart'],
+                                  whilecond="True",whileindex=0)
 
                 self.out("# program: %s" % program.name)
                 self.out("# Will wait to slew until: %s" % program.slewAt)
@@ -250,8 +318,16 @@ class ChimeraSched (ChimeraCLI):
                 if imagetype == "OBJECT":
                     if position:
                         program.actions.append(Point(targetRaDec=position))
+                        print "Point: "
+                        print Point(targetRaDec=position)
+                        print type(Point(targetRaDec=position))
+                        #program.target=
                     else:
                         program.actions.append(Point(targetName=objname))
+                        print "Point: "
+                        print Point(targetName=objname)
+                        print type(Point(targetName=objname))
+                        #program.target=Simbad.lookup(objname)
 
                 if imagetype == "FLAT":
                     site = self._remoteManager.getProxy("/Site/0")
@@ -290,7 +366,10 @@ class ChimeraSched (ChimeraCLI):
                                                   imageType=imagetype,
                                                   objectName=objname))
                 self.out("")
-                programs.append(program)
+                if inwhile:
+                    whileprograms.append(program)
+                else:
+                    programs.append(program)
     
         session.add_all(programs)
         session.commit()

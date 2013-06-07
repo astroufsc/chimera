@@ -167,7 +167,7 @@ class SCH(object):
 
         
         
-print "SCH.py executed"
+#print "SCH.py executed"
         
         
 if __name__ == "__main__":

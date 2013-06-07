@@ -10,7 +10,7 @@ from chimera.controllers.scheduler.model import Session
 
 from chimera.util.enum import Enum
 
-print "controller"
+#print "controller"
 SchedulingAlgorithm = Enum("SEQUENTIAL", "CIRCULAR")
 
 
@@ -40,7 +40,8 @@ class Scheduler(ChimeraObject):
     def __start__ (self):
         self.executor = ProgramExecutor(self)
         self.scheduler = SchedulingAlgorithms[self["algorithm"]]
-        self.machine = Machine(self.scheduler, self.executor, self)
+        site = self.getManager().getProxy(self["site"])
+        self.machine = Machine(self.scheduler, self.executor, self, site)
 
         self.log.debug("Using %s algorithm" % self["algorithm"])
 

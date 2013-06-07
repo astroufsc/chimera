@@ -120,7 +120,8 @@ setup(name='chimera-python',
                           "RO == 2.2.8",
                           "pyfits >= 1.3",
                           "pyserial == 2.4",
-                          "Pyro == 3.8.1"] + linux_cdeps + win32_cdeps + mac_cdeps,
+                          "Pyro == 3.8.1",
+                          "pysandbox"] + linux_cdeps + win32_cdeps + mac_cdeps,
 
       dependency_links = [os.path.join(os.path.dirname(__file__), "contrib")],
 

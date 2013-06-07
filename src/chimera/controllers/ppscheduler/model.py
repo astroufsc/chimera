@@ -17,7 +17,7 @@ import datetime as dt
 
 class Program(Base):
     __tablename__ = "program"
-    print "model.py"
+    #print "model.py"
     
     id     = Column(Integer, primary_key=True)
     name   = Column(String, default="Program")
@@ -29,6 +29,9 @@ class Program(Base):
     finished  = Column(Boolean, default=False)
     slewAt = Column(Float, default=0.0)
     exposeAt = Column(Float, default=0.0)
+    whilecond=Column(String,default="True")
+    whileindex=Column(Integer,default=0)
+
     
     actions   = relation("Action", backref=backref("program", order_by="Action.id"),
                          cascade="all, delete, delete-orphan")

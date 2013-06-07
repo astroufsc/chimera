@@ -38,11 +38,14 @@ class SequentialScheduler (IScheduler):
 
     def next (self):
         if not self.rq.empty():
-            log.debug("bbbbbbbbbbbbbbbbbbbb self.rq %s",self.rq)
-            print self.rq
+            #log.debug("self.rq %s",self.rq)
+            #print self.rq
             return self.rq.get()
 
         return None
+
+    def put_back (self,program):
+        self.rq.put(program)
 
     def done (self, task, error=None):
 
