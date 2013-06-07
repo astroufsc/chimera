@@ -9,6 +9,8 @@ import simplejson
 
 import threading
 import os
+import re
+import subprocess
 
 class WebAdminRoot (object):
 
@@ -17,7 +19,23 @@ class WebAdminRoot (object):
         
     @cherrypy.expose
     def index (self):
-        return open(os.path.join(os.path.dirname(__file__), "webadmin.html")).read()
+        ret=open(os.path.join(os.path.dirname(__file__), "webadmin.html")).read()
+        i=0
+        rets=ret.split('\n')
+        for line in rets:
+          if re.search('<\/body>',line):
+            endl=i
+          i+=1
+        addstr="<PRE>"
+        addstr+="\n".join(((subprocess.check_output(["chimera-ppsched","--info"])).split("\n"))[1:-1])+"\n"
+        addstr+=subprocess.check_output(["chimera-tel","--info"])
+        addstr+=subprocess.check_output(["chimera-dome","--info"])
+        addstr+=subprocess.check_output(["chimera-cam","--info"])
+        addstr+=subprocess.check_output(["chimera-filter","--info"])
+        addstr+=subprocess.check_output(["chimera-focus","--info"])
+        addstr+="</PRE>"
+        rets.insert(endl,addstr)
+        return "\n".join(rets)
 
     @cherrypy.expose
     def start (self):
@@ -70,7 +88,8 @@ class WebAdmin (ChimeraObject):
 
     def __start__ (self):
 
-        try: 
+
+        try:
             self.dome = self.getManager().getProxy(self["dome"])
             self.scheduler = self.getManager().getProxy(self["scheduler"])
             self.telescope = self.getManager().getProxy(self["telescope"])

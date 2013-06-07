@@ -28,7 +28,7 @@ from chimera.util.output import blue, green, red
 from chimera.controllers.scheduler.status import SchedulerStatus
 from chimera.controllers.scheduler.states import State
 from chimera.controllers.scheduler.model import (Session, Program, Point,
-                                                 Expose, PointVerify, AutoFocus)
+                                                 Expose, PointVerify, AutoFocus, Dome)
 
 from chimera.util.simbad import Simbad
 
@@ -404,7 +404,6 @@ class ChimeraSched (ChimeraCLI):
     @action(help="Print scheduler information", helpGroup="RUN")
     def info(self, options):
         self.out("="*40)
-        self.out('abacax')
         self.out("Scheduler: %s" % self.ppscheduler.getLocation())
         self.out("State: %s" % self.ppscheduler.state())
         if self.ppscheduler.state() == State.BUSY and self.ppscheduler.currentAction():
@@ -470,7 +469,7 @@ class ChimeraSched (ChimeraCLI):
             self.wait(abort=False)
 
 def main():
-    print 'Using ppsched'
+    #print 'Using ppsched'
     cli = ChimeraSched()
     cli.run(sys.argv)
     cli.wait()

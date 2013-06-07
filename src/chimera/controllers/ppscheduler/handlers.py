@@ -45,8 +45,8 @@ class PointHandler(ActionHandler):
                 telescope.slewToAltAz(action.targetAltAz)
             elif action.targetName is not None:
                 telescope.slewToObject(action.targetName)
-                
-            dome.openSlit()
+            print dome    
+            #dome.openSlit()
             
         except Exception, e:
             raise ProgramExecutionException(str(e))
@@ -68,6 +68,39 @@ class PointHandler(ActionHandler):
             return "slewing telescope to (alt az) %s" % action.targetAltAz
         elif action.targetName is not None:
             return "slewing telescope to (object) %s" % action.targetName
+
+class DomeHandler(ActionHandler):
+
+    @staticmethod
+    @requires("telescope")
+    @requires("dome")
+    def process(action):
+        telescope = PointHandler.telescope
+        dome = PointHandler.dome
+
+        try:
+            if action.targetAz is not None:
+                dome.slewToAz(action.targetAz)
+            print dome    
+            #dome.openSlit()
+            
+        except Exception, e:
+            raise ProgramExecutionException(str(e))
+
+    @staticmethod
+    def abort(action):
+        # use newer Proxies as Proxies cannot be shared between threads
+#        telescope = copy.copy(PointHandler.telescope)
+        dome = copy.copy(PointHandler.dome)
+
+#        telescope.abortSlew()
+        dome.abortSlew()
+        
+    @staticmethod
+    def log(action):
+        if action.targetAz is not None:
+            return "slewing dome to (az) %s" % action.targetAz
+
 
 class ExposeHandler(ActionHandler):
 

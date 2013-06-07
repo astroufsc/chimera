@@ -96,6 +96,18 @@ class Point(Action):
             return "point: (alt,az) %s" % self.targetAltAz
         elif self.targetName is not None:
             return "point: (object) %s" % self.targetName
+        
+class Dome(Action):
+    __tablename__ = "action_dome"
+    __mapper_args__ = {'polymorphic_identity': 'Dome'}
+
+    id          = Column(Integer, ForeignKey('action.id'), primary_key=True)
+    targetAz = Column(PickleType, default=None)
+    track=Column(PickleType,default=True)
+
+    def __str__ (self):
+        if self.targetAz is not None:
+            return "dome: (az) %s" % self.targetAz
     
 class Expose(Action):
     __tablename__ = "action_expose"

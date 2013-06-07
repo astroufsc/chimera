@@ -104,7 +104,8 @@ setup(name='chimera-python',
       scripts          = chimera_scripts,
       data_files       = [("chimera/core", ["src/chimera/core/chimera.sample.config"]),
                           ("chimera/gui", ["src/chimera/gui/chimera.xml"]),
-                          ("chimera/gui/modules", guifiles)],
+                          ("chimera/gui/modules", guifiles),
+                          ("chimera/controllers/webadmin", ["src/chimera/controllers/webadmin/webadmin.html","src/chimera/controllers/webadmin/jquery-1.3.2.js"])],
       zip_safe         = False,
 
       # dependencies are installed bottom up, so put important things last
