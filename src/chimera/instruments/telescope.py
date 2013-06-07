@@ -29,7 +29,9 @@ from chimera.core.lock import lock
 from chimera.core.exceptions import ObjectTooLowException
 
 from chimera.util.simbad import Simbad
+from chimera.util.ssodnet import SsODNetlookup
 from chimera.util.position import Epoch, Position
+from chimera.util.ssodnet import SsODNetlookup
 
 
 __all__ = ["TelescopeBase"]
@@ -47,6 +49,11 @@ class TelescopeBase(ChimeraObject,
     @lock
     def slewToObject(self, name):
         target = Simbad.lookup(name)
+        self.slewToRaDec(target)
+
+    @lock
+    def slewToSolarSystemObject(self, name):
+        target = SsODNetlookup(name)
         self.slewToRaDec(target)
 
     @lock

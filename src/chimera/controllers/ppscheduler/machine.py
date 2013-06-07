@@ -33,7 +33,7 @@ def getobserver(siteproxy):
     site.lat  = siteproxy["latitude"].strfcoord('%(d)d:%(m)d:%(s).2f')
     site.long = siteproxy["longitude"].strfcoord('%(d)d:%(m)d:%(s).2f')
     site.elev = siteproxy['altitude']
-    site.date = siteproxy.ut()
+    site.date = ephem.now()
     site.epoch='2000/1/1 00:00:00'
     return site
 

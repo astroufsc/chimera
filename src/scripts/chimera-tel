@@ -24,13 +24,25 @@ from chimera.core.cli import ChimeraCLI, action, ParameterType
 from chimera.util.coord import Coord
 from chimera.util.position import Position
 from chimera.util.simbad import Simbad
+from chimera.util.ssodnet import SsODNetlookup
 
 from chimera.core.callback import callback
 from chimera.core.exceptions import ObjectTooLowException, ObjectNotFoundException
 from chimera.interfaces.telescope import SlewRate, TelescopeStatus
+import time
+import ephem
 
 import sys
 import copy
+
+def getobserver(siteproxy):
+    site = ephem.Observer()
+    site.lat  = siteproxy["latitude"].strfcoord('%(d)d:%(m)d:%(s).2f')
+    site.long = siteproxy["longitude"].strfcoord('%(d)d:%(m)d:%(s).2f')
+    site.elev = siteproxy['altitude']
+    site.date = ephem.now()
+    site.epoch='2000/1/1 00:00:00'
+    return site
 
 #TODO: Abort, skip_init/init
 
@@ -55,7 +67,8 @@ class ChimeraTel (ChimeraCLI):
                            dict(name="epoch", type="string", default="J2000", helpGroup="COORDS", help="Epoch"),
                            dict(name="az", type="string", helpGroup="COORDS", help="Local Azimuth."),
                            dict(name="alt", type="string", helpGroup="COORDS", help="Local Altitude."),
-                           dict(name="objectName", long="object", type="string", helpGroup="COORDS", help="Object name"),)
+                           dict(name="objectName", long="object", type="string", helpGroup="COORDS", help="Object name"),
+                           dict(name="solarsystemName", long="solarsystemobject", type="string", helpGroup="COORDS", help="Solar System Object name"))
         
         self.addHelpGroup("RATE", "Slew rate")
         self.addParameters(dict(name="rate", type=ParameterType.CHOICE, 
@@ -78,11 +91,13 @@ class ChimeraTel (ChimeraCLI):
     def init(self, options):
         pass
     
-    @action(help="Slew to given --ra --dec or --az --alt or --object", helpGroup="SLEW")
+    @action(help="Slew to given --ra --dec or --az --alt or --object or --solarsystemobject", helpGroup="SLEW")
     def slew(self, options):
         
         telescope = self.telescope
-        if options.objectName is not None:
+        if options.solarsystemName is not None:
+            target=options.solarsystemName
+        elif options.objectName is not None:
             target = options.objectName
         else:
             target = self._validateCoords(options)
@@ -107,19 +122,29 @@ class ChimeraTel (ChimeraCLI):
         telescope.slewBegin     += slewBegin
         telescope.slewComplete  += slewComplete
 
-        if options.objectName:
+        if options.solarsystemName:
+           if (not SsODNetlookup(target)):
+             self.err("Object '%s' not found on SsODNet database." % target)
+             self.exit()
+        elif options.objectName:
             try:
                 Simbad.lookup(target)
             except ObjectNotFoundException:
                 self.err("Object '%s' not found on Simbad database." % target)
                 self.exit()
+
+                
     
         self.out(40*"=")
         self.out("current position ra/dec: %s" % telescope.getPositionRaDec())
         self.out("current position alt/az: %s" % telescope.getPositionAltAz())
-    
+   
+
+ 
         try:
-            if options.objectName:
+            if options.solarsystemName:
+                telescope.slewToSolarSystemObject(target)
+            elif options.objectName:
                 telescope.slewToObject(target)
             else:
                 if self.localSlew:
@@ -216,15 +241,20 @@ class ChimeraTel (ChimeraCLI):
         telescope = self.telescope
 
         self.out(40*"=")
+        site=self.telescope.getSite()
+        self.out("site: %s: lat %s lon %s alt %s m" % (site["name"],site["latitude"],site["longitude"],site["altitude"]))
+        self.out("local time: %s" % (time.strftime('%Y-%m-%d %H:%M:%S',time.localtime())))
+        self.out("UT:         %s" % (time.strftime('%Y-%m-%d %H:%M:%S',time.gmtime())))
         self.out("telescope: %s (%s)." % (telescope.getLocation(),
                                           telescope["device"]))
 
         self.out("current position ra/dec: %s" % telescope.getPositionRaDec())
         self.out("current position alt/az: %s" % telescope.getPositionAltAz())
-        lst=self.telescope.getSite().LST()
+        observer=getobserver(site)
+        lst=Coord.fromR(observer.sidereal_time())
         ha=lst-self.telescope.getRa()
-        self.out("current position hour angle: %s (%s°) " % (ha,ha.D))
-        self.out("LST: %s" % lst)
+        self.out("current position hour angle: %s (%s°) " % (ha.toHMS(),ha.D))
+        self.out("LST: %s" % lst.toHMS())
         if telescope.isTracking():
             self.out("tracking: enabled.")
         else:
