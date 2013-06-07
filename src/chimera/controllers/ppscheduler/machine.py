@@ -9,8 +9,8 @@ from chimera.core.exceptions import ProgramExecutionException, ProgramExecutionA
 
 from chimera.core.site import Site 
 
-from sandbox import Sandbox, SandboxConfig
-from sandbox.proxy import proxy
+#from sandbox import Sandbox, SandboxConfig
+#from sandbox.proxy import proxy
 
 import ephem
 import math
@@ -40,15 +40,15 @@ def getobserver(siteproxy):
 def proxyNamespace(d):
     return dict((str(k), proxy(v)) for k, v in d.iteritems())
         
-def wrapeval(expr,globs,locs):
-    subglobs = proxyNamespace(globs)
-    sublocs = proxyNamespace(locs)
-    return eval(expr,subglobs,sublocs)
-    try:
-        ret=eval(expr,subglobs,sublocs)
-    except:
-        ret=False
-    return ret
+#def wrapeval(expr,globs,locs):
+#    subglobs = proxyNamespace(globs)
+#    sublocs = proxyNamespace(locs)
+#    return eval(expr,subglobs,sublocs)
+#    try:
+#        ret=eval(expr,subglobs,sublocs)
+#    except:
+#        ret=False
+#    return ret
 
 def evalexpr(expr,globs,locs):
     return eval(expr,globs,locs)
@@ -98,7 +98,7 @@ class Machine(threading.Thread):
 
         # inject instruments on handlers
         self.executor.__start__()
-        sandbox=Sandbox()
+        #sandbox=Sandbox()
 
         while self.state() != State.SHUTDOWN:
 
