@@ -27,12 +27,30 @@ class WebAdminRoot (object):
             endl=i
           i+=1
         addstr="<PRE>"
-        addstr+="\n".join(((subprocess.check_output(["chimera-ppsched","--info"])).split("\n"))[1:-1])+"\n"
-        addstr+=subprocess.check_output(["chimera-tel","--info"])
-        addstr+=subprocess.check_output(["chimera-dome","--info"])
-        addstr+=subprocess.check_output(["chimera-cam","--info"])
-        addstr+=subprocess.check_output(["chimera-filter","--info"])
-        addstr+=subprocess.check_output(["chimera-focus","--info"])
+        p=subprocess.Popen(["chimera-ppsched","--info"],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,close_fds=True)
+        stdout,stderr=p.communicate()
+        addstr+="\n".join(stdout.split("\n")[1:-1])+"\n"
+        p=subprocess.Popen(["chimera-tel","--info"],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,close_fds=True)
+        stdout,stderr=p.communicate()
+        addstr+="\n".join(stdout.split("\n"))
+        p=subprocess.Popen(["chimera-dome","--info"],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,close_fds=True)
+        stdout,stderr=p.communicate()
+        addstr+="\n".join(stdout.split("\n"))
+        p=subprocess.Popen(["chimera-cam","--info"],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,close_fds=True)
+        stdout,stderr=p.communicate()
+        addstr+="\n".join(stdout.split("\n"))
+        p=subprocess.Popen(["chimera-filter","--info"],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,close_fds=True)
+        stdout,stderr=p.communicate()
+        addstr+="\n".join(stdout.split("\n"))
+        p=subprocess.Popen(["chimera-focus","--info"],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,close_fds=True)
+        stdout,stderr=p.communicate()
+        addstr+="\n".join(stdout.split("\n"))
+        #addstr+="\n".join(((subprocess.check_output(["chimera-ppsched","--info"])).split("\n"))[1:-1])+"\n"
+        #addstr+=subprocess.check_output(["chimera-tel","--info"])
+        #addstr+=subprocess.check_output(["chimera-dome","--info"])
+        #addstr+=subprocess.check_output(["chimera-cam","--info"])
+        #addstr+=subprocess.check_output(["chimera-filter","--info"])
+        #addstr+=subprocess.check_output(["chimera-focus","--info"])
         addstr+="</PRE>"
         rets.insert(endl,addstr)
         return "\n".join(rets)
