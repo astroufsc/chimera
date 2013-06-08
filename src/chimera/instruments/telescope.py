@@ -54,6 +54,7 @@ class TelescopeBase(ChimeraObject,
     @lock
     def slewToSolarSystemObject(self, name):
         target = SsODNetlookup(name)
+        print "telescope got from SsODNet "+str(target)
         self.slewToRaDec(target)
 
     @lock
