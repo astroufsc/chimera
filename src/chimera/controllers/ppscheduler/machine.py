@@ -3,6 +3,10 @@ import chimera.core.log
 from chimera.controllers.scheduler.states import State
 from chimera.controllers.scheduler.model import Session, Program
 from chimera.controllers.scheduler.status import SchedulerStatus
+from chimera.util.simbad import Simbad
+import re
+from chimera.util.ssodnet import SsODNetlookup
+
 
 
 from chimera.core.exceptions import ProgramExecutionException, ProgramExecutionAborted
@@ -125,30 +129,41 @@ class Machine(threading.Thread):
                     if program.whileindex<0:
                         log.debug("[idle] while loop found, processing...")
                         log.debug("[idle] loop condition:'"+program.whilecond+"'")
-                    print "Actions:"
+                    #print "Actions:"
                     for action in program.actions: #Find out the pointing target
                         if action.action_type=="Point":
                             point=action
+                    targets="0:0:0 0:0:0"
                     if point.targetRaDec:
                         #ra,dec=point.targetRaDec.split()
                         targets=str(point.targetRaDec)#Position.fromRaDec(ra=ra,dec=dec)
                     if point.targetName:
-                        targets=str(Simbad.lookup(point.targetName))
+                        m=re.match('^SSOBJ:(.+)',point.targetName)
+                        if m:
+                            sstarget=m.groups()[-1]
+                            print "Target is Solar System object: ",sstarget
+                            targets=str(SsODNetlookup(sstarget))
+                            print "Got "+targets+" from SsODNet"
+                        else:
+                            targets=str(Simbad.lookup(point.targetName))
                     sun=ephem.Sun()
                     moon=ephem.Moon()
                     site=getobserver(self.site)
                     sun.compute(site)
                     moon.compute(site)
-                    print "Target:"
-                    print targets,type(targets)
+                    #print "Target:"
+                    #print targets,type(targets)
                     ra,dec=targets.split()
                     target=ephem.readdb("target,f,"+ra+","+dec+",,2000")
                     target.compute(site)
                     globs={'target':target,'sun':sun,'moon':moon,'ephem':ephem,'math':math,'time':time,'observer':site,'site':self.site,'airmass':airmass,'zenithdistance':zenithdistance}
-                    print site
+                    #print site
                     locs=globs
                     whileres=evalexpr(program.whilecond,globs,locs)
-                    if whileres:
+                    schedulerres=evalexpr(self.controller["condition"],globs,locs)
+                    log.debug("[idle] scheduler condition: %s",self.controller["condition"])
+                    log.debug("[idle] scheduler condition evaluated to: %s",schedulerres)
+                    if (schedulerres and whileres):
                     #if sandbox._call(wrapeval,(program.whilecond,globs,locs),{}):
                         if program.whileindex<0:
                             log.debug("[idle] while condition evaluated to: %s",whileres)    
@@ -162,44 +177,6 @@ class Machine(threading.Thread):
                         log.debug("[idle] while condition evaluated to: %s",whileres)
                     continue
 
-#                if program:
-#                    found=True
-#                    log.debug("[idle] there is something to do, processing...")
-#                    programsinwhile=[]
-#                    while True:
-#                        programsinwhile.append(program)
-#                        if (program.whileindex >= -1):
-#                            break
-#                        program = self.scheduler.next()
-#                        
-#                while True:
-#                    condition_failed=False
-#                    log.debug("[idle]hhhhhhhhhwhile loop index:")
-#                    if program.whileindex<0:
-#                        log.debug("[idle] while loop found, processing...")
-#                        log.debug("[idle] loop condition:")
-#                        log.debug(program.whilecond)
-#                    print "programsinwhile:",len(programsinwhile)
-#                    for program in programsinwhile:
-#                        print program.name
-#                        print program.whileindex
-#                        print program.whilecond
-#                        log.debug("[idle] evaluating loop condition")
-#                        if eval(program.whilecond):
-#                            log.debug("[idle] program slew start %s",program.slewAt)
-#                            log.debug("[idle] program exposure start %s",program.exposeAt)
-#                            self.state(State.BUSY)
-#                            self.currentProgram = program
-#                            self._process(program)
-#                        else:
-#                            condition_failed=True
-#                            log.debug("[idle] while loop condition evaluated to False, getting out of loop")
-#                            break
-#                    if condition_failed or program.whileindex==0:
-#                        break
-#                
-#                if found:
-#                    continue
 
                 # should'nt get here if any task was executed
                 log.debug("[idle] there is nothing to do, going offline...")

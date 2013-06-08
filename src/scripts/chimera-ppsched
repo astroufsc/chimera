@@ -22,6 +22,7 @@ from chimera.core.cli import ChimeraCLI, action
 from chimera.core.constants import DEFAULT_PROGRAM_DATABASE
 from chimera.core.callback import callback
 from chimera.util.position import Position
+from chimera.util.coord import Coord
 from chimera.util.output import blue, green, red
 
 
@@ -195,6 +196,8 @@ class ChimeraSched (ChimeraCLI):
                     site = self._remoteManager.getProxy("/Site/0")
                     flatPosition = Position.fromAltAz(site['flat_alt'], site['flat_az'])
                     program.actions.append(Point(targetAltAz=flatPosition))
+                    domeflatPosition = Coord.fromD(site['dome_flat_az'])
+                    program.actions.append(Dome(targetAz=domeflatPosition))
     
                 #if i == 0:
                 #    program.actions.append(AutoFocus(start=1500, end=3000, step=250, filter="R", exptime=10))

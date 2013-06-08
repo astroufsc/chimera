@@ -50,7 +50,8 @@ class DomeBase (ChimeraObject, Dome):
                   "polar_axis_az" : float('nan'), #azimuth the polar axis points to
                   "base_z" : 0.0, #position of the base of the RA axis relative to the dome center (z)
                   "base_x" : 0.0, #position of the base of the RA axis relative to the dome center (x - east)
-                  "base_y" : 0.0} #position of the base of the RA axis relative to the dome center (y - north)
+                  "base_y" : 0.0, #position of the base of the RA axis relative to the dome center (y - north)
+                  "park_az": 0.0} #Azimuth of park position
 
     def __init__(self):
         ChimeraObject.__init__(self)
@@ -211,7 +212,7 @@ class DomeBase (ChimeraObject, Dome):
         tel_alt=self.getTelescope().getAlt().R
         signaz=-1.0 if tel_az > pi/2. else 1.0
         tel_ma=tel_ha+(pi/2.)*signaz
-        print("tel_az,tel_ha,tel_ma: ",tel_az*180.0/pi,tel_ha*180.0/pi,tel_ma*180.0/pi)
+        print("tel_az,tel_alt,tel_ha,tel_ma: ",tel_az*180.0/pi,tel_alt*180.0/pi,tel_ha*180.0/pi,tel_ma*180.0/pi)
         paz=self["polar_axis_az"]*pi/180.
         lat=fabs(self.getSite()["latitude"].R)
         decl=self["dec_length"]
@@ -220,9 +221,9 @@ class DomeBase (ChimeraObject, Dome):
         dz=self["base_z"]+decl*cos(lat)*cos(tel_ma)
         #Telescope axis origin, y0 component (distance from dome center towards polar axis azimuth)
         dy0=-decl*sin(lat)*cos(tel_ma)
-        print("dy0 ",dy0,decl,sin(lat),cos(-tel_ha))
+        #print("dy0 ",dy0,decl,sin(lat),cos(-tel_ha))
         #Telescope axis origin, x0 component (distance from dome center perpendicular to polar axis azimuth, with x0,y0,z right-handed)
-        dx0=decl*sin(-tel_ma)
+        dx0=decl*sin(tel_ma)
         #Rotate dx0,dy0 by polar_axis_az
         dx=dx0*cos(paz)+dy0*sin(paz)+self["base_x"]
         dy=dx0*sin(paz)+dy0*cos(paz)+self["base_y"]
@@ -231,19 +232,20 @@ class DomeBase (ChimeraObject, Dome):
         axisline_x0=axisline*cos(tel_alt)*cos(pi/2.-tel_az)
         axisline_y0=axisline*cos(tel_alt)*sin(pi/2.-tel_az)
         axisline_z0=axisline*sin(tel_alt)
-        print("axisline: ",cos(tel_alt)*cos(pi/2.-tel_az),cos(tel_alt)*sin(pi/2.-tel_az),sin(tel_alt))
-        print("x,y,z: ",dx,dy,dz)
+        #print("dx0,dy0,dz: ",dx0,dy0,dz)
+        #print("axisline: ",cos(tel_alt)*cos(pi/2.-tel_az),cos(tel_alt)*sin(pi/2.-tel_az),sin(tel_alt))
+        #print("dx,dy,dz: ",dx,dy,dz)
         #Translate this array of points into the dome's center reference frame
         axisline=np.array([axisline_x0+dx,axisline_y0+dy,axisline_z0+dz])
         #Find the intersection between telescope's optical axis and dome
         axislengths=np.sqrt((axisline**2).sum(axis=0))
         ind=np.argmin(np.absolute(axislengths-R))
         intersection=axisline[:,ind]/R
-        print intersection
+        #print intersection
         int_alt=asin(intersection[2])
         int_az=pi/2.0-atan2(intersection[1],intersection[0])
         int_az=int_az % (2.0*pi)
-        print int_alt*180.0/pi,int_az*180.0/pi
+        #print int_alt*180.0/pi,int_az*180.0/pi
         return Coord.fromR(int_az)        
 
 

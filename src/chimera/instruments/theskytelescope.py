@@ -34,7 +34,33 @@ from chimera.util.position import Position
 from chimera.instruments.telescope import TelescopeBase
 from chimera.interfaces.telescope  import PositionOutsideLimitsException, TelescopeStatus
 
+import ephem
+import time
+import math
+
 log = logging.getLogger(__name__)
+
+def timetoepoch(t):
+   ret=t.tm_year
+   ylen=365.0
+   if (not (ret % 400)):
+     ylen+=1.
+   elif (not (ret % 100)):
+     ylen+=0
+   elif (not (ret % 4)):
+     ylen+=1
+   ret+=(t.tm_yday+(t.tm_hour+t.tm_min/60.+t.tm_sec/3600.)/24.)/ylen
+   return ret
+
+
+def getobserver(siteproxy):
+    site = ephem.Observer()
+    site.lat  = siteproxy["latitude"].strfcoord('%(d)d:%(m)d:%(s).2f')
+    site.long = siteproxy["longitude"].strfcoord('%(d)d:%(m)d:%(s).2f')
+    site.elev = siteproxy['altitude']
+    site.date = ephem.now()
+    site.epoch='2000/1/1 00:00:00'
+    return site
 
 if sys.platform == "win32":
     # handle COM multithread support
@@ -172,7 +198,22 @@ class TheSkyTelescope (TelescopeBase):
     @com
     def getPositionAltAz (self):
         self._telescope.GetAzAlt ()
-        return Position.fromAltAz(Coord.fromD(self._telescope.dAlt), Coord.fromD(self._telescope.dAz))
+        altaz=Position.fromAltAz(Coord.fromD(self._telescope.dAlt), Coord.fromD(self._telescope.dAz))
+        print "AltAz from TheSky: ",altaz
+        radec=Position.fromRaDec(Coord.fromH(self._telescope.dRa), Coord.fromD(self._telescope.dDec))
+        print "RaDec from TheSky: ",radec
+        altAz=self.getSite().raDecToAltAz(radec)
+        print "AltAz from TheSky's RaDec: ",altaz
+        obs=getobserver(self.getSite())
+        epoch=timetoepoch(time.gmtime())
+        obs.epoch=epoch
+        targstr='target,f,'+Coord.fromH(self._telescope.dRa)+','+Coord.fromD(self._telescope.dDec)+',,'+str(epoch)
+        target=ephem.readdb(targstr)
+        print tarstr
+        target.compute(obs)
+        print target.ra*12./math.pi,target.dec*180./math.pi
+        print target.alt*180./math.pi,target.az*180./math.pi
+        return altaz
 
     @com
     def getTargetRaDec (self):

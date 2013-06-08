@@ -28,7 +28,8 @@ class Scheduler(ChimeraObject):
                   "autofocus"   : "/Autofocus/0",
                   "point_verify": "/PointVerify/0",
                   'site'        : '/Site/0',
-                  'algorithm'   : SchedulingAlgorithm.SEQUENTIAL}
+                  'algorithm'   : SchedulingAlgorithm.SEQUENTIAL,
+                  'condition'   : 'True'}
     
     def __init__(self):
         ChimeraObject.__init__(self)

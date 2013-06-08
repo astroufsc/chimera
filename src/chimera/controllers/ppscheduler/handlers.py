@@ -2,6 +2,7 @@ from chimera.core.exceptions import ProgramExecutionException, printException
 from chimera.controllers.imageserver.imagerequest import ImageRequest
 
 import copy
+import re
 
 def requires(instrument):
     """Simple dependecy injection mechanism. See ProgramExecutor"""
@@ -37,14 +38,21 @@ class PointHandler(ActionHandler):
     def process(action):
         telescope = PointHandler.telescope
         dome = PointHandler.dome
-
+        
         try:
             if action.targetRaDec is not None:
                 telescope.slewToRaDec(action.targetRaDec)
             elif action.targetAltAz is not None:
                 telescope.slewToAltAz(action.targetAltAz)
             elif action.targetName is not None:
-                telescope.slewToObject(action.targetName)
+                m=re.match('^SSOBJ:(.+)',action.targetName)
+                if m:
+                    sstarget=m.groups()[-1]
+                    print "Target is Solar System object: ",sstarget
+                    print "Got "+str(sstarget)+" from SsODNet"
+                    telescope.slewToSolarSystemObject(sstarget)
+                else:
+                    telescope.slewToObject(action.targetName)
             print dome    
             #dome.openSlit()
             
