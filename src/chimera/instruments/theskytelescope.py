@@ -207,12 +207,14 @@ class TheSkyTelescope (TelescopeBase):
         obs=getobserver(self.getSite())
         epoch=timetoepoch(time.gmtime())
         obs.epoch=epoch
-        targstr='target,f,'+Coord.fromH(self._telescope.dRa)+','+Coord.fromD(self._telescope.dDec)+',,'+str(epoch)
+        targstr='target,f,'+str(Coord.fromH(self._telescope.dRa).toHMS())+','+str(Coord.fromD(self._telescope.dDec).toHMS())+',,'+str(epoch)
+        #print targstr
         target=ephem.readdb(targstr)
-        print tarstr
         target.compute(obs)
-        print target.ra*12./math.pi,target.dec*180./math.pi
-        print target.alt*180./math.pi,target.az*180./math.pi
+        #print target.ra*12./math.pi,target.dec*180./math.pi
+        #print target.alt*180./math.pi,target.az*180./math.pi
+        altaz2=Position.fromAltAz(Coord.fromR(target.alt),Coord.fromR(target.az))
+        print "AltAz from TheSky's RaDec: by pyephem",altaz2
         return altaz
 
     @com
