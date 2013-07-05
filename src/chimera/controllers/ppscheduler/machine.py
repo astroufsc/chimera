@@ -163,7 +163,11 @@ class Machine(threading.Thread):
                     schedulerres=evalexpr(self.controller["condition"],globs,locs)
                     log.debug("[idle] scheduler condition: %s",self.controller["condition"])
                     log.debug("[idle] scheduler condition evaluated to: %s",schedulerres)
-                    if (schedulerres and whileres):
+                    ifres=evalexpr(program.ifcond,globs,locs)
+                    log.debug("[idle] while condition: %s",program.whilecond)
+                    log.debug("[idle] if condition: %s",program.ifcond)
+                    log.debug("[idle] if condition evaluated to: %s",ifres)
+                    if (schedulerres and whileres and ifres):
                     #if sandbox._call(wrapeval,(program.whilecond,globs,locs),{}):
                         if program.whileindex<0:
                             log.debug("[idle] while condition evaluated to: %s",whileres)    

@@ -248,7 +248,7 @@ class ChimeraSched (ChimeraCLI):
         fpexpr='[-+]?(?:(?:[0-9]*\.?[0-9]+)|(?:[0-9]+\.?[0-9]*))(?:[eEdD][-+]?[0-9]+)?' #4 groups
         lineRe = re.compile('(?P<coord>(?P<ra>[\d:-]+)\s+(?P<dec>\+?[\d:-]+)\s+(?P<epoch>[\dnowNOWJjBb\.]+)\s+)?(?P<imagetype>[\w]+)'
                             '\s+(?P<objname>\'([^\\n\'\\\\]|\\\\.)*\'|"([^\\n"\\\\]|\\\\.)*"|([^ \\n"\\\\]|\\\\.)*)\s+(?P<exposures>[\w\d\s:\*,\(]*\))'
-                            '(?:\s+(?P<slewstart>'+fpexpr+'))?(?:\s+(?P<exposurestart>'+fpexpr+'))?')
+                            '(?:\s+(?P<slewstart>'+fpexpr+'))?(?:\s+(?P<exposurestart>'+fpexpr+'))?(?:\s+if\s+\((?P<ifcond>.+)\))?')
         
         whilestart=re.compile('while\s+\((?P<whilecond>.+)\)')
         whileend=re.compile('endwhile')
@@ -289,7 +289,11 @@ class ChimeraSched (ChimeraCLI):
                 continue
     
             params = matchs.groupdict()
+            ifcond=params.get("ifcond",True)
+            if ifcond is None:
+                ifcond=True
 
+            
             position = None
             objname  = None
 
@@ -312,24 +316,26 @@ class ChimeraSched (ChimeraCLI):
 
                 program = Program(name="%s-%03d" % (objname.replace(" ", ""), i),
                                   slewAt=params['slewstart'],exposeAt=params['exposurestart'],
-                                  whilecond="True",whileindex=0)
+                                  whilecond="True",whileindex=0,ifcond=ifcond)
 
                 self.out("# program: %s" % program.name)
                 self.out("# Will wait to slew until: %s" % program.slewAt)
                 self.out("# Will wait to expose until: %s" % program.exposeAt)
+                self.out("# Will execute if: %s" % ifcond)
+                self.out("# Will execute if: %s" % program.ifcond)
 
                 if imagetype == "OBJECT":
                     if position:
                         program.actions.append(Point(targetRaDec=position))
                         print "Point: "
                         print Point(targetRaDec=position)
-                        print type(Point(targetRaDec=position))
+                        #print type(Point(targetRaDec=position))
                         #program.target=
                     else:
                         program.actions.append(Point(targetName=objname))
                         print "Point: "
                         print Point(targetName=objname)
-                        print type(Point(targetName=objname))
+                        #print type(Point(targetName=objname))
                         #program.target=Simbad.lookup(objname)
 
                 if imagetype == "FLAT":

@@ -31,6 +31,8 @@ class Program(Base):
     exposeAt = Column(Float, default=0.0)
     whilecond=Column(String,default="True")
     whileindex=Column(Integer,default=0)
+    ifcond=Column(String,default="True")
+
 
     
     actions   = relation("Action", backref=backref("program", order_by="Action.id"),
