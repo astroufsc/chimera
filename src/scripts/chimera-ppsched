@@ -225,7 +225,7 @@ class ChimeraSched (ChimeraCLI):
 
             if params.get("coord", None):
                 position  = Position.fromRaDec(params['ra'], params['dec'], params['epoch'])
-
+            
             imagetype = params['imagetype'].upper()
             objname   = params['objname'].replace("\"", "")
 
