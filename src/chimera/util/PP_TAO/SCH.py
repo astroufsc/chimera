@@ -114,6 +114,7 @@ class SCH(object):
             s=re.search(expr,l)
             if s:
                 g=s.groupdict()
+                g['Filter'] = g['Filter'].split('(')[1].split(')')[0].replace(' ','').upper()
                 buffer.append(g)
             else:
                 if not re.search('\n',l):
