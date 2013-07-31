@@ -6,7 +6,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relation, backref
 
 engine = create_engine('sqlite:///%s' % DEFAULT_PROGRAM_DATABASE, echo=False)
-print 'engine created with sqlite:///%s' % DEFAULT_PROGRAM_DATABASE
+print '-- engine created with sqlite:///%s' % DEFAULT_PROGRAM_DATABASE
 metaData = MetaData()
 metaData.bind = engine
 
@@ -15,12 +15,36 @@ Base = declarative_base(metadata=metaData)
 
 import datetime as dt
 
+class Targets(Base):
+    __tablename__ = "targets"
+    print "model.py"
+    
+    id     = Column(Integer, primary_key=True)
+    name   = Column(String, default="Program") 
+    type   = Column(String, default=None) 
+    lastObservation = Column(DateTime, default=None)
+    observed  = Column(Boolean, default=False)
+    scheduled  = Column(Boolean, default=False)
+    targetRa = Column(Float, default=0.0)
+    targetDec = Column(Float, default=0.0)
+    targetEpoch = Column(Float, default=2000.)
+    targetMag = Column(Float, default=0.0)
+    magFilter = Column(String, default=None)
+
+    def __str__ (self):
+        if self.observed:
+            return "#%d %s [type: %s] #LastObverved@: %s" % (self.id, self.name, self.type,
+                                                        self.lastObservation)
+        else:
+            return "#%d %s [type: %s] #NeverObserved" % (self.id, self.name, self.type)
+
 class Program(Base):
     __tablename__ = "program"
     print "model.py"
     
     id     = Column(Integer, primary_key=True)
-    name   = Column(String, default="Program")
+    tid    = Column(Integer, ForeignKey('targets.id'))
+    name   = Column(String, ForeignKey("targets.name"))
     pi     = Column(String, default="Anonymous Investigator")
 
     priority = Column(Integer, default=0)
