@@ -26,8 +26,11 @@ from chimera.util.output import blue, green, red
 
 from chimera.controllers.scheduler.status import SchedulerStatus
 from chimera.controllers.scheduler.states import State
+from chimera.controllers.scheduler.tao import TAO
 from chimera.controllers.scheduler.model import (Session, Targets, Program, Point,
                                                  Expose, PointVerify, AutoFocus)
+
+
 
 import re
 import sys
@@ -36,11 +39,14 @@ import shutil
 import time
 
 class ChimeraSched (ChimeraCLI):
+
+
     
     def __init__ (self):
         ChimeraCLI.__init__(self, "chimera-sched", "Scheduler controller", 0.1, port=9010)
-    
 
+        self.tao = TAO()
+		
         self.addHelpGroup("SCHEDULER", "Scheduler")
         self.addController(name="scheduler", cls="Scheduler", required=True,
                            help="Scheduler controller to be used", helpGroup="SCHEDULER")
@@ -66,6 +72,10 @@ class ChimeraSched (ChimeraCLI):
 
         self.addParameters(dict(name="filename", long="file", short="f", helpGroup="DB", default="",
                                 help="Filename of the input database.", metavar="FILENAME"))
+        self.addParameters(dict(name="nstd", long="nstd", helpGroup="DB", default=3, type=int,
+                                help="Number of standard stars to be selected.", metavar="NSTD"))
+        self.addParameters(dict(name="JD", long="jd", helpGroup="DB", type=float,
+                                help="Julian day of the observations to be scheduled.", metavar="JD"))
 
     @action(long="cleanQueue", help="Delete all programs in the queue.",
             helpGroup="DB", actionGroup="DB")
@@ -134,11 +144,35 @@ class ChimeraSched (ChimeraCLI):
     def appendDatabase(self, options):
         self.generateDatabase(options)
 
+    @action(long="selectStandardStars", help="Select standard stars from the main database. By default choose 3 standard stars. The used can edit the number with the option --nstd.",
+            helpGroup="DB", actionGroup="DB")
+    def selectStandardStars(self,options):
+
+		if options.JD and not self.tao.isJD:
+			self.out('Setting JD = %.2f'%(options.JD))
+			self.tao.setJD(options.JD)
+		elif not self.tao.isJD:
+			self.tao.setJD()
+
+		self.tao.selectStandardTargets(options.nstd)
+
+    @action(long="selectScienceTargets", help="Select science stars from the main database. If you want to choose standard stars do it first and then select science targets. Otherwise, the scheduler will fill the entire night with science targets and leave no space for standards.",
+            helpGroup="DB", actionGroup="DB")
+    def selectScienceTargets(self,options):
+
+		if options.JD and not self.tao.isJD:
+			self.out('Setting JD = %.2f'%(options.JD))
+			self.tao.setJD(options.JD)
+		elif not self.tao.isJD:
+			self.tao.setJD()
+
+		self.tao.selectScienceTargets()
+
     def generateTargetsDatabase(self,options):
         
         import numpy as np
 
-	targets = np.loadtxt(options.filename,dtype = 'S',delimiter=',',unpack=True)
+        targets = np.loadtxt(options.filename,dtype = 'S',delimiter=',',unpack=True)
 
         session = Session()
 
@@ -278,6 +312,11 @@ class ChimeraSched (ChimeraCLI):
         self.out("%s" % green("OK"))
         self.out("="*40)
         self.monitor(options)
+
+    @action(help="targets", helpGroup="RUN", actionGroup="RUN")
+    def targets(self, options):
+        self.out("Generating targets")
+        self.tao.targets()
 
     @action(help="Stop the scheduler", helpGroup="RUN", actionGroup="RUN")
     def stop(self, options):
