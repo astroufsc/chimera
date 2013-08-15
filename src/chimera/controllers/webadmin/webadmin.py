@@ -5,7 +5,6 @@ from chimera.core.chimeraobject import ChimeraObject
 from chimera.core.constants import SYSTEM_CONFIG_DIRECTORY
 
 import cherrypy
-import simplejson
 
 import threading
 import os
@@ -63,7 +62,7 @@ class WebAdmin (ChimeraObject):
                   "scheduler": "/Scheduler/0",
                   "telescope": "/Telescope/0",
                   "host": "default",
-                  "port": 8080}
+                  "port": 50000}
     
     def __init__ (self):
         ChimeraObject.__init__(self)
