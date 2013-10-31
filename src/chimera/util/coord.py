@@ -518,6 +518,17 @@ class Coord (object):
         self.cache = {}
 
     #
+    # serialization
+    #
+    def __getstate__(self):
+      return {"v": self.v, "state": str(self.state)}
+
+    def __setstate__(self, state):
+      self.v = state["v"]
+      self.state = State.fromStr(state["state"])
+      self.cache = {}
+
+    #
     # factories
     #
 
