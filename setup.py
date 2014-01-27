@@ -109,7 +109,7 @@ setup(name='chimera-python',
 
       # dependencies are installed bottom up, so put important things last
       install_requires = linux_deps + win32_deps + mac_deps + \
-                          "CherryPy == 3.1.2",
+                          ["CherryPy == 3.1.2",
                           "PyYAML == 3.08",
                           "suds == 0.3.8",
                           "asciidata == 1.1",
