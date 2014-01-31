@@ -31,7 +31,7 @@ CCD     = Enum("IMAGING", "TRACKING")
 # Special features parameters can be passed as ImageRequest
 # parameters. The Camera.supports(feature) method can be used
 # to ask if the current camera support a given feature (useful for
-# interfaces, to decides when to display options to the user).
+# interfaces, to decide when to display options to the user).
 
 CameraFeature = Enum("TEMPERATURE_CONTROL",
                      "PROGRAMMABLE_GAIN",
@@ -49,11 +49,11 @@ class ReadoutMode(object):
     provide an constuctor from a modeString (some instrument specific
     internal value).
 
-    pixelWidth and pixelHeight should provides the virtual size of a
+    pixelWidth and pixelHeight should provide the virtual size of a
     pixel after any on-chip sum.
 
     gain is in e-/ADU. All others, except mode (which is an internal
-    value) are in pixel.
+    value) are in pixels.
     """
 
     mode = 0
