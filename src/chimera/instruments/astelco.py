@@ -91,9 +91,9 @@ class Astelco (TelescopeBase): #converted to Astelco
                 self._calibration[rate][direction] = 1
         
         self._user="admin"
-        self._password="a8zfuoad1"
-        self._aahost="sim.tt-data.eu"
-        self._aaport="65443"
+        self._password="admin"
+        self._aahost="localhost"
+        self._aaport="65432"
 
     # -- ILifeCycle implementation --
 
