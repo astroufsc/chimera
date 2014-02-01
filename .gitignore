@@ -18,6 +18,11 @@ develop-eggs
 lib
 lib64
 
+# eclipse files
+.settings
+.project
+.pydevproject
+
 # Installer logs
 pip-log.txt
 
