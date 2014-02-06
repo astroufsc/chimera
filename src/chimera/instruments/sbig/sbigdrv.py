@@ -46,11 +46,11 @@ class SBIGReadoutMode(ReadoutMode):
 
     def __init__(self, mode):
         self.mode =  mode.mode
-        self.gain = float(hex(mode.gain).split('x')[1]) / 100.0
+        self.gain = float(hex(mode.gain).split('x')[1].split('L')[0]) / 100.0
         self.width = mode.width
         self.height = mode.height
-        self.pixelWidth = float(hex(mode.pixel_width).split('x')[1]) / 100.0
-        self.pixelHeight = float(hex(mode.pixel_height).split('x')[1]) / 100.0
+        self.pixelWidth = float(hex(mode.pixel_width).split('x')[1].split('L')[0]) / 100.0
+        self.pixelHeight = float(hex(mode.pixel_height).split('x')[1].split('L')[0]) / 100.0
 
 
 class TemperatureSetPoint(object):

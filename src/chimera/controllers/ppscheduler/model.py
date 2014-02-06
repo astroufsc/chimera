@@ -1,7 +1,7 @@
 from chimera.core.constants import DEFAULT_PROGRAM_DATABASE
 
 from sqlalchemy import (Column, String, Integer, DateTime, Boolean, ForeignKey,
-                        Float, PickleType, MetaData, create_engine)
+                        Float, PickleType, MetaData, Text, create_engine)
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relation, backref
 
@@ -37,6 +37,30 @@ class Targets(Base):
                                                         self.lastObservation)
         else:
             return "#%d %s [type: %s] #NeverObserved" % (self.id, self.name, self.type)
+
+class Projects(Base):
+	__tablename__ = "projects"
+
+	id     = Column(Integer, primary_key=True)
+	flag   = Column(String, default="PID")
+	pi     = Column(String, default="Anonymous Investigator")
+	abstract = Column(Text, default="")
+	url    = Column(String, default="")
+		
+	filter = Column(String, default=None)
+	exptime = Column(Float, default=1.0)
+	maxairmass = Column(Float, default=2.5)
+	maxmoonBright = Column(Float, default=100.) # percent
+	minmoonBright = Column(Float, default=0.) # percent
+	minmoonDist = Column(Float, default=10.) # in degrees
+	maxseeing = Column(Float, default=2.0) # seing
+	cloudcover = Column(Integer, default=0) # must be defined by user
+	schedalgorith = Column(Integer, default=0) # scheduling algorith
+	applyextcorr = Column(Boolean, default=False)
+	
+	def __str__ (self):
+		return "#%3d %s pi:%s #filter: %s #exptime: %.2f" % (self.id, self.flag,
+										  self.pi, self.filter,self.exptime)
 
 class Program(Base):
     __tablename__ = "program"

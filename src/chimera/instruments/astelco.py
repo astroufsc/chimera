@@ -91,13 +91,18 @@ class Astelco (TelescopeBase): #converted to Astelco
                 self._calibration[rate][direction] = 1
         
         self._user="admin"
-        self._password="a8zfuoad1"
-        self._aahost="sim.tt-data.eu"
-        self._aaport="65443"
+        self._password="admin"
+        self._aahost="10.10.18.1"
+        self._aaport="65432"
+        print '--> INIT <--'
+
+#        self._aahost="sim.tt-data.eu"
+#        self._aaport="65443"
 
     # -- ILifeCycle implementation --
 
     def __start__ (self): #converted to Astelco
+        print '--> START <--'
         self.open()
 
         # try to read saved calibration data
@@ -159,6 +164,7 @@ class Astelco (TelescopeBase): #converted to Astelco
         print 'Connecting to Astelco server ',self._aahost,':',int(self._aaport)
         self._tsi=TSI(user=self._user,password=self._password,
                       host=self._aahost,port=int(self._aaport),echo=False,verbose=False,debug=True)
+        print '--> OPEN <--'
         print self._tsi.log
 
         try:

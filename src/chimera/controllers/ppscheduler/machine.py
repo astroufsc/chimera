@@ -133,6 +133,7 @@ class Machine(threading.Thread):
             log.debug("[start] %s" % str(task))
 
             site=Site()
+
             nowmjd=site.MJD()
             log.debug("[start] Current MJD is %f",nowmjd)
             if program.slewAt:
