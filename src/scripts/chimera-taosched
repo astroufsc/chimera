@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#! /usr/bin/env python
 # -*- coding: iso-8859-1 -*-
 
 # chimera - observatory automation system
@@ -26,25 +26,29 @@ from chimera.util.output import blue, green, red
 
 from chimera.controllers.scheduler.status import SchedulerStatus
 from chimera.controllers.scheduler.states import State
-from chimera.controllers.scheduler.model import (Session, Program, Point,
+from chimera.controllers.scheduler.tao import TAO
+from chimera.controllers.scheduler.model import (Session, Targets, Program, Point,
                                                  Expose, PointVerify, AutoFocus)
+
+
 
 import re
 import sys
 import os
 import shutil
 import time
-import datetime as dt
-from chimera.util.PP_TAO.SCH import SCH
 
 class ChimeraSched (ChimeraCLI):
+
+
     
     def __init__ (self):
-        ChimeraCLI.__init__(self, "chimera-ppsched", "Scheduler controller", 0.1, port=9010)
-    
+        ChimeraCLI.__init__(self, "chimera-sched", "Scheduler controller", 0.1, port=9010)
 
+        self.tao = TAO()
+		
         self.addHelpGroup("SCHEDULER", "Scheduler")
-        self.addController(name="ppscheduler", cls="Scheduler", required=True,
+        self.addController(name="scheduler", cls="Scheduler", required=True,
                            help="Scheduler controller to be used", helpGroup="SCHEDULER")
 
         databaseHelp = """Database options\n\tThe file must have the following format:
@@ -67,9 +71,56 @@ class ChimeraSched (ChimeraCLI):
         self.addHelpGroup("RUN" , "Start/Stop/Info")
 
         self.addParameters(dict(name="filename", long="file", short="f", helpGroup="DB", default="",
-                                help="Filename of the input database or .SCH file for TAO.", metavar="FILENAME"))
-        self.addParameters(dict(name="shootfile", long="shootfile", short="s", helpGroup="DB", default="",
-                                help="Filename of the TAO shoot file.", metavar="SHHOTFILE",))
+                                help="Filename of the input database.", metavar="FILENAME"))
+        self.addParameters(dict(name="nstd", long="nstd", helpGroup="DB", default=3, type=int,
+                                help="Number of standard stars to be selected.", metavar="NSTD"))
+        self.addParameters(dict(name="JD", long="jd", helpGroup="DB", type=float,
+                                help="Julian day of the observations to be scheduled.", metavar="JD"))
+
+    @action(long="cleanQueue", help="Delete all programs in the queue.",
+            helpGroup="DB", actionGroup="DB")
+    def cleanQueue(self,options):
+        # save a copy
+        if os.path.exists(DEFAULT_PROGRAM_DATABASE):
+            shutil.copy(DEFAULT_PROGRAM_DATABASE, "%s.%s.bak" % (DEFAULT_PROGRAM_DATABASE, time.strftime("%Y%m%d%H%M%S")))
+
+        # delete all programs
+        session = Session()
+        programs = session.query(Program).all()
+        for program in programs:
+            session.delete(program)
+        session.commit()
+
+        
+    @action(long="newTargetsDB", help="Generate a new targets database from a text file (excluding all programs already in database)",
+            helpGroup="DB", actionGroup="DB")
+    def newTargetsDatabase(self, options):
+
+        # save a copy
+        if os.path.exists(DEFAULT_PROGRAM_DATABASE):
+            shutil.copy(DEFAULT_PROGRAM_DATABASE, "%s.%s.bak" % (DEFAULT_PROGRAM_DATABASE, time.strftime("%Y%m%d%H%M%S")))
+
+        # delete all programs
+        session = Session()
+        targets = session.query(Targets).all()
+        for target in targets:
+            session.delete(target)
+        programs = session.query(Program).all()
+        for program in programs:
+            session.delete(program)
+        session.commit()
+
+        self.generateTargetsDatabase(options)
+
+    @action(long="addTargetsDB", help="Add new targets to database from a text file (excluding all programs already in database)",
+            helpGroup="DB", actionGroup="DB")
+    def addTargetsDatabase(self, options):
+
+        # save a copy
+        if os.path.exists(DEFAULT_PROGRAM_DATABASE):
+            shutil.copy(DEFAULT_PROGRAM_DATABASE, "%s.%s.bak" % (DEFAULT_PROGRAM_DATABASE, time.strftime("%Y%m%d%H%M%S")))
+
+        self.generateTargetsDatabase(options)
 
     @action(long="new", help="Generate a new database from a text file (excluding all programs already in database)",
             helpGroup="DB", actionGroup="DB")
@@ -92,104 +143,68 @@ class ChimeraSched (ChimeraCLI):
             helpGroup="DB", actionGroup="DB")
     def appendDatabase(self, options):
         self.generateDatabase(options)
-        
-    def generateDatabase(self,options):
-        if not options.shootfile:
-            self.generateDatabase_chimerafile(options)
-            return
 
-        self.out("Parsing files in TAO's format:\n",options.filename,"\n",options.shootfile)
+    @action(long="selectStandardStars", help="Select standard stars from the main database. By default choose 3 standard stars. The used can edit the number with the option --nstd.",
+            helpGroup="DB", actionGroup="DB")
+    def selectStandardStars(self,options):
+
+		if options.JD and not self.tao.isJD:
+			self.out('Setting JD = %.2f'%(options.JD))
+			self.tao.setJD(options.JD)
+		elif not self.tao.isJD:
+			self.tao.setJD()
+
+		self.tao.selectStandardTargets(options.nstd)
+
+    @action(long="selectScienceTargets", help="Select science stars from the main database. If you want to choose standard stars do it first and then select science targets. Otherwise, the scheduler will fill the entire night with science targets and leave no space for standards.",
+            helpGroup="DB", actionGroup="DB")
+    def selectScienceTargets(self,options):
+
+		if options.JD and not self.tao.isJD:
+			self.out('Setting JD = %.2f'%(options.JD))
+			self.tao.setJD(options.JD)
+		elif not self.tao.isJD:
+			self.tao.setJD()
+
+		self.tao.selectScienceTargets()
+
+    def generateTargetsDatabase(self,options):
         
-        sch=SCH(file=options.filename,shootfile=options.shootfile)
-        sch.Read()
+        import numpy as np
+
+        targets = np.loadtxt(options.filename,dtype = 'S',delimiter=',',unpack=True)
 
         session = Session()
 
-        programs = []
-    
-        for i, line in enumerate(sch.schedule):
-    
-            position = None
-            objname  = None
+        for i in range(len(targets[0])):
+            p = None
+            try:
+                p = Position.fromRaDec(str(targets[2][i]),str(targets[3][i]))
+            except ValueError:
+                self.out('Object %s has invalid coordinates (%s,%s). Skipping'%(targets[1][i],targets[2][i],targets[3][i]))
+                pass
+            except:
+                raise
 
-            if line['ra'] and line['dec']:
-                position  = Position.fromRaDec(line['ra'],line['dec'])
+            if p:
+                                
+                target = Targets(name=targets[1][i],
+                                 type=targets[0][i],
+                                 targetRa=p.ra.H,
+                                 targetDec=p.dec.D)
+                if len(targets) > 4:
+                    target.targetEpoch = float(targets[4][i])
+                if len(targets) > 5:
+                    target.targetMag = float(targets[5][i])
+                if len(targets) > 6:
+                    target.magFilter = float(targets[6][i])
 
-            objname=line['Object']            
-            if objname in ('DARK','BIAS','FLAT'):
-                imagetype=objname
-            else:
-                imagetype='OBJECT'
+                self.out('Adding %s...'%(targets[1][i]))
+                session.add(target)
+                session.commit()
 
-            if line['Mode'] == 'd':
-                if line['exp'] == 0.0:
-                    imagetype='BIAS'
-                else:
-                    imagetype='DARK'
-            else:
-                if objname == 'FLAT':
-                    imagetype='FLAT'
-                else:
-                    imagetype='OBJECT'
-            
-            multiplier=1
-                        
-            for i in range(multiplier):
 
-                program = Program(name="%s-%03d" % (objname.replace(" ", ""), i),
-                                  slewAt=line['Slewstart'],exposeAt=line['Exposurestart'])
-
-                self.out("# program: %s" % program.name)
-                self.out("# Will wait to slew until: %s" % program.slewAt)
-                self.out("# Will wait to expose until: %s" % program.exposeAt)
-
-                if imagetype == "OBJECT":
-                    if position:
-                        program.actions.append(Point(targetRaDec=position))
-                    else:
-                        program.actions.append(Point(targetName=objname))
-
-                if imagetype == "FLAT":
-                    site = self._remoteManager.getProxy("/Site/0")
-                    flatPosition = Position.fromAltAz(site['flat_alt'], site['flat_az'])
-                    program.actions.append(Point(targetAltAz=flatPosition))
-    
-                #if i == 0:
-                #    program.actions.append(AutoFocus(start=1500, end=3000, step=250, filter="R", exptime=10))
-                #    program.actions.append(PointVerify(here=True))
-                
-                filter, exptime, frames = (line['Filter'], line['exp'], 1)
-    
-
-                if imagetype in ("OBJECT", "FLAT"):
-                    shutter = "OPEN"
-                else:
-                    shutter = "CLOSE"
-
-                if imagetype == "BIAS":
-                    exptime = 0
-
-                if imagetype in ("BIAS", "DARK"):
-                    filter = None
-
-                self.out("%s %s %s filter=%s exptime=%s frames=%s" % (imagetype, objname, str(position), filter, exptime, frames))
-    
-                program.actions.append(Expose(shutter=shutter,
-                                                filename="%s-$DATE-$TIME" % objname.replace(" ", ""),
-                                                filter=filter,
-                                                frames=frames,
-                                                exptime=exptime,
-                                                imageType=imagetype,
-                                                objectName=objname))
-            self.out("")
-            programs.append(program)
-    
-        session.add_all(programs)
-        session.commit()
-
-        self.out("Restart the scheduler to run it with the new database.")        
-
-    def generateDatabase_chimerafile(self, options):
+    def generateDatabase(self, options):
         f = None
         try:
             f = open(options.filename, "r")
@@ -200,10 +215,6 @@ class ChimeraSched (ChimeraCLI):
 
         lineRe = re.compile('(?P<coord>(?P<ra>[\d:-]+)\s+(?P<dec>\+?[\d:-]+)\s+(?P<epoch>[\dnowNOWJjBb\.]+)\s+)?(?P<imagetype>[\w]+)'
                             '\s+(?P<objname>\'([^\\n\'\\\\]|\\\\.)*\'|"([^\\n"\\\\]|\\\\.)*"|([^ \\n"\\\\]|\\\\.)*)\s+(?P<exposures>[\w\d\s:\*\(\),]*)')
-        fpexpr='[-+]?(?:(?:[0-9]*\.?[0-9]+)|(?:[0-9]+\.?[0-9]*))(?:[eEdD][-+]?[0-9]+)?' #4 groups
-        lineRe = re.compile('(?P<coord>(?P<ra>[\d:-]+)\s+(?P<dec>\+?[\d:-]+)\s+(?P<epoch>[\dnowNOWJjBb\.]+)\s+)?(?P<imagetype>[\w]+)'
-                            '\s+(?P<objname>\'([^\\n\'\\\\]|\\\\.)*\'|"([^\\n"\\\\]|\\\\.)*"|([^ \\n"\\\\]|\\\\.)*)\s+(?P<exposures>[\w\d\s:\*,\(]*\))'
-                            '(?:\s+(?P<slewstart>'+fpexpr+'))?(?:\s+(?P<exposurestart>'+fpexpr+'))?')
         programs = []
     
         for i, line in enumerate(f):
@@ -215,7 +226,6 @@ class ChimeraSched (ChimeraCLI):
     
             if matchs is None:
                 print "Couldn't process line #%d" % i
-                print line
                 continue
     
             params = matchs.groupdict()
@@ -225,7 +235,7 @@ class ChimeraSched (ChimeraCLI):
 
             if params.get("coord", None):
                 position  = Position.fromRaDec(params['ra'], params['dec'], params['epoch'])
-            
+
             imagetype = params['imagetype'].upper()
             objname   = params['objname'].replace("\"", "")
 
@@ -237,15 +247,11 @@ class ChimeraSched (ChimeraCLI):
 
             exps = exps.replace("(", "").replace(")", "").strip().split(",")
             
-            
             for i in range(multiplier):
-
-                program = Program(name="%s-%03d" % (objname.replace(" ", ""), i),
-                                  slewAt=params['slewstart'],exposeAt=params['exposurestart'])
+    
+                program = Program(name="%s-%03d" % (objname.replace(" ", ""), i))
 
                 self.out("# program: %s" % program.name)
-                self.out("# Will wait to slew until: %s" % program.slewAt)
-                self.out("# Will wait to expose until: %s" % program.exposeAt)
 
                 if imagetype == "OBJECT":
                     if position:
@@ -302,22 +308,27 @@ class ChimeraSched (ChimeraCLI):
     def start(self, options):
         self.out("="*40)
         self.out("Starting ...", end="")
-        self.ppscheduler.start()
+        self.scheduler.start()
         self.out("%s" % green("OK"))
         self.out("="*40)
         self.monitor(options)
 
+    @action(help="targets", helpGroup="RUN", actionGroup="RUN")
+    def targets(self, options):
+        self.out("Generating targets")
+        self.tao.targets()
+
     @action(help="Stop the scheduler", helpGroup="RUN", actionGroup="RUN")
     def stop(self, options):
-        self.ppscheduler.stop()
+        self.scheduler.stop()
         self.out("OK")
 
     @action(help="Restart the scheduler", helpGroup="RUN", actionGroup="RUN")
     def restart(self, options):
         self.out("="*40)
         self.out("Restarting ...", end="")
-        self.ppscheduler.stop()
-        self.ppscheduler.start()
+        self.scheduler.stop()
+        self.scheduler.start()
         self.out("%s" % green("OK"))
         self.out("="*40)
         self.monitor(options)
@@ -325,12 +336,11 @@ class ChimeraSched (ChimeraCLI):
     @action(help="Print scheduler information", helpGroup="RUN")
     def info(self, options):
         self.out("="*40)
-        self.out('abacax')
-        self.out("Scheduler: %s" % self.ppscheduler.getLocation())
-        self.out("State: %s" % self.ppscheduler.state())
-        if self.ppscheduler.state() == State.BUSY and self.ppscheduler.currentAction():
+        self.out("Scheduler: %s" % self.scheduler.getLocation())
+        self.out("State: %s" % self.scheduler.state())
+        if self.scheduler.state() == State.BUSY and self.scheduler.currentAction():
             session = Session()
-            action = session.merge(self.ppscheduler.currentAction())
+            action = session.merge(self.scheduler.currentAction())
             program = session.query(Program).filter(Program.id == action.program_id).one()
             self.out("Working on: %s (%s)" % (program.name, str(action)))
 
@@ -379,19 +389,18 @@ class ChimeraSched (ChimeraCLI):
                 self.out("="*40)
                 self.exit()
 
-        self.ppscheduler.programBegin    += programBeginClbk
-        self.ppscheduler.programComplete += programCompleteClbk
-        self.ppscheduler.actionBegin     += actionBeginClbk
-        self.ppscheduler.actionComplete  += actionCompleteClbk
-        self.ppscheduler.stateChanged    += stateChangedClbk
+        self.scheduler.programBegin    += programBeginClbk
+        self.scheduler.programComplete += programCompleteClbk
+        self.scheduler.actionBegin     += actionBeginClbk
+        self.scheduler.actionComplete  += actionCompleteClbk
+        self.scheduler.stateChanged    += stateChangedClbk
 
-        if self.ppscheduler.state() == State.OFF:
+        if self.scheduler.state() == State.OFF:
             self.out("%s no programs to do" % blue("[scheduler]"))
         else:
             self.wait(abort=False)
 
 def main():
-    print 'Using ppsched'
     cli = ChimeraSched()
     cli.run(sys.argv)
     cli.wait()
