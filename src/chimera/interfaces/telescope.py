@@ -68,7 +68,7 @@ class TelescopeSlew (Telescope):
                   "min_altitude"        : 20} 
 
     def slewToObject (self, name):
-        """Slew the scope to the the coordinates of the given
+        """Slew the scope to the coordinates of the given
         object. Object name will be converted to a coordinate using a
         resolver like SIMBAD or NED.
 
