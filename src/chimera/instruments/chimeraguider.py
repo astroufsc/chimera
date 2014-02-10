@@ -1,28 +1,36 @@
 import threading
-import time
 import os
-import datetime as dt
+
+import numpy as np
+
+try:
+    from astropy.io import fits
+except:
+    import pyfits as fits
 
 from chimera.core.chimeraobject import ChimeraObject
+from chimera.core.lock import lock
 from chimera.core.event import event
-from chimera.core.managerlocator import ManagerLocator
+
+from chimera.interfaces.guider import Guider
+
+from chimera.instruments.telescope import TelescopeBase
+from chimera.instruments.filterwheel import FilterWheelBase
+
+from chimera.util.filenamesequence import FilenameSequence
 
 
-class CameraGuider(ChimeraObject):
-    __config__ = {"telescope": "/Telescope/0",
-                  "camera": "/Camera/0",
-                  "filterwheel": "/FilterWheel/0",
-                  "tolra": 0.0166666666667,
-                  "toldec": 0.0166666666667,
-                  "exptime": 10.0,
-                  "filter": "V",
-                  "max_trials": 5}
-
+class ChimeraGuider(Guider):
     def __init__(self):
-
         ChimeraObject.__init__(self)
 
-    # Where is my telescope?
+    def __start__(self):
+        """
+        Initialization stuff for the guider:
+
+        """
+        pass
+
     def getTelescope(self):
         """
         Get the telescope we are guiding either from the __config__
@@ -42,14 +50,35 @@ class CameraGuider(ChimeraObject):
         [('S', 1.2), ('E', 0.4)]
         Constraints:
         - At most 2 elements in the list;
-        - Cannot have opposing cardinals: N-S, or E-W.
+        - Cannot have opposing cardinals: N-S, or E-W, in the same list.
+        Hint: use the SlewRate.GUIDE Enum
         """
         pass
 
-    def getCorrections(self):
+    def getCorrections(self, img):
         """
-        Here goes the meat, the meddle, the mothership...
-
+        We implement a SIMPLE, lightweight, guiding technique; for the purpose of
+        keeping the scope aligned with the target, we don't need astrometry, photometry,
+        nor field ID and WCS. We only need a clear point source of photons...
         """
-        pass
+        # Assume the data is in the primary header unit.
+        # NOTE: need to hook an event here to know when the image is updated.
 
+        gdrarray = fits.getdata(img)
+        bg = np.nanmean(img)
+
+        # Get the brightest candidate guiding source.
+
+        trans = np.array(
+            [[i, np.argmax(self.gdrarray[i]), np.nanmax(gdrarray[i])] for i in range(0, gdrarray.shape[1])],
+            dtype='float32')
+
+        # Coords and value of the highest pixel value
+        ctr = trans[np.argmax(trans[0:1023, 2])]
+
+        # Finally, the guiding box is:
+        gbox = gdarray[ctr[0] - 5:ctr[0] + 5, ctr[1] - 5:ctr[1] + 5]
+
+        n = fits.PrimaryHDU(gbox)
+        nunits = fits.HDUList(n)
+        nunits.writeto(os.path.join(self['gdrimagesdir'], "box.fits"))

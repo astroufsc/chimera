@@ -42,7 +42,7 @@ class Telescope (Interface):
     Telescope base interface.
     """
 
-    __config__ = {"device": "/dev/ttyS0",
+    __config__ = {"device"          : "/dev/ttyS0",
                   "model"           : "Fake Telescopes Inc.",
                   "optics"          : ["Newtonian", "SCT", "RCT"],
                   "mount"           : "Mount type Inc.",
@@ -328,7 +328,7 @@ class TelescopePark (Telescope):
     def park(self):
         """Park the telescope on the actual saved park position
         (L{setParkPosition}) or on the default position if none
-        setted.
+        set.
 
         When parked, the telescope will not track objects and may be
         turned off (if the scope was able to).
@@ -370,13 +370,13 @@ class TelescopePark (Telescope):
 
     @event
     def parkComplete(self):
-        """Indicates that the scope has parked successfuly.
+        """Indicates that the scope has parked successfully.
         """
 
     @event
     def unparkComplete (self):
         """Indicates that the scope has unparked (waked up)
-        successfuly.
+        successfully.
         """
 
 class TelescopeTracking (Telescope):
