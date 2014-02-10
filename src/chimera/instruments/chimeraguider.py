@@ -20,7 +20,7 @@ from chimera.instruments.filterwheel import FilterWheelBase
 from chimera.util.filenamesequence import FilenameSequence
 
 
-class ChimeraGuider(Guider):
+class ChimeraGuider(ChimeraObject, Guider):
     def __init__(self):
         ChimeraObject.__init__(self)
 
@@ -82,3 +82,4 @@ class ChimeraGuider(Guider):
         n = fits.PrimaryHDU(gbox)
         nunits = fits.HDUList(n)
         nunits.writeto(os.path.join(self['gdrimagesdir'], "box.fits"))
+
