@@ -24,12 +24,12 @@ class ChimeraGuider(ChimeraObject, Guider):
     def __init__(self):
         ChimeraObject.__init__(self)
 
-    def __start__(self):
-        """
-        Initialization stuff for the guider:
-
-        """
-        pass
+    # def __start__(self):
+    #     """
+    #     Initialization stuff for the guider:
+    #
+    #     """
+    #     pass
 
     def getTelescope(self):
         """
@@ -37,7 +37,7 @@ class ChimeraGuider(ChimeraObject, Guider):
         or from the running Manager, if needed. The latter should
         take precedence if different from the former (possible?).
         """
-        pass
+        mytel = self.getManager().getProxy(self["telescope"])
 
 
     def correctTelPos(self, pos):
@@ -64,25 +64,26 @@ class ChimeraGuider(ChimeraObject, Guider):
         # Assume the data is in the primary header unit.
         # NOTE: need to hook an event here to know when the image is updated.
 
-        gdrarray = fits.getdata(img)
-        bg = np.nanmean(img)
+        gdr_array = fits.getdata(img)
+        bg = np.nanmean(gdr_array)
 
         # Get the brightest candidate guiding source.
 
         trans = np.array(
-            [[i, np.argmax(self.gdrarray[i]), np.nanmax(gdrarray[i])] for i in range(0, gdrarray.shape[1])],
+            [[i, np.argmax(gdr_array[i]), np.nanmax(gdr_array[i])] for i in range(0, gdr_array.shape[1])],
             dtype='float32')
 
         # Coords and value of the highest pixel value
         ctr = trans[np.argmax(trans[0:1023, 2])]
 
         # Finally, the guiding box is:
-        gbox = gdarray[ctr[0] - 5:ctr[0] + 5, ctr[1] - 5:ctr[1] + 5]
+        gbox = gdr_array[ctr[0] - 5:ctr[0] + 5, ctr[1] - 5:ctr[1] + 5]
 
-        if self['savegdrimages']:
-            n = fits.PrimaryHDU(gbox)
-            nunits = fits.HDUList(n)
-            nunits.writeto(os.path.join(self['gdrimagesdir'], "box.fits"))
+        # if self['gdrsaveimages']:
+        #     n = fits.PrimaryHDU(gbox)
+        #     hunits = fits.HDUList(n)
+        #     hunits.writeto(os.path.join(self['gdrimagesdir'], "box.fits"))
 
+        # Start the guiding!
 
 

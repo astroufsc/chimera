@@ -18,7 +18,7 @@ class Guider(Interface):
                   "camera"          : "/Camera/0",
                   "guidercamera"    : "/Moravian/guiding",
                   "filterwheel"     : "/FilterWheel/0",
-                  "savegdrimages"   : False,
+                  "gdrsaveimages"   : False,
                   "gdrimagesdir"    : "~/images",
                   "exptime"         : 1.0,
                   "filter"          : "V",
