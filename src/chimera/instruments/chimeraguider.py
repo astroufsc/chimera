@@ -42,7 +42,7 @@ class ChimeraGuider(ChimeraObject, Guider):
 
     def correctTelPos(self, pos):
         """
-        Send direction and distance (in arcseconds?) to the telescope
+        Send direction and distance (in arcseconds or pixels?) to the telescope
         for correction, if the guiding algorithm does not deliver them
         directly (hence this method might prove unnecessary, except for
         decoupling).
@@ -79,7 +79,10 @@ class ChimeraGuider(ChimeraObject, Guider):
         # Finally, the guiding box is:
         gbox = gdarray[ctr[0] - 5:ctr[0] + 5, ctr[1] - 5:ctr[1] + 5]
 
-        n = fits.PrimaryHDU(gbox)
-        nunits = fits.HDUList(n)
-        nunits.writeto(os.path.join(self['gdrimagesdir'], "box.fits"))
+        if self['savegdrimages']:
+            n = fits.PrimaryHDU(gbox)
+            nunits = fits.HDUList(n)
+            nunits.writeto(os.path.join(self['gdrimagesdir'], "box.fits"))
+
+
 
