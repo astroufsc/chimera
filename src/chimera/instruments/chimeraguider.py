@@ -87,7 +87,7 @@ class ChimeraGuider(ChimeraObject, Guider):
         # All tuples present in both sets are the centers of potential gdr boxes.
 
 
-        # Finally, the guiding box is:
+        # Finally, the guiding boxes are:
         gboxes = box_h.intersection(box_v)
 
         # if self['gdrsaveimages']:
