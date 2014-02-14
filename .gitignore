@@ -43,3 +43,5 @@ src/chimera/controllers/scheduler
 
 # IDEs aux files
 .idea
+
+src/chimera/instruments/snippets

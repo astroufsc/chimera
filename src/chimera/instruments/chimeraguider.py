@@ -65,19 +65,30 @@ class ChimeraGuider(ChimeraObject, Guider):
         # NOTE: need to hook an event here to know when the image is updated.
 
         gdr_array = fits.getdata(img)
-        bg = np.nanmean(gdr_array)
 
-        # Get the brightest candidate guiding source.
+        boxmin = np.nanvar(gdr_array)
+        boxmax = np.nanmax(gdr_array)
+        box_h = set()
+        box_v = set()
 
-        trans = np.array(
-            [[i, np.argmax(gdr_array[i]), np.nanmax(gdr_array[i])] for i in range(0, gdr_array.shape[1])],
-            dtype='float32')
+        # Get the brightest candidates for guiding sources.
+        for i in range(0, np.shape(gdr_array)[0]):
+            if (1.5 * boxmin < np.nanmax(gdr_array[i, :]) <= boxmax):
+                box_h.add((i, np.nanargmax(gdr_array[i, :])))
+            else:
+                continue
 
-        # Coords and value of the highest pixel value
-        ctr = trans[np.argmax(trans[0:1023, 2])]
+        for i in range(0, np.shape(gdr_array)[0]):
+            if (boxmin < np.nanmax(gdr_array[:,i]) <= boxmax):
+                box_v.add((np.nanargmax(gdr_array[:,i]), i))
+            else:
+                continue
+
+        # All tuples present in both sets are the centers of potential gdr boxes.
+
 
         # Finally, the guiding box is:
-        gbox = gdr_array[ctr[0] - 5:ctr[0] + 5, ctr[1] - 5:ctr[1] + 5]
+        gboxes = box_h.intersection(box_v)
 
         # if self['gdrsaveimages']:
         #     n = fits.PrimaryHDU(gbox)
