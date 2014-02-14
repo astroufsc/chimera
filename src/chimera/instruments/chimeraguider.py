@@ -67,7 +67,7 @@ class ChimeraGuider(ChimeraObject, Guider):
         gdr_array = fits.getdata(img)
 
         boxmin = np.nanvar(gdr_array)
-        boxmax = np.nanmmax(gdr_array)
+        boxmax = np.nanmax(gdr_array)
         box_h = set()
         box_v = set()
 
