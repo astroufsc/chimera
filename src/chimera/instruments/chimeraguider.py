@@ -95,6 +95,5 @@ class ChimeraGuider(ChimeraObject, Guider):
         #     hunits = fits.HDUList(n)
         #     hunits.writeto(os.path.join(self['gdrimagesdir'], "box.fits"))
 
-        # Start the guiding!
 
 
