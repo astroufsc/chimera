@@ -9,6 +9,7 @@ except:
     import pyfits as fits
 
 from chimera.core.chimeraobject import ChimeraObject
+from chimera.core.manager import ManagerAdapter
 from chimera.core.lock import lock
 from chimera.core.event import event
 
@@ -37,7 +38,7 @@ class ChimeraGuider(ChimeraObject, Guider):
         or from the running Manager, if needed. The latter should
         take precedence if different from the former (possible?).
         """
-        mytel = self.getManager().getProxy(self["telescope"])
+        return self.getManager().getProxy(self["telescope"])
 
 
     def correctTelPos(self, pos):
@@ -55,7 +56,7 @@ class ChimeraGuider(ChimeraObject, Guider):
         """
         pass
 
-    def getCorrections(self, img):
+    def getGdrBoxes(self, img):
         """
         We implement a SIMPLE, lightweight, guiding technique; for the purpose of
         keeping the scope aligned with the target, we don't need astrometry, photometry,
@@ -79,22 +80,22 @@ class ChimeraGuider(ChimeraObject, Guider):
                 continue
 
         for i in range(0, np.shape(gdr_array)[0]):
-            if (boxmin < np.nanmax(gdr_array[:,i]) <= boxmax):
-                box_v.add((np.nanargmax(gdr_array[:,i]), i))
+            if (boxmin < np.nanmax(gdr_array[:, i]) <= boxmax):
+                box_v.add((np.nanargmax(gdr_array[:, i]), i))
             else:
                 continue
 
         # All tuples present in both sets are the centers of potential gdr boxes.
 
 
-        # Finally, the guiding box is:
+        # Finally, the guiding boxes are:
         gboxes = box_h.intersection(box_v)
+        return gboxes
 
-        # if self['gdrsaveimages']:
+        # if self['gdr_saveimages']:
         #     n = fits.PrimaryHDU(gbox)
         #     hunits = fits.HDUList(n)
         #     hunits.writeto(os.path.join(self['gdrimagesdir'], "box.fits"))
 
-        # Start the guiding!
 
 
