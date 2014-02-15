@@ -20,7 +20,7 @@ from chimera.instruments.filterwheel import FilterWheelBase
 
 from chimera.util.filenamesequence import FilenameSequence
 
-__all__  = ['ChimerGuider']
+__all__  = ['ChimeraGuider']
 
 
 class ChimeraGuider(ChimeraObject, Guider):
