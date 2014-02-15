@@ -20,8 +20,6 @@ from chimera.instruments.filterwheel import FilterWheelBase
 
 from chimera.util.filenamesequence import FilenameSequence
 
-__all__  = ['ChimeraGuider']
-
 
 class ChimeraGuider(ChimeraObject, Guider):
     def __init__(self):
