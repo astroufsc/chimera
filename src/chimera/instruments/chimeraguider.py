@@ -9,10 +9,7 @@ except:
     import pyfits as fits
 
 from chimera.core.chimeraobject import ChimeraObject
-from chimera.core.manager import ManagerAdapter
-from chimera.core.lock import lock
-from chimera.core.event import event
-
+from chimera.core.exceptions import ObjectNotFoundException
 from chimera.interfaces.guider import Guider
 
 from chimera.instruments.telescope import TelescopeBase
@@ -34,27 +31,20 @@ class ChimeraGuider(ChimeraObject, Guider):
 
     def getTelescope(self):
         """
-        Get the telescope we are guiding either from the __config__
+        Get the telescope proxy we are guiding either from the __config__
         or from the running Manager, if needed. The latter should
         take precedence if different from the former (possible?).
         """
-        return self.getManager().getProxy(self["telescope"])
+        # Turns out dome.py has exactly what I need... Shameless copy!
+        try:
+            p = self.getManager().getProxy(self['telescope'], lazy=True)
+            if not p.ping():
+                return False
+            else:
+                return p
+        except ObjectNotFoundException:
+            return False
 
-
-    def correctTelPos(self, pos):
-        """
-        Send direction and distance (in arcseconds or pixels?) to the telescope
-        for correction, if the guiding algorithm does not deliver them
-        directly (hence this method might prove unnecessary, except for
-        decoupling).
-        @param pos: list of tuples (dir, dist); e.g.:
-        [('S', 1.2), ('E', 0.4)]
-        Constraints:
-        - At most 2 elements in the list;
-        - Cannot have opposing cardinals: N-S, or E-W, in the same list.
-        Hint: use the SlewRate.GUIDE Enum
-        """
-        pass
 
     def getGdrBoxes(self, img):
         """
@@ -96,6 +86,21 @@ class ChimeraGuider(ChimeraObject, Guider):
         #     n = fits.PrimaryHDU(gbox)
         #     hunits = fits.HDUList(n)
         #     hunits.writeto(os.path.join(self['gdrimagesdir'], "box.fits"))
+
+    def correctTelPos(self, pos):
+        """
+        Send direction and distance (in arcseconds or pixels?) to the telescope
+        for correction, if the guiding algorithm does not deliver them
+        directly (hence this method might prove unnecessary, except for
+        decoupling).
+        @param pos: list of tuples (dir, dist); e.g.:
+        [('S', 1.2), ('E', 0.4)]
+        Constraints:
+        - At most 2 elements in the list;
+        - Cannot have opposing cardinals: N-S, or E-W, in the same list.
+        Hint: use the SlewRate.GUIDE Enum
+        """
+        pass
 
 
 
