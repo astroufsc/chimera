@@ -61,6 +61,7 @@ class ChimeraGuider(ChimeraObject, Guider):
         boxmax = np.nanmax(gdr_array)
         box_h = set()
         box_v = set()
+        gboxes = list()
 
         # Get the brightest candidates for guiding sources.
         for i in range(0, np.shape(gdr_array)[0]):
@@ -76,10 +77,16 @@ class ChimeraGuider(ChimeraObject, Guider):
                 continue
 
         # All tuples present in both sets are the centers of potential gdr boxes.
+        #TODO: check for objects too close to any border.
 
 
-        # Finally, the guiding boxes are:
-        gboxes = box_h.intersection(box_v)
+        # Finally, the guiding centers are:
+        gcenters = box_h.intersection(box_v)
+        lgcenters = list(gcenters)
+        for i in range(0, len(lgcenters)):
+            gboxes.append([(lgcenters[0][0] - 5,lgcenters[0][0] + 5), (lgcenters[0][1] - 5, lgcenters[0][1] + 5),
+                  (lgcenters[1][0] - 5, lgcenters[1][0] + 5), (lgcenters[1][1] - 5, lgcenters[1][1] +5)])
+
         return gboxes
 
         # if self['gdr_saveimages']:
