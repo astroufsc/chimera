@@ -12,11 +12,7 @@ from chimera.core.chimeraobject import ChimeraObject
 from chimera.core.exceptions import ObjectNotFoundException
 from chimera.interfaces.guider import Guider
 
-from chimera.instruments.telescope import TelescopeBase
 from chimera.instruments.filterwheel import FilterWheelBase
-
-from chimera.util.filenamesequence import FilenameSequence
-
 
 class ChimeraGuider(ChimeraObject, Guider):
     def __init__(self):
@@ -64,6 +60,7 @@ class ChimeraGuider(ChimeraObject, Guider):
         gboxes = list()
 
         # Get the brightest candidates for guiding sources.
+        # TODO: reimplement all this with grids, surely more efficient...
         for i in range(0, np.shape(gdr_array)[0]):
             if (1.5 * boxmin < np.nanmax(gdr_array[i, :]) <= boxmax):
                 box_h.add((i, np.nanargmax(gdr_array[i, :])))
@@ -79,7 +76,6 @@ class ChimeraGuider(ChimeraObject, Guider):
         # All tuples present in both sets are the centers of potential gdr boxes.
         #TODO: check for objects too close to any border.
 
-
         # Finally, the guiding centers are:
         gcenters = box_h.intersection(box_v)
         lgcenters = list(gcenters)
@@ -87,12 +83,29 @@ class ChimeraGuider(ChimeraObject, Guider):
             gboxes.append([(lgcenters[0][0] - 5,lgcenters[0][0] + 5), (lgcenters[0][1] - 5, lgcenters[0][1] + 5),
                   (lgcenters[1][0] - 5, lgcenters[1][0] + 5), (lgcenters[1][1] - 5, lgcenters[1][1] +5)])
 
-        return gboxes
 
         # if self['gdr_saveimages']:
         #     n = fits.PrimaryHDU(gbox)
         #     hunits = fits.HDUList(n)
         #     hunits.writeto(os.path.join(self['gdrimagesdir'], "box.fits"))
+
+        return gboxes
+
+    def com(self, gf):
+        """
+        Get a guiding image ( of size gboxes); calculate the centroid, compare to
+        reference (where it's at?) and return offsets (where are NESW!?)
+        @param gf:
+        """
+        ps = fits.getdata(gf)
+        n = np.sum(ps)
+
+        #"Grid logic" (ha!) courtesy of scipy.ndimage.measurements.center_of_mass
+        grids = np.ogrid[[slice(0, i) for i in ps.shape]]
+
+        ctrd = [np.sum(ps*grids[dir]) / n for dir in range(2)]
+
+        return ctrd
 
     def correctTelPos(self, pos):
         """
