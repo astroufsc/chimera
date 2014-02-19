@@ -2,6 +2,7 @@ import threading
 import os
 
 import numpy as np
+from chimera.core.event import event
 
 try:
     from astropy.io import fits
@@ -110,8 +111,8 @@ class ChimeraGuider(ChimeraObject, Guider):
         ctrd = [np.sum(ps*grids[dir]) / n for dir in range(ps.ndim)]
 
         return ctrd
-
-    def correctTelPos(self, pos):
+    @event
+    def startGuider(self, pos):
         """
         Send direction and distance (in arcseconds or pixels?) to the telescope
         for correction, if the guiding algorithm does not deliver them
