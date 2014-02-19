@@ -47,6 +47,8 @@ class ChimeraGuider(ChimeraObject, Guider):
         We implement a SIMPLE, lightweight, guiding technique; for the purpose of
         keeping the scope aligned with the target, we don't need astrometry, photometry,
         nor field ID and WCS. We only need a clear point source of photons...
+        @param img: image as sent by the current camera in use as guider.
+        @rtype : list of tuples holding the coordinates of the guiding box(es).
         """
         # Assume the data is in the primary header unit.
         # NOTE: need to hook an event here to know when the image is updated.
@@ -67,7 +69,7 @@ class ChimeraGuider(ChimeraObject, Guider):
             else:
                 continue
 
-        for i in range(0, np.shape(gdr_array)[0]):
+        for i in range(0, np.shape(gdr_array)[1]):
             if (boxmin < np.nanmax(gdr_array[:, i]) <= boxmax):
                 box_v.add((np.nanargmax(gdr_array[:, i]), i))
             else:
@@ -79,9 +81,10 @@ class ChimeraGuider(ChimeraObject, Guider):
         # Finally, the guiding centers are:
         gcenters = box_h.intersection(box_v)
         lgcenters = list(gcenters)
-        for i in range(0, len(lgcenters)):
-            gboxes.append([(lgcenters[0][0] - 5,lgcenters[0][0] + 5), (lgcenters[0][1] - 5, lgcenters[0][1] + 5),
-                  (lgcenters[1][0] - 5, lgcenters[1][0] + 5), (lgcenters[1][1] - 5, lgcenters[1][1] +5)])
+
+        for b in lgcenters:
+            print b; raw_input()
+            gboxes.append([(b[0] - 5, b[0] + 5), (b[1] - 5, b[1] + 5)])
 
 
         # if self['gdr_saveimages']:
@@ -95,7 +98,8 @@ class ChimeraGuider(ChimeraObject, Guider):
         """
         Get a guiding image ( of size gboxes); calculate the centroid, compare to
         reference (where it's at?) and return offsets (where are NESW!?)
-        @param gf:
+        @param gf: guiding box as fits image.
+        @rtype : list with centroid coordinates (pixels).
         """
         ps = fits.getdata(gf)
         n = np.sum(ps)
@@ -103,7 +107,7 @@ class ChimeraGuider(ChimeraObject, Guider):
         #"Grid logic" (ha!) courtesy of scipy.ndimage.measurements.center_of_mass
         grids = np.ogrid[[slice(0, i) for i in ps.shape]]
 
-        ctrd = [np.sum(ps*grids[dir]) / n for dir in range(2)]
+        ctrd = [np.sum(ps*grids[dir]) / n for dir in range(ps.ndim)]
 
         return ctrd
 
