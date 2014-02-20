@@ -1,6 +1,4 @@
 from chimera.core.interface  import Interface
-from chimera.core.event      import event
-from chimera.core.exceptions import ChimeraException
 
 from chimera.util.enum import Enum
 
@@ -16,7 +14,7 @@ class Guider(Interface):
     # guidercamera: the actual hardware guider we'll be driving.
     __config__ = {"telescope"       : "/Telescope/0",       # Telescope this guider will drive
                   "camera"          : "/Camera/0",          # Main imaging camera
-                  "guidercamera"    : "/Moravian/guiding",  # Guider camera (might be one and the same)
+                  "guidercamera"    : "/ChimeraGuider/0",   # Guider camera (might be one and the same)
                   "gdr_filterwheel" : "/FilterWheel/0",     # As name suggests, if present
                   "gdr_focuser"     : "/Focuser/focuser0",  # Guider focusing mechanism
                   "gdr_saveimages"  : False,                # Save gdr frames into fits files (MEF?)
