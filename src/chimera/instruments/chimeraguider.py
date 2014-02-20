@@ -1,5 +1,5 @@
 import threading
-import os
+import sys
 
 import numpy as np
 from chimera.core.event import event
@@ -15,44 +15,45 @@ from chimera.interfaces.guider import Guider
 
 from chimera.instruments.filterwheel import FilterWheelBase
 
+import logging
+
 class ChimeraGuider(ChimeraObject, Guider):
     def __init__(self):
         ChimeraObject.__init__(self)
 
-    # def __start__(self):
-    #     """
-    #     Initialization stuff for the guider:
-    #
-    #     """
-    #     pass
+    def __start__(self):
+        """
+        Initialization stuff for the guider:
 
-    def getTelescope(self):
         """
-        Get the telescope proxy we are guiding either from the __config__
-        or from the running Manager, if needed. The latter should
-        take precedence if different from the former (possible?).
-        """
+        self.gboxes = list()
+
         # Turns out dome.py has exactly what I need... Shameless copy!
         try:
-            p = self.getManager().getProxy(self['telescope'], lazy=True)
-            if not p.ping():
-                return False
-            else:
-                return p
-        except ObjectNotFoundException:
-            return False
+            t = self.getManager().getProxy(self['telescope'])
+        except:
+            self.log.exception('Cannot contact telescope instance.')
+            return
 
+        if not t.ping():
+            self.log.exception('Telescope not responding! Unable to guide.')
+            return
+
+        try:
+            c = self.getManager().getProxy(self['guidercamera'])
+        except:
+            self.log.exception('Guider camera not found! Unable to guide.')
+            return
+
+        if not c.ping():
+            self.log.exception('Guider camera not responding! Unable to guide')
+            return
 
     def getGdrBoxes(self, img):
         """
-        We implement a SIMPLE, lightweight, guiding technique; for the purpose of
-        keeping the scope aligned with the target, we don't need astrometry, photometry,
-        nor field ID and WCS. We only need a clear point source of photons...
-        @param img: image as sent by the current camera in use as guider.
-        @rtype : list of tuples holding the coordinates of the guiding box(es).
+        Simple, unsophisticated, but (hopefully) fast guiding system
         """
         # Assume the data is in the primary header unit.
-        # NOTE: need to hook an event here to know when the image is updated.
 
         gdr_array = fits.getdata(img)
 
@@ -60,7 +61,6 @@ class ChimeraGuider(ChimeraObject, Guider):
         boxmax = np.nanmax(gdr_array)
         box_h = set()
         box_v = set()
-        gboxes = list()
 
         # Get the brightest candidates for guiding sources.
         # TODO: reimplement all this with grids, surely more efficient...
@@ -85,7 +85,7 @@ class ChimeraGuider(ChimeraObject, Guider):
 
         for b in lgcenters:
             print b; raw_input()
-            gboxes.append([(b[0] - 5, b[0] + 5), (b[1] - 5, b[1] + 5)])
+            self.gboxes.append([(b[0] - 5, b[0] + 5), (b[1] - 5, b[1] + 5)])
 
 
         # if self['gdr_saveimages']:
@@ -93,7 +93,6 @@ class ChimeraGuider(ChimeraObject, Guider):
         #     hunits = fits.HDUList(n)
         #     hunits.writeto(os.path.join(self['gdrimagesdir'], "box.fits"))
 
-        return gboxes
 
     def com(self, gf):
         """
@@ -111,20 +110,12 @@ class ChimeraGuider(ChimeraObject, Guider):
         ctrd = [np.sum(ps*grids[dir]) / n for dir in range(ps.ndim)]
 
         return ctrd
+
     @event
     def startGuider(self, pos):
         """
-        Send direction and distance (in arcseconds or pixels?) to the telescope
-        for correction, if the guiding algorithm does not deliver them
-        directly (hence this method might prove unnecessary, except for
-        decoupling).
-        @param pos: list of tuples (dir, dist); e.g.:
-        [('S', 1.2), ('E', 0.4)]
-        Constraints:
-        - At most 2 elements in the list;
-        - Cannot have opposing cardinals: N-S, or E-W, in the same list.
-        Hint: use the SlewRate.GUIDE Enum
         """
+        #Tip: use telescope.moveOffset(ra,dec).
         pass
 
 
