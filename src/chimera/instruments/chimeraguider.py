@@ -1,6 +1,3 @@
-import threading
-import sys
-
 import numpy as np
 from chimera.core.event import event
 
@@ -16,7 +13,9 @@ from chimera.interfaces.guider import Guider
 
 from chimera.instruments.filterwheel import FilterWheelBase
 
+#import chimera.core.log
 import logging
+
 log = logging.getLogger(__name__)
 
 class ChimeraGuider(ChimeraObject, Guider):
@@ -34,38 +33,50 @@ class ChimeraGuider(ChimeraObject, Guider):
         self.centroids = list()
 
         # Turns out dome.py has exactly what I need... Shameless copy!
-        try:
-            t = self.getManager().getProxy(self['telescope'])
-        except:
-            self.log.exception('Cannot contact telescope instance.')
-            return
+        # try:
+        #     t = self.getManager().getProxy(self['telescope'])
+        # except:
+        #     self.log.exception('Cannot contact telescope instance.')
+        #     return
+        #
+        # if not t.ping():
+        #     log.exception('Telescope not responding! Unable to guide.')
+        #     return
+        #
+        # try:
+        #     gcam = self.getManager().getProxy(self['guidercamera'])
+        # except:
+        #     log.exception('Guider camera not found! Unable to guide.')
+        #     return
+        #
+        # if not gcam.ping():
+        #     log.exception('Guider camera not responding! Unable to guide')
+        #     return
+        #
+        # try:
+        #     mcam = self.getManager().getProxy(self['camera'])
+        # except:
+        #     log.exception('Main camera not found! Unable to guide.')
+        #     return
+        #
+        # if not gcam.ping():
+        #     log.exception('Main camera not responding! Unable to guide')
+        #     return
+        #
+        for ci in (('t', 'telescope'), ('gc', 'guidercamera'), ('mc', 'camera')):
+            try:
+                ci[0] = self.getManager().getProxy(self[ci[1]])
+                log.info(u'{0:s} contacted'.format(ci[1]))
+            except:
+                log.exception(u'Cannot contact {0:s} instance'.format(ci[1]))
+                return
+            else:
+                if not ci[0].ping():
+                    log.exception(u'{0:s} not responding!'.format(ci[1]))
+                    return
 
-        if not t.ping():
-            log.exception('Telescope not responding! Unable to guide.')
-            return
-
-        try:
-            gcam = self.getManager().getProxy(self['guidercamera'])
-        except:
-            log.exception('Guider camera not found! Unable to guide.')
-            return
-
-        if not gcam.ping():
-            log.exception('Guider camera not responding! Unable to guide')
-            return
-
-        try:
-            mcam = self.getManager().getProxy(self['camera'])
-        except:
-            log.exception('Main camera not found! Unable to guide.')
-            return
-
-        if not gcam.ping():
-            log.exception('Main camera not responding! Unable to guide')
-            return
-
-        mcam.exposeBegin += self.exposeBegin
-        mcam.exposeEnd += self.exposeEnd
+        mc.exposeBegin += self.exposeBegin
+        mc.exposeEnd += self.exposeEnd
 
     def getGdrBoxes(self, img):
         """
