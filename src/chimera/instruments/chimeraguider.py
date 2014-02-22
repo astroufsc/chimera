@@ -11,13 +11,16 @@ except:
 
 from chimera.core.chimeraobject import ChimeraObject
 from chimera.core.exceptions import ObjectNotFoundException
+
 from chimera.interfaces.guider import Guider
 
 from chimera.instruments.filterwheel import FilterWheelBase
 
 import logging
+log = logging.getLogger(__name__)
 
 class ChimeraGuider(ChimeraObject, Guider):
+
     def __init__(self):
         ChimeraObject.__init__(self)
 
@@ -27,6 +30,8 @@ class ChimeraGuider(ChimeraObject, Guider):
 
         """
         self.gboxes = list()
+        self.gimages = list()
+        self.centroids = list()
 
         # Turns out dome.py has exactly what I need... Shameless copy!
         try:
@@ -36,27 +41,38 @@ class ChimeraGuider(ChimeraObject, Guider):
             return
 
         if not t.ping():
-            self.log.exception('Telescope not responding! Unable to guide.')
+            log.exception('Telescope not responding! Unable to guide.')
             return
 
         try:
-            c = self.getManager().getProxy(self['guidercamera'])
+            gcam = self.getManager().getProxy(self['guidercamera'])
         except:
-            self.log.exception('Guider camera not found! Unable to guide.')
+            log.exception('Guider camera not found! Unable to guide.')
             return
 
-        if not c.ping():
-            self.log.exception('Guider camera not responding! Unable to guide')
+        if not gcam.ping():
+            log.exception('Guider camera not responding! Unable to guide')
             return
+
+        try:
+            mcam = self.getManager().getProxy(self['camera'])
+        except:
+            log.exception('Main camera not found! Unable to guide.')
+            return
+
+        if not gcam.ping():
+            log.exception('Main camera not responding! Unable to guide')
+            return
+
+        mcam.exposeBegin += self.exposeBegin
+        mcam.exposeEnd += self.exposeEnd
 
     def getGdrBoxes(self, img):
         """
         Simple, unsophisticated, but (hopefully) fast guiding system
         """
         # Assume the data is in the primary header unit.
-
         gdr_array = fits.getdata(img)
-
         boxmin = np.nanvar(gdr_array)
         boxmax = np.nanmax(gdr_array)
         box_h = set()
@@ -84,39 +100,43 @@ class ChimeraGuider(ChimeraObject, Guider):
         lgcenters = list(gcenters)
 
         for b in lgcenters:
-            print b; raw_input()
+            # Store coords of all compliant guiding boxes.
             self.gboxes.append([(b[0] - 5, b[0] + 5), (b[1] - 5, b[1] + 5)])
+            # ...and also store the corresponding image sections, until we know
+            # how the cameras will deliver guider images.
+            self.gimages.append(gdr_array[b[0] - 5:b[0] + 5, b[1] - 5:b[1] + 5])
 
-
-        # if self['gdr_saveimages']:
-        #     n = fits.PrimaryHDU(gbox)
-        #     hunits = fits.HDUList(n)
-        #     hunits.writeto(os.path.join(self['gdrimagesdir'], "box.fits"))
-
-
-    def com(self, gf):
+    def getCOM(self, gf):
         """
         Get a guiding image ( of size gboxes); calculate the centroid, compare to
         reference (where it's at?) and return offsets (where are NESW!?)
         @param gf: guiding box as fits image.
         @rtype : list with centroid coordinates (pixels).
         """
-        ps = fits.getdata(gf)
+        #ps = fits.getdata(gf)
+        ps = gf
         n = np.sum(ps)
 
-        #"Grid logic" (ha!) courtesy of scipy.ndimage.measurements.center_of_mass
+        # "Grid logic" (ha!) courtesy of scipy.ndimage.measurements.center_of_mass
         grids = np.ogrid[[slice(0, i) for i in ps.shape]]
 
-        ctrd = [np.sum(ps*grids[dir]) / n for dir in range(ps.ndim)]
+        self.centroids.append([np.sum(ps*grids[dir]) / n for dir in range(ps.ndim)])
 
-        return ctrd
+    # @event
+    # def startGuider(self, fld):
+    #     """
+    #     """
+    #     #Tip: use telescope.moveOffset(ra,dec).
+    #     # First pass?
+    #     if not len(self.gboxes):
+    #         self.getGdrBoxes(fld)
+    #         # Use the brightest box
+    #         self.getCOM(self.gimages[0])
+    #     # 2nd and on
+    #     while not self.stopped:
+    #
 
-    @event
-    def startGuider(self, pos):
-        """
-        """
-        #Tip: use telescope.moveOffset(ra,dec).
-        pass
+
 
 
 
