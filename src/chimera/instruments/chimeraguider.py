@@ -34,8 +34,8 @@ class ChimeraGuider(ChimeraObject, Guider):
 
         try:
             t, gc, mc = (self.getManager().getProxy(self[x]) for x in ['telescope','guidercamera','camera'])
-        except ObjectNotFoundException:
-            print('Component not found')
+        except ObjectNotFoundException, e:
+            self.log.debug('%s Component not found' % e)
             #print('%s' % sys.exc_info()[1])
             # TODO: better exit strategy
             return
