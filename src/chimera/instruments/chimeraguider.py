@@ -32,18 +32,6 @@ class ChimeraGuider(ChimeraObject, Guider):
         self.gimages = list()
         self.centroids = list()
 
-        # for ci in ('telescope', 'guidercamera', 'camera'):
-        #     try:
-        #         ci[0] = self.getManager().getProxy(self[ci])
-        #         self.log.info(u'{0:s} contacted'.format(ci))
-        #     except:
-        #         self.log.exception(u'Cannot contact {0:s} instance'.format(ci))
-        #         return
-        #     else:
-        #         if not ci[0].ping():
-        #             self.log.exception(u'{0:s} not responding!'.format(ci))
-        #             return
-
         try:
             t, gc, mc = (self.getManager().getProxy(self[x]) for x in ['telescope','guidercamera','camera'])
         except ObjectNotFoundException:
