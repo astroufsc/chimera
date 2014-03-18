@@ -1,5 +1,7 @@
 import sys
-from chimera.core.event import event
+#import logging
+
+import numpy as np
 
 try:
     from astropy.io import fits
@@ -12,11 +14,6 @@ from chimera.core.exceptions import ObjectNotFoundException
 from chimera.interfaces.guider import Guider
 
 from chimera.instruments.filterwheel import FilterWheelBase
-
-#import chimera.core.log
-# import logging
-#
-# log = logging.getLogger(__name__)
 
 class ChimeraGuider(ChimeraObject, Guider):
 
@@ -34,14 +31,14 @@ class ChimeraGuider(ChimeraObject, Guider):
 
         try:
             t, gc, mc = (self.getManager().getProxy(self[x]) for x in ['telescope','guidercamera','camera'])
-        except ObjectNotFoundException:
-            print('Component not found')
-            #print('%s' % sys.exc_info()[1])
+        except ObjectNotFoundException, e:
+            self.log.debug('%s Component not found' % e)
+            print('%s' % sys.exc_info()[1])
             # TODO: better exit strategy
             return
         else:
             if not (x.ping for x in [t,gc,mc]):
-                print('Component not responding')
+                self.log.info('Component not responding')
                 return
 
         mc.exposeBegin += self.exposeBegin
@@ -101,20 +98,6 @@ class ChimeraGuider(ChimeraObject, Guider):
         grids = np.ogrid[[slice(0, i) for i in ps.shape]]
 
         self.centroids.append([np.sum(ps*grids[dir]) / n for dir in range(ps.ndim)])
-
-    # @event
-    # def startGuider(self, fld):
-    #     """
-    #     """
-    #     #Tip: use telescope.moveOffset(ra,dec).
-    #     # First pass?
-    #     if not len(self.gboxes):
-    #         self.getGdrBoxes(fld)
-    #         # Use the brightest box
-    #         self.getCOM(self.gimages[0])
-    #     # 2nd and on
-    #     while not self.stopped:
-    #
 
     def exposeBegin(self):
         pass
