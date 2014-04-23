@@ -1,6 +1,6 @@
 # ONLY SCRATCH AT THE MOMENT!!!
 import socket, struct
-import xml.etree.ElementTree as etree
+import xml.etree.ElementTree as et
 
 
 class AVTDrv(object):
@@ -35,19 +35,22 @@ class AVTDrv(object):
         return
 
 
-top = etree.parse('somexmlfile')
-tree = top.getroot()
 
 
-def stripRoot(t, el):
-    return el.tag.lstrip(t.tag + '}')
+    def GvcpGetRegisters(self,dfile):
+        """
+        Parse camera xml description file, get registers for supported
+        features.
+        @return: a dict with
+        """
+        top = et.parse(dfile)
+        tree = top.getroot()
 
 
-for c in list(tree):
-    if 'Category' in stripRoot(tree, c) and c.attrib['Name'] == 'ImageFormatControl':
-        print [t.text for t in c.getchildren()]
 
-for c in list(tree):
-    if 'Category' in stripRoot(tree, c):
-        print [t.text for t in c.getchildren()]
 
+
+# def stripRoot(t, el):
+#     return el.tag.lstrip(t.tag + '}')
+#
+#
