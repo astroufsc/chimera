@@ -9,6 +9,8 @@ si_pkt_cmd_hdr = si_pkt_base + '2H'
 si_pkt_data_hdr = si_pkt_base + 'iHi'
 si_pkt_img_hdr = si_pkt_base + 'i4H3iI'
 
+BUFFER = 4096
+# Future idea: at module load time, define a namedtuple subclass for each data structure?
 
 class SIDrv(object):
     def __init__(self):
@@ -45,6 +47,44 @@ class SIDrv(object):
 
         # Here goes the unavoidable XML parsing routine...Argh!
 
+    def _cmdPkt(self, svcmd):
+        """
+        Sends a command packet to the camera server, checks for
+        integrity of the ack response
+        @return: a tuple of:
+            - number of bytes in the packet;
+            - packet id;
+            - camera id (1 if sole camera);
+            - flag
+        """
+        # Build the cmd packet
+        cmd = struct.pack(si_pkt_cmd_hdr, 10, 128, 0, svcmd, 0)
+        # Send it away!
+        self.sk.send(cmd)
+        # Get the ack. back
+        try:
+            resp = self.sk.recv(struct.calcsize(si_pkt_cmd_ack))
+        except socket.error, e:
+            print(e)
+        else:
+            nbytes, pkid, camid, flg = struct.unpack(si_pkt_cmd_ack, resp)
+
+        return nbytes, pkid, camid, flg
+
+    def _dataPacket(self, pktfmt):
+        """
+        Retrieves the data packet from the socket, unpack it via associated format
+        and populates results
+        @param pktfmt: struct format for the corresponding data structure
+        @return: unpacked tuple
+        """
+        dp = self.sk.recv(BUFFER)
+        fmt = si_pkt_data_hdr + pktfmt
+        print fmt
+        resp = struct.unpack(fmt, dp)
+
+        return resp
+
     #
     # Server Commands
     #
@@ -66,7 +106,7 @@ class SIDrv(object):
         print 'Ack: ', nbytes, pkid, camid, flg
 
         # Get this much data in a buffer
-        cp = self.sk.recv(4096)
+        cp = self.sk.recv(BUFFER)
         cps = struct.calcsize(si_pkt_data_hdr) - len(cp)
         fmt = si_pkt_data_hdr + repr(cps) + 's'
         print fmt
@@ -75,23 +115,28 @@ class SIDrv(object):
         return pl, pid, cid, err, dt, nb, ln
 
     def getSGLIISettings(self):
-        """
+        # """
+        #
+        # @return:
+        # """
+        # cmd = struct.pack(si_pkt_cmd_hdr, 10, 128, 0, self.cmds['GetSGLSettings'], 0)
+        # self.sk.send(cmd)
+        # fmt_size = struct.calcsize(si_pkt_cmd_ack)
+        # nbytes, pkid, camid, flg = struct.unpack(si_pkt_cmd_ack, self.sk.recv(fmt_size))
+        # print('Ack:', nbytes, pkid, camid, flg)
+        #
+        # # Get this much data in a buffer
+        # cp = self.sk.recv(BUFFER)
+        #
+        # fmt = si_pkt_data_hdr + 'I2B2I2H6i'
+        # pl, pid, cid, err, dt, nb, exp, nrd, rm, an, fr, am, at, so, sl, sb, po, pl, pb = struct.unpack(fmt, cp)
+        #
+        # return pl, pid, cid, err, dt, nb, exp, nrd, rm, an, fr, am, at, so, sl, sb, po, pl, pb
+        ans = self._cmdPkt(self.cmds['GetSGLSettings'])
+        print ans
 
-        @return:
-        """
-        cmd = struct.pack(si_pkt_cmd_hdr, 10, 128, 0, self.cmds['GetSGLSettings'], 0)
-        self.sk.send(cmd)
-        fmt_size = struct.calcsize(si_pkt_cmd_ack)
-        nbytes, pkid, camid, flg = struct.unpack(si_pkt_cmd_ack, self.sk.recv(fmt_size))
-        print('Ack:', nbytes, pkid, camid, flg)
-
-        # Get this much data in a buffer
-        cp = self.sk.recv(4096)
-
-        fmt = si_pkt_data_hdr + 'I2B2I2H6i'
-        pl, pid, cid, err, dt, nb, exp, nrd, rm, an, fr, am, at, so, sl, sb, po, pl, pb = struct.unpack(fmt, cp)
-
-        return pl, pid, cid, err, dt, nb, exp, nrd, rm, an, fr, am, at, so, sl, sb, po, pl, pb
+        cdata = self._dataPacket('I2B2I2H6i')
+        return cdata
 
     #
     # Camera Commands; CANNOT DEBUG UNTIL A CAMERA IS ATTACHED!
@@ -115,7 +160,7 @@ class SIDrv(object):
     #     ack = self.sk.recv(struct.calcsize(si_pkt_cmd_ack))
     #     nbytes, pkid, camid, flg = struct.unpack(si_pkt_cmd_ack, ack)
     #
-    #     cp = self.sk.recv(4096)
+    #     cp = self.sk.recv(BUFFER)
     #
     #     cps = struct.calcsize(si_pkt_data_hdr) - len(cp)
     #     fmt = si_pkt_data_hdr + repr(cps) + 's'
