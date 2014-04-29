@@ -47,7 +47,7 @@ class SIDrv(object):
 
         # Here goes the unavoidable XML parsing routine...Argh!
 
-    def _cmdPkt(self, svcmd):
+    def _cmdPacket(self, svrcmd, type=0, psl=0):
         """
         Sends a command packet to the camera server, checks for
         integrity of the ack response
@@ -58,7 +58,7 @@ class SIDrv(object):
             - flag
         """
         # Build the cmd packet
-        cmd = struct.pack(si_pkt_cmd_hdr, 10, 128, 0, svcmd, 0)
+        cmd = struct.pack(si_pkt_cmd_hdr, 10, 128, type, svrcmd, psl)
         # Send it away!
         self.sk.send(cmd)
         # Get the ack. back
@@ -67,9 +67,9 @@ class SIDrv(object):
         except socket.error, e:
             print(e)
         else:
-            nbytes, pkid, camid, flg = struct.unpack(si_pkt_cmd_ack, resp)
+            ack = struct.unpack(si_pkt_cmd_ack, resp)
 
-        return nbytes, pkid, camid, flg
+        return ack
 
     def _dataPacket(self, pktfmt):
         """
@@ -99,49 +99,42 @@ class SIDrv(object):
           +-------------------------------------+
         @return:
         """
-        cmd = struct.pack(si_pkt_cmd_hdr, 10, 128, 0, self.cmds['GetCamPars'], 0)
-        self.sk.send(cmd)
-        fmt_size = struct.calcsize(si_pkt_cmd_ack)
-        nbytes, pkid, camid, flg = struct.unpack(si_pkt_cmd_ack, self.sk.recv(fmt_size))
-        print 'Ack: ', nbytes, pkid, camid, flg
+        ack = self._cmdPacket(self.cmds['GetCamPars'])
+        print ack
 
-        # Get this much data in a buffer
-        cp = self.sk.recv(BUFFER)
-        cps = struct.calcsize(si_pkt_data_hdr) - len(cp)
-        fmt = si_pkt_data_hdr + repr(cps) + 's'
-        print fmt
-        pl, pid, cid, err, dt, nb, ln  = struct.unpack(fmt, cp)
-
-        return pl, pid, cid, err, dt, nb, ln
+        cps = struct.calcsize(si_pkt_data_hdr) - ack[0]
+        print cps
+        cdata = self._dataPacket(repr(cps))
+        return cdata
 
     def getSGLIISettings(self):
         # """
         #
         # @return:
         # """
-        # cmd = struct.pack(si_pkt_cmd_hdr, 10, 128, 0, self.cmds['GetSGLSettings'], 0)
-        # self.sk.send(cmd)
-        # fmt_size = struct.calcsize(si_pkt_cmd_ack)
-        # nbytes, pkid, camid, flg = struct.unpack(si_pkt_cmd_ack, self.sk.recv(fmt_size))
-        # print('Ack:', nbytes, pkid, camid, flg)
-        #
-        # # Get this much data in a buffer
-        # cp = self.sk.recv(BUFFER)
-        #
-        # fmt = si_pkt_data_hdr + 'I2B2I2H6i'
-        # pl, pid, cid, err, dt, nb, exp, nrd, rm, an, fr, am, at, so, sl, sb, po, pl, pb = struct.unpack(fmt, cp)
-        #
-        # return pl, pid, cid, err, dt, nb, exp, nrd, rm, an, fr, am, at, so, sl, sb, po, pl, pb
-        ans = self._cmdPkt(self.cmds['GetSGLSettings'])
-        print ans
+        ack = self._cmdPacket(self.cmds['GetSGLSettings'])
+        print ack
 
         cdata = self._dataPacket('I2B2I2H6i')
+        return cdata
+
+    def getCamXMLFiles(self):
+        """
+
+        @return:
+        """
+        ack = self._cmdPacket(self.cmds['GetXMLFiles'])
+        print ack
+
+        cps = struct.calcsize(si_pkt_data_hdr) - ack[0]
+        print cps
+        cdata = self._dataPacket(repr(cps))
         return cdata
 
     #
     # Camera Commands; CANNOT DEBUG UNTIL A CAMERA IS ATTACHED!
     #
-    # def getStatus(self):
+    def getStatus(self):
     #     """
     #     Camera command;
     #     Retrieves status from the camera:
@@ -153,40 +146,36 @@ class SIDrv(object):
     #
     #     @return:
     #     """
-    #     # pkt format, pkt size, pktid, cmid, cmd, len param
-    #     cmd = struct.pack(si_pkt_cmd_hdr, 10, 128, 1, self.cmds['CamStatus'], 0)
-    #     self.sk.send(cmd)
-    #     # somewhere around here there should be a check for remaining content on the socket buffer...
-    #     ack = self.sk.recv(struct.calcsize(si_pkt_cmd_ack))
-    #     nbytes, pkid, camid, flg = struct.unpack(si_pkt_cmd_ack, ack)
-    #
-    #     cp = self.sk.recv(BUFFER)
-    #
-    #     cps = struct.calcsize(si_pkt_data_hdr) - len(cp)
-    #     fmt = si_pkt_data_hdr + repr(cps) + 's'
-    #     print fmt
-    #     pl, pid, cid, err, dt, nb, ln  = struct.unpack(fmt, cp)
-    #
-    #     return pl, pid, cid, err, dt, nb, ln
+        ack = self._cmdPacket(self.cmds['CamStatus'])
+        print ack
 
-    def getCamXMLFiles(self):
+        cps = struct.calcsize(si_pkt_data_hdr) - ack[0]
+        print cps
+        cdata = self._dataPacket(repr(cps))
+        return cdata
+
+
+    def setAcqMode(self, am):
         """
 
         @return:
         """
-        cmd = struct.pack(si_pkt_cmd_hdr, 10, 128, 0, self.cmds['GetXMLFiles'], 0)
-        self.sk.send(cmd)
-        fmt_size = struct.calcsize(si_pkt_cmd_ack)
-        nbytes, pkid, camid, flg = struct.unpack(si_pkt_cmd_ack, self.sk.recv(fmt_size))
-        print('Ack:', nbytes, pkid, camid, flg)
+        ack = self._cmdPacket(self.cmds['SetAcqMode'], type=1, psl=am)
+        print ack
 
-        # Get this much data in a buffer
-        cp = self.sk.recv(4096)
-        cps = struct.calcsize(si_pkt_data_hdr) - len(cp)
-        fmt = si_pkt_data_hdr + repr(cps) + 's'
-        print fmt
-        pl, pid, cid, err, dt, nb, ln  = struct.unpack(fmt, cp)
+        cdata = self._dataPacket('H')
+        return cdata
 
-        return pl, pid, cid, err, dt, nb, ln
+    def setExpTime(self, time):
+        ack = self._cmdPacket(self.cmds['SetExpTime'], type=1, psl=time) # what is DBL? check this time fmt
+        print ack
 
+        cdata = self._dataPacket('H')
+        return cdata
+
+    def setAckType(self, at):
+        ack = self._cmdPacket(self.cmds['SetAcqType'], type=1, psl=at)
+        print ack
+        cdata = self._dataPacket('H')
+        return cdata
 
