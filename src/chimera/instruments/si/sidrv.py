@@ -35,9 +35,9 @@ class SIDrv(object):
             self.sk = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.sk.settimeout(10)
             self.sk.connect((self.ipaddr, self.port))
-            print('Camera connected at {} on port {}', self.ipaddr,self.port)
+            print 'Camera connected at {%s} on port {%s}', self.ipaddr, self.port
         except socket.error, e:
-            print('Is the Camera connected? {}', e)
+            print('Is the Camera connected?', e)
             return
 
         # try:
@@ -80,7 +80,8 @@ class SIDrv(object):
         """
         dp = self.sk.recv(BUFFER)
         fmt = si_pkt_data_hdr + pktfmt
-        print fmt
+        print 'data fmt:', fmt
+
         resp = struct.unpack(fmt, dp)
 
         return resp
@@ -105,7 +106,7 @@ class SIDrv(object):
         cps = struct.calcsize(si_pkt_data_hdr) - ack[0]
         print cps
         cdata = self._dataPacket(repr(cps))
-        return cdata
+        return 'Params:', cdata
 
     def getSGLIISettings(self):
         # """
@@ -116,7 +117,7 @@ class SIDrv(object):
         print ack
 
         cdata = self._dataPacket('I2B2I2H6i')
-        return cdata
+        return 'Data pkt:', cdata
 
     def getCamXMLFiles(self):
         """
@@ -134,7 +135,7 @@ class SIDrv(object):
     #
     # Camera Commands; CANNOT DEBUG UNTIL A CAMERA IS ATTACHED!
     #
-    def getStatus(self):
+    def getCamStatus(self):
     #     """
     #     Camera command;
     #     Retrieves status from the camera:
@@ -150,8 +151,8 @@ class SIDrv(object):
         print ack
 
         cps = struct.calcsize(si_pkt_data_hdr) - ack[0]
-        print cps
-        cdata = self._dataPacket(repr(cps))
+        print cps, repr(cps)
+        cdata = self._dataPacket(repr(cps)+'s')
         return cdata
 
 
