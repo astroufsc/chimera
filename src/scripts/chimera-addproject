@@ -1,0 +1,405 @@
+#! /usr/bin/env python
+# -*- coding: iso-8859-1 -*-
+
+# chimera - observatory automation system
+# Copyright (C) 2006-2009  P. Henrique Silva <henrique@astro.ufsc.br>
+
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+from chimera.core.cli import ChimeraCLI, action
+from chimera.core.constants import DEFAULT_PROGRAM_DATABASE
+from chimera.core.callback import callback
+from chimera.util.position import Position
+from chimera.util.output import blue, green, red
+
+from chimera.controllers.scheduler.model import (Session, Targets, Program, Projects, Point,BlockPar,BlockConfig,ObsBlock,
+                                                 Expose, PointVerify, AutoFocus)
+
+
+import re
+import sys
+import os
+import shutil
+import time
+import ConfigParser
+import numpy as np
+
+class ChimeraSched (ChimeraCLI):
+
+
+    
+    def __init__ (self):
+        ChimeraCLI.__init__(self, "chimera-addproject", "Scheduler controller", 0.1, port=9010)
+
+        databaseHelp = """Add/modify project information to the database. The task
+use read configuration file to input information for most of the tables. The format is
+
+[tablename]
+columname1 = String Value	# For string values
+columname2 = 0.4			# For float
+columname3 = 1				# For int
+
+The project information contain:
+
+####################################################################################################
+
+Table name: [projects]
+Information: Project information
+Columns:
+	PID :		A unique string identifying the project.
+				For instance SO2014B-123, SPLUS, SPOL, SPLUSPLUS...
+	PI	:		Name of the principal investigator.
+	ABSTRACT:	Abstract of the project.
+	URL	:		URL for the project.
+	PRIORITY:	The execution priority of the project. Lower is higher, so a project with priority
+				0 gets observed earlier than 1, and so on. There may be multiple projects with the
+				same priority.
+
+####################################################################################################
+
+Table name: [obsblock]
+Information:	Observation block definition. Each project must have at least 1 block, may have more 
+				than one. An observaiton block is the smaller unit of observation that is allowed.
+				Larger block with multiple objects observed in multiple filters are dificult to schedule
+				and must be avoided unless really necessary. If you want to observe 2 targets in the same
+				night you should use a single block. But beware that this may create idle time if no other 
+				block can be schedule in between observations and the lag is too large.
+Columns:
+	PID :		A unique string identifying the project.
+
+	MAXAIRMASS		:	Larger airmass (lower altitude) a target can be observed. This is defined as a fraction
+						of minimum airmass. For instance if target minimum airmass is 1.2 and MAXAIRMASS=0.5 Then
+						the target will only be observed if airmass < 1.8 (1.5x the minimum).
+	maxmoonBright	:	Percentage of maximum moon ilumination allowed (100% = fullmoon).
+	minmoonBright	:	Percentage of minimum moon ilumination allowed (0% = no mooon).
+	minmoonDist		:	Minimum moon distance allowed (in degrees).
+	maxseeing		:	Maximum seeing allowed. If no seeing monitor is present the observation may be discarded
+						later during data processing, and the targets gets back to the queue for observing.
+	cloudcover		:	Maximum cloud cover allowed.
+	schedalgorith	:	Type of scheduling algorithm. Some examples are;
+						0 - observe at maximum altitude
+						1 - time series
+						2 - standard star observation (multiple airmasses)
+	applyextcorr	:	Modify exposure time according to sky extiction? Boolean 0 or 1.
+
+####################################################################################################
+
+To input observations blocks and targets a list of 
+
+pid , blockid , objectid , block configuration file 
+
+In general each block will contain only one target. But, blocks with multiple targets are allowed. 
+The format is simply a 4 column ascii file. You can check the pids, blockids, objectids in the database.
+
+Example 1:
+
+SO2014B-123 000 147 config01_147.cfg
+SO2014B-123 000 148 config01_148.cfg
+SO2014B-123 000 149 config01_149.cfg
+SO2014B-123 001 150 config01_150.cfg
+SO2014B-123 001 151 config01_151.cfg
+SO2014B-123 002 148 config02_148.cfg
+
+This will include 6 objects in 3 blocks for project SO2014B-123. Block 0 will have objects 147, 148 
+and 149, Block 1 will have objects 149 and 150 and Block 2 repeats object 148 in a different configuration.
+
+Example 2:
+
+SPLUS 000 000 splus_block.cfg
+SPLUS 001 001 splus_block.cfg
+SPLUS 002 002 splus_block.cfg
+.
+.
+.
+SPLUS  N   N  splus_block.cfg
+
+This will include objects in blocks for project SPLUS. Block 0 will have object 0, Block 1 will have 
+object 1 and so on. All observations are performed with the same configuration. The configuration file
+must have the following format:
+
+[blockconfig]
+	filter = [B,V,R,I]
+	exptime = [80.,80.,60.,40.]
+	nexp = [2,1,1,2]
+        """
+
+        self.addHelpGroup("DB" , databaseHelp)
+
+        self.addParameters(dict(name="filename", long="file", short="f", helpGroup="DB", default="",
+                                help="Filename with program or block information.", metavar="FILENAME"))
+
+        self.addParameters(dict(name="pid", long="pid", helpGroup="DB", default="",
+                                help="Project ID to work.", metavar="pid"))
+
+    @action(long="newProjectsDB", help="Add projects (and related information) to the database.",
+            helpGroup="DB", actionGroup="DB")
+    def newProjectsDB(self,options):
+		
+		'''Input configuration file for project database. If project exists update information, create new project otherwise.
+		'''
+
+		config = ConfigParser.RawConfigParser()
+
+		config.read(options.filename)
+
+		if config.has_section('projects'):
+			pid = config.get('projects', 'pid')
+			pi = config.get('projects', 'pi')
+			abstract = config.get('projects', 'abstract')
+			url = config.get('projects', 'url')
+			priority = config.get('projects', 'priority')
+
+			session = Session()
+			
+			project = session.query(Projects).filter(Projects.pid == pid)
+			if len(project[:]) > 0:
+				project[0].pi = pi
+				project[0].abstract = abstract
+				project[0].url = url
+				project[0].priority = priority
+			else:
+				project = Projects(	pid = pid,
+									pi = pi,
+									abstract = abstract,
+									url = url,
+									priority=priority)
+
+				session.add(project)
+		
+		sct = np.array(config.sections())
+		
+		bp_sct = sct[ np.array([ss.find('blockpar') for ss in sct]) == 0 ]
+
+		if bp_sct > 0:
+		
+			for ss in bp_sct:
+			
+				b_id = config.get(ss,'id')
+				b_pid = config.get(ss,'pid')
+				maxairmass = config.get(ss,'maxairmass')
+				maxmoonBright = config.get(ss,'maxmoonBright')
+				minmoonBright = config.get(ss,'minmoonBright')
+				minmoonDist = config.get(ss,'minmoonDist')
+				maxseeing = config.get(ss,'maxseeing')
+				cloudcover = config.get(ss,'cloudcover')
+				schedalgorith = config.get(ss,'schedalgorith')
+				applyextcorr = config.get(ss,'applyextcorr')
+				
+				block = session.query(BlockPar).filter(BlockPar.bid == b_id).filter(BlockPar.pid == b_pid)
+				if len(block[:]) > 0:
+					block[0].bid = b_id
+					block[0].pid = b_pid
+					block[0].maxairmass = maxairmass
+					block[0].maxmoonBright = maxmoonBright
+					block[0].minmoonBright = minmoonBright
+					block[0].minmoonDist = minmoonDist
+					block[0].maxseeing = maxseeing
+					block[0].cloudcover = cloudcover
+					block[0].schedalgorith = schedalgorith
+					block[0].applyextcorr = applyextcorr
+				else:
+					block = BlockPar(	bid = b_id,
+										pid = b_pid,
+										maxairmass = maxairmass,
+										maxmoonBright = maxmoonBright,
+										minmoonBright = minmoonBright,
+										minmoonDist = minmoonDist,
+										maxseeing = maxseeing,
+										cloudcover = cloudcover,
+										schedalgorith = schedalgorith,
+										applyextcorr = applyextcorr)
+					session.add(block)
+
+		session.commit()
+
+    @action(long="cleanProjectDB", help="Delete all projects (and related information) from the database.",
+            helpGroup="DB", actionGroup="DB")
+    def cleanProjectDB(self,options):
+		# save a copy
+		if os.path.exists(DEFAULT_PROGRAM_DATABASE):
+			shutil.copy(DEFAULT_PROGRAM_DATABASE, "%s.%s.bak" % (DEFAULT_PROGRAM_DATABASE, time.strftime("%Y%m%d%H%M%S")))
+
+		# delete all projects and related information
+		session = Session()
+
+		blockconfig = session.query(BlockConfig).all()
+		for block in blockconfig:
+			session.delete(block)
+
+		blocktargets = session.query(BlockPar).all()
+		for block in blocktargets:
+			session.delete(block)
+
+		obsblock = session.query(ObsBlock).all()
+		for block in obsblock:
+			session.delete(block)
+
+		projects = session.query(Projects).all()
+		for project in projects:
+			session.delete(project)
+
+		session.commit()
+
+    @action(long="cleanBlocks", help="Delete all blocks (and related information) for a specific project.",
+            helpGroup="DB", actionGroup="DB")
+    def cleanBlockDB(self,options):
+        # save a copy
+        if os.path.exists(DEFAULT_PROGRAM_DATABASE):
+            shutil.copy(DEFAULT_PROGRAM_DATABASE, "%s.%s.bak" % (DEFAULT_PROGRAM_DATABASE, time.strftime("%Y%m%d%H%M%S")))
+
+        # delete all projects and related information
+        session = Session()
+
+        obsblock = session.query(ObsBlock).filter(ObsBlock.pid == options.pid)
+        for block in obsblock:
+			session.delete(block)
+
+        blocktargets = session.query(BlockPar).all()
+			
+        for targets in blocktargets:
+			session.delete(targets)
+
+        blockconfig = session.query(BlockConfig).all()
+        for bcfg in blockconfig:
+			session.delete(bcfg)
+
+
+
+        session.commit()
+
+        
+    @action(long="newTargetsDB", help="Generate a new targets database from a text file (excluding all programs already in database)",
+            helpGroup="DB", actionGroup="DB")
+    def newTargetsDatabase(self, options):
+
+        # save a copy
+        if os.path.exists(DEFAULT_PROGRAM_DATABASE):
+            shutil.copy(DEFAULT_PROGRAM_DATABASE, "%s.%s.bak" % (DEFAULT_PROGRAM_DATABASE, time.strftime("%Y%m%d%H%M%S")))
+
+        # delete all programs
+        session = Session()
+        targets = session.query(Targets).all()
+        for target in targets:
+            session.delete(target)
+        programs = session.query(Program).all()
+        for program in programs:
+            session.delete(program)
+        session.commit()
+
+        self.generateTargetsDatabase(options)
+
+    @action(long="addTargetsDB", help="Add new targets to database from a text file (excluding all programs already in database)",
+            helpGroup="DB", actionGroup="DB")
+    def addTargetsDatabase(self, options):
+
+        # save a copy
+        if os.path.exists(DEFAULT_PROGRAM_DATABASE):
+            shutil.copy(DEFAULT_PROGRAM_DATABASE, "%s.%s.bak" % (DEFAULT_PROGRAM_DATABASE, time.strftime("%Y%m%d%H%M%S")))
+
+        self.generateTargetsDatabase(options)
+
+    @action(long="addObsBlock", help="Add new observations blocks.",
+            helpGroup="DB", actionGroup="DB")
+    def addObsBlock(self, options):
+
+		session = Session()
+		
+		blockList = np.loadtxt(options.filename,dtype='S')
+		
+		for block in blockList:
+
+			config = ConfigParser.RawConfigParser()
+
+			config.read(block[3])
+													
+			filters = config.get('blockconfig','filter').split(',')
+			exptime = config.get('blockconfig','exptime').split(',')
+			nexp = config.get('blockconfig','nexp').split(',')
+
+			addblock = session.query(ObsBlock).filter(ObsBlock.objid == block[2]).filter(ObsBlock.blockid == block[1]).filter(ObsBlock.pid == block[0])
+			if len(addblock[:]) > 0:
+				print 'Modifing block: ',addblock[0].id
+				blockcnf = session.query(BlockConfig).filter(BlockConfig.bid == block[1])
+				for bb in blockcnf:
+					session.delete(bb)
+				for i in range(len(filters)):
+					blockcnf = BlockConfig( bid = block[1],
+											filter=filters[i],
+											exptime=exptime[i],
+											nexp=nexp[i])
+					session.add(blockcnf)
+					
+			else:
+				print 'Adding block: ',block
+				addblock = ObsBlock(objid = block[2],
+									blockid = block[1],
+									pid = block[0])
+				session.add(addblock)
+				for i in range(len(filters)):
+					blockcnf = BlockConfig( bid = block[1],
+											filter=filters[i],
+											exptime=exptime[i],
+											nexp=nexp[i])
+					session.add(blockcnf)
+
+			session.commit()
+			#blockcnf = session.query(BlockConfig).filter(BlockConfig.bid == block[1])
+	
+		return 0
+		
+    def generateTargetsDatabase(self,options):
+        
+        #import numpy as np
+
+        targets = np.loadtxt(options.filename,dtype = 'S',delimiter=',',unpack=True)
+
+        session = Session()
+
+        for i in range(len(targets[0])):
+            p = None
+            try:
+                p = Position.fromRaDec(str(targets[2][i]),str(targets[3][i]))
+            except ValueError:
+                self.out('Object %s has invalid coordinates (%s,%s). Skipping'%(targets[1][i],targets[2][i],targets[3][i]))
+                pass
+            except:
+                raise
+
+            if p:
+                                
+                target = Targets(objname=targets[1][i],
+                                 type=targets[0][i],
+                                 targetRa=p.ra.H,
+                                 targetDec=p.dec.D)
+                if len(targets) > 4:
+                    target.targetEpoch = float(targets[4][i])
+                if len(targets) > 5:
+                    target.targetMag = float(targets[5][i])
+                if len(targets) > 6:
+                    target.magFilter = float(targets[6][i])
+
+                self.out('Adding %s...'%(targets[1][i]))
+                session.add(target)
+                session.commit()
+
+
+def main():
+    cli = ChimeraSched()
+    cli.run(sys.argv)
+    cli.wait()
+    
+if __name__ == '__main__':
+
+    main()

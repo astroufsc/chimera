@@ -26,7 +26,7 @@ from chimera.util.output import blue, green, red
 
 from chimera.controllers.scheduler.status import SchedulerStatus
 from chimera.controllers.scheduler.states import State
-#from chimera.controllers.scheduler.tao import TAO
+from chimera.controllers.scheduler.tao import TAO
 from chimera.controllers.scheduler.model import (Session, Targets, Program, Point,
                                                  Expose, PointVerify, AutoFocus)
 
