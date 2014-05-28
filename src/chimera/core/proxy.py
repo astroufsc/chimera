@@ -64,9 +64,6 @@ class Proxy (Pyro.core.DynamicProxy):
             return 0
 
     def __getattr__ (self, attr):
-        if attr == "__getinitargs__":
-            raise AttributeError()
-            
         return ProxyMethod(self, attr)
 
     def __iadd__ (self, configDict):
