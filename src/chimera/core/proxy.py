@@ -63,6 +63,9 @@ class Proxy (Pyro.core.DynamicProxy):
         except Pyro.errors.ProtocolError, e:
             return 0
 
+    def __getnewargs__(self):
+        return tuple()
+
     def __getattr__ (self, attr):
         return ProxyMethod(self, attr)
 
