@@ -216,8 +216,19 @@ class Position (object):
                  system=System.CELESTIAL):
 
         self._coords = coords
-        self.system = str(system).lower()
+        self.system = System.fromStr(str(system).upper())
         self.epoch = Epoch.fromStr(str(epoch).upper())
+
+    #
+    # serialization
+    #
+    def __getstate__(self):
+      return {"_coords": self._coords, "system": str(self.system), "epoch": str(self.epoch)}
+
+    def __setstate__(self, state):
+      self._coords = state["_coords"]
+      self.system = System.fromStr(state["system"])
+      self.epoch = Epoch.fromStr(state["epoch"])
 
     def __str__(self):
         """

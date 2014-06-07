@@ -67,7 +67,7 @@ class ChimeraSched (ChimeraCLI):
         self.addHelpGroup("RUN" , "Start/Stop/Info")
 
         self.addParameters(dict(name="filename", long="file", short="f", helpGroup="DB", default="",
-                                help="Filename of the input database.", metavar="FILENAME"))
+                                help="Filename of the input database or .SCH file for TAO.", metavar="FILENAME"))
         self.addParameters(dict(name="shootfile", long="shootfile", short="s", helpGroup="DB", default="",
                                 help="Filename of the TAO shoot file.", metavar="SHHOTFILE",))
 
@@ -225,7 +225,7 @@ class ChimeraSched (ChimeraCLI):
 
             if params.get("coord", None):
                 position  = Position.fromRaDec(params['ra'], params['dec'], params['epoch'])
-
+            
             imagetype = params['imagetype'].upper()
             objname   = params['objname'].replace("\"", "")
 

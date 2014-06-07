@@ -87,7 +87,7 @@ class TPL2(object):
         self.received_objects={}
         self.echo=echo
         self.debug=debug
-        self.sleep=0.5
+        self.sleep=0.01
         self.events=[]
         
 
@@ -178,7 +178,7 @@ class TPL2(object):
             self.commands_sent[id]['allstatus'].append(d['status'])
             self.commands_sent[id]['ok']=(d['status']=='OK')
                     
-        s=re.search('(?P<id>\d+)\s+(?P<data>DATA INLINE) (?P<object>\S+.*?)=(?P<value>\S+.*?)\r?\n?',buf)
+        s=re.search('(?P<id>\d+)\s+(?P<data>DATA INLINE) (?P<object>\S+.*?)=(?P<value>[\S \d]+.*?)\r?\n?',buf)
         if s:
             id=int(s.group('id'))
             self.commands_sent[id]['data']=True

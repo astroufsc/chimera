@@ -18,6 +18,11 @@ develop-eggs
 lib
 lib64
 
+# eclipse files
+.settings
+.project
+.pydevproject
+
 # Installer logs
 pip-log.txt
 
@@ -40,8 +45,9 @@ doc.pdf
 
 #scheduler link
 src/chimera/controllers/scheduler
-
-# IDEs aux files
-.idea
+<<<<<<< HEAD
 
 src/chimera/instruments/snippets
+=======
+.idea
+>>>>>>> e06102a78c8f80ec3e892404bd93c04cafcb868e

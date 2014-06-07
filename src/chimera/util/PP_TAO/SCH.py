@@ -114,6 +114,7 @@ class SCH(object):
             s=re.search(expr,l)
             if s:
                 g=s.groupdict()
+                g['Filter'] = g['Filter'].split('(')[1].split(')')[0].replace(' ','').upper()
                 buffer.append(g)
             else:
                 if not re.search('\n',l):
@@ -146,10 +147,10 @@ class SCH(object):
     def ParseShootFile(self):
         import re
         fpexpr=self.fpexpr
-        expr='\s+(?P<ra>'+fpexpr+')\s+(?P<dec>'+fpexpr+')\s+(?P<object>\S+.*\S+)\s+(?P<user>\S{3})\s+\
+        expr='(?P<ra>'+fpexpr+')\s+(?P<dec>'+fpexpr+')\s+(?P<object>\S+.*\S+)\s+(?P<user>\S{3})\s+\
 (?P<idle>'+fpexpr+')\s+(?P<exp>'+fpexpr+')\s+(?P<filter>\d+)\s+(?P<slewstart>'+fpexpr+')\s+\
-(?P<dra>'+fpexpr+')\s+(?P<ddec>'+fpexpr+')\s+(?P<reqid>\S+)\s+(?P<fitsfile>\S+)'
-        print 'Parsing schedule shoot file ('+self.shootfile+')...',
+(?P<dra>'+fpexpr+')\s+(?P<ddec>'+fpexpr+')\s+(?P<fitsfile>\S+)'
+        print '-- Parsing schedule shoot file ('+self.shootfile+')...',
         i=0
         for l in self.shootlines:
             if i == self.nobs:
@@ -159,8 +160,9 @@ class SCH(object):
                 g=s.groupdict()
                 for key in g:
                     self.schedule[i][key]=g[key]
+
                 i+=1
-        print 'Done'
+        print '**Done'
             
             
             

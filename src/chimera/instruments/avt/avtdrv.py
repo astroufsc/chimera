@@ -20,7 +20,7 @@ class AVTDrv(object):
         #Singleton!?
         pass
 
-    def GvcpDiscover(self):
+    def GvcpDiscover(self, timeout=None):
         """
         Open socket, enable broadcasting, shout for available gigevision cameras,
         see who responds.
@@ -28,6 +28,7 @@ class AVTDrv(object):
         """
         self.sk = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.sk.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+        self.sk.settimeout(timeout)
 
         self.sk.connect((self.ipaddr, self.port))
         self.sk.sendall(self.disc_cmd)

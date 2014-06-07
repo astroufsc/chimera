@@ -3,7 +3,7 @@ import socket
 
 
 # These data pack defs are taken from the camera's documentation, as of 2014
-si_pkt_base = '>IBB'
+si_pkt_base = '>I2B'
 si_pkt_cmd_ack = si_pkt_base + 'H'
 si_pkt_cmd_hdr = si_pkt_base + '2H'
 si_pkt_data_hdr = si_pkt_base + 'iHi'

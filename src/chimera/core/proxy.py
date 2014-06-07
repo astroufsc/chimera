@@ -63,11 +63,14 @@ class Proxy (Pyro.core.DynamicProxy):
         except Pyro.errors.ProtocolError, e:
             return 0
 
+    def __getnewargs__(self):
+        return tuple()
+
     def __getattr__ (self, attr):
-        if attr == "__getinitargs__":
-            raise AttributeError()
-            
         return ProxyMethod(self, attr)
+
+    def __getitem__ (self, item):
+        return ProxyMethod(self, "__getitem__")(item)
 
     def __iadd__ (self, configDict):
         ProxyMethod(self, "__iadd__")(configDict)
