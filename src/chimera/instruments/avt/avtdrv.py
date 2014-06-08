@@ -1,57 +1,75 @@
-# ONLY SCRATCH AT THE MOMENT!!!
-import socket, struct
-import xml.etree.ElementTree as et
+import time
+from pymba import *
 
-
-class AVTDrv(object):
-    ipaddr = '<broadcast>'
-    port = 3956
-    gvcp_hdr_fmt = '>8B'
-    disc_cmd = struct.pack(gvcp_hdr_fmt, 0x42, 0x01, 0x00, 0x02, 0x00, 0x00, 0x00, 0x01)
-    bye_cmd = struct.pack(gvcp_hdr_fmt, 0x42, 0x01, 0x00, 0x04, 0x00, 0x00, 0x00, 0x01)
-    pkt_resend_cmd = struct.pack(gvcp_hdr_fmt, 0x42, 0x01, 0x00, 0x40, 0x00, 0x00, 0x00, 0x01)
-    reg_read_cmd = struct.pack(gvcp_hdr_fmt, 0x42, 0x01, 0x00, 0x80, 0x00, 0x00, 0x00, 0x01)
-    reg_write_cmd = struct.pack(gvcp_hdr_fmt, 0x42, 0x01, 0x00, 0x82, 0x00, 0x00, 0x00, 0x01)
-    mem_read_cmd = struct.pack(gvcp_hdr_fmt, 0x42, 0x01, 0x00, 0x84, 0x00, 0x00, 0x00, 0x01)
-    mem_write_cmd = struct.pack(gvcp_hdr_fmt, 0x42, 0x01, 0x00, 0x86, 0x00, 0x00, 0x00, 0x01)
-
-
+class LittleRedThingy(object):
     def __init__(self):
-        #Singleton!?
-        pass
+        # start Vimba
+        self.vimba = Vimba()
+        self.vimba.startup()
+        # get system object
+        self.system = self.vimba.getSystem()
 
-    def GvcpDiscover(self, timeout=None):
-        """
-        Open socket, enable broadcasting, shout for available gigevision cameras,
-        see who responds.
-        @return: response, address tuple
-        """
-        self.sk = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.sk.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-        self.sk.settimeout(timeout)
+    def list_cameras(self):
+        # list available cameras (after enabling discovery for GigE cameras)
+        if self.system.GeVTLIsPresent:
+            self.system.runFeatureCommand("GeVDiscoveryAllOnce")
+            time.sleep(0.2)
+        self.cameraIds = self.vimba.getCameraIds()
+        for cId in self.cameraIds:
+            print 'Camera ID:', cId
 
-        self.sk.connect((self.ipaddr, self.port))
-        self.sk.sendall(self.disc_cmd)
-        self.resp, self.addr = self.sk.recvfrom(1024)
-        return
+    def get_camfeatures(self):
+        # get and open a camera
+        self.camera0 = self.vimba.getCamera(cameraIds[0])
+        self.camera0.openCamera()
 
+        # list camera features
+        cameraFeatureNames = self.camera0.getFeatureNames()
+        for name in cameraFeatureNames:
+            print 'Camera feature:', name
 
+    def set_camfeature(self):
+        # get the value of a feature
+        print self.camera0.AcquisitionMode
 
+        # set the value of a feature
+        self.camera0.AcquisitionMode = 'SingleFrame'
 
-    def GvcpGetRegisters(self,dfile):
-        """
-        Parse camera xml description file, get registers for supported
-        features.
-        @return: a dict with
-        """
-        top = et.parse(dfile)
-        tree = top.getroot()
+    def get_frames(self):
+        # create new frames for the camera
+        frame0 = camera0.getFrame()    # creates a frame
+        frame1 = camera0.getFrame()    # creates a second frame
 
+        # announce frame
+        frame0.announceFrame()
 
+        # capture a camera image
+        camera0.startCapture()
+        frame0.queueFrameCapture()
+        camera0.runFeatureCommand('AcquisitionStart')
+        camera0.runFeatureCommand('AcquisitionStop')
+        frame0.waitFrameCapture()
 
+        # get image data...
+        imgData = frame0.getBufferByteData()
+        return imgdata
 
+        # ...or use NumPy for fast image display (for use with OpenCV, etc)
+        #import numpy as np
+        #moreUsefulImgData = np.ndarray(buffer = frame0.getBufferByteData(),
+        #                               dtype = np.uint8,
+        #                               shape = (frame0.height,
+        #                                        frame0.width,
+        #                                        1))
 
-# def stripRoot(t, el):
-#     return el.tag.lstrip(t.tag + '}')
-#
-#
+        # clean up after capture
+        self.camera0.endCapture()
+        self.camera0.revokeAllFrames()
+
+        # close camera
+        self.camera0.closeCamera()
+
+    def shutdown(self):
+        # shutdown Vimba
+        self.vimba.shutdown()
+
