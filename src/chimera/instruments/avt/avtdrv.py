@@ -35,41 +35,40 @@ class LittleRedThingy(object):
         # set the value of a feature
         self.camera0.AcquisitionMode = 'SingleFrame'
 
-    def get_frames(self):
+    def get_frames(self, mode='raw'):
         # create new frames for the camera
-        frame0 = camera0.getFrame()    # creates a frame
-        frame1 = camera0.getFrame()    # creates a second frame
+        frame0 = self.cam0.getFrame()    # creates a frame
+        frame1 = self.cam0.getFrame()    # creates a second frame
 
         # announce frame
         frame0.announceFrame()
 
         # capture a camera image
-        camera0.startCapture()
+        self.cam0.startCapture()
         frame0.queueFrameCapture()
-        camera0.runFeatureCommand('AcquisitionStart')
-        camera0.runFeatureCommand('AcquisitionStop')
+        self.cam0.runFeatureCommand('AcquisitionStart')
+        self.cam0.runFeatureCommand('AcquisitionStop')
         frame0.waitFrameCapture()
 
         # get image data...
-        imgData = frame0.getBufferByteData()
+        if mode == 'raw':
+            imgdata = frame0.getBufferByteData()
+        else:
+            imgdata = np.ndarray(buffer = frame0.getBufferByteData(),
+                                          dtype = np.uint8,
+                                          shape = (frame0.height,
+                                                   frame0.width,
+                                                   1))
+
         return imgdata
 
-        # ...or use NumPy for fast image display (for use with OpenCV, etc)
-        #import numpy as np
-        #moreUsefulImgData = np.ndarray(buffer = frame0.getBufferByteData(),
-        #                               dtype = np.uint8,
-        #                               shape = (frame0.height,
-        #                                        frame0.width,
-        #                                        1))
-
+    def close_and_shutdown(self):
         # clean up after capture
-        self.camera0.endCapture()
-        self.camera0.revokeAllFrames()
+        self.cam0.endCapture()
+        self.cam0.revokeAllFrames()
 
         # close camera
-        self.camera0.closeCamera()
-
-    def shutdown(self):
+        self.cam0.closeCamera()
         # shutdown Vimba
-        self.vimba.shutdown()
+        self.vmb.shutdown()
 
