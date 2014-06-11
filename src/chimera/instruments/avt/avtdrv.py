@@ -1,10 +1,15 @@
 import time
-from pymba import *
+import pymba as pb
+import numpy as np
+
+# NOTE: for production, it'd be better if this is just a module w/functions,
+# not a class. Genicam states only one instance of the "system" per camera
+# is allowed.
 
 class LittleRedThingy(object):
     def __init__(self):
         # start Vimba
-        self.vimba = Vimba()
+        self.vimba = pb.Vimba()
         self.vimba.startup()
         # get system object
         self.system = self.vimba.getSystem()
