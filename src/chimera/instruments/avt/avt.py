@@ -8,6 +8,7 @@ from chimera.interfaces.camera import (Camera,
                                        ReadoutMode)
 from chimera.core.event import event
 from chimera.core.exceptions import NotImplementedException
+import avtdrvmod
 
 
 class AVTGigE(Camera, ReadoutMode, CameraExpose, CameraTemperature, CameraInformation):

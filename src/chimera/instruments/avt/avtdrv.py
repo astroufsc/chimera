@@ -42,8 +42,8 @@ class LittleRedThingy(object):
 
     def get_frames(self, mode='raw'):
         # create new frames for the camera
-        frame0 = self.cam0.getFrame()    # creates a frame
-        frame1 = self.cam0.getFrame()    # creates a second frame
+        frame0 = self.cam0.getFrame()  # creates a frame
+        frame1 = self.cam0.getFrame()  # creates a second frame
 
         # announce frame
         frame0.announceFrame()
@@ -59,11 +59,11 @@ class LittleRedThingy(object):
         if mode == 'raw':
             imgdata = frame0.getBufferByteData()
         else:
-            imgdata = np.ndarray(buffer = frame0.getBufferByteData(),
-                                          dtype = np.uint8,
-                                          shape = (frame0.height,
-                                                   frame0.width,
-                                                   1))
+            imgdata = np.ndarray(buffer=frame0.getBufferByteData(),
+                                 dtype=np.uint8,
+                                 shape=(frame0.height,
+                                        frame0.width,
+                                        1))
 
         return imgdata
 

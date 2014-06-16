@@ -1,3 +1,8 @@
+"""
+The module implementation is a poor man's attempt at a singleton
+pattern; at least we know no other camera driver can run within
+this interpreter w/o a Vimba error.
+"""
 import time
 import pymba as pb
 import numpy as np
