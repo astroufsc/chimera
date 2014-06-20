@@ -1,7 +1,9 @@
 import time
 from pymba import *
 
+
 class LittleRedThingy(object):
+
     def __init__(self):
         # start Vimba
         self.vimba = Vimba()
@@ -54,11 +56,11 @@ class LittleRedThingy(object):
         if mode == 'raw':
             imgdata = frame0.getBufferByteData()
         else:
-            imgdata = np.ndarray(buffer = frame0.getBufferByteData(),
-                                          dtype = np.uint8,
-                                          shape = (frame0.height,
-                                                   frame0.width,
-                                                   1))
+            imgdata = np.ndarray(buffer=frame0.getBufferByteData(),
+                                 dtype=np.uint8,
+                                 shape=(frame0.height,
+                                        frame0.width,
+                                        1))
 
         return imgdata
 
@@ -71,4 +73,3 @@ class LittleRedThingy(object):
         self.cam0.closeCamera()
         # shutdown Vimba
         self.vmb.shutdown()
-
