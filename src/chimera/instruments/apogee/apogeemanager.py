@@ -7,6 +7,7 @@ libc = cdll.LoadLibrary('libapogee_chimera.so')
 
 
 class ApogeeManager(object):
+
     def __init__(self):
         # ApogeeAltaManager* NewApogeeAltaManager(char* image_name, double time_exposure,
         # 	int shutter, int xbin, int ybin, int xstart, int xend, int ystart, int yend)
@@ -18,7 +19,8 @@ class ApogeeManager(object):
         # xstart - Region of interest - Image subregion in the format startx,starty,endx,endy
         # xend - Region of interest - Image subregion in the format startx,starty,endx,endy
         # ystart - Region of interest - Image subregion in the format startx,starty,endx,endy
-        # yend - Region of interest - Image subregion in the format startx,starty,endx,endy
+        # yend - Region of interest - Image subregion in the format
+        # startx,starty,endx,endy
 
         self.obj = libc.NewApogeeAltaManager(1, 1, 0, 0, 0, 0)
         print "ApogeeManager - initalized"
@@ -27,7 +29,8 @@ class ApogeeManager(object):
         libc.setUp(self.obj)
 
     def expose(self, filename, expose_time, shutter):
-        libc.expose(self.obj, c.c_char_p(filename), c.c_double(expose_time), c.c_int(shutter))
+        libc.expose(self.obj, c.c_char_p(filename),
+                    c.c_double(expose_time), c.c_int(shutter))
 
     def stop(self):
         libc.stop(self.obj)
@@ -51,4 +54,4 @@ class ApogeeManager(object):
         return libc.startFan(self.obj)
 
     def stopFan(self):
-        return libc.stopFan(self.obj)        
+        return libc.stopFan(self.obj)

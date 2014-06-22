@@ -2,7 +2,7 @@
 # -*- coding: iso-8859-1 -*-
 
 # chimera - observatory automation system
-# Copyright (C) 2006-2007  
+# Copyright (C) 2006-2007
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -16,44 +16,46 @@
 
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301, USA.
 
-import time
+# import time
 import datetime as dt
-import random
-import urllib
-import os
-import shutil
-import ctypes
+# import random
+# import urllib
+# import os
+# import shutil
+# import ctypes
 
 import numpy as N
 import pyfits
 
 from chimera.instruments.apogee.apogeemanager import ApogeeManager
-from chimera.interfaces.camera import (CCD, CameraFeature, Shutter, ReadoutMode, CameraStatus)
+from chimera.interfaces.camera import (
+    CCD, CameraFeature, Shutter, ReadoutMode, CameraStatus)
 
 from chimera.util.image import Image, ImageUtil, WCSNotFoundException
 
-from chimera.instruments.camera      import CameraBase
+from chimera.instruments.camera import CameraBase
 from chimera.instruments.filterwheel import FilterWheelBase, InvalidFilterPositionException
 
-from chimera.core.lock       import lock
+from chimera.core.lock import lock
 
-class APOGEE(CameraBase, FilterWheelBase): 
 
-    #  por mais que nao utilize esse __config__ mas parece que esta bem preso as classes Base
-    #entao deixa assim, porque senao nao funciona
-    __config__ = {"use_dss"     : True,
-                  "ccd_width"   : 512,
-                  "ccd_height"  : 512}
+class APOGEE(CameraBase, FilterWheelBase):
+    # por mais que nao utilize esse __config__ mas parece que esta bem preso as classes Base
+    # entao deixa assim, porque senao nao funciona
+    __config__ = {"use_dss": True,
+                  "ccd_width": 512,
+                  "ccd_height": 512}
 
-    def __init__ (self):
-        CameraBase.__init__ (self)
-        FilterWheelBase.__init__ (self)
+    def __init__(self):
+        CameraBase.__init__(self)
+        FilterWheelBase.__init__(self)
 
         self.__apogee_manager = ApogeeManager()
 
-        self.__cooling  = False
+        self.__cooling = False
 
         self.__lastFilter = self._getFilterName(0)
         self.__temperature = 20.0
@@ -80,7 +82,7 @@ class APOGEE(CameraBase, FilterWheelBase):
                           CameraFeature.PROGRAMMABLE_FAN: True,
                           CameraFeature.PROGRAMMABLE_LEDS: False,
                           CameraFeature.PROGRAMMABLE_BIAS_LEVEL: False}
-        
+
         readoutMode = ReadoutMode()
         readoutMode.mode = 0
         readoutMode.gain = 1.0
@@ -90,27 +92,27 @@ class APOGEE(CameraBase, FilterWheelBase):
         readoutMode.pixelHeight = 9.0
 
         self._readoutModes = {self._MY_CCD:
-                                  {self._MY_READOUT_MODE: readoutMode}}
+                              {self._MY_READOUT_MODE: readoutMode}}
 
         #  TODO : necessario?
         self._binning_factors = {"1x1": 1,
                                  "2x2": 2,
                                  "3x3": 3,
-                                 "9x9": 9}                                  
+                                 "9x9": 9}
 
-    def __del__ (self):
+    def __del__(self):
         self.__apogee_manager.stop()
 
-    def __start__ (self):
+    def __start__(self):
         self["camera_model"] = "Alta U16M"
         self["ccd_model"] = "Apogee Instruments Inc."
         self.__apogee_manager.setUp()
 
-    def control (self):
+    def control(self):
         # if self.isCooling():
         #     if self.__temperature > self.__setpoint:
         #         self.__temperature -= 0.5
-            
+
         return True
 
     def _expose(self, imageRequest):
@@ -119,8 +121,8 @@ class APOGEE(CameraBase, FilterWheelBase):
         shutterRequest = imageRequest['shutter']
 
         # '~/images/$LAST_NOON_DATE/$DATE-$TIME.fits')
-        filenameRequest = ImageUtil.makeFilename( imageRequest['filename'] )
-	imageRequest['filenameRequest'] = filenameRequest
+        filenameRequest = ImageUtil.makeFilename(imageRequest['filename'])
+        imageRequest['filenameRequest'] = filenameRequest
         file(filenameRequest, "w").close()
 
         exptimeRequest = imageRequest["exptime"]
@@ -128,17 +130,18 @@ class APOGEE(CameraBase, FilterWheelBase):
         self.log.debug("filenameRequest = %s" % filenameRequest)
         self.log.debug("exptime = %s" % exptimeRequest)
 
-	#  0 = false
-	shutter = 0
+        #  0 = false
+        shutter = 0
         if shutterRequest == Shutter.OPEN:
             shutter = 1
         elif shutterRequest == Shutter.CLOSE:
             shutter = 0
-	
-        self.log.debug("shutter = %d" % shutter )
+
+        self.log.debug("shutter = %d" % shutter)
 
         self.exposeBegin(imageRequest)
-        self.__apogee_manager.expose(filenameRequest, int(exptimeRequest), int(shutterRequest) )
+        self.__apogee_manager.expose(
+            filenameRequest, int(exptimeRequest), int(shutterRequest))
 
         # if any error happens, it will be thrown an exception
         status = CameraStatus.OK
@@ -149,17 +152,17 @@ class APOGEE(CameraBase, FilterWheelBase):
 
         self.exposeComplete(imageRequest, status)
         self.log.debug("apogee - expose - END")
-    
+
     def make_dark(self, shape, dtype, exptime):
         ret = N.zeros(shape, dtype=dtype)
-        #Taken from specs for KAF-1603ME as found in ST-8XME
+        # Taken from specs for KAF-1603ME as found in ST-8XME
         #normtemp is now in ADU/pix/sec
-        normtemp= ((10 * 2**((self.__temperature-25)/6.3)) * exptime)/2.3
+        normtemp = (
+            (10 * 2 ** ((self.__temperature - 25) / 6.3)) * exptime) / 2.3
         ret += normtemp + N.random.random(shape)  # +/- 1 variance in readout
         return ret
 
     def make_flat(self, shape, dtype):
-
         """
         Flat is composition of:
          - a normal distribution of mean=1000, sigma=1
@@ -167,43 +170,46 @@ class APOGEE(CameraBase, FilterWheelBase):
          - plus a bad region with different mean level
         """
 
-        iadd=15.0/shape[0]
-        jadd=10.0/shape[1]
+        iadd = 15.0 / shape[0]
+        jadd = 10.0 / shape[1]
 
         badlevel = 0
 
-        badareai=shape[0]/2
-        badareaj=shape[1]/2
+        badareai = shape[0] / 2
+        badareaj = shape[1] / 2
 
-        # this array is only to make sure we create our array with the right dtype
-        ret  = N.zeros(shape, dtype=dtype)
+        # this array is only to make sure we create our array with the right
+        # dtype
+        ret = N.zeros(shape, dtype=dtype)
 
         ret += N.random.normal(1000, 1, shape)
-        ret += N.fromfunction(lambda i,j: i*jadd - j*jadd, shape)
+        ret += N.fromfunction(lambda i, j: i * jadd - j * jadd, shape)
 
-        ret[badareai:,badareaj:] += badlevel
+        ret[badareai:, badareaj:] += badlevel
 
         return ret
-        
+
     def _readout(self, imageRequest):
         self.log.debug("apogee - _readout - BEGIN")
-        (mode, binning, top,  left,
+        (mode, binning, top, left,
          width, height) = self._getReadoutModeInfo(imageRequest["binning"],
                                                    imageRequest["window"])
-        # readout 
+        # readout
         img = N.zeros((height, width), N.int32)
 
         self.readoutBegin(imageRequest)
 
-        self.log.debug("apogee - _readout - temperature = %f" % self.lastFrameTemp)
-        self.log.debug("apogee - _readout - start_time = %s" % self.lastFrameStartTime)
+        self.log.debug("apogee - _readout - temperature = %f" %
+                       self.lastFrameTemp)
+        self.log.debug("apogee - _readout - start_time = %s" %
+                       self.lastFrameStartTime)
 
         img = self.__apogee_manager.getImageData()
 
         proxy = self._saveImage(imageRequest, img,
                                 {"frame_temperature": self.lastFrameTemp,
                                  "frame_start_time": self.lastFrameStartTime,
-                                 "binning_factor":self._binning_factors[binning]})
+                                 "binning_factor": self._binning_factors[binning]})
 
         self.log.debug("apogee - _readout - END")
         return True
@@ -226,9 +232,10 @@ class APOGEE(CameraBase, FilterWheelBase):
 
     @lock
     def getTemperature(self):
-        self.log.debug("apogee - temperature = %s ºC" % self.__apogee_manager.getTemperature()) 
+        self.log.debug("apogee - temperature = %s ºC" %
+                       self.__apogee_manager.getTemperature())
         return self.__apogee_manager.getTemperature()
-    
+
     def getSetPoint(self):
         return self.__setpoint
 
@@ -244,7 +251,7 @@ class APOGEE(CameraBase, FilterWheelBase):
 
     def isFanning(self):
         self.__isFanning
-    
+
     def getCCDs(self):
         return self._ccds
 
@@ -261,7 +268,7 @@ class APOGEE(CameraBase, FilterWheelBase):
         return (self["ccd_width"], self["ccd_height"])
 
     def getPixelSize(self):
-        return (9,9)
+        return (9, 9)
 
     def getOverscanSize(self, ccd=None):
         return (0, 0)
@@ -275,14 +282,14 @@ class APOGEE(CameraBase, FilterWheelBase):
     #
     # filter wheel
     #
-    def getFilter (self):
+    def getFilter(self):
         return self.__lastFilter
 
     @lock
-    def setFilter (self, filter):
+    def setFilter(self, filter):
         if filter not in self.getFilters():
-            raise InvalidFilterPositionException("%s is not a valid filter" % filter)
+            raise InvalidFilterPositionException(
+                "%s is not a valid filter" % filter)
 
         self.filterChange(filter, self.__lastFilter)
         self.__lastFilter = filter
-

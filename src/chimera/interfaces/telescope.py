@@ -16,11 +16,12 @@
 
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301, USA.
 
 
-from chimera.core.interface  import Interface
-from chimera.core.event      import event
+from chimera.core.interface import Interface
+from chimera.core.event import event
 from chimera.core.exceptions import ChimeraException
 
 from chimera.util.position import Position
@@ -28,7 +29,7 @@ from chimera.util.enum import Enum
 
 
 AlignMode = Enum("ALT_AZ", "POLAR", "LAND")
-SlewRate  = Enum("GUIDE", "CENTER", "FIND", "MAX")
+SlewRate = Enum("GUIDE", "CENTER", "FIND", "MAX")
 
 TelescopeStatus = Enum("OK", "ABORTED", "OBJECT_TOO_LOW", "OBJECT_TOO_HIGH")
 
@@ -38,36 +39,39 @@ class PositionOutsideLimitsException (ChimeraException):
 
 
 class Telescope (Interface):
+
     """
     Telescope base interface.
     """
 
-    __config__ = {"device"          : "/dev/ttyS0",
-                  "model"           : "Fake Telescopes Inc.",
-                  "optics"          : ["Newtonian", "SCT", "RCT"],
-                  "mount"           : "Mount type Inc.",
-                  "aperture"        : 100.0,  # mm
-                  "focal_length"    : 1000.0, # mm
-                  "focal_reduction" : 1.0,    # unit (ex., 0.5 for a half length focal reducer)
+    __config__ = {"device": "/dev/ttyS0",
+                  "model": "Fake Telescopes Inc.",
+                  "optics": ["Newtonian", "SCT", "RCT"],
+                  "mount": "Mount type Inc.",
+                  "aperture": 100.0,  # mm
+                  "focal_length": 1000.0,  # mm
+                  # unit (ex., 0.5 for a half length focal reducer)
+                  "focal_reduction": 1.0,
                   }
 
 
 class TelescopeSlew (Telescope):
+
     """Basic interface for telescopes.
     """
 
-    __config__ = {"timeout"             : 30, # s
-                  "slew_rate"           : SlewRate.MAX,
-                  "auto_align"          : True,
-                  "align_mode"          : AlignMode.POLAR,
-                  "slew_idle_time"      : 0.1,  # s
-                  "max_slew_time"       : 90.0, # s
-                  "stabilization_time"  : 2.0,  # s
-                  "position_sigma_delta": 60.0, # arcseconds
-                  "skip_init"           : False,
-                  "min_altitude"        : 20} 
+    __config__ = {"timeout": 30,  # s
+                  "slew_rate": SlewRate.MAX,
+                  "auto_align": True,
+                  "align_mode": AlignMode.POLAR,
+                  "slew_idle_time": 0.1,  # s
+                  "max_slew_time": 90.0,  # s
+                  "stabilization_time": 2.0,  # s
+                  "position_sigma_delta": 60.0,  # arcseconds
+                  "skip_init": False,
+                  "min_altitude": 20}
 
-    def slewToObject (self, name):
+    def slewToObject(self, name):
         """Slew the scope to the coordinates of the given
         object. Object name will be converted to a coordinate using a
         resolver like SIMBAD or NED.
@@ -79,7 +83,7 @@ class TelescopeSlew (Telescope):
         @rtype: None
         """
 
-    def slewToRaDec (self, position):
+    def slewToRaDec(self, position):
         """Slew the scope to the given equatorial coordinates.
 
         @param position: the equatorial coordinates to slew to.
@@ -89,7 +93,7 @@ class TelescopeSlew (Telescope):
         @rtype: None
         """
 
-    def slewToAltAz (self, position):
+    def slewToAltAz(self, position):
         """Slew the scope to the given local coordinates.
 
         @param position: the local coordinates to slew to.
@@ -100,21 +104,21 @@ class TelescopeSlew (Telescope):
         @rtype: None
         """
 
-    def abortSlew (self):
+    def abortSlew(self):
         """Try to abort the current slew.
 
         @return: Nothing.
         @rtype: None
         """
 
-    def isSlewing (self):
+    def isSlewing(self):
         """Ask if the telescope is slewing right now.
 
         @return: True if the telescope is slewing, False otherwise.
         @rtype: bool
         """
 
-    def moveEast (self, offset, rate=SlewRate.MAX):
+    def moveEast(self, offset, rate=SlewRate.MAX):
         """Move the scope I{offset} arcseconds East (if offset positive, West
         otherwise)
 
@@ -130,7 +134,7 @@ class TelescopeSlew (Telescope):
         @note: float accepted only to make life easier, probably we can't handle such precision.
         """
 
-    def moveWest (self, offset, rate=SlewRate.MAX):
+    def moveWest(self, offset, rate=SlewRate.MAX):
         """Move the scope I{offset} arcseconds West (if offset positive, East
         otherwise)
 
@@ -147,7 +151,7 @@ class TelescopeSlew (Telescope):
         can't handle such precision.
         """
 
-    def moveNorth (self, offset, rate=SlewRate.MAX):
+    def moveNorth(self, offset, rate=SlewRate.MAX):
         """Move the scope I{offset} arcseconds North (if offset positive, South
         otherwise)
 
@@ -164,7 +168,7 @@ class TelescopeSlew (Telescope):
         can't handle such precision.
         """
 
-    def moveSouth (self, offset, rate=SlewRate.MAX):
+    def moveSouth(self, offset, rate=SlewRate.MAX):
         """Move the scope {offset} arcseconds South (if offset positive, North
         otherwise)
 
@@ -181,7 +185,7 @@ class TelescopeSlew (Telescope):
         can't handle such precision.
         """
 
-    def moveOffset (self, offsetRA, offsetDec, rate=SlewRate.GUIDE):
+    def moveOffset(self, offsetRA, offsetDec, rate=SlewRate.GUIDE):
         """
         @param offsetRA: Arcseconds to move in RA.
         @type  offsetDec: int or float
@@ -199,56 +203,56 @@ class TelescopeSlew (Telescope):
         can't handle such precision.
         """
 
-    def getRa (self):
+    def getRa(self):
         """Get the current telescope Right Ascension.
 
         @return: Telescope's current Right Ascension.
         @rtype: L{Coord}
         """
 
-    def getDec (self):
+    def getDec(self):
         """Get the current telescope Declination.
 
         @return: Telescope's current Declination.
         @rtype: L{Coord}
         """
 
-    def getAz (self):
+    def getAz(self):
         """Get the current telescope Azimuth.
 
         @return: Telescope's current Azimuth.
         @rtype: L{Coord}
         """
 
-    def getAlt (self):
+    def getAlt(self):
         """Get the current telescope Altitude.
 
         @return: Telescope's current Alt
         @rtype: L{Coord}
         """
 
-    def getPositionRaDec (self):
+    def getPositionRaDec(self):
         """Get the current position of the telescope in equatorial coordinates.
 
         @return: Telescope's current position (ra, dec).
         @rtype: L{Position}
         """
 
-    def getPositionAltAz (self):
+    def getPositionAltAz(self):
         """Get the current position of the telescope in local coordinates.
 
         @return: Telescope's current position (alt, az).
         @rtype: L{Position}
         """
 
-    def getTargetRaDec (self):
+    def getTargetRaDec(self):
         """Get the current telescope target in equatorial coordinates.
 
         @return: Telescope's current target (ra, dec).
         @rtype: L{Position}
         """
 
-    def getTargetAltAz (self):
+    def getTargetAltAz(self):
         """Get the current telescope target in local coordinates.
 
         @return: Telescope's current target (alt, az).
@@ -256,7 +260,7 @@ class TelescopeSlew (Telescope):
         """
 
     @event
-    def slewBegin (self, target):
+    def slewBegin(self, target):
         """Indicates that a slew operation started.
 
         @param target: The target position where the telescope will
@@ -266,7 +270,7 @@ class TelescopeSlew (Telescope):
         """
 
     @event
-    def slewComplete (self, position, status):
+    def slewComplete(self, position, status):
         """Indicates that the last slew operation finished. This event
         will be fired even when problems impedes complete slew
         (altitude limits, for example). Check L{status} field if you
@@ -279,12 +283,13 @@ class TelescopeSlew (Telescope):
         @type  status: L{TelescopeStatus}
         """
 
+
 class TelescopeSync (Telescope):
+
     """Telescope with sync support.
     """
 
-
-    def syncObject (self, name):
+    def syncObject(self, name):
         """Synchronize the telescope using the coordinates of the
         given object.
 
@@ -292,7 +297,7 @@ class TelescopeSync (Telescope):
         @type  name: str
         """
 
-    def syncRaDec (self, position):
+    def syncRaDec(self, position):
         """Synchronizes the telescope on the given equatorial
         coordinates.
 
@@ -320,6 +325,7 @@ class TelescopeSync (Telescope):
 
 
 class TelescopePark (Telescope):
+
     """Telescope with park/unpark support.
     """
 
@@ -337,21 +343,21 @@ class TelescopePark (Telescope):
         @rtype: None
         """
 
-    def unpark (self):
+    def unpark(self):
         """Wake up the telescope of the last park operation.
 
         @return: Nothing.
         @rtype: None
         """
 
-    def isParked (self):
+    def isParked(self):
         """Ask if the telescope is at park position.
 
         @return: True if the telescope is parked, False otherwise.
         @rtype: bool
         """
 
-    def setParkPosition (self, position):
+    def setParkPosition(self, position):
         """Defines where the scope will park when asked to.
 
         @param position: local coordinates to park the scope
@@ -361,7 +367,7 @@ class TelescopePark (Telescope):
         @rtype: None
         """
 
-    def getParkPosition (self):
+    def getParkPosition(self):
         """Get the Current park position.
 
         @return: Current park position.
@@ -374,17 +380,19 @@ class TelescopePark (Telescope):
         """
 
     @event
-    def unparkComplete (self):
+    def unparkComplete(self):
         """Indicates that the scope has unparked (waked up)
         successfully.
         """
 
+
 class TelescopeTracking (Telescope):
+
     """
     Telescope with support to start/stop tracking.
     """
 
-    def startTracking (self):
+    def startTracking(self):
         """
         Start telescope tracking.
 
@@ -392,7 +400,7 @@ class TelescopeTracking (Telescope):
         @rtype: None
         """
 
-    def stopTracking (self):
+    def stopTracking(self):
         """
         Stop telescope tracking.
 
@@ -400,7 +408,7 @@ class TelescopeTracking (Telescope):
         @rtype: None
         """
 
-    def isTracking (self):
+    def isTracking(self):
         """
         Ask if the telescope is tracking.
 
