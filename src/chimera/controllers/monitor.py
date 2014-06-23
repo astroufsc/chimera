@@ -100,12 +100,16 @@ class SnmpMonitor(ChimeraObject):
 
 
         """
+        ChimeraObject.__init__(self)
+
+    def __start(self):
         # Define the SNMP instance
         try:
-            self.snmp_mon = spp.PassPersist('.1.3.6.1.3.53.10')
+            self.ppm = spp.PassPersist('.1.3.6.1.3.53.10')
             logging.info('SNMP monitoring initialized')
         except:
             logging.error('SNMP monitoring uninitialized')
+        return
 
     def populate_mib(self):
         """

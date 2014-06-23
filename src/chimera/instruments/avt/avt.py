@@ -53,7 +53,7 @@ class AVTGigE(Camera, ReadoutMode, CameraExpose, CameraTemperature, CameraInform
     def expose(self, request=None, **kwargs):
         """
         TBD!!!
-        @param kwargs: image exposure parameters, if not coming from ImageRequest (likely)
+        @param kwargs: image exposure parameters, if not coming from ImageRequest
         @return:
         """
         pass
