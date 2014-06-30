@@ -1,8 +1,14 @@
+import os.path
 import subprocess
 import logging
-import snmp_passpersist as spp
+
+from pysnmp.entity import engine, config
+from pysnmp.entity.rfc3413 import cmdrsp, context
+from pysnmp.carrier.asynsock.dgram import udp
+from pysnmp.smi import builder
 
 from chimera.core.chimeraobject import ChimeraObject
+from chimera.core.constants import SYSTEM_CONFIG_DIRECTORY
 
 
 class SnmpMonitor(ChimeraObject):
@@ -96,23 +102,82 @@ class SnmpMonitor(ChimeraObject):
     """
 
     def __init__(self):
-        """
-
-
-        """
         ChimeraObject.__init__(self)
 
-    def __start(self):
-        # Define the SNMP instance
-        try:
-            self.ppm = spp.PassPersist('.1.3.6.1.3.53.10')
-            logging.info('SNMP monitoring initialized')
-        except:
-            logging.error('SNMP monitoring uninitialized')
-        return
-
-    def populate_mib(self):
-        """
-        Load all the OIDs that only need loading once
-        """
+    def __start__(self):
+        # Define the SNMP entity
         pass
+
+    def chimera_mib(self):
+        """
+        Checks for existence of pythonic MIB files other than the
+        default ones; if not, generate them, and add them to the MIB
+        path..
+        @return:
+        """
+        try:
+            os.path.exists(os.path.abspath(SYSTEM_CONFIG_DIRECTORY+'/mibs'))
+
+    def snmp_engine(self):
+        try:
+            self.se = engine.SnmpEngine()
+        except:
+            print('Cannot initialize SNMP! Bye...')
+            exit()
+
+    def snmp_context(self):
+        self.sc = context.SnmpContext(self.se)
+
+    def set_transport(self):
+        try:
+            config.addSocketTransport(self.se,
+                                      udp.domainName,
+                                      udp.UdpTransport().openServerMode(
+                                          '127.0.0.1', 161)
+                                      )
+        except:
+            print('Ouch! No UDP!?')
+            exit()
+
+    def set_usertypes(self):
+      #'usr-md5-des', auth = MD5, priv = Des
+        config.addV3User(
+            self.se, 'usr-md5-des',
+            config.usmHMACMD5AuthProtocol, 'authkey1',
+            config.usmDESPrivProtocol, 'privkey1'
+        )
+      #'usr-sha-none', auth = SHA, priv = None
+        config.addV3User(
+            self.se, 'usr-sha-none',
+            config.usmHMACSHAAuthProtocol, 'authkey1'
+        )
+      #'usr-sha-aes128', auth = SHA, priv = AES/128
+        config.addV3User(
+            self.se, 'usr-sha-aes128',
+            config.usmHMACSHAAuthProtocol, 'authkey1',
+            config.usmAesCfb128Protocol, 'privkey1'
+        )
+
+    def set_access(self):
+        config.addVacmUser(
+            self.se, 3,
+            'usr-md5-des', 'authPriv',
+            (1, 3, 6, 1, 3, 53),
+            (1, 3, 6, 1, 3, 53))
+        config.addVacmUser(
+            self.se, 3, 'usr-sha-none', 'authPriv',
+            (1, 3, 6, 1, 3, 53),
+            (1, 3, 6, 1, 3, 53))
+        config.addVacmUser(
+            self.se, 3, 'usr-sha-aes128', 'authPriv',
+            (1, 3, 6, 1, 3, 53),
+            (1, 3, 6, 1, 3, 53))
+
+    def register_cmds(self):
+        cmdrsp.GetCommandResponder(self.se, self.sc)
+        cmdrsp.SetCommandResponder(self.se, self.sc)
+        cmdrsp.NextCommandResponder(self.se, self.sc)
+        cmdrsp.BulkCommandResponder(self.se, self.sc)
+
+
+
