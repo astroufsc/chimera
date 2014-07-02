@@ -10,6 +10,7 @@ from pysnmp.smi import builder
 from chimera.core.chimeraobject import ChimeraObject
 from chimera.core.constants import SYSTEM_CONFIG_DIRECTORY
 
+MIBS = ['FLOAT-TC-MIB', 'CHIMERA-MIB']
 
 class SnmpMonitor(ChimeraObject):
 
@@ -108,15 +109,12 @@ class SnmpMonitor(ChimeraObject):
         # Define the SNMP entity
         pass
 
-    def chimera_mib(self):
+    def load_mibs(self):
         """
-        Checks for existence of pythonic MIB files other than the
-        default ones; if not, generate them, and add them to the MIB
-        path..
+
         @return:
         """
-        try:
-            os.path.exists(os.path.abspath(SYSTEM_CONFIG_DIRECTORY+'/mibs'))
+
 
     def snmp_engine(self):
         try:
@@ -140,18 +138,22 @@ class SnmpMonitor(ChimeraObject):
             exit()
 
     def set_usertypes(self):
-      #'usr-md5-des', auth = MD5, priv = Des
+        """
+        TODO: add a v2c user.
+        @return:
+        """
+        #'usr-md5-des', auth = MD5, priv = Des
         config.addV3User(
             self.se, 'usr-md5-des',
             config.usmHMACMD5AuthProtocol, 'authkey1',
             config.usmDESPrivProtocol, 'privkey1'
         )
-      #'usr-sha-none', auth = SHA, priv = None
+        #'usr-sha-none', auth = SHA, priv = None
         config.addV3User(
             self.se, 'usr-sha-none',
             config.usmHMACSHAAuthProtocol, 'authkey1'
         )
-      #'usr-sha-aes128', auth = SHA, priv = AES/128
+        #'usr-sha-aes128', auth = SHA, priv = AES/128
         config.addV3User(
             self.se, 'usr-sha-aes128',
             config.usmHMACSHAAuthProtocol, 'authkey1',
