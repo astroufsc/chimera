@@ -1,0 +1,358 @@
+CHIMERA-MIB DEFINITIONS ::= BEGIN
+
+IMPORTS
+        experimental
+                FROM RFC1155-SMI
+        OBJECT-TYPE
+                FROM RFC-1212
+        DisplayString
+                FROM RFC1213-MIB
+        Float
+                FROM FLOAT-TC-MIB
+        TruthValue
+                FROM SNMPv2-TC;
+
+chimera         OBJECT IDENTIFIER ::= { experimental 53 }
+
+telescopeGroup OBJECT IDENTIFIER ::= { chimera 1 }
+
+telescopeName  OBJECT-TYPE
+  SYNTAX  DisplayString (SIZE (0..256))
+  ACCESS  read-only
+  STATUS  mandatory
+  DESCRIPTION
+          "The name of the telescope under chimera's control."
+  ::= { telescopeGroup 1 }
+
+telescopeModel  OBJECT-TYPE
+  SYNTAX  DisplayString (SIZE (0..256))
+  ACCESS  read-only
+  STATUS  mandatory
+  DESCRIPTION
+          "The model of the telescope under chimera's control."
+  ::= { telescopeGroup 2 }
+
+telescopeDevice OBJECT-TYPE
+  SYNTAX  DisplayString (SIZE (0..256))
+  ACCESS  read-only
+  STATUS  mandatory
+  DESCRIPTION
+          "The device the telescope uses to communicate with chimera."
+  ::= { telescopeGroup 3 }
+
+telescopeOptics OBJECT-TYPE
+  SYNTAX  DisplayString (SIZE (0..256))
+  ACCESS  read-only
+  STATUS  mandatory
+  DESCRIPTION
+          "The elescope's optics type."
+  ::= { telescopeGroup 4 }
+ 
+ -- Numerical value as per telescope interface
+telescopeAperture OBJECT-TYPE
+  SYNTAX  Float
+  ACCESS  read-only
+  STATUS  mandatory
+  DESCRIPTION
+          "The telescope's aperture size in millimeters."
+  ::= { telescopeGroup 5 }
+
+telescopeMount OBJECT-TYPE
+  SYNTAX  DisplayString (SIZE (0..256))
+  ACCESS  read-only
+  STATUS  mandatory
+  DESCRIPTION
+          "The telescope's mount type."
+  ::= { telescopeGroup 6 }
+
+ -- Numerical value as per telescope interface
+telescopeFocalLength OBJECT-TYPE
+  SYNTAX  DisplayString (SIZE (0..256))
+  ACCESS  read-only
+  STATUS  mandatory
+  DESCRIPTION
+          "The telescope's focal length."
+  ::= { telescopeGroup 7 }
+
+cameraGroup OBJECT IDENTIFIER ::= { chimera 2 }
+
+cameraDevice  OBJECT-TYPE
+  SYNTAX  DisplayString (SIZE (0..256))
+  ACCESS  read-only
+  STATUS  mandatory
+  DESCRIPTION
+          "The device connecting the camera to the computer."
+  ::= { cameraGroup 1 }
+
+cameraCCD OBJECT-TYPE
+  SYNTAX  DisplayString (SIZE (0..256))
+  ACCESS  read-only
+  STATUS  mandatory
+  DESCRIPTION
+          "The detector model inside the camera."
+  ::= { cameraGroup 2 }
+
+cameraTempDelta OBJECT-TYPE
+  SYNTAX  DisplayString (SIZE (0..256))
+  ACCESS  read-only
+  STATUS  mandatory
+  DESCRIPTION
+          "The temperature delta permissible for the detector."
+  ::= { cameraGroup 3 }
+
+cameraCCDSaturationLevel  OBJECT-TYPE
+  SYNTAX  DisplayString (SIZE (0..256))
+  ACCESS  read-only
+  STATUS  mandatory
+  DESCRIPTION
+          "The detector saturation level."
+  ::= { cameraGroup 4 }
+
+cameraModel OBJECT-TYPE
+  SYNTAX  DisplayString (SIZE (0..256))
+  ACCESS  read-only
+  STATUS  mandatory
+  DESCRIPTION
+          "The camera's model."
+  ::= { cameraGroup 5 }
+
+cameraCCDModel  OBJECT-TYPE
+  SYNTAX  DisplayString (SIZE (0..256))
+  ACCESS  read-only
+  STATUS  mandatory
+  DESCRIPTION
+          "The camera's CCD model."
+  ::= { cameraGroup 6 }
+
+cameraTelescopeFocalLength  OBJECT-TYPE
+  SYNTAX  DisplayString (SIZE (0..256))
+  ACCESS  read-only
+  STATUS  mandatory
+  DESCRIPTION
+          "The camera's optics focal length."
+  ::= { cameraGroup 7 }
+
+domeGroup OBJECT IDENTIFIER ::= { chimera 3 }
+
+domeDevice  OBJECT-TYPE
+  SYNTAX  DisplayString (SIZE (0..256))
+  ACCESS  read-only
+  STATUS  mandatory
+  DESCRIPTION
+          "The dome's device."
+  ::= { domeGroup 1 }
+
+domeTelescope OBJECT-TYPE
+  SYNTAX  DisplayString (SIZE (0..256))
+  ACCESS  read-only
+  STATUS  mandatory
+  DESCRIPTION
+          "The telescope inside this dome."
+  ::= { domeGroup 2 }
+
+-- Maybe some boolean here?
+domeMode  OBJECT-TYPE
+  SYNTAX  DisplayString (SIZE (0..256))
+  ACCESS  read-only
+  STATUS  mandatory
+  DESCRIPTION
+          "The dome's current mode: tracking - not tracking."
+  ::= { domeGroup 3 }
+
+domeModel OBJECT-TYPE
+  SYNTAX  DisplayString (SIZE (0..256))
+  ACCESS  read-only
+  STATUS  mandatory
+  DESCRIPTION
+          "The dome's manufacturer model."
+  ::= { domeGroup 4 }
+
+domeStyle OBJECT-TYPE
+  SYNTAX  DisplayString (SIZE (0..256))
+  ACCESS  read-only
+  STATUS  mandatory
+  DESCRIPTION
+          "The dome style."
+  ::= { domeGroup 5 }
+
+domeParkPosition  OBJECT-TYPE
+  SYNTAX  DisplayString (SIZE (0..256))
+  ACCESS  read-only
+  STATUS  mandatory
+  DESCRIPTION
+          "The The dome's parking position."
+  ::= { domeGroup 6 }
+
+-- Boolean?
+domeParkOnShutdown  OBJECT-TYPE
+  SYNTAX  DisplayString (SIZE (0..256))
+  ACCESS  read-only
+  STATUS  mandatory
+  DESCRIPTION
+          "Park the dome at shutdown time."
+  ::= { domeGroup 7 }
+
+-- Boolean?
+domeCloseOnShutdown OBJECT-TYPE
+  SYNTAX  DisplayString (SIZE (0..256))
+  ACCESS  read-only
+  STATUS  mandatory
+  DESCRIPTION
+          "Close the dome shutter at shutdown time."
+  ::= { domeGroup 8 }
+
+-- Integer?
+domeAzResolution  OBJECT-TYPE
+  SYNTAX  DisplayString (SIZE (0..256))
+  ACCESS  read-only
+  STATUS  mandatory
+  DESCRIPTION
+          "Azimuth resolution of the dome's position."
+  ::= { domeGroup 9 }
+
+-- Integer?
+domeSlewTimeout OBJECT-TYPE
+  SYNTAX  DisplayString (SIZE (0..256))
+  ACCESS  read-only
+  STATUS  mandatory
+  DESCRIPTION
+          "Dome slew command timeout."
+  ::= { domeGroup 10 }
+
+-- Integer?
+domeAbortTimeout  OBJECT-TYPE
+  SYNTAX  DisplayString (SIZE (0..256))
+  ACCESS  read-only
+  STATUS  mandatory
+  DESCRIPTION
+          "Dome abort command timeout."
+  ::= { domeGroup 11 }
+
+-- Integer?
+domeInitTimeout OBJECT-TYPE
+  SYNTAX  DisplayString (SIZE (0..256))
+  ACCESS  read-only
+  STATUS  mandatory
+  DESCRIPTION
+          "Dome initalization command timeout."
+  ::= { domeGroup 12 }
+
+-- Integer?
+domeOpenTimeout OBJECT-TYPE
+  SYNTAX  DisplayString (SIZE (0..256))
+  ACCESS  read-only
+  STATUS  mandatory
+  DESCRIPTION
+          "Dome open command timeout."
+  ::= { domeGroup 13 }
+
+
+
+--filterwheelInfo Table OBJECT-TYPE
+--  SYNTAX  SEQUENCE OF FilterwheelEntry
+--  ACCESS  not-accessible
+--  STATUS  mandatory
+--  DESCRIPTION
+--          "The startup configuration of the chimera's controlled filterwheel."
+--  ::= { chimera 4 }
+--
+--filterwheelEntry OBJECT-TYPE
+--  SYNTAX  FilterwheelEntry
+--  ACCESS  not-accessible
+--  STATUS  mandatory
+--  INDEX   { filterwheelIndex }
+--  ::= { filterwheelTable 1 }
+--
+--FilterwheelEntry ::=
+--  SEQUENCE {
+--    filterWheelDevice           DisplayString (SIZE (0..256)),
+--    filterWheelFilterWheelModel DisplayString (SIZE (0..256)),
+--    filterWheelFilters          DisplayString (SIZE (0..256))
+--  }
+--
+--focuserInfo Table OBJECT-TYPE
+--  SYNTAX  SEQUENCE OF FocuserEntry
+--  ACCESS  not-accessible
+--  STATUS  mandatory
+--  DESCRIPTION
+--          "The startup configuration of the chimera's controlled focuser."
+--  ::= { chimera 5 }
+--
+--focuserEntry OBJECT-TYPE
+--  SYNTAX  FocuserEntry
+--  ACCESS  not-accessible
+--  STATUS  mandatory
+--  INDEX   { focuserIndex }
+--  ::= { focuserTable 1 }
+--
+--FocuserEntry ::=
+--  SEQUENCE {
+--    focuserDevice       DisplayString (SIZE (0..256)),
+--    focuserModel        DisplayString (SIZE (0..256)),
+--    focuserOpentimeout  DisplayString (SIZE (0..256)),
+--    focuserMovetimeout  DisplayString (SIZE (0..256))
+--  }
+--
+--guiderINfo Table OBJECT-TYPE
+--  SYNTAX  SEQUENCE OF GuiderEntry
+--  ACCESS  not-accessible
+--  STATUS  mandatory
+--  DESCRIPTION
+--          "The startup configuration of the chimera's controlled guider."
+--  ::= { chimera 6 }
+--
+--guiderEntry OBJECT-TYPE
+--  SYNTAX  GuiderEntry
+--  ACCESS  not-accessible
+--  STATUS  mandatory
+--  INDEX   { guiderIndex }
+--  ::= { guiderTable 1 }
+--
+--GuiderEntry ::=
+--  SEQUENCE {
+--    guiderTelescope     DisplayString (SIZE (0..256)),
+--    guiderCamera        DisplayString (SIZE (0..256)),
+--    guiderInstrument    DisplayString (SIZE (0..256)),
+--    guiderFilterwheel   DisplayString (SIZE (0..256)),
+--    guiderFocuser       DisplayString (SIZE (0..256)),
+--    guiderSaveimages    DisplayString (SIZE (0..256)),
+--    guiderImagesdir     DisplayString (SIZE (0..256)),
+--    guiderExptime       DisplayString (SIZE (0..256)),
+--    guiderFilterPos     DisplayString (SIZE (0..256)),
+--    guiderMaxWindows    DisplayString (SIZE (0..256)),
+--    guiderMaxTrials     DisplayString (SIZE (0..256))
+--  }
+--
+--weatherstationInfo Table OBJECT-TYPE
+--  SYNTAX  SEQUENCE OF WeatherstationEntry
+--  ACCESS  not-accessible
+--  STATUS  mandatory
+--  DESCRIPTION
+--          "The startup configuration of the chimera's controlled weatherstation."
+--  ::= { chimera 7 }
+--
+--weatherstationEntry OBJECT-TYPE
+--  SYNTAX  WeatherstationEntry
+--  ACCESS  not-accessible
+--  STATUS  mandatory
+--  INDEX   { weatherstationIndex }
+--  ::= { weatherstationTable 1 }
+--
+--WeatherstationEntry ::=
+--  SEQUENCE {
+--    weatherStationDevice            DisplayString (SIZE (0..256)),
+--    weatherStationHumidityUnit      DisplayString (SIZE (0..256)),
+--    weatherStationTemperatureUnit   DisplayString (SIZE (0..256)),
+--    weatherStationWindUnit          DisplayString (SIZE (0..256)),
+--    weatherStationDewPointUnit      DisplayString (SIZE (0..256)),
+--    weatherStationPressureUnit      DisplayString (SIZE (0..256)),
+--    weatherStationRainUnit          DisplayString (SIZE (0..256)),
+--    weatherStationHumidityDelta     DisplayString (SIZE (0..256)),
+--    weatherStationTemperatureDelta  DisplayString (SIZE (0..256)),
+--    weatherStationWindDelta         DisplayString (SIZE (0..256)),
+--    weatherStationDewPointDelta     DisplayString (SIZE (0..256)),
+--    weatherStationPressureDelta     DisplayString (SIZE (0..256)),
+--    weatherStationRainDelta         DisplayString (SIZE (0..256))
+--  }
+
+END
