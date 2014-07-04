@@ -8,12 +8,13 @@ from pysnmp.carrier.asynsock.dgram import udp
 from pysnmp.smi import builder
 
 from chimera.core.chimeraobject import ChimeraObject
-from chimera.core.constants import SYSTEM_CONFIG_DIRECTORY
 
 MIBS = ['FLOAT-TC-MIB', 'CHIMERA-MIB']
 
-class SnmpMonitor(ChimeraObject):
+log = logging.getLogger(__name__)
 
+
+class SnmpMonitor(ChimeraObject):
     """
     SNMP MIB tree for Chimera
 
@@ -109,13 +110,6 @@ class SnmpMonitor(ChimeraObject):
         # Define the SNMP entity
         pass
 
-    def load_mibs(self):
-        """
-
-        @return:
-        """
-
-
     def snmp_engine(self):
         try:
             self.se = engine.SnmpEngine()
@@ -126,13 +120,26 @@ class SnmpMonitor(ChimeraObject):
     def snmp_context(self):
         self.sc = context.SnmpContext(self.se)
 
+    def load_mibs(self):
+        """
+        Get the needed pythonized MIBs, including the chimera one
+        @return:
+        """
+        # Add the modules path to the mib -sources
+        self.mibBuilder = self.sc.getMibInstrum().getMibBuilder()
+        mibSources = self.mibBuilder.getMibSources() + \
+                     (builder.DirMibSource(self.__path__),)
+
+        self.mibBuilder.setMibSources(*mibSources)
+
+
     def set_transport(self):
         try:
             config.addSocketTransport(self.se,
                                       udp.domainName,
                                       udp.UdpTransport().openServerMode(
                                           '127.0.0.1', 161)
-                                      )
+            )
         except:
             print('Ouch! No UDP!?')
             exit()
@@ -142,7 +149,7 @@ class SnmpMonitor(ChimeraObject):
         TODO: add a v2c user.
         @return:
         """
-        #'usr-md5-des', auth = MD5, priv = Des
+        # 'usr-md5-des', auth = MD5, priv = Des
         config.addV3User(
             self.se, 'usr-md5-des',
             config.usmHMACMD5AuthProtocol, 'authkey1',
