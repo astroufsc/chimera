@@ -1,5 +1,4 @@
-import os.path
-import subprocess
+# import subprocess
 import logging
 
 from pysnmp.entity import engine, config
@@ -9,9 +8,9 @@ from pysnmp.smi import builder
 
 from chimera.core.chimeraobject import ChimeraObject
 
-MIBS = ['FLOAT-TC-MIB', 'CHIMERA-MIB']
+MIBMODS = ['FLOAT-TC-MIB', 'CHIMERA-MIB']
 
-log = logging.getLogger(__name__)
+#log = logging.getLogger(__name__)
 
 
 class SnmpMonitor(ChimeraObject):
@@ -103,8 +102,19 @@ class SnmpMonitor(ChimeraObject):
              +--R--weatherStationRainDelta             .1.3.6.1.3.53.7.13
     """
 
+    # This horror is temp! At prod, it will likely go somewhere standard...
+    __config__ = {
+    'mibpath': '/Users/oso/Development/python/virtualenvs/vchimera/chimera/src/chimera/controllers/monitor'}
+
     def __init__(self):
         ChimeraObject.__init__(self)
+
+        # self.se = self.snmp_engine()
+        # self.sc = self.snmp_context()
+        # self.set_transport()
+        # self.set_usertypes()
+        # self.set_access()
+        # self.register_cmds()
 
     def __start__(self):
         # Define the SNMP entity
@@ -112,13 +122,14 @@ class SnmpMonitor(ChimeraObject):
 
     def snmp_engine(self):
         try:
-            self.se = engine.SnmpEngine()
+            return engine.SnmpEngine()
         except:
+            #log.critical('Cannot initialize SNMP! Bye...')
             print('Cannot initialize SNMP! Bye...')
             exit()
 
     def snmp_context(self):
-        self.sc = context.SnmpContext(self.se)
+        return context.SnmpContext(self.se)
 
     def load_mibs(self):
         """
@@ -128,10 +139,10 @@ class SnmpMonitor(ChimeraObject):
         # Add the modules path to the mib -sources
         self.mibBuilder = self.sc.getMibInstrum().getMibBuilder()
         mibSources = self.mibBuilder.getMibSources() + \
-                     (builder.DirMibSource(self.__path__),)
+                     (builder.DirMibSource(self['mibpath']),)
 
         self.mibBuilder.setMibSources(*mibSources)
-
+        self.mibBuilder.loadModules(*MIBMODS)
 
     def set_transport(self):
         try:
@@ -141,7 +152,8 @@ class SnmpMonitor(ChimeraObject):
                                           '127.0.0.1', 161)
             )
         except:
-            print('Ouch! No UDP!?')
+            #log.critical('Ouch! No UDP!? Bye...')
+            print('Ouch! No UDP!? Bye...')
             exit()
 
     def set_usertypes(self):
@@ -187,6 +199,3 @@ class SnmpMonitor(ChimeraObject):
         cmdrsp.SetCommandResponder(self.se, self.sc)
         cmdrsp.NextCommandResponder(self.se, self.sc)
         cmdrsp.BulkCommandResponder(self.se, self.sc)
-
-
-
