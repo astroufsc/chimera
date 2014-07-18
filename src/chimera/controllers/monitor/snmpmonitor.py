@@ -1,16 +1,19 @@
 # import subprocess
-import logging
 
 from pysnmp.entity import engine, config
 from pysnmp.entity.rfc3413 import cmdrsp, context
 from pysnmp.carrier.asynsock.dgram import udp
 from pysnmp.smi import builder
 
+import logging
+
 from chimera.core.chimeraobject import ChimeraObject
+import chimera.core.log
+
 
 MIBMODS = ['FLOAT-TC-MIB', 'CHIMERA-MIB']
 
-#log = logging.getLogger(__name__)
+log = logging.getLogger('chimera')
 
 
 class SnmpMonitor(ChimeraObject):
@@ -124,8 +127,8 @@ class SnmpMonitor(ChimeraObject):
         try:
             return engine.SnmpEngine()
         except:
-            #log.critical('Cannot initialize SNMP! Bye...')
-            print('Cannot initialize SNMP! Bye...')
+            log.critical('Cannot initialize SNMP! Bye...')
+            #print('Cannot initialize SNMP! Bye...')
             exit()
 
     def snmp_context(self):
@@ -152,8 +155,8 @@ class SnmpMonitor(ChimeraObject):
                                           '127.0.0.1', 161)
             )
         except:
-            #log.critical('Ouch! No UDP!? Bye...')
-            print('Ouch! No UDP!? Bye...')
+            log.critical('Ouch! No UDP!? Bye...')
+            #print('Ouch! No UDP!? Bye...')
             exit()
 
     def set_usertypes(self):
