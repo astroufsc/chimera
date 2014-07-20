@@ -3,12 +3,13 @@
 from pysnmp.entity import engine, config
 from pysnmp.entity.rfc3413 import cmdrsp, context
 from pysnmp.carrier.asynsock.dgram import udp
+from pysnmp.carrier.asynsock.dispatch import AsynsockDispatcher
 from pysnmp.smi import builder
 
 import logging
 
 from chimera.core.chimeraobject import ChimeraObject
-import chimera.core.log
+#import chimera.core.log
 
 
 MIBMODS = ['FLOAT-TC-MIB', 'CHIMERA-MIB']
@@ -107,13 +108,13 @@ class SnmpMonitor(ChimeraObject):
 
     # This horror is temp! At prod, it will likely go somewhere standard...
     __config__ = {
-    'mibpath': '/Users/oso/Development/python/virtualenvs/vchimera/chimera/src/chimera/controllers/monitor'}
+        'mibpath': '/Users/oso/Development/python/virtualenvs/vchimera/chimera/src/chimera/controllers/monitor'}
 
     def __init__(self):
         ChimeraObject.__init__(self)
 
-        # self.se = self.snmp_engine()
-        # self.sc = self.snmp_context()
+        self.se = self.snmp_engine()
+        self.sc = self.snmp_context()
         # self.set_transport()
         # self.set_usertypes()
         # self.set_access()
@@ -128,7 +129,7 @@ class SnmpMonitor(ChimeraObject):
             return engine.SnmpEngine()
         except:
             log.critical('Cannot initialize SNMP! Bye...')
-            #print('Cannot initialize SNMP! Bye...')
+            # print('Cannot initialize SNMP! Bye...')
             exit()
 
     def snmp_context(self):
@@ -147,16 +148,29 @@ class SnmpMonitor(ChimeraObject):
         self.mibBuilder.setMibSources(*mibSources)
         self.mibBuilder.loadModules(*MIBMODS)
 
-    def set_transport(self):
+    # def set_transport(self):
+    #     try:
+    #         config.addSocketTransport(self.se,
+    #                                   udp.domainName,
+    #                                   udp.UdpTransport().openServerMode(
+    #                                       '127.0.0.1', 161)
+    #         )
+    #     except:
+    #         log.critical('Ouch! No UDP!? Bye...')
+    #         #print('Ouch! No UDP!? Bye...')
+    #         exit()
+
+    def set_dispatcher(self):
         try:
-            config.addSocketTransport(self.se,
-                                      udp.domainName,
-                                      udp.UdpTransport().openServerMode(
-                                          '127.0.0.1', 161)
+            tr_d = AsynsockDispatcher()
+            tr_d.registerTransport(udp.domainName,
+                                   udp.UdpSocketTransport().openServerMode(
+                                       ('localhost', 161)
+                                   )
             )
-        except:
-            log.critical('Ouch! No UDP!? Bye...')
-            #print('Ouch! No UDP!? Bye...')
+        except Exception, e:
+            log.critical('Dispatcher could not be created! Adios...')
+            print(e)
             exit()
 
     def set_usertypes(self):
