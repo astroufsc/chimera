@@ -9,6 +9,8 @@ from pysnmp.smi import builder
 import logging
 
 from chimera.core.chimeraobject import ChimeraObject
+from chimera.core.constants import MANAGER_DEFAULT_HOST, MANAGER_DEFAULT_PORT
+from chimera.core.managerlocator import ManagerLocator
 #import chimera.core.log
 
 
@@ -18,6 +20,7 @@ log = logging.getLogger('chimera')
 
 
 class SnmpMonitor(ChimeraObject):
+
     """
     SNMP MIB tree for Chimera
 
@@ -113,8 +116,11 @@ class SnmpMonitor(ChimeraObject):
     def __init__(self):
         ChimeraObject.__init__(self)
 
+        self.mgr = ManagerLocator.locate(MANAGER_DEFAULT_HOST, MANAGER_DEFAULT_PORT)
+
         self.se = self.snmp_engine()
         self.sc = self.snmp_context()
+        # out while debugging
         # self.set_transport()
         # self.set_usertypes()
         # self.set_access()
@@ -143,7 +149,7 @@ class SnmpMonitor(ChimeraObject):
         # Add the modules path to the mib -sources
         self.mibBuilder = self.sc.getMibInstrum().getMibBuilder()
         mibSources = self.mibBuilder.getMibSources() + \
-                     (builder.DirMibSource(self['mibpath']),)
+            (builder.DirMibSource(self['mibpath']),)
 
         self.mibBuilder.setMibSources(*mibSources)
         self.mibBuilder.loadModules(*MIBMODS)
@@ -157,7 +163,7 @@ class SnmpMonitor(ChimeraObject):
     #         )
     #     except:
     #         log.critical('Ouch! No UDP!? Bye...')
-    #         #print('Ouch! No UDP!? Bye...')
+    # print('Ouch! No UDP!? Bye...')
     #         exit()
 
     def set_dispatcher(self):
@@ -167,7 +173,7 @@ class SnmpMonitor(ChimeraObject):
                                    udp.UdpSocketTransport().openServerMode(
                                        ('localhost', 161)
                                    )
-            )
+                                   )
         except Exception, e:
             log.critical('Dispatcher could not be created! Adios...')
             print(e)
@@ -176,7 +182,6 @@ class SnmpMonitor(ChimeraObject):
     def set_usertypes(self):
         """
         TODO: add a v2c user.
-        @return:
         """
         # 'usr-md5-des', auth = MD5, priv = Des
         config.addV3User(
@@ -216,3 +221,12 @@ class SnmpMonitor(ChimeraObject):
         cmdrsp.SetCommandResponder(self.se, self.sc)
         cmdrsp.NextCommandResponder(self.se, self.sc)
         cmdrsp.BulkCommandResponder(self.se, self.sc)
+
+    def get_telpars(self):
+        self.tel = self.getManager().getProxy(self['telescope'])
+
+    def get_campars(self):
+        return self.getManager().getProxy(self['camera'])
+
+    def get_filtwpars(self):
+        return self.getManager().getProxy(self['filterwheel'])
