@@ -273,7 +273,7 @@ class ChimeraCam (ChimeraCLI):
     def __abort__(self):
         self.out("\naborting... ", endl="")
 
-        # copy self.camera Proxy because we are running from a differente
+        # copy self.camera Proxy because we are running from a different
         # thread (yes, Pyro is tricky!)
         cam = copy.copy(self.camera)
         cam.abortExposure()

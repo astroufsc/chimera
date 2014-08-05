@@ -1,4 +1,4 @@
-# import subprocess
+from multiprocessing import Process
 
 from pysnmp.entity import engine, config
 from pysnmp.entity.rfc3413 import cmdrsp, context
@@ -221,6 +221,21 @@ class SnmpMonitor(ChimeraObject):
         cmdrsp.SetCommandResponder(self.se, self.sc)
         cmdrsp.NextCommandResponder(self.se, self.sc)
         cmdrsp.BulkCommandResponder(self.se, self.sc)
+
+    def start_responder(self):
+        def set_responder():
+            self.se.transportDispatcher.jobStarted(1)
+            try:
+                self.se.transportDispatcher.runDispatcher()
+            except:
+                self.se.transportDispatcher.closeDispatcher()
+                raise
+
+        self.rsp = Process(target=set_responder)
+        self.rsp.start()
+
+    def stop_responder():
+        self.rsp.join()
 
     def get_telpars(self):
         self.tel = self.getManager().getProxy(self['telescope'])
