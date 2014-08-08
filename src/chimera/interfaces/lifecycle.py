@@ -16,7 +16,8 @@
 
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301, USA.
 
 
 from chimera.core.interface import Interface
@@ -44,8 +45,8 @@ class ILifeCycle (Interface):
         @note: Runs on the Manager's thread.
         @warning: This method must not block, so be a good boy/girl.
         """
-        
-    def __start__ (self):
+
+    def __start__(self):
         """
         Do device initialization. Open files, sockets, etc. This
         method it's called by Manager, just after the constructor.
@@ -53,8 +54,8 @@ class ILifeCycle (Interface):
         @note: Runs on the L{Manager} thread.
         @warning: This method must not block, so be a good boy/girl.
         """
-        
-    def __stop__ (self):
+
+    def __stop__(self):
         """
         Cleanup {__start__} actions.
 
@@ -66,7 +67,7 @@ class ILifeCycle (Interface):
         @warning: This method must not block, so be a good boy/girl.
         """
 
-    def __main__ (self):
+    def __main__(self):
         """
         Main control method. Implementers could use this method to
         implement control loop functions.
@@ -74,36 +75,36 @@ class ILifeCycle (Interface):
         @note: This method runs on their own thread.
         """
 
-    def getState (self):
+    def getState(self):
         """
         Get the current state of the object as a L{State} enum.
 
         @see: L{State} for possible values.
         """
 
-    def __setstate__ (self, state):
+    def __setstate__(self, state):
         """
         Internally used function to set the current state of the object.
 
         @see: L{State} for possible values.
         """
 
-    def getLocation (self):
+    def getLocation(self):
         """
         Get the current L{Location} where the object is deployed.
         """
 
-    def __setlocation__ (self, location):
+    def __setlocation__(self, location):
         """
         Internally used function to set the current location of the object.
         """
 
-    def getManager (self):
+    def getManager(self):
         """
         Get the current Manager for this object.
         """
 
-    def getProxy (self):
+    def getProxy(self):
         """
         Get a Proxy for this object (useful for callbacks)
         """

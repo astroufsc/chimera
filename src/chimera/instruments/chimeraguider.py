@@ -7,14 +7,14 @@ try:
     from astropy.io import fits
 except:
     import pyfits as fits
-import numpy as np
 
 from chimera.core.chimeraobject import ChimeraObject
 from chimera.core.exceptions import ObjectNotFoundException
 
 from chimera.interfaces.guider import Guider
 
-from chimera.instruments.filterwheel import FilterWheelBase
+# from chimera.instruments.filterwheel import FilterWheelBase
+
 
 class ChimeraGuider(ChimeraObject, Guider):
 
@@ -31,14 +31,15 @@ class ChimeraGuider(ChimeraObject, Guider):
         self.centroids = list()
 
         try:
-            t, gc, mc = (self.getManager().getProxy(self[x]) for x in ['telescope','guidercamera','camera'])
+            t, gc, mc = (self.getManager().getProxy(self[x])
+                         for x in ['telescope', 'guidercamera', 'camera'])
         except ObjectNotFoundException, e:
             self.log.debug('%s Component not found' % e)
             print('%s' % sys.exc_info()[1])
             # TODO: better exit strategy
             return
         else:
-            if not (x.ping for x in [t,gc,mc]):
+            if not (x.ping for x in [t, gc, mc]):
                 self.log.info('Component not responding')
                 return
 
@@ -70,8 +71,9 @@ class ChimeraGuider(ChimeraObject, Guider):
             else:
                 continue
 
-        # All tuples present in both sets are the centers of potential gdr boxes.
-        #TODO: check for objects too close to any border.
+        # All tuples present in both sets are the centers of potential
+        # gdr boxes.
+        # TODO: check for objects too close to any border.
 
         # Finally, the guiding centers are:
         gcenters = box_h.intersection(box_v)
@@ -82,12 +84,13 @@ class ChimeraGuider(ChimeraObject, Guider):
             self.gboxes.append([(b[0] - 5, b[0] + 5), (b[1] - 5, b[1] + 5)])
             # ...and also store the corresponding image sections, until we know
             # how the cameras will deliver guider images.
-            self.gimages.append(gdr_array[b[0] - 5:b[0] + 5, b[1] - 5:b[1] + 5])
+            self.gimages.append(
+                gdr_array[b[0] - 5:b[0] + 5, b[1] - 5:b[1] + 5])
 
     def getCOM(self, gf):
         """
-        Get a guiding image ( of size gboxes); calculate the centroid, compare to
-        reference (where it's at?) and return offsets (where are NESW!?)
+        Get a guiding image ( of size gboxes); calculate the centroid, compare
+        to reference (where it's at?) and return offsets (where are NESW!?)
         @param gf: guiding box as fits image.
         @rtype : list with centroid coordinates (pixels).
         """
@@ -95,10 +98,12 @@ class ChimeraGuider(ChimeraObject, Guider):
         ps = gf
         n = np.sum(ps)
 
-        # "Grid logic" (ha!) courtesy of scipy.ndimage.measurements.center_of_mass
+        # "Grid logic" (ha!) courtesy of
+        # scipy.ndimage.measurements.center_of_mass
         grids = np.ogrid[[slice(0, i) for i in ps.shape]]
 
-        self.centroids.append([np.sum(ps*grids[dir]) / n for dir in range(ps.ndim)])
+        self.centroids.append(
+            [np.sum(ps * grids[dir]) / n for dir in range(ps.ndim)])
 
     def exposeBegin(self):
         pass

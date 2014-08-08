@@ -10,23 +10,29 @@ si_pkt_data_hdr = si_pkt_base + 'iHi'
 si_pkt_img_hdr = si_pkt_base + 'i4H3iI'
 
 BUFFER = 4096
-# Future idea: at module load time, define a namedtuple subclass for each data structure?
+# Future idea: at module load time, define a namedtuple subclass for each
+# data structure?
+
 
 class SIDrv(object):
+
     def __init__(self):
         """
         Initialize TBD
         Connect to the camera (IP)
-        Grok the camera's config file, whatever that is! Once initialized, the camera is ready
-        to accept commands
+        Grok the camera's config file, whatever that is! Once initialized,
+        the camera is ready to accept commands
         @return:
         """
         # They're not all here...
-        self.cmds = dict(CamStatus=1011, AcqStatus=1017, TermAcq=1018, GetImage=1019, GetImgHdr=1024, SaveImg=1031,
-                         SetAcqMode=1034, SetExpTime=1035, SetAcqType=1036, Acquire=1037, NberOfFrames=1039,
-                         GetSGLSettings=1041, SetReadoutMode=1042, SetCCDFormat=1043, SetParam=1044,
-                         CoolerOnOff=1046, SetSavetoPath=1047, GetCamPars=1048, GetXMLFiles=1060, GetAcqTypes=1061,
-                         ResetCam=1063, HardResetCam=1064)
+        self.cmds = dict(
+            CamStatus=1011, AcqStatus=1017, TermAcq=1018, GetImage=1019,
+            GetImgHdr=1024, SaveImg=1031, SetAcqMode=1034, SetExpTime=1035,
+            SetAcqType=1036, Acquire=1037, NberOfFrames=1039,
+            GetSGLSettings=1041, SetReadoutMode=1042, SetCCDFormat=1043,
+            SetParam=1044, CoolerOnOff=1046, SetSavetoPath=1047,
+            GetCamPars=1048, GetXMLFiles=1060, GetAcqTypes=1061,
+            ResetCam=1063, HardResetCam=1064)
 
         self.ipaddr = '192.168.0.111'
         self.port = 2055
@@ -35,7 +41,7 @@ class SIDrv(object):
             self.sk = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.sk.settimeout(10)
             self.sk.connect((self.ipaddr, self.port))
-            print 'Camera connected at {%s} on port {%s}', self.ipaddr, self.port
+            print 'Camera at {%s} on port {%s}',self.ipaddr, self.port
         except socket.error, e:
             print('Is the Camera connected?', e)
             return
@@ -73,8 +79,8 @@ class SIDrv(object):
 
     def _dataPacket(self, pktfmt):
         """
-        Retrieves the data packet from the socket, unpack it via associated format
-        and populates results
+        Retrieves the data packet from the socket, unpack it via associated
+        format and populates results
         @param pktfmt: struct format for the corresponding data structure
         @return: unpacked tuple
         """
@@ -152,9 +158,8 @@ class SIDrv(object):
 
         cps = struct.calcsize(si_pkt_data_hdr) - ack[0]
         print cps, repr(cps)
-        cdata = self._dataPacket(repr(cps)+'s')
+        cdata = self._dataPacket(repr(cps) + 's')
         return cdata
-
 
     def setAcqMode(self, am):
         """
@@ -168,7 +173,8 @@ class SIDrv(object):
         return cdata
 
     def setExpTime(self, time):
-        ack = self._cmdPacket(self.cmds['SetExpTime'], type=1, psl=time) # what is DBL? check this time fmt
+        # what is DBL? check this time fmt
+        ack = self._cmdPacket(self.cmds['SetExpTime'], type=1, psl=time)
         print ack
 
         cdata = self._dataPacket('H')
@@ -179,4 +185,3 @@ class SIDrv(object):
         print ack
         cdata = self._dataPacket('H')
         return cdata
-

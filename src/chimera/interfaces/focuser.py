@@ -16,7 +16,8 @@
 
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301, USA.
 
 
 from chimera.core.interface import Interface
@@ -27,13 +28,16 @@ FocuserFeature = Enum("TEMPERATURE_COMPENSATION",
                       "ENCODER",
                       "POSITION_FEEDBACK")
 
+
 class InvalidFocusPositionException (ChimeraException):
+
     """
     Represents an outside of boundaries Focuser error.
     """
 
 
 class Focuser (Interface):
+
     """Instrument interface for an electromechanical focuser for
        astronomical telescopes.
        
@@ -51,7 +55,7 @@ class Focuser (Interface):
                   "open_timeout": 10,
                   "move_timeout": 60}
 
-    def moveIn (self, n):
+    def moveIn(self, n):
         """
         Move the focuser IN by n steps. Steps could be absolute units
         (for focuser with absolute encoders) or just a pulse of
@@ -70,8 +74,7 @@ class Focuser (Interface):
         @rtype   : None
         """
 
-
-    def moveOut (self, n):
+    def moveOut(self, n):
         """
         Move the focuser OUT by n steps. Steps could be absolute units
         (for focuser with absolute encoders) or just a pulse of
@@ -90,7 +93,7 @@ class Focuser (Interface):
         @rtype   : None
         """
 
-    def moveTo (self, position):
+    def moveTo(self, position):
         """
         Move the focuser to the select position (if ENCODER_BASED
         supported).
@@ -107,7 +110,7 @@ class Focuser (Interface):
         @rtype   : None
         """
 
-    def getPosition (self):
+    def getPosition(self):
         """
         Gets the current focuser position (if the POSITION_FEEDBACK
         supported).
@@ -119,18 +122,18 @@ class Focuser (Interface):
         @return  : Current focuser position.
         """
 
-    def getRange (self):
+    def getRange(self):
         """Gets the focuser total range
         @rtype: tuple
         @return: Start and end positions of the focuser (start, end)
         """
 
-    def getTemperature (self):
+    def getTemperature(self):
         """Retusn the temperature of the focuser probe
         @rtype: float
         """
 
-    def supports (self, feature=None):
+    def supports(self, feature=None):
         """Ask Focuser if it supports the given feature. Feature list
         is availble on L{FocuserFeature} enum.
 
