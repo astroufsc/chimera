@@ -234,7 +234,7 @@ class SnmpMonitor(ChimeraObject):
         self.rsp = Process(target=set_responder)
         self.rsp.start()
 
-    def stop_responder():
+    def stop_responder(self):
         self.rsp.join()
 
     def get_telpars(self):
