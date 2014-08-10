@@ -5,6 +5,7 @@ from chimera.core.exceptions import ChimeraValueError, ObjectNotFoundException
 
 import logging
 import chimera.core.log
+
 log = logging.getLogger(__name__)
 
 
@@ -34,8 +35,8 @@ class ImageRequest (dict):
                     'wait_dome': True,
                     'object_name': ''}
 
-        # Automatically call getMetadata on all instruments + site as long as only
-        # one instance of each is listed by the manager.
+        # Automatically call getMetadata on all instruments + site as long as
+        # only one instance of each is listed by the manager.
         self.auto_collect_metadata = True
 
         # URLs of proxies from which to get metadata before taking each image
@@ -94,7 +95,8 @@ class ImageRequest (dict):
 
         if self["object_name"]:
             self.headers.append(
-                ("OBJECT", str(self["object_name"]), "name of observed object"))
+                ("OBJECT", str(self["object_name"]), "name of observed object")
+                )
 
     def __setitem__(self, key, value):
 
@@ -104,12 +106,12 @@ class ImageRequest (dict):
         self.update({key: value})
 
     def __str__(self):
-        return ('exptime: %f, frames: %i, shutter: %s, type: %s' % (self['exptime'],
-                                                                    self[
-                                                                        'frames'],
-                                                                    self[
-                                                                        'shutter'],
-                                                                    self['type']))
+        return (
+            'exptime: %f, frames: %i, shutter: %s, type: %s' % (self['exptime'],
+                                                                self['frames'],
+                                                                self['shutter'],
+                                                                self['type'])
+            )
 
     def beginExposure(self, manager):
 

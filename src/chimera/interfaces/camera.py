@@ -178,7 +178,7 @@ class CameraExpose (Camera):
 
         @param status: The status of the current expose.
         @type  status: L{CameraStatus}
-        
+
         """
 
     @event
@@ -201,7 +201,7 @@ class CameraExpose (Camera):
 
         @param status: current exposure status
         @type  status: L{CameraStatus}
-        
+
         """
 
 

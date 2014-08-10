@@ -1,12 +1,11 @@
-from chimera.core.interface import Interface
+from chimera.interfaces.camera import (CameraExpose, CameraTemperature,
+                                       CameraInformation,
+                                       InvalidReadoutMode)
+from chimera.instruments.si.sidrv import SIDrv
+
 from chimera.core.event import event
 from chimera.util.enum import Enum
 from chimera.core.exceptions import ChimeraException
-
-Shutter = Enum('OPEN', 'CLOSE', 'LEAVE_AS_IS')
-Bitpix = Enum("char8", "uint16", "int16",
-              "int32", "int64", "float32", "float64")
-CCD = Enum("IMAGING", "TRACKING")
 
 # Special features parameters can be passed as ImageRequest
 # parameters. The Camera.supports(feature) method can be used

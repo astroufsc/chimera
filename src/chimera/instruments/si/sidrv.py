@@ -65,7 +65,6 @@ class SIDrv(object):
         # except:
         #     print('Error getting camera configuration file.')
 
-        # Here goes the unavoidable XML parsing routine...Argh!
 
     def _cmd_packet(self, svrcmd, type=0, psl=0):
         """
