@@ -20,9 +20,7 @@ class SI():
     __config__ = {"device": "Ethernet",
                   "ccd": CCD.IMAGING,
                   "temp_delta": 2.0,
-
                   "ccd_saturation_level": 60000,
-
                   "camera_model": "Spectral Instruments Inc. 1110S",
                   "ccd_model": "TBD",
                   "telescope_focal_length": 4000  # milimeter
