@@ -150,7 +150,7 @@ class CameraExpose (Camera):
         includes both integration time and readout).
 
         @return: The currently exposing ImageRequest if the camera is
-        exposing, False otherwise.  
+        exposing, False otherwise.
 
         @rtype: bool or L{ImageRequest}
         """
