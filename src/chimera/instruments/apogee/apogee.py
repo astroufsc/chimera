@@ -30,7 +30,7 @@ import datetime as dt
 import numpy as N
 import pyfits
 
-from chimera.instruments.apogee.apogeemanager import ApogeeManager
+from chimera.instruments.apogee.apogeedrv import ApogeeDrv
 from chimera.interfaces.camera import (
     CCD, CameraFeature, Shutter, ReadoutMode, CameraStatus)
 
@@ -53,7 +53,7 @@ class APOGEE(CameraBase, FilterWheelBase):
         CameraBase.__init__(self)
         FilterWheelBase.__init__(self)
 
-        self.__apogee_manager = ApogeeManager()
+        self.__apogee_manager = ApogeeDrv()
 
         self.__cooling = False
 
