@@ -1,0 +1,17 @@
+# For template doc:
+# In this section put the chimera classes necessary to interact
+# with the system.
+from chimera.core.cli import ChimeraCLI, action, parameter
+from chimera.core.callback import callback
+from chimera.core.exceptions import ChimeraException
+from chimera.core.compat import freeze_support
+
+
+class ChimeraMon(ChimeraCLI):
+
+    """
+    According to the inline doc, the command must have the
+    form:
+    chimera-mon (--start|stop)
+    [--proto=(v2c|v3)]
+    """
