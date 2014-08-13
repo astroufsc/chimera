@@ -300,7 +300,8 @@ class ChimeraCLI (object):
         self.parser = optparse.OptionParser(prog=prog,
                                             description=_chimera_description_ +
                                             " - " + description,
-                                            version="Chimera: %s\n%s: %s" % (_chimera_version_, prog, version))
+                                            version="Chimera: %s\n%s: %s" %
+                                            (_chimera_version_, prog, version))
 
         # hack to inject our exit funciton into the parser
         def parser_exit(status=0, msg=None):
@@ -410,7 +411,7 @@ class ChimeraCLI (object):
                                     type=ParameterType.INCLUDE_PATH, default=[
                                         ChimeraPath.controllers()],
                                     help="Append PATH to controllers load path. "
-                                    "This option could be setted multiple "
+                                    "This option could be set multiple "
                                     "times to add multiple directories.",
                                     metavar="PATH"))
             self._needControllersPath = False
