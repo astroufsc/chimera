@@ -28,7 +28,7 @@ dps_imgacq_struct_2013 = 's'
 
 
 
-class SIDrv(object):
+class SIDrv():
 
     def __init__(self):
         """
@@ -60,12 +60,15 @@ class SIDrv(object):
             print('Is the Camera connected?', e)
             return
 
+<<<<<<< HEAD
         # try:
         #     self.cfg = os.path.join(SYSTEM_CONFIG_DIRECTORY, 'SICam.cfg')
         # except:
         #     print('Error getting camera configuration file.')
 
 
+=======
+>>>>>>> spectral_instruments
     def _cmd_packet(self, svrcmd, type=0, psl=0):
         """
         Sends a command packet to the camera server, checks for
@@ -131,9 +134,7 @@ class SIDrv(object):
         ack = self._cmd_packet(self.cmds['GetCamPars'])
         print ack
 
-        cps = struct.calcsize(si_pkt_data_hdr) - ack[0]
-        print cps
-        cdata = self._data_packet(repr(cps))
+        cdata = self._data_packet(dps_campars_struct_2010)
         return 'Params:', cdata
 
     def get_SGLII_settings(self):
@@ -155,7 +156,7 @@ class SIDrv(object):
         ack = self._cmd_packet(self.cmds['GetXMLFiles'])
         print ack
 
-        cdata = self._data_packet(repr(cps))
+        cdata = self._data_packet(dps_camxml_struct_2011)
         return cdata
 
     def get_acq_types(self):
