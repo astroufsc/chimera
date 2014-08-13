@@ -1,0 +1,23 @@
+# For template doc:
+# In this section put the chimera classes necessary to interact
+# with the system.
+from chimera.core.cli import ChimeraCLI, action, parameter
+from chimera.core.callback import callback
+from chimera.core.exceptions import ChimeraException
+from chimera.core.compat import freeze_support
+
+
+class ChimeraMon(ChimeraCLI):
+    # According to the inline doc, the command must have the
+    # form:
+    # chimera-mon (--start|--stop) --proto=(v2c|v3) --auth=(md5|sha)
+    #              
+
+    def __init__(self):
+        ChimeraCLI.__init__(
+            self, "chimera-mon", "Chimera Monitoring System", 0.1, port=9005)
+
+        self.addHelpGroup("SNMPMON", "SNMP Authentication Information")
+        #self.addParameters(dict(name="telescope", default="/Telescope/0", helpGroup="TELESCOPE",
+                                # help="Tell the dome to follow TELESCOPE when tracking (only "
+                                # "utilized when using --track"))
