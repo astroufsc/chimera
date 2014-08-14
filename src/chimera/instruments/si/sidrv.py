@@ -60,15 +60,12 @@ class SIDrv():
             print('Is the Camera connected?', e)
             return
 
-<<<<<<< HEAD
         # try:
         #     self.cfg = os.path.join(SYSTEM_CONFIG_DIRECTORY, 'SICam.cfg')
         # except:
         #     print('Error getting camera configuration file.')
 
 
-=======
->>>>>>> spectral_instruments
     def _cmd_packet(self, svrcmd, type=0, psl=0):
         """
         Sends a command packet to the camera server, checks for

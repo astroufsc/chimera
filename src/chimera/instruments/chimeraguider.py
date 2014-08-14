@@ -1,11 +1,10 @@
 import sys
-#import logging
 
 import numpy as np
 
 try:
     from astropy.io import fits
-except:
+except ImportError:
     import pyfits as fits
 
 from chimera.core.chimeraobject import ChimeraObject
@@ -13,7 +12,12 @@ from chimera.core.exceptions import ObjectNotFoundException
 
 from chimera.interfaces.guider import Guider
 
-# from chimera.instruments.filterwheel import FilterWheelBase
+
+from chimera.core.log import fmt
+from chimera.instruments import log
+
+print log.name, fmt
+raw_input()
 
 
 class ChimeraGuider(ChimeraObject, Guider):
@@ -34,13 +38,13 @@ class ChimeraGuider(ChimeraObject, Guider):
             t, gc, mc = (self.getManager().getProxy(self[x])
                          for x in ['telescope', 'guidercamera', 'camera'])
         except ObjectNotFoundException, e:
-            self.log.debug('%s Component not found' % e)
-            print('%s' % sys.exc_info()[1])
+            log.debug('%s Component not found' % e)
+            #print('%s' % sys.exc_info()[1])
             # TODO: better exit strategy
             return
         else:
             if not (x.ping for x in [t, gc, mc]):
-                self.log.info('Component not responding')
+                log.info('Component not responding')
                 return
 
         mc.exposeBegin += self.exposeBegin

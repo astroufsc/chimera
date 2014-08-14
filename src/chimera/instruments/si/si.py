@@ -1,10 +1,8 @@
-<<<<<<< HEAD
 from chimera.interfaces.camera import (CameraExpose, CameraTemperature,
                                        CameraInformation,
                                        InvalidReadoutMode)
 from chimera.instruments.si.sidrv import SIDrv
 
-=======
 import logging
 from chimera.interfaces.camera import (CCD,
                                        Bitpix,
@@ -17,19 +15,11 @@ from chimera.interfaces.camera import (CCD,
                                        ReadoutMode,
                                        CameraTemperature)
 from chimera.instruments.si.sidrv import SIDrv
->>>>>>> spectral_instruments
 from chimera.core.event import event
 from chimera.core.exceptions import ChimeraException
 
-<<<<<<< HEAD
-# Special features parameters can be passed as ImageRequest
-# parameters. The Camera.supports(feature) method can be used
-# to ask if the current camera support a given feature (useful for
-# interfaces, to decide when to display options to the user).
-=======
 log = logging.getloggger('chimera')
 
->>>>>>> spectral_instruments
 
 class SI():
     __config__ = {"device": "Ethernet",
