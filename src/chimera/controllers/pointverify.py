@@ -56,13 +56,10 @@ class PointVerify (ChimeraObject, IPointVerify):
     def _takeImage(self):
 
         cam = self.getCam()
-<<<<<<< HEAD
         frames = cam.expose(
             exptime=self["exptime"], frames=1, shutter=Shutter.OPEN, filename="pointverify-$DATE")
-=======
         frames = cam.expose(exptime=self[
                             "exptime"], frames=1, shutter=Shutter.OPEN, filename="pointverify-$DATE")
->>>>>>> monitor_module
 
         if frames:
             return frames[0]
@@ -151,13 +148,10 @@ class PointVerify (ChimeraObject, IPointVerify):
         if (self.ntrials == 0):
             site = self.getManager().getProxy("/Site/0")
             logstr = "Pointing Info for Mount Model: %s %s %s %s %s" % (site.LST(),
-<<<<<<< HEAD
-                                                                        site.MJD(
-                                                                        ),
-=======
                                                                         site.MJD(),
->>>>>>> monitor_module
-                                                                        image["DATE-OBS"], initialPosition, currentWCS)
+                                                                        image["DATE-OBS"],
+                                                                        initialPosition,
+                                                                        currentWCS)
             self.log.info(logstr)
 
         delta_ra = ra_img_center - ra_wcs_center
@@ -183,13 +177,10 @@ class PointVerify (ChimeraObject, IPointVerify):
                 raise CantPointScopeException("Scope does not point with a precision of %f (RA) or %f (DEC) after %d trials\n" % (
                     self["tolra"], self["toldec"], self["max_trials"]))
             time.sleep(5)
-<<<<<<< HEAD
             tel.moveOffset(Coord.fromD(delta_ra).AS, Coord.fromD(
                 delta_dec).AS, rate=SlewRate.CENTER)
-=======
             tel.moveOffset(
                 Coord.fromD(delta_ra).AS, Coord.fromD(delta_dec).AS, rate=SlewRate.CENTER)
->>>>>>> monitor_module
             self.pointVerify()
         else:
             # if we got here, we were succesfull, reset trials counter

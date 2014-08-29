@@ -13,13 +13,6 @@ from chimera.core.exceptions import ObjectNotFoundException
 from chimera.interfaces.guider import Guider
 
 
-from chimera.core.log import fmt
-from chimera.instruments import log
-
-print log.name, fmt
-raw_input()
-
-
 class ChimeraGuider(ChimeraObject, Guider):
 
     def __init__(self):
