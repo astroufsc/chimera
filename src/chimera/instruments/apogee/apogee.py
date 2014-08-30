@@ -26,6 +26,7 @@ import datetime as dt
 # import os
 # import shutil
 # import ctypes
+import logging
 
 import numpy as N
 import pyfits
@@ -40,6 +41,8 @@ from chimera.instruments.camera import CameraBase
 from chimera.instruments.filterwheel import FilterWheelBase, InvalidFilterPositionException
 
 from chimera.core.lock import lock
+
+log = logging.getLogger(__name__)
 
 
 class APOGEE(CameraBase, FilterWheelBase):
@@ -116,7 +119,7 @@ class APOGEE(CameraBase, FilterWheelBase):
         return True
 
     def _expose(self, imageRequest):
-        self.log.debug("apogee - expose - BEGIN")
+        log.debug("apogee - expose - BEGIN")
 
         shutterRequest = imageRequest['shutter']
 
@@ -126,9 +129,9 @@ class APOGEE(CameraBase, FilterWheelBase):
         file(filenameRequest, "w").close()
 
         exptimeRequest = imageRequest["exptime"]
-        self.log.debug("shutterRequest = %s" % shutterRequest)
-        self.log.debug("filenameRequest = %s" % filenameRequest)
-        self.log.debug("exptime = %s" % exptimeRequest)
+        log.debug("shutterRequest = %s" % shutterRequest)
+        log.debug("filenameRequest = %s" % filenameRequest)
+        log.debug("exptime = %s" % exptimeRequest)
 
         #  0 = false
         shutter = 0
@@ -137,7 +140,7 @@ class APOGEE(CameraBase, FilterWheelBase):
         elif shutterRequest == Shutter.CLOSE:
             shutter = 0
 
-        self.log.debug("shutter = %d" % shutter)
+        log.debug("shutter = %d" % shutter)
 
         self.exposeBegin(imageRequest)
         self.__apogee_manager.expose(
@@ -151,7 +154,7 @@ class APOGEE(CameraBase, FilterWheelBase):
         self.lastFrameTemp = self.__apogee_manager.getTemperature()
 
         self.exposeComplete(imageRequest, status)
-        self.log.debug("apogee - expose - END")
+        log.debug("apogee - expose - END")
 
     def make_dark(self, shape, dtype, exptime):
         ret = N.zeros(shape, dtype=dtype)
@@ -190,7 +193,7 @@ class APOGEE(CameraBase, FilterWheelBase):
         return ret
 
     def _readout(self, imageRequest):
-        self.log.debug("apogee - _readout - BEGIN")
+        log.debug("apogee - _readout - BEGIN")
         (mode, binning, top, left,
          width, height) = self._getReadoutModeInfo(imageRequest["binning"],
                                                    imageRequest["window"])
@@ -199,9 +202,9 @@ class APOGEE(CameraBase, FilterWheelBase):
 
         self.readoutBegin(imageRequest)
 
-        self.log.debug("apogee - _readout - temperature = %f" %
+        log.debug("apogee - _readout - temperature = %f" %
                        self.lastFrameTemp)
-        self.log.debug("apogee - _readout - start_time = %s" %
+        log.debug("apogee - _readout - start_time = %s" %
                        self.lastFrameStartTime)
 
         img = self.__apogee_manager.getImageData()
@@ -211,7 +214,7 @@ class APOGEE(CameraBase, FilterWheelBase):
                                  "frame_start_time": self.lastFrameStartTime,
                                  "binning_factor": self._binning_factors[binning]})
 
-        self.log.debug("apogee - _readout - END")
+        log.debug("apogee - _readout - END")
         return True
 
     @lock
@@ -232,7 +235,7 @@ class APOGEE(CameraBase, FilterWheelBase):
 
     @lock
     def getTemperature(self):
-        self.log.debug("apogee - temperature = %s ÂºC" %
+        log.debug("apogee - temperature = %s ºC" %
                        self.__apogee_manager.getTemperature())
         return self.__apogee_manager.getTemperature()
 

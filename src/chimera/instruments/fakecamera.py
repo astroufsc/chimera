@@ -24,6 +24,7 @@ import random
 import urllib
 import os
 import shutil
+import logging
 
 import numpy as N
 import pyfits
@@ -36,6 +37,8 @@ from chimera.instruments.camera      import CameraBase
 from chimera.instruments.filterwheel import FilterWheelBase, InvalidFilterPositionException
 
 from chimera.core.lock       import lock
+
+log = logging.getLogger(__name__)
 
 
 class FakeCamera (CameraBase, FilterWheelBase):
@@ -178,32 +181,32 @@ class FakeCamera (CameraBase, FilterWheelBase):
             dome = None
         
         if not telescope:
-            self.log.debug("FakeCamera couldn't find telescope.")
+            log.debug("FakeCamera couldn't find telescope.")
         if not dome:
-            self.log.debug("FakeCamera couldn't find dome.")
+            log.debug("FakeCamera couldn't find dome.")
 
         ccd_width, ccd_height = self.getPhysicalSize()
         
         if (imageRequest["type"].upper() == "DARK"):
-            self.log.info("making dark")
+            log.info("making dark")
             pix = self.make_dark((ccd_height, ccd_width), N.float, imageRequest['exptime'])
         elif (imageRequest["type"].upper() == "FLAT"):
-            self.log.info("making flat")
+            log.info("making flat")
             pix = (self.make_flat((ccd_height,ccd_width), N.float)/1000)
         elif (imageRequest["type"].upper() == "BIAS"):
-            self.log.info("making bias")
+            log.info("making bias")
             pix = self.make_dark((ccd_height, ccd_width), N.float, 0)
         else:
             if telescope and dome:
-                self.log.debug("Dome open? "+ str(dome.isSlitOpen()))
+                log.debug("Dome open? "+ str(dome.isSlitOpen()))
 
                 if dome.isSlitOpen() and self["use_dss"]:
                     domeAZ=dome.getAz().toD()
                     telAZ=telescope.getAz().toD()
 
-                    self.log.debug("Dome AZ: "+str(domeAZ)+"  Tel AZ: "+str(telAZ))
+                    log.debug("Dome AZ: "+str(domeAZ)+"  Tel AZ: "+str(telAZ))
                     if (abs(domeAZ-telAZ) <= 3):
-                        self.log.debug("Dome & Slit aligned -- getting DSS")
+                        log.debug("Dome & Slit aligned -- getting DSS")
                         url = "http://stdatu.stsci.edu/cgi-bin/dss_search?"
                         query_args = {"r": telescope.getRa().strfcoord('%(h)02d:%(m)02d:%(s)04d'),
                                       "d": telescope.getDec().strfcoord('%(d)02d:%(m)02d:%(s)04d', signed=True),
@@ -225,11 +228,11 @@ class FakeCamera (CameraBase, FilterWheelBase):
                             
                         url += urllib.urlencode(query_args)
                         
-                        self.log.debug("Attempting URL: " + url)
+                        log.debug("Attempting URL: " + url)
                         try:
                             t0 = time.time()
                             dssfile=urllib.urlretrieve(url)[0]
-                            self.log.debug("download took: %.3f s" % (time.time() - t0))
+                            log.debug("download took: %.3f s" % (time.time() - t0))
                             fitsfile = dssfile+".fits.gz"
                             shutil.copy(dssfile, fitsfile)
                             hdulist=pyfits.open(fitsfile)
@@ -237,24 +240,24 @@ class FakeCamera (CameraBase, FilterWheelBase):
                             hdulist.close()
                             os.remove(fitsfile)
                         except Exception, e:
-                            self.log.warning("General error getting DSS image: " + str(e))
+                            log.warning("General error getting DSS image: " + str(e))
 
                     # dome not aligned, take a 'dome flat'
                     else:
-                        self.log.debug("Dome not aligned... making flat image...")
+                        log.debug("Dome not aligned... making flat image...")
                         try:
                             pix = (self.make_flat((ccd_height,ccd_width), N.float)/1000)
                         except Exception, e:
-                            self.log.warning("Error generating flat: " + str(e))
+                            log.warning("Error generating flat: " + str(e))
 
         # without telescope/dome, or if dome/telescope aren't aligned, or the dome is closed
         # or we otherwise failed, just make a flat pattern with dark noise
         if (pix == None):
             try:
-                self.log.info("Making flat image: " + str(ccd_height) + "x" + str(ccd_width))
+                log.info("Making flat image: " + str(ccd_height) + "x" + str(ccd_width))
                 pix = self.make_flat((ccd_height,ccd_width), N.float)
             except Exception, e:
-                self.log.warning("Make flat error: " + str(e))
+                log.warning("Make flat error: " + str(e))
         
         # Last resort if nothing else could make a picture
         if (pix == None):

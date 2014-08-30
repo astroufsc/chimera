@@ -6,7 +6,6 @@ from chimera.core.constants  import (SYSTEM_CONFIG_DEFAULT_FILENAME,
 
 import yaml
 
-import chimera.core.log
 import logging
 log = logging.getLogger(__name__)
 

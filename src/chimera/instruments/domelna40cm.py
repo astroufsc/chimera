@@ -24,6 +24,7 @@ import threading
 import math
 import os
 import select
+import logging
 
 from chimera.instruments.dome import DomeBase
 from chimera.interfaces.dome  import InvalidDomePositionException, DomeStatus
@@ -33,6 +34,8 @@ from chimera.core.lock import lock
 from chimera.core.constants import SYSTEM_CONFIG_DIRECTORY
 
 from chimera.util.coord import Coord
+
+log = logging.getLogger(__name__)
 
 
 class DomeLNA40cm (DomeBase):
@@ -56,7 +59,7 @@ class DomeLNA40cm (DomeBase):
         try:
             self._debugLog = open(os.path.join(SYSTEM_CONFIG_DIRECTORY, "dome-debug.log"), "w")
         except IOError, e:
-            self.log.warning("Could not create meade debug file (%s)" % str(e))
+            log.warning("Could not create meade debug file (%s)" % str(e))
 
     def __start__ (self):
 
@@ -66,7 +69,7 @@ class DomeLNA40cm (DomeBase):
         try:
             self.open()
         except Exception, e:
-            self.log.exception(e)
+            log.exception(e)
             return False
 
         return super(DomeLNA40cm, self).__start__()
@@ -93,7 +96,7 @@ class DomeLNA40cm (DomeBase):
 
         ret = self._readline ()
         if ret != "INVALIDO":
-            self.log.warning("Quirk error, restarting Dome.")
+            log.warning("Quirk error, restarting Dome.")
             self._restartDome()
 
         return True
@@ -106,7 +109,7 @@ class DomeLNA40cm (DomeBase):
             self._num_restarts += 1
                                   
 
-        self.log.info("Trying to restart the Dome.")
+        log.info("Trying to restart the Dome.")
 
         self._write("INICIAR")
 
@@ -189,7 +192,7 @@ class DomeLNA40cm (DomeBase):
         fin = self._readline ()
 
         if fin == "ALARME":
-            self.log.warning("Error while slewing dome. Some barcodes"
+            log.warning("Error while slewing dome. Some barcodes"
                              " couldn't be read correctly."
                              " Restarting the dome and trying again.")
             self._restartDome()
@@ -201,7 +204,7 @@ class DomeLNA40cm (DomeBase):
             self.slewComplete(self.getAz(), DomeStatus.OK)
         else:
             self._slewing = False
-            self.log.warning("Unknow error while slewing. "
+            log.warning("Unknow error while slewing. "
                              "Received '%s' from dome. Restarting it." % fin)
             self._restartDome()
             return self.slewToAz(az)
@@ -240,7 +243,7 @@ class DomeLNA40cm (DomeBase):
 
         # check timeout
         if not ack:
-            self.log.warning("Dome timeout, restarting it.")
+            log.warning("Dome timeout, restarting it.")
             self._restartDome()
             return self.getAz()
             #raise IOError("Couldn't get azimuth after %d seconds." % 10)
@@ -254,7 +257,7 @@ class DomeLNA40cm (DomeBase):
             ack = ack[ack.find("=")+1:]
 
         if ack == "ERRO":
-            self.log.warning("Dome position error, restarting it.")
+            log.warning("Dome position error, restarting it.")
             self._restartDome()
             return self.getAz()
 

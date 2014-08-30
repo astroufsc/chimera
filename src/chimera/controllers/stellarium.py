@@ -4,10 +4,13 @@ import threading
 import SocketServer
 import struct
 import math
+import logging
 
 from chimera.core.chimeraobject import ChimeraObject
 from chimera.util.coord import Coord
 from chimera.util.position import Position
+
+log = logging.getLogger(__name__)
 
 
 class GotoMessage:
@@ -136,7 +139,7 @@ class Stellarium(ChimeraObject):
         return True
 
     def receiveGoto(self, message):
-        self.log.debug("[stellarium] goto %s" % message.position)
+        log.debug("[stellarium] goto %s" % message.position)
         try:
             self.telescope.slewToRaDec(message.position)
             self.error = False

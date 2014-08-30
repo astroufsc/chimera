@@ -19,6 +19,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 # 02110-1301, USA.
 
+import logging
 
 from chimera.core.chimeraobject import ChimeraObject
 
@@ -34,6 +35,8 @@ from chimera.util.position import Epoch, Position
 
 
 __all__ = ["TelescopeBase"]
+
+log = logging.getLogger(__name__)
 
 
 class TelescopeBase(ChimeraObject,
@@ -78,16 +81,16 @@ class TelescopeBase(ChimeraObject,
     def _getFinalPosition(self, position):
 
         if str(position.epoch).lower() != str(Epoch.NOW).lower():
-            self.log.info(
+            log.info(
                 "Precessing position (%s) from %s to current epoch." %
                 (str(position), position.epoch))
             position_now = position.precess(Epoch.NOW)
         else:
-            self.log.info(
+            log.info(
                 "Current position (%s), no precession needed." % str(position))
             position_now = position
 
-        self.log.info("Final precessed position %s" % str(position_now))
+        log.info("Final precessed position %s" % str(position_now))
 
         return position_now
 

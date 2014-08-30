@@ -1,4 +1,4 @@
-import sys
+import logging
 
 import numpy as np
 
@@ -11,6 +11,8 @@ from chimera.core.chimeraobject import ChimeraObject
 from chimera.core.exceptions import ObjectNotFoundException
 
 from chimera.interfaces.guider import Guider
+
+log = logging.getLogger(__name__)
 
 
 class ChimeraGuider(ChimeraObject, Guider):

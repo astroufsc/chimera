@@ -29,7 +29,7 @@ except ImportError:
     
 
 import logging
-import chimera.core.log
+
 log = logging.getLogger(__name__)
 
 from chimera.util.enum import EnumValue

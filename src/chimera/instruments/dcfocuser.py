@@ -18,6 +18,8 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+import logging
+
 from chimera.interfaces.focuser import (InvalidFocusPositionException,
                                         FocuserFeature)
 
@@ -33,6 +35,8 @@ Direction = Enum("IN", "OUT")
 
 __all__ = ['Direction',
            'DCFocuser']
+
+log = logging.getLogger(__name__)
 
 
 class DCFocuser (FocuserBase):
@@ -81,7 +85,7 @@ class DCFocuser (FocuserBase):
         # range setting
         self._range = (0, int(self["dt"]/float(self["pulse_dt"])))
         if self._range[1] <= 0:
-            self.log.warning("Invalid dt and pulse_dt constants, focuser range negative.")
+            log.warning("Invalid dt and pulse_dt constants, focuser range negative.")
             return False
 
         # restore last position
@@ -92,7 +96,7 @@ class DCFocuser (FocuserBase):
             try:
                 lastPosition = int(open(filename, 'r').read())
             except ValueError:
-                self.log.warning("Content of dc_focuser.memory file is invalid. Removing it.")
+                log.warning("Content of dc_focuser.memory file is invalid. Removing it.")
                 os.unlink(filename)
 
         self._lastPositionLog = open(filename, 'w')
@@ -105,9 +109,9 @@ class DCFocuser (FocuserBase):
 
         # move focuser to our "zero" if needed
         if lastPosition is None:
-            self.log.info("Focuser not calibrated. Wait ...")
+            log.info("Focuser not calibrated. Wait ...")
             self.moveTo(0)
-            self.log.info("Calibration DONE")
+            log.info("Calibration DONE")
 
         return True
 

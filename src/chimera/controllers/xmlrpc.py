@@ -26,6 +26,7 @@ import socket
 import sys
 import select
 import threading
+import logging
 
 from chimera.core.chimeraobject import ChimeraObject
 from chimera.core.location import Location
@@ -35,6 +36,7 @@ from chimera.util.coord import Coord
 from chimera.util.position import Position
 
 from Pyro.util import getPyroTraceback
+log = logging.getLogger(__name__)
 
 
 class ThreadingXMLRPCServer (SocketServer.ThreadingTCPServer,
@@ -236,17 +238,17 @@ class XMLRPC(ChimeraObject):
             self._srv.register_function(self.getListOf, 'Chimera.getListOf')
             return True
         except socket.error, e:
-            self.log.error("Error while starting Remote server (%s)" % e)
+            log.error("Error while starting Remote server (%s)" % e)
 
     def __stop__(self):
-        self.log.info(
+        log.info(
             'Shutting down XMLRPC server at http://%s:%d' % (self.host, self["port"]))
         self._srvThread.shutdown()
 
     def control(self):
 
         if self._srv != None:
-            self.log.info(
+            log.info(
                 "Starting XML-RPC server at http://%s:%d" % (self.host, self["port"]))
             self._srvThread = serverThread(self._srv)
             self._srvThread.start()

@@ -18,10 +18,14 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+import logging
+
 from chimera.core.chimeraobject import ChimeraObject
 from chimera.core.lock          import lock
 
 from chimera.interfaces.focuser import Focuser
+
+log = logging.getLogger(__name__)
 
 
 class FocuserBase (ChimeraObject, Focuser):
@@ -54,7 +58,7 @@ class FocuserBase (ChimeraObject, Focuser):
         if feature in self._supports:
             return self._supports[feature]
         else:
-            self.log.info("Invalid feature: %s" % str(feature))
+            log.info("Invalid feature: %s" % str(feature))
             return False
 
     def getMetadata(self, request):

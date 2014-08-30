@@ -23,6 +23,7 @@ import threading
 import datetime as dt
 from types import FloatType
 import os
+import logging
 
 try:
     import cPickle as pickle
@@ -43,6 +44,8 @@ from chimera.core.exceptions import ObjectNotFoundException, MeadeException
 from chimera.core.constants import SYSTEM_CONFIG_DIRECTORY
 
 Direction = Enum("E", "W", "N", "S")
+
+log = logging.getLogger(__name__)
 
 
 class Meade (TelescopeBase):
@@ -72,7 +75,7 @@ class Meade (TelescopeBase):
         try:
             self._debugLog = open(os.path.join(SYSTEM_CONFIG_DIRECTORY, "meade-debug.log"), "w")
         except IOError, e:
-            self.log.warning("Could not create meade debug file (%s)" % str(e))
+            log.warning("Could not create meade debug file (%s)" % str(e))
 
         # how much arcseconds / second for every slew rate
         # and direction
@@ -96,7 +99,7 @@ class Meade (TelescopeBase):
                 self._calibration = pickle.loads(open(self._calibrationFile, "r").read())
                 self.calibrated = True
             except Exception, e:
-                self.log.warning("Problems reading calibration persisted data (%s)" % e)
+                log.warning("Problems reading calibration persisted data (%s)" % e)
 
         return True
 
@@ -145,7 +148,7 @@ class Meade (TelescopeBase):
             self.setUTCOffset(site.utcoffset())
             self.setDate(dt.date.today())
         except ObjectNotFoundException:
-            self.log.warning("Cannot initialize telescope. "
+            log.warning("Cannot initialize telescope. "
                              "Site object not available. Telescope"
                              " attitude cannot be determined.")
 
@@ -170,7 +173,7 @@ class Meade (TelescopeBase):
 
             # manualy initialize scope
             if self["skip_init"]:
-                self.log.info("Skipping init as requested.")
+                log.info("Skipping init as requested.")
             else:
                 self._initTelescope()
 
@@ -401,7 +404,7 @@ class Meade (TelescopeBase):
         start = time.time ()
         finish = start + duration
 
-        self.log.debug("[move] delta: %f s" % (finish-start,))
+        log.debug("[move] delta: %f s" % (finish-start,))
 
         while time.time() < finish:
             pass # busy wait!
@@ -414,7 +417,7 @@ class Meade (TelescopeBase):
             return Coord.fromD(end.angsep(start))
 
         delta = calcDelta(startPos, self.getPositionRaDec())
-        self.log.debug("[move] moved %f arcsec" % delta.AS)
+        log.debug("[move] moved %f arcsec" % delta.AS)
 
         return True
 
@@ -458,14 +461,14 @@ class Meade (TelescopeBase):
             
         for rate in SlewRate:
             for direction in Direction:
-                self.log.debug("Calibrating %s %s" % (rate, direction))
+                log.debug("Calibrating %s %s" % (rate, direction))
 
                 total = 0
 
                 for i in range(2):
                     total += calibrate(direction, rate).AS
 
-                self.log.debug("> %f" % (total/2.0)) 
+                log.debug("> %f" % (total/2.0)) 
                 self._calibration[rate][direction] = total/2.0
 
         # save calibration
@@ -474,9 +477,9 @@ class Meade (TelescopeBase):
             f.write(pickle.dumps(self._calibration))
             f.close()
         except Exception, e:
-            self.log.warning("Problems persisting calibration data. (%s)" % e)
+            log.warning("Problems persisting calibration data. (%s)" % e)
 
-        self.log.info("Calibration was OK.")
+        log.info("Calibration was OK.")
 
     def _calcDuration (self, arc, direction, rate):
         """
@@ -485,10 +488,10 @@ class Meade (TelescopeBase):
         """
 
         if not self.isMoveCalibrated():
-            self.log.info("Telescope fine movement not calibrated. Calibrating now...")
+            log.info("Telescope fine movement not calibrated. Calibrating now...")
             self.calibrateMove()
 
-        self.log.debug("[move] asked for %s arcsec" % float(arc))
+        log.debug("[move] asked for %s arcsec" % float(arc))
                    
         return arc*(self._calibration_time/self._calibration[rate][direction])
 

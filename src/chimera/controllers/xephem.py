@@ -5,7 +5,11 @@ from chimera.util.position import Position
 import os
 import time
 from select import select
-    
+import logging
+
+log = logging.getLogger(__name__)
+
+
 class XEphem (ChimeraObject):
 
     __config__ = {"telescope": "/Telescope/0",
@@ -27,7 +31,7 @@ class XEphem (ChimeraObject):
                 try:
                     os.mkfifo(fifo, 0666)
                 except OSError:
-                    self.log.exception("Couldn't create XEphem FIFOs.")
+                    log.exception("Couldn't create XEphem FIFOs.")
                     raise
 
     def _getTel(self):
@@ -41,18 +45,18 @@ class XEphem (ChimeraObject):
             out_fifo = os.fdopen(fd, "w")
 
             mark = "RA:%.3f Dec:%.3f" % (position.ra.R, position.dec.R)
-            self.log.debug("Updating sky marker: %s" % mark)
+            log.debug("Updating sky marker: %s" % mark)
 
             out_fifo.write(mark)
             out_fifo.flush()
             
         except IOError:
-            self.log.exception("Error updating sky marker")
+            log.exception("Error updating sky marker")
         except OSError, e:
             if e.errno==6: #ENXIO (no such device or address): XEphem closed
                 pass
             else:
-                self.log.exception("Error updating sky marker")
+                log.exception("Error updating sky marker")
     
     def __main__ (self):
 
@@ -92,13 +96,13 @@ class XEphem (ChimeraObject):
                 dec = edb[3].split("|")[0].strip()
             
                 target = Position.fromRaDec(ra, dec)
-                self.log.info("XEphem FIFO changed: slewing to %s" % target)
+                log.info("XEphem FIFO changed: slewing to %s" % target)
                 self._getTel().slewToRaDec(target)
             except (ValueError, IndexError):
-                self.log.exception("Cannot convert XEphem EDB to Position.")
+                log.exception("Cannot convert XEphem EDB to Position.")
                 continue
             except:
-                self.log.exception("Something wrong...")
+                log.exception("Something wrong...")
     
             
         

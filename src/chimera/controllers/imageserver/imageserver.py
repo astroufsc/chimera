@@ -8,6 +8,10 @@ from chimera.util.image import Image
 import Pyro.util
 
 import os
+import logging
+
+
+log = logging.getLogger(__name__)
 
 
 class ImageServer(ChimeraObject):
@@ -42,7 +46,7 @@ class ImageServer(ChimeraObject):
             self.http.start()
 
         if self['autoload']:
-            self.log.info('Loading existing images...')
+            log.info('Loading existing images...')
             loaddir = os.path.expanduser(self['images_dir'])
             loaddir = os.path.expandvars(loaddir)
             loaddir = os.path.realpath(loaddir)
@@ -68,7 +72,7 @@ class ImageServer(ChimeraObject):
                                 for f in files if f.endswith(".fits")]
 
             for file in filesToLoad:
-                self.log.debug('Loading %s' % file)
+                log.debug('Loading %s' % file)
                 self.register(Image.fromFile(file))
 
     def register(self, image):

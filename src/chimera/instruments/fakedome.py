@@ -26,6 +26,9 @@ from chimera.instruments.dome import DomeBase
 
 import time
 import threading
+import logging
+
+log = logging.getLogger(__name__)
 
 
 class FakeDome (DomeBase):
@@ -56,18 +59,18 @@ class FakeDome (DomeBase):
         self._slewing = True
         
         self.slewBegin(az)
-        self.log.info("Slewing to %s" % az)
+        log.info("Slewing to %s" % az)
         
         # slew time ~ distance from current position
         distance = abs(float(az-self._position))
         if distance > 180:
             distance = 360-distance
 
-        self.log.info("Slew distance %.3f deg" % distance)
+        log.info("Slew distance %.3f deg" % distance)
 
         slew_time = distance*self._maxSlewTime
 
-        self.log.info("Slew time ~ %.3f s" % slew_time)
+        log.info("Slew time ~ %.3f s" % slew_time)
 
         status = DomeStatus.OK
         
@@ -107,14 +110,14 @@ class FakeDome (DomeBase):
 
     @lock
     def openSlit (self):
-        self.log.info("Opening slit")
+        log.info("Opening slit")
         time.sleep(2)
         self._slitOpen = True
         self.slitOpened(self.getAz())
 
     @lock
     def closeSlit (self):
-        self.log.info("Closing slit")
+        log.info("Closing slit")
         time.sleep(2)        
         self._slitOpen = False
         self.slitClosed(self.getAz())

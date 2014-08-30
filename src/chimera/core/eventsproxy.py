@@ -21,7 +21,6 @@
 from chimera.core.proxy import Proxy
 
 import logging
-import chimera.core.log
 
 import Pyro.errors
 

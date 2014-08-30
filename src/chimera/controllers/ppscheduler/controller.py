@@ -1,3 +1,5 @@
+import logging
+
 from chimera.core.chimeraobject import ChimeraObject
 from chimera.core.event import event
 
@@ -16,6 +18,8 @@ SchedulingAlgorithm = Enum("SEQUENTIAL", "CIRCULAR")
 
 SchedulingAlgorithms = {SchedulingAlgorithm.SEQUENTIAL: SequentialScheduler(),
                         SchedulingAlgorithm.CIRCULAR  : CircularScheduler()}
+
+log = logging.getLogger(__name__)
 
 
 class Scheduler(ChimeraObject):
@@ -42,7 +46,7 @@ class Scheduler(ChimeraObject):
         self.scheduler = SchedulingAlgorithms[self["algorithm"]]
         self.machine = Machine(self.scheduler, self.executor, self)
 
-        self.log.debug("Using %s algorithm" % self["algorithm"])
+        log.debug("Using %s algorithm" % self["algorithm"])
 
     def control(self):
         if not self.machine.isAlive():
@@ -50,9 +54,9 @@ class Scheduler(ChimeraObject):
             return False
 
     def __stop__ (self):
-        self.log.debug('Attempting to stop machine')
+        log.debug('Attempting to stop machine')
         self.shutdown()
-        self.log.debug('Machine stopped')
+        log.debug('Machine stopped')
         Session().commit()
         return True
 

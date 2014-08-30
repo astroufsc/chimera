@@ -23,6 +23,7 @@ import os
 import serial
 import time
 import threading
+import logging
 
 from chimera.core.lock          import lock
 
@@ -34,6 +35,9 @@ from chimera.instruments.focuser import FocuserBase
 from chimera.core.constants import SYSTEM_CONFIG_DIRECTORY
 
 __all__ = ['JMIsmart232']
+
+log = logging.getLogger(__name__)
+
 
 class JMIsmart232 (FocuserBase):
 
@@ -51,7 +55,7 @@ class JMIsmart232 (FocuserBase):
         try:
             self._debugLog = open(os.path.join(SYSTEM_CONFIG_DIRECTORY, "jmismart-debug.log"), "w")
         except IOError, e:
-            self.log.warning("Could not create meade debug file (%s)" % str(e))
+            log.warning("Could not create meade debug file (%s)" % str(e))
 
 
     def __start__ (self):
@@ -145,7 +149,7 @@ class JMIsmart232 (FocuserBase):
         return (0, 6600)
 
     def _setPosition (self, n):
-        self.log.info("Changing focuser to %s" % n)
+        log.info("Changing focuser to %s" % n)
 
         cmd = "g" + ('%02x' % (int(n)/256)).decode('hex') + ('%02x' % (int(n)%256)).decode('hex')
 		

@@ -1,5 +1,6 @@
 from __future__ import division
 from math import fabs
+import logging
 
 from chimera.util.catalogs.landolt import Landolt
 from chimera.core.chimeraobject import ChimeraObject
@@ -19,6 +20,8 @@ from chimera.util.image import Image
 from chimera.util.astrometrynet import AstrometryNet, NoSolutionAstrometryNetException
 
 import time
+
+log = logging.getLogger(__name__)
 
 
 class PointVerify (ChimeraObject, IPointVerify):
@@ -87,7 +90,7 @@ class PointVerify (ChimeraObject, IPointVerify):
             image = self._takeImage()
             print "image name %s", image.filename()
         except:
-            self.log.error("Can't take image")
+            log.error("Can't take image")
             raise
 
         ra_img_center = image["CRVAL1"]    # expects to see this in image
@@ -109,7 +112,7 @@ class PointVerify (ChimeraObject, IPointVerify):
             # send the telescope back to checkPointing
             # if that fails, clouds or telescope problem
             # an exception will be raised there
-            #self.log.error("No WCS solution")
+            #log.error("No WCS solution")
             # if not self.checkedpointing:
             #    self.nfields += 1
             #    self.currentField += 1
@@ -152,21 +155,21 @@ class PointVerify (ChimeraObject, IPointVerify):
                                                                         image["DATE-OBS"],
                                                                         initialPosition,
                                                                         currentWCS)
-            self.log.info(logstr)
+            log.info(logstr)
 
         delta_ra = ra_img_center - ra_wcs_center
         delta_dec = dec_img_center - dec_wcs_center
 
-        self.log.debug("delta_ra: %s delta_dec: %s" % (delta_ra, delta_dec))
-        self.log.debug("ra_img_center: %s ra_wcs_center: %s" %
+        log.debug("delta_ra: %s delta_dec: %s" % (delta_ra, delta_dec))
+        log.debug("ra_img_center: %s ra_wcs_center: %s" %
                        (ra_img_center, ra_wcs_center))
-        self.log.debug("dec_img_center: %s dec_wcs_center: %s" %
+        log.debug("dec_img_center: %s dec_wcs_center: %s" %
                        (dec_img_center, dec_wcs_center))
 
         # *** need to do real logging here
         logstr = "%s %f %f %f %f %f %f" % (
             image["DATE-OBS"], ra_img_center, dec_img_center, ra_wcs_center, dec_wcs_center, delta_ra, delta_dec)
-        self.log.debug(logstr)
+        log.debug(logstr)
 
         if (fabs(delta_ra) > self["tolra"]) or (fabs(delta_dec) > self["toldec"]):
             print "Telescope not there yet."
@@ -191,7 +194,7 @@ class PointVerify (ChimeraObject, IPointVerify):
             logstr = "Pointing: final solution %s %s %s" % (image["DATE-OBS"],
                                                             currentImageCenter,
                                                             currentWCS)
-            #self.log.debug("Synchronizing telescope on %s" % currentWCS)
+            #log.debug("Synchronizing telescope on %s" % currentWCS)
             # tel.syncRaDec(currentWCS)
 
             # *** should we sync the scope ???
@@ -200,7 +203,7 @@ class PointVerify (ChimeraObject, IPointVerify):
             # subsequent pointings should not.
             # another idea is to sync if the delta_coords at first trial were
             # larger than some value
-            self.log.info(logstr)
+            log.info(logstr)
 
         return(True)
 
@@ -220,14 +223,14 @@ class PointVerify (ChimeraObject, IPointVerify):
         lat = site["latitude"]
         coords = Position.fromRaDec(lst, lat)
 
-        self.log.info(
+        log.info(
             "Check pointing - Zenith coordinates: %f %f" % (lst, lat))
 
         tel = self.getTel()
 
         # use the Vizier catalogs to see what Landolt field is closest to
         # zenith
-        self.log.debug("Calling landolt")
+        log.debug("Calling landolt")
         fld = Landolt()
         fld.useTarget(coords, radius=45)
         obj = fld.find(limit=self["max_fields"])
@@ -239,7 +242,7 @@ class PointVerify (ChimeraObject, IPointVerify):
         name = obj[self.currentField]["ID"]
         print "Current object ", ra, dec, name
 
-        self.log.info("Chose %s %f %f" % (name, ra, dec))
+        log.info("Chose %s %f %f" % (name, ra, dec))
         tel.slewToRaDec(Position.fromRaDec(ra, dec))
         try:
             self.pointVerify()

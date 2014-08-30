@@ -8,6 +8,10 @@ import cherrypy
 
 import threading
 import os
+import logging
+
+log = logging.getLogger(__name__)
+
 
 class WebAdminRoot (object):
 
@@ -74,7 +78,7 @@ class WebAdmin (ChimeraObject):
             self.scheduler = self.getManager().getProxy(self["scheduler"])
             self.telescope = self.getManager().getProxy(self["telescope"])
         except Exception:
-            self.log.warning("No dome, scheduler or telescope available, Web Admin would be disabled.")
+            log.warning("No dome, scheduler or telescope available, Web Admin would be disabled.")
             return False
 
         if self["host"] == "default":

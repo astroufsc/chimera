@@ -20,6 +20,7 @@
 
 import time
 import threading
+import logging
 
 from chimera.interfaces.telescope  import SlewRate, TelescopeStatus
 from chimera.instruments.telescope import TelescopeBase
@@ -29,6 +30,8 @@ from chimera.core.site import Site
 
 from chimera.util.coord    import Coord
 from chimera.util.position import Position, Epoch
+
+log = logging.getLogger(__name__)
 
 
 class FakeTelescope (TelescopeBase):
@@ -273,13 +276,13 @@ class FakeTelescope (TelescopeBase):
 
     @lock
     def park(self):
-        self.log.info("Parking...")
+        log.info("Parking...")
         self._parked = True
         self.parkComplete()
 
     @lock
     def unpark(self):
-        self.log.info("Unparking...")
+        log.info("Unparking...")
         self._parked = False
         self.unparkComplete()        
 

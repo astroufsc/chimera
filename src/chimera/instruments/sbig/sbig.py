@@ -23,6 +23,7 @@ from __future__ import division
 
 import time
 import datetime as dt
+import logging
 import numpy as N
 
 from chimera.instruments.sbig.sbigdrv import (SBIGDrv, SBIGException)
@@ -34,6 +35,8 @@ from chimera.instruments.camera import CameraBase
 from chimera.instruments.filterwheel import FilterWheelBase
 
 from chimera.core.lock import lock
+
+log = logging.getLogger(__name__)
 
 
 class SBIG(CameraBase, FilterWheelBase):
@@ -222,7 +225,7 @@ class SBIG(CameraBase, FilterWheelBase):
         elif shutterRequest == Shutter.LEAVE_AS_IS:
             shutter = SBIGDrv.leaveShutter
         else:
-            self.log.warning("Incorrect shutter option (%s)."
+            log.warning("Incorrect shutter option (%s)."
                              " Leaving shutter intact" % shutterRequest)
             shutter = SBIGDrv.leaveShutter
 

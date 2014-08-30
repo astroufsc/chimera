@@ -105,7 +105,7 @@ class TheSkyTelescope (TelescopeBase):
                 self._telescope = Dispatch ("TheSky.RASCOMTele")
 
         except com_error:
-            self.log.error ("Couldn't instantiate TheSky %d COM objects." % self["thesky"])
+            log.error ("Couldn't instantiate TheSky %d COM objects." % self["thesky"])
             return False
 
         try:
@@ -121,7 +121,7 @@ class TheSkyTelescope (TelescopeBase):
             return True
         
         except com_error, e:
-            self.log.error ("Couldn't connect to TheSky. (%s)" % e)
+            log.error ("Couldn't connect to TheSky. (%s)" % e)
             return False
 
     @com
@@ -132,7 +132,7 @@ class TheSkyTelescope (TelescopeBase):
             self._telescope.Disconnect ()
             self._thesky.Quit ()
         except com_error:
-            self.log.error ("Couldn't disconnect to TheSky.")
+            log.error ("Couldn't disconnect to TheSky.")
             return False
 
         if self["thesky"] == 5:

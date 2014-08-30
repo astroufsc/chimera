@@ -18,12 +18,16 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+import logging
+
 from chimera.core.lock          import lock
 
 from chimera.interfaces.focuser import (FocuserFeature,
                                         InvalidFocusPositionException)
 
 from chimera.instruments.focuser import FocuserBase
+
+log = logging.getLogger(__name__)
 
 
 class FakeFocuser (FocuserBase):
@@ -74,7 +78,7 @@ class FakeFocuser (FocuserBase):
         return (0, 7000)
 
     def _setPosition (self, n):
-        self.log.info("Changing focuser to %s" % n)
+        log.info("Changing focuser to %s" % n)
         self._position = n
 
     def _inRange (self, n):

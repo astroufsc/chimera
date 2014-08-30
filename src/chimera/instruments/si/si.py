@@ -18,7 +18,7 @@ from chimera.instruments.si.sidrv import SIDrv
 from chimera.core.event import event
 from chimera.core.exceptions import ChimeraException
 
-log = logging.getloggger('chimera')
+log = logging.getLogger(__name__)
 
 
 class SI():
