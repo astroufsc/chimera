@@ -23,6 +23,8 @@ import threading
 import datetime as dt
 from types import FloatType
 import os
+import os
+import socket
 
 try:
     import cPickle as pickle
@@ -47,7 +49,8 @@ Direction = Enum("E", "W", "N", "S")
 
 class Meade (TelescopeBase):
     
-    __config__ = {'azimuth180Correct'   : True}
+    __config__ = {'azimuth180Correct'   : True,
+                  'method': 'serial:/dev/ttyS1'}
 
     def __init__(self):
 
@@ -113,13 +116,14 @@ class Meade (TelescopeBase):
     # -- ITelescope implementation
 
     def _checkMeade (self):
-
-        tmp = self._tty.timeout
-        self._tty.timeout = 5
+        if self._tty:
+            tmp = self._tty.timeout
+            self._tty.timeout = 5
 
         align = self.getAlignMode ()
 
-        self._tty.timeout = tmp
+        if self._tty:
+            self._tty.timeout = tmp
 
         if align < 0:
             raise MeadeException ("Couldn't find a Meade telescope on '%s'." % self["device"])
@@ -151,17 +155,21 @@ class Meade (TelescopeBase):
 
     @lock
     def open(self):
-
-        self._tty = serial.Serial(self["device"],
-                                  baudrate=9600,
-                                  bytesize=serial.EIGHTBITS,
-                                  parity=serial.PARITY_NONE,
-                                  stopbits=serial.STOPBITS_ONE,
-                                  timeout=self["timeout"],
-                                  xonxoff=False, rtscts=False)
-
+        params = self["device"]
         try:
-            self._tty.open()
+            if params[0] == 'serial':
+                self._tty = serial.Serial(params[1],
+                                          baudrate=9600,
+                                          bytesize=serial.EIGHTBITS,
+                                          parity=serial.PARITY_NONE,
+                                          stopbits=serial.STOPBITS_ONE,
+                                          timeout=self["timeout"],
+                                          xonxoff=False, rtscts=False)
+                self._tty.open()
+            elif params[0] == 'eth':
+                self._tty = None
+                self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                self.sock.connect((params[1], int(params[2]))
 
             self._checkMeade()
 
@@ -181,11 +189,14 @@ class Meade (TelescopeBase):
 
     @lock
     def close(self):
-        if self._tty.isOpen():
-            self._tty.close()
-            return True
+        if self._tty:
+            if self._tty.isOpen():
+                self._tty.close()
+                return True
+            else:
+                return False
         else:
-            return False
+            self.sock.close()
 
     # --
 
@@ -194,8 +205,9 @@ class Meade (TelescopeBase):
 
         self._write (":Aa#")
 
-        while not self._tty.inWaiting ():
-            time.sleep (1)
+        if self._tty:
+            while not self._tty.inWaiting ():
+                time.sleep (1)
 
         # FIXME: bad LX200 behaviour
         tmp = self._read (1)
@@ -784,13 +796,15 @@ class Meade (TelescopeBase):
 
         elif ret == "1":
             # discard junk message and wait Meade finish update of internal databases
-            tmpTimeout = self._tty.timeout
-            self._tty.timeout = 60
+            if self._tty:
+                tmpTimeout = self._tty.timeout
+                self._tty.timeout = 60
             self._readline () # junk message
 
             self._readline ()
 
-            self._tty.timeout = tmpTimeout
+            if self._tty:
+                self._tty.timeout = tmpTimeout
             return True
 
     @lock
@@ -1045,24 +1059,34 @@ class Meade (TelescopeBase):
             self._debugLog.flush()
 
     def _read(self, n = 1, flush = True):
-
-        if not self._tty.isOpen():
-            raise IOError("Device not open")
-
-        if flush:
-            self._tty.flushInput()
-
-        ret = self._tty.read(n)
-        self._debug("[read ] %s" % repr(ret))
-        return ret
+        if self._tty:
+            if not self._tty.isOpen():
+                raise IOError("Device not open")
+            
+            if flush:
+                self._tty.flushInput()
+                
+            ret = self._tty.read(n)
+            self._debug("[read ] %s" % repr(ret))
+            return ret
+        else:
+            ret = self.sock.read(n)
+            self._debug("[read ] %s" % repr(ret))
+            return ret
 
     def _readline(self, eol='#'):
-        if not self._tty.isOpen():
-            raise IOError("Device not open")
-
-        ret = self._tty.readline(None, eol)
-        self._debug("[read ] %s" % repr(ret))
-        return ret
+        if self._tty:
+            if not self._tty.isOpen():
+                raise IOError("Device not open")
+        
+            ret = self._tty.readline(None, eol)
+            self._debug("[read ] %s" % repr(ret))
+            return ret
+        else:
+            sio = io.TextIOWrapper(self.sock, newline=eol)
+            ret = sio.readline()
+            self._debug("[read ] %s" % repr(ret))
+            return ret
 
     def _readbool(self):
 
@@ -1077,13 +1101,16 @@ class Meade (TelescopeBase):
         return True
 
     def _write(self, data, flush = True):
-        if not self._tty.isOpen():
-            raise IOError("Device not open")
-
-        if flush:
-            self._tty.flushOutput()
-
         self._debug("[write] %s" % repr(data))
 
-        return self._tty.write(data)
+        if self._tty:
+            if not self._tty.isOpen():
+                raise IOError("Device not open")
+            
+            if flush:
+                self._tty.flushOutput()
+                
+            return self._tty.write(data)
+        else:
+            return self.sock.write(data)
 
