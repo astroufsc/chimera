@@ -6,7 +6,9 @@ import numpy as np
 # not a class. Genicam states only one instance of the "system" per camera
 # is allowed.
 
+
 class LittleRedThingy(object):
+
     def __init__(self):
         # start Vimba
         self.vimba = pb.Vimba()
@@ -25,7 +27,7 @@ class LittleRedThingy(object):
 
     def get_camfeatures(self):
         # get and open a camera
-        self.camera0 = self.vimba.getCamera(cameraIds[0])
+        self.camera0 = self.vimba.getCamera(self.cameraIds[0])
         self.camera0.openCamera()
 
         # list camera features
@@ -43,7 +45,7 @@ class LittleRedThingy(object):
     def get_frames(self, mode='raw'):
         # create new frames for the camera
         frame0 = self.cam0.getFrame()  # creates a frame
-        frame1 = self.cam0.getFrame()  # creates a second frame
+        # frame1 = self.cam0.getFrame()  # creates a second frame
 
         # announce frame
         frame0.announceFrame()
@@ -76,4 +78,3 @@ class LittleRedThingy(object):
         self.cam0.closeCamera()
         # shutdown Vimba
         self.vmb.shutdown()
-

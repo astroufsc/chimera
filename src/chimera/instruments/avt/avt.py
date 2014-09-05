@@ -12,6 +12,7 @@ import avtdrvmod
 
 
 class AVTGigE(Camera, ReadoutMode, CameraExpose, CameraTemperature, CameraInformation):
+
     def __init__(self):
         """
         Initialize the GenTL interface, goes out to discover devices via GVCP.
@@ -137,7 +138,6 @@ class AVTGigE(Camera, ReadoutMode, CameraExpose, CameraTemperature, CameraInform
     def stopFan(self):
         raise NotImplementedException()
 
-
     def getCurrentCCD(self):
         raise NotImplementedException()
 
@@ -162,4 +162,3 @@ class AVTGigE(Camera, ReadoutMode, CameraExpose, CameraTemperature, CameraInform
 
     def supports(self):
         pass
-

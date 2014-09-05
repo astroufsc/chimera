@@ -9,7 +9,6 @@ SlewRate = Enum("GUIDE", "CENTER", "FIND", "MAX")
 
 class Guider(Interface):
     __config__ = {"telescope": "/Telescope/0",
-                  "camera": "/Camera/0",
                   "guidercamera": "/ChimeraGuider/0",
                   "gdr_filterwheel": "/FilterWheel/0",
                   "gdr_focuser": "/Focuser/focuser0",

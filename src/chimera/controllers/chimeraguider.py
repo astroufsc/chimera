@@ -30,22 +30,18 @@ class ChimeraGuider(ChimeraObject, Guider):
         self.centroids = list()
 
         try:
-            t, gc, mc = (self.getManager().getProxy(self[x])
-                         for x in ['telescope', 'guidercamera', 'camera'])
+            t, gc = (self.getManager().getProxy(self[x])
+                         for x in ['telescope', 'guidercamera'])
         except ObjectNotFoundException, e:
             log.debug('%s Component not found' % e)
-            #print('%s' % sys.exc_info()[1])
-            # TODO: better exit strategy
             return
         else:
-            if not (x.ping for x in [t, gc, mc]):
+            if not (x.ping for x in [t, gc]):
                 log.info('Component not responding')
                 return
 
-        mc.exposeBegin += self.exposeBegin
-        mc.exposeEnd += self.exposeEnd
 
-    def getGdrBoxes(self, img):
+    def get_gdrboxes(self, img):
         """
         Simple, unsophisticated, but (hopefully) fast guiding system
         """
@@ -86,7 +82,7 @@ class ChimeraGuider(ChimeraObject, Guider):
             self.gimages.append(
                 gdr_array[b[0] - 5:b[0] + 5, b[1] - 5:b[1] + 5])
 
-    def getCOM(self, gf):
+    def get_centroid(self, gf):
         """
         Get a guiding image ( of size gboxes); calculate the centroid, compare
         to reference (where it's at?) and return offsets (where are NESW!?)
@@ -104,8 +100,3 @@ class ChimeraGuider(ChimeraObject, Guider):
         self.centroids.append(
             [np.sum(ps * grids[dir]) / n for dir in range(ps.ndim)])
 
-    def exposeBegin(self):
-        pass
-
-    def exposeEnd(self):
-        pass
