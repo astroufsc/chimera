@@ -1,0 +1,305 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Developing for Chimera &mdash; Chimera 0.2 documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="Chimera 0.2 documentation" href="index.html" />
+    <link rel="prev" title="Chimera Advanced Usage" href="advanced.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="advanced.html" title="Chimera Advanced Usage"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">Chimera 0.2 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="developing-for-chimera">
+<h1>Developing for Chimera<a class="headerlink" href="#developing-for-chimera" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="introduction">
+<h2>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h2>
+<p>Chimera uses a client/server model coupled with remote procedure call
+(RPC) system. Chimera defines all its entities in terms of objects.</p>
+<p>To be a valid Chimera object a class must extend
+<tt class="xref py py-class docutils literal"><span class="pre">ChimeraObject</span></tt> class. <tt class="xref py py-class docutils literal"><span class="pre">ChimeraObject</span></tt> class implements
+<tt class="xref py py-class docutils literal"><span class="pre">ILifeCycle</span></tt> interface which defines basic methods every object
+must have to be started and stopped. <tt class="xref py py-class docutils literal"><span class="pre">ChimeraObject</span></tt> provides a
+basic implementation of a control loop, a common structure in control
+programs.</p>
+<p>By itself, a Chimera object is just a static bunch of code that
+inherits from a specific class. To be useful, every
+<tt class="xref py py-class docutils literal"><span class="pre">ChimeraObject</span></tt> must have a <tt class="xref py py-class docutils literal"><span class="pre">Manager</span></tt> to manage its life
+cycle.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">We call it instrument, controller or driver purely from a semantic
+point of view, as they are equal from a code point of view, there is
+no different base class for different kinds of objects. Every
+instrument, controller or driver extends <tt class="xref py py-class docutils literal"><span class="pre">ChimeraObject</span></tt>. More
+specifically, it must implement <tt class="xref py py-class docutils literal"><span class="pre">ILifeCycle</span></tt>, and
+<tt class="xref py py-class docutils literal"><span class="pre">ChimeraObject</span></tt> provides us with a basic implementation.</p>
+</div>
+<p>The <tt class="xref py py-class docutils literal"><span class="pre">Manager</span></tt> class is responsible for object initialization, life
+cycle (start, stop) and proxy creation. <tt class="xref py py-class docutils literal"><span class="pre">Manager</span></tt> is also our
+server in the client/server model. It&#8217;s a server of objects. We can
+think of <tt class="xref py py-class docutils literal"><span class="pre">Manager</span></tt> as a pool of objects available to be used.</p>
+<p>As we need RPC support for every object and want to make the system easy
+to use and write, we use a Proxy class that handles all the networking
+for us. This way, you don&#8217;t have to write networking code on your
+objects, just the real action, Proxy and friends add networking for
+you.</p>
+<p>Before describing <tt class="xref py py-class docutils literal"><span class="pre">Manager</span></tt>&#8216;s responsibilities in more detail,
+let&#8217;s describe all features we can have in a Chimera object.</p>
+</div>
+<div class="section" id="chimera-objects">
+<span id="chimeraobj"></span><h2>Chimera objects<a class="headerlink" href="#chimera-objects" title="Permalink to this headline">¶</a></h2>
+<p>A Chimera object, as already said, is a normal Python class which extends from
+a specific base class, <tt class="xref py py-class docutils literal"><span class="pre">ChimeraObject</span></tt>, the simplest
+<tt class="xref py py-class docutils literal"><span class="pre">ChimeraObject</span></tt> is the following.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">chimera.core.chimeraobject</span> <span class="kn">import</span> <span class="n">ChimeraObject</span>
+
+<span class="k">class</span> <span class="nc">Simplest</span> <span class="p">(</span><span class="n">ChimeraObject</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">ChimeraObject</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>this object has no methods, configuration or events, so it&#8217;s the simplest
+and dumbest possible object.</p>
+<p>As Python doesn&#8217;t call base constructors per se, you need to call the
+base constructor from Simplest constructor (<tt class="xref py py-meth docutils literal"><span class="pre">__init__()</span></tt> method).</p>
+<p>Chimera uses the concept of <tt class="xref py py-class docutils literal"><span class="pre">Location</span></tt> all over the code. A
+Location is much like an URL, but without a scheme. Locations
+identify specific class instances running somewhere. The basic
+format is the following:</p>
+<div class="highlight-python"><div class="highlight"><pre>[host:port]/Classname/instance_name[?param1=value1,...]
+</pre></div>
+</div>
+<p><cite>host</cite> and <cite>port</cite>, optional fields, tell Chimera where to look for
+this particular object. <cite>Classname</cite> is the class name of the object
+and <cite>instance_name</cite> the name given to a specific instance running on
+host:port. When you add objects to <tt class="xref py py-class docutils literal"><span class="pre">Manager</span></tt>, you must specify
+a name. Also, you can pass configuration parameters as comma separated
+param=value pairs.</p>
+<p>Let&#8217;s write down a class that uses this and see how to actually use
+this from Chimera.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">chimera.core.chimeraobject</span> <span class="kn">import</span> <span class="n">ChimeraObject</span>
+
+<span class="k">class</span> <span class="nc">Example1</span> <span class="p">(</span><span class="n">ChimeraObject</span><span class="p">):</span>
+
+    <span class="n">__config__</span> <span class="o">=</span> <span class="p">{</span><span class="s">&quot;param1&quot;</span><span class="p">:</span> <span class="s">&quot;a string parameter&quot;</span><span class="p">}</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">ChimeraObject</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__start__</span> <span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">doSomething</span><span class="p">(</span><span class="s">&quot;test argument&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">doSomething</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">arg</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s">&quot;Hi, I&#39;m doing something.&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s">&quot;My arg=</span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">arg</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s">&quot;My param1=</span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="p">[</span><span class="s">&quot;param1&quot;</span><span class="p">])</span>
+</pre></div>
+</div>
+<p>This example requires some explanations, but before, let&#8217;s run it
+using <strong class="command">chimera</strong> script. <strong class="command">chimera</strong> script is a script
+to initialize <tt class="xref py py-class docutils literal"><span class="pre">Manager</span></tt> and add objects either from Locations
+given on command line or from a configuration file.</p>
+<p>To follow Chimera conventions, a file with a class named
+<tt class="xref py py-class docutils literal"><span class="pre">Example1</span></tt> must be saved to a file name <tt class="file docutils literal"><span class="pre">example1.py</span></tt> to
+allow Chimera ClassLoader to find it. We may simplify this in the future.</p>
+<p>You can save this file anywhere on your system, let&#8217;s suppose you saved
+it on your $HOME directory.</p>
+<p>To run it, call <strong class="command">chimera</strong> this way:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ chimera -I $HOME -i /Example1/example
+</pre></div>
+</div>
+<p>You&#8217;ll see something like this:</p>
+<div class="highlight-python"><div class="highlight"><pre>[date] WARNING chimera.example1 (example1) example1.py:15 Hi, I&#39;m doing something.
+[date] WARNING chimera.example1 (example1) example1.py:16 My arg=test argument
+[date] WARNING chimera.example1 (example1) example1.py:17 My param1=a string parameter
+</pre></div>
+</div>
+<p>You should use Ctrl+C (SIGINT) to stop <strong class="command">chimera</strong>.</p>
+<p>The -I on chimera tells Chimera where to look for instruments, this
+case to look in your $HOME directory (you can use any directory there,
+&#8216;.&#8217; for example). Then to -i we pass a valid Chimera Location. From
+the Location, Chimera knows that you want to create an instance of
+Example1 class and call this instance &#8216;example&#8217;.</p>
+<p>You can also pass configuration parameters right on the Location given
+in the command line. Use:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ chimera -I $HOME -i /Example1/example?param1=&quot;Now for something different&quot;
+</pre></div>
+</div>
+<p>A few points need explanation on <tt class="xref py py-class docutils literal"><span class="pre">Example1</span></tt>:</p>
+<blockquote>
+<div><p>1. <tt class="xref py py-attr docutils literal"><span class="pre">__config__</span></tt> is a class attribute (class field in some
+circles) where you should pass a Python dictionary with any parameter
+you like to add to your object. Chimera uses the value you pass in as
+default value and also uses the type of it to do some type checking
+for you. Look at src/chimera/core/config.py for valid types.</p>
+<p>2. <tt class="xref py py-meth docutils literal"><span class="pre">__start__()</span></tt> method. This method is from <tt class="xref py py-class docutils literal"><span class="pre">ILifeCycle</span></tt>
+interface, <tt class="xref py py-class docutils literal"><span class="pre">ChimeraObject</span></tt> implementation just does nothing,
+here we use it to call a specific method on object
+initialization. <tt class="xref py py-class docutils literal"><span class="pre">Manager</span></tt> first call <tt class="xref py py-meth docutils literal"><span class="pre">__init__()</span></tt> to
+create an instance, configure this instance passing any parameter you
+gave on command line, then call <tt class="xref py py-meth docutils literal"><span class="pre">__start__()</span></tt> and when system is
+shutting down call <tt class="xref py py-meth docutils literal"><span class="pre">__stop__()</span></tt>.</p>
+<p>3. <tt class="xref py py-attr docutils literal"><span class="pre">log</span></tt>. <tt class="xref py py-class docutils literal"><span class="pre">ChimeraObject</span></tt> implementation give a <cite>log</cite>
+attribute (instance field, in other circles) to every class, you can
+use this to log messages to default Chimera log system. It&#8217;s a normal
+Python&#8217;s <a class="reference external" href="http://docs.python.org/library/logging.html#module-logging" title="(in Python v2.7)"><tt class="xref py py-mod docutils literal"><span class="pre">logging</span></tt></a> logger, so consult <a class="reference external" href="http://docs.python.org/lib/module-logging.html">logging</a> for more
+information.</p>
+<p>4. <tt class="xref py py-attr docutils literal"><span class="pre">self[&quot;param1&quot;]</span></tt>. You define your object parameters using
+<tt class="xref py py-attr docutils literal"><span class="pre">__config__</span></tt> dict, but to access the actual value, you use the
+current object (self) as dictionary to access values from it. Thus,
+<tt class="xref py py-attr docutils literal"><span class="pre">self[&quot;param1&quot;]</span></tt> treat <cite>self</cite> as a dict and get key <cite>param1</cite> from
+it. For most purposes, self is a dict and normal dict. You can also
+set things, with normal <tt class="docutils literal"><span class="pre">self[&quot;param1&quot;]</span> <span class="pre">=</span> <span class="pre">&quot;value1&quot;</span></tt>.</p>
+</div></blockquote>
+<p>When you use <strong class="command">chimera</strong> script, a <tt class="xref py py-class docutils literal"><span class="pre">Manager</span></tt> is created
+for you, but you can do it by yourself to learn how things work in
+Chimera. The following example is based on <tt class="file docutils literal"><span class="pre">server.py</span></tt>.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">chimera.core.manager</span> <span class="kn">import</span> <span class="n">Manager</span>
+
+<span class="n">manager</span> <span class="o">=</span> <span class="n">Manager</span><span class="p">(</span><span class="n">host</span><span class="o">=</span><span class="s">&#39;localhost&#39;</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="mi">8000</span><span class="p">)</span>
+<span class="n">manager</span><span class="o">.</span><span class="n">addLocation</span><span class="p">(</span><span class="s">&quot;/Example1/example&quot;</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+
+<span class="n">manager</span><span class="o">.</span><span class="n">wait</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Suppose you save it to <tt class="file docutils literal"><span class="pre">server.py</span></tt> in the same directory where
+you put <tt class="file docutils literal"><span class="pre">example1.py</span></tt> (this is a not a restriction, just to make
+things easier).</p>
+<div class="highlight-python"><div class="highlight"><pre>$ python server.py
+</pre></div>
+</div>
+<p>You&#8217;ll see exactly the same as running <strong class="command">chimera</strong>.</p>
+<p>But, as said in the first paragraph of this document Chimera is
+client/server, <tt class="file docutils literal"><span class="pre">server.py</span></tt> shows how to create a server, let&#8217;s
+see how to use it in a client.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">chimera.core.manager</span> <span class="kn">import</span> <span class="n">Manager</span>
+
+<span class="n">manager</span> <span class="o">=</span> <span class="n">Manager</span><span class="p">()</span>
+
+<span class="n">example</span> <span class="o">=</span> <span class="n">manager</span><span class="o">.</span><span class="n">getProxy</span><span class="p">(</span><span class="s">&quot;localhost:8000/Example1/example&quot;</span><span class="p">)</span>
+<span class="n">example</span><span class="o">.</span><span class="n">doSomething</span><span class="p">(</span><span class="s">&quot;client argument&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Save it to <tt class="file docutils literal"><span class="pre">client.py</span></tt>. First run, <tt class="file docutils literal"><span class="pre">server.py</span></tt> as
+explained above and then run <tt class="file docutils literal"><span class="pre">client.py</span></tt>.</p>
+<div class="highlight-python"><div class="highlight"><pre>$ python client.py
+</pre></div>
+</div>
+<p>You will see something like this:</p>
+<div class="highlight-python"><div class="highlight"><pre>[date] WARNING chimera.example1 (example1) example1.py:15 Hi, I&#39;m doing something.
+[date] WARNING chimera.example1 (example1) example1.py:16 My arg=test argument
+[date] WARNING chimera.example1 (example1) example1.py:17 My param1=a string parameter
+[date] WARNING chimera.example1 (example1) example1.py:15 Hi, I&#39;m doing something.
+[date] WARNING chimera.example1 (example1) example1.py:16 My arg=client argument
+[date] WARNING chimera.example1 (example1) example1.py:17 My param1=a string parameter
+</pre></div>
+</div>
+<p>The first three lines are from <tt class="xref py py-meth docutils literal"><span class="pre">__start__()</span></tt> calling
+<tt class="xref py py-meth docutils literal"><span class="pre">doSomething()</span></tt>, and later three from our client calling it again.</p>
+<p>In <tt class="file docutils literal"><span class="pre">client.py</span></tt>, you see we create a normal <tt class="xref py py-class docutils literal"><span class="pre">Manager</span></tt>,
+just like in server.py, but we only use this <tt class="xref py py-class docutils literal"><span class="pre">Manager</span></tt> to get
+access to <tt class="xref py py-class docutils literal"><span class="pre">Example1</span></tt> running on other <tt class="xref py py-class docutils literal"><span class="pre">Manager</span></tt>
+(localhost:8000).</p>
+<p><tt class="xref py py-meth docutils literal"><span class="pre">Manager.getProxy()</span></tt> returns a <tt class="xref py py-class docutils literal"><span class="pre">Proxy</span></tt> object for the
+specifies Location. For all purposes this <tt class="xref py py-class docutils literal"><span class="pre">Proxy</span></tt> class acts
+like the original object, so you can call any method just like you
+would with the original object.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Developing for Chimera</a><ul>
+<li><a class="reference internal" href="#introduction">Introduction</a></li>
+<li><a class="reference internal" href="#chimera-objects">Chimera objects</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="advanced.html"
+                        title="previous chapter">Chimera Advanced Usage</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/chimerafordevs.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="advanced.html" title="Chimera Advanced Usage"
+             >previous</a> |</li>
+        <li><a href="index.html">Chimera 0.2 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, Paulo Henrique Silva.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
+    </div>
+  </body>
+</html>
