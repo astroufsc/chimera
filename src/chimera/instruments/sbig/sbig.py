@@ -23,6 +23,8 @@ from __future__ import division
 import time
 import datetime as dt
 import numpy as N
+
+import struct
         
 from chimera.instruments.sbig.sbigdrv import (SBIGDrv, SBIGException)
 
@@ -34,7 +36,11 @@ from chimera.instruments.filterwheel import FilterWheelBase
 from chimera.core.lock import lock
 
 
-class SBIG(CameraBase, FilterWheelBase):  
+class SBIG(CameraBase, FilterWheelBase):
+
+    __config__ = {
+        'device': 'USB'
+        }
 
     def __init__(self):
         CameraBase.__init__ (self)
@@ -42,7 +48,13 @@ class SBIG(CameraBase, FilterWheelBase):
 
         self.drv = SBIGDrv()
         self.ccd = SBIGDrv.imaging
-        self.dev = SBIGDrv.usb
+
+        self.ipaddr = None
+        if self['device'] == 'USB':
+            self.dev = SBIGDrv.usb
+        elif self['device'].startswith('ETH:'):
+            self.dev = SBIGDrv.eth
+            self.ipaddr = struct.unpack('I', struct.pack('BBBB', *map(int, self['device'].split(':')[1].split('.')))[::-1])[0]
 
         self.lastTemp = 0
         self.lastFilter = None
@@ -85,7 +97,7 @@ class SBIG(CameraBase, FilterWheelBase):
         else:
             self.ccd = SBIGDrv.tracking
 
-        self.open(self.dev)
+        self.open(self.dev, self.ipaddr)
 
         # make sure filter wheel is in the right position
         self.setFilter(self.getFilters()[0])
@@ -102,9 +114,9 @@ class SBIG(CameraBase, FilterWheelBase):
         except SBIGException: pass
 
     @lock
-    def open(self, device):
+    def open(self, device, ipaddr=None):
         self.drv.openDriver()
-        self.drv.openDevice(device)
+        self.drv.openDevice(device, ipaddr)
         self.drv.establishLink()
         self.drv.queryCCDInfo()
         return True

@@ -123,6 +123,7 @@ class SBIGDrv(object):
     usb2 = udrv.DEV_USB2
     usb3 = udrv.DEV_USB3
     usb4 = udrv.DEV_USB4
+    eth  = udrv.DEV_ETH
     
     imaging = udrv.CCD_IMAGING
     tracking = udrv.CCD_TRACKING
@@ -168,10 +169,12 @@ class SBIGDrv(object):
     def closeDriver(self):
         return self._cmd(udrv.CC_CLOSE_DRIVER, None, None)
 
-    def openDevice(self, device):
+    def openDevice(self, device, ipaddr=None):
 
         odp = udrv.OpenDeviceParams()
         odp.deviceType = device
+        if ipaddr:
+            odp.ipAddress = ipaddr
 
         try:
             return self._cmd(udrv.CC_OPEN_DEVICE, odp, None)
