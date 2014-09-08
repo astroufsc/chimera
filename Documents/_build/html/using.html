@@ -1,0 +1,219 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Using Chimera &mdash; Chimera 0.2 documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="Chimera 0.2 documentation" href="index.html" />
+    <link rel="next" title="Chimera Configuration" href="configuring.html" />
+    <link rel="prev" title="Welcome to Chimera’s documentation!" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="configuring.html" title="Chimera Configuration"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Welcome to Chimera’s documentation!"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">Chimera 0.2 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="using-chimera">
+<h1>Using Chimera<a class="headerlink" href="#using-chimera" title="Permalink to this headline">¶</a></h1>
+<p><strong>Chimera</strong> provides a few features to make your life easier when getting started with the system:</p>
+<blockquote>
+<div><ul class="simple">
+<li>reasonable defaults;</li>
+<li>fake devices as default when no configuration is supplied;</li>
+<li>minimum boilerplate on command line once configured;</li>
+<li>an easy to read/write configuration format: <a class="reference external" href="http://www.yaml.org">YAML: YAML Ain&#8217;t Markup
+Language</a>.</li>
+</ul>
+</div></blockquote>
+<p>Once installed, Chimera provides a few command line programs:</p>
+<blockquote>
+<div><ul class="simple">
+<li><strong class="program">chimera</strong></li>
+<li><strong class="program">chimera-tel</strong></li>
+<li><strong class="program">chimera-cam</strong></li>
+<li><strong class="program">chimera-dome</strong></li>
+<li><strong class="program">chimera-focus</strong></li>
+<li><strong class="program">chimera-admin</strong></li>
+</ul>
+</div></blockquote>
+<div class="section" id="starting-chimera">
+<h2>Starting Chimera<a class="headerlink" href="#starting-chimera" title="Permalink to this headline">¶</a></h2>
+<p>To start the server component of the software, run:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">chimera</span> <span class="p">[</span><span class="o">-</span><span class="n">v</span><span class="o">|</span><span class="n">v</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>This will start the server, with either the device set described in the configuration file or the set of default ones provided if no configuration is present.</p>
+</div>
+<div class="section" id="using-the-chimera-scripts">
+<h2>Using the Chimera scripts<a class="headerlink" href="#using-the-chimera-scripts" title="Permalink to this headline">¶</a></h2>
+<p>Every script has a <em>&#8211;help</em> option that displays usage information in great detail; here we will provide a few examples and/or use cases for your every day observing needs.</p>
+<p>Additionally, all <strong>chimera</strong> scripts have a common set of options:</p>
+<blockquote>
+<div><table class="docutils option-list" frame="void" rules="none">
+<col class="option" />
+<col class="description" />
+<tbody valign="top">
+<tr><td class="option-group">
+<kbd><span class="option">--version</span></kbd></td>
+<td>show program&#8217;s version number and exit</td></tr>
+<tr><td class="option-group">
+<kbd><span class="option">-h</span>, <span class="option">--help</span></kbd></td>
+<td>show this help message and exit</td></tr>
+<tr><td class="option-group">
+<kbd><span class="option">-v</span>, <span class="option">--verbose</span></kbd></td>
+<td>Display information while working</td></tr>
+<tr><td class="option-group">
+<kbd><span class="option">-q</span>, <span class="option">--quiet</span></kbd></td>
+<td>Don&#8217;t display information while working
+[default=True]</td></tr>
+</tbody>
+</table>
+</div></blockquote>
+<div class="section" id="chimera-cam">
+<h3><strong>chimera-cam:</strong><a class="headerlink" href="#chimera-cam" title="Permalink to this headline">¶</a></h3>
+<p>Say you want to take two frames of 10 seconds each and save to file names like <tt class="file docutils literal"><span class="pre">fake-images-XXXX.fits</span></tt>:</p>
+<div class="highlight-python"><div class="highlight"><pre>chimera-cam --frames 2 --exptime 10 --output fake-images
+</pre></div>
+</div>
+</div>
+<div class="section" id="chimera-dome">
+<h3><strong>chimera-dome:</strong><a class="headerlink" href="#chimera-dome" title="Permalink to this headline">¶</a></h3>
+<p>In routine operations, the dome and the telescope devices are synchronized; it is however possible to move either independently:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">chimera</span><span class="o">-</span><span class="n">dome</span> <span class="o">--</span><span class="n">to</span><span class="o">=</span><span class="n">AZ</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="chimera-tel">
+<h3><strong>chimera-tel</strong><a class="headerlink" href="#chimera-tel" title="Permalink to this headline">¶</a></h3>
+<p>Slew the scope:</p>
+<div class="highlight-python"><div class="highlight"><pre>chimera-tel --slew --object M5
+</pre></div>
+</div>
+<p>As noted before, the dome will follow the telescope&#8217;s position automatically. If the dome is still
+moving, <strong class="program">chimera-cam</strong> will wait until the dome finishes:</p>
+<div class="highlight-python"><div class="highlight"><pre>chimera-cam --frames 1 --filters R,G,B --interval 2 --exptime 30
+</pre></div>
+</div>
+<p>After about one and a half minute, you&#8217;ll have three nice frames of M5 in R, G and B
+filters, ready to stack and make nice false color image.</p>
+</div>
+<div class="section" id="chimera-filter">
+<h3><strong>chimera-filter:</strong><a class="headerlink" href="#chimera-filter" title="Permalink to this headline">¶</a></h3>
+<p>This script controls a configured (or fake) filter wheel:</p>
+<div class="highlight-python"><div class="highlight"><pre>chimera-filter [-F|--list-filters]
+
+chimera-filter [-f |--set-filter=] FILTERNAME
+</pre></div>
+</div>
+<p>The former command will list the filters configured in <strong class="program">chimera</strong> (or the fakes), the latter moves the filter wheel to the position referred to by the filter&#8217;s name.</p>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Using Chimera</a><ul>
+<li><a class="reference internal" href="#starting-chimera">Starting Chimera</a></li>
+<li><a class="reference internal" href="#using-the-chimera-scripts">Using the Chimera scripts</a><ul>
+<li><a class="reference internal" href="#chimera-cam"><strong>chimera-cam:</strong></a></li>
+<li><a class="reference internal" href="#chimera-dome"><strong>chimera-dome:</strong></a></li>
+<li><a class="reference internal" href="#chimera-tel"><strong>chimera-tel</strong></a></li>
+<li><a class="reference internal" href="#chimera-filter"><strong>chimera-filter:</strong></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="index.html"
+                        title="previous chapter">Welcome to Chimera&#8217;s documentation!</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="configuring.html"
+                        title="next chapter">Chimera Configuration</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/using.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="configuring.html" title="Chimera Configuration"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Welcome to Chimera’s documentation!"
+             >previous</a> |</li>
+        <li><a href="index.html">Chimera 0.2 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, Paulo Henrique Silva.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
+    </div>
+  </body>
+</html>
