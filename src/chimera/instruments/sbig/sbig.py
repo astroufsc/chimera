@@ -237,6 +237,10 @@ class SBIG(CameraBase, FilterWheelBase):
         
         # ok, start it
         self.exposeBegin(imageRequest)
+
+        (mode, binning, top,  left,
+         width, height) = self._getReadoutModeInfo(imageRequest["binning"],
+                                                   imageRequest["window"])
         
         self.drv.startExposure(self.ccd,
                                int(imageRequest["exptime"]*100), shutter)

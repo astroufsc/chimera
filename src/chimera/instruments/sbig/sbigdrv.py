@@ -204,15 +204,27 @@ class SBIGDrv(object):
         self._cmd(udrv.CC_GET_LINK_STATUS, None, glsr)
         return bool(glsr.linkEstablished)
 
-    def startExposure(self, ccd, exp_time, shutter):
-        sep = udrv.StartExposureParams()
+    def startExposure(self, ccd, exp_time, shutter, mode = 0, window = None):
+
+        # geometry checking
+        readoutMode = self.readoutModes[ccd][mode]
+
+        window = (window or []) or readoutMode.getWindow()
+        
+        sep = udrv.StartExposureParams2()
 
         sep.ccd = ccd
         sep.openShutter = shutter
         sep.abgState = 0
         sep.exposureTime = exp_time
+        sep.readoutMode = mode
+        sep.top    = window[0]
+        sep.left   = window[1]
+        sep.width  = window[2]
+        sep.height = window[3]
+        
 
-        return self._cmd(udrv.CC_START_EXPOSURE, sep, None)
+        return self._cmd(udrv.CC_START_EXPOSURE2, sep, None)
 
     def endExposure(self, ccd):
         eep = udrv.EndExposureParams()
