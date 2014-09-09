@@ -243,7 +243,8 @@ class SBIG(CameraBase, FilterWheelBase):
                                                    imageRequest["window"])
         
         self.drv.startExposure(self.ccd,
-                               int(imageRequest["exptime"]*100), shutter)
+                               int(imageRequest["exptime"]*100), shutter,
+                               mode=mode.mode, window=(top, left, width, height))
         
         # save time exposure started
         self.lastFrameStartTime = dt.datetime.utcnow()
