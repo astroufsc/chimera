@@ -49,13 +49,6 @@ class SBIG(CameraBase, FilterWheelBase):
         self.drv = SBIGDrv()
         self.ccd = SBIGDrv.imaging
 
-        self.ipaddr = None
-        if self['device'] == 'USB':
-            self.dev = SBIGDrv.usb
-        elif self['device'].startswith('ETH:'):
-            self.dev = SBIGDrv.eth
-            self.ipaddr = struct.unpack('I', struct.pack('BBBB', *map(int, self['device'].split(':')[1].split('.')))[::-1])[0]
-
         self.lastTemp = 0
         self.lastFilter = None
 
@@ -96,6 +89,13 @@ class SBIG(CameraBase, FilterWheelBase):
             self.ccd = SBIGDrv.imaging
         else:
             self.ccd = SBIGDrv.tracking
+
+        self.ipaddr = None
+        if self['device'] == 'USB':
+            self.dev = SBIGDrv.usb
+        elif self['device'].startswith('ETH:'):
+            self.dev = SBIGDrv.eth
+            self.ipaddr = struct.unpack('I', struct.pack('BBBB', *map(int, self['device'].split(':')[1].split('.')))[::-1])[0]
 
         self.open(self.dev, self.ipaddr)
 
