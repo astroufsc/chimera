@@ -17,6 +17,7 @@ Contents
    configuring
    advanced
    chimerafordevs
+   CLI
 
 
 Indices and tables
@@ -29,7 +30,7 @@ Indices and tables
 Introduction
 ============
 
-:program:Chimera was originally thought of as a *Command Line Interface* to 
+:program:`Chimera` was originally thought of as a *Command Line Interface* to 
 *Observatory Control Systems* in the context of astronomical observation. As such it posesses a very complete and strong implementation of tools oriented to terminal based interaction. It is also essentially **distributed** in nature, meaning it can run across computers, operating systems and networks and provide an integrated control system.
 
 In time, **Chimera** has acquired wider functionality, like e.g. graphical user 
