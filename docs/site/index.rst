@@ -7,18 +7,6 @@
 Welcome to Chimera's documentation!
 ***********************************
 
-Contents
-========
-
-.. toctree::
-   :maxdepth: 2
-
-   using
-   configuring
-   advanced
-   chimerafordevs
-   supported
-
 Introduction
 ============
 
@@ -68,6 +56,18 @@ Chimera is:
  	All these qualities are the consequence  of the chosen programming language: Python_.
 
  	.. _Python: https://www.python.org/
+
+Contents
+========
+
+.. toctree::
+   :maxdepth: 2
+
+   using
+   configuring
+   advanced
+   chimerafordevs
+   supported
 
 Getting Started
 ===============
