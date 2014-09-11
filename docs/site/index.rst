@@ -17,20 +17,15 @@ Contents
    configuring
    advanced
    chimerafordevs
-
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+   supported
 
 Introduction
 ============
 
-:program:Chimera was originally thought of as a *Command Line Interface* to 
-*Observatory Control Systems* in the context of astronomical observation. As such it posesses a very complete and strong implementation of tools oriented to terminal based interaction. It is also essentially **distributed** in nature, meaning it can run across computers, operating systems and networks and provide an integrated control system.
+:program:`Chimera` was originally thought of as a *Command Line Interface* to
+*Observatory Control Systems* in the context of astronomical observation. As such it possesses a very complete and
+strong implementation of tools oriented to terminal based interaction. It is also essentially **distributed** in nature,
+meaning it can run across computers, operating systems and networks and provide an integrated control system.
 
 In time, **Chimera** has acquired wider functionality, like e.g. graphical user 
 interface(s), included support for devices: instruments, cameras, telescopes/domes, 
@@ -55,8 +50,7 @@ Chimera is:
    and Chimera does the rest.
 
 **Hardware friendly**
-   Support for most common off-the-shelf components. See `supported
-   devices`_.
+   Support for most common off-the-shelf components. See `supported devices`_.
 
 **Extensible**
    Very easy to add support for new devices.
@@ -78,16 +72,16 @@ Chimera is:
 Getting Started
 ===============
 
-Prerequisites:
---------------
+Prerequisites
+-------------
 
 Your platform of choice will need to have the following software installed:
 
 * Python 2.7; **Chimera** has not been ported to Python3 yet.
 * Git;
 
-Installation:
--------------
+Installation
+------------
 
 .. _above:
 
@@ -123,12 +117,12 @@ Distutils will run, generate eggs, etc., and will install the following python d
 * python-sbigudrv: 0.5
 * pywcs: 1.10.2
 * suds: 0.4
-  
-Alternative Methods:
---------------------
 
-Python virtual environment:
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Alternative Methods
+-------------------
+
+Python virtual environment
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 For those constrained by limited access to their platform, restrictions to the system
 provided python or any other reason, the python tool *virtualenv* provides an 
@@ -153,12 +147,19 @@ isolated environment in which to install **Chimera**.
 
 .. _virtualenv: https://virtualenv.pypa.io/en/latest/
 
-Virtualization Options:
-^^^^^^^^^^^^^^^^^^^^^^^
+Virtualization Options
+^^^^^^^^^^^^^^^^^^^^^^
 
 We are currently exploring things like Docker_ as options to enable undisturbing
 installations; additionally we think it will allow more streamlined support for cross 
 platform development.
 
 .. _Docker: https://docker.io/
+
+
+License
+-------
+
+Chimera is Free/Open Software licensed by `GPL v2
+<http://www.gnu.org/licenses/gpl.html>`_ or later (at your choice).
 

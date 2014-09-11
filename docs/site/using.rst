@@ -48,16 +48,16 @@ Additionally, all **chimera** scripts have a common set of options:
 	[default=True]
 
 
-**chimera-cam:**
-^^^^^^^^^^^^^^^^
+**chimera-cam**
+^^^^^^^^^^^^^^^
 
 Say you want to take two frames of 10 seconds each and save to file names like :file:`fake-images-XXXX.fits`::
 
  chimera-cam --frames 2 --exptime 10 --output fake-images
 
 
-**chimera-dome:**
-^^^^^^^^^^^^^^^^^
+**chimera-dome**
+^^^^^^^^^^^^^^^^
 
 In routine operations, the dome and the telescope devices are synchronized; it is however possible to move either independently::
 
@@ -78,7 +78,7 @@ moving, :program:`chimera-cam` will wait until the dome finishes::
 After about one and a half minute, you'll have three nice frames of M5 in R, G and B
 filters, ready to stack and make nice false color image.
 
-**chimera-filter:**
+**chimera-filter**
 ^^^^^^^^^^^^^^^^^^
 
 This script controls a configured (or fake) filter wheel::
