@@ -123,6 +123,7 @@ class SBIGDrv(object):
     usb2 = udrv.DEV_USB2
     usb3 = udrv.DEV_USB3
     usb4 = udrv.DEV_USB4
+    eth  = udrv.DEV_ETH
     
     imaging = udrv.CCD_IMAGING
     tracking = udrv.CCD_TRACKING
@@ -168,10 +169,12 @@ class SBIGDrv(object):
     def closeDriver(self):
         return self._cmd(udrv.CC_CLOSE_DRIVER, None, None)
 
-    def openDevice(self, device):
+    def openDevice(self, device, ipaddr=None):
 
         odp = udrv.OpenDeviceParams()
         odp.deviceType = device
+        if ipaddr:
+            odp.ipAddress = ipaddr
 
         try:
             return self._cmd(udrv.CC_OPEN_DEVICE, odp, None)
@@ -201,15 +204,27 @@ class SBIGDrv(object):
         self._cmd(udrv.CC_GET_LINK_STATUS, None, glsr)
         return bool(glsr.linkEstablished)
 
-    def startExposure(self, ccd, exp_time, shutter):
-        sep = udrv.StartExposureParams()
+    def startExposure(self, ccd, exp_time, shutter, mode = 0, window = None):
+
+        # geometry checking
+        readoutMode = self.readoutModes[ccd][mode]
+
+        window = (window or []) or readoutMode.getWindow()
+        
+        sep = udrv.StartExposureParams2()
 
         sep.ccd = ccd
         sep.openShutter = shutter
         sep.abgState = 0
         sep.exposureTime = exp_time
+        sep.readoutMode = mode
+        sep.top    = window[0]
+        sep.left   = window[1]
+        sep.width  = window[2]
+        sep.height = window[3]
+        
 
-        return self._cmd(udrv.CC_START_EXPOSURE, sep, None)
+        return self._cmd(udrv.CC_START_EXPOSURE2, sep, None)
 
     def endExposure(self, ccd):
         eep = udrv.EndExposureParams()
