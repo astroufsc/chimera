@@ -181,13 +181,87 @@ sqlite> select * from targets; ::
   4860        115 516      STD                          23.7375     1.23694444  2000.0       10.434                
   4861        PG2349+002   STD                          23.8647222  0.47138888  2000.0       13.277                
 
-(Man at work...)
+After checking this out, you need to create a list of observing blocks with the following format:
 
-Once in the database, the observations can than be scheduled and executed. 
+obsblock.lis ::
+
+  SPLUS   00001 00001 splus_block.cfg 0
+  SPLUS   00002 00002 splus_block.cfg 0
+  SPLUS   00003 00003 splus_block.cfg 0
+  SPLUS   00004 00004 splus_block.cfg 0
+  SPLUS   00005 00005 splus_block.cfg 0
+  .
+  .
+  .
+  SPLUS   04331 04331 splus_block.cfg 0
+  SPLUS   04332 04332 splus_block.cfg 0
+  SPLUS   04333 04333 splus_block.cfg 0
+  SPLUS   04334 04334 splus_block.cfg 0
+  SPLUS   04335 04335 splus_block.cfg 0
+  EXTMONI 00001 04336 stdblock.cfg    0
+  EXTMONI 00002 04337 stdblock.cfg    0
+  EXTMONI 00003 04338 stdblock.cfg    0
+  EXTMONI 00004 04339 stdblock.cfg    0
+  EXTMONI 00005 04340 stdblock.cfg    0
+  EXTMONI 00006 04341 stdblock.cfg    0
+  .
+  .
+  .
+  EXTMONI 00522 04857 stdblock.cfg    0
+  EXTMONI 00523 04858 stdblock.cfg    0
+  EXTMONI 00524 04859 stdblock.cfg    0
+  EXTMONI 00525 04860 stdblock.cfg    0
+  EXTMONI 00526 04861 stdblock.cfg    0
+  EXTMONI 00527 04862 stdblock.cfg    0
+
+The first column is the project ID of which this block is part of. The second columns is the block number and the third the
+object id in the target database. Note how the block number runs from 1 to 43335 for project SPLUS and then goes back to 1 when
+we go to project EXTMONI, while the object id keeps increasing. Also, here we create a single block for each target. This is 
+usually the case for normal observations. But, in some cases, a single block may have more than one target. If this happens just 
+repeate the block number (second column) with different object id. Note however that to deal with this, specific scheduling 
+algorithms must be implemented. Depending of what you want the scheduler will not deal with this properly yet. Here you can also 
+note that a single object can be part of different projects. Just by selecting the appropriate values for columns 1 and 2 and 
+then repeating column 3. Column 4 of this file specify the observations configuration of each block and the last column 
+specify which kind of block it is (the subsections, specifying the enviromental constraints in the project configuration file).
+
+The observations configuration file must have the following (self explanatory) format:
+
+splus_block.cfg ::
+
+  [blockconfig]
+  
+  filter = B,V,R,I
+  exptime = 80.,80.,60.,40.
+  nexp = 2,1,1,2
+  imagetype=OBJECT,OBJECT,OBJECT,OBJECT
+
+
+and 
+
+stdblock.cfg ::
+
+  [blockconfig]
+  filter = B,V,R,I
+  exptime = 5.,5.,5.,5.
+  nexp = 1,1,1,1
+  imagetype=OBJECT,OBJECT,OBJECT,OBJECT
+
+
+Note how you have/can specify the imagetype of the observation in each filter. If you need to take darks or bias during an
+observation or schedule skyflats, the scheduler can deal with it properly. 
+
+To add the observation blocks to the database you can just run:
+
+  chimera-addproject --addObsBlock -f obsblock.lis 
+
+After this information is loaded to the database, observations can then be scheduled and executed. 
 
 
 Running ``chimera-sched``
 -------------------------
+
+WORK IN PROGRESS...
+
 
 Example: NoNoNo
 ---------------
