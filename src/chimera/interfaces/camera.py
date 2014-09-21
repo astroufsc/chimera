@@ -16,17 +16,19 @@
 
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301, USA.
 
 
 from chimera.core.interface import Interface
 from chimera.core.event import event
-from chimera.util.enum  import Enum
+from chimera.util.enum import Enum
 from chimera.core.exceptions import ChimeraException
 
 Shutter = Enum('OPEN', 'CLOSE', 'LEAVE_AS_IS')
-Bitpix  = Enum("char8", "uint16", "int16", "int32", "int64", "float32", "float64")
-CCD     = Enum("IMAGING", "TRACKING")
+Bitpix = Enum(
+    "char8", "uint16", "int16", "int32", "int64", "float32", "float64")
+CCD = Enum("IMAGING", "TRACKING")
 
 # Special features parameters can be passed as ImageRequest
 # parameters. The Camera.supports(feature) method can be used
@@ -44,6 +46,7 @@ CameraStatus = Enum("OK", "ERROR", "ABORTED")
 
 
 class ReadoutMode(object):
+
     """
     Store basic geometry for a given readout mode. Implementer should
     provide an constuctor from a modeString (some instrument specific
@@ -95,29 +98,33 @@ class InvalidReadoutMode (ChimeraException):
 
 
 class Camera (Interface):
-    """Base camera interface.
+
+    """
+    Base camera interface.
     """
 
     # config
-    __config__ = {"device"     : "USB",
-                  "ccd"        : CCD.IMAGING,
-                  "temp_delta" : 2.0,
+    __config__ = {"device": "USB",
+                  "ccd": CCD.IMAGING,
+                  "temp_delta": 2.0,
 
                   "ccd_saturation_level": 60000,
 
-                  "camera_model"    : "Fake camera Inc.",
-                  "ccd_model"       : "KAF XYZ 10",
-                  "telescope_focal_length": 4000 # milimeter
+                  "camera_model": "Fake camera Inc.",
+                  "ccd_model": "KAF XYZ 10",
+                  "telescope_focal_length": 4000  # milimeter
                   }
 
 
 class CameraExpose (Camera):
-    """Basic camera that can expose and abort exposures.
+
+    """
+    Basic camera that can expose and abort exposures.
     """
 
-    def expose (self, request=None, **kwargs):
-
-        """Start an exposure based upon the specified image request or
+    def expose(self, request=None, **kwargs):
+        """
+        Start an exposure based upon the specified image request or
         will create a new image request from kwargs
 
         @param request: ImageRequest containing details of the image to be taken
@@ -127,8 +134,9 @@ class CameraExpose (Camera):
         @rtype: tuple(L{Proxy})
         """
 
-    def abortExposure (self, readout=True):
-        """Try abort the current exposure, reading out the current
+    def abortExposure(self, readout=True):
+        """
+        Try abort the current exposure, reading out the current
         frame if asked to.
 
         @param readout: Whether to readout the current frame after
@@ -140,8 +148,9 @@ class CameraExpose (Camera):
         @rtype: bool
         """
 
-    def isExposing (self):
-        """Ask if camera is exposing right now.(where exposing
+    def isExposing(self):
+        """
+        Ask if camera is exposing right now.(where exposing
         includes both integration time and readout).
 
         @return: The currently exposing ImageRequest if the camera is
@@ -151,8 +160,9 @@ class CameraExpose (Camera):
         """
 
     @event
-    def exposeBegin (self, request):
-        """Indicates that new exposure is starting.
+    def exposeBegin(self, request):
+        """
+        Indicates that new exposure is starting.
 
         When multiple frames are taken in a single shot, multiple
         exposeBegin events will be fired.
@@ -162,8 +172,9 @@ class CameraExpose (Camera):
         """
 
     @event
-    def exposeComplete (self, request, status):
-        """Indicates that new exposure frame was taken.
+    def exposeComplete(self, request, status):
+        """
+        Indicates that new exposure frame was taken.
 
         When multiple frames are taken in a single shot, multiple
         exposeComplete events will be fired.
@@ -173,12 +184,12 @@ class CameraExpose (Camera):
 
         @param status: The status of the current expose.
         @type  status: L{CameraStatus}
-        
         """
 
     @event
-    def readoutBegin (self, request):
-        """Indicates that new readout is starting.
+    def readoutBegin(self, request):
+        """
+        Indicates that new readout is starting.
 
         When multiple frames are taken in a single shot, multiple
         readoutBegin events will be fired.
@@ -188,7 +199,7 @@ class CameraExpose (Camera):
         """
 
     @event
-    def readoutComplete (self, proxy, status):
+    def readoutComplete(self, proxy, status):
         """Indicates that a new frame was exposed and saved.
 
         @param request: The just taken Image (as a Proxy) or None is status=[ERROR or ABORTED]..
@@ -196,17 +207,18 @@ class CameraExpose (Camera):
 
         @param status: current exposure status
         @type  status: L{CameraStatus}
-        
         """
 
 
 class CameraTemperature (Camera):
-    """A camera that supports temperature monitoring and control.
+
+    """
+    A camera that supports temperature monitoring and control.
     """
 
-
-    def startCooling (self, tempC):
-        """Start cooling the camera with SetPoint setted to tempC.
+    def startCooling(self, tempC):
+        """
+        Start cooling the camera with SetPoint setted to tempC.
 
         @param tempC: SetPoint temperature in degrees Celsius.
         @type  tempC: float or int
@@ -215,29 +227,33 @@ class CameraTemperature (Camera):
         @rtype: bool
         """
 
-    def stopCooling (self):
-        """Stop cooling the camera
+    def stopCooling(self):
+        """
+        Stop cooling the camera
 
         @return: True if successful, False otherwise.
         @rtype: bool
         """
 
-    def isCooling (self):
-        """Returns whether the camera is currently cooling.
+    def isCooling(self):
+        """
+        Returns whether the camera is currently cooling.
 
         @return: True if cooling, False otherwise.
         @rtype: bool
         """
 
     def getTemperature(self):
-        """Get the current camera temperature.
+        """
+        Get the current camera temperature.
 
         @return: The current camera temperature in degrees Celsius.
         @rtype: float
         """
 
     def getSetPoint(self):
-        """Get the current camera temperature SetPoint.
+        """
+        Get the current camera temperature SetPoint.
 
         @return: The current camera temperature SetPoint in degrees Celsius.
         @rtype: float
@@ -252,10 +268,10 @@ class CameraTemperature (Camera):
     def isFanning(self):
         pass
 
-
     @event
-    def temperatureChange (self, newTempC, delta):
-        """Camera temperature probe. Will be fired everytime that the camera
+    def temperatureChange(self, newTempC, delta):
+        """
+        Camera temperature probe. Will be fired everytime that the camera
         temperature changes more than temperature_monitor_delta
         degrees Celsius.
 
@@ -266,7 +282,8 @@ class CameraTemperature (Camera):
         @type  delta: float
         """
 
-class CameraInformation (Camera):
+
+class CameraInformation(Camera):
 
     # for getCCDs, getBinnings and getADCs, the instrument should return a
     # hash with keys as Human readable strings, which could be later passed as a
@@ -275,7 +292,6 @@ class CameraInformation (Camera):
     # example:
     # ADCs = {'12 bits': SomeInternalValueWhichMapsTo12BitsADC,
     #         '16 bits': SomeInternalValueWhichMapsTo16BitsADC}
-
 
     def getCCDs(self):
         pass
@@ -308,7 +324,6 @@ class CameraInformation (Camera):
     #
     # special features support
     #
-    
+
     def supports(self, feature=None):
         pass
-

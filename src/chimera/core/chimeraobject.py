@@ -36,7 +36,7 @@ from chimera.core.constants import RWLOCK_ATTRIBUTE_NAME
 
 from chimera.interfaces.lifecycle import ILifeCycle
 
-import chimera.core.log
+#import chimera.core.log
 
 import logging
 import time

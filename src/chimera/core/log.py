@@ -16,7 +16,8 @@
 
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301, USA.
 
 import logging
 import logging.handlers
@@ -40,10 +41,10 @@ __all__ = ['setConsoleLevel']
 
 class ChimeraFormatter (logging.Formatter):
 
-    def __init__ (self, fmt, datefmt):
+    def __init__(self, fmt, datefmt):
         logging.Formatter.__init__(self, fmt, datefmt)
 
-    def formatException (self, exc_info):
+    def formatException(self, exc_info):
         stream = StringIO.StringIO()
         printException(exc_info[1], stream=stream)
 
@@ -52,7 +53,7 @@ class ChimeraFormatter (logging.Formatter):
         finally:
             stream.close()
 
-        
+
 fmt = ChimeraFormatter(fmt='%(asctime)s.%(msecs)d %(levelname)s %(name)s %(filename)s:%(lineno)d %(message)s',
                        datefmt='%d-%m-%Y %H:%M:%S')
 
@@ -68,15 +69,16 @@ root.propagate = False
 
 consoleHandler = logging.StreamHandler(sys.stderr)
 consoleHandler.setFormatter(fmt)
-consoleHandler.setLevel(logging.WARNING)    
+consoleHandler.setLevel(logging.WARNING)
 root.addHandler(consoleHandler)
 
-def setConsoleLevel (level):
+
+def setConsoleLevel(level):
     consoleHandler.setLevel(level)
 
 try:
     fileHandler = logging.handlers.RotatingFileHandler(SYSTEM_CONFIG_LOG_NAME,
-                                                       maxBytes=5*1024*1024, backupCount=10)
+                                                       maxBytes=5 * 1024 * 1024, backupCount=10)
     fileHandler.setFormatter(fmt)
     fileHandler.setLevel(logging.DEBUG)
     root.addHandler(fileHandler)

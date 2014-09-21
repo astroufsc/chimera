@@ -23,7 +23,7 @@
 from chimera.core.interface import Interface
 from chimera.core.event import event
 
-from chimera.util.enum import Enum
+#from chimera.util.enum import Enum
 from chimera.core.exceptions import ChimeraException
 
 

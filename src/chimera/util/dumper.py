@@ -1,10 +1,13 @@
-#Taken from http://code.activestate.com/recipes/137951/
-#Originally licensed under the Python License (presumably version 2.0.1/2.1.1 or later)
-#Relicensed under GPL of use in Chimera
+# Taken from http://code.activestate.com/recipes/137951/
+# Originally licensed under the Python License (presumably
+# version 2.0.1/2.1.1 or later)
+# Relicensed under GPL of use in Chimera
+
 
 def printDict(di, format="%-25s %s"):
     for (key, val) in di.items():
-        print format % (str(key)+':', val)
+        print format % (str(key) + ':', val)
+
 
 def dumpObj(obj, maxlen=77, lindent=24, maxspew=600):
     """Print a nicely formatted overview of an object.
@@ -40,11 +43,11 @@ def dumpObj(obj, maxlen=77, lindent=24, maxspew=600):
          __weakref__           None
          a                     30
     """
-    
+
     import types
 
     # Formatting parameters.
-    ltab    = 2    # initial tab in front of level 2 text
+    ltab = 2    # initial tab in front of level 2 text
 
     # There seem to be a couple of other types; gather templates of them
     MethodWrapperType = type(object().__hash__)
@@ -52,32 +55,32 @@ def dumpObj(obj, maxlen=77, lindent=24, maxspew=600):
     #
     # Gather all the attributes of the object
     #
-    objclass  = None
-    objdoc    = None
+    objclass = None
+    objdoc = None
     objmodule = '<None defined>'
-    
-    methods   = []
-    builtins  = []
-    classes   = []
-    attrs     = []
+
+    methods = []
+    builtins = []
+    classes = []
+    attrs = []
     for slot in dir(obj):
         attr = getattr(obj, slot)
-        if   slot == '__class__':
+        if slot == '__class__':
             objclass = attr.__name__
         elif slot == '__doc__':
             objdoc = attr
         elif slot == '__module__':
             objmodule = attr
-        elif (isinstance(attr, types.BuiltinMethodType) or 
+        elif (isinstance(attr, types.BuiltinMethodType) or
               isinstance(attr, MethodWrapperType)):
-            builtins.append( slot )
+            builtins.append(slot)
         elif (isinstance(attr, types.MethodType) or
               isinstance(attr, types.FunctionType)):
-            methods.append( (slot, attr) )
+            methods.append((slot, attr))
         elif isinstance(attr, types.TypeType):
-            classes.append( (slot, attr) )
+            classes.append((slot, attr))
         else:
-            attrs.append( (slot, attr) )
+            attrs.append((slot, attr))
 
     #
     # Organize them
@@ -91,7 +94,7 @@ def dumpObj(obj, maxlen=77, lindent=24, maxspew=600):
     # Print a readable summary of those attributes
     #
     normalwidths = [lindent, maxlen - lindent]
-    tabbedwidths = [ltab, lindent-ltab, maxlen - lindent - ltab]
+    tabbedwidths = [ltab, lindent - ltab, maxlen - lindent - ltab]
 
     def truncstring(s, maxlen):
         if len(s) > maxlen:
@@ -110,29 +113,29 @@ def dumpObj(obj, maxlen=77, lindent=24, maxspew=600):
     if objdoc is None:
         objdoc = str(objdoc)
     else:
-        objdoc = ('"""' + objdoc.strip()  + '"""')
+        objdoc = ('"""' + objdoc.strip() + '"""')
     print
-    print prettyPrintCols( ('Documentation string:',
-                            truncstring(objdoc, maxspew)),
+    print prettyPrintCols(('Documentation string:',
+                           truncstring(objdoc, maxspew)),
                           normalwidths, ' ')
 
     # Built-in methods
     if builtins:
-        bi_str   = delchars(str(builtins), "[']") or str(None)
+        bi_str = delchars(str(builtins), "[']") or str(None)
         print
-        print prettyPrintCols( ('Built-in Methods:',
-                                truncstring(bi_str, maxspew)),
+        print prettyPrintCols(('Built-in Methods:',
+                               truncstring(bi_str, maxspew)),
                               normalwidths, ', ')
-        
+
     # Classes
     if classes:
         print
         print 'Classes:'
     for (classname, classtype) in classes:
         classdoc = getattr(classtype, '__doc__', None) or '<No documentation>'
-        print prettyPrintCols( ('',
-                                classname,
-                                truncstring(classdoc, maxspew)),
+        print prettyPrintCols(('',
+                               classname,
+                               truncstring(classdoc, maxspew)),
                               tabbedwidths, ' ')
 
     # User methods
@@ -141,9 +144,9 @@ def dumpObj(obj, maxlen=77, lindent=24, maxspew=600):
         print 'Methods:'
     for (methodname, method) in methods:
         methoddoc = getattr(method, '__doc__', None) or '<No documentation>'
-        print prettyPrintCols( ('',
-                                methodname,
-                                truncstring(methoddoc, maxspew)),
+        print prettyPrintCols(('',
+                               methodname,
+                               truncstring(methoddoc, maxspew)),
                               tabbedwidths, ' ')
 
     # Attributes
@@ -151,10 +154,11 @@ def dumpObj(obj, maxlen=77, lindent=24, maxspew=600):
         print
         print 'Attributes:'
     for (attr, val) in attrs:
-        print prettyPrintCols( ('',
-                                attr,
-                                truncstring(unicode(val), maxspew)),
+        print prettyPrintCols(('',
+                               attr,
+                               truncstring(unicode(val), maxspew)),
                               tabbedwidths, ' ')
+
 
 def prettyPrintCols(strings, widths, split=' '):
     """Pretty prints text in colums, with each string breaking at
@@ -179,6 +183,7 @@ def prettyPrintCols(strings, widths, split=' '):
     # generate the formatted text
     return '\n'.join(map(formatline, *cols))
 
+
 def prettyPrint(string, maxlen=75, split=' '):
     """Pretty prints the given string to break at an occurrence of
     split where necessary to avoid lines longer than maxlen.
@@ -188,28 +193,31 @@ def prettyPrint(string, maxlen=75, split=' '):
 
     # Tack on the splitting character to guarantee a final match
     string += split
-    
-    lines   = []
-    oldeol  = 0
-    eol     = 0
-    while not (eol == -1 or eol == len(string)-1):
-        eol = string.rfind(split, oldeol, oldeol+maxlen+len(split))
+
+    lines = []
+    oldeol = 0
+    eol = 0
+    while not (eol == -1 or eol == len(string) - 1):
+        eol = string.rfind(split, oldeol, oldeol + maxlen + len(split))
         lines.append(string[oldeol:eol])
         oldeol = eol + len(split)
 
     return lines
 
+
 def nukenewlines(string):
     """Strip newlines and any trailing/following whitespace; rejoin
     with a single space where the newlines were.
-    
+
     Bug: This routine will completely butcher any whitespace-formatted
     text."""
-    
-    if not string: return ''
+
+    if not string:
+        return ''
     lines = string.splitlines()
-    return ' '.join( [line.strip() for line in lines] )
-    
+    return ' '.join([line.strip() for line in lines])
+
+
 def delchars(str, chars):
     """Returns a string for which all occurrences of characters in
     chars have been removed."""

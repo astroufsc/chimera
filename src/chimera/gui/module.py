@@ -3,11 +3,11 @@ class ChimeraGUIModule(object):
 
     module_controls = {"default": "Default"}
 
-    def __init__ (self,  manager):
+    def __init__(self,  manager):
         self.builder = None
         self.manager = manager
-        
-    def setupGUI (self, objects):
+
+    def setupGUI(self, objects):
         """
         You could override this method and add module specific widgets
         to the GUI.  This method must returns a GtkWidget, that would
@@ -17,10 +17,8 @@ class ChimeraGUIModule(object):
         module can control (defined in self.module_controls).
         """
 
-    def setupEvents (self):
+    def setupEvents(self):
         """
         Override this method to add module specific event handling.
         This methos will be called after GUI creation.
         """
-
-

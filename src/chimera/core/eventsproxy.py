@@ -16,12 +16,13 @@
 
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301, USA.
 
 from chimera.core.proxy import Proxy
 
 import logging
-import chimera.core.log
+#import chimera.core.log
 
 import Pyro.errors
 
@@ -39,7 +40,7 @@ class EventsProxy:
     def __init__(self):
         self.handlers = {}
 
-    def subscribe (self, handler):
+    def subscribe(self, handler):
 
         topic = handler["topic"]
 
@@ -51,7 +52,7 @@ class EventsProxy:
 
         return True
 
-    def unsubscribe (self, handler):
+    def unsubscribe(self, handler):
 
         topic = handler["topic"]
 
@@ -65,7 +66,7 @@ class EventsProxy:
 
         return True
 
-    def publish (self, topic, *args, **kwargs):
+    def publish(self, topic, *args, **kwargs):
 
         if topic not in self.handlers:
             return True
@@ -74,34 +75,38 @@ class EventsProxy:
 
         for handler in self.handlers[topic]:
 
-            # FIXME: reuse connections? if not, TIME_WAIT sockets start to slow down things
-            proxy = Proxy (uri=handler["proxy"])
+            # FIXME: reuse connections? if not, TIME_WAIT sockets start to slow
+            # down things
+            proxy = Proxy(uri=handler["proxy"])
 
             try:
                 dispatcher = getattr(proxy, handler["method"])
-                #proxy._setOneway ([handler["method"]]) should be faster but results say no!
-                dispatcher (*args, **kwargs)
+                # proxy._setOneway ([handler["method"]]) should be faster but
+                # results say no!
+                dispatcher(*args, **kwargs)
             except AttributeError, e:
                 tb_size = len(traceback.extract_tb(sys.exc_info()[2]))
                 if tb_size == 1:
-                    log.debug("Invalid proxy method ('%s %s') for '%s' handler." % \
+                    log.debug("Invalid proxy method ('%s %s') for '%s' handler." %
                               (handler["proxy"], handler["method"], topic))
                 else:
-                    log.debug ("Handler (%s) raised an exception. Removing from subscribers list." % proxy)
+                    log.debug(
+                        "Handler (%s) raised an exception. Removing from subscribers list." % proxy)
                     log.exception(e)
 
                 excluded.append(handler)
                 continue
             except Pyro.errors.ProtocolError, e:
-                log.debug ("Unreachable handler (%s). Removing from subscribers list." % proxy)
+                log.debug(
+                    "Unreachable handler (%s). Removing from subscribers list." % proxy)
                 excluded.append(handler)
                 continue
             except Exception, e:
-                log.debug ("Handler (%s) raised an exception. Removing from subscribers list." % proxy)
+                log.debug(
+                    "Handler (%s) raised an exception. Removing from subscribers list." % proxy)
                 log.exception(e)
                 excluded.append(handler)
                 continue
-
 
         # remove unreacheable
         for handler in excluded:

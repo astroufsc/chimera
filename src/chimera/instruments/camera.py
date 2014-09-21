@@ -16,7 +16,8 @@
 
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301, USA.
 
 
 import threading
@@ -26,9 +27,9 @@ import datetime as dt
 from math import pi
 
 from chimera.core.chimeraobject import ChimeraObject
-from chimera.interfaces.camera  import (CameraExpose, CameraTemperature,
-                                        CameraInformation,
-                                        InvalidReadoutMode, Shutter)
+from chimera.interfaces.camera import (CameraExpose, CameraTemperature,
+                                       CameraInformation,
+                                       InvalidReadoutMode, Shutter)
 
 from chimera.controllers.imageserver.imagerequest import ImageRequest
 from chimera.controllers.imageserver.util import getImageServer
@@ -49,9 +50,9 @@ class CameraBase (ChimeraObject,
 
         self.__isExposing = threading.Event()
 
-    def __stop__ (self):
+    def __stop__(self):
         self.abortExposure(readout=False)
-        
+
     @lock
     def expose(self, request=None, **kwargs):
 
@@ -75,7 +76,7 @@ class CameraBase (ChimeraObject,
                 imageRequest = ImageRequest(**kwargs)
             else:
                 imageRequest = ImageRequest()
-        
+
         frames = imageRequest['frames']
         interval = imageRequest['interval']
 
@@ -91,10 +92,12 @@ class CameraBase (ChimeraObject,
         self._getReadoutModeInfo(imageRequest["binning"],
                                  imageRequest["window"])
 
-        # use image server if any and save image on server's default dir if filename given as a relative path.
+        # use image server if any and save image on server's default dir if
+        # filename given as a relative path.
         server = getImageServer(self.getManager())
         if not os.path.isabs(imageRequest["filename"]):
-            imageRequest["filename"] = os.path.join(server.defaultNightDir(), imageRequest["filename"])
+            imageRequest["filename"] = os.path.join(
+                server.defaultNightDir(), imageRequest["filename"])
 
         # clear abort setting
         self.abort.clear()
@@ -114,7 +117,7 @@ class CameraBase (ChimeraObject,
             # [ABORT POINT]
             if self.abort.isSet():
                 return tuple(images)
-            
+
             image = self._readout(imageRequest)
             if image is not None:
                 images.append(image)
@@ -123,12 +126,12 @@ class CameraBase (ChimeraObject,
             # [ABORT POINT]
             if self.abort.isSet():
                 return tuple(images)
-            
+
             if (interval > 0 and frame_num < frames) and (not frames == 1):
                 time.sleep(interval)
 
         return tuple(images)
-                
+
     def abortExposure(self, readout=True):
 
         if not self.isExposing():
@@ -139,7 +142,7 @@ class CameraBase (ChimeraObject,
 
         # then wait
         while self.isExposing():
-            time.sleep (0.1)
+            time.sleep(0.1)
 
         return True
 
@@ -150,31 +153,32 @@ class CameraBase (ChimeraObject,
                                                    imageRequest["window"])
 
         binFactor = extra.get("binning_factor", 1.0)
-        
+
         pix_w, pix_h = self.getPixelSize()
         focal_length = self["telescope_focal_length"]
 
-        scale_x = binFactor * (((180/pi) / focal_length) * (pix_w * 0.001))
-        scale_y = binFactor * (((180/pi) / focal_length) * (pix_h * 0.001))
-        
+        scale_x = binFactor * (((180 / pi) / focal_length) * (pix_w * 0.001))
+        scale_y = binFactor * (((180 / pi) / focal_length) * (pix_h * 0.001))
+
         full_width, full_height = self.getPhysicalSize()
-        CRPIX1 = ((int(full_width/2.0)) - left) - 1
-        CRPIX2 = ((int(full_height/2.0)) - top) - 1
+        CRPIX1 = ((int(full_width / 2.0)) - left) - 1
+        CRPIX2 = ((int(full_height / 2.0)) - top) - 1
 
         t0 = time.time()
         img = Image.create(imageData, imageRequest)
 
         img += [('DATE-OBS',
-                 ImageUtil.formatDate(extra.get("frame_start_time", dt.datetime.utcnow())),
+                 ImageUtil.formatDate(
+                     extra.get("frame_start_time", dt.datetime.utcnow())),
                  'Date exposure started'),
-                
+
                 ('CCD-TEMP', extra.get("frame_temperature", -275.0),
                  'CCD Temperature at Exposure Start [deg. C]'),
 
                 ("EXPTIME", float(imageRequest['exptime']) or -1,
                  "exposure time in seconds"),
 
-                ('IMAGETYP', imageRequest['type'].strip(), 
+                ('IMAGETYP', imageRequest['type'].strip(),
                  'Image type'),
 
                 ('SHUTTER', str(imageRequest['shutter']),
@@ -189,8 +193,10 @@ class CameraBase (ChimeraObject,
 
                 ('CAMERA', str(self['camera_model']), 'Camera Model'),
                 ('CCD',    str(self['ccd_model']), 'CCD Model'),
-                ('CCD_DIMX', self.getPhysicalSize()[0], 'CCD X Dimension Size'),
-                ('CCD_DIMY', self.getPhysicalSize()[1], 'CCD Y Dimension Size'),
+                ('CCD_DIMX', self.getPhysicalSize()
+                 [0], 'CCD X Dimension Size'),
+                ('CCD_DIMY', self.getPhysicalSize()
+                 [1], 'CCD Y Dimension Size'),
                 ('CCDPXSZX', self.getPixelSize()[0],
                  'CCD X Pixel Size [micrometer]'),
                 ('CCDPXSZY', self.getPixelSize()[1],
@@ -221,40 +227,44 @@ class CameraBase (ChimeraObject,
             # use full frame if None given
             binId = self.getBinnings()["1x1"]
             mode = self.getReadoutModes()[self.getCurrentCCD()][binId]
-            
+
         left = 0
         top = 0
         width, height = mode.getSize()
 
-        if window != None:
+        if window is not None:
             try:
                 xx, yy = window.split(",")
                 xx = xx.strip()
                 yy = yy.strip()
                 x1, x2 = xx.split(":")
                 y1, y2 = yy.split(":")
-                
+
                 x1 = int(x1)
                 x2 = int(x2)
                 y1 = int(y1)
                 y2 = int(y2)
 
-                left = min(x1,x2) - 1
-                top  = min(y1,y2) - 1
-                width  = (max(x1,x2) - min(x1,x2)) + 1
-                height = (max(y1,y2) - min(y1,y2)) + 1
+                left = min(x1, x2) - 1
+                top = min(y1, y2) - 1
+                width = (max(x1, x2) - min(x1, x2)) + 1
+                height = (max(y1, y2) - min(y1, y2)) + 1
 
                 if left < 0 or left >= mode.width:
-                    raise InvalidReadoutMode("Invalid subframe: left=%d, ccd width (in this binning)=%d" % (left, mode.width))
+                    raise InvalidReadoutMode(
+                        "Invalid subframe: left=%d, ccd width (in this binning)=%d" % (left, mode.width))
 
                 if top < 0 or top >= mode.height:
-                    raise InvalidReadoutMode("Invalid subframe: top=%d, ccd height (in this binning)=%d" % (top,mode.height))
+                    raise InvalidReadoutMode(
+                        "Invalid subframe: top=%d, ccd height (in this binning)=%d" % (top, mode.height))
 
                 if width > mode.width:
-                    raise InvalidReadoutMode("Invalid subframe: width=%d, ccd width (int this binning)=%d" % (width, mode.width))
+                    raise InvalidReadoutMode(
+                        "Invalid subframe: width=%d, ccd width (int this binning)=%d" % (width, mode.width))
 
                 if height > mode.height:
-                    raise InvalidReadoutMode("Invalid subframe: height=%d, ccd height (int this binning)=%d" % (height, mode.height))
+                    raise InvalidReadoutMode(
+                        "Invalid subframe: height=%d, ccd height (int this binning)=%d" % (height, mode.height))
 
             except ValueError:
                 left = 0
@@ -262,22 +272,23 @@ class CameraBase (ChimeraObject,
                 width, height = mode.getSize()
 
         if not binning:
-            binning = self.getBinnings().keys().pop(self.getBinnings().keys().index("1x1"))
-            
+            binning = self.getBinnings().keys().pop(
+                self.getBinnings().keys().index("1x1"))
+
         return (mode, binning, top, left, width, height)
 
-    def isExposing (self):
+    def isExposing(self):
         return self.__isExposing.isSet()
-    
+
     @lock
-    def startCooling (self, tempC):
+    def startCooling(self, tempC):
         raise NotImplementedError()
 
     @lock
-    def stopCooling (self):
+    def stopCooling(self):
         raise NotImplementedError()
 
-    def isCooling (self):
+    def isCooling(self):
         raise NotImplementedError()
 
     @lock
@@ -298,7 +309,7 @@ class CameraBase (ChimeraObject,
 
     def isFanning(self):
         raise NotImplementedError()
-    
+
     def getCCDs(self):
         raise NotImplementedError()
 
@@ -325,4 +336,3 @@ class CameraBase (ChimeraObject,
 
     def supports(self, feature=None):
         raise NotImplementedError()
-

@@ -19,5 +19,3 @@ for name in fd.readlines():
                                              position.dec,
                                              name.replace(" ", "_"))
     sys.stdout.flush()
-
-    

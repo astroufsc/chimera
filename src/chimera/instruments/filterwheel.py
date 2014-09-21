@@ -16,7 +16,8 @@
 
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301, USA.
 
 
 from chimera.core.chimeraobject import ChimeraObject
@@ -27,26 +28,27 @@ from chimera.core.lock import lock
 
 class FilterWheelBase (ChimeraObject, FilterWheel):
 
-    def __init__ (self):
+    def __init__(self):
         ChimeraObject.__init__(self)
 
     @lock
-    def setFilter (self, filter):
+    def setFilter(self, filter):
         raise NotImplementedError()
 
-    def getFilter (self):
+    def getFilter(self):
         raise NotImplementedError()
 
-    def getFilters (self):
+    def getFilters(self):
         return self["filters"].upper().split()
 
-    def _getFilterName (self, index):
+    def _getFilterName(self, index):
         try:
             return self.getFilters()[index]
         except (ValueError, TypeError):
-           raise InvalidFilterPositionException("Unknown filter (%s)." % str(index))
+            raise InvalidFilterPositionException(
+                "Unknown filter (%s)." % str(index))
 
-    def _getFilterPosition (self, name):
+    def _getFilterPosition(self, name):
         return self.getFilters().index(name)
 
     def getMetadata(self, request):

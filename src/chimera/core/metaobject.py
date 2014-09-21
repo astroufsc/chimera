@@ -27,7 +27,7 @@ from chimera.core.lockwrapper import LockWrapper, LockWrapperDispatcher
 
 from chimera.core.rwlock import ReadWriteLock
 
-from chimera.core.constants     import EVENT_ATTRIBUTE_NAME, \
+from chimera.core.constants import EVENT_ATTRIBUTE_NAME, \
     CONFIG_ATTRIBUTE_NAME, \
     LOCK_ATTRIBUTE_NAME, \
     EVENTS_ATTRIBUTE_NAME, \

@@ -26,22 +26,23 @@ gtk.gdk.threads_init()
 
 from chimera.core.systemconfig import SystemConfig
 from chimera.core.manager import Manager
-from chimera.core.managerlocator   import ManagerLocator
+from chimera.core.managerlocator import ManagerLocator
 from chimera.core.constants import SYSTEM_CONFIG_DEFAULT_FILENAME
 
 
 class ChimeraGUI:
-    
+
     def __init__(self):
 
         self.setupGUI()
         self.setupChimera()
         self.setupViews()
 
-    def setupGUI (self):
+    def setupGUI(self):
         self.builder = gtk.Builder()
-        self.builder.add_from_file(os.path.join(os.path.dirname(__file__), "chimera.xml"))
-             
+        self.builder.add_from_file(
+            os.path.join(os.path.dirname(__file__), "chimera.xml"))
+
         self.mainWindow = self.builder.get_object("mainWindow")
         self.builder.connect_signals({"window_destroy": self.chimera_quit,
                                       "chimera_connect_handler": self.chimera_connect_handler,
@@ -57,40 +58,44 @@ class ChimeraGUI:
         self.builder.get_object("main_area").pack_end(self.dock)
 
         self.mainWindow.set_default_size(640, 480)
-	self.mainWindow.show_all()
+        self.mainWindow.show_all()
 
-    def chimera_quit (self, *arga, **kwargs):
-        #self.dock_layout.save_to_file("chimera_gui_layout.xml")
+    def chimera_quit(self, *arga, **kwargs):
+        # self.dock_layout.save_to_file("chimera_gui_layout.xml")
         gtk.main_quit()
 
-    def chimera_connect_handler (self, action):
+    def chimera_connect_handler(self, action):
         threading.Thread(target=self.showConnectDialog).start()
 
-    def showConnectDialog (self):
+    def showConnectDialog(self):
         dialog = self.builder.get_object("chimera_connect_dialog")
         response = dialog.run()
         dialog.hide()
         dialog.destroy()
 
-    def setupChimera (self):
+    def setupChimera(self):
         try:
-            self.sysconfig = SystemConfig.fromFile(SYSTEM_CONFIG_DEFAULT_FILENAME)
+            self.sysconfig = SystemConfig.fromFile(
+                SYSTEM_CONFIG_DEFAULT_FILENAME)
         except IOError, e:
             logging.exception(e)
-            logging.error("There was a problem reading your configuration file. (%s)" % e)
+            logging.error(
+                "There was a problem reading your configuration file. (%s)" % e)
             return False
-        
-        self.localManager = Manager(host=self.sysconfig.chimera["host"], port=9000)
-        self.manager = ManagerLocator.locate(self.sysconfig.chimera["host"], self.sysconfig.chimera["port"])
 
-    def getFirstProxy (self, type):
+        self.localManager = Manager(
+            host=self.sysconfig.chimera["host"], port=9000)
+        self.manager = ManagerLocator.locate(
+            self.sysconfig.chimera["host"], self.sysconfig.chimera["port"])
+
+    def getFirstProxy(self, type):
         objs = self.manager.getResourcesByClass(type)
         if objs:
             return self.manager.getProxy(objs[0])
         else:
             raise Exception("ERRO")
 
-    def setupViews (self):
+    def setupViews(self):
 
         controls = {}
 
@@ -117,20 +122,22 @@ class ChimeraGUI:
         for view in views:
 
             for name, widget, position in view["widgets"]:
-                
+
                 item = gdl.DockItem(name, name, gdl.DOCK_ITEM_BEH_CANT_ICONIFY)
                 item.add(widget)
                 item.show_all()
                 self.dock.add_item(item, gdl.DOCK_CENTER)
-                
+
             view["instance"].setupEvents()
 
-    def getChimeraModules (self):
+    def getChimeraModules(self):
         return self.manager.getResources()
-        
-    def getAvailableModules (self):
 
-        module_names = glob.glob("%s/[a-zA-Z]*.py" % os.path.join(os.path.dirname(__file__), "modules"))
+    def getAvailableModules(self):
+
+        module_names = glob.glob(
+            "%s/[a-zA-Z]*.py" % os.path.join(os.path.dirname(__file__),
+                                             "modules"))
 
         modules = []
 
@@ -139,14 +146,13 @@ class ChimeraGUI:
             for name in dir(mod):
                 if "GUIModule" in name and name != "ChimeraGUIModule":
                     modules.append(getattr(mod, name))
-                    
+
         return modules
 
-    def run(self, args=[]):        
+    def run(self, args=[]):
         self.mainWindow.show_all()
         gtk.main()
-            
+
 if __name__ == "__main__":
     ChimeraGUI()
     gtk.main()
-

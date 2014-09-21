@@ -16,7 +16,8 @@
 
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301, USA.
 
 from chimera.util.position import Position
 
@@ -43,16 +44,16 @@ class Simbad (object):
     __client = None
 
     @staticmethod
-    def lookup (name):
+    def lookup(name):
 
         if not Simbad.__client:
             Simbad.__client = Client(Simbad.WSDL)
 
         client = Simbad.__client
-        
+
         if name in Simbad.__cache:
             return Simbad.__cache[name]
-        
+
         res = client.service.sesame(name, 'x', True)
         target = Simbad._parseSesame(res)
 
@@ -60,19 +61,19 @@ class Simbad (object):
             raise ObjectNotFoundException("Couldn't find %s on SIMBAD" % name)
 
         Simbad.__cache[name] = target
-        
+
         return target
 
     @staticmethod
-    def _parseSesame (xml):
+    def _parseSesame(xml):
 
         try:
             sesame = ET.fromstring(xml.replace("&", "&amp;"))
             target = sesame.findall("Target")
-            
+
             if target:
                 for resolver in target[0].findall("Resolver"):
-                    jpos  = resolver.find("jpos")
+                    jpos = resolver.find("jpos")
                     if jpos is None:
                         continue
                     return Position.fromRaDec(*jpos.text.split())
@@ -80,7 +81,7 @@ class Simbad (object):
             return False
 
         return False
-        
+
 if __name__ == '__main__':
 
     s = Simbad()
@@ -90,7 +91,8 @@ if __name__ == '__main__':
             obj = raw_input("Give me an object name: ")
             if obj:
                 o = s.lookup(obj)
-                if not o: continue
+                if not o:
+                    continue
                 print o.ra, o.dec
         except (KeyboardInterrupt, EOFError):
             print

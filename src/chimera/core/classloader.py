@@ -16,7 +16,8 @@
 
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301, USA.
 
 
 import sys
@@ -24,19 +25,19 @@ import traceback
 
 from chimera.core.exceptions import ClassLoaderException
 
+
 class ClassLoader (object):
-    
-    def __init__ (self):
+
+    def __init__(self):
         self._cache = {}
 
-    def loadClass (self, clsname, path = ['.']):
-        return self._lookupClass (clsname, path)
+    def loadClass(self, clsname, path=['.']):
+        return self._lookupClass(clsname, path)
 
-    def reloadClass (self, clsname):
+    def reloadClass(self, clsname):
         pass
 
-    def _lookupClass (self, clsname, path):
-
+    def _lookupClass(self, clsname, path):
         """
         Based on this recipe
         http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/52241
@@ -53,7 +54,8 @@ class ClassLoader (object):
 
         try:
 
-            module = __import__(clsname.lower(), globals(), locals(), [clsname])
+            module = __import__(
+                clsname.lower(), globals(), locals(), [clsname])
 
         except ImportError:
 
@@ -71,31 +73,33 @@ class ClassLoader (object):
 
             # ImportError above
             if tb_size == 1:
-                raise ClassLoaderException ("Couldn't find module %s (%s)." % (clsname, path))
+                raise ClassLoaderException(
+                    "Couldn't find module %s (%s)." % (clsname, path))
 
             # ImportError on loaded module
             else:
-                raise ClassLoaderException ("Module %s found but couldn't be loaded." % clsname)
+                raise ClassLoaderException(
+                    "Module %s found but couldn't be loaded." % clsname)
 
         except:
-            raise ClassLoaderException ("Module %s found but couldn't be loaded." % clsname)
+            raise ClassLoaderException(
+                "Module %s found but couldn't be loaded." % clsname)
 
         # turns sys.path back
-        [sys.path.remove (p) for p in path]
-        
+        [sys.path.remove(p) for p in path]
 
         cls = None
-        
+
         for k, v in vars(module).items():
             if k.lower() == clsname.lower():
                 cls = v
                 break
-        
+
         if not cls:
-            raise ClassLoaderException ("Module found but couldn't fount class on module '%s' (%s)." %
-                                        (clsname.lower(), module.__file__))
+            raise ClassLoaderException(
+                "Module found but couldn't fount class on module '%s' (%s)." %
+                (clsname.lower(), module.__file__))
 
         self._cache[clsname.lower()] = cls
 
         return self._cache[clsname.lower()]
-

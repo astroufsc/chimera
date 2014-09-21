@@ -16,7 +16,8 @@
 
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301, USA.
 
 from setuptools import setup, find_packages
 
@@ -26,21 +27,21 @@ import glob
 import re
 
 # append chimera to sys.path to get current version
-build_dir = os.getcwd ()
-src_dir   = os.path.join (build_dir, 'src')
+build_dir = os.getcwd()
+src_dir = os.path.join(build_dir, 'src')
 
 old_sys_path = sys.path
-sys.path.insert (0, src_dir)
+sys.path.insert(0, src_dir)
 
-from chimera.core.version import  _chimera_version_,		\
-                                  _chimera_description_,	\
-                                  _chimera_author,		\
-                                  _chimera_author_email_,	\
-                                  _chimera_license_,		\
-                                  _chimera_url_,		\
-                                  _chimera_download_url_,	\
-                                  _chimera_classifiers_,	\
-                                  _chimera_platform_		
+from chimera.core.version import _chimera_version_,\
+    _chimera_description_,  \
+    _chimera_author,    \
+    _chimera_author_email_, \
+    _chimera_license_,    \
+    _chimera_url_,    \
+    _chimera_download_url_, \
+    _chimera_classifiers_,  \
+    _chimera_platform_
 
 # modules
 
@@ -68,53 +69,52 @@ if sys.platform == "win32":
     win32_deps += ["pywin32 == 218"]
 elif sys.platform == "darwin":
     mac_deps += [
-      "python-sbigudrv == 0.5",
-      "pywcs"
+        "python-sbigudrv == 0.5",
+        "pywcs"
     ]
 else:
     linux_deps += [
-      "python-sbigudrv == 0.5",
-      "pywcs"
+        "python-sbigudrv == 0.5",
+        "pywcs"
     ]
 
-modulefiles=os.listdir("src/chimera/gui/modules/")
-guifiles=[]
+modulefiles = os.listdir("src/chimera/gui/modules/")
+guifiles = []
 for file in modulefiles:
-      if re.match('(.+\.png)|(.+\.xml)',file):
-         guifiles.append("src/chimera/gui/modules/"+file)
+    if re.match('(.+\.png)|(.+\.xml)', file):
+        guifiles.append("src/chimera/gui/modules/" + file)
 
 setup(name='chimera-python',
-      package_dir      = {"": "src"},
+      package_dir={"": "src"},
 
-      packages         = find_packages("src", exclude=["*.tests"]),
-      scripts          = chimera_scripts,
-      data_files       = [("chimera/core", ["src/chimera/core/chimera.sample.config"]),
-                          ("chimera/gui", ["src/chimera/gui/chimera.xml"]),
-                          ("chimera/gui/modules", guifiles)],
-      zip_safe         = False,
+      packages=find_packages("src", exclude=["*.tests"]),
+      scripts=chimera_scripts,
+      data_files=[("chimera/core", ["src/chimera/core/chimera.sample.config"]),
+                  ("chimera/gui", ["src/chimera/gui/chimera.xml"]),
+                  ("chimera/gui/modules", guifiles)],
+      zip_safe=False,
 
       # dependencies are installed bottom up, so put important things last
-      install_requires = ["CherryPy",
-                          "PyYAML",
-                          "suds",
-                          "SQLAlchemy",
-                          "pyephem",
-                          "python-dateutil",
-                          "RO",
-                          "pyfits",
-                          "pyserial",
-                          "Pyro"] + linux_deps + win32_deps + mac_deps + linux_cdeps + win32_cdeps + mac_cdeps + ["numpy"],
+      install_requires=["CherryPy",
+                        "PyYAML",
+                        "suds",
+                        "SQLAlchemy",
+                        "pyephem",
+                        "python-dateutil",
+                        "RO",
+                        "pyfits",
+                        "pyserial",
+                        "Pyro"] + linux_deps + win32_deps + mac_deps + linux_cdeps + win32_cdeps + mac_cdeps + ["numpy"],
 
-      tests_require    = ["nose", "coverage"],
+      tests_require=["nose", "coverage"],
 
-      version          = _chimera_version_,
-      description      = _chimera_description_,
-      long_description = open("docs/site/index.rst").read(),
-      author           = _chimera_author,
-      author_email     = _chimera_author_email_,
-      license          = _chimera_license_,
-      url              = _chimera_url_,
-      download_url     = _chimera_download_url_,
-      classifiers      = _chimera_classifiers_,
-      platforms        = _chimera_platform_)
-
+      version=_chimera_version_,
+      description=_chimera_description_,
+      long_description=open("docs/site/index.rst").read(),
+      author=_chimera_author,
+      author_email=_chimera_author_email_,
+      license=_chimera_license_,
+      url=_chimera_url_,
+      download_url=_chimera_download_url_,
+      classifiers=_chimera_classifiers_,
+      platforms=_chimera_platform_)

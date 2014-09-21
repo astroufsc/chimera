@@ -16,29 +16,31 @@
 
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301, USA.
 
 from __future__ import division
 
 import time
 import datetime as dt
 import numpy as N
-        
+
 from chimera.instruments.sbig.sbigdrv import (SBIGDrv, SBIGException)
 
-from chimera.interfaces.camera   import (CCD, CameraFeature, Shutter, CameraStatus)
+from chimera.interfaces.camera import (
+    CCD, CameraFeature, Shutter, CameraStatus)
 
-from chimera.instruments.camera      import CameraBase
+from chimera.instruments.camera import CameraBase
 from chimera.instruments.filterwheel import FilterWheelBase
 
 from chimera.core.lock import lock
 
 
-class SBIG(CameraBase, FilterWheelBase):  
+class SBIG(CameraBase, FilterWheelBase):
 
     def __init__(self):
-        CameraBase.__init__ (self)
-        FilterWheelBase.__init__ (self)
+        CameraBase.__init__(self)
+        FilterWheelBase.__init__(self)
 
         self.drv = SBIGDrv()
         self.ccd = SBIGDrv.imaging
@@ -53,7 +55,7 @@ class SBIG(CameraBase, FilterWheelBase):
 
         self._isFanning = False
 
-        self.setHz(1.0/5)
+        self.setHz(1.0 / 5)
 
         self._supports = {CameraFeature.TEMPERATURE_CONTROL: True,
                           CameraFeature.PROGRAMMABLE_GAIN: False,
@@ -72,13 +74,12 @@ class SBIG(CameraBase, FilterWheelBase):
                           "3x3": 2,
                           "9x9": 9}
 
-
         self._binning_factors = {"1x1": 1,
                                  "2x2": 2,
                                  "3x3": 3,
                                  "9x9": 9}
 
-    def __start__ (self):
+    def __start__(self):
 
         if self['ccd'] == CCD.IMAGING:
             self.ccd = SBIGDrv.imaging
@@ -94,12 +95,13 @@ class SBIG(CameraBase, FilterWheelBase):
 
         self["camera_model"] = self.drv.cameraNames[self.ccd]
 
-    def __stop__ (self):
+    def __stop__(self):
         try:
             self.stopFan()
             self.stopCooling()
-            self.close ()
-        except SBIGException: pass
+            self.close()
+        except SBIGException:
+            pass
 
     @lock
     def open(self, device):
@@ -123,12 +125,12 @@ class SBIG(CameraBase, FilterWheelBase):
 
     @lock
     def startCooling(self, tempC):
-        self.drv.setTemperature (True, tempC)
+        self.drv.setTemperature(True, tempC)
         return True
 
     @lock
     def stopCooling(self):
-        self.drv.setTemperature (False, self.getSetPoint())
+        self.drv.setTemperature(False, self.getSetPoint())
         return True
 
     @lock
@@ -156,14 +158,15 @@ class SBIG(CameraBase, FilterWheelBase):
     def isFanning(self):
         return self._isFanning
 
-    def getFilter (self):
+    def getFilter(self):
         # SBIG support for this is very poor, we just keep track mannualy
         return self.lastFilter
 
     @lock
-    def setFilter (self, filter):
+    def setFilter(self, filter):
         # Chimera uses filter starting with 0, and SBIG uses 1
-        position = self.drv.filters.get(self._getFilterPosition(filter)+1, None)
+        position = self.drv.filters.get(
+            self._getFilterPosition(filter) + 1, None)
 
         if not position:
             raise ValueError("Selected filter not defined on SBIG driver.")
@@ -171,9 +174,9 @@ class SBIG(CameraBase, FilterWheelBase):
         if self.lastFilter == None:
             self.lastFilter = self.getFilter()
 
-        self.drv.setFilterPosition (position)
-        
-        while self.drv.getFilterStatus() != 1: # while not idle
+        self.drv.setFilterPosition(position)
+
+        while self.drv.getFilterStatus() != 1:  # while not idle
             time.sleep(.5)
 
         self.filterChange(filter, self.lastFilter)
@@ -200,7 +203,7 @@ class SBIG(CameraBase, FilterWheelBase):
         return self.drv.readoutModes[self.ccd][0].getPixelSize()
 
     def getOverscanSize(self):
-        return (0,0)
+        return (0, 0)
 
     def getReadoutModes(self):
         return self.drv.readoutModes
@@ -209,9 +212,9 @@ class SBIG(CameraBase, FilterWheelBase):
         return self._supports[feature]
 
     def _expose(self, imageRequest):
-        
+
         shutterRequest = imageRequest['shutter']
-        
+
         if shutterRequest == Shutter.OPEN:
             shutter = SBIGDrv.openShutter
         elif shutterRequest == Shutter.CLOSE:
@@ -222,13 +225,13 @@ class SBIG(CameraBase, FilterWheelBase):
             self.log.warning("Incorrect shutter option (%s)."
                              " Leaving shutter intact" % shutterRequest)
             shutter = SBIGDrv.leaveShutter
-        
+
         # ok, start it
         self.exposeBegin(imageRequest)
-        
+
         self.drv.startExposure(self.ccd,
-                               int(imageRequest["exptime"]*100), shutter)
-        
+                               int(imageRequest["exptime"] * 100), shutter)
+
         # save time exposure started
         self.lastFrameStartTime = dt.datetime.utcnow()
         self.lastFrameTemp = self.getTemperature()
@@ -256,26 +259,26 @@ class SBIG(CameraBase, FilterWheelBase):
         (mode, binning, top,  left,
          width, height) = self._getReadoutModeInfo(imageRequest["binning"],
                                                    imageRequest["window"])
-        # readout 
+        # readout
         img = N.zeros((height, width), N.int32)
 
         self.readoutBegin(imageRequest)
 
         self.drv.startReadout(self.ccd, mode.mode, (top, left, width, height))
-        
+
         for line in range(height):
             # [ABORT POINT]
             if self.abort.isSet():
                 self._endReadout(None, CameraStatus.ABORTED)
                 return False
- 
-            img[line] = self.drv.readoutLine(self.ccd, mode.mode, (left, width))
 
+            img[line] = self.drv.readoutLine(
+                self.ccd, mode.mode, (left, width))
 
         proxy = self._saveImage(imageRequest, img,
                                 {"frame_temperature": self.lastFrameTemp,
                                  "frame_start_time": self.lastFrameStartTime,
-                                 "binning_factor":self._binning_factors[binning]})
+                                 "binning_factor": self._binning_factors[binning]})
 
         return self._endReadout(proxy, CameraStatus.OK)
 
@@ -289,4 +292,3 @@ class SBIG(CameraBase, FilterWheelBase):
         headers += super(CameraBase, self).getMetadata(request)
         headers += super(FilterWheelBase, self).getMetadata(request)
         return headers
-

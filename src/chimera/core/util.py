@@ -16,7 +16,8 @@
 
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301, USA.
 
 
 from chimera.core.constants import MANAGER_DEFAULT_HOST, MANAGER_DEFAULT_PORT, MANAGER_LOCATION
@@ -24,13 +25,12 @@ from chimera.core.constants import MANAGER_DEFAULT_HOST, MANAGER_DEFAULT_PORT, M
 try:
     import Pyro.core
 except ImportError, e:
-    raise RuntimeError ("You must have Pyro version >= 3.6 installed.")
+    raise RuntimeError("You must have Pyro version >= 3.6 installed.")
 
-def getManagerURI (host = None, port = None):
+
+def getManagerURI(host=None, port=None):
 
     host = host or MANAGER_DEFAULT_HOST
     port = port or MANAGER_DEFAULT_PORT
-    
+
     return Pyro.core.PyroURI(host, MANAGER_LOCATION, port)
-
-
