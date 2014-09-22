@@ -16,7 +16,8 @@
 
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301, USA.
 
 
 from chimera.core.cli import ChimeraCLI, action, ParameterType
@@ -32,77 +33,108 @@ from chimera.interfaces.telescope import SlewRate, TelescopeStatus
 import sys
 import copy
 
-#TODO: Abort, skip_init/init
+# TODO: Abort, skip_init/init
+
 
 class ChimeraTel (ChimeraCLI):
-    
-    def __init__ (self):
-        ChimeraCLI.__init__(self, "chimera-tel", "Telescope controller", 0.1, port=9004)
-        
+
+    def __init__(self):
+        ChimeraCLI.__init__(
+            self, "chimera-tel", "Telescope controller", 0.1, port=9004)
+
         self.localSlew = False
-        
+
         self.addHelpGroup("TELESCOPE", "Telescope")
-        self.addInstrument(name="telescope", cls="Telescope", required=True,
+        self.addInstrument(name="telescope",
+                           cls="Telescope",
+                           required=True,
                            help="Telescope instrument to be used. If blank, try to guess from chimera.config",
                            helpGroup="TELESCOPE")
-        
+
         self.addHelpGroup("COORDS", "Coordinates")
-        self.addParameters(dict(name="ra", type="string", helpGroup="COORDS", help="Right Ascension."),
-                           dict(name="dec", type="string", helpGroup="COORDS", help="Declination."),
-                           dict(name="epoch", type="string", default="J2000", helpGroup="COORDS", help="Epoch"),
-                           dict(name="az", type="string", helpGroup="COORDS", help="Local Azimuth."),
-                           dict(name="alt", type="string", helpGroup="COORDS", help="Local Altitude."),
-                           dict(name="objectName", long="object", type="string", helpGroup="COORDS", help="Object name"),)
-        
+        self.addParameters(dict(name="ra",
+                                type="string",
+                                helpGroup="COORDS",
+                                help="Right Ascension."),
+                           dict(
+                               name="dec",
+                               type="string",
+                               helpGroup="COORDS",
+                               help="Declination."),
+                           dict(
+                               name="epoch",
+                               type="string",
+                               default="J2000",
+                               helpGroup="COORDS",
+                               help="Epoch"),
+                           dict(
+                               name="az",
+                               type="string",
+                               helpGroup="COORDS",
+                               help="Local Azimuth."),
+                           dict(name="alt",
+                                type="string",
+                                helpGroup="COORDS",
+                                help="Local Altitude."),
+                           dict(name="objectName",
+                                long="object",
+                                type="string",
+                                helpGroup="COORDS",
+                                help="Object name"),)
+
         self.addHelpGroup("RATE", "Slew rate")
-        self.addParameters(dict(name="rate", type=ParameterType.CHOICE, 
-                                choices=["max", "MAX", "guide", "GUIDE", "center", "CENTER", "find", "FIND"],
-                                default="CENTER", helpGroup="RATE",
+        self.addParameters(dict(name="rate", type=ParameterType.CHOICE,
+                                choices=[
+                                    "max", "MAX", "guide", "GUIDE", "center", "CENTER", "find", "FIND"],
+                                default="CENTER",
+                                helpGroup="RATE",
                                 help="Slew rate to be used for --move-* commands. GUIDE, CENTER, FIND or MAX"))
-        
 
         self.addHelpGroup("INIT", "Initialization")
         self.addHelpGroup("SLEW", "Slew")
         self.addHelpGroup("PARK", "Park")
-        self.addHelpGroup("TRACKING", "Tracking")                
+        self.addHelpGroup("TRACKING", "Tracking")
         self.addHelpGroup("HANDLE", "Virtual Handle",
                           "You can pass a int/float with number of arcseconds or use d:m:s notation. "
                           "Remember that this is an offset relative to the current position.")
-        
-        
-    @action(help="Initialize the telescope (Lat/long/Date/Time)", helpGroup="INIT")
+
+    @action(help="Initialize the telescope (Lat/long/Date/Time)",
+            helpGroup="INIT")
     def init(self, options):
         pass
-    
-    @action(help="Slew to given --ra --dec or --az --alt or --object", helpGroup="SLEW")
+
+    @action(help="Slew to given --ra --dec or --az --alt or --object",
+            helpGroup="SLEW")
     def slew(self, options):
-        
+
         telescope = self.telescope
-        
+
         if options.objectName is not None:
             target = options.objectName
         else:
             target = self._validateCoords(options)
-        
+
         @callback(self.localManager)
         def slewBegin(target):
-            self.out(40*"=")
+            self.out(40 * "=")
             if options.objectName:
                 coords = tuple(target)
-                self.out("slewing to %s (%s %s %s)... " % (options.objectName, coords[0], coords[1], target.epochString()), end="")
+                self.out("slewing to %s (%s %s %s)... " % (
+                    options.objectName, coords[0], coords[1], target.epochString()), end="")
             else:
-                self.out("slewing to %s (%s)... " % (target, target.epochString()), end="")
+                self.out("slewing to %s (%s)... " %
+                         (target, target.epochString()), end="")
 
         @callback(self.localManager)
         def slewComplete(position, status):
             if status == TelescopeStatus.OK:
                 self.out("OK.")
-                self.out(40*"=")
+                self.out(40 * "=")
             else:
                 self.out("")
-    
-        telescope.slewBegin     += slewBegin
-        telescope.slewComplete  += slewComplete
+
+        telescope.slewBegin += slewBegin
+        telescope.slewComplete += slewComplete
 
         if options.objectName:
             try:
@@ -110,11 +142,11 @@ class ChimeraTel (ChimeraCLI):
             except ObjectNotFoundException:
                 self.err("Object '%s' not found on Simbad database." % target)
                 self.exit()
-    
-        self.out(40*"=")
+
+        self.out(40 * "=")
         self.out("current position ra/dec: %s" % telescope.getPositionRaDec())
         self.out("current position alt/az: %s" % telescope.getPositionAltAz())
-    
+
         try:
             if options.objectName:
                 telescope.slewToObject(target)
@@ -126,29 +158,29 @@ class ChimeraTel (ChimeraCLI):
         except ObjectTooLowException, e:
             self.err("ERROR: %s" % str(e))
             self.exit()
-    
+
         self.out("new position ra/dec: %s" % telescope.getPositionRaDec())
         self.out("new position alt/az: %s" % telescope.getPositionAltAz())
-        
-        telescope.slewBegin     -= slewBegin
-        telescope.slewComplete  -= slewComplete
+
+        telescope.slewBegin -= slewBegin
+        telescope.slewComplete -= slewComplete
 
     @action(help="Sync on the given --ra --dec or --object", helpGroup="SYNC")
     def sync(self, options):
         telescope = self.telescope
-        
+
         if options.objectName is not None:
             target = options.objectName
         else:
             target = self._validateCoords(options)
-        
-        self.out(40*"=")
+
+        self.out(40 * "=")
         self.out("current position ra/dec: %s" % telescope.getPositionRaDec())
         self.out("current position:alt/az: %s" % telescope.getPositionAltAz())
-        self.out(40*"=")
+        self.out(40 * "=")
 
         self.out("syncing on %s ... " % target, end="")
-        
+
         if options.objectName:
             telescope.syncObject(options.objectName)
         else:
@@ -156,51 +188,56 @@ class ChimeraTel (ChimeraCLI):
 
         self.out("OK")
 
-        self.out(40*"=")
+        self.out(40 * "=")
         self.out("new position ra/dec: %s" % telescope.getPositionRaDec())
         self.out("new position alt/az: %s" % telescope.getPositionAltAz())
-        self.out(40*"=")        
+        self.out(40 * "=")
 
-    
     @action(help="Park the telescope", helpGroup="PARK", actionGroup="PARK")
     def park(self, options):
-        self.out(40*"=")
+        self.out(40 * "=")
         self.out("parking ... ", end="")
         self.telescope.park()
         self.out("OK")
-        self.out(40*"=")        
+        self.out(40 * "=")
 
     @action(help="Unpark the telescope", helpGroup="PARK", actionGroup="PARK")
     def unpark(self, options):
-        self.out(40*"=")
+        self.out(40 * "=")
         self.out("unparking ... ", end="")
         self.telescope.unpark()
         self.out("OK")
-        self.out(40*"=")        
- 
-    @action(name="stop_tracking", long="stop-tracking", help="Stop telescope tracking",
-            helpGroup="TRACKING", actionGroup="TRACKING")
+        self.out(40 * "=")
+
+    @action(name="stop_tracking",
+            long="stop-tracking",
+            help="Stop telescope tracking",
+            helpGroup="TRACKING",
+            actionGroup="TRACKING")
     def stopTracking(self, options):
-        self.out(40*"=")
+        self.out(40 * "=")
         self.out("stopping telescope tracking... ", end="")
         self.telescope.stopTracking()
         self.out("OK")
-        self.out(40*"=")        
+        self.out(40 * "=")
 
-    @action(name="start_tracking", long="start-tracking", help="Start telescope tracking",
-            helpGroup="TRACKING", actionGroup="TRACKING")
+    @action(name="start_tracking",
+            long="start-tracking",
+            help="Start telescope tracking",
+            helpGroup="TRACKING",
+            actionGroup="TRACKING")
     def startTracking(self, options):
-        self.out(40*"=")
+        self.out(40 * "=")
         self.out("starting telescope tracking... ", end="")
         self.telescope.startTracking()
         self.out("OK")
-        self.out(40*"=")        
+        self.out(40 * "=")
 
     @action(help="Print telescope information and exit")
     def info(self, options):
         telescope = self.telescope
 
-        self.out(40*"=")
+        self.out(40 * "=")
         self.out("telescope: %s (%s)." % (telescope.getLocation(),
                                           telescope["device"]))
 
@@ -211,19 +248,19 @@ class ChimeraTel (ChimeraCLI):
         else:
             self.out("tracking: disabled.")
 
-        self.out(40*"=")
+        self.out(40 * "=")
 
     def _move(self, direction, cmd, offset):
-        
+
         offset = self._validateOffset(offset)
 
         telescope = self.telescope
 
-        self.out(40*"=")
+        self.out(40 * "=")
         self.out("current position ra/dec: %s" % telescope.getPositionRaDec())
         self.out("current position:alt/az: %s" % telescope.getPositionAltAz())
 
-        self.out(40*"=")
+        self.out(40 * "=")
         self.out("moving %s arcseconds (%s) %s at %s rate... " % (offset.AS,
                                                                   offset.strfcoord(),
                                                                   direction,
@@ -231,21 +268,21 @@ class ChimeraTel (ChimeraCLI):
         try:
             cmd(offset.AS, SlewRate.fromStr(self.options.rate))
             self.out("OK")
-            self.out(40*"=")
+            self.out(40 * "=")
             self.out("new position ra/dec: %s" % telescope.getPositionRaDec())
             self.out("new position:alt/az: %s" % telescope.getPositionAltAz())
 
         except Exception, e:
             self.err("ERROR. (%s)" % e)
-        
-        self.out(40*"=")
-    
+
+        self.out(40 * "=")
+
     @action(name="move_east", short='E', long="move-east", type="string",
             help="Move telescope ARCSEC arcseconds to East.",
             metavar="ARCSEC", helpGroup="HANDLE")
     def moveEast(self, options):
         self._move("East", self.telescope.moveEast, options.move_east)
-        
+
     @action(name="move_west", short='W', long="move-west", type="string",
             help="Move telescope ARCSEC arcseconds to West.",
             metavar="ARCSEC", helpGroup="HANDLE")
@@ -257,28 +294,30 @@ class ChimeraTel (ChimeraCLI):
             metavar="ARCSEC", helpGroup="HANDLE")
     def moveNorth(self, options):
         self._move("North", self.telescope.moveNorth, options.move_north)
-    
+
     @action(name="move_south", short='S', long="move-south", type="string",
             help="Move telescope ARCSEC arcseconds to South.",
             metavar="ARCSEC", helpGroup="HANDLE")
     def moveSouth(self, options):
-        self._move("South", self.telescope.moveSouth, options.move_south)        
+        self._move("South", self.telescope.moveSouth, options.move_south)
 
-    def _validateCoords (self, options):
-        
+    def _validateCoords(self, options):
+
         target = None
-        
-        if (options.ra != None or options.dec != None) and \
-            (options.az != None or options.alt != None):
-            self.exit("RA/DEC and AZ/ALT given at the same time, I don't know what to do.")
 
-        if (options.ra != None) and (options.dec != None):
+        if (options.ra is not None or options.dec is not None) and \
+                (options.az is not None or options.alt is not None):
+            self.exit(
+                "RA/DEC and AZ/ALT given at the same time, I don't know what to do.")
+
+        if (options.ra is not None) and (options.dec is not None):
             try:
-                target = Position.fromRaDec(options.ra, options.dec, epoch=options.epoch)
+                target = Position.fromRaDec(
+                    options.ra, options.dec, epoch=options.epoch)
             except Exception, e:
                 self.exit(str(e))
 
-        elif (options.az != None) and (options.alt != None):
+        elif (options.az is not None) and (options.alt is not None):
             try:
                 target = Position.fromAltAz(options.alt, options.az)
                 self.localSlew = True
@@ -286,11 +325,12 @@ class ChimeraTel (ChimeraCLI):
                 self.exit(str(e))
 
         else:
-            self.exit("Invalid coordinates, try --ra --dec or --alt --az or --object.")
-        
+            self.exit(
+                "Invalid coordinates, try --ra --dec or --alt --az or --object.")
+
         return target
-        
-    def __abort__ (self):
+
+    def __abort__(self):
         self.out("\naborting... ", end="")
 
         # create a copy of telescope proxy
@@ -302,7 +342,7 @@ class ChimeraTel (ChimeraCLI):
             offset = Coord.fromAS(int(value))
         except ValueError:
             offset = Coord.fromDMS(value)
-        
+
         return offset
 
 
@@ -310,7 +350,7 @@ def main():
     cli = ChimeraTel()
     cli.run(sys.argv)
     cli.wait()
-    
+
 if __name__ == '__main__':
 
     main()

@@ -6,7 +6,7 @@ from chimera.core.chimeraobject import ChimeraObject
 from chimera.core.exceptions import (ChimeraException, CantPointScopeException,
                                      CanSetScopeButNotThisField, CantSetScopeException,
                                      printException)
-from chimera.core.managerlocator import ManagerLocator
+#from chimera.core.managerlocator import ManagerLocator
 
 from chimera.interfaces.camera import Shutter
 from chimera.interfaces.telescope import SlewRate
@@ -65,9 +65,8 @@ class PointVerify (ChimeraObject, IPointVerify):
             raise Exception("Could not take an image")
 
     def pointVerify(self):
-        """ Checks telescope pointing
-
-        Checks the pointing.
+        """
+        Checks telescope pointing.
         If abs ( telescope coordinates - image coordinates ) > tolerance
            move the scope
            take a new image
@@ -145,10 +144,12 @@ class PointVerify (ChimeraObject, IPointVerify):
         # write down the two positions for later use in mount models
         if (self.ntrials == 0):
             site = self.getManager().getProxy("/Site/0")
-            logstr = "Pointing Info for Mount Model: %s %s %s %s %s" % (site.LST(),
-                                                                        site.MJD(
-                                                                        ),
-                                                                        image["DATE-OBS"], initialPosition, currentWCS)
+            logstr = "Pointing Info for Mount Model: %s %s %s %s %s" % (
+                site.LST(),
+                site.MJD(),
+                image["DATE-OBS"],
+                initialPosition,
+                currentWCS)
             self.log.info(logstr)
 
         delta_ra = ra_img_center - ra_wcs_center
@@ -162,7 +163,13 @@ class PointVerify (ChimeraObject, IPointVerify):
 
         # *** need to do real logging here
         logstr = "%s %f %f %f %f %f %f" % (
-            image["DATE-OBS"], ra_img_center, dec_img_center, ra_wcs_center, dec_wcs_center, delta_ra, delta_dec)
+            image["DATE-OBS"],
+            ra_img_center,
+            dec_img_center,
+            ra_wcs_center,
+            dec_wcs_center,
+            delta_ra,
+            delta_dec)
         self.log.debug(logstr)
 
         if (fabs(delta_ra) > self["tolra"]) or (fabs(delta_dec) > self["toldec"]):
@@ -241,7 +248,8 @@ class PointVerify (ChimeraObject, IPointVerify):
         except Exception, e:
             printException(e)
             raise CantSetScopeException(
-                "Can't set scope on field %s %f %f we are in trouble, call for help" % (name, ra, dec))
+                "Can't set scope on field %s %f %f we are in trouble, call for help" % 
+                (name, ra, dec))
         return True
 
     def findStandards(self):

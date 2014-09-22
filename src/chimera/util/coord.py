@@ -16,7 +16,8 @@
 
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301, USA.
 
 
 import math
@@ -38,11 +39,12 @@ except ImportError:
 try:
     from chimera.core.compat import *
 except ImportError:
-    if sys.version_info[:2] < (2,5):
+    if sys.version_info[:2] < (2, 5):
 
-        def any (iterable):
+        def any(iterable):
             for element in iterable:
-                if element: return True
+                if element:
+                    return True
             return False
 
 
@@ -52,26 +54,28 @@ __all__ = ['Coord',
 
 State = Enum("HMS", "DMS", "D", "H", "R", "AS")
 
+
 class CoordUtil (object):
 
-    COORD_RE = re.compile('((?P<dd>(?P<sign>[+-]?)[\s]*\d+)[dh]?[\s:]*)?((?P<mm>\d+)[m]?[\s:]*)?((?P<ss>\d+)(?P<msec>\.\d*)?([\ss]*))?')
+    COORD_RE = re.compile(
+        '((?P<dd>(?P<sign>[+-]?)[\s]*\d+)[dh]?[\s:]*)?((?P<mm>\d+)[m]?[\s:]*)?((?P<ss>\d+)(?P<msec>\.\d*)?([\ss]*))?')
 
-    _arcsec2deg = 1.0/3600    
-    _min2deg    = 1.0/60
-
-    @staticmethod
-    def epsEqual (a, b, eps=1e-7):
-        return abs(a-b) <= eps
+    _arcsec2deg = 1.0 / 3600
+    _min2deg = 1.0 / 60
 
     @staticmethod
-    def d2hms (d, sec_prec=None):
+    def epsEqual(a, b, eps=1e-7):
+        return abs(a - b) <= eps
+
+    @staticmethod
+    def d2hms(d, sec_prec=None):
         """
         See CoordUtil.d2dms.
         """
-        return CoordUtil.d2dms(d/15, sec_prec)
+        return CoordUtil.d2dms(d / 15, sec_prec)
 
     @staticmethod
-    def d2dms (d, sec_prec=None):
+    def d2dms(d, sec_prec=None):
         """
         This function returns a tuple which can be used to reconstruct
         the decimal value of Coord as follow:
@@ -82,15 +86,16 @@ class CoordUtil (object):
         seconds values. strfcoord uses this to round values when using
         specific %.xf values.
         """
-        dd  = int(d)
-        mms = (d-dd) * 60
-        mm  = int(mms)
-        ss  = (mms - mm) * 60
+        dd = int(d)
+        mms = (d - dd) * 60
+        mm = int(mms)
+        ss = (mms - mm) * 60
 
         # precision defined here
         sec_prec = sec_prec or 7
 
-        # use one decimal place more to don't truncate values when printing, see below.
+        # use one decimal place more to don't truncate values when printing,
+        # see below.
         sec_prec += 1
 
         ss = round(ss, sec_prec)
@@ -99,10 +104,12 @@ class CoordUtil (object):
         # needed, for example: if sec_prec=2, 59.999 with eps=1e-2 ==
         # 60.00, but with eps=1-3 == 59.99 which is what user is
         # expecting.
-        if CoordUtil.epsEqual(abs(ss), 60.0, 10**(-sec_prec)):
-            ss  = 0
-            if d < 0: mm -= 1
-            else:     mm += 1
+        if CoordUtil.epsEqual(abs(ss), 60.0, 10 ** (-sec_prec)):
+            ss = 0
+            if d < 0:
+                mm -= 1
+            else:
+                mm += 1
 
         sign = 1
         if d < 0:
@@ -111,7 +118,7 @@ class CoordUtil (object):
         return (sign, abs(dd), abs(mm), abs(ss))
 
     @staticmethod
-    def dms2d (dms):
+    def dms2d(dms):
 
         # float/int case
         if type(dms) in [FloatType, IntType, LongType]:
@@ -123,10 +130,11 @@ class CoordUtil (object):
             matches = CoordUtil.COORD_RE.match(dms.strip())
 
             # our regular expression is tooo general, we need to make sure that things
-            # like "xyz" (which is valid) but is a zero-lenght match wont pass silently
+            # like "xyz" (which is valid) but is a zero-lenght match wont pass
+            # silently
             if any(matches.groups()):
                 m_dict = matches.groupdict()
-                sign=m_dict["sign"] or '+'                
+                sign = m_dict["sign"] or '+'
                 dd = m_dict["dd"] or 0
                 mm = m_dict["mm"] or 0
                 ss = m_dict["ss"] or 0
@@ -138,40 +146,45 @@ class CoordUtil (object):
                     ss = int(ss)
                     msec = float(msec)
                 except ValueError, e:
-                    raise ValueError("Invalid coordinate: '%s' (%s)." % (dms, e))
+                    raise ValueError(
+                        "Invalid coordinate: '%s' (%s)." % (dms, e))
 
-                d = abs(dd) + mm*CoordUtil._min2deg + ((ss+msec) * CoordUtil._arcsec2deg)
+                d = abs(dd) + mm * CoordUtil._min2deg + \
+                    ((ss + msec) * CoordUtil._arcsec2deg)
 
                 if sign == '-':
                     d *= -1
 
                 return d
-                
+
             else:
                 # brute force float conversion
                 try:
                     return float(dms)
                 except ValueError, e:
-                    raise ValueError("Invalid coordinate: '%s' (%s)." % (dms, e))
+                    raise ValueError(
+                        "Invalid coordinate: '%s' (%s)." % (dms, e))
 
-        raise ValueError("Invalid coordinate type: '%s'. Expecting string or numbers." % str(type(dms)))
+        raise ValueError(
+            "Invalid coordinate type: '%s'. Expecting string or numbers." % str(type(dms)))
 
     @staticmethod
-    def hms2d (hms):
+    def hms2d(hms):
         d = CoordUtil.dms2d(hms)
-        return d*15
+        return d * 15
 
     @staticmethod
-    def hms2str (c):
+    def hms2str(c):
         return c.strfcoord()
 
     @staticmethod
-    def dms2str (c):
+    def dms2str(c):
         return c.strfcoord()
 
     @staticmethod
-    def strfcoord (c, format=None, signed=True):
-        """strfcoord acts like sprintf family, allowing arbitrary
+    def strfcoord(c, format=None, signed=True):
+        """
+        strfcoord acts like sprintf family, allowing arbitrary
         coordinate conversion to str following the given template
         format.
 
@@ -185,7 +198,7 @@ class CoordUtil (object):
 
         if signed was True, decimal degrees will always begins with
         a sign (+ or -) and hours values will have a negative sign if
-        needed. Note that 
+        needed. Note that
 
         Examples:
 
@@ -210,7 +223,6 @@ class CoordUtil (object):
          (1, 13, 23, 45.999999999999091)
          >>> # the last line show what happened:
          >>> #  %d just truncate while %f rounds the seconds to get the 'right' number
-
         """
 
         default = None
@@ -219,7 +231,7 @@ class CoordUtil (object):
             default = '%(h)02d:%(m)02d:%(s)06.3f'
         else:
             default = '%(d)02d:%(m)02d:%(s)06.3f'
-            
+
         format = format or default
 
         # find required precision on seconds
@@ -238,11 +250,11 @@ class CoordUtil (object):
                 parts = sec_prec.split(".")
 
                 if len(parts) == 2:
-                    sec_prec = int(parts[1])+1
+                    sec_prec = int(parts[1]) + 1
             except ValueError:
                 # got a %d or something not like a float
                 pass
-                    
+
         sign, d, dm, ds = CoordUtil.d2dms(c.D, sec_prec)
         _, h, hm, hs = CoordUtil.d2hms(c.D, sec_prec)
 
@@ -255,11 +267,12 @@ class CoordUtil (object):
             sign_str = "-"
         else:
             sign_str = "+"
-        
+
         if '(h)' in format or '(hh)' in format:
             m = hm
             s = hs
-            if sign > 0: sign_str = ""
+            if sign > 0:
+                sign_str = ""
         else:
             m = dm
             s = ds
@@ -270,7 +283,7 @@ class CoordUtil (object):
                     h=h, hh=h)
 
         if signed:
-            return (sign_str+format) % subs
+            return (sign_str + format) % subs
         else:
             return format % subs
 
@@ -280,7 +293,7 @@ class CoordUtil (object):
             return float(coord.toR())
         else:
             return float(coord)
-    
+
     @staticmethod
     def makeValid0to360(coord):
         coordR = CoordUtil.coordToR(coord)
@@ -288,7 +301,7 @@ class CoordUtil (object):
         if coordR < 0.0:
             coordR += TWO_PI
         return Coord.fromR(coordR)
-    
+
     @staticmethod
     def makeValid180to180(coord):
         coordR = CoordUtil.coordToR(coord)
@@ -298,46 +311,48 @@ class CoordUtil (object):
         if coordR < (- math.pi):
             coordR += TWO_PI
         return Coord.fromR(coordR)
-                
+
     @staticmethod
     def raToHa(ra, lst):
         return Coord.fromR(CoordUtil.coordToR(lst) - CoordUtil.coordToR(ra))
-    
+
     @staticmethod
     def haToRa(ha, lst):
         return Coord.fromR(CoordUtil.coordToR(lst) - CoordUtil.coordToR(ha))
-    
-#    #coordRotate adopted from sidereal.py
-#    #http://www.nmt.edu/tcc/help/lang/python/examples/sidereal/ims/
-    
+
+# coordRotate adopted from sidereal.py
+# http://www.nmt.edu/tcc/help/lang/python/examples/sidereal/ims/
+
     @staticmethod
-    def coordRotate (x, y, z):
-        """Used to convert between equatorial and horizon coordinates.
-    
+    def coordRotate(x, y, z):
+        """
+        Used to convert between equatorial and horizon coordinates.
+
           [ x, y, and z are angles in radians ->
               return (xt, yt) where
               xt=arcsin(sin(x)*sin(y)+cos(x)*cos(y)*cos(z)) and
               yt=arccos((sin(x)-sin(y)*sin(xt))/(cos(y)*cos(xt))) ]
         """
         #-- 1 --
-        xt  =  math.asin (math.sin(x) * math.sin(y) +
-                      math.cos(x) * math.cos(y) * math.cos(z))
+        xt = math.asin(math.sin(x) * math.sin(y) +
+                       math.cos(x) * math.cos(y) * math.cos(z))
         #-- 2 --
-        yt  =  math.acos ((math.sin(x) - math.sin(y) * math.sin(xt)) /
-                      (math.cos(y) * math.cos(xt)))
+        yt = math.acos((math.sin(x) - math.sin(y) * math.sin(xt)) /
+                       (math.cos(y) * math.cos(xt)))
         #-- 3 --
-        if  math.sin(z) > 0.0:
-            yt  =  TWO_PI - yt
-    
+        if math.sin(z) > 0.0:
+            yt = TWO_PI - yt
+
         #-- 4 --
         return (xt, yt)
 
-    #Great circle distance formulae:
+    # Great circle distance formulae:
     # source http://wiki.astrogrid.org/bin/view/Astrogrid/CelestialCoordinates
 
     @staticmethod
     def hav(theta):
-        """haversine function, units = radians. Used in calculation of great
+        """
+        have rsine function, units = radians. Used in calculation of great
         circle distance
 
         @param theta: angle in radians
@@ -345,16 +360,17 @@ class CoordUtil (object):
 
         @rtype: number
         """
-        ans = (math.sin(0.5*theta))**2
+        ans = (math.sin(0.5 * theta)) ** 2
         return ans
 
     @staticmethod
     def ahav(x):
-        """archaversine function, units = radians. Used in calculation of great
+        """
+        archaversine function, units = radians. Used in calculation of great
         circle distance
 
         @type x: number
-        
+
         @return: angle in radians
         @rtype: number
         """
@@ -363,25 +379,29 @@ class CoordUtil (object):
 
     @staticmethod
     def gcdist(vec1, vec2):
-        """Input (ra,dec) vectors in radians;
+        """
+        Input (ra,dec) vectors in radians;
         output great circle distance in radians.
 
         @param vec1,vec2: position in radians
         @type vec1: number
         @type vec2: number
-        
+
         @rtype: great circle distance in radians
-        
+
         @see: U{http://wiki.astrogrid.org/bin/view/Astrogrid/CelestialCoordinates}
         """
-        ra1,dec1=vec1
-        ra2,dec2=vec2
-        ans=CoordUtil.ahav( CoordUtil.hav(dec1-dec2) + math.cos(dec1)*math.cos(dec2)*CoordUtil.hav(ra1-ra2) )
+        ra1, dec1 = vec1
+        ra2, dec2 = vec2
+        ans = CoordUtil.ahav(CoordUtil.hav(
+            dec1 - dec2) + math.cos(dec1) * math.cos(dec2) * CoordUtil.hav(ra1 - ra2))
         return ans
 
 
 class Coord (object):
-    """L{Coord} represents a single angular coordinate.
+
+    """
+    L{Coord} represents a single angular coordinate.
 
     It support all the common angle representations found in
     astronomy. This class is intended to be used as part of low level
@@ -463,13 +483,13 @@ class Coord (object):
      non-Coord operand was a string, then the string will be
      interpreted using the same state as the Coord operand, so code
      likt this would be possible:
-     
+
      >>> c = Coord.fromHMS('10:10:10')
      >>> d = c+'1:0:0'
      >>> d
      >>> <Coord object 11:10:10.00 (HMS) at 0xb7804a4c>
-     
-      
+
+
     Internals
     =========
 
@@ -488,31 +508,30 @@ class Coord (object):
      representation again.
 
      Only math operations (apart of factories, of course) return new
-     Coord objects.   
+     Coord objects.
     """
 
-    deg2rad = math.pi/180.0
-    rad2deg = 180.0/math.pi
+    deg2rad = math.pi / 180.0
+    rad2deg = 180.0 / math.pi
 
     # internal state conversions from/to internal
     # representation (decimal degrees)
     from_state = {State.HMS: CoordUtil.hms2d,
                   State.DMS: CoordUtil.dms2d,
-                  State.D  : lambda d  : float(d),
-                  State.H  : lambda h  : h*15.0,
-                  State.R  : lambda r  : r * Coord.rad2deg,
-                  State.AS : lambda AS : AS/3600.0}
-    
-    to_state = {State.HMS: CoordUtil.d2hms, 
-                State.DMS: CoordUtil.d2dms,
-                State.D  : lambda d: float(d),
-                State.H  : lambda d: d/15.0,
-                State.R  : lambda d: d*Coord.deg2rad,
-                State.AS : lambda d: d*3600.0}
+                  State.D: lambda d: float(d),
+                  State.H: lambda h: h * 15.0,
+                  State.R: lambda r: r * Coord.rad2deg,
+                  State.AS: lambda AS: AS / 3600.0}
 
+    to_state = {State.HMS: CoordUtil.d2hms,
+                State.DMS: CoordUtil.d2dms,
+                State.D: lambda d: float(d),
+                State.H: lambda d: d / 15.0,
+                State.R: lambda d: d * Coord.deg2rad,
+                State.AS: lambda d: d * 3600.0}
 
     # DON'T CALL THIS CONSTRUCTOR DIRECTLY, USE from* FORMS
-    def __init__ (self, v, state):
+    def __init__(self, v, state):
         self.v = v
         self.state = state
         self.cache = {}
@@ -521,45 +540,45 @@ class Coord (object):
     # serialization
     #
     def __getstate__(self):
-      return {"v": self.v, "state": str(self.state)}
+        return {"v": self.v, "state": str(self.state)}
 
     def __setstate__(self, state):
-      self.v = state["v"]
-      self.state = State.fromStr(state["state"])
-      self.cache = {}
+        self.v = state["v"]
+        self.state = State.fromStr(state["state"])
+        self.cache = {}
 
     #
     # factories
     #
 
     @staticmethod
-    def fromHMS (c):
+    def fromHMS(c):
         v = Coord.from_state[State.HMS](c)
         return Coord(v, State.HMS)
 
     @staticmethod
-    def fromDMS (c):
+    def fromDMS(c):
         v = Coord.from_state[State.DMS](c)
         return Coord(v, State.DMS)
 
     @staticmethod
-    def fromD (c):
+    def fromD(c):
         return Coord._from_float_to(c, State.D)
 
     @staticmethod
-    def fromH (c):
+    def fromH(c):
         return Coord._from_float_to(c, State.H)
 
     @staticmethod
-    def fromR (c):
+    def fromR(c):
         return Coord._from_float_to(c, State.R)
 
     @staticmethod
-    def fromAS (c):
+    def fromAS(c):
         return Coord._from_float_to(c, State.AS)
 
     @staticmethod
-    def fromState (c, state):
+    def fromState(c, state):
         ctr = getattr(Coord, 'from%s' % state)
         if hasattr(ctr, '__call__'):
             return ctr(c)
@@ -568,7 +587,7 @@ class Coord (object):
                              "from unknown state %s" % state)
 
     @staticmethod
-    def _from_float_to (c, state):
+    def _from_float_to(c, state):
 
         if type(c) == StringType:
             try:
@@ -579,42 +598,38 @@ class Coord (object):
         c = Coord.from_state[state](c)
         return Coord(c, state)
 
-
     #
     # conversion factories
     #
-
-    def toHMS (self):
+    def toHMS(self):
         return Coord(self.D, State.HMS)
 
-    def toDMS (self):
+    def toDMS(self):
         return Coord(self.D, State.DMS)
 
-    def toD (self):
+    def toD(self):
         return Coord(self.D, State.D)
 
-    def toH (self):
+    def toH(self):
         return Coord(self.D, State.H)
 
-    def toR (self):
+    def toR(self):
         return Coord(self.D, State.R)
 
-    def toAS (self):
+    def toAS(self):
         return Coord(self.D, State.AS)
-
 
     #
     # primitive getters (properties, actually)
     #
-
     HMS = property(lambda self: self.get(State.HMS))
     DMS = property(lambda self: self.get(State.DMS))
-    D   = property(lambda self: self.get(State.D))
-    H   = property(lambda self: self.get(State.H))
-    R   = property(lambda self: self.get(State.R))
-    AS  = property(lambda self: self.get(State.AS))
+    D = property(lambda self: self.get(State.D))
+    H = property(lambda self: self.get(State.H))
+    R = property(lambda self: self.get(State.R))
+    AS = property(lambda self: self.get(State.AS))
 
-    def get (self, state=None):
+    def get(self, state=None):
 
         state = state or self.state
 
@@ -632,11 +647,11 @@ class Coord (object):
     # string conversions
     #
 
-    def __repr__ (self):
+    def __repr__(self):
         return '<%s object %s (%s) at %s>' % (Coord.__name__, str(self),
                                               self.state, hex(id(self))[:-1])
 
-    def __str__ (self):
+    def __str__(self):
         if self.state == State.DMS:
             return CoordUtil.dms2str(self)
         elif self.state == State.HMS:
@@ -644,26 +659,26 @@ class Coord (object):
         else:
             return '%.2f' % self.get()
 
-    def strfcoord (self, *args, **kwargs):
+    def strfcoord(self, *args, **kwargs):
         return CoordUtil.strfcoord(self, *args, **kwargs)
 
     #
     # primitive conversion
     #
 
-    def __int__ (self):
+    def __int__(self):
         if self.state in [State.DMS, State.HMS]:
             return int(self.get(State.D))
         else:
             return int(self.get())
 
-    def __float__ (self):
+    def __float__(self):
         if self.state in [State.DMS, State.HMS]:
             return float(self.get(State.D))
         else:
             return float(self.get())
 
-    def __iter__ (self):
+    def __iter__(self):
         if self.state in [State.DMS, State.HMS]:
             for v in self.get():
                 yield v
@@ -674,33 +689,33 @@ class Coord (object):
     # hash
     #
 
-    def __hash__ (self):
+    def __hash__(self):
         return hash(self.D)
 
     #
     # math
     #
 
-    def __neg__ (self):
+    def __neg__(self):
         return Coord(-self.D, self.state)
 
-    def __pos__ (self):
+    def __pos__(self):
         return Coord(+self.D, self.state)
 
-    def __abs__ (self):
+    def __abs__(self):
         return Coord(abs(self.D), self.state)
 
-    def __mod__ (self, other):
+    def __mod__(self, other):
         if not isinstance(other, Coord):
             other = Coord.fromState(other, State.D)
         return Coord(self.D % other.D, self.state)
 
-    def __rmod__ (self, other):
+    def __rmod__(self, other):
         if not isinstance(other, Coord):
             other = Coord.fromState(other, State.D)
         return Coord(other.D % self.D, self.state)
 
-    def __add__ (self, other):
+    def __add__(self, other):
         if not isinstance(other, Coord):
             if isinstance(other, str):
                 other = Coord.fromState(other, self.state)
@@ -708,10 +723,10 @@ class Coord (object):
                 other = Coord.fromState(other, State.D)
         return Coord(self.D + other.D, self.state)
 
-    def __radd__ (self, other):
+    def __radd__(self, other):
         return self.__add__(other)
 
-    def __sub__ (self, other):
+    def __sub__(self, other):
         if not isinstance(other, Coord):
             if isinstance(other, str):
                 other = Coord.fromState(other, self.state)
@@ -719,7 +734,7 @@ class Coord (object):
                 other = Coord.fromState(other, State.D)
         return Coord(self.D - other.D, self.state)
 
-    def __rsub__ (self, other):
+    def __rsub__(self, other):
         if not isinstance(other, Coord):
             if isinstance(other, str):
                 other = Coord.fromState(other, self.state)
@@ -727,7 +742,7 @@ class Coord (object):
                 other = Coord.fromState(other, State.D)
         return Coord(other.D - self.D, self.state)
 
-    def __mul__ (self, other):
+    def __mul__(self, other):
         if not isinstance(other, Coord):
             if isinstance(other, str):
                 other = Coord.fromState(other, self.state)
@@ -735,10 +750,10 @@ class Coord (object):
                 other = Coord.fromState(other, State.D)
         return Coord(self.D * other.D, self.state)
 
-    def __rmul__ (self, other):
+    def __rmul__(self, other):
         return self.__mul__(other)
 
-    def __div__ (self, other):
+    def __div__(self, other):
         if not isinstance(other, Coord):
             if isinstance(other, str):
                 other = Coord.fromState(other, self.state)
@@ -746,7 +761,7 @@ class Coord (object):
                 other = Coord.fromState(other, State.D)
         return Coord(self.D / other.D, self.state)
 
-    def __rdiv__ (self, other):
+    def __rdiv__(self, other):
         if not isinstance(other, Coord):
             if isinstance(other, str):
                 other = Coord.fromState(other, self.state)
@@ -754,14 +769,14 @@ class Coord (object):
                 other = Coord.fromState(other, State.D)
         return Coord(other.D / self.D, self.state)
 
-    def __truediv__ (self, other):
+    def __truediv__(self, other):
         return self.__div__(other)
 
-    def __rtruediv__ (self, other):
+    def __rtruediv__(self, other):
         return self.__rdiv__(other)
 
     # logic
-    def __lt__ (self, other):
+    def __lt__(self, other):
         if not isinstance(other, Coord):
             if isinstance(other, str):
                 other = Coord.fromState(other, self.state)
@@ -769,7 +784,7 @@ class Coord (object):
                 other = Coord.fromState(other, State.D)
         return self.D < other.D
 
-    def __le__ (self, other):
+    def __le__(self, other):
         if not isinstance(other, Coord):
             if isinstance(other, str):
                 other = Coord.fromState(other, self.state)
@@ -778,7 +793,7 @@ class Coord (object):
 
         return self.D <= other.D
 
-    def __eq__ (self, other):
+    def __eq__(self, other):
         if not isinstance(other, Coord):
             if isinstance(other, str):
                 other = Coord.fromState(other, self.state)
@@ -786,7 +801,7 @@ class Coord (object):
                 other = Coord.fromState(other, State.D)
         return self.D == other.D
 
-    def __ne__ (self, other):
+    def __ne__(self, other):
         if not isinstance(other, Coord):
             if isinstance(other, str):
                 other = Coord.fromState(other, self.state)
@@ -794,7 +809,7 @@ class Coord (object):
                 other = Coord.fromState(other, State.D)
         return self.D != other.D
 
-    def __gt__ (self, other):
+    def __gt__(self, other):
         if not isinstance(other, Coord):
             if isinstance(other, str):
                 other = Coord.fromState(other, self.state)
@@ -802,17 +817,10 @@ class Coord (object):
                 other = Coord.fromState(other, State.D)
         return self.D > other.D
 
-    def __ge__ (self, other):
+    def __ge__(self, other):
         if not isinstance(other, Coord):
             if isinstance(other, str):
                 other = Coord.fromState(other, self.state)
             else:
                 other = Coord.fromState(other, State.D)
         return self.D >= other.D
-
-
-
-
-
-
-

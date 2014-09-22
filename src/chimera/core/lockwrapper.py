@@ -16,15 +16,16 @@
 
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301, USA.
 
 
 import logging
 import time
 
-from chimera.core.methodwrapper  import MethodWrapper, MethodWrapperDispatcher
+from chimera.core.methodwrapper import MethodWrapper, MethodWrapperDispatcher
 
-from chimera.core.constants      import INSTANCE_MONITOR_ATTRIBUTE_NAME
+from chimera.core.constants import INSTANCE_MONITOR_ATTRIBUTE_NAME
 
 import chimera.core.log
 log = logging.getLogger(__name__)
@@ -36,16 +37,16 @@ __all__ = ['LockWrapper',
 
 class LockWrapper (MethodWrapper):
 
-    def __init__ (self, func, specials = None, dispatcher = None):
+    def __init__(self, func, specials=None, dispatcher=None):
         MethodWrapper.__init__(self, func, specials, dispatcher)
 
 
-class LockWrapperDispatcher (MethodWrapperDispatcher):   
+class LockWrapperDispatcher (MethodWrapperDispatcher):
 
-    def __init__ (self, wrapper, instance, cls):
-        MethodWrapperDispatcher.__init__ (self, wrapper, instance, cls)
+    def __init__(self, wrapper, instance, cls):
+        MethodWrapperDispatcher.__init__(self, wrapper, instance, cls)
 
-    def call (self, *args, **kwargs):
+    def call(self, *args, **kwargs):
         """
         Locked or synchronized methods holds two locks. The object
         monitor, which gives exclusive right to run locked methods and
@@ -58,10 +59,10 @@ class LockWrapperDispatcher (MethodWrapperDispatcher):
         #t0 = time.time()
         #log.debug("[trying to acquire monitor] %s %s" % (self.instance, self.func.__name__))
         lock.acquire()
-        #log.debug("[acquired monitor] %s %s after %f" % (self.instance, self.func.__name__, time.time()-t0))        
+        #log.debug("[acquired monitor] %s %s after %f" % (self.instance, self.func.__name__, time.time()-t0))
 
         ret = None
-        
+
         try:
             ret = self.func(*args, **kwargs)
         finally:

@@ -16,38 +16,39 @@
 
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301, USA.
 
 from chimera.core.chimeraobject import ChimeraObject
-from chimera.core.lock          import lock
+from chimera.core.lock import lock
 
 from chimera.interfaces.focuser import Focuser
 
 
 class FocuserBase (ChimeraObject, Focuser):
 
-    def __init__ (self):
+    def __init__(self):
         ChimeraObject.__init__(self)
 
         self._supports = {}
 
     @lock
-    def moveIn (self, n):
+    def moveIn(self, n):
         raise NotImplementedError()
 
     @lock
-    def moveOut (self, n):
+    def moveOut(self, n):
         raise NotImplementedError()
 
     @lock
-    def moveTo (self, position):
+    def moveTo(self, position):
         raise NotImplementedError()
 
     @lock
-    def getPosition (self):
+    def getPosition(self):
         raise NotImplementedError()
 
-    def getRange (self):
+    def getRange(self):
         raise NotImplementedError()
 
     def supports(self, feature=None):

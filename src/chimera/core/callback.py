@@ -16,7 +16,8 @@
 
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301, USA.
 
 
 import hashlib
@@ -29,10 +30,12 @@ from chimera.core.chimeraobject import ChimeraObject
 __all__ = ['callback']
 
 
-def callback (manager):
-    """Callback decorator.
+def callback(manager):
+    """
+    Callback decorator.
     Use this decorator to add an callback object to an active Manager.
-    This decorator returns a ProxyMethod that you use to subscribe to an event (using += operator)
+    This decorator returns a ProxyMethod that you use to subscribe to
+    an event (using += operator)
 
     >>> @callback(managerInstance)
     >>> def clbk ():
@@ -48,13 +51,16 @@ def callback (manager):
     """
 
     class Callback (ChimeraObject):
-        def __init__ (self):
+
+        def __init__(self):
             ChimeraObject.__init__(self)
 
-    def clbk_deco (f):
+    def clbk_deco(f):
         setattr(Callback, 'handler', staticmethod(f))
-        return manager.addClass(Callback, 
-                                'h'+hashlib.sha1(str(time.time())+str(random.random())).hexdigest(),
+        return manager.addClass(Callback,
+                                'h' +
+                                hashlib.sha1(
+                                    str(time.time()) + str(random.random())).hexdigest(),
                                 start=False).handler
 
     return clbk_deco

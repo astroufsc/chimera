@@ -1,4 +1,3 @@
-
 import warnings
 import time
 import os
@@ -16,7 +15,8 @@ except ImportError:
 def xpaaccess(template="ds9"):
 
     try:
-        p = subprocess.Popen("xpaaccess -v %s" % template, stdout=subprocess.PIPE, shell=True)
+        p = subprocess.Popen("xpaaccess -v %s" %
+                             template, stdout=subprocess.PIPE, shell=True)
         p.wait()
 
         aps = p.stdout.read()
@@ -32,7 +32,9 @@ def xpaaccess(template="ds9"):
         # xpaaccess not found
         return []
 
-class DS9 (object):
+
+class DS9(object):
+
     """
     A wrapper to enable programmatic control of DS9
     (http://www.astro.washington.edu/rowen/) instances. Thanks to
@@ -40,7 +42,7 @@ class DS9 (object):
     RO.DS9 module.
     """
 
-    def __init__ (self, open=False):
+    def __init__(self, open=False):
 
         if not have_ds9:
             raise IOError("No DS9 available. Check if you have DS9 and XPA"
@@ -52,10 +54,13 @@ class DS9 (object):
             id = ids[-1]
 
         try:
-            self.ds9 = DS9Win(doRaise=True, doOpen=open, template=id, closeFDs=True)
-        except RuntimeError, e:
-            # even with RO installed, we still need XPA package to get DS9 working
-            raise IOError("DS9 is not available, check if you have the XPA package installed. Display disabled.")
+            self.ds9 = DS9Win(
+                doRaise=True, doOpen=open, template=id, closeFDs=True)
+        except RuntimeError:
+            # even with RO installed, we still need XPA package to get DS9
+            # working
+            raise IOError(
+                "DS9 is not available, check if you have the XPA package installed. Display disabled.")
 
     def open(self):
         self.ds9.doOpen()
@@ -65,15 +70,15 @@ class DS9 (object):
 
     def quit(self):
         if self.isOpen():
-            self.set("exit")            
+            self.set("exit")
 
-    def displayImage (self, image, frame=1):
+    def displayImage(self, image, frame=1):
         try:
             self.displayFile(filename=image.filename())
         except IOError:
             self.displayFile(url=image.http())
 
-    def displayFile (self, filename=None, url=None, frame=1):
+    def displayFile(self, filename=None, url=None, frame=1):
         """
         Display a file either from a local file or from a remote URL.
 
@@ -100,7 +105,7 @@ class DS9 (object):
         if url:
             self.set("file url '%s'" % url)
 
-    def displayArray (self, array, frame=1):
+    def displayArray(self, array, frame=1):
         pass
 
     def set(self, cmd, data=None):
@@ -113,6 +118,5 @@ class DS9 (object):
         else:
             return None
 
-    def id (self):
+    def id(self):
         return self.ds9.template
-

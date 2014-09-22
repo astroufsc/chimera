@@ -16,7 +16,8 @@
 
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301, USA.
 
 import time
 import serial
@@ -26,7 +27,7 @@ import os
 import select
 
 from chimera.instruments.dome import DomeBase
-from chimera.interfaces.dome  import InvalidDomePositionException, DomeStatus
+from chimera.interfaces.dome import InvalidDomePositionException, DomeStatus
 
 from chimera.core.exceptions import ChimeraException
 from chimera.core.lock import lock
@@ -38,12 +39,12 @@ from chimera.util.coord import Coord
 class DomeLNA40cm (DomeBase):
 
     def __init__(self):
-        DomeBase.__init__ (self)
+        DomeBase.__init__(self)
 
         self.tty = None
-        self.abort = threading.Event ()
+        self.abort = threading.Event()
 
-        self._slewing  = False
+        self._slewing = False
         self._slitOpen = False
 
         self._az_shift = 0
@@ -54,11 +55,12 @@ class DomeLNA40cm (DomeBase):
         # debug log
         self._debugLog = None
         try:
-            self._debugLog = open(os.path.join(SYSTEM_CONFIG_DIRECTORY, "dome-debug.log"), "w")
+            self._debugLog = open(
+                os.path.join(SYSTEM_CONFIG_DIRECTORY, "dome-debug.log"), "w")
         except IOError, e:
             self.log.warning("Could not create meade debug file (%s)" % str(e))
 
-    def __start__ (self):
+    def __start__(self):
 
         # NOTE: DomeBase __start__ expect the serial port to be open, so open it before
         #       calling super().__start__.
@@ -71,40 +73,41 @@ class DomeLNA40cm (DomeBase):
 
         return super(DomeLNA40cm, self).__start__()
 
-    def __stop__ (self):
+    def __stop__(self):
 
         # NOTE: Here is the opposite, call super first and then close
 
         ret = super(DomeLNA40cm, self).__start__()
-        if not ret: return ret
+        if not ret:
+            return ret
 
         self.close()
 
         return True
 
-    def _checkDome (self):
+    def _checkDome(self):
         # just for test, ask azimuth
         self.getAz()
         return True
 
-    def _checkQuirk (self):
+    def _checkQuirk(self):
         # clear uC command buffer sending and \r, this makes the uC happy!
         self._write("")
 
-        ret = self._readline ()
+        ret = self._readline()
         if ret != "INVALIDO":
             self.log.warning("Quirk error, restarting Dome.")
             self._restartDome()
 
         return True
 
-    def _restartDome (self):
+    def _restartDome(self):
 
         if self._num_restarts >= self._max_restarts:
-            raise ChimeraException("Could not restart the dome after %s tries. Manual restart needed." % self._max_restarts)
+            raise ChimeraException(
+                "Could not restart the dome after %s tries. Manual restart needed." % self._max_restarts)
         else:
             self._num_restarts += 1
-                                  
 
         self.log.info("Trying to restart the Dome.")
 
@@ -113,7 +116,8 @@ class DomeLNA40cm (DomeBase):
         ack = self._readline()
         if not ack == "INICIANDO":
             if not self._checkQuirk():
-                raise ChimeraException("Could not restart dome! Manual restart needed.")
+                raise ChimeraException(
+                    "Could not restart dome! Manual restart needed.")
             else:
                 self._num_restarts = 0
                 return True
@@ -121,7 +125,8 @@ class DomeLNA40cm (DomeBase):
         ack2 = self._readline()
         if not ack2.startswith("CUPULA=") or ack2.startswith("CUPULA=ERRO") or ack == '':
             if not self._checkQuirk():
-                raise ChimeraException("Could not restart dome! Manual restart needed.")
+                raise ChimeraException(
+                    "Could not restart dome! Manual restart needed.")
             else:
                 self._num_restarts = 0
                 return True
@@ -131,7 +136,7 @@ class DomeLNA40cm (DomeBase):
         return True
 
     @lock
-    def open (self):
+    def open(self):
 
         self.tty = serial.Serial(self["device"], baudrate=9600,
                                  bytesize=serial.EIGHTBITS,
@@ -140,10 +145,9 @@ class DomeLNA40cm (DomeBase):
                                  timeout=self["init_timeout"],
                                  xonxoff=0, rtscts=0)
 
-
         self.tty.open()
-        self.tty.flushInput ()
-        self.tty.flushOutput ()
+        self.tty.flushInput()
+        self.tty.flushOutput()
 
         self._checkDome()
 
@@ -166,16 +170,16 @@ class DomeLNA40cm (DomeBase):
         if dome_az > 360:
             raise InvalidDomePositionException("Cannot slew to %s. "
                                                "Outside azimuth limits." % az)
-        
-        dome_az = int (math.ceil (dome_az / self["az_resolution"]))
+
+        dome_az = int(math.ceil(dome_az / self["az_resolution"]))
 
         pstn = "CUPULA=%03d" % dome_az
 
-        self.tty.setTimeout (self["slew_timeout"])
+        self.tty.setTimeout(self["slew_timeout"])
 
         self._write(pstn)
 
-        ack = self._readline ()
+        ack = self._readline()
 
         if ack == "INVALIDO":
             raise IOError("Error trying to slew the dome to"
@@ -186,7 +190,7 @@ class DomeLNA40cm (DomeBase):
         self.slewBegin(az)
 
         # FIXME: add abort option here
-        fin = self._readline ()
+        fin = self._readline()
 
         if fin == "ALARME":
             self.log.warning("Error while slewing dome. Some barcodes"
@@ -195,9 +199,9 @@ class DomeLNA40cm (DomeBase):
             self._restartDome()
             return self.slewToAz(az)
 
-        if fin.startswith ("CUPULA="):
+        if fin.startswith("CUPULA="):
             self._slewing = False
-            time.sleep (0.3) # FIXME: how much sleep we need?
+            time.sleep(0.3)  # FIXME: how much sleep we need?
             self.slewComplete(self.getAz(), DomeStatus.OK)
         else:
             self._slewing = False
@@ -205,22 +209,22 @@ class DomeLNA40cm (DomeBase):
                              "Received '%s' from dome. Restarting it." % fin)
             self._restartDome()
             return self.slewToAz(az)
-          
 
-    def isSlewing (self):
+    def isSlewing(self):
         return self._slewing
 
     def abortSlew(self):
         # FIXME: make abort work
 
-        if not self.isSlewing(): return
+        if not self.isSlewing():
+            return
 
-        self._checkQuirk ()
+        self._checkQuirk()
 
         self._write("PARAR")
 
-        self.tty.setTimeout (self["abort_timeout"])
-        ack = self._readline ()
+        self.tty.setTimeout(self["abort_timeout"])
+        ack = self._readline()
 
         if ack != "PARADO":
             raise IOError("Error while trying to stop the dome.")
@@ -228,15 +232,15 @@ class DomeLNA40cm (DomeBase):
     @lock
     def getAz(self):
 
-        self._checkQuirk ()
+        self._checkQuirk()
 
-        self.tty.setTimeout (10)
+        self.tty.setTimeout(10)
 
         cmd = "POSICAO?"
 
         self._write(cmd)
 
-        ack = self._readline ()
+        ack = self._readline()
 
         # check timeout
         if not ack:
@@ -251,7 +255,7 @@ class DomeLNA40cm (DomeBase):
 
         # get ack return
         if ack.startswith("CUPULA="):
-            ack = ack[ack.find("=")+1:]
+            ack = ack[ack.find("=") + 1:]
 
         if ack == "ERRO":
             self.log.warning("Dome position error, restarting it.")
@@ -259,16 +263,16 @@ class DomeLNA40cm (DomeBase):
             return self.getAz()
 
         # correct dome/telescope phase difference
-        az = int(math.ceil(int(ack)*self["az_resolution"]))
+        az = int(math.ceil(int(ack) * self["az_resolution"]))
         az -= self._az_shift
         az = az % 360
 
         return Coord.fromDMS(az)
 
     @lock
-    def openSlit (self):
+    def openSlit(self):
 
-        self._checkQuirk ()
+        self._checkQuirk()
 
         cmd = "ABRIR"
 
@@ -279,24 +283,24 @@ class DomeLNA40cm (DomeBase):
         if ack != "ABRINDO":
             raise IOError("Error trying to open the slit.")
 
-        self.tty.setTimeout (self["open_timeout"])
+        self.tty.setTimeout(self["open_timeout"])
 
-        fin = self._readline ()
+        fin = self._readline()
 
         # check timeout
         if not fin:
             raise IOError("Dome is still opening after "
                           "%d seconds" % self["open_timeout"])
 
-        if not fin.startswith ("ABERTO"):
+        if not fin.startswith("ABERTO"):
             raise IOError("Error opening slit.")
 
         self._slitOpen = True
         self.slitOpened(self.getAz())
 
     @lock
-    def closeSlit (self):
-        self._checkQuirk ()
+    def closeSlit(self):
+        self._checkQuirk()
 
         cmd = "FECHAR"
 
@@ -307,28 +311,28 @@ class DomeLNA40cm (DomeBase):
         if ack != "FECHANDO":
             raise IOError("Error trying to close the slit.")
 
-        self.tty.setTimeout (self["close_timeout"])
+        self.tty.setTimeout(self["close_timeout"])
 
-        fin = self._readline ()
+        fin = self._readline()
 
         # check timeout
         if not fin:
             raise IOError("Dome is still closing after "
                           "%d seconds" % self["close_timeout"])
 
-        if not fin.startswith ("FECHADO"):
+        if not fin.startswith("FECHADO"):
             raise IOError("Error closing slit.")
 
         self._slitOpen = False
         self.slitClosed(self.getAz())
 
-    def isSlitOpen (self):
+    def isSlitOpen(self):
         return self._slitOpen
 
     @lock
-    def lightsOn (self):
+    def lightsOn(self):
 
-        self._checkQuirk ()
+        self._checkQuirk()
 
         cmd = "FLAT_ON"
 
@@ -340,8 +344,8 @@ class DomeLNA40cm (DomeBase):
             raise IOError("Error trying to turn lights on.")
 
     @lock
-    def lightsOff (self):
-        self._checkQuirk ()
+    def lightsOff(self):
+        self._checkQuirk()
 
         cmd = "FLAT_OFF"
 
@@ -358,10 +362,11 @@ class DomeLNA40cm (DomeBase):
 
     def _debug(self, msg):
         if self._debugLog:
-            print >> self._debugLog, time.time(), threading.currentThread().getName(), msg
+            print >> self._debugLog, time.time(
+            ), threading.currentThread().getName(), msg
             self._debugLog.flush()
 
-    def _read(self, n = 1):
+    def _read(self, n=1):
         if not self.tty.isOpen():
             raise IOError("Device not open")
 
@@ -388,7 +393,7 @@ class DomeLNA40cm (DomeBase):
         else:
             return ""
 
-    def _readbool(self, n = 1):
+    def _readbool(self, n=1):
         ret = int(self._read(1))
 
         if not ret:
@@ -397,10 +402,10 @@ class DomeLNA40cm (DomeBase):
         return True
 
     def _busy_wait(self, n):
-        t0 = time.time()
+        #t0 = time.time()
         i = 0
         while i < n:
-            i+=1
+            i += 1
 
     def _write(self, data, eol="\r"):
         if not self.tty.isOpen():
@@ -410,6 +415,7 @@ class DomeLNA40cm (DomeBase):
 
         self._busy_wait(1e6)
 
-        self._debug("[write] '%s%s'" % (repr(data).replace("'", ""), repr(eol).replace("'","")))
+        self._debug("[write] '%s%s'" %
+                    (repr(data).replace("'", ""), repr(eol).replace("'", "")))
         ret = self.tty.write("%s%s" % (data, eol))
         return ret

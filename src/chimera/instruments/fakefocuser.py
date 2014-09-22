@@ -16,9 +16,10 @@
 
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301, USA.
 
-from chimera.core.lock          import lock
+from chimera.core.lock import lock
 
 from chimera.interfaces.focuser import (FocuserFeature,
                                         InvalidFocusPositionException)
@@ -28,7 +29,7 @@ from chimera.instruments.focuser import FocuserBase
 
 class FakeFocuser (FocuserBase):
 
-    def __init__ (self):
+    def __init__(self):
         FocuserBase.__init__(self)
 
         self._position = 0
@@ -37,12 +38,12 @@ class FakeFocuser (FocuserBase):
                           FocuserFeature.POSITION_FEEDBACK: True,
                           FocuserFeature.ENCODER: True}
 
-    def __start__ (self):
+    def __start__(self):
         self._position = int(self.getRange()[1] / 2.0)
         self["model"] = "Fake Focus v.1"
 
     @lock
-    def moveIn (self, n):
+    def moveIn(self, n):
         target = self.getPosition() - n
 
         if self._inRange(target):
@@ -50,8 +51,9 @@ class FakeFocuser (FocuserBase):
         else:
             raise InvalidFocusPositionException("%d is outside focuser "
                                                 "boundaries." % target)
+
     @lock
-    def moveOut (self, n):
+    def moveOut(self, n):
         target = self.getPosition() + n
 
         if self._inRange(target):
@@ -59,24 +61,26 @@ class FakeFocuser (FocuserBase):
         else:
             raise InvalidFocusPositionException("%d is outside focuser "
                                                 "boundaries." % target)
+
     @lock
-    def moveTo (self, position):
+    def moveTo(self, position):
         if self._inRange(position):
             self._setPosition(position)
         else:
             raise InvalidFocusPositionException("%d is outside focuser "
                                                 "boundaries." % int(position))
+
     @lock
-    def getPosition (self):
+    def getPosition(self):
         return self._position
 
-    def getRange (self):
+    def getRange(self):
         return (0, 7000)
 
-    def _setPosition (self, n):
+    def _setPosition(self, n):
         self.log.info("Changing focuser to %s" % n)
         self._position = n
 
-    def _inRange (self, n):
+    def _inRange(self, n):
         min_pos, max_pos = self.getRange()
         return (min_pos <= n <= max_pos)

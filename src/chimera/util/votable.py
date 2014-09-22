@@ -1,7 +1,7 @@
-"""	Class to handle VOTable
-	Created: 2005-05-31 by Shui Hung Kwok, shkwok at computer.org
+""" Class to handle VOTable
+    Created: 2005-05-31 by Shui Hung Kwok, shkwok at computer.org
 
-	See http://www.ivoa.net/Documents/latest/VOT.html .
+    See http://www.ivoa.net/Documents/latest/VOT.html .
 """
 
 import sys
@@ -10,9 +10,10 @@ import xml.sax
 import xml.sax.handler
 
 
-class VONode (object):
+class VONode(object):
 
-    """	Class representing an XML node of a VOTable
+    """
+    Class representing an XML node of a VOTable
     """
 
     def __init__(self, tagname=('', '')):
@@ -68,7 +69,7 @@ class VONode (object):
             try:
                 l = node._nodeList
                 res.append(node)
-            except Exception, e:
+            except Exception:
                 pass
         return res
 
@@ -80,7 +81,7 @@ class VONode (object):
             try:
                 l = node.lower()
                 res.append(node)
-            except Exception, e:
+            except Exception:
                 pass
         return ''.join(res)
 
@@ -101,7 +102,7 @@ class VONode (object):
                     continue
                 l = node._nodeList
                 res.append(node)
-            except Exception, e:
+            except Exception:
                 pass
         return res
 
@@ -112,7 +113,7 @@ class VONode (object):
             return self.buildName(self._tagname)
 
     def getNode(self, path):
-        """	Returns a node for a given path.
+        """ Returns a node for a given path.
                 Path is of the form /tag1/tag2/tag3.
                 Path can include array index, like /tag1/tag2[3]/tag4.
         """
@@ -141,7 +142,7 @@ class VONode (object):
         return node
 
     def getNodesByPath(self, path):
-        """	Returns an array of VONodes for a given path.
+        """ Returns an array of VONodes for a given path.
                 Path is of the form /tag1/tag2/tag3.
                 Path can include array index, like /tag1/tag2[3]/tag4.
         """
@@ -177,15 +178,15 @@ class VONode (object):
         """
         ns, n = tname
         """
-		if ns:
-			return "%s:%s" % (self.qname, n)
-		else: 
-			return n
-		"""
+        if ns:
+            return "%s:%s" % (self.qname, n)
+        else:
+            return n
+        """
         return n
 
     def printAllNodes(self, func=sys.stdout.write, prefix=''):
-        """	Recursive method to visit all nodes of the tree
+        """ Recursive method to visit all nodes of the tree
                 and calls the provided function to output the content.
         """
         func("%s<%s" % (prefix, self.buildName(self._tagname)))
@@ -254,13 +255,15 @@ class VOTableHandler (xml.sax.handler.ContentHandler):
         return self.sentinel  # ._nodeList[0]
 
 
-class VOTable (object):
+class VOTable(object):
 
-    """ Implementation of VOTable 
+    """
+    Implementation of VOTable 
     """
 
     def __init__(self, source=None, vonode=VONode):
-        """ Instantiate a VOTable.
+        """
+    Instantiate a VOTable.
                 source can be URL, file name or a string representing the VOTable.
                 vonode is a class representing VONode, must be derived from or
                 compatible with VONode.
@@ -271,14 +274,16 @@ class VOTable (object):
             self.parse(source)
 
     def parse(self, source):
-        """ Invokes XML parser and stores VOTable
+        """ 
+        Invokes XML parser and stores VOTable
                 in self.root as VONode.
         """
         parser = VOTableHandler(self.vonode)
         self.root = parser.parse(source)
 
     def printAllNodes(self, func=sys.stdout.write):
-        """	Output entire content as XML.
+        """
+        Output entire content as XML.
                 func is the output method, defined as:
                         func (outString)
         """
@@ -290,19 +295,22 @@ class VOTable (object):
         node.printAllNodes(func)
 
     def getNode(self, path):
-        """ Returns a VONode of the given path.
+        """
+        Returns a VONode of the given path.
         """
         return self.root._nodeList[0].getNode(path)
 
     def getContent(self, path):
-        """ Returns the content of a node.
+        """
+        Returns the content of a node.
                 Only strings are returned.
         """
         node = self.getNode(path)
         return node.getContent()
 
     def getColumnIdx(self, val):
-        """ Returns the column index for the given name
+        """
+        Returns the column index for the given name
                 Will return any attribute value matching val.
         """
         fields = self.getFields()
@@ -312,19 +320,22 @@ class VOTable (object):
         return -1
 
     def getFields(self):
-        """ Returns a list of VONode representing all the fields
+        """
+        Returns a list of VONode representing all the fields
         """
         #table = self.root.VOTABLE.RESOURCE.TABLE
         # return table.getNodesByName ('FIELD')
         return self.root.VOTABLE.RESOURCE.TABLE.FIELD
 
     def getParams(self):
-        """	Returns a list of VONode representing all PARAMS
+        """
+        Returns a list of VONode representing all PARAMS
         """
         return self.root.VOTABLE.RESOURCE.RESOURCE.PARAM
 
     def getFieldsAttrs(self):
-        """	Returns a list of maps that contains attributes.
+        """
+        Returns a list of maps that contains attributes.
                 Returned list looks like this: [{},{},...]
         """
         res = []
@@ -337,7 +348,8 @@ class VOTable (object):
         return res
 
     def getDataRows(self):
-        """	Returns a list of VONodes representing rows of the table.
+        """
+        Returns a list of VONodes representing rows of the table.
                 Use getData () to extract data from each row.
                 for x in getDataRows ():
                         data = getData (x)
@@ -347,7 +359,8 @@ class VOTable (object):
         return tableData._nodeList
 
     def getData(self, row):
-        """ row is a VONode <TR> parent of a list of <TD>.
+        """ 
+    row is a VONode <TR> parent of a list of <TD>.
                 Returns a list of values.
         """
         res = []
@@ -360,7 +373,8 @@ class VOTable (object):
         return res
 
     def append(self, vot):
-        """ Appends votable vot to the end of this VOTable. 
+        """
+        Appends votable vot to the end of this VOTable. 
                 No tests to see if fields are the same. 
                 vot must have the same fields. 
         """

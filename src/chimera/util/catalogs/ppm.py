@@ -4,20 +4,20 @@
 import os
 
 from chimera.util.catalog import Catalog
-from chimera.util.scat    import SCatWrapper
+from chimera.util.scat import SCatWrapper
 
 
 class PPM (Catalog):
 
-    def __init__ (self):
-        Catalog.__init__ (self)
+    def __init__(self):
+        Catalog.__init__(self)
 
         self.scat = SCatWrapper()
 
-    def getName (self):
+    def getName(self):
         return "PPM"
 
-    def getMetadata (self):
+    def getMetadata(self):
         return [("PPM_NUM", "arbitrary", "PPM number"),
                 ("RA", "h:m:s", "Right Ascension (J2000)"),
                 ("DEC", "d:m:s", "Declination (J2000)"),
@@ -25,21 +25,20 @@ class PPM (Catalog):
                 ("SpTyp", "arbitrary", "Spectral type"),
                 ("R", "arcsec", "Distance from the target")]
 
-    def getMagnitudeBands (self):
+    def getMagnitudeBands(self):
         return ["V"]
 
-    def find (self, near, limit=None, **conditions):
+    def find(self, near, limit=None, **conditions):
 
-        scat_options = {"catalog"   : "ppm",
-                        "near"      : near or "00:00:00 +00:00:00",
-                        "limit"     : limit or 100,
-                        "bands"     : self.getMagnitudeBands(),
+        scat_options = {"catalog": "ppm",
+                        "near": near or "00:00:00 +00:00:00",
+                        "limit": limit or 100,
+                        "bands": self.getMagnitudeBands(),
                         "conditions": conditions,
-                        "metadata"  : self.getMetadata(),
-                        "env"       : os.environ.update({"PPM_PATH": "/home/henrique/catalogs/"})}
+                        "metadata": self.getMetadata(),
+                        "env": os.environ.update({"PPM_PATH": "/home/henrique/catalogs/"})}
 
         # OK, run it!
-        data = self.scat.run (scat_options)
+        data = self.scat.run(scat_options)
 
         return data
-

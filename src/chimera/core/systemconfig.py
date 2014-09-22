@@ -1,12 +1,12 @@
 
-from chimera.core.location   import Location
+from chimera.core.location import Location
 from chimera.core.exceptions import ChimeraException
-from chimera.core.constants  import (SYSTEM_CONFIG_DEFAULT_FILENAME,
-                                     MANAGER_DEFAULT_HOST, MANAGER_DEFAULT_PORT)
+from chimera.core.constants import (SYSTEM_CONFIG_DEFAULT_FILENAME,
+                                    MANAGER_DEFAULT_HOST, MANAGER_DEFAULT_PORT)
 
 import yaml
 
-import chimera.core.log
+#import chimera.core.log
 import logging
 log = logging.getLogger(__name__)
 
@@ -52,7 +52,7 @@ class SystemConfig (object):
       parameter_1: value1
       parameter_2: value2
       parameter_3: value3
-                   
+
     To define more than one instance, just pass an sequence as the
     maps value, as in:
 
@@ -60,13 +60,13 @@ class SystemConfig (object):
      - parameter_1: value1
        parameter_2: value2
        parameter_3: value3
-       
+
      - parameter_1: other1
        parameter_2: other2
        parameter_3: other3
 
     You could also pass another map as a parameter value, as in:
-    
+
      instrument:
       parameter_1:
         parameterkey: paramatervalue
@@ -102,23 +102,22 @@ class SystemConfig (object):
     """
 
     @staticmethod
-    def fromString (string):
+    def fromString(string):
         s = SystemConfig()
         s.add(string)
         return s
 
     @staticmethod
-    def fromFile (filename):
+    def fromFile(filename):
         s = SystemConfig()
         s.add(open(filename, "r").read())
         return s
 
     @staticmethod
-    def fromDefault ():
+    def fromDefault():
         return SystemConfig.fromFile(SYSTEM_CONFIG_DEFAULT_FILENAME)
 
-
-    def __init__ (self):
+    def __init__(self):
 
         # primitives
         self.chimera = {}
@@ -134,32 +133,34 @@ class SystemConfig (object):
                           "dome", "domes",
                           "focuser", "focusers"]
 
-        self._instrumentsSections = self._specials + ["instrument", "instruments"]
+        self._instrumentsSections = self._specials + \
+            ["instrument", "instruments"]
         self._controllersSections = ["controller", "controllers"]
-        self._sections = self._instrumentsSections + self._controllersSections + ["site", "chimera"]
+        self._sections = self._instrumentsSections + \
+            self._controllersSections + ["site", "chimera"]
 
         # to create nice numbered names for objects without a name
         self._useCount = {}
-        
+
         self.chimera["host"] = MANAGER_DEFAULT_HOST
         self.chimera["port"] = MANAGER_DEFAULT_PORT
 
     def add(self, buffer):
-        
+
         try:
             config = yaml.load(buffer)
-            if not config: # empty file
+            if not config:  # empty file
                 return
         except yaml.YAMLError, e:
             s = None
             if hasattr(e, 'problem_mark'):
                 mark = e.problem_mark
-                s = "error at line %s column %s" % (mark.line+1, mark.column+1)
+                s = "error at line %s column %s" % (
+                    mark.line + 1, mark.column + 1)
             else:
                 s = str(e)
 
             raise SystemConfigSyntaxException(s)
-
 
         # scan the buffer to determine section order, which would be
         # used to guarantee instrument initialization order
@@ -178,21 +179,21 @@ class SystemConfig (object):
                 # BIGGG FIXME: read all files before create Locations,
                 # to avoid this hack
                 if "host" in values or "port" in values:
-                   # host/port changed
-                   for l in self.instruments+self.controllers:
-                       l._host = values["host"]
-                       l._port = values["port"]            
-                 
+                    # host/port changed
+                    for l in self.instruments + self.controllers:
+                        l._host = values["host"]
+                        l._port = values["port"]
+
                 del config[type]
                 break
-            
+
         # ensure host/port setup on chimera
         if "host" not in self.chimera:
             self.chimera["host"] = MANAGER_DEFAULT_HOST
-        
+
         if "port" not in self.chimera:
             self.chimera["port"] = MANAGER_DEFAULT_PORT
-        
+
         objects = {}
 
         for type, values in config.items():
@@ -220,7 +221,7 @@ class SystemConfig (object):
         # always use a single site from the last added file
         if "site" in objects:
             self.sites = [objects["site"][0]]
-        
+
         return True
 
     def _getDefaultName(self, type):
@@ -230,8 +231,8 @@ class SystemConfig (object):
         name = "%s_%d" % (str(type), self._useCount[type])
         self._useCount[type] += 1
         return name
-    
-    def _parseLocation (self, type, dic):
+
+    def _parseLocation(self, type, dic):
 
         name = dic.pop('name', self._getDefaultName(type))
 
@@ -240,10 +241,10 @@ class SystemConfig (object):
         name = name.replace('"', "_")
         name = name.replace("'", "_")
 
-        if type=="site": # keep name
-          dic["name"] = name
+        if type == "site":  # keep name
+            dic["name"] = name
 
-        cls  = dic.pop('type', None)
+        cls = dic.pop('type', None)
 
         if not cls:
             if type in self._specials or type == "site":
@@ -251,9 +252,8 @@ class SystemConfig (object):
             else:
                 raise TypeNotFoundException("%s %s must have a type." % (type,
                                                                          name))
-            
+
         host = dic.pop('host', self.chimera["host"])
         port = dic.pop('port', self.chimera["port"])
 
         return Location(name=name, cls=cls, host=host, port=port, config=dic)
-

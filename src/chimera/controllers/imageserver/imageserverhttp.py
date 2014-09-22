@@ -1,10 +1,11 @@
 
 import threading
-import logging
+#import logging
 import os
 
 from SimpleHTTPServer import SimpleHTTPRequestHandler
-from BaseHTTPServer   import HTTPServer
+from BaseHTTPServer import HTTPServer
+
 
 class ImageServerHTTPHandler(SimpleHTTPRequestHandler):
 
@@ -18,7 +19,7 @@ class ImageServerHTTPHandler(SimpleHTTPRequestHandler):
         self.server.ctrl.log.info("%s - - [%s] %s" %
                                   (self.address_string(),
                                    self.log_date_time_string(),
-                                   format%args))
+                                   format % args))
 
     def send_head(self, response=200, ctype=None, length=None, modified=None):
         self.send_response(response)
@@ -41,7 +42,7 @@ class ImageServerHTTPHandler(SimpleHTTPRequestHandler):
             self.copyfile(f, self.wfile)
             f.close()
 
-    def image (self):
+    def image(self):
 
         args = self.path.split("/image/")
 
@@ -63,14 +64,16 @@ class ImageServerHTTPHandler(SimpleHTTPRequestHandler):
             image = self.server.ctrl.imagesByPath[key]
             id = image.GUID()
             path = image.filename()
-            toReturn += ('<tr><td><a href="/image/%s">%s</a></td><td><a href="/image/%s">%s</a></td></tr>' %
-                         (id,id,id,path))
+            toReturn += (
+                '<tr><td><a href="/image/%s">%s</a></td><td><a href="/image/%s">%s</a></td></tr>' %
+                (id, id, id, path))
 
         self.response(200, toReturn, "text/html")
 
+
 class ImageServerHTTP(threading.Thread):
 
-    def __init__ (self, ctrl):
+    def __init__(self, ctrl):
         threading.Thread.__init__(self)
         self.setDaemon(True)
         self.setName("Image Server HTTPD")
@@ -82,8 +85,11 @@ class ImageServerHTTP(threading.Thread):
 
     def run(self):
 
-        srv = HTTPServer((self.ctrl['http_host'], self.ctrl['http_port']), ImageServerHTTPHandler)
-        self.ctrl.log.info("Starting HTTP server on %s:%d" % (self.ctrl['http_host'], self.ctrl['http_port']))
+        srv = HTTPServer(
+            (self.ctrl['http_host'], self.ctrl['http_port']),
+            ImageServerHTTPHandler)
+        self.ctrl.log.info("Starting HTTP server on %s:%d" %
+                           (self.ctrl['http_host'], self.ctrl['http_port']))
 
         self.die.clear()
 
@@ -95,4 +101,3 @@ class ImageServerHTTP(threading.Thread):
 
     def stop(self):
         self.die.set()
-

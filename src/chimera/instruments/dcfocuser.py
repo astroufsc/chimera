@@ -16,7 +16,8 @@
 
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301, USA.
 
 from chimera.interfaces.focuser import (InvalidFocusPositionException,
                                         FocuserFeature)
@@ -36,6 +37,7 @@ __all__ = ['Direction',
 
 
 class DCFocuser (FocuserBase):
+
     """
     DCFocuser uses as standard DC pulse Focuser with a software
     layer to mimic the behaviour of a Encoder-based Focuser.
@@ -60,13 +62,13 @@ class DCFocuser (FocuserBase):
     give this number for you.
     """
 
-    __config__ = {"dt": 1000, # how many milliseconds/pulses should I
-                              # use to traverse the whole focus range
-                              # (end-to-end).
-                  "pulse_dt": 10} # unit pulse length (ms)
+    __config__ = {"dt": 1000,  # how many milliseconds/pulses should I
+                  # use to traverse the whole focus range
+                  # (end-to-end).
+                  "pulse_dt": 10}  # unit pulse length (ms)
 
-    def __init__ (self):
-        FocuserBase.__init__ (self)
+    def __init__(self):
+        FocuserBase.__init__(self)
 
         self._supports = {FocuserFeature.TEMPERATURE_COMPENSATION: False,
                           FocuserFeature.POSITION_FEEDBACK: True,
@@ -76,12 +78,13 @@ class DCFocuser (FocuserBase):
         self._range = None
         self._lastTimeLog = None
 
-    def __start__ (self):
+    def __start__(self):
 
         # range setting
-        self._range = (0, int(self["dt"]/float(self["pulse_dt"])))
+        self._range = (0, int(self["dt"] / float(self["pulse_dt"])))
         if self._range[1] <= 0:
-            self.log.warning("Invalid dt and pulse_dt constants, focuser range negative.")
+            self.log.warning(
+                "Invalid dt and pulse_dt constants, focuser range negative.")
             return False
 
         # restore last position
@@ -92,7 +95,8 @@ class DCFocuser (FocuserBase):
             try:
                 lastPosition = int(open(filename, 'r').read())
             except ValueError:
-                self.log.warning("Content of dc_focuser.memory file is invalid. Removing it.")
+                self.log.warning(
+                    "Content of dc_focuser.memory file is invalid. Removing it.")
                 os.unlink(filename)
 
         self._lastPositionLog = open(filename, 'w')
@@ -115,40 +119,41 @@ class DCFocuser (FocuserBase):
         self._lastPositionLog.truncate()
         self._lastPositionLog.write(str(position))
         self._lastPositionLog.flush()
-        
-    @lock
-    def moveIn (self, n):
-        return self._move (Direction.IN, n)
 
     @lock
-    def moveOut (self, n):
-        return self._move (Direction.OUT, n)
+    def moveIn(self, n):
+        return self._move(Direction.IN, n)
 
     @lock
-    def moveTo (self, position):
+    def moveOut(self, n):
+        return self._move(Direction.OUT, n)
 
-        current = self.getPosition ()
+    @lock
+    def moveTo(self, position):
+
+        current = self.getPosition()
 
         delta = position - current
 
         try:
             if delta > 0:
-                self._move (Direction.OUT, abs(delta))
+                self._move(Direction.OUT, abs(delta))
             elif delta < 0:
-                self._move (Direction.IN, abs(delta))
+                self._move(Direction.IN, abs(delta))
         except:
             return
 
         self._savePosition(position)
         self._position = position
-        
+
         return True
 
-    def _move (self, direction, steps):
+    def _move(self, direction, steps):
 
         if not self._inRange(direction, steps):
-            raise InvalidFocusPositionException("%d is outside focuser limits." % steps)
-        
+            raise InvalidFocusPositionException(
+                "%d is outside focuser limits." % steps)
+
         if direction not in Direction:
             raise ValueError("Invalid direction '%s'." % direction)
 
@@ -156,7 +161,7 @@ class DCFocuser (FocuserBase):
 
         return True
 
-    def _inRange (self, direction, n):
+    def _inRange(self, direction, n):
 
         # Assumes:
         #   0 -------  N
@@ -170,12 +175,11 @@ class DCFocuser (FocuserBase):
             target = current + n
 
         min_pos, max_pos = self.getRange()
-        
+
         return (min_pos <= target <= max_pos)
 
-    def getPosition (self):
+    def getPosition(self):
         return self._position
 
-    def getRange (self):
+    def getRange(self):
         return self._range
-        
