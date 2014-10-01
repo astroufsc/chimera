@@ -430,7 +430,7 @@ class Image (DictMixin, RemoteObject):
         return self._fd["PRIMARY"].header.items()
 
     def __contains__(self, key):
-        return self._fd["PRIMARY"].header.has_key(key)
+        return key in self._fd["PRIMARY"].header
 
     def __iter__(self):
         for k in self.keys():

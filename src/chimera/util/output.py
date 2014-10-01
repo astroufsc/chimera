@@ -99,7 +99,7 @@ def nc_len(mystr):
 
 
 def xtermTitle(mystr):
-    if havecolor and dotitles and os.environ.has_key("TERM") and sys.stderr.isatty():
+    if havecolor and dotitles and "TERM" in os.environ and sys.stderr.isatty():
         myt = os.environ["TERM"]
         legal_terms = [
             "xterm", "Eterm", "aterm", "rxvt", "screen", "kterm", "rxvt-unicode"]
