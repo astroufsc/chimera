@@ -3,7 +3,6 @@ PyYAML==3.10
 Pyro==3.16
 RO==3.3.0
 SQLAlchemy==0.9.1
-chimera-python==0.2.dev
 numpy>=1.8.0
 pyephem==3.7.5.2
 pyfits==3.2
