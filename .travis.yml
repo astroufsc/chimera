@@ -1,0 +1,15 @@
+# Travis configuration file - http://docs.travis-ci.com/user/languages/python/
+language: python
+python:
+  - "2.7"
+
+# command to install dependencies
+install:
+  - sudo apt-get update
+  - sudo apt-get install libusb-1.0-0-dev
+  - pip install -r requirements.txt
+
+# command to run the tests
+script:
+  - python setup.py install
+
