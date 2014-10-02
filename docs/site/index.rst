@@ -83,6 +83,11 @@ Your platform of choice will need to have the following software installed:
 Installation
 ------------
 
+Current build status: |build_status|
+
+.. |build_status| image:: https://travis-ci.org/astroufsc/chimera.svg?branch=master
+    :target: https://travis-ci.org/astroufsc/chimera
+
 .. _above:
 
 **Chimera** currently lives in Github_. To install it, go to your install directory, and run:
@@ -117,6 +122,7 @@ Distutils will run, generate eggs, etc., and will install the following python d
 * python-sbigudrv: 0.5
 * pywcs: 1.10.2
 * suds: 0.4
+
 
 Alternative Methods
 -------------------
