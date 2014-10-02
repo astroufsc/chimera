@@ -3,13 +3,13 @@ language: python
 python:
   - "2.7"
 
-# command to install dependencies
+# Installing Dependencies...
 install:
   - sudo apt-get update
   - sudo apt-get install libusb-1.0-0-dev
   - pip install -r requirements.txt
 
-# command to run the tests
+# Installing chimera...
 script:
   - python setup.py install
 
