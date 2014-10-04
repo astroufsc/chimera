@@ -1,4 +1,4 @@
-import chimera.core.log
+#import chimera.core.log
 
 from chimera.controllers.scheduler.states import State
 from chimera.controllers.scheduler.model import Session, Program

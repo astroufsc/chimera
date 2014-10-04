@@ -4,7 +4,7 @@ from chimera.controllers.scheduler.model import Session, Program
 
 from sqlalchemy import desc
 
-import chimera.core.log
+#import chimera.core.log
 import logging
 
 log = logging.getLogger(__name__)

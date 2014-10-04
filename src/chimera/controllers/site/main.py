@@ -38,7 +38,7 @@ from chimera.core.constants import (MANAGER_DEFAULT_HOST,
 from chimera.core.site import Site
 from chimera.core.path import ChimeraPath
 
-import chimera.core.log
+#import chimera.core.log
 
 
 log = logging.getLogger(__name__)
@@ -53,10 +53,12 @@ class SiteController (object):
         self.options, self.args = self.parseArgs(args)
 
         if self.options.verbose == 1:
-            chimera.core.log.setConsoleLevel(logging.INFO)
+            #chimera.core.log.setConsoleLevel(logging.INFO)
+            log.setConsoleLevel(logging.INFO)
 
         if self.options.verbose > 1:
-            chimera.core.log.setConsoleLevel(logging.DEBUG)
+            #chimera.core.log.setConsoleLevel(logging.DEBUG)
+            log.setConsoleLevel(logging.DEBUG)
 
         self.manager = None
 

@@ -5,7 +5,7 @@ from chimera.core.exceptions    import ChimeraException
 
 from nose.tools import assert_raises
 
-import chimera.core.log
+#import chimera.core.log
 import logging
 
 log = logging.getLogger("chimera.test_log")

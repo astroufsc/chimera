@@ -7,7 +7,7 @@ from chimera.controllers.scheduler.status import SchedulerStatus
 
 from chimera.core.exceptions import ObjectNotFoundException, ProgramExecutionAborted, ProgramExecutionException
 
-import chimera.core.log
+#import chimera.core.log
 import logging
 import threading
 import time

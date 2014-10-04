@@ -25,7 +25,7 @@ import chimera.util.etree.ElementTree as ET
 from chimera.core.exceptions import ObjectNotFoundException
 from xml.parsers.expat import ExpatError
 
-import chimera.core.log
+#import chimera.core.log
 
 import logging
 logging.getLogger("suds").setLevel(1000000000)

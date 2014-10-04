@@ -2,7 +2,7 @@
 from chimera.controllers.scheduler.sequential import SequentialScheduler
 from chimera.controllers.scheduler.model import Session, Program
 
-import chimera.core.log
+#import chimera.core.log
 import logging
 
 log = logging.getLogger(__name__)
