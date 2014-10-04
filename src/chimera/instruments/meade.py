@@ -155,7 +155,7 @@ class Meade (TelescopeBase):
 
     @lock
     def open(self):
-        params = self["device"]
+        params = self["method"].split(":")
         try:
             if params[0] == 'serial':
                 self._tty = serial.Serial(params[1],
@@ -169,7 +169,10 @@ class Meade (TelescopeBase):
             elif params[0] == 'eth':
                 self._tty = None
                 self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                self.sock.connect((params[1], int(params[2]))
+                self.sock.connect((params[1], int(params[2])))
+                #self.sockfd = self.sock.makefile(mode='rw')
+            else:
+                raise ValueError("Invalid method")
 
             self._checkMeade()
 
@@ -1070,7 +1073,7 @@ class Meade (TelescopeBase):
             self._debug("[read ] %s" % repr(ret))
             return ret
         else:
-            ret = self.sock.read(n)
+            ret = self.sock.recv(n)
             self._debug("[read ] %s" % repr(ret))
             return ret
 
@@ -1083,8 +1086,17 @@ class Meade (TelescopeBase):
             self._debug("[read ] %s" % repr(ret))
             return ret
         else:
-            sio = io.TextIOWrapper(self.sock, newline=eol)
-            ret = sio.readline()
+            #sio = io.TextIOWrapper(self.sock, newline=eol)
+            #fd = self.sock.makefile(mode='r')
+            #ret = fd.readline()
+            ret = ''
+            while True:
+                s = self.sock.recv(1)
+                ret += s
+                if len(s) == 0:
+                    raise EOFError("End of the line")
+                if s == eol:
+                    break
             self._debug("[read ] %s" % repr(ret))
             return ret
 
@@ -1112,5 +1124,5 @@ class Meade (TelescopeBase):
                 
             return self._tty.write(data)
         else:
-            return self.sock.write(data)
+            return self.sock.sendall(data)
 
