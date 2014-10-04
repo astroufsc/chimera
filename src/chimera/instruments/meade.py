@@ -170,7 +170,6 @@ class Meade (TelescopeBase):
                 self._tty = None
                 self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 self.sock.connect((params[1], int(params[2])))
-                #self.sockfd = self.sock.makefile(mode='rw')
             else:
                 raise ValueError("Invalid method")
 
@@ -1086,9 +1085,6 @@ class Meade (TelescopeBase):
             self._debug("[read ] %s" % repr(ret))
             return ret
         else:
-            #sio = io.TextIOWrapper(self.sock, newline=eol)
-            #fd = self.sock.makefile(mode='r')
-            #ret = fd.readline()
             ret = ''
             while True:
                 s = self.sock.recv(1)
