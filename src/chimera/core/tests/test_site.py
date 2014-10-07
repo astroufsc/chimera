@@ -22,7 +22,7 @@ from chimera.core.manager    import Manager
 from chimera.core.site       import Site
 from chimera.core.exceptions import printException
 
-import chimera.core.log
+#import chimera.core.log
 
 from chimera.util.coord    import Coord
 from chimera.util.position import Position

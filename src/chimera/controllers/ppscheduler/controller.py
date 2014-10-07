@@ -15,29 +15,29 @@ SchedulingAlgorithm = Enum("SEQUENTIAL", "CIRCULAR")
 
 
 SchedulingAlgorithms = {SchedulingAlgorithm.SEQUENTIAL: SequentialScheduler(),
-                        SchedulingAlgorithm.CIRCULAR  : CircularScheduler()}
+                        SchedulingAlgorithm.CIRCULAR: CircularScheduler()}
 
 
 class Scheduler(ChimeraObject):
-    
-    __config__ = {"telescope"   : "/Telescope/0",
-                  "camera"      : "/Camera/0",
-                  "filterwheel" : "/FilterWheel/0",
-                  "focuser"     : "/Focuser/0",
-                  "dome"        : "/Dome/0",
-                  "autofocus"   : "/Autofocus/0",
+
+    __config__ = {"telescope": "/Telescope/0",
+                  "camera": "/Camera/0",
+                  "filterwheel": "/FilterWheel/0",
+                  "focuser": "/Focuser/0",
+                  "dome": "/Dome/0",
+                  "autofocus": "/Autofocus/0",
                   "point_verify": "/PointVerify/0",
-                  'site'        : '/Site/0',
-                  'algorithm'   : SchedulingAlgorithm.SEQUENTIAL}
-    
+                  'site': '/Site/0',
+                  'algorithm': SchedulingAlgorithm.SEQUENTIAL}
+
     def __init__(self):
         ChimeraObject.__init__(self)
-        
+
         self.executor = None
         self.scheduler = None
         self.machine = None
 
-    def __start__ (self):
+    def __start__(self):
         self.executor = ProgramExecutor(self)
         self.scheduler = SchedulingAlgorithms[self["algorithm"]]
         self.machine = Machine(self.scheduler, self.executor, self)
@@ -49,7 +49,7 @@ class Scheduler(ChimeraObject):
             self.machine.start()
             return False
 
-    def __stop__ (self):
+    def __stop__(self):
         self.log.debug('Attempting to stop machine')
         self.shutdown()
         self.log.debug('Machine stopped')
@@ -100,4 +100,3 @@ class Scheduler(ChimeraObject):
     @event
     def stateChanged(self, newState, oldState):
         pass
-        

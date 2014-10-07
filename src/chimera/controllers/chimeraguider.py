@@ -1,5 +1,5 @@
 import sys
-#import logging
+import logging
 
 import numpy as np
 
@@ -14,6 +14,7 @@ from chimera.core.exceptions import ObjectNotFoundException
 from chimera.interfaces.guider import Guider
 
 #from chimera.instruments.filterwheel import FilterWheelBase
+log = logging.getLogger(__name__)
 
 
 class ChimeraGuider(ChimeraObject, Guider):
@@ -33,17 +34,17 @@ class ChimeraGuider(ChimeraObject, Guider):
             t, gc, mc = (self.getManager().getProxy(
                 self[x]) for x in ['telescope', 'guidercamera', 'camera'])
         except ObjectNotFoundException, e:
-            self.log.debug('%s Component not found' % e)
+            log.debug('%s Component not found' % e)
             print('%s' % sys.exc_info()[1])
             # TODO: better exit strategy
             return
         else:
             if not (x.ping for x in [t, gc, mc]):
-                self.log.info('Component not responding')
+                log.info('Component not responding')
                 return
 
-        mc.exposeBegin += self.exposeBegin
-        mc.exposeEnd += self.exposeEnd
+        # mc.exposeBegin += self.exposeBegin
+        # mc.exposeEnd += self.exposeEnd
 
     def getGdrBoxes(self, img):
         """
@@ -89,7 +90,8 @@ class ChimeraGuider(ChimeraObject, Guider):
     def getCOM(self, gf):
         """
         Get a guiding image ( of size gboxes); calculate the centroid,
-        compare to reference (where it's at?) and return offsets (where are NESW!?)
+        compare to reference (where it's at?) and return offsets
+        where are NESW!?)
         @param gf: guiding box as fits image.
         @rtype : list with centroid coordinates (pixels).
         """
@@ -97,14 +99,15 @@ class ChimeraGuider(ChimeraObject, Guider):
         ps = gf
         n = np.sum(ps)
 
-        # "Grid logic" (ha!) courtesy of scipy.ndimage.measurements.center_of_mass
+        # "Grid logic" (ha!) courtesy of
+        # scipy.ndimage.measurements.center_of_mass
         grids = np.ogrid[[slice(0, i) for i in ps.shape]]
 
         self.centroids.append(
             [np.sum(ps * grids[dir]) / n for dir in range(ps.ndim)])
 
-    def exposeBegin(self):
-        pass
+    # def exposeBegin(self):
+    #     pass
 
-    def exposeEnd(self):
-        pass
+    # def exposeEnd(self):
+    #     pass

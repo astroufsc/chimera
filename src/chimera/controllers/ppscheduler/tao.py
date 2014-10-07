@@ -1,4 +1,4 @@
-import chimera.core.log
+#import chimera.core.log
 
 import os
 import ConfigParser

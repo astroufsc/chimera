@@ -54,9 +54,11 @@ class SiteController (object):
 
         if self.options.verbose == 1:
             chimera.core.log.setConsoleLevel(logging.INFO)
+            #log.setConsoleLevel(logging.INFO)
 
         if self.options.verbose > 1:
             chimera.core.log.setConsoleLevel(logging.DEBUG)
+            #log.setConsoleLevel(logging.DEBUG)
 
         self.manager = None
 

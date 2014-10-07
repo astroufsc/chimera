@@ -27,7 +27,7 @@ from chimera.core.methodwrapper import MethodWrapper, MethodWrapperDispatcher
 
 from chimera.core.constants import INSTANCE_MONITOR_ATTRIBUTE_NAME
 
-import chimera.core.log
+#import chimera.core.log
 log = logging.getLogger(__name__)
 
 
