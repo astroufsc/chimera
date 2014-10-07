@@ -11,3 +11,4 @@ python-dateutil==2.2
 python-sbigudrv==0.5
 pywcs==1.10.2
 suds==0.4
+asciidata>=1.1
