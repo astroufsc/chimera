@@ -27,7 +27,7 @@ import os
 import shutil
 
 import numpy as N
-import pyfits
+from astropy.io import fits as pyfits
 
 from chimera.interfaces.camera import (CCD, CameraFeature,
                                        ReadoutMode,

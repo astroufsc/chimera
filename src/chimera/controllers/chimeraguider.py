@@ -3,10 +3,7 @@ import logging
 
 import numpy as np
 
-try:
-    from astropy.io import fits
-except:
-    import pyfits as fits
+from astropy.io import fits
 
 from chimera.core.chimeraobject import ChimeraObject
 from chimera.core.exceptions import ObjectNotFoundException

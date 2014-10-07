@@ -9,7 +9,7 @@ from chimera.util.position import Position
 from chimera.util.filenamesequence import FilenameSequence
 from chimera.util.sextractor import SExtractor
 
-import pyfits
+from astropy.io import fits as pyfits
 import numpy as N
 
 try:
