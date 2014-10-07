@@ -9,8 +9,9 @@ install:
   - sudo apt-get update
   - sudo apt-get install libusb-dev
   - pip install -r requirements.txt
+  - python setup.py install
 
 # Installing chimera...
 script:
-  - python setup.py install
+  - nosetests
 
