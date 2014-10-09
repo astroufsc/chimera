@@ -102,7 +102,7 @@ setup(name='chimera-python',
                         "pyephem",
                         "python-dateutil",
                         "RO",
-                        "pyfits",
+                        "astropy",
                         "pyserial",
                         "Pyro"] + linux_deps + win32_deps + mac_deps + linux_cdeps + win32_cdeps + mac_cdeps + ["numpy"],
 
