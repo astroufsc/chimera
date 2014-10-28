@@ -1,0 +1,22 @@
+import click
+
+from chimera.util.catalogs.ncatalogs import Catalogs
+
+
+def valid_cats(ctx, param, value):
+    if value not in ('Vizier', 'Simbad', 'SDSS'):
+        raise click.BadParameter('Only Vizier, Simbad and SDSS are valid')
+    return value
+
+
+@click.command()
+@click.option('--cat', callback=valid_cats,
+              default='Vizier', help='Catalog to parse')
+def chimera_cats(cat):
+    click.echo('Using {0}'.format(cat))
+    app = Catalogs(cat)
+    app.run()
+
+if __name__ == '__main__':
+    raw_input('Enter to run:')
+    chimera_cats()
