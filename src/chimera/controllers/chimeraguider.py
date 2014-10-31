@@ -1,13 +1,11 @@
 import sys
 import logging
-
 import numpy as np
-
 from astropy.io import fits
+from astropysics.utils.alg import centroid
 
 from chimera.core.chimeraobject import ChimeraObject
 from chimera.core.exceptions import ObjectNotFoundException
-
 from chimera.interfaces.guider import Guider
 
 #from chimera.instruments.filterwheel import FilterWheelBase
@@ -15,7 +13,12 @@ log = logging.getLogger(__name__)
 
 
 class ChimeraGuider(ChimeraObject, Guider):
-
+    """
+    The ChimeraGuider controller takes pictures from a predefined
+    guider camera, picks guide star candidates, calculates their
+    centroid and starts driving the telescope with corrective
+    offsets to maintain the guide stars within predefined boudaries.
+    """
     def __init__(self):
         ChimeraObject.__init__(self)
 
@@ -45,7 +48,8 @@ class ChimeraGuider(ChimeraObject, Guider):
 
     def getGdrBoxes(self, img):
         """
-        Simple, unsophisticated, but (hopefully) fast guiding system
+        Simple, unsophisticated, but (hopefully) fast guiding system.
+        :param img: FITS image from the guider camera.
         """
         # Assume the data is in the primary header unit.
         gdr_array = fits.getdata(img)
@@ -84,24 +88,36 @@ class ChimeraGuider(ChimeraObject, Guider):
             self.gimages.append(
                 gdr_array[b[0] - 5:b[0] + 5, b[1] - 5:b[1] + 5])
 
+    # def getCOM(self, gf):
+    #     """
+    #     Get a guiding image ( of size gboxes); calculate the centroid,
+    #     compare to reference (where it's at?) and return offsets
+    #     where are NESW!?)
+    #     @param gf: guiding box as fits image.
+    #     @rtype : list with centroid coordinates (pixels).
+    #     """
+    #     #ps = fits.getdata(gf)
+    #     ps = gf
+    #     n = np.sum(ps)
+
+    #     # "Grid logic" (ha!) courtesy of
+    #     # scipy.ndimage.measurements.center_of_mass
+    #     grids = np.ogrid[[slice(0, i) for i in np.shape(ps)]]
+
+    #     self.centroids.append(
+    #         [np.sum(ps * grids[dir]) / n for dir in range(np.ndim(ps))])
+
     def getCOM(self, gf):
         """
-        Get a guiding image ( of size gboxes); calculate the centroid,
-        compare to reference (where it's at?) and return offsets
-        where are NESW!?)
-        @param gf: guiding box as fits image.
-        @rtype : list with centroid coordinates (pixels).
+        Calculates and stores the centroid of each star passed
+        in as a numpy array.
+        :param gf: fits file of single star, sized as guider box.
         """
-        #ps = fits.getdata(gf)
-        ps = gf
-        n = np.sum(ps)
+        # New version, uses astropysics.util.alg func.
+        # Ego safety note: the results are within 0.01% var.
+        # from the old method...
+        self.centroids.append(centroid(gf))
 
-        # "Grid logic" (ha!) courtesy of
-        # scipy.ndimage.measurements.center_of_mass
-        grids = np.ogrid[[slice(0, i) for i in ps.shape]]
-
-        self.centroids.append(
-            [np.sum(ps * grids[dir]) / n for dir in range(ps.ndim)])
 
     # def exposeBegin(self):
     #     pass
