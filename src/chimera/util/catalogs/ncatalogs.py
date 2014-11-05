@@ -1,7 +1,7 @@
 from __future__ import print_function
-import sys
 from blessed import Terminal
 
+from astropy.coordinates import SkyCoord
 from astroquery.simbad import Simbad
 from astroquery.vizier import Vizier
 from astroquery.sdss.core import SDSS
@@ -15,7 +15,6 @@ logging.getLogger(__name__)
 
 
 class CatUI():
-
     """
     If we generalize this UI's use, this class will migrate
     to a suitable place.
@@ -33,8 +32,8 @@ class CatUI():
         """
         with self.t.location(0, 0):
             print('{0}{1}'.format(
-                self.t.clear, self.t.black_on_white('Chimera Catalogs Browser')))
-        print(self.t.height, self.t.width)
+                self.t.clear, self.t.black_on_white('Chimera Catalog Browser')))
+        #print(self.t.height, self.t.width)
 
     def ui_catname(self, catname):
         """
@@ -45,7 +44,10 @@ class CatUI():
 
 
 class Catalogs():
-
+    """
+    Example queries:
+    'Landolt', 'Landolt II/183A'
+    """
     def __init__(self, catalog):
         self.catalog = catalog
 
@@ -85,34 +87,12 @@ class Catalogs():
             print('Maximum Queries: {0}\n{1}'.format(
                 SDSS.MAXQUERIES, '-' * 15))
 
+    def get_closest(self, coords, ):
+        """
+        Series of specialized queries on the catalog(s), based
+        on the UCD1+ keywords.
+        :param coords: SkyCoord object
+        """
 
+        pass
 
-# class Cat_Simbad():
-
-#     def __init__(self):
-# Display initial values for Simbad queries
-#         print('Simbad Configuration:\n{0}'.format('*' * 20))
-#         print('Query URL:{0}{1}{2}{3}'.format(
-#             '\t' * 2, Simbad.SIMBAD_URL, '\n', '-' * 9))
-#         print('Row Limit:{0}{1}{2}{3}'.format(
-#             '\t' * 2, Simbad.ROW_LIMIT, '\n', '-' * 9))
-#         print('Query Timeout:{0}{1}{2}{3}'.format(
-#             '\t' * 2, Simbad.TIMEOUT, '\n', '-' * 13))
-#         print('Accepted Wildcards:')
-#         Simbad.list_wildcards()
-
-#     def query(self, obj, mode='table'):
-#         res = Simbad.query_object(obj)
-#         if mode is 'table':
-#             return res
-#         elif mode is 'print':
-#             print(res)
-
-
-# class Cat_Sloane():
-
-#     def __init__(self):
-#         SDSS.__init__(self)
-#         print('Base URL:\t {0}\n{1}'.format(SDSS.BASE_URL, '-' * 8))
-#         print('Query URL:\t {0}\n{1}'.format(SDSS.QUERY_URL, '-' * 9))
-#         print('Maximum Queries: {0}\n{1}'.format(SDSS.MAXQUERIES, '-' * 15))
