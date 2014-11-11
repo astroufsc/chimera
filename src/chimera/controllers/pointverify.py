@@ -3,8 +3,10 @@ from math import fabs
 
 from chimera.util.catalogs.landolt import Landolt
 from chimera.core.chimeraobject import ChimeraObject
-from chimera.core.exceptions import (ChimeraException, CantPointScopeException,
-                                     CanSetScopeButNotThisField, CantSetScopeException,
+from chimera.core.exceptions import (ChimeraException,
+                                     CantPointScopeException,
+                                     CanSetScopeButNotThisField,
+                                     CantSetScopeException,
                                      printException)
 #from chimera.core.managerlocator import ManagerLocator
 
@@ -56,8 +58,10 @@ class PointVerify (ChimeraObject, IPointVerify):
     def _takeImage(self):
 
         cam = self.getCam()
-        frames = cam.expose(
-            exptime=self["exptime"], frames=1, shutter=Shutter.OPEN, filename="pointverify-$DATE")
+        frames = cam.expose(exptime=self["exptime"],
+                            frames=1,
+                            shutter=Shutter.OPEN,
+                            filename="pointverify-$DATE")
 
         if frames:
             return frames[0]
@@ -248,7 +252,7 @@ class PointVerify (ChimeraObject, IPointVerify):
         except Exception, e:
             printException(e)
             raise CantSetScopeException(
-                "Can't set scope on field %s %f %f we are in trouble, call for help" % 
+                "Can't set scope on field %s %f %f we are in trouble, call for help" %
                 (name, ra, dec))
         return True
 

@@ -222,10 +222,10 @@ class Position (object):
                 "Value must between %s and %s." % (lower, upper))
         return True
 
-    def __init__(self, coords,
+    def __init__(self,
+                 coords,
                  epoch=Epoch.J2000,
                  system=System.CELESTIAL):
-
         self._coords = coords
         self.system = System.fromStr(str(system).upper())
         self.epoch = Epoch.fromStr(str(epoch).upper())

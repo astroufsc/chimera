@@ -320,8 +320,8 @@ class CoordUtil (object):
     def haToRa(ha, lst):
         return Coord.fromR(CoordUtil.coordToR(lst) - CoordUtil.coordToR(ha))
 
-# coordRotate adopted from sidereal.py
-# http://www.nmt.edu/tcc/help/lang/python/examples/sidereal/ims/
+    # coordRotate adopted from sidereal.py
+    # http://www.nmt.edu/tcc/help/lang/python/examples/sidereal/ims/
 
     @staticmethod
     def coordRotate(x, y, z):
