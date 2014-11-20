@@ -44,3 +44,4 @@ nosetests.xml
 doc.pdf
 
 .idea
+.noseids
