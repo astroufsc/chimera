@@ -265,7 +265,7 @@ class Image (DictMixin, RemoteObject):
         if not self._findWCS():
             return (0, 0)
 
-        pixel = self._valueAt(self._wcs.wcs_sky2pix_fits, *world)
+        pixel = self._valueAt(self._wcs.wcs_sky2pix, *world)
 
         # round pixel to avoid large decimal numbers and get out strange -0
         pixel = list(round(p, 6) for p in pixel)
@@ -282,7 +282,7 @@ class Image (DictMixin, RemoteObject):
         if not self._findWCS():
             return Position.fromRaDec(0, 0)
 
-        world = self._valueAt(self._wcs.wcs_pix2sky_fits, *pixel)
+        world = self._valueAt(self._wcs.wcs_pix2sky, *pixel)
         return Position.fromRaDec(Coord.fromD(world[0]), Coord.fromD(world[1]))
 
     def _findWCS(self):
@@ -319,7 +319,7 @@ class Image (DictMixin, RemoteObject):
             else:  # assumes as tuple
                 c1, c2 = coords[0]
 
-        value = fn([N.array([c1, c2])])
+        value = fn(N.array([[c1, c2]]), 1)
 
         if len(value) >= 1:
             return tuple(value[0])
