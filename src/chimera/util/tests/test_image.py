@@ -6,7 +6,7 @@ import os
 import time
 
 class TestImage (object):
-    
+
     base = os.path.dirname(__file__)
 
     def test_headers (self):
@@ -14,7 +14,7 @@ class TestImage (object):
         img = Image.fromFile(os.path.join(self.base, "teste-sem-wcs.fits"), fix=False)
 
         print
-        
+
         for k, v in img.items():
             print k,v, type(v)
 
@@ -31,14 +31,10 @@ class TestImage (object):
         assert world.ra.D != None
         assert world.dec.D != None
 
-        img = Image.fromFile(os.path.join(self.base, "teste-sem-wcs.fits"), fix=False)
-        assert_raises(WCSNotFoundException, img.worldAt, 0, 0)
-
-
     def test_extractor (self):
 
         for f in ["teste-com-wcs.fits", "teste-sem-wcs.fits"]:
-            
+
             img = Image.fromFile(os.path.join(self.base, f), fix=False)
 
             stars = img.extract()
@@ -48,7 +44,7 @@ class TestImage (object):
 
             for star in stars[:10]:
                 print star["NUMBER"], star["XWIN_IMAGE"], star["YWIN_IMAGE"], star["FLUX_BEST"]
-                    
+
     def test_make_filename (self):
 
         names = []
@@ -65,7 +61,7 @@ class TestImage (object):
 
         img = Image.create(N.zeros((100,100)), filename="autogen-teste.fits")
         print img.width, img.height
-        
-        
-                       
-        
+
+
+
+
