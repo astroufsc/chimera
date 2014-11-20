@@ -87,7 +87,7 @@ class Catalogs():
             print('Maximum Queries: {0}\n{1}'.format(
                 SDSS.MAXQUERIES, '-' * 15))
 
-    def get_closest(self, coords, ):
+    def get_closest(self, coords):
         """
         Series of specialized queries on the catalog(s), based
         on the UCD1+ keywords.
