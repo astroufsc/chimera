@@ -1,12 +1,10 @@
-import chimera.core.log
-
 from chimera.controllers.scheduler.states import State
 from chimera.controllers.scheduler.model import Session, Program
 from chimera.controllers.scheduler.status import SchedulerStatus
 
 from chimera.core.exceptions import ProgramExecutionException, ProgramExecutionAborted
 
-from chimera.core.site import Site 
+from chimera.core.site import Site
 
 import threading
 import logging
@@ -16,11 +14,11 @@ import time
 log = logging.getLogger(__name__)
 
 class Machine(threading.Thread):
-    
+
     __state = None
     __stateLock = threading.Lock()
     __wakeUpCall = threading.Condition()
-    
+
     def __init__(self, scheduler, executor, controller):
         threading.Thread.__init__(self)
 
@@ -120,7 +118,7 @@ class Machine(threading.Thread):
             program.finished = False
 
         session.commit()
-        
+
     def _process(self, program):
 
         def process ():
@@ -144,14 +142,14 @@ class Machine(threading.Thread):
                 else:
                     log.debug("[start] Specified slew start MJD %s has already passed; proceeding without waiting",program.slewAt)
             else:
-               log.debug("[start] No slew time specified, so no waiting") 
+               log.debug("[start] No slew time specified, so no waiting")
             log.debug("[start] Current MJD is %f",site.MJD())
-            log.debug("[start] Proceeding since MJD %f should have passed",program.slewAt)            
+            log.debug("[start] Proceeding since MJD %f should have passed",program.slewAt)
             self.controller.programBegin(program)
 
             try:
                 self.executor.execute(task)
-                log.debug("[finish] %s" % str(task)) 
+                log.debug("[finish] %s" % str(task))
                 self.scheduler.done(task)
                 self.controller.programComplete(program, SchedulerStatus.OK)
                 self.state(State.IDLE)

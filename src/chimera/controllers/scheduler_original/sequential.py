@@ -4,7 +4,6 @@ from chimera.controllers.scheduler.model import Session, Program
 
 from sqlalchemy import desc
 
-import chimera.core.log
 import logging
 
 log = logging.getLogger(__name__)
@@ -25,7 +24,7 @@ class SequentialScheduler (IScheduler):
 
         session = Session()
         programs = session.query(Program).order_by(desc(Program.priority)).filter(Program.finished == False).all()
-        
+
         if not programs:
             return
 
@@ -49,6 +48,6 @@ class SequentialScheduler (IScheduler):
             log.exception(error)
         else:
             task.finished = True
-        
+
         self.rq.task_done()
         self.machine.wakeup()
