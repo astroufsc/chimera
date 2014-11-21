@@ -55,8 +55,7 @@ if sys.platform == "win32":
   ]
 else:
   platform_deps += [
-    "python-sbigudrv",
-    "pywcs"
+    "python-sbigudrv"
   ]
 
 # go!

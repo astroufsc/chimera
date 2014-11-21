@@ -18,9 +18,6 @@ class TestImage (object):
         for k, v in img.items():
             print k,v, type(v)
 
-        #img += ("TEST", 10, "test header")
-        #img.save()
-
     def test_wcs (self):
 
         img = Image.fromFile(os.path.join(self.base, "teste-com-wcs.fits"), fix=False)
@@ -54,13 +51,18 @@ class TestImage (object):
             names.append(name)
             file(name, "w").close()
 
-        print
-        for n in names: print n
+        for name in names:
+            assert os.path.exists(name)
+            os.unlink(name)
 
     def test_create (self):
 
         img = Image.create(N.zeros((100,100)), filename="autogen-teste.fits")
-        print img.width, img.height
+        assert os.path.exists(img.filename())
+        assert img.width() == 100
+        assert img.height() == 100
+
+        os.unlink(img.filename())
 
 
 
