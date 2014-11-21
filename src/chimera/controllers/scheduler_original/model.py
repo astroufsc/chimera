@@ -5,7 +5,8 @@ from sqlalchemy import (Column, String, Integer, DateTime, Boolean, ForeignKey,
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relation, backref
 
-engine = create_engine('sqlite:///%s' % DEFAULT_PROGRAM_DATABASE, pool_size=20, echo=False)
+engine = create_engine('sqlite:///%s' % DEFAULT_PROGRAM_DATABASE, echo=False)
+print '-- engine created with sqlite:///%s' % DEFAULT_PROGRAM_DATABASE
 metaData = MetaData()
 metaData.bind = engine
 
@@ -14,17 +15,44 @@ Base = declarative_base(metadata=metaData)
 
 import datetime as dt
 
-class Program(Base):
-    __tablename__ = "program"
+class Targets(Base):
+    __tablename__ = "targets"
+    print "model.py"
     
     id     = Column(Integer, primary_key=True)
-    name   = Column(String, default="Program")
+    name   = Column(String, default="Program") 
+    type   = Column(String, default=None) 
+    lastObservation = Column(DateTime, default=None)
+    observed  = Column(Boolean, default=False)
+    scheduled  = Column(Boolean, default=False)
+    targetRa = Column(Float, default=0.0)
+    targetDec = Column(Float, default=0.0)
+    targetEpoch = Column(Float, default=2000.)
+    targetMag = Column(Float, default=0.0)
+    magFilter = Column(String, default=None)
+
+    def __str__ (self):
+        if self.observed:
+            return "#%d %s [type: %s] #LastObverved@: %s" % (self.id, self.name, self.type,
+                                                        self.lastObservation)
+        else:
+            return "#%d %s [type: %s] #NeverObserved" % (self.id, self.name, self.type)
+
+class Program(Base):
+    __tablename__ = "program"
+    print "model.py"
+    
+    id     = Column(Integer, primary_key=True)
+    tid    = Column(Integer, ForeignKey('targets.id'))
+    name   = Column(String, ForeignKey("targets.name"))
     pi     = Column(String, default="Anonymous Investigator")
 
     priority = Column(Integer, default=0)
 
     createdAt = Column(DateTime, default=dt.datetime.today())
     finished  = Column(Boolean, default=False)
+    slewAt = Column(Float, default=0.0)
+    exposeAt = Column(Float, default=0.0)
     
     actions   = relation("Action", backref=backref("program", order_by="Action.id"),
                          cascade="all, delete, delete-orphan")
@@ -38,6 +66,7 @@ class Action(Base):
     id         = Column(Integer, primary_key=True)
     program_id = Column(Integer, ForeignKey("program.id"))
     action_type = Column('type', String(100))
+
 
     __tablename__ = "action"
     __mapper_args__ = {'polymorphic_on': action_type}
@@ -113,5 +142,6 @@ class Expose(Action):
 
 ###
     
+#metaData.drop_all(engine)
 metaData.create_all(engine)
 

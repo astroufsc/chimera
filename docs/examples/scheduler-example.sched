@@ -1,0 +1,13 @@
+# RA      dec       epoch  type    name  N*(f1:t1:n1, f2:t2:n2, ......) slew start MJD exposure start MJD
+14:00:00 -30:00:00  J2000  OBJECT  obj1  2*(V:7, R:6:2, B:5:2) 55981.043831 55936.97863
+15:00:00 -30:00:00  NOW    OBJECT  obj2  2*(V:7, R:6:2, B:5:2) 55981.043831
+15:00:00 -30:00:00  NOW    OBJECT  obj2  2*(V:7, R:6:2, B:5:2) 55936.99863
+
+# special targets follow different format
+# for bias and dark, filter is ignored, we use same format just to keep it simple
+
+# type name       N[*(f1:t1:n1, ...)] UTC
+FLAT   flat       3*(V:10:1, R:8:2, B:9:3)
+BIAS   bias       1*(V:0)  
+DARK   dark       1*(V:1:4)
+OBJECT "NGC 5272" 1*(B:10:10)

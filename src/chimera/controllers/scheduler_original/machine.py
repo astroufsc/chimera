@@ -4,8 +4,12 @@ from chimera.controllers.scheduler.status import SchedulerStatus
 
 from chimera.core.exceptions import ProgramExecutionException, ProgramExecutionAborted
 
+from chimera.core.site import Site
+
 import threading
 import logging
+
+import time
 
 log = logging.getLogger(__name__)
 
@@ -65,6 +69,8 @@ class Machine(threading.Thread):
 
                 if program:
                     log.debug("[idle] there is something to do, processing...")
+                    log.debug("[idle] program slew start %s",program.slewAt)
+                    log.debug("[idle] program exposure start %s",program.exposeAt)
                     self.state(State.BUSY)
                     self.currentProgram = program
                     self._process(program)
@@ -124,6 +130,21 @@ class Machine(threading.Thread):
 
             log.debug("[start] %s" % str(task))
 
+            site=Site()
+            nowmjd=site.MJD()
+            log.debug("[start] Current MJD is %f",nowmjd)
+            if program.slewAt:
+                waittime=(program.slewAt-nowmjd)*86.4e3
+                if waittime>0.0:
+                    log.debug("[start] Waiting until MJD %f to start slewing",program.slewAt)
+                    log.debug("[start] Will wait for %f seconds",waittime)
+                    time.sleep(waittime)
+                else:
+                    log.debug("[start] Specified slew start MJD %s has already passed; proceeding without waiting",program.slewAt)
+            else:
+               log.debug("[start] No slew time specified, so no waiting")
+            log.debug("[start] Current MJD is %f",site.MJD())
+            log.debug("[start] Proceeding since MJD %f should have passed",program.slewAt)
             self.controller.programBegin(program)
 
             try:
