@@ -9,7 +9,8 @@ from chimera.util.position import Position
 from chimera.util.filenamesequence import FilenameSequence
 from chimera.util.sextractor import SExtractor
 
-import pyfits
+from astropy.io import fits
+
 import numpy as N
 
 try:
@@ -139,7 +140,7 @@ class Image (DictMixin, RemoteObject):
     """
     Class to manipulate FITS images with a Pythonic taste.
 
-    The underlying framework comes from the very good PyFITS library
+    The underlying framework comes from astropy.io.fits library
     with some PyWCS stuff to get WCS info (which as matter of fact use
     WCSlib from Mark Calabretta). In addition, we use a wrapper to
     E. Bertin SExctractor's written by Laurent Le Guillou. Thank you all guys.
@@ -153,7 +154,7 @@ class Image (DictMixin, RemoteObject):
 
     @staticmethod
     def fromFile(filename, fix = False, mode = "update"):
-        fd = pyfits.open(filename, mode = mode)
+        fd = fits.open(filename, mode = mode)
         img = Image(filename, fd)
 
         if fix:
@@ -174,7 +175,7 @@ class Image (DictMixin, RemoteObject):
 
         filename = ImageUtil.makeFilename(filename)
 
-        hdu = pyfits.PrimaryHDU(data)
+        hdu = fits.PrimaryHDU(data)
 
         headers = [("DATE", ImageUtil.formatDate(dt.datetime.utcnow()), "date of file creation"),
                    ("CREATOR", _chimera_name_, _chimera_long_description_)]
@@ -191,7 +192,7 @@ class Image (DictMixin, RemoteObject):
             except Exception, e:
                 log.warning("Couldn't add %s: %s" % (str(header), str(e)))
 
-        hduList = pyfits.HDUList([hdu])
+        hduList = fits.HDUList([hdu])
         hduList.writeto(filename)
         hduList.close()
 
@@ -241,7 +242,7 @@ class Image (DictMixin, RemoteObject):
 
     def __setstate__(self, args):
         self.__dict__ = args
-        self._fd = pyfits.open(self._filename, mode="update")
+        self._fd = fits.open(self._filename, mode="update")
 
     #
     # geometry

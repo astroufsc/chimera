@@ -51,12 +51,12 @@ t_readout = t2 - t1
 import os
 os.environ["NUMERIX"] = "numpy"
 
-import pyfits
+from astropy.io import fits
 
 t1 = time.time()
 
-hdu = pyfits.PrimaryHDU(img)
-f = pyfits.HDUList([hdu])
+hdu = fits.PrimaryHDU(img)
+f = fits.HDUList([hdu])
 f.writeto("first-light.fits")
 
 t2 = time.time()

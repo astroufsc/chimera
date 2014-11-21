@@ -89,7 +89,6 @@ setup(
     "PyYAML",
     "python-dateutil",
     "pyephem",
-    "pyfits",
     "pyserial",
     "RO",
     "suds",
