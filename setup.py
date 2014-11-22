@@ -74,9 +74,7 @@ setup(
   package_dir = {"": "src"},
   packages = find_packages("src", exclude=["*.tests"]),
 
-  data_files = [
-    ("chimera/core", ["src/chimera/core/chimera.sample.config"])
-  ],
+  include_package_data = True,
 
   scripts = chimera_scripts,
 
