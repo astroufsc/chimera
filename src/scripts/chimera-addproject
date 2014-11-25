@@ -130,9 +130,12 @@ object 1 and so on. All observations are performed with the same configuration. 
 must have the following format:
 
 [blockconfig]
-	filter = [B,V,R,I]
-	exptime = [80.,80.,60.,40.]
-	nexp = [2,1,1,2]
+filter = B,V,R,I
+exptime = 80.,80.,60.,40.
+nexp = 2,1,1,2
+imagetype=OBJECT,OBJECT,OBJECT,OBJECT
+
+
         """
 
         self.addHelpGroup("DB" , databaseHelp)
@@ -153,15 +156,14 @@ must have the following format:
 		config = ConfigParser.RawConfigParser()
 
 		config.read(options.filename)
-
+		session = Session()
+		
 		if config.has_section('projects'):
 			pid = config.get('projects', 'pid')
 			pi = config.get('projects', 'pi')
 			abstract = config.get('projects', 'abstract')
 			url = config.get('projects', 'url')
 			priority = config.get('projects', 'priority')
-
-			session = Session()
 			
 			project = session.query(Projects).filter(Projects.pid == pid)
 			if len(project[:]) > 0:
@@ -327,8 +329,9 @@ must have the following format:
 			filters = config.get('blockconfig','filter').split(',')
 			exptime = config.get('blockconfig','exptime').split(',')
 			nexp = config.get('blockconfig','nexp').split(',')
-
-			addblock = session.query(ObsBlock).filter(ObsBlock.objid == block[2]).filter(ObsBlock.blockid == block[1]).filter(ObsBlock.pid == block[0])
+			imagetype = config.get('blockconfig','imagetype').split(',')
+			
+			addblock = session.query(ObsBlock).filter(ObsBlock.objid == block[2]).filter(ObsBlock.blockid == block[1]).filter(ObsBlock.pid == block[0]).filter(ObsBlock.pid == block[0])
 			if len(addblock[:]) > 0:
 				print 'Modifing block: ',addblock[0].id
 				blockcnf = session.query(BlockConfig).filter(BlockConfig.bid == block[1])
@@ -338,7 +341,10 @@ must have the following format:
 					blockcnf = BlockConfig( bid = block[1],
 											filter=filters[i],
 											exptime=exptime[i],
-											nexp=nexp[i])
+											nexp=nexp[i],
+										    imagetype=imagetype[i],
+                                            pid = block[0],
+                                            bparid = block[4])
 					session.add(blockcnf)
 					
 			else:
@@ -351,7 +357,10 @@ must have the following format:
 					blockcnf = BlockConfig( bid = block[1],
 											filter=filters[i],
 											exptime=exptime[i],
-											nexp=nexp[i])
+											nexp=nexp[i],
+										    imagetype=imagetype[i],
+                                            pid = block[0],
+                                            bparid = block[4])
 					session.add(blockcnf)
 
 			session.commit()

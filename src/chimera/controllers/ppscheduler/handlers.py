@@ -93,8 +93,8 @@ class ExposeHandler(ActionHandler):
                           binning = action.binning,
                           wait_dome = True)
 
-        ir.headers += [("PROGRAM", str(action.program.name), "Program Name"),
-                       ("PROG_PI", str(action.program.pi), "Principal Investigator")]
+        ir.headers += [("PROGRAM", str(action.program.pid), "Program Name")] #,
+#                       ("PROG_PI", str(action.program.pi), "Principal Investigator")]
 
         try:
             camera.expose(ir)

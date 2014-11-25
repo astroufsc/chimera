@@ -24,7 +24,7 @@ class SequentialScheduler (IScheduler):
         self.rq = Queue(-1)
 
         session = Session()
-        programs = session.query(Program).order_by(desc(Program.priority)).filter(Program.finished == False).all()
+        programs = session.query(Program).order_by(desc(Program.exposeAt)).filter(Program.finished == False).all()
         
         if not programs:
             return

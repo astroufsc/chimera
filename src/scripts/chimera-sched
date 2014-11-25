@@ -136,7 +136,7 @@ class ChimeraSched (ChimeraCLI):
     
                 program = Program(name="%s-%03d" % (objname.replace(" ", ""), i))
 
-                self.out("# program: %s" % program.name)
+                self.out("# program: %s" % program.pid)
 
                 if imagetype == "OBJECT":
                     if position:
@@ -222,7 +222,7 @@ class ChimeraSched (ChimeraCLI):
             session = Session()
             action = session.merge(self.scheduler.currentAction())
             program = session.query(Program).filter(Program.id == action.program_id).one()
-            self.out("Working on: %s (%s)" % (program.name, str(action)))
+            self.out("Working on: %s (%s)" % (program.pid, str(action)))
 
         self.out("="*40)
 
@@ -234,16 +234,16 @@ class ChimeraSched (ChimeraCLI):
             session = Session()
             program = session.merge(program)
             self.out("="*40)
-            self.out("%s %s" % (blue("[program]"), program.name))
+            self.out("%s %s" % (blue("[program]"), program.pid))
 
         @callback(self.localManager)
         def programCompleteClbk(program, status, message=None):
             session = Session()
             program = session.merge(program)
             if status == SchedulerStatus.OK:
-                self.out("%s %s %s" % (blue("[program]"), program.name, green(str(status))))
+                self.out("%s %s %s" % (blue("[program]"), program.pid, green(str(status))))
             else:
-                self.out("%s %s %s (%s)" % (blue("[program]"), program.name, red(str(status)), red(str(message))))
+                self.out("%s %s %s (%s)" % (blue("[program]"), program.pid, red(str(status)), red(str(message))))
 
         @callback(self.localManager)
         def actionBeginClbk(action, message):

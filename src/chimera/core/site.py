@@ -221,9 +221,12 @@ class Site (ChimeraObject):
     def haToRa(self, ha):
         return CoordUtil.raToHa(ha, self.LST_inRads())
     
-    def raDecToAltAz(self, raDec):
-        return Position.raDecToAltAz(raDec, self['latitude'], self.LST_inRads())
-    
+    def raDecToAltAz(self, raDec, lst=None):
+		if not lst:
+			return Position.raDecToAltAz(raDec, self['latitude'], self.LST_inRads())
+		else:
+			return Position.raDecToAltAz(raDec, self['latitude'], lst)
+
     def altAzToRaDec(self, altAz):
         return Position.altAzToRaDec(altAz, self['latitude'], self.LST_inRads())    
 
@@ -234,3 +237,11 @@ class Site (ChimeraObject):
                 ('LONGITUD',str(self['longitude']), 'Site longitude'),
                 ('ALTITUDE',str(self['altitude']), 'Site altitude'),
                 ]
+
+    def sec_z(self,altAz):
+		"""Compute airmass"""
+		#if altAz.alt < ephem.degrees('03:00:00'):
+		#	altAz.alt = ephem.degrees('03:00:00')
+		sz = 1.0/np.sin(altAz*np.pi/180.) - 1.0
+		xp = 1.0 + sz*(0.9981833 - sz*(0.002875 + 0.0008083*sz))
+		return xp

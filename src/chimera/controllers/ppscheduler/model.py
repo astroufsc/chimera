@@ -30,11 +30,7 @@ class Targets(Base):
 	magFilter = Column(String, default=None)
 
 	def __str__ (self):
-		if self.observed:
-			return "#%d %s [type: %s] #LastObverved@: %s" % (self.id, self.name, self.type,
-														self.lastObservation)
-		else:
-			return "#%d %s [type: %s] #NeverObserved" % (self.id, self.name, self.type)
+		return "#%d %s [type: %s]" % (self.id, self.objname, self.type)
 
 class BlockPar(Base):
 	__tablename__ = "blockpar"
@@ -59,16 +55,23 @@ class ObsBlock(Base):
 	pid = Column(String, ForeignKey("projects.pid"))
 	observed  = Column(Boolean, default=False)
 	scheduled  = Column(Boolean, default=False)
-
+	def __str__(self):
+		return "#%i %s[%i] [observed: %i | scheduled: %i]"%(self.id,self.pid,self.objid,self.observed,self.scheduled)
 
 class BlockConfig(Base):
 	__tablename__ = "blockconfig"
 	id     = Column(Integer, primary_key=True)
-	bid    = Column(Integer, ForeignKey("obsblock.id"))
-
+	bid    = Column(Integer, ForeignKey("obsblock.blockid"))
+	bparid = Column(Integer, ForeignKey("blockpar.bid"))
+	pid    = Column(String, ForeignKey("projects.pid"))
 	filter = Column(String, default=None)
 	exptime = Column(Float, default=1.0)
+	imagetype = Column(String, default=None)
 	nexp    = Column(Integer, default=1)
+
+	def __str__ (self):
+		return "#%i %s [filter: %s | exptime: %f | nexp: %i]" % (self.id, self.pid, self.filter, self.exptime, self.nexp)
+
 	
 class Projects(Base):
 	__tablename__ = "projects"
@@ -101,8 +104,8 @@ class Program(Base):
 						 cascade="all, delete, delete-orphan")
 
 	def __str__ (self):
-		return "#%d %s pi:%s #actions: %d" % (self.id, self.name,
-											  self.pi, len(self.actions))
+		return "#%d %s #actions: %d" % (self.id, self.pid,
+										len(self.actions))
 
 class Action(Base):
 

@@ -4,6 +4,7 @@ from chimera.core.event import event
 from chimera.controllers.scheduler.machine import Machine
 from chimera.controllers.scheduler.sequential import SequentialScheduler
 from chimera.controllers.scheduler.circular import CircularScheduler
+from chimera.controllers.scheduler.queue import QueueScheduler
 from chimera.controllers.scheduler.executor import ProgramExecutor
 from chimera.controllers.scheduler.states import State
 from chimera.controllers.scheduler.model import Session
@@ -11,11 +12,12 @@ from chimera.controllers.scheduler.model import Session
 from chimera.util.enum import Enum
 
 print "controller"
-SchedulingAlgorithm = Enum("SEQUENTIAL", "CIRCULAR")
+SchedulingAlgorithm = Enum("SEQUENTIAL", "CIRCULAR", "QUEUE")
 
 
 SchedulingAlgorithms = {SchedulingAlgorithm.SEQUENTIAL: SequentialScheduler(),
-                        SchedulingAlgorithm.CIRCULAR  : CircularScheduler()}
+                        SchedulingAlgorithm.CIRCULAR  : CircularScheduler(),
+						SchedulingAlgorithm.QUEUE  : QueueScheduler()}
 
 
 class Scheduler(ChimeraObject):

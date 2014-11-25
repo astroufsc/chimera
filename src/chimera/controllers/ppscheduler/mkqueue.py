@@ -9,22 +9,17 @@ from chimera.core.cli import ChimeraCLI, action
 
 from chimera.util.position import Position
 
+from sqlalchemy import desc
+
 from chimera.controllers.scheduler.model import (Session, Targets, Program, Point,
-                                                 Expose, PointVerify, AutoFocus)
+                                                 Expose, PointVerify, AutoFocus,
+												 ObsBlock, BlockConfig, BlockPar)
 
 from chimera.core.site import (Site, datetimeFromJD)
 
 import re
 
-try:
-	import _skysub
-except ImportError:
-	print '''To load chimera's TAO interface you need skycalc instaled. Skycalc can be downloaded at ().'''
-
-cfgpath = os.path.dirname(__file__)
-
-####################################################################################################################################
-
+################################################################################
 class MKQueue (ChimeraObject):
 	'''
 	A queue maker that operates with chimera for automated scheduling of observations. The input target lists are loaded
@@ -50,21 +45,6 @@ class MKQueue (ChimeraObject):
 		
 	'''
 
-	__config__ = {'sunMaxAlt'						: -18.}
-
-	schedInfo = {	'targetFlag'					: '', # Main info
-					'targetschedAlgorith'			: -1,
-					'targetFilter'					: '',
-					'targetExpTime'					: -1,
-					'targetMaxAirmass'				: 1.8,
-					'targetMaxMoonBright'			: 100.,
-					'targetMinMoonBright'			: 0.,
-					'targetMinMoonDist'				: 0.,
-					'targetMaxSeeing'				: 1.8,
-					'targetCloudCover'				: 0}
-					
-#					'sunMaxAlt'						: -18.}
-
 	####################################################################################################################################
 	
 	def __init__(self):
@@ -73,11 +53,8 @@ class MKQueue (ChimeraObject):
 		'''
         
 		ChimeraObject.__init__(self)
-		
-		self.sunMaxAlt = -18.
-		self.isJD = False
-		
 
+		self.slotLen = 60. # duration of observation slot in seconds
 	####################################################################################################################################
 	
 #	def __start__(self):
@@ -142,16 +119,71 @@ class MKQueue (ChimeraObject):
 
 	####################################################################################################################################
 
-	def selectScienceTargets(self):
+	def selectScienceTargets(self,FLAG):
 		'''
-		Based on configuration parameters select a good set of targets to run scheduler on a specified Julian Day.
-		'''
-		
+        Based on configuration parameters select a good set of targets to run scheduler on a specified Julian Day.
+        '''
+
 		session = Session()
 		
-		# [To be done] Reject objects that are close to the moon
+		targets = session.query(ObsBlock).filter(ObsBlock.pid == FLAG).filter(ObsBlock.scheduled == True) #,Targets,BlockConfig,BlockPar).filter(ObsBlock.pid == FLAG).join(Targets).join(BlockConfig).join((BlockPar,BlockPar.bid == BlockConfig.bparid))
+		
+		for target in targets:
+			target.scheduled = False
+			session.commit()
 
-		for tbin,time in enumerate(self.obsTimeBins):
+		site = Site()
+
+        # [To be done] Reject objects that are close to the moon
+
+		nightstart = site.sunset_twilight_end()
+		nightend   = site.sunrise_twilight_begin()
+
+		# Creat observation slots.
+
+		obsSlots = np.array(np.arange(site.MJD(nightstart),site.MJD(nightend),self.slotLen/60./60./24.),
+						    dtype= [ ('start',np.float),
+									 ('end',np.float)  ,
+									 ('slotid',np.int)] )
+
+		obsSlots['end'] += self.slotLen/60./60/24.
+		obsSlots['slotid'] = np.arange(len(obsSlots))
+
+		obsTargets = np.array([],dtype=[('obsblock',ObsBlock),('targets',Targets),('blockid',np.int)])
+
+
+		# For each slot select the higher in the sky...
+		# [TBD] - avoid moon
+		targets = session.query(ObsBlock,Targets).filter(ObsBlock.pid == FLAG,ObsBlock.scheduled==False,ObsBlock.observed==False).join(Targets)
+
+		for itr in range(len(obsSlots)):
+
+				ephem = site._getEphem(datetimeFromJD(obsSlots['start'][itr]+2400000.5))
+
+				lst = ephem.sidereal_time() # in radians
+				#sitelat = np.sum(np.array([float(tt) / 60.**i for i,tt in enumerate(str(site['latitude']).split(':'))]))
+				alt = np.array([float(site.raDecToAltAz(Position.fromRaDec(target[1].targetRa,target[1].targetDec),lst).alt) for target in targets])
+
+				stg = alt.argmax()
+				s_target = targets[stg]
+
+				if not targets[stg][0].blockid in obsTargets['blockid']:
+					self.log.debug('#%s %i %i %f: lst = %f | ra = %f | scheduled = %i'%(s_target[0].pid,stg,targets[stg][0].blockid,obsSlots['start'][itr],lst,s_target[1].targetRa,targets[stg][0].scheduled))
+										
+					obsTargets = np.append( obsTargets, np.array((s_target[0],s_target[1],targets[stg][0].blockid),dtype=[('obsblock',ObsBlock),('targets',Targets),('blockid',np.int)]))
+					
+					self.addObservation(s_target[0],obsSlots['start'][itr])
+					targets[stg][0].scheduled = True
+					session.commit()
+				
+				else:
+					self.log.debug('#Block already scheduled#%s %i %i %f: lst = %f | ra = %f | scheduled = %i'%(s_target[0].pid,stg,targets[stg][0].blockid,obsSlots['start'][itr],lst,s_target[1].targetRa,targets[stg][0].scheduled))
+							
+		print len(obsTargets)
+		return 0
+
+        '''
+        for tbin,time in enumerate(self.obsTimeBins):
 
 			if self.obsTimeMask[tbin] < 1.0:
 				# Select objects from database that where not observed and where not scheduled yet
@@ -183,103 +215,243 @@ class MKQueue (ChimeraObject):
 				self.log.debug('Bin %3i @mjd=%.3f already filled up with observations. Skipping...'%(tbin,time-2400000.5))
 				
 		#print i
-		return 0 #targets
-
-	####################################################################################################################################
-
-	def selectStandardTargets(self,flag,nstars=3,nairmass=3):
+        return 0 #targets
+'''
+	#
+	############################################################################
+	#
+	
+	def selectStandardTargets(self,FLAG,nstars=3,nairmass=3):
 		'''
-		Based on configuration parameters, select 'nstars' standard stars to run scheduler on a specified Julian Day. Ideally you 
-		will select standard stars before your science targets so not to have a full queue. Usually standard stars are observed 
-		more than once a night at different airmasses. The user can control this parameter with nairmass and the script will try
-		to take care of the rest. 
+Based on configuration parameters, select 'nstars' standard stars to run the
+scheduler on a specified Julian Day. Ideally you will select standard stars 
+before your science targets so not to have a full queue. Usually standard stars 
+are observed more than once a night at different airmasses. The user can control
+this parameter with nairmass and the script will try to take care of the rest.
 		'''
 
 		session = Session()
 		
-		# First of all, standard stars can be observed multiple times in sucessive nights. I will mark all
-		# stars an unscheduled.
-		targets = session.query(Targets).filter(Targets.scheduled == True).filter(Targets.type == flag)
+		# First of all, standard stars can be observed multiple times in
+		# sucessive nights. I will mark all stars an unscheduled.
+		targets = session.query(ObsBlock).filter(ObsBlock.pid == FLAG) #,Targets,BlockConfig,BlockPar).filter(ObsBlock.pid == FLAG).join(Targets).join(BlockConfig).join((BlockPar,BlockPar.bid == BlockConfig.bparid))
+		
 		for target in targets:
 			target.scheduled = False
 			session.commit()
+
+		# [TBD] Reject objects that are close to the moon
+
+		# Selecting standard stars is not only searching for the higher in that
+		# time but select stars than can be observed at 3 or more (nairmass)
+		# different airmasses. It is also important to select stars with
+		# different colors (but this will be taken care in the future).
+
+		# [TBD] Select by color also
 		
-		# [To be done] Reject objects that are close to the moon
+		#if nairmass*nstars > len(self.obsTimeBins):
+		#	self.log.warning('Requesting more stars/observations than it will be possible to schedule. Decreasing number of requests to fit in the night.')
+		#	nstars = len(self.obsTimeBins)/nairmass
 
-		# Selecting standard stars is not only searching for the higher in that time but select stars than can be observed at 3
-		# or more (nairmass) different airmasses. It is also important to select stars with different colors (but this will be
-		# taken care in the future).
-
-		if nairmass*nstars > len(self.obsTimeBins):
-			self.log.warning('Requesting more stars/observations than it will be possible to schedule. Decreasing number of requests to fit in the night.')
-			nstars = len(self.obsTimeBins)/nairmass
-
-		obsStandars = np.zeros(len(self.obsTimeBins))-1 # first selection of observable standards
+		# Build queue with objects already alocated
+		
+		programs = session.query(Program).filter(Program.finished == False).all()
+		obsQueue = np.array(np.zeros(len(programs[:])),
+							dtype=[ ('start',np.float),('end',np.float)])
 
 		site = Site()
+		for i,program in enumerate(programs):
+			if site.sunset_twilight_end() < program.slewAt < site.sunrise_twilight_begin():
+				expose = session.query(Expose).filter(expose.id == program.id)
+				obsQueue['start'][i] = program.slewAt if program.slewAt > 0. else program.exposeAt
+				obsQueue['end'][i] = program.exposeAt
+				for exp in expose:
+					obsQueue['end'][i] += exp.frames * exp.exptime
+
+		if len(obsQueue) > 0:
+			# sort result with increasing start time
+			asort = obsQueue['start'].argsort()
+			obsQueue['start'] = obsQueue['start'][asort]
+			obsQueue['end'] = obsQueue['end'][asort]
+		else:
+			obsQueue = np.array(np.zeros(1)+site.MJD(site.sunrise_twilight_begin()),
+								dtype=[ ('start',np.float),('end',np.float)])
+
+		# check that queue makes sense
+		if checkQueue(obsQueue):
+			msg = '''Looks like there is a problem with the queue definition. Usually this means
+that there are overlaping observations. Try cleaning the queue and start over.'''
+			self.log.error(msg)
+			raise IOError(msg)
 		
-		for tbin,time in enumerate(self.obsTimeBins):
+		# Create empty slot arrays where there can be objects scheduled
+		emptySlots = np.array([],
+							  dtype=[ ('start',np.float),
+									  ('end',np.float)  ,
+									  ('slotid',np.int)] )
 
-			if self.obsTimeMask[tbin] < 1.0:
-				# 1 - Select objects from database that where not scheduled yet (standard stars may be repited)
-				#     that fits our observing night
-				targets = session.query(Targets).filter(Targets.scheduled == 0).filter(Targets.type == flag)
+		time = site.MJD(site.sunset_twilight_end()) # time at start of the night
+		block = 0
 
-				ephem = site._getEphem(datetimeFromJD(time))
-				
-				lst = np.sum(np.array([float(tt) / 60.**i for i,tt in enumerate(str(ephem.sidereal_time()).split(':'))]))
-				sitelat = np.sum(np.array([float(tt) / 60.**i for i,tt in enumerate(str(site['latitude']).split(':'))]))
-				alt = np.array([_skysub.altit(target.targetDec,lst - target.targetRa,sitelat)[0] for target in targets])
+		while ( time < site.MJD(site.sunrise_twilight_begin()) and block < len(obsQueue) ):
+
+			if time < obsQueue['start'][block]:
+				obsSlots = np.arange(time,
+									obsQueue['start'][block],
+									 self.slotLen/60./60/24.)
+				newslots = np.array(np.zeros(len(obsSlots)-1)+block,
+									 dtype=[ ('start',np.float),
+											 ('end',np.float),
+											 ('slotid',np.int)])
+				newslots['start'] = obsSlots[:-1]
+				newslots['end'] = obsSlots[1:]
+				emptySlots = np.append(emptySlots,newslots)
+									   
+			time = obsQueue['end'][block]
+			block += 1
+
+		if len(emptySlots) == 0:
+			self.log.warning('No slots available. Try reseting the queue.')
+			return -1
+		else:
+			self.log.debug('%i slots available'%(len(obsSlots)))
+
+		time = site.MJD(site.sunset_twilight_end()) # time at start of the night
+		sched = True # Flag to stop scheduler
+		block = 0 # iterator over observing blocks
+		obsStandars = np.array([],dtype=[('obsblock',ObsBlock),('targets',Targets)])
+		obsStandarsStart = np.array([])
+		obsStandarsEnd = np.array([])
+		
+		# Pre-select all available standard stars that fits observing windows
+		#.join(BlockConfig).join((BlockPar,BlockPar.bid == BlockConfig.bparid))
+
+		while sched:
+
+			if time < obsQueue['start'][block]:
+				# 1 - Select objects from database that where not scheduled yet
+				# that fits our observing night (standard stars may be repited)
+				#targets = session.query(Targets).filter(Targets.scheduled == 0).filter(Targets.type == flag)
+				#targets = session.query(ObsBlock).filter(ObsBlock.scheduled == True).filter(ObsBlock.pid == FLAG).join(Targets).join(BlockConfig).join((BlockPar,BlockPar.bid == BlockConfig.bparid))
+
+				targets = session.query(ObsBlock,Targets).filter(ObsBlock.pid == FLAG,ObsBlock.scheduled==False).join(Targets)
+				ephem = site._getEphem(datetimeFromJD(time+2400000.5))
+
+				lst = ephem.sidereal_time() # in radians
+				#sitelat = np.sum(np.array([float(tt) / 60.**i for i,tt in enumerate(str(site['latitude']).split(':'))]))
+				alt = np.array([float(site.raDecToAltAz(Position.fromRaDec(target[1].targetRa,target[1].targetDec),lst).alt) for target in targets])
+
 				stg = alt.argmax()
-
-				self.log.info('Selecting %s'%(targets[stg]))
 				
-				# Marking target as schedule
-				tst = session.query(Targets).filter(Targets.id == targets[stg].id)
-
-				for t in tst:
-					t.scheduled = True
-					session.commit()
-					obsStandars[tbin] = t.id
+				s_target = targets[stg]
 				
+				self.log.debug('#%s %i %i %f %f: lst = %f | ra = %f'%(s_target[0].pid,stg,targets[stg][0].blockid,time,obsQueue['start'][block],lst,s_target[1].targetRa))
+				#blockid = targets[stg][0].blockid
+				tmp = session.query(BlockConfig).filter(ObsBlock.pid == FLAG, BlockConfig.bid == s_target[0].blockid)
+				# Check if observation fits in current window
+				dT = 0.
+				for t in tmp:
+					dT += t.nexp * t.exptime/60./60./24.
+				
+				self.log.debug('dT = %f'%dT)
+				
+				if time+dT < obsQueue['start'][block]: # Ok, fits!
+					self.log.debug('Block fits...')
+					#targets[stg][0].scheduled = True
+					#session.commit()
+					
+					for t in tmp:
+						obsStandars = np.append( obsStandars, np.array(s_target,dtype=[('obsblock',ObsBlock),('targets',Targets)]))
+						obsStandarsStart = np.append( obsStandarsStart, time)
+						obsStandarsEnd = np.append( obsStandarsEnd, time+dT)
+					
+					time+=dT
+				elif time >= site.MJD(site.sunrise_twilight_begin()):
+					sched = False
+				else: # does not fit :(
+					self.log.debug('Block does not fit. Skipping...')
+					time = obsQueue['end'][block]
+					block += 1
+					if block >= len(obsQueue):
+						self.log.debug('Night is over...')
+						sched = False
+
 			else:
-				self.log.info('Bin already filled up with observations. Skipping...')
+				self.log.debug('Bin already filled up with observations. Skipping...')
+				time = ObsBlock['end'][block]
+				block += 1
+				if block >= len(obsQueue):
+					sched = False
 
-		if len(obsStandars[obsStandars >= 0]) < nstars:
+		if len(obsStandars) < nstars:
 			self.log.warning('Could not find %i suitable standard stars in catalog. Only %i where found.'%(nstars,len(obsStandars[obsStandars >= 0])))
+		elif len(obsStandars) == 0:
+			self.log.warning('Could not find suitable targets. Job done.')
+			return -1
+
+		# Don;t need this anymore since I already have a list of targets
 		#
 		# Unmarking potential targets as scheduled
 		#
-		for id in obsStandars[obsStandars >= 0]:
-			target = session.query(Targets).filter(Targets.id == id)
-			for t in target:
-				t.scheduled = False
-				session.commit()
-				
-			tbin+=1
+		#for id in obsStandars:
+		#	target = session.query(ObsBlock).filter(ObsBlock.id == obsStandars[i])
+		#	for t in target:
+		#		t.scheduled = False
+		#		session.commit()
+		#
+		#	tbin+=1
+
 		#
 		# Preparing a grid of altitudes for each target for each observing window
 		#
-		amGrid = np.zeros(len(obsStandars)*len(obsStandars)).reshape(len(obsStandars),len(obsStandars))
+		amGrid = np.zeros(len(obsStandars)*len(emptySlots)).reshape(len(obsStandars),len(emptySlots))
+		self.log.info('Preparing grid of altitudes for each target for each observing window...')
+		
+		for i in np.arange(len(obsStandars)):
 
-		for i in np.arange(len(obsStandars))[obsStandars >= 0]:
-			target = session.query(Targets).filter(Targets.id == obsStandars[i])[0]
-			for j in range(len(obsStandars)):
-				lst = _skysub.lst(self.obsTimeBins[j],self.sitelong)
-				amGrid[i][j] = _skysub.true_airmass(_skysub.secant_z(_skysub.altit(target.targetDec,lst - target.targetRa,self.sitelat)[0]))
-				if amGrid[i][j] < 0:
-					amGrid [i][j] = 99.
+			target = obsStandars['targets'][i] #session.query(ObsBlock).join(Targets).filter(ObsBlock.id == obsStandars[i])[0]
+			for j in range(len(emptySlots)):
+				time = (emptySlots['start'][j]+emptySlots['end'][j])/2.
+				ephem = site._getEphem(datetimeFromJD(time+2400000.5))
+				altAz = site.raDecToAltAz(Position.fromRaDec(target.targetRa,target.targetDec),float(ephem.sidereal_time()))
+				#amGrid[i][j] = float(altAz.alt)
+				
+				amGrid[i][j] = site.sec_z(float(altAz.alt))
+				if float(altAz.alt) < 10:
+					amGrid [i][j] = site.sec_z(10.)
+				#elif amGrid[i][j] > 5.0:
+				#	amGrid[i][j] = 5.0
+				
+
 		#
 		# Build a grid mask that specifies the position in time each target should be observed. This means that, when
-		# selecting a single target we ocuppy more than one, non consecutive, position in the night. This grid shows where are these
-		# positions.
+		# selecting a single target we ocuppy more than one, non consecutive, position in the night. This grid shows where
+		# these positions are.
 		#
-		obsMask = np.zeros(len(obsStandars)*len(obsStandars),dtype=np.bool).reshape(len(obsStandars),len(obsStandars))
+		self.log.info('Build a grid mask specifing the position in time each target should be observed...')
+		
+		obsMask = np.zeros(len(obsStandars)*len(emptySlots),dtype=np.bool).reshape(len(obsStandars),len(emptySlots))
+		blockDuration = np.zeros(len(obsStandars)) # store duration of each block
+		maxAirmass = np.zeros(len(obsStandars)) # store max airmass of each block
+		
+		for i in np.arange(len(obsStandars)):
 
-		for i in np.arange(len(obsStandars))[obsStandars >= 0]:
-			amObs = np.linspace(amGrid[i].min(),self.stdMaxAirmass,nairmass) # requested aimasses
-			dam = np.mean(np.abs(amGrid[i][amGrid[i]<self.stdMaxAirmass][1:] - amGrid[i][amGrid[i]<self.stdMaxAirmass][:-1])) # how much airmass changes in average
+			blockInfo = session.query(BlockConfig).filter(BlockConfig.pid == FLAG,BlockConfig.bid == obsStandars['obsblock'][i].blockid)
+			blockPar = session.query(BlockPar).filter(BlockPar.pid == FLAG, BlockPar.bid == blockInfo[0].bparid).first()
+			
+			
+			for b in blockInfo:
+				self.log.debug(b)
+				blockDuration[i] += b.nexp * b.exptime/60./60./24.
+			if blockPar.maxairmass > 1.0:
+				maxAirmass[i] = blockPar.maxairmass
+			else:
+				maxAirmass[i] = 3.0
+			
+			amObs = np.linspace(amGrid[i].min(),maxAirmass[i],nairmass) # requested aimasses
+			dam = np.mean(np.abs(amGrid[i][1:] - amGrid[i][:-1])) # how much airmass changes in average
 			for j,am in enumerate(amObs):
+				self.log.debug('GridPos: %4i | Airmass: %5.2f'%(j,am))
 				# Mark positions where target is at	specified airmass
 				if j == 0:
 					obsMask[i] = np.bitwise_or(obsMask[i],amGrid[i] == am)
@@ -296,39 +468,154 @@ class MKQueue (ChimeraObject):
 		# lista de alvos
 		#
 
-		obsMaskTimeGrid = np.zeros(len(obsStandars),dtype=np.bool)
+		self.log.info('Selecting apropriate targets...')
+		
+		obsMaskTimeGrid = np.zeros(len(emptySlots),dtype=np.bool)
 		nrequests = 0
 		reqId = np.zeros(nstars,dtype=np.int)-1
-		for tbin,time in enumerate(self.obsTimeBins[:-1]):
+		
+		for tbin in range(obsMask.shape[0]):
 			# Evaluates if time slots are all available. If yes, mark orbservation and ocuppy slots.
-			if ( (not obsMaskTimeGrid[obsMask[tbin]].any()) and (len(amGrid[tbin][obsMask[tbin]])>=nairmass) ):
+			if ( ( not obsMaskTimeGrid[obsMask[tbin]].any() ) \
+				  and (len(amGrid[tbin][obsMask[tbin]])>=nairmass) ):
 				obsMaskTimeGrid = np.bitwise_or(obsMaskTimeGrid,obsMask[tbin])
 				reqId[nrequests] = tbin
 				nrequests += 1
 			if nrequests >= nstars:
 				break
 
+		if nrequests >= nstars:
+			self.log.info('Found %i suitable standard stars... Scheduling...'%(nrequests))
+		else:
+			self.log.warning('Could not find enough standard stars to fill the requested number. Found %i of %i...'%(nrequests, nstars))
+
 		# Finally, requesting observations
 
 		for id in reqId[reqId >= 0]:
-			target = session.query(Targets).filter(Targets.id == obsStandars[id])[0]
 			secz = amGrid[id][obsMask[id]]
 			seczreq = np.zeros(nairmass,dtype=np.bool)
-			amObs = np.linspace(amGrid[id].min(),self.stdMaxAirmass,nairmass) # requested aimasses
-			for i,obstime in enumerate(self.obsTimeBins[obsMask[id]]):
+			amObs = np.linspace(amGrid[id].min(),maxAirmass[id],nairmass) # requested aimasses
+			for i,obstime in enumerate(emptySlots['start'][obsMask[id]]):
 				sindex = np.abs(amObs-secz[i]).argmin()
 				if not seczreq[sindex]:
-					self.log.info('Requesting observations of %s @airmass=%4.2f @mjd=%.3f...'%(target.name,secz[i],obstime-2400000.5))
+					self.log.debug('Requesting observations of %s [@airmass=%4.2f | mjd_Start=%.3f | dT=%.3e]'%(obsStandars['targets'][id].objname,secz[i],obstime,blockDuration[id]))
 					seczreq[sindex] = True
-					target.scheduled = True
+					obsStandars['targets'][id].scheduled = True
 					session.commit()
-					self.addObservation(target,obstime)
-					self.obsTimeMask[obsMask[id]] = 1.0
+					#print obsStandars['obsblock'][id]
+					self.addObservation(obsStandars['obsblock'][id],obstime)
+					#self.obsTimeMask[obsMask[id]] = 1.0
 			#print self.obsTimeBins[obsMask[id]]
 			#print
 
 		#print i
 		return 0 #targets
 
-	####################################################################################################################################
+	############################################################################
+
+	def addObservation(self,block,obstime):
+	
+		session = Session()
+		
+		# Schedule each observing block
+		#for i,block in enumerate(obsBlocks):
+		
+			#imagetype = block.imagetype.upper()
+
+			# Query for targets in that block
+		bTargets = session.query(Targets).filter(Targets.id == block.objid)
+		blockConfig = session.query(BlockConfig).filter(BlockConfig.pid == block.pid,BlockConfig.bid == block.blockid)
+
+		imtypes = [b.imagetype.upper() for b in blockConfig]
+		
+		imagetype = "OBJECT" if "OBJECT" in imtypes else "FLAT" if "FLAT" in imtypes else imtypes[0]
+		
+		programs = []
+		
+		for i,target in enumerate(bTargets):
+			
+			objname = target.objname.replace("\"", "").replace(" ", "")
+			program = Program(pid = block.pid,blockid=block.blockid,
+							  slewAt=obstime)#,exposeAt=obstime)
+			
+			position  = Position.fromRaDec(target.targetRa,target.targetDec,'J%.0f'%target.targetEpoch)
+
+			self.log.info("# program: %s" % program.pid)
+
+			if imagetype == "OBJECT":
+				if position:
+					program.actions.append(Point(targetRaDec=position))
+				else:
+					program.actions.append(Point(targetName=objname))
+
+			if imagetype == "FLAT":
+				site = self._remoteManager.getProxy("/Site/0")
+				flatPosition = Position.fromAltAz(site['flat_alt'], site['flat_az'])
+				program.actions.append(Point(targetAltAz=flatPosition))
+
+
+			for exp in blockConfig:
+
+				filter, exptime, frames = exp.filter,exp.exptime,exp.nexp
+
+				if exp.imagetype.upper() in ("OBJECT", "FLAT"):
+					shutter = "OPEN"
+				else:
+					shutter = "CLOSE"
+
+				if exp.imagetype.upper() == "BIAS":
+					exptime = 0
+
+				if exp.imagetype.upper() in ("BIAS", "DARK"):
+					filter = None
+
+				self.log.info("%s %s %s filter=%s exptime=%s frames=%s" % (imagetype, objname, str(position), filter, exptime, frames))
+
+				program.actions.append(Expose(shutter=shutter,
+											  filename="%s-%s-$DATE-$TIME" % (block.pid,objname.replace(" ", "")),
+											  filter=filter,
+											  frames=frames,
+											  exptime=exptime,
+											  imageType=exp.imagetype.upper(),
+											  objectName=objname))
+
+			self.log.info("")
+			programs.append(program)
+
+		session.add_all(programs)
+		session.commit()
+
+
+	############################################################################
+
+################################################################################
+
+def checkQueue(queue):
+	'''
+Auxiliary function: Checks if queue makes sense. Basically check if there are 
+overlapping observations and return True or False
+	'''
+
+	if len(queue) == 0:
+		return False
+	asort = queue['start'].argsort()
+	queue['start'] = queue['start'][asort]
+	queue['end'] = queue['end'][asort]
+
+	check = queue['end'][:-1] - queue['start'][1:] > 0
+
+	return check.any()
+
+################################################################################
+
+
+
+
+
+
+
+
+
+
+
 
