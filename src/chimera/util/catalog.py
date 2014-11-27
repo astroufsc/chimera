@@ -1,38 +1,39 @@
 #!/usr/bin/env python
 # -*- coding: iso-8859-1 -*-
 
+
 class Catalog (object):
 
-    def getName (self):
+    def getName(self):
         """
         Return the catalog name
         """
 
-    def getMetadata (self):
+    def getMetadata(self):
         """
         Returns a list of tuples with information about the each
         column of the catalog.  Each tuple contains, in this order,
         name of the column, unit of the column data and a comment.
         """
 
-    def getMagnitudeBands (self):
+    def getMagnitudeBands(self):
         """
         Return a list of the available magnitude bands on this catalog
         """
-   
-    def find (self, near, limit=None, **conditions):
+
+    def find(self, near, limit=None, **conditions):
         """
         Query the catalog near a specific object/place with spatial
         and flux limits.
-        
+
         Examples:
 
         ucac = Catalog()
 
         ucac.find (near='00:00:00 +00:00:00', radius=10)
-        ucac.find (near='m5', box=(240, 240))           
+        ucac.find (near='m5', box=(240, 240))
         ucac.find (near='m4', radius=10, magV=10, limit=1)
-        ucac.find (near='meridian', magV=(10, 12), limit=10)                  
+        ucac.find (near='meridian', magV=(10, 12), limit=10)
 
         Keywords:
 

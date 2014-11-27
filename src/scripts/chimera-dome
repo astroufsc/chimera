@@ -16,7 +16,8 @@
 
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301, USA.
 
 
 from chimera.core.cli import ChimeraCLI, action
@@ -29,69 +30,85 @@ import copy
 
 
 class ChimeraDome (ChimeraCLI):
-    
-    def __init__ (self):
-        ChimeraCLI.__init__(self, "chimera-dome", "Dome controller", 0.1, port=9001)
-    
+
+    def __init__(self):
+        ChimeraCLI.__init__(
+            self, "chimera-dome", "Dome controller", 0.1, port=9001)
 
         self.addHelpGroup("DOME", "Dome")
         self.addInstrument(name="dome", cls="Dome", required=True,
                            help="Dome instrument to be used", helpGroup="DOME")
 
         self.addHelpGroup("TELESCOPE", "Telescope Tracking Configuration")
-        self.addParameters(dict(name="telescope", default="/Telescope/0", helpGroup="TELESCOPE",
-                                help="Tell the dome to follow TELESCOPE when tracking (only "
-                                "utilized when using --track"))
-        
+        self.addParameters(dict(name="telescope",
+                                default="/Telescope/0",
+                                helpGroup="TELESCOPE",
+                                help="Tell the dome to follow TELESCOPE when tracking"
+                                "(only utilized when using --track"))
+
         self.addHelpGroup("COMMANDS", "Commands")
 
         self.addHelpGroup("LIGHT", "Dome lights control")
-
 
     @action(help="Open dome slit", helpGroup="COMMANDS", actionGroup="SLIT")
     def open(self, options):
         self.out("Opening dome slit ... ", end="")
         self.dome.openSlit()
         self.out("OK")
-    
-    @action(help="Close dome slit", helpGroup="COMMANDS", actionGroup="SLIT")
+
+    @action(help="Close dome slit",
+            helpGroup="COMMANDS",
+            actionGroup="SLIT")
     def close(self, options):
         self.out("Closing dome slit ... ", end="")
         self.dome.closeSlit()
         self.out("OK")
 
-    @action(long="lights-off", help="Turn flat light off", helpGroup="LIGHT", actionGroup="LIGHT")
+    @action(long="lights-off",
+            help="Turn flat light off",
+            helpGroup="LIGHT",
+            actionGroup="LIGHT")
     def lightsOff(self, options):
         self.out("Turning flat lights off ... ", end="")
         self.dome.lightsOff()
         self.out("OK")
 
-    @action(long="lights-on", help="Turn flat light on", helpGroup="LIGHT", actionGroup="LIGHT")
+    @action(long="lights-on",
+            help="Turn flat light on",
+            helpGroup="LIGHT",
+            actionGroup="LIGHT")
     def lightsOn(self, options):
         self.out("Turning flat lights on ... ", end="")
         self.dome.lightsOn()
         self.out("OK")
 
-    @action(help="Track the telescope", helpGroup="COMMANDS", actionGroup="TRACKING")
+    @action(help="Track the telescope",
+            helpGroup="COMMANDS",
+            actionGroup="TRACKING")
     def track(self, options):
 
         if options.telescope:
             self.dome["telescope"] = options.telescope
-            
+
         self.out("Activating tracking ... ", end="")
         self.dome.track()
         self.out("OK")
 
-    @action(help="Stop tracking the telescope (stand)", helpGroup="COMMANDS", actionGroup="TRACKING")
+    @action(help="Stop tracking the telescope (stand)",
+            helpGroup="COMMANDS",
+            actionGroup="TRACKING")
     def stand(self, options):
         self.out("Deactivating tracking ... ", end="")
         self.dome.stand()
         self.out("OK")
 
-    @action(long="to", type="string",
-            help="Move dome to AZ azimuth", metavar="AZ", helpGroup="COMMANDS")
+    @action(long="to",
+            type="string",
+            help="Move dome to AZ azimuth",
+            metavar="AZ",
+            helpGroup="COMMANDS")
     def moveTo(self, options):
-        
+
         try:
             target = Coord.fromDMS(options.moveTo)
         except ValueError, e:
@@ -100,36 +117,40 @@ class ChimeraDome (ChimeraCLI):
         self.out("Moving dome to %s ... " % target, end="")
         self.dome.slewToAz(target)
         self.out("OK")
-    
-    @action(help="Print dome information", helpGroup="COMMANDS")
+
+    @action(help="Print dome information",
+            helpGroup="COMMANDS")
     def info(self, options):
 
-        self.out("="*40)
-        self.out("Dome: %s (%s)."%(self.dome.getLocation(), self.dome["device"]))
+        self.out("=" * 40)
+        self.out("Dome: %s (%s)." %
+                 (self.dome.getLocation(), self.dome["device"]))
 
         self.out("Current dome azimuth: %s." % self.dome.getAz())
         self.out("Current dome mode: %s." % self.dome.getMode())
         if self.dome.getMode() == Mode.Track:
-                self.out("Tracking: %s." % self.dome["telescope"])
+            self.out("Tracking: %s." % self.dome["telescope"])
 
         if self.dome.isSlitOpen():
             self.out("Dome slit is open.")
         else:
             self.out("Dome slit is closed.")
-        self.out("="*40)
+        self.out("=" * 40)
 
-    def __abort__ (self):
+    def __abort__(self):
         self.out("\naborting... ", endl="")
 
-        # copy self.dome Proxy because we are running from a differente thread (yes, Pyro is tricky!)
+        # copy self.dome Proxy because we are running from a differente thread
+        # (yes, Pyro is tricky!)
         dome = copy.copy(self.dome)
         dome.abortSlew()
+
 
 def main():
     cli = ChimeraDome()
     cli.run(sys.argv)
     cli.wait()
-    
+
 if __name__ == '__main__':
 
     main()

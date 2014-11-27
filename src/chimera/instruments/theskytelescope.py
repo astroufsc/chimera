@@ -17,7 +17,8 @@
 
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301, USA.
 
 import sys
 import threading
@@ -26,13 +27,13 @@ import logging
 import time
 
 from chimera.core.exceptions import ChimeraException
-from chimera.core.lock     import lock
+from chimera.core.lock import lock
 
-from chimera.util.coord    import Coord
+from chimera.util.coord import Coord
 from chimera.util.position import Position
 
 from chimera.instruments.telescope import TelescopeBase
-from chimera.interfaces.telescope  import PositionOutsideLimitsException, TelescopeStatus
+from chimera.interfaces.telescope import PositionOutsideLimitsException, TelescopeStatus
 
 log = logging.getLogger(__name__)
 
@@ -40,23 +41,23 @@ if sys.platform == "win32":
     # handle COM multithread support
     # see: Python Programming On Win32, Mark Hammond and Andy Robinson, Appendix D
     #      http://support.microsoft.com/kb/q150777/
-    sys.coinit_flags = 0 # pythoncom.COINIT_MULTITHREAD
-    import pythoncom
+    sys.coinit_flags = 0  # pythoncom.COINIT_MULTITHREAD
+    #import pythoncom
 
     from win32com.client import Dispatch
     from pywintypes import com_error
 
 else:
     log.warning("Not on win32. TheSky Telescope will not work.")
-    #raise ChimeraException("Not on win32. TheSky Telescope will not work.")    
+    #raise ChimeraException("Not on win32. TheSky Telescope will not work.")
 
 
-def com (func):
+def com(func):
     """
     Wrapper decorator used to handle COM objects errors.
     Every method that use COM method should be decorated.
     """
-    def com_wrapper (*args, **kwargs):
+    def com_wrapper(*args, **kwargs):
 
         try:
             return func(*args, **kwargs)
@@ -66,13 +67,12 @@ def com (func):
     return com_wrapper
 
 
-
 class TheSkyTelescope (TelescopeBase):
 
     __config__ = {"thesky": [5, 6]}
 
-    def __init__ (self):
-        TelescopeBase.__init__ (self)
+    def __init__(self):
+        TelescopeBase.__init__(self)
 
         self._abort = threading.Event()
 
@@ -82,122 +82,128 @@ class TheSkyTelescope (TelescopeBase):
         self._target = None
 
     @com
-    def __start__ (self):
+    def __start__(self):
         self.open()
         super(TheSkyTelescope, self).__start__()
         return True
 
     @com
-    def __stop__ (self):
+    def __stop__(self):
         self.close()
-        super(TheSkyTelescope, self).__stop__()        
+        super(TheSkyTelescope, self).__stop__()
         return True
 
     @com
-    def open (self):
+    def open(self):
 
         try:
             if self["thesky"] == 6:
-                self._thesky = Dispatch ("TheSky6.RASCOMTheSky")
-                self._telescope = Dispatch ("TheSky6.RASCOMTele")
+                self._thesky = Dispatch("TheSky6.RASCOMTheSky")
+                self._telescope = Dispatch("TheSky6.RASCOMTele")
             else:
-                self._thesky = Dispatch ("TheSky.RASCOMTheSky")
-                self._telescope = Dispatch ("TheSky.RASCOMTele")
+                self._thesky = Dispatch("TheSky.RASCOMTheSky")
+                self._telescope = Dispatch("TheSky.RASCOMTele")
 
         except com_error:
-            self.log.error ("Couldn't instantiate TheSky %d COM objects." % self["thesky"])
+            self.log.error(
+                "Couldn't instantiate TheSky %d COM objects." % self["thesky"])
             return False
 
         try:
 
             if self["thesky"] == 6:
-                self._thesky.Connect ()
-                self._telescope.Connect ()
-                self._telescope.FindHome ()
+                self._thesky.Connect()
+                self._telescope.Connect()
+                self._telescope.FindHome()
             else:
-                self._thesky.Connect ()
-                self._telescope.Connect ()
-                
+                self._thesky.Connect()
+                self._telescope.Connect()
+
             return True
-        
+
         except com_error, e:
-            self.log.error ("Couldn't connect to TheSky. (%s)" % e)
+            self.log.error("Couldn't connect to TheSky. (%s)" % e)
             return False
 
     @com
-    def close (self):
+    def close(self):
         try:
-            self._thesky.Disconnect ()
-            self._thesky.DisconnectTelescope ()
-            self._telescope.Disconnect ()
-            self._thesky.Quit ()
+            self._thesky.Disconnect()
+            self._thesky.DisconnectTelescope()
+            self._telescope.Disconnect()
+            self._thesky.Quit()
         except com_error:
-            self.log.error ("Couldn't disconnect to TheSky.")
+            self.log.error("Couldn't disconnect to TheSky.")
             return False
 
         if self["thesky"] == 5:
-            #kill -9 on Windows
+            # kill -9 on Windows
             time.sleep(2)
             subprocess.call("TASKKILL /IM Sky.exe /F")
         else:
             time.sleep(2)
             subprocess.call("TASKKILL /IM TheSky6.exe /F")
-                    
 
     @com
-    def getRa (self):
+    def getRa(self):
         self._telescope.GetRaDec()
         return Coord.fromH(self._telescope.dRa)
 
     @com
-    def getDec (self):
+    def getDec(self):
         self._telescope.GetRaDec()
         return Coord.fromD(self._telescope.dDec)
 
     @com
-    def getAz (self):
+    def getAz(self):
         self._telescope.GetAzAlt()
         return Coord.fromD(self._telescope.dAz)
 
     @com
-    def getAlt (self):
+    def getAlt(self):
         self._telescope.GetAzAlt()
         return Coord.fromD(self._telescope.dAlt)
 
     @com
-    def getPositionRaDec (self):
+    def getPositionRaDec(self):
         self._telescope.GetRaDec()
-        return Position.fromRaDec(Coord.fromH(self._telescope.dRa), Coord.fromD(self._telescope.dDec))
+        return Position.fromRaDec(
+            Coord.fromH(self._telescope.dRa), Coord.fromD(self._telescope.dDec)
+            )
 
     @com
-    def getPositionAltAz (self):
-        self._telescope.GetAzAlt ()
-        return Position.fromAltAz(Coord.fromD(self._telescope.dAlt), Coord.fromD(self._telescope.dAz))
+    def getPositionAltAz(self):
+        self._telescope.GetAzAlt()
+        return Position.fromAltAz(
+            Coord.fromD(self._telescope.dAlt), Coord.fromD(self._telescope.dAz)
+            )
 
     @com
-    def getTargetRaDec (self):
-        if not self._target: return self.getPositionRaDec()
+    def getTargetRaDec(self):
+        if not self._target:
+            return self.getPositionRaDec()
         return self._target
 
     @com
-    def slewToRaDec (self, position):
+    def slewToRaDec(self, position):
 
-        if self.isSlewing ():
+        if self.isSlewing():
             return False
 
         self._target = position
-        self._abort.clear ()
+        self._abort.clear()
 
         try:
             self._telescope.Asynchronous = 1
 
             position_now = self._getFinalPosition(position)
-            
+
             self.slewBegin(position_now)
-            self._telescope.SlewToRaDec (position_now.ra.H, position_now.dec.D, "chimera")
+            self._telescope.SlewToRaDec(
+                position_now.ra.H, position_now.dec.D, "chimera")
 
             status = TelescopeStatus.OK
-            
+
             while not self._telescope.IsSlewComplete:
 
                 # [ABORT POINT]
@@ -205,7 +211,7 @@ class TheSkyTelescope (TelescopeBase):
                     status = TelescopeStatus.ABORTED
                     break
 
-                time.sleep (self._idle_time)
+                time.sleep(self._idle_time)
 
             self.slewComplete(self.getPositionRaDec(), status)
 
@@ -220,7 +226,7 @@ class TheSkyTelescope (TelescopeBase):
 #        if self.isSlewing ():
 #            return False
 #
-#        #self._target = position
+# self._target = position
 #        self._term.clear ()
 #
 #        try:
@@ -243,69 +249,69 @@ class TheSkyTelescope (TelescopeBase):
 #        return True
 
     @com
-    def abortSlew (self):
-        if self.isSlewing ():
-            self._abort.set ()
-            time.sleep (self._idle_time)
-            self._telescope.Abort ()
+    def abortSlew(self):
+        if self.isSlewing():
+            self._abort.set()
+            time.sleep(self._idle_time)
+            self._telescope.Abort()
             return True
 
         return False
 
     @com
-    def isSlewing (self):
+    def isSlewing(self):
         return (self._telescope.IsSlewComplete == 0)
 
     @com
-    def isTracking (self):
+    def isTracking(self):
         return (self._telescope.IsTracking == 1)
 
     @com
-    def park (self):
+    def park(self):
         self._telescope.Park()
 
     @com
-    def unpark (self):
+    def unpark(self):
         self._telescope.Connect()
         self._telescope.FindHome()
 
     @com
-    def isParked (self):
+    def isParked(self):
         return False
 
     @com
-    def startTracking (self):
-        self._telescope.SetTracking(1,1,0,0)
+    def startTracking(self):
+        self._telescope.SetTracking(1, 1, 0, 0)
 
     @com
-    def stopTracking (self):
-        self._telescope.SetTracking(0,1,0,0)
+    def stopTracking(self):
+        self._telescope.SetTracking(0, 1, 0, 0)
 
     @com
-    def moveEast (self, offset, slewRate = None):
+    def moveEast(self, offset, slewRate=None):
         self._telescope.Asynchronous = 0
         self._telescope.Jog(offset.AS / 60.0, 'East')
-        self._telescope.Asynchronous = 1        
+        self._telescope.Asynchronous = 1
 
     @com
-    def moveWest (self, offset, slewRate = None):
+    def moveWest(self, offset, slewRate=None):
         self._telescope.Asynchronous = 0
         self._telescope.Jog(offset.AS / 60.0, 'West')
-        self._telescope.Asynchronous = 1        
+        self._telescope.Asynchronous = 1
 
     @com
-    def moveNorth (self, offset, slewRate = None):
+    def moveNorth(self, offset, slewRate=None):
         self._telescope.Asynchronous = 0
         self._telescope.Jog(offset.AS / 60.0, 'North')
-        self._telescope.Asynchronous = 1        
+        self._telescope.Asynchronous = 1
 
     @com
-    def moveSouth (self, offset, slewRate = None):
+    def moveSouth(self, offset, slewRate=None):
         self._telescope.Asynchronous = 0
         self._telescope.Jog(offset.AS / 60.0, 'South')
         self._telescope.Asynchronous = 1
 
     @lock
     def syncRaDec(self, position):
-        self._telescope.Sync (position.ra.H, position.dec.D, "chimera")
-        self.syncComplete(position)            
+        self._telescope.Sync(position.ra.H, position.dec.D, "chimera")
+        self.syncComplete(position)

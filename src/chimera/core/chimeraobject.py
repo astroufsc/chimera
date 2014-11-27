@@ -16,15 +16,16 @@
 
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301, USA.
 
-from chimera.core.metaobject   import MetaObject
+from chimera.core.metaobject import MetaObject
 from chimera.core.remoteobject import RemoteObject
 
-from chimera.core.config      import Config
+from chimera.core.config import Config
 from chimera.core.eventsproxy import EventsProxy
 
-from chimera.core.state    import State
+from chimera.core.state import State
 from chimera.core.location import Location
 
 from chimera.core.constants import EVENTS_ATTRIBUTE_NAME
@@ -35,7 +36,7 @@ from chimera.core.constants import RWLOCK_ATTRIBUTE_NAME
 
 from chimera.interfaces.lifecycle import ILifeCycle
 
-import chimera.core.log
+#import chimera.core.log
 
 import logging
 import time
@@ -44,19 +45,19 @@ import threading
 
 __all__ = ['ChimeraObject']
 
-    
+
 class ChimeraObject (RemoteObject, ILifeCycle):
 
     __metaclass__ = MetaObject
 
-    def __init__ (self):
+    def __init__(self):
         RemoteObject.__init__(self)
-    
+
         # event handling
-        self.__events_proxy__ = EventsProxy ()
+        self.__events_proxy__ = EventsProxy()
 
         # configuration handling
-        self.__config_proxy__ = Config (self)
+        self.__config_proxy__ = Config(self)
 
         self.__state__ = State.STOPPED
 
@@ -67,7 +68,7 @@ class ChimeraObject (RemoteObject, ILifeCycle):
         # we can easily setup levels on all our parts
         logName = self.__module__
         if not logName.startswith("chimera."):
-            logName = "chimera."+logName+" (%s)" % logName
+            logName = "chimera." + logName + " (%s)" % logName
 
         self.log = logging.getLogger(logName)
 
@@ -76,40 +77,40 @@ class ChimeraObject (RemoteObject, ILifeCycle):
         self._loop_abort = threading.Event()
 
     # config implementation
-    def __getitem__ (self, item):
+    def __getitem__(self, item):
         # any thread can read if none writing at the time
         lock = getattr(self, RWLOCK_ATTRIBUTE_NAME)
         try:
             lock.acquireRead()
-            return self.__config_proxy__.__getitem__ (item)
+            return self.__config_proxy__.__getitem__(item)
         finally:
             lock.release()
-    
-    def __setitem__ (self, item, value):
+
+    def __setitem__(self, item, value):
         # only one thread can write
         lock = getattr(self, RWLOCK_ATTRIBUTE_NAME)
         try:
             lock.acquireWrite()
-            return self.__config_proxy__.__setitem__ (item, value)
+            return self.__config_proxy__.__setitem__(item, value)
         finally:
             lock.release()
 
     # bulk configuration (pass a dict to config multiple values)
-    def __iadd__ (self, configDict):
+    def __iadd__(self, configDict):
         # only one thread can write
         lock = getattr(self, RWLOCK_ATTRIBUTE_NAME)
         try:
             lock.acquireWrite()
-            self.__config_proxy__.__iadd__ (configDict)
+            self.__config_proxy__.__iadd__(configDict)
         finally:
             lock.release()
             return self.getProxy()
 
     # locking
-    def __enter__ (self):
+    def __enter__(self):
         return getattr(self, INSTANCE_MONITOR_ATTRIBUTE_NAME).__enter__()
 
-    def __exit__ (self, *args):
+    def __exit__(self, *args):
         return getattr(self, INSTANCE_MONITOR_ATTRIBUTE_NAME).__exit__(*args)
 
     def acquire(self, blocking=True):
@@ -123,36 +124,36 @@ class ChimeraObject (RemoteObject, ILifeCycle):
 
     def notify(self, n=1):
         return getattr(self, INSTANCE_MONITOR_ATTRIBUTE_NAME).notify(n)
-    
+
     def notifyAll(self):
-        return getattr(self, INSTANCE_MONITOR_ATTRIBUTE_NAME).notifyAll()    
+        return getattr(self, INSTANCE_MONITOR_ATTRIBUTE_NAME).notifyAll()
 
     # reflection
-    def __get_events__ (self):
+    def __get_events__(self):
         return getattr(self, EVENTS_ATTRIBUTE_NAME)
 
-    def __get_methods__ (self):
+    def __get_methods__(self):
         return getattr(self, METHODS_ATTRIBUTE_NAME)
 
-    def __get_config__ (self):
+    def __get_config__(self):
         return getattr(self, CONFIG_PROXY_NAME).items()
-    
+
     # ILifeCycle implementation
-    def __start__ (self):
-        return True
-        
-    def __stop__ (self):
+    def __start__(self):
         return True
 
-    def getHz (self):
+    def __stop__(self):
+        return True
+
+    def getHz(self):
         return self._Hz
 
-    def setHz (self, freq):
+    def setHz(self, freq):
         tmpHz = self.getHz()
         self._Hz = freq
         return tmpHz
 
-    def __main__ (self):
+    def __main__(self):
 
         self._loop_abort.clear()
         timeslice = 0.5
@@ -171,33 +172,34 @@ class ChimeraObject (RemoteObject, ILifeCycle):
             # if object set a long sleep time and Manager decides to
             # shutdown, we must be alseep to receive his message and
             # return.
-            timeToWakeUp = 1.0/self.getHz()
+            timeToWakeUp = 1.0 / self.getHz()
             sleeped = 0
             while sleeped < timeToWakeUp:
                 time.sleep(timeslice)
-                if self._loop_abort.isSet(): return True
+                if self._loop_abort.isSet():
+                    return True
                 sleeped += timeslice
 
         return True
 
-    def __abort_loop__ (self):
+    def __abort_loop__(self):
         self._loop_abort.set()
 
-    def control (self):
+    def control(self):
         return False
 
-    def getState (self):
+    def getState(self):
         return self.__state__
 
-    def __setstate__ (self, state):
+    def __setstate__(self, state):
         oldstate = self.__state__
         self.__state__ = state
         return oldstate
 
-    def getLocation (self):
+    def getLocation(self):
         return self.__location__
 
-    def __setlocation__ (self, location):
+    def __setlocation__(self, location):
 
         location = Location(location)
 
@@ -205,16 +207,17 @@ class ChimeraObject (RemoteObject, ILifeCycle):
         self.setGUID("/%s/%s" % (location.cls, location.name))
         return True
 
-    def getManager (self):
+    def getManager(self):
         if self.getDaemon():
             return self.getDaemon().getProxyForObj(self.getDaemon().getManager())
 
-    def getProxy (self):
-        # just to put everthing together (no need to change the base implementation)
+    def getProxy(self):
+        # just to put everthing together (no need to change the base
+        # implementation)
         return super(ChimeraObject, self).getProxy()
-    
+
     def getGUID(self):
         return self.objectGUID
-    
+
     def getMetadata(self, request):
         return []

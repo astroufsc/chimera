@@ -1,7 +1,8 @@
 
 from chimera.util.coord import Coord
 
-import asciidata
+from astropy.io import ascii
+
 import os
 import time
 
@@ -14,7 +15,7 @@ class TestCoord (object):
     def test_parsing_conversion_bsc (self):
         """Parsing and comparing to Vizier calculated values the entire 5th Bright Star Catalogue"""
 
-        bsc = asciidata.open(os.path.abspath(os.path.join(os.path.dirname(__file__), 'bsc.dat')), comment_char='#', delimiter='\t')
+        bsc = ascii.read(os.path.abspath(os.path.join(os.path.dirname(__file__), 'bsc.dat')), format="tab", converters={})
 
         expected_ra  = []
         expected_ra_str = []
@@ -25,36 +26,37 @@ class TestCoord (object):
         ra  = []
         dec = []
 
-        for i in range(bsc.nrows):
-            expected_ra.append(bsc[0][i])
-            expected_dec.append(bsc[1][i])
+        for row in bsc:
+            expected_ra.append(row[0])
+            expected_dec.append(row[1])
 
-            expected_ra_str.append(bsc[2][i].strip())
-            expected_dec_str.append(bsc[3][i].strip())
-            
-            ra.append(Coord.fromHMS(bsc[2][i]))
-            dec.append(Coord.fromDMS(bsc[3][i]))
+            expected_ra_str.append(row[2].strip())
+            expected_dec_str.append(row[3].strip())
 
-        for i in range(bsc.nrows):
+            ra.append(Coord.fromHMS(str(row[2])))
+            dec.append(Coord.fromDMS(str(row[3])))
+
+        for i in range(len(bsc)):
             # use e=0.0001 'cause its the maximum we can get with Vizier data (4 decimal places only)
 
             # test conversion from HMS DMS to decimal
-            assert TestCoord.equal(ra[i].D, expected_ra[i], e=1e-4), "ra: %.6f != coord ra: %.6f (%.6f)" % (expected_ra[i], ra[i].D,
-                                                                                                            expected_ra[i]-ra[i].D)
-            assert TestCoord.equal(dec[i].D, expected_dec[i], e=1e-4), "dec: %.6f != coord dec: %.64f (%.6f)" % (expected_dec[i], dec[i].D,
-                                                                                                                 expected_dec[i]-dec[i].D)
+            assert TestCoord.equal(ra[i].D, expected_ra[i], e=1e-4), \
+                "ra: %.6f != coord ra: %.6f (%.6f)" % (expected_ra[i], ra[i].D, expected_ra[i]-ra[i].D)
+
+            assert TestCoord.equal(dec[i].D, expected_dec[i], e=1e-4), \
+                "dec: %.6f != coord dec: %.64f (%.6f)" % (expected_dec[i], dec[i].D, expected_dec[i]-dec[i].D)
 
             # test strfcoord implementation
-            assert expected_ra_str[i] == ra[i].strfcoord("%(h)02d %(m)02d %(s)04.1f"), "ra: %s != coord ra: %s" % (expected_ra_str[i],
-                                                                                                    ra[i].strfcoord("%(h)02d %(m)02d %(s)04.1f"))
-            
-            assert expected_dec_str[i] == dec[i].strfcoord("%(d)02d %(m)02d %(s)02.0f"), "dec: %s != coord dec: %s" % (expected_dec_str[i],
-                                                                                                    dec[i].strfcoord("%(d)02d %(m)02d %(s)02.0f"))
+            assert expected_ra_str[i] == ra[i].strfcoord("%(h)02d %(m)02d %(s)04.1f"), \
+                "ra: %s != coord ra: %s" % (expected_ra_str[i], ra[i].strfcoord("%(h)02d %(m)02d %(s)04.1f"))
+
+            assert expected_dec_str[i] == dec[i].strfcoord("%(d)02d %(m)02d %(s)02.0f"), \
+                "dec: %s != coord dec: %s" % (expected_dec_str[i], dec[i].strfcoord("%(d)02d %(m)02d %(s)02.0f"))
 
     def test_parsing_conversion_hipparcos (self):
         """Parsing and comparing a subset of the Hipparcos and Tycho Catalog"""
 
-        bsc = asciidata.open(os.path.abspath(os.path.join(os.path.dirname(__file__), 'hipparcos-tycho.dat')), comment_char='#', delimiter='\t')
+        hipp = ascii.read(os.path.abspath(os.path.join(os.path.dirname(__file__), 'hipparcos-tycho.dat')), format="tab")
 
         expected_ra  = []
         expected_ra_str = []
@@ -64,57 +66,43 @@ class TestCoord (object):
 
         ra  = []
         ra_hms = []
-        
+
         dec = []
         dec_dms = []
 
-        for i in range(bsc.nrows):
+        for row in hipp:
+            expected_ra_str.append(row[0].strip())
+            expected_dec_str.append(row[1].strip())
 
-            expected_ra_str.append(bsc[0][i].strip())
-            expected_dec_str.append(bsc[1][i].strip())
+            expected_ra.append(float(row[2]))
+            expected_dec.append(float(row[3]))
 
-            expected_ra.append(float(bsc[2][i]))
-            expected_dec.append(float(bsc[3][i]))
-            
-            ra.append(Coord.fromD(bsc[2][i]))
-            dec.append(Coord.fromD(bsc[3][i]))
+            ra.append(Coord.fromD(str(row[2])))
+            dec.append(Coord.fromD(str(row[3])))
 
-            ra_hms.append(Coord.fromHMS(bsc[0][i]))
-            dec_dms.append(Coord.fromDMS(bsc[1][i]))
+            ra_hms.append(Coord.fromHMS(str(row[0])))
+            dec_dms.append(Coord.fromDMS(str(row[1])))
 
-        for i in range(bsc.nrows):
+        for i in range(len(hipp)):
+            assert expected_ra_str[i] == ra_hms[i].strfcoord("%(h)02d %(m)02d %(s)05.2f"), \
+                "ra: %s != coord ra: %s" % (expected_ra_str[i], ra_hms[i].strfcoord("%(h)02d %(m)02d %(s)05.2f"))
 
-            # FIXME: bexause of rounding errors, when we got fromD with a high precision number,
-            # not every time we can convert it to DMS/HMS rounding seconds correctly. FP sucks!
-            
-            # test strfcoord implementation
-            #assert expected_ra_str[i] == ra[i].strfcoord("%(h)02d %(m)02d %(s)05.2f"), "ra: %s (%.8f) != coord ra: %s (%.8f)" % (expected_ra_str[i],
-            #                                                                                    expected_ra[i],
-            #                                                                                    ra[i].strfcoord("%(h)02d %(m)02d %(s)05.2f"),ra[i].D)
-            # 
-            #assert expected_dec_str[i] == dec[i].strfcoord("%(d)02d %(m)02d %(s)04.1f"), "dec: %s (%s) != coord dec: %s (%.8f)" % (expected_dec_str[i],
-            #                                                                                    expected_dec[i],
-            #                                                                                    dec[i].strfcoord("%(d)02d %(m)02d %(s)04.1f"), dec[i].D)
-            #
-            assert expected_ra_str[i] == ra_hms[i].strfcoord("%(h)02d %(m)02d %(s)05.2f"), "ra: %s != coord ra: %s" % (expected_ra_str[i],
-                                                                                                    ra_hms[i].strfcoord("%(h)02d %(m)02d %(s)05.2f"))
-            
-            assert expected_dec_str[i] == dec_dms[i].strfcoord("%(d)02d %(m)02d %(s)04.1f"), "dec: %s != coord dec: %s" % (expected_dec_str[i],
-                                                                                                    dec_dms[i].strfcoord("%(d)02d %(m)02d %(s)04.1f"))
+            assert expected_dec_str[i] == dec_dms[i].strfcoord("%(d)02d %(m)02d %(s)04.1f"), \
+                "dec: %s != coord dec: %s" % (expected_dec_str[i], dec_dms[i].strfcoord("%(d)02d %(m)02d %(s)04.1f"))
 
             # test conversion from D to D
-            assert TestCoord.equal(ra[i].D, expected_ra[i], e=1e-8), "ra: %.6f != coord ra: %.6f (%.6f)" % (expected_ra[i], ra[i].D,
-                                                                                                            expected_ra[i]-ra[i].D)
-            assert TestCoord.equal(dec[i].D, expected_dec[i], e=1e-8), "dec: %.6f != coord dec: %.64f (%.6f)" % (expected_dec[i], dec[i].D,
-                                                                                                                 expected_dec[i]-dec[i].D)
+            assert TestCoord.equal(ra[i].D, expected_ra[i], e=1e-8), \
+                "ra: %.6f != coord ra: %.6f (%.6f)" % (expected_ra[i], ra[i].D, expected_ra[i]-ra[i].D)
+
+            assert TestCoord.equal(dec[i].D, expected_dec[i], e=1e-8), \
+                "dec: %.6f != coord dec: %.64f (%.6f)" % (expected_dec[i], dec[i].D, expected_dec[i]-dec[i].D)
 
             # test conversion from DMS HMS to D
-            assert TestCoord.equal(ra_hms[i].D, expected_ra[i], e=1e-4), "ra: %.6f != coord ra: %.6f (%.6f)" % (expected_ra[i], ra_hms[i].D,
-                                                                                                                expected_ra[i]-ra_hms[i].D)
-            assert TestCoord.equal(dec_dms[i].D, expected_dec[i], e=1e-4), "dec: %.6f != coord dec: %.64f (%.6f)" % (expected_dec[i], dec_dms[i].D,
-                                                                                                                     expected_dec[i]-dec_dms[i].D)
+            assert TestCoord.equal(ra_hms[i].D, expected_ra[i], e=1e-4), \
+                "ra: %.6f != coord ra: %.6f (%.6f)" % (expected_ra[i], ra_hms[i].D, expected_ra[i]-ra_hms[i].D)
 
-
+            assert TestCoord.equal(dec_dms[i].D, expected_dec[i], e=1e-4), \
+                "dec: %.6f != coord dec: %.64f (%.6f)" % (expected_dec[i], dec_dms[i].D, expected_dec[i]-dec_dms[i].D)
 
     def test_parse_dms (self):
 
@@ -131,7 +119,7 @@ class TestCoord (object):
                     t = time.clock()
                     c = Coord.fromDMS(s)
                     t_parse += time.clock()-t
-                    
+
                     coords.append((s,c))
 
         for coord in coords:

@@ -1,5 +1,6 @@
 
 from chimera.util.ds9 import DS9
+from nose import SkipTest
 
 import os
 import signal
@@ -10,16 +11,20 @@ class TestDS9(object):
 
     def test_basics (self):
 
+        raise SkipTest()
+
         ds9 = DS9()
         assert ds9 != None
 
         ds9.open()
         assert ds9.isOpen() == True
-        
+
         ds9.quit()
         assert ds9.isOpen() == False
 
     def test_use_global_ds9 (self):
+
+        raise SkipTest()
 
         filename = os.path.realpath(os.path.join(os.path.dirname(__file__), "teste-sem-wcs.fits"))
 

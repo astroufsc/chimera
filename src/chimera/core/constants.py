@@ -16,7 +16,8 @@
 
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301, USA.
 
 
 import sys
@@ -28,8 +29,8 @@ MANAGER_DEFAULT_PORT = 7666
 MANAGER_LOCATION = '/Manager/manager'
 
 # annotations
-EVENT_ATTRIBUTE_NAME  = '__event__'
-LOCK_ATTRIBUTE_NAME   = '__lock__'
+EVENT_ATTRIBUTE_NAME = '__event__'
+LOCK_ATTRIBUTE_NAME = '__lock__'
 
 # special propxies
 EVENTS_PROXY_NAME = '__events_proxy__'
@@ -37,26 +38,30 @@ CONFIG_PROXY_NAME = '__config_proxy__'
 
 # monitor objects
 INSTANCE_MONITOR_ATTRIBUTE_NAME = '__instance_monitor__'
-RWLOCK_ATTRIBUTE_NAME           = '__rwlock__'
+RWLOCK_ATTRIBUTE_NAME = '__rwlock__'
 
 # reflection
-CONFIG_ATTRIBUTE_NAME  = '__config__'
-EVENTS_ATTRIBUTE_NAME  = '__events__'
+CONFIG_ATTRIBUTE_NAME = '__config__'
+EVENTS_ATTRIBUTE_NAME = '__events__'
 METHODS_ATTRIBUTE_NAME = '__methods__'
 
 # system config
 if sys.platform == "win32":
-    SYSTEM_CONFIG_DIRECTORY        = os.path.expanduser('~/chimera')
+    SYSTEM_CONFIG_DIRECTORY = os.path.expanduser('~/chimera')
 else:
-    SYSTEM_CONFIG_DIRECTORY        = os.path.expanduser('~/.chimera')
-    
-SYSTEM_CONFIG_DEFAULT_FILENAME = os.path.join(SYSTEM_CONFIG_DIRECTORY, 'chimera.config')
+    SYSTEM_CONFIG_DIRECTORY = os.path.expanduser('~/.chimera')
+
+SYSTEM_CONFIG_DEFAULT_FILENAME = os.path.join(
+    SYSTEM_CONFIG_DIRECTORY, 'chimera.config')
 
 if hasattr(sys, 'frozen'):
-    SYSTEM_CONFIG_DEFAULT_SAMPLE   = os.path.join(os.path.dirname(sys.executable), 'samples', 'chimera.sample.config')
+    SYSTEM_CONFIG_DEFAULT_SAMPLE = os.path.join(
+        os.path.dirname(sys.executable), 'samples', 'chimera.sample.config')
 else:
-    SYSTEM_CONFIG_DEFAULT_SAMPLE   = os.path.join(os.path.dirname(__file__), 'chimera.sample.config')
+    SYSTEM_CONFIG_DEFAULT_SAMPLE = os.path.join(
+        os.path.dirname(__file__), 'chimera.sample.config')
 
 SYSTEM_CONFIG_LOG_NAME = os.path.join(SYSTEM_CONFIG_DIRECTORY, 'chimera.log')
 
-DEFAULT_PROGRAM_DATABASE = os.path.join(SYSTEM_CONFIG_DIRECTORY, 'scheduler.db')
+DEFAULT_PROGRAM_DATABASE = os.path.join(
+    SYSTEM_CONFIG_DIRECTORY, 'scheduler.db')

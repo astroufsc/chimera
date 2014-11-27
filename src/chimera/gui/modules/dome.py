@@ -11,9 +11,10 @@ import gdl
 import os
 import threading
 
+
 class DomeController:
 
-    def __init__ (self, module):
+    def __init__(self, module):
         self.module = module
         self.dome = None
 
@@ -23,7 +24,7 @@ class DomeController:
         @callback(self.module.manager)
         def on_slit_close(az):
             self.module.view.updateSlitStatus()
-            
+
         @callback(self.module.manager)
         def on_slit_open(az):
             self.module.view.updateSlitStatus()
@@ -31,14 +32,14 @@ class DomeController:
         @callback(self.module.manager)
         def on_slew_begin(az):
             self.module.view.slewBegin(az)
-            
+
         @callback(self.module.manager)
         def on_slew_complete(az, status):
             self.module.view.slewComplete(az)
 
-        self.dome.slitOpened   += on_slit_open
-        self.dome.slitClosed   += on_slit_close
-        self.dome.slewBegin    += on_slew_begin
+        self.dome.slitOpened += on_slit_open
+        self.dome.slitClosed += on_slit_close
+        self.dome.slewBegin += on_slew_begin
         self.dome.slewComplete += on_slew_complete
 
     def getDome(self):
@@ -75,7 +76,7 @@ class DomeController:
     def isSlewing(self):
         return self.dome.isSlewing()
 
-    def toggleTracking (self):
+    def toggleTracking(self):
 
         if self.dome.getMode() == Mode.Stand:
             self.dome.track()
@@ -84,9 +85,10 @@ class DomeController:
 
         self.module.view.updateTrackingStatus()
 
+
 class DomeView:
 
-    def __init__ (self, module):
+    def __init__(self, module):
         self.module = module
 
         self.positionLabel = self.module.builder.get_object("positionLabel")
@@ -94,52 +96,53 @@ class DomeView:
         self.closeButton = self.module.builder.get_object("closeButton")
         self.azEntry = self.module.builder.get_object("azEntry")
         self.slewButton = self.module.builder.get_object("slewButton")
-        self.trackingCheckbox = self.module.builder.get_object("trackingCheckbox")
+        self.trackingCheckbox = self.module.builder.get_object(
+            "trackingCheckbox")
 
         self.updateTimer = None
 
-    def updateSlitStatus (self):
+    def updateSlitStatus(self):
         def ui():
             if self.module.controller.isSlitOpen():
                 self.openButton.set_sensitive(False)
-                self.closeButton.set_sensitive(True)            
+                self.closeButton.set_sensitive(True)
             else:
                 self.openButton.set_sensitive(True)
                 self.closeButton.set_sensitive(False)
-                
+
         glib.idle_add(ui)
 
-    def startUpdateTimer (self):
+    def startUpdateTimer(self):
         self.updateTimer = glib.timeout_add(2000, self.updateDomePosition)
 
-    def pauseUpdateTimer (self):
+    def pauseUpdateTimer(self):
         if self.updateTimer:
             glib.source_remove(self.updateTimer)
 
-    def updateDomePosition (self):
+    def updateDomePosition(self):
         self.positionLabel.set_text(str(self.module.controller.getAz()))
         return True
 
-    def slewBegin (self, az):
+    def slewBegin(self, az):
         def ui():
             self.pauseUpdateTimer()
             self.slewButton.set_sensitive(False)
         glib.idle_add(ui)
 
-    def slewComplete (self, az):
+    def slewComplete(self, az):
         def ui():
             self.startUpdateTimer()
             self.slewButton.set_sensitive(True)
             self.updateTrackingStatus()
         glib.idle_add(ui)
 
-    def slitChangeBegin (self):
+    def slitChangeBegin(self):
         def ui():
             self.openButton.set_sensitive(False)
             self.closeButton.set_sensitive(False)
         glib.idle_add(ui)
 
-    def updateTrackingStatus (self):
+    def updateTrackingStatus(self):
         if self.module.controller.isTracking():
             self.trackingCheckbox.set_active(True)
             self.slewButton.set_sensitive(False)
@@ -149,22 +152,24 @@ class DomeView:
             self.slewButton.set_sensitive(True)
             self.azEntry.set_sensitive(True)
 
+
 class DomeGUIModule(ChimeraGUIModule):
 
     module_controls = {"dome": "Dome"}
 
-    def __init__ (self, manager):
+    def __init__(self, manager):
         ChimeraGUIModule.__init__(self, manager)
 
         self.view = None
         self.controller = None
 
-    def setupGUI (self, objects):
+    def setupGUI(self, objects):
 
         dome = objects.get("dome", None)
 
         self.builder = gtk.Builder()
-        self.builder.add_from_file(os.path.join(os.path.dirname(__file__), "dome.xml"))
+        self.builder.add_from_file(
+            os.path.join(os.path.dirname(__file__), "dome.xml"))
 
         self.view = DomeView(self)
         self.controller = DomeController(self)
@@ -177,14 +182,14 @@ class DomeGUIModule(ChimeraGUIModule):
         win = self.builder.get_object("window")
         gui = self.builder.get_object("gui")
         win.remove(gui)
-        
+
         return [("Dome", gui, gdl.DOCK_CENTER)]
-        
-    def setupEvents (self):
+
+    def setupEvents(self):
 
         def on_close_action(action):
             threading.Thread(target=self.controller.closeSlit).start()
-    
+
         def on_open_action(action):
             threading.Thread(target=self.controller.openSlit).start()
 
@@ -192,9 +197,9 @@ class DomeGUIModule(ChimeraGUIModule):
             threading.Thread(target=self.controller.slew).start()
 
         def on_track_action(action):
-            threading.Thread(target=self.controller.toggleTracking).start()            
-    
+            threading.Thread(target=self.controller.toggleTracking).start()
+
         self.builder.connect_signals({"on_close_action": on_close_action,
-                                      "on_open_action" : on_open_action,
-                                      "on_slew_action" : on_slew_action,
+                                      "on_open_action": on_open_action,
+                                      "on_slew_action": on_slew_action,
                                       "on_track_action": on_track_action})

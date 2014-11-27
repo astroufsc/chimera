@@ -5,17 +5,19 @@ import tempfile
 import os
 import urllib
 
+
 class VizQuery(object):
+
     """
-    Queries A catalog in Vizier 
+    Queries A catalog in Vizier
     within a given radius or box of the zenith
     """
+
     def __init__(self):
         self.args = {}
         self.args["-mime"] = "xml"
         self.columns = None
 
-    
     def useCat(self, catName):
         """
         @param catName: the catalog's name in Vizier
@@ -45,7 +47,7 @@ class VizQuery(object):
         self.args["-out"] = columns
 
         if reverse:
-            self.args["-sort"] = "-"+sortBy
+            self.args["-sort"] = "-" + sortBy
         else:
             self.args["-sort"] = sortBy
 
@@ -64,7 +66,6 @@ class VizQuery(object):
         """
         self.args.update(columns)
 
-
     def useTarget(self, center, radius=None, box=None):
         """
         @param center: center of search in catalog
@@ -80,7 +81,7 @@ class VizQuery(object):
 
         self.args["-c"] = str(center)
         self.args["-c.eq"] = "J2000"
-        
+
         if radius:
             self.args["-c.rd"] = radius
         elif box:
@@ -101,9 +102,9 @@ class VizQuery(object):
         assert "-c.rd" in self.args or "-c.bd" in self.args, "No target selected, use useTarget method first."
 
         self.args["-out.max"] = limit
-        
-        results = tempfile.NamedTemporaryFile(mode='w+', 
-                                              prefix="chimera.vizquery", 
+
+        results = tempfile.NamedTemporaryFile(mode='w+',
+                                              prefix="chimera.vizquery",
                                               dir=tempfile.gettempdir())
 
         # query the catalog in Vizier's database
@@ -111,7 +112,7 @@ class VizQuery(object):
 
         s = urllib.urlencode(self.args)
 
-        conn.request("POST", "/viz-bin/votable",s)  
+        conn.request("POST", "/viz-bin/votable", s)
         resp = conn.getresponse()
         ret = resp.read()
 

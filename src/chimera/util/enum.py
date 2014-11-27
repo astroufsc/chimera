@@ -8,7 +8,8 @@
 # under the terms of the GNU General Public License, version 2 or later
 # or, at your option, the terms of the Python license.
 
-"""Robust enumerated type support in Python
+"""
+Robust enumerated type support in Python
 
 This package provides a module for robust enumerations in Python.
 
@@ -60,19 +61,25 @@ __version__ = "0.4.3"
 
 
 class EnumException(Exception):
+
     """ Base class for all exceptions in this module """
+
     def __init__(self):
         if self.__class__ is EnumException:
             raise NotImplementedError, \
                 "%s is an abstract class for subclassing" % self.__class__
 
+
 class EnumEmptyError(AssertionError, EnumException):
+
     """ Raised when attempting to create an empty enumeration """
 
     def __str__(self):
         return "Enumerations cannot be empty"
 
+
 class EnumBadKeyError(TypeError, EnumException):
+
     """ Raised when creating an Enum with non-string keys """
 
     def __init__(self, key):
@@ -81,7 +88,9 @@ class EnumBadKeyError(TypeError, EnumException):
     def __str__(self):
         return "Enumeration keys must be strings: %s" % (self.key,)
 
+
 class EnumImmutableError(TypeError, EnumException):
+
     """ Raised when attempting to modify an Enum """
 
     def __init__(self, *args):
@@ -92,6 +101,7 @@ class EnumImmutableError(TypeError, EnumException):
 
 
 class EnumValue(object):
+
     """ A specific value of an enumerated type """
 
     def __init__(self, enumtype, index, key):
@@ -111,7 +121,7 @@ class EnumValue(object):
     def __str__(self):
         return "%s" % (self.key)
 
-    def __int__ (self):
+    def __int__(self):
         return self.index
 
     def __get_index(self):
@@ -141,6 +151,7 @@ class EnumValue(object):
 
 
 class Enum(object):
+
     """ Enumerated type """
 
     def __init__(self, *keys, **kwargs):
@@ -165,7 +176,8 @@ class Enum(object):
         super(Enum, self).__setattr__('_keys', keys)
         super(Enum, self).__setattr__('_values', values)
 
-    def fromStr(self, s): return self.__getattribute__(s)
+    def fromStr(self, s):
+        return self.__getattribute__(s)
 
     def __setattr__(self, name, value):
         raise EnumImmutableError(name)
@@ -195,12 +207,13 @@ class Enum(object):
         else:
             try:
                 is_member = (value in self._values)
-            #EnumValueError isn't defined!
-            #except EnumValueCompareError, e:
+            # EnumValueError isn't defined!
+            # except EnumValueCompareError, e:
             except Exception, e:
                 is_member = False
         return is_member
-    def __cmp__ (self, other):
+
+    def __cmp__(self, other):
         """
         Rationale here is: if, for whatever reason, our Enum get
         copied, normal equality test used in EnumValue.__cmp__ would
@@ -208,6 +221,6 @@ class Enum(object):
         different (id) objects, given that they accepts the same
         values (keys).
         """
-        
+
         assert type(other) == type(self)
         return cmp(getattr(self, '_keys'), getattr(other, '_keys'))

@@ -65,7 +65,7 @@
 #
 # Revision 1.3  2005/01/06 13:37:11  laurentl
 # *** empty log message ***
-# 
+#
 #
 # ======================================================================
 
@@ -161,16 +161,17 @@ __version__ = "1.15.0 (2005-07-06)"
 
 # ======================================================================
 
+
 class SExtractorException(Exception):
     pass
 
 # ======================================================================
 
 nnw_config = \
-"""NNW
+    """NNW
 # Neural Network Weights for the SExtractor star/galaxy classifier (V1.3)
-# inputs:	9 for profile parameters + 1 for seeing.
-# outputs:	``Stellarity index'' (0.0 to 1.0)
+# inputs: 9 for profile parameters + 1 for seeing.
+# outputs:  ``Stellarity index'' (0.0 to 1.0)
 # Seeing FWHM range: from 0.025 to 5.5'' (images must have 1.5 < FWHM < 5 pixels)
 # Optimized for Moffat profiles with 2<= beta <= 4.
 
@@ -199,110 +200,112 @@ nnw_config = \
 
 # ======================================================================
 
+
 class SExtractor:
+
     """
     A wrapper class to transparently use SExtractor.
 
     """
 
-    _SE_config = { 
+    _SE_config = {
         "CATALOG_NAME":
         {"comment": "name of the output catalog",
          "value": "py-sextractor.cat"},
-        
+
         "CATALOG_TYPE":
         {"comment":
          '"NONE","ASCII_HEAD","ASCII","FITS_1.0" or "FITS_LDAC"',
          "value": "ASCII_HEAD"},
-        
+
         "PARAMETERS_NAME":
         {"comment": "name of the file containing catalog contents",
          "value": "py-sextractor.param"},
-        
+
         "DETECT_TYPE":
         {"comment": '"CCD" or "PHOTO"',
          "value": "CCD"},
-        
+
         "FLAG_IMAGE":
         {"comment": "filename for an input FLAG-image",
          "value": "flag.fits"},
-        
+
         "DETECT_MINAREA":
         {"comment": "minimum number of pixels above threshold",
          "value": 5},
-        
+
         "DETECT_THRESH":
         {"comment": "<sigmas> or <threshold>,<ZP> in mag.arcsec-2",
          "value": 1.5},
-        
+
         "ANALYSIS_THRESH":
         {"comment": "<sigmas> or <threshold>,<ZP> in mag.arcsec-2",
          "value": 1.5},
-        
+
         "FILTER":
         {"comment": 'apply filter for detection ("Y" or "N")',
          "value": 'Y'},
-        
+
         "FILTER_NAME":
         {"comment": "name of the file containing the filter",
          "value": "py-sextractor.conv"},
-        
+
         "DEBLEND_NTHRESH":
         {"comment": "Number of deblending sub-thresholds",
          "value": 32},
-        
+
         "DEBLEND_MINCONT":
         {"comment": "Minimum contrast parameter for deblending",
          "value": 0.005},
-        
+
         "CLEAN":
         {"comment": "Clean spurious detections (Y or N)",
          "value": 'Y'},
-        
+
         "CLEAN_PARAM":
         {"comment": "Cleaning efficiency",
          "value": 1.0},
-        
+
         "MASK_TYPE":
         {"comment": 'type of detection MASKing: can be one of "NONE", "BLANK" or "CORRECT"',
          "value": "CORRECT"},
-        
+
         "PHOT_APERTURES":
         {"comment": "MAG_APER aperture diameter(s) in pixels",
          "value": 5},
-        
+
         "PHOT_AUTOPARAMS":
         {"comment": 'MAG_AUTO parameters: <Kron_fact>,<min_radius>',
          "value": [2.5, 3.5]},
-        
+
         "SATUR_LEVEL":
         {"comment": "level (in ADUs) at which arises saturation",
          "value": 50000.0},
-        
+
         "MAG_ZEROPOINT":
         {"comment": "magnitude zero-point",
          "value": 0.0},
-        
+
         "MAG_GAMMA":
         {"comment": "gamma of emulsion (for photographic scans)",
          "value": 4.0},
-        
+
         "GAIN":
         {"comment": "detector gain in e-/ADU",
          "value": 0.0},
-        
+
         "PIXEL_SCALE":
         {"comment": "size of pixel in arcsec (0=use FITS WCS info)",
          "value": 1.0},
-        
+
         "SEEING_FWHM":
         {"comment": "stellar FWHM in arcsec",
          "value": 1.2},
-        
+
         "STARNNW_NAME":
         {"comment": "Neural-Network_Weight table filename",
          "value": "py-sextractor.nnw"},
-        
+
         "BACK_SIZE":
         {"comment": "Background mesh: <size> or <width>,<height>",
          "value": 64},
@@ -314,11 +317,11 @@ class SExtractor:
         "BACK_VALUE":
         {"comment": "User-supplied constant value to be subtracted as sky",
          "value": "0.0,0.0"},
-        
+
         "BACK_FILTERSIZE":
         {"comment": "Background filter: <size> or <width>,<height>",
          "value": 3},
-        
+
         "BACKPHOTO_TYPE":
         {"comment": 'can be "GLOBAL" or "LOCAL"',
          "value": "GLOBAL"},
@@ -326,27 +329,27 @@ class SExtractor:
         "BACKPHOTO_THICK":
         {"comment": "Thickness in pixels of the background local annulus",
          "value": 24},
-        
+
         "CHECKIMAGE_TYPE":
         {"comment": 'can be one of "NONE", "BACKGROUND", "MINIBACKGROUND", "-BACKGROUND", "OBJECTS", "-OBJECTS", "SEGMENTATION", "APERTURES", or "FILTERED"',
          "value": "NONE"},
-        
+
         "CHECKIMAGE_NAME":
         {"comment": "Filename for the check-image",
          "value": "check.fits"},
-        
+
         "MEMORY_OBJSTACK":
         {"comment": "number of objects in stack",
          "value": 3000},
-        
+
         "MEMORY_PIXSTACK":
         {"comment": "number of pixels in stack",
          "value": 300000},
-        
+
         "MEMORY_BUFSIZE":
         {"comment": "number of lines in buffer",
          "value": 1024},
-        
+
         "VERBOSE_TYPE":
         {"comment": 'can be "QUIET", "NORMAL" or "FULL"',
          "value": "QUIET"},
@@ -355,7 +358,7 @@ class SExtractor:
 
         "PARAMETERS_LIST":
         {"comment": '[Extra key] catalog contents (to put in PARAMETERS_NAME)',
-         "value": ["NUMBER", "FLUX_BEST", "FLUXERR_BEST", 
+         "value": ["NUMBER", "FLUX_BEST", "FLUXERR_BEST",
                    "X_IMAGE", "Y_IMAGE", "FLAGS", "FWHM_IMAGE"]},
 
         "CONFIG_FILE":
@@ -367,19 +370,13 @@ class SExtractor:
          "value": [[1, 2, 1],
                    [2, 4, 2],
                    [1, 2, 1]]}
-        }
+    }
 
-    
     # -- Special config. keys that should not go into the config. file.
-
     _SE_config_special_keys = ["PARAMETERS_LIST", "CONFIG_FILE", "FILTER_MASK"]
 
-
     # -- Dictionary of all possible parameters (from sexcatalog.py module)
-
     _SE_parameters = SExtractorfile._SE_keys
-
-
 
     def __init__(self):
         """
@@ -387,14 +384,13 @@ class SExtractor:
         """
 
         self.config = (
-            dict([(k, copy.deepcopy(SExtractor._SE_config[k]["value"]))\
+            dict([(k, copy.deepcopy(SExtractor._SE_config[k]["value"]))
                   for k in SExtractor._SE_config.keys()]))
 
         # print self.config
 
         self.program = None
         self.version = None
-
 
     def setup(self, path=None):
         """
@@ -411,8 +407,8 @@ class SExtractor:
 
         if (path):
             candidates = [path]
-        
-        selected=None
+
+        selected = None
         for candidate in candidates:
             try:
                 p = subprocess.Popen(candidate, shell=True,
@@ -421,14 +417,14 @@ class SExtractor:
                 (_out_err, _in) = (p.stdout, p.stdin)
                 versionline = _out_err.read()
                 if (versionline.find("SExtractor") != -1):
-                    selected=candidate
+                    selected = candidate
                     break
             except IOError:
                 continue
-                
+
         if not(selected):
             raise SExtractorException, \
-                  """
+                """
                   Cannot find SExtractor program. Check your PATH,
                   or provide the SExtractor program path in the constructor.
                   """
@@ -439,18 +435,16 @@ class SExtractor:
         _version_match = re.search("[Vv]ersion ([0-9\.])+", versionline)
         if not _version_match:
             raise SExtractorException, \
-                  "Cannot determine SExtractor version."
+                "Cannot determine SExtractor version."
 
         _version = _version_match.group()[8:]
         if not _version:
             raise SExtractorException, \
-                  "Cannot determine SExtractor version."
+                "Cannot determine SExtractor version."
 
         # print "Use " + self.program + " [" + self.version + "]"
 
         return _program, _version
-
-
 
     def update_config(self):
         """
@@ -473,7 +467,7 @@ class SExtractor:
         for row in filter:
             filter_f.write(" ".join(map(repr, row)))
             filter_f.write("\n")
-            
+
         filter_f.close()
 
         # -- Write parameter list file
@@ -490,26 +484,22 @@ class SExtractor:
         nnw_f.write(nnw_config)
         nnw_f.close()
 
-
         # -- Write main configuration file
-
         main_f = __builtin__.open(self.config['CONFIG_FILE'], 'w')
 
         for key in self.config.keys():
             if (key in SExtractor._SE_config_special_keys):
                 continue
 
-            if (key == "PHOT_AUTOPARAMS"): # tuple instead of a single value
+            if (key == "PHOT_AUTOPARAMS"):  # tuple instead of a single value
                 value = " ".join(map(str, self.config[key]))
             else:
                 value = str(self.config[key])
-            
-            
+
             print >>main_f, ("%-16s       %-16s # %s" %
                              (key, value, SExtractor._SE_config[key]['comment']))
 
         main_f.close()
-
 
     def run(self, file, updateconfig=True, clean=False, path=None):
         """
@@ -531,19 +521,18 @@ class SExtractor:
 
         self.program, self.version = self.setup(path)
 
-        commandline = (self.program + " -c " + self.config['CONFIG_FILE'] + " " + file)
+        commandline = (
+            self.program + " -c " + self.config['CONFIG_FILE'] + " " + file)
         # print commandline
 
         rcode = os.system(commandline)
 
         if (rcode):
             raise SExtractorException, \
-                  "SExtractor command [%s] failed." % commandline
-            
+                "SExtractor command [%s] failed." % commandline
+
         if clean:
             self.clean()
-
-
 
     def catalog(self):
         """
@@ -557,7 +546,6 @@ class SExtractor:
         output_f.close()
 
         return c
-
 
     def clean(self, config=True, catalog=False, check=False):
         """
@@ -577,7 +565,7 @@ class SExtractor:
                 os.unlink(self.config['CATALOG_NAME'])
             if (check):
                 os.unlink(self.config['CHECKIMAGE_NAME'])
-                
+
         except OSError:
             pass
 
