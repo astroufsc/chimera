@@ -93,10 +93,10 @@ class Astelco (TelescopeBase):  # converted to Astelco
             for direction in Direction:
                 self._calibration[rate][direction] = 1
 
-        self._user = "admin"
-        self._password = "admin"
-        self._aahost = "localhost"
-        self._aaport = "65432"
+        self._user = self.user
+        self._password = self.password
+        self._aahost = self.host
+        self._aaport = self.port
 
     # -- ILifeCycle implementation --
 

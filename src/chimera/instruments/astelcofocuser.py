@@ -60,8 +60,8 @@ vector. Temperature compensation can also be performed.
 		self._range = None
 		self._lastTimeLog = None
 
-        self._tsi = None
-        self._abort = threading.Event ()
+		self._tsi = None
+		self._abort = threading.Event ()
 
 		self._errorNo = 0
 		self._errorString = ""
@@ -74,9 +74,66 @@ vector. Temperature compensation can also be performed.
 		except IOError, e:
 			self.log.warning("Could not create astelco debug file (%s)" % str(e))
 
-		self._user="admin"
-		self._password="admin"
-		self._aahost="10.10.18.1"
-		self._aaport="65432"
+
+		#self._user="admin"
+		#self._password="admin"
+		#self._aahost="localhost"
+		#self._aaport="65432"
 		print '--> INIT <--'
 
+
+	def __start__(self):
+
+		self.open()
+
+		return True
+
+	@lock
+	def open(self):  # converted to Astelco
+		print 'Connecting to Astelco server ',
+		self._aahost,
+		':',
+		int(self._aaport)
+
+		self._tpl = TPL2(user=self.user,
+						password=self.password,
+						host=self.host,
+						port=int(self.port),
+						echo=False,
+						verbose=False,
+						debug=True)
+		print self._tpl.log
+
+		try:
+			self._tpl.open()
+
+			self._checkAstelco()
+
+			return True
+
+		except (TPL2.SocketError, IOError):
+			raise AstelcoException("Error while opening %s." % self["device"])
+
+	@lock
+	def close(self):  # converted to Astelco
+		self.log.debug("TPl2 log:\n")
+		for lstr in self._tpl.log:
+			self.log.debug(lstr)
+		if self._tpl.isListening():
+			self._tpl.disconnect()
+			return True
+		else:
+			return False
+
+	def _move(self, direction, steps, axis=1):
+		
+		if not self._inRange(direction, steps):
+			raise InvalidFocusPositionException(
+												"%d is outside focuser limits." % steps)
+
+		if direction not in Direction:
+			raise ValueError("Invalid direction '%s'." % direction)
+
+		self._moveTo(direction, steps)
+		
+		return True
