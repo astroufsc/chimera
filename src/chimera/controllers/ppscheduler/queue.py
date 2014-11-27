@@ -18,6 +18,8 @@ log = logging.getLogger(__name__)
 
 from Queue import PriorityQueue
 
+import numpy as np
+
 class QueueScheduler (IScheduler):
     
     def __init__ (self):
