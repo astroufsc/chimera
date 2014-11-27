@@ -7,7 +7,6 @@ from chimera.controllers.scheduler.status import SchedulerStatus
 
 from chimera.core.exceptions import ObjectNotFoundException, ProgramExecutionAborted, ProgramExecutionException
 
-import chimera.core.log
 import logging
 import threading
 import time
@@ -21,9 +20,9 @@ class ProgramExecutor(object):
 
         self.currentHandler = None
         self.currentAction  = None
-        
+
         self.mustStop = threading.Event()
-        
+
         self.controller = controller
         self.actionHandlers = {Expose     : ExposeHandler,
                                Point      : PointHandler,
@@ -37,7 +36,7 @@ class ProgramExecutor(object):
     def execute(self, program):
 
         self.mustStop.clear()
-        
+
         for action in program.actions:
 
             # aborted?
@@ -83,7 +82,7 @@ class ProgramExecutor(object):
 
         if not hasattr(handler.process, "__requires__"):
             return
-        
+
         for instrument in handler.process.__requires__:
             try:
                 setattr(handler, instrument,

@@ -9,14 +9,10 @@ from chimera.util.position import Position
 from chimera.util.filenamesequence import FilenameSequence
 from chimera.util.sextractor import SExtractor
 
-import pyfits
-import numpy as N
+from astropy.io import fits
+from astropy import wcs
 
-try:
-    have_pywcs = True
-    import pywcs
-except ImportError:
-    have_pywcs = False
+import numpy as N
 
 import os
 import string
@@ -139,8 +135,8 @@ class Image (DictMixin, RemoteObject):
     """
     Class to manipulate FITS images with a Pythonic taste.
 
-    The underlying framework comes from the very good PyFITS library
-    with some PyWCS stuff to get WCS info (which as matter of fact use
+    The underlying framework comes from astropy.io.fits library
+    and astropy.wcs to get WCS info (which as matter of fact use
     WCSlib from Mark Calabretta). In addition, we use a wrapper to
     E. Bertin SExctractor's written by Laurent Le Guillou. Thank you all guys.
 
@@ -152,10 +148,8 @@ class Image (DictMixin, RemoteObject):
     """
 
     @staticmethod
-    def fromFile(filename, fix=True):
-
-        fd = pyfits.open(filename, mode="update")
-
+    def fromFile(filename, fix = False, mode = "update"):
+        fd = fits.open(filename, mode = mode)
         img = Image(filename, fd)
 
         if fix:
@@ -176,7 +170,7 @@ class Image (DictMixin, RemoteObject):
 
         filename = ImageUtil.makeFilename(filename)
 
-        hdu = pyfits.PrimaryHDU(data)
+        hdu = fits.PrimaryHDU(data)
 
         headers = [("DATE", ImageUtil.formatDate(dt.datetime.utcnow()), "date of file creation"),
                    ("CREATOR", _chimera_name_, _chimera_long_description_)]
@@ -189,11 +183,11 @@ class Image (DictMixin, RemoteObject):
 
         for header in headers:
             try:
-                hdu.header.update(*header)
+                hdu.header.set(*header)
             except Exception, e:
                 log.warning("Couldn't add %s: %s" % (str(header), str(e)))
 
-        hduList = pyfits.HDUList([hdu])
+        hduList = fits.HDUList([hdu])
         hduList.writeto(filename)
         hduList.close()
 
@@ -243,7 +237,7 @@ class Image (DictMixin, RemoteObject):
 
     def __setstate__(self, args):
         self.__dict__ = args
-        self._fd = pyfits.open(self._filename, mode="update")
+        self._fd = fits.open(self._filename, mode="update")
 
     #
     # geometry
@@ -265,7 +259,7 @@ class Image (DictMixin, RemoteObject):
         if not self._findWCS():
             return (0, 0)
 
-        pixel = self._valueAt(self._wcs.wcs_sky2pix_fits, *world)
+        pixel = self._valueAt(self._wcs.wcs_world2pix, *world)
 
         # round pixel to avoid large decimal numbers and get out strange -0
         pixel = list(round(p, 6) for p in pixel)
@@ -282,17 +276,14 @@ class Image (DictMixin, RemoteObject):
         if not self._findWCS():
             return Position.fromRaDec(0, 0)
 
-        world = self._valueAt(self._wcs.wcs_pix2sky_fits, *pixel)
+        world = self._valueAt(self._wcs.wcs_pix2world, *pixel)
         return Position.fromRaDec(Coord.fromD(world[0]), Coord.fromD(world[1]))
 
     def _findWCS(self):
 
-        if not have_pywcs:
-            return False
-
         if not self._wcs:
             try:
-                self._wcs = pywcs.WCS(self._fd["PRIMARY"].header)
+                self._wcs = wcs.WCS(self._fd["PRIMARY"].header)
             except (KeyError, ValueError), e:
                 raise WCSNotFoundException(
                     "Couldn't find WCS information on %s ('%s')" % (self._filename, e))
@@ -319,7 +310,7 @@ class Image (DictMixin, RemoteObject):
             else:  # assumes as tuple
                 c1, c2 = coords[0]
 
-        value = fn([N.array([c1, c2])])
+        value = fn(N.array([[c1, c2]]), 1)
 
         if len(value) >= 1:
             return tuple(value[0])
@@ -457,7 +448,7 @@ class Image (DictMixin, RemoteObject):
             headers = [headers]
 
         for header in headers:
-            self._fd["PRIMARY"].header.update(*header)
+            self._fd["PRIMARY"].header.set(*header)
 
         self.save()
 

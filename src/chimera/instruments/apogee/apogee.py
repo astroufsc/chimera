@@ -28,7 +28,6 @@ import datetime as dt
 #import ctypes
 
 import numpy as N
-#import pyfits
 
 from chimera.instruments.apogee.apogeemanager import ApogeeManager
 from chimera.interfaces.camera import (

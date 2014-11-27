@@ -42,8 +42,7 @@ from chimera.core.lock import lock
 from chimera.core.exceptions import ObjectNotFoundException, ChimeraException
 from chimera.core.constants import SYSTEM_CONFIG_DIRECTORY
 
-from chimera.util.TSI.TSI import TSI
-import chimera.util.TPL2.TPL2 as TPL2
+from chimera.util.tpl2 import TPL2
 
 
 Direction = Enum("E", "W", "N", "S")
@@ -60,7 +59,7 @@ class Astelco (TelescopeBase):  # converted to Astelco
     def __init__(self):
         TelescopeBase.__init__(self)
 
-        self._tsi = None
+        self._tpl = None
         self._slewRate = None
         self._abort = threading.Event()
         self._slewing = False
@@ -162,17 +161,17 @@ class Astelco (TelescopeBase):  # converted to Astelco
         ':',
         int(self._aaport)
 
-        self._tsi = TSI(user=self._user,
+        self._tpl = TPL2(user=self._user,
                         password=self._password,
                         host=self._aahost,
                         port=int(self._aaport),
                         echo=False,
                         verbose=False,
                         debug=True)
-        print self._tsi.log
+        print self._tpl.log
 
         try:
-            self._tsi.open()
+            self._tpl.open()
 
             self._checkAstelco()
 
@@ -185,7 +184,7 @@ class Astelco (TelescopeBase):  # converted to Astelco
             else:
                 self._initTelescope()
 
-            self._tsi.debug = False
+            self._tpl.debug = False
             return True
 
         except (TPL2.SocketError, IOError):
@@ -193,11 +192,11 @@ class Astelco (TelescopeBase):  # converted to Astelco
 
     @lock
     def close(self):  # converted to Astelco
-        self.log.debug("TSI log:\n")
-        for lstr in self._tsi.log:
+        self.log.debug("TPl2 log:\n")
+        for lstr in self._tpl.log:
             self.log.debug(lstr)
-        if self._tsi.isOpen():
-            self._tsi.disconnect()
+        if self._tpl.isListening():
+            self._tpl.disconnect()
             return True
         else:
             return False
@@ -211,11 +210,11 @@ class Astelco (TelescopeBase):  # converted to Astelco
 
     @lock
     def getAlignMode(self):  # converted to Astelco
-        ret = self._tsi.getobject('TELESCOPE.CONFIG.MOUNTOPTIONS')
+        ret = self._tpl.getobject('TELESCOPE.CONFIG.MOUNTOPTIONS')
 
         if not ret or ret not in ("AZ-ZD", "ZD-ZD", "HA-DEC"):
             print "Log:"
-            print self._tsi.log
+            print self._tpl.log
             raise AstelcoException(
                 "Couldn't get the alignment mode. Is this an Astelco??")
 
@@ -260,18 +259,18 @@ class Astelco (TelescopeBase):  # converted to Astelco
 
         # slew
         print "Time to slew to RA/Dec is reported to be ",
-        self._tsi.getobject('POINTING.SLEWTIME'),
+        self._tpl.getobject('POINTING.SLEWTIME'),
         " s."
-        cmdid = self._tsi.set('POINTING.TRACK', 1, wait=True)
+        cmdid = self._tpl.set('POINTING.TRACK', 1, wait=True)
 
         # to handle timeout
         start_time = time.time()
 
-        err = not self._tsi.succeeded(cmdid)
+        err = not self._tpl.succeeded(cmdid)
 
         if err:
             # check error message
-            msg = self._tsi.commands_sent[cmdid]['received']
+            msg = self._tpl.commands_sent[cmdid]['received']
             self._slewing = False
             raise AstelcoException(msg[:-1])
 
@@ -312,14 +311,14 @@ class Astelco (TelescopeBase):  # converted to Astelco
 
         # slew
         print "Time to slew to Alt/Az is reported to be ",
-        self._tsi.getobject('POINTING.SLEWTIME'),
+        self._tpl.getobject('POINTING.SLEWTIME'),
         " s."
-        cmdid = self._tsi.set('POINTING.TRACK', 2, wait=True)
+        cmdid = self._tpl.set('POINTING.TRACK', 2, wait=True)
 
         # to handle timeout
         start_time = time.time()
 
-        err = not self._tsi.succeeded(cmdid)
+        err = not self._tpl.succeeded(cmdid)
 
         if err:
             # check error message
@@ -356,9 +355,9 @@ class Astelco (TelescopeBase):  # converted to Astelco
             if target.within(position, eps=Coord.fromAS(60)):
                 time.sleep(self["stabilization_time"])
                 self._slewing = False
-                cmdid = self._tsi.set('POINTING.TRACK', 1, wait=True)
-                if self._tsi.succeeded(cmdid):
-                    print "Tracking time available is ", self._tsi.getobject('POINTING.TRACKTIME'), " s."
+                cmdid = self._tpl.set('POINTING.TRACK', 1, wait=True)
+                if self._tpl.succeeded(cmdid):
+                    print "Tracking time available is ", self._tpl.getobject('POINTING.TRACKTIME'), " s."
                     return TelescopeStatus.OK
 
             print "RA,Dec: ", self.getPositionRaDec()
@@ -380,7 +379,7 @@ class Astelco (TelescopeBase):  # converted to Astelco
 
     def isSlewing(self):  # converted to Astelco
         self._slewing = (
-            int(self._tsi.getobject('TELESCOPE.MOTION_STATE')) != 0) and (int(self._tsi.getobject('POINTING.TRACK')) != 1)
+            int(self._tpl.getobject('TELESCOPE.MOTION_STATE')) != 0) and (int(self._tpl.getobject('POINTING.TRACK')) != 1)
         return self._slewing
 
     def _move(self, direction, duration=1.0, slewRate=SlewRate.GUIDE):  # yet to convert to Astelco
@@ -479,7 +478,7 @@ class Astelco (TelescopeBase):  # converted to Astelco
 
     def _calcDuration(self, arc, direction, rate):  # no need to convert to Astelco
         """
-        Calculates the time spent (returned number) to move by arc in a 
+        Calculates the time spent (returned number) to move by arc in a
         given direction at a given rate
         """
 
@@ -533,19 +532,19 @@ class Astelco (TelescopeBase):  # converted to Astelco
 
     @lock
     def stopMoveAll(self):  # converted to Astelco
-        self._tsi.set('TELESCOPE.STOP', 1, wait=True)
+        self._tpl.set('TELESCOPE.STOP', 1, wait=True)
         return True
 
     @lock
     def getRa(self):  # converted to Astelco
 
-        ret = self._tsi.getobject('POSITION.EQUATORIAL.RA_J2000')
+        ret = self._tpl.getobject('POSITION.EQUATORIAL.RA_J2000')
 
         return Coord.fromH(ret)
 
     @lock
     def getDec(self):  # converted to Astelco
-        ret = self._tsi.getobject('POSITION.EQUATORIAL.DEC_J2000')
+        ret = self._tpl.getobject('POSITION.EQUATORIAL.DEC_J2000')
 
         return Coord.fromD(ret)
 
@@ -581,7 +580,7 @@ class Astelco (TelescopeBase):  # converted to Astelco
 
     @lock
     def getTargetRa(self):  # converted to Astelco
-        ret = self._tsi.getobject('OBJECT.EQUATORIAL.RA')
+        ret = self._tpl.getobject('OBJECT.EQUATORIAL.RA')
 
         return Coord.fromH(ret)
 
@@ -590,9 +589,9 @@ class Astelco (TelescopeBase):  # converted to Astelco
         if not isinstance(ra, Coord):
             ra = Coord.fromHMS(ra)
 
-        cmdid = self._tsi.set('OBJECT.EQUATORIAL.RA', ra.H, wait=True)
+        cmdid = self._tpl.set('OBJECT.EQUATORIAL.RA', ra.H, wait=True)
 
-        ret = self._tsi.succeeded(cmdid)
+        ret = self._tpl.succeeded(cmdid)
 
         if not ret:
             raise AstelcoException("Invalid RA '%s'" % ra)
@@ -604,9 +603,9 @@ class Astelco (TelescopeBase):  # converted to Astelco
         if not isinstance(dec, Coord):
             dec = Coord.fromDMS(dec)
 
-        cmdid = self._tsi.set('OBJECT.EQUATORIAL.DEC', dec.D, wait=True)
+        cmdid = self._tpl.set('OBJECT.EQUATORIAL.DEC', dec.D, wait=True)
 
-        ret = self._tsi.succeeded(cmdid)
+        ret = self._tpl.succeeded(cmdid)
 
         if not ret:
             raise AstelcoException("Invalid DEC '%s'" % dec)
@@ -615,13 +614,13 @@ class Astelco (TelescopeBase):  # converted to Astelco
 
     @lock
     def getTargetDec(self):  # converted to Astelco
-        ret = self._tsi.getobject('OBJECT.EQUATORIAL.DEC')
+        ret = self._tpl.getobject('OBJECT.EQUATORIAL.DEC')
 
         return Coord.fromD(ret)
 
     @lock
     def getAz(self):  # converted to Astelco
-        ret = self._tsi.getobject('POSITION.HORIZONTAL.AZ')
+        ret = self._tpl.getobject('POSITION.HORIZONTAL.AZ')
 
         c = Coord.fromD(ret)
 
@@ -635,7 +634,7 @@ class Astelco (TelescopeBase):  # converted to Astelco
 
     @lock
     def getAlt(self):  # converted to Astelco
-        ret = self._tsi.getobject('POSITION.HORIZONTAL.ALT')
+        ret = self._tpl.getobject('POSITION.HORIZONTAL.ALT')
 
         return Coord.fromD(ret)
 
@@ -647,9 +646,9 @@ class Astelco (TelescopeBase):  # converted to Astelco
         if not isinstance(alt, Coord):
             alt = Coord.fromD(alt)
 
-        cmdid = self._tsi.set('OBJECT.HORIZONTAL.ALT', alt.D, wait=True)
+        cmdid = self._tpl.set('OBJECT.HORIZONTAL.ALT', alt.D, wait=True)
 
-        ret = self._tsi.succeeded(cmdid)
+        ret = self._tpl.succeeded(cmdid)
 
         if not ret:
             raise AstelcoException("Invalid Altitude '%s'" % alt)
@@ -673,9 +672,9 @@ class Astelco (TelescopeBase):  # converted to Astelco
             else:
                 az = az + Coord.fromD(180)
 
-        cmdid = self._tsi.set('OBJECT.HORIZONTAL.AZ', az.D, wait=True)
+        cmdid = self._tpl.set('OBJECT.HORIZONTAL.AZ', az.D, wait=True)
 
-        ret = self._tsi.succeeded(cmdid)
+        ret = self._tpl.succeeded(cmdid)
 
         if not ret:
             raise AstelcoException(
@@ -687,7 +686,7 @@ class Astelco (TelescopeBase):  # converted to Astelco
 
     @lock
     def getLat(self):  # converted to Astelco
-        ret = self._tsi.getobject('POINTING.SETUP.LOCAL.LATITUDE')
+        ret = self._tpl.getobject('POINTING.SETUP.LOCAL.LATITUDE')
 
         return Coord.fromD(ret)
 
@@ -698,9 +697,9 @@ class Astelco (TelescopeBase):  # converted to Astelco
 
         lat_float = lat.D
 
-        cmdid = self._tsi.set(
+        cmdid = self._tpl.set(
             'POINTING.SETUP.LOCAL.LATITUDE', lat_float, wait=True)
-        ret = self._tsi.succeeded(cmdid)
+        ret = self._tpl.succeeded(cmdid)
         if not ret:
             raise AstelcoException(
                 "Invalid Latitude '%s' ('%s')" % (lat, lat_float))
@@ -708,16 +707,16 @@ class Astelco (TelescopeBase):  # converted to Astelco
 
     @lock
     def getLong(self):  # converted to Astelco
-        ret = self._tsi.getobject('POINTING.SETUP.LOCAL.LONGITUDE')
+        ret = self._tpl.getobject('POINTING.SETUP.LOCAL.LONGITUDE')
         return Coord.fromD(ret)
 
     @lock
     def setLong(self, coord):  # converted to Astelco
         if not isinstance(coord, Coord):
             coord = Coord.fromDMS(coord)
-        cmdid = self._tsi.set(
+        cmdid = self._tpl.set(
             'POINTING.SETUP.LOCAL.LONGITUDE', coord.D, wait=True)
-        ret = self._tsi.succeeded(cmdid)
+        ret = self._tpl.succeeded(cmdid)
         if not ret:
             raise AstelcoException("Invalid Longitude '%s'" % coord.D)
         return True
@@ -725,7 +724,7 @@ class Astelco (TelescopeBase):  # converted to Astelco
     @lock
     def getDate(self):  # converted to Astelco
         timef = time.mktime(
-            time.localtime(self._tsi.getobject('POSITION.LOCAL.UTC')))
+            time.localtime(self._tpl.getobject('POSITION.LOCAL.UTC')))
         return dt.datetime.fromtimestamp(timef).date()
 
     @lock
@@ -735,7 +734,7 @@ class Astelco (TelescopeBase):  # converted to Astelco
     @lock
     def getLocalTime(self):  # converted to Astelco
         timef = time.mktime(
-            time.localtime(self._tsi.getobject('POSITION.LOCAL.UTC')))
+            time.localtime(self._tpl.getobject('POSITION.LOCAL.UTC')))
         return dt.datetime.fromtimestamp(timef).time()
 
     @lock
@@ -747,7 +746,7 @@ class Astelco (TelescopeBase):  # converted to Astelco
 
     @lock
     def getLocalSiderealTime(self):  # converted to Astelco
-        ret = self._tsi.getobject('POSITION.LOCAL.SIDEREAL')
+        ret = self._tpl.getobject('POSITION.LOCAL.SIDEREAL')
         c = Coord.fromH(ret)
         return dt.datetime.time(c.HMS[1:-1])
 
@@ -789,8 +788,8 @@ class Astelco (TelescopeBase):  # converted to Astelco
 
     @lock
     def startTracking(self):  # converted to Astelco
-        cmdid = self._tsi.set('POINTING.TRACK', 1, wait=True)
-        return self._tsi.succeeded(cmdid)
+        cmdid = self._tpl.set('POINTING.TRACK', 1, wait=True)
+        return self._tpl.succeeded(cmdid)
 
         if self.getAlignMode() in (AlignMode.POLAR, AlignMode.ALT_AZ):
             return True
@@ -799,8 +798,8 @@ class Astelco (TelescopeBase):  # converted to Astelco
 
     @lock
     def stopTracking(self):  # converted to Astelco
-        cmdid = self._tsi.set('POINTING.TRACK', 0, wait=True)
-        return self._tsi.succeeded(cmdid)
+        cmdid = self._tpl.set('POINTING.TRACK', 0, wait=True)
+        return self._tpl.succeeded(cmdid)
 
         if self.getAlignMode() == AlignMode.LAND:
             return True
@@ -809,7 +808,7 @@ class Astelco (TelescopeBase):  # converted to Astelco
         return True
 
     def isTracking(self):  # converted to Astelco
-        return self._tsi.getobject('POINTING.TRACK')
+        return self._tpl.getobject('POINTING.TRACK')
 
         if self.getAlignMode() != AlignMode.LAND:
             return True
@@ -861,7 +860,7 @@ class Astelco (TelescopeBase):  # converted to Astelco
         site = self.getManager().getProxy("/Site/0")
         #self.slewToRaDec(Position.fromRaDec(str(self.getLocalSiderealTime()),
 #                                            site["latitude"]))
-        cmdid = self._tsi.set('TELESCIPE.READY', 0, wait=True)
+        cmdid = self._tpl.set('TELESCIPE.READY', 0, wait=True)
 
         # 2. stop tracking
         #self.stopTracking ()
@@ -871,7 +870,7 @@ class Astelco (TelescopeBase):  # converted to Astelco
 
         self.parkComplete()
 
-        return self._tsi.succeeded(cmdid)
+        return self._tpl.succeeded(cmdid)
 
     @lock
     def unpark(self):  # converted to Astelco
@@ -880,7 +879,7 @@ class Astelco (TelescopeBase):  # converted to Astelco
             return True
         # 1. power on
         #self.powerOn ()
-        cmdid = self._tsi.set('TELESCOPE.READY', 1, wait=True)
+        cmdid = self._tpl.set('TELESCOPE.READY', 1, wait=True)
 
         # 2. start tracking
         #self.startTracking()
@@ -888,7 +887,7 @@ class Astelco (TelescopeBase):  # converted to Astelco
         while ready_state < 1.0:
             print "Powering up Astelco: ", ready_state*100.0, "%"
             old_ready_state = ready_state
-            ready_state = self._tsi.getobject('TELESCOPE.READY_STATE')
+            ready_state = self._tpl.getobject('TELESCOPE.READY_STATE')
             if ready_state != old_ready_state:
                 print "Powering up Astelco: ", ready_state*100.0, "%"
                 old_ready_state = ready_state
@@ -908,7 +907,7 @@ class Astelco (TelescopeBase):  # converted to Astelco
 
         self.unparkComplete()
         self._parked = False
-        return self._tsi.succeeded(cmdid)
+        return self._tpl.succeeded(cmdid)
 
     # low-level
     def _debug(self, msg):  # no need to convert to Astelco
@@ -958,14 +957,14 @@ class Astelco (TelescopeBase):  # converted to Astelco
         return self._tty.write(data)
 
     def getobject(self, object):
-        return self._tsi.getobject(object)
+        return self._tpl.getobject(object)
 
     def set(self, object, value, wait=False, binary=False):
-        return self._tsi.set(object, value, wait=False, binary=False)
+        return self._tpl.set(object, value, wait=False, binary=False)
 
     def getcommands_sent(self):
-        return self._tsi.commands_sent
+        return self._tpl.commands_sent
 
     def getlog(self):
-        return self._tsi.log
+        return self._tpl.log
 

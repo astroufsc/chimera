@@ -1,13 +1,1 @@
-CherryPy==3.2.4
-PyYAML==3.10
-Pyro==3.16
-RO==3.3.0
-SQLAlchemy==0.9.1
-numpy>=1.8.0
-pyephem==3.7.5.2
-pyfits==3.2
-pyserial==2.7
-python-dateutil==2.2
-python-sbigudrv==0.5
-pywcs==1.10.2
-suds==0.4
+-e .

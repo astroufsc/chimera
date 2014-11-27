@@ -27,7 +27,7 @@ import os
 import shutil
 
 import numpy as N
-import pyfits
+from astropy.io import fits
 
 from chimera.interfaces.camera import (CCD, CameraFeature,
                                        ReadoutMode,
@@ -221,14 +221,14 @@ class FakeCamera (CameraBase, FilterWheelBase):
                         if telescope.getDec().D < -25:
                             query_args["v"] = "poss2ukstu_red"
                             query_args["h"] = ccd_height / 59.5  # ~1"/pix (~60 pix/arcmin) is the plate scale of DSS POSS2-Red
-                            query_args["w"] = ccd_width / 59.5                            
+                            query_args["w"] = ccd_width / 59.5
                         else:
                             query_args["v"] = "poss1_red"
                             query_args["h"] = ccd_height / 35.3 # 1.7"/pix (35.3 pix/arcmin) is the plate scale of DSS POSS1-Red
                             query_args["w"] = ccd_width / 35.3
-                            
+
                         url += urllib.urlencode(query_args)
-                        
+
                         self.log.debug("Attempting URL: " + url)
                         try:
                             t0 = time.time()
@@ -237,7 +237,7 @@ class FakeCamera (CameraBase, FilterWheelBase):
                                 "download took: %.3f s" % (time.time() - t0))
                             fitsfile = dssfile + ".fits.gz"
                             shutil.copy(dssfile, fitsfile)
-                            hdulist = pyfits.open(fitsfile)
+                            hdulist = fits.open(fitsfile)
                             pix = hdulist[0].data
                             hdulist.close()
                             os.remove(fitsfile)

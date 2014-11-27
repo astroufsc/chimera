@@ -8,10 +8,7 @@ python:
 install:
   - sudo apt-get update
   - sudo apt-get install libusb-dev sextractor
-  - sudo sh -c 'curl http://ds9.si.edu/download/linux64/ds9.linux64.7.3.1.tar.gz | tar zx -C /bin/'
-  - sudo sh -c 'curl http://ds9.si.edu/download/linux64/xpa.linux64.2.1.14.tar.gz | tar zx -C /bin/'
   - pip install -r requirements.txt
-  - pip install coverage coveralls  # Needed to nosetests coverage
   - python setup.py install
 
 # Installing chimera...

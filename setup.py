@@ -26,95 +26,72 @@ import sys
 import glob
 import re
 
-# append chimera to sys.path to get current version
-build_dir = os.getcwd()
-src_dir = os.path.join(build_dir, 'src')
+# read version.py file to get version and metadata information
+here = os.path.abspath(os.path.dirname(__file__))
+version_py = os.path.join(here, "src/chimera/core/version.py")
+execfile(version_py)
 
-old_sys_path = sys.path
-sys.path.insert(0, src_dir)
-
-from chimera.core.version import _chimera_version_,\
-    _chimera_description_,  \
-    _chimera_author,    \
-    _chimera_author_email_, \
-    _chimera_license_,    \
-    _chimera_url_,    \
-    _chimera_download_url_, \
-    _chimera_classifiers_,  \
-    _chimera_platform_
-
-# modules
-
+# chimera scripts
 chimera_scripts = ['src/scripts/chimera',
-                   'src/scripts/chimera-cam',
-                   'src/scripts/chimera-admin',
-                   'src/scripts/chimera-filter',
-                   'src/scripts/chimera-tel',
-                   'src/scripts/chimera-dome',
-                   'src/scripts/chimera-focus',
-                   'src/scripts/chimera-pverify',
-                   'src/scripts/chimera-console',
-                   'src/scripts/chimera-sched',
-                   'src/scripts/chimera-ppsched',
-                   'src/scripts/chimera-taosched',
-                   'src/scripts/chimera-gui']
+  'src/scripts/chimera-cam',
+  'src/scripts/chimera-admin',
+  'src/scripts/chimera-filter',
+  'src/scripts/chimera-tel',
+  'src/scripts/chimera-dome',
+  'src/scripts/chimera-focus',
+  'src/scripts/chimera-pverify',
+  'src/scripts/chimera-console',
+  'src/scripts/chimera-sched',
+  'src/scripts/chimera-ppsched',
+  'src/scripts/chimera-taosched',
+]
 
-# setup
-
-linux_deps = linux_cdeps = []
-win32_deps = win32_cdeps = []
-mac_deps = mac_cdeps = []
+# platform specific requirements
+platform_deps = []
 
 if sys.platform == "win32":
-    win32_deps += ["pywin32 == 218"]
-elif sys.platform == "darwin":
-    mac_deps += [
-        "python-sbigudrv == 0.5",
-        "pywcs"
-    ]
+  platform_deps += [
+    "pywin32 == 218"
+  ]
 else:
-    linux_deps += [
-        "python-sbigudrv == 0.5",
-        "pywcs"
-    ]
+  platform_deps += [
+    "python-sbigudrv"
+  ]
 
-modulefiles = os.listdir("src/chimera/gui/modules/")
-guifiles = []
-for file in modulefiles:
-    if re.match('(.+\.png)|(.+\.xml)', file):
-        guifiles.append("src/chimera/gui/modules/" + file)
+# go!
+setup(
+  name = 'chimera-python',
+  version = _chimera_version_,
+  description = _chimera_description_,
+  long_description = open("docs/site/index.rst").read(),
+  url = _chimera_url_,
 
-setup(name='chimera-python',
-      package_dir={"": "src"},
+  author = _chimera_author_,
+  author_email = _chimera_author_email_,
 
-      packages=find_packages("src", exclude=["*.tests"]),
-      scripts=chimera_scripts,
-      data_files=[("chimera/core", ["src/chimera/core/chimera.sample.config"]),
-                  ("chimera/gui", ["src/chimera/gui/chimera.xml"]),
-                  ("chimera/gui/modules", guifiles)],
-      zip_safe=False,
+  license = _chimera_license_,
 
-      # dependencies are installed bottom up, so put important things last
-      install_requires=["CherryPy",
-                        "PyYAML",
-                        "suds",
-                        "SQLAlchemy",
-                        "pyephem",
-                        "python-dateutil",
-                        "RO",
-                        "pyfits",
-                        "pyserial",
-                        "Pyro"] + linux_deps + win32_deps + mac_deps + linux_cdeps + win32_cdeps + mac_cdeps + ["numpy"],
+  package_dir = {"": "src"},
+  packages = find_packages("src", exclude=["*.tests"]),
 
-      tests_require=["nose", "coverage"],
+  include_package_data = True,
 
-      version=_chimera_version_,
-      description=_chimera_description_,
-      long_description=open("docs/site/index.rst").read(),
-      author=_chimera_author,
-      author_email=_chimera_author_email_,
-      license=_chimera_license_,
-      url=_chimera_url_,
-      download_url=_chimera_download_url_,
-      classifiers=_chimera_classifiers_,
-      platforms=_chimera_platform_)
+  scripts = chimera_scripts,
+
+  # installation happens in the specified order
+  install_requires = [
+    "Pyro",
+    "numpy",
+    "astropy",
+    "PyYAML",
+    "python-dateutil",
+    "pyephem",
+    "pyserial",
+    "RO",
+    "suds",
+    "SQLAlchemy",
+    "CherryPy",
+  ] + platform_deps,
+
+  tests_require = ["nose", "coverage", "wheel"],
+)

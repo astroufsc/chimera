@@ -1,33 +1,14 @@
-#! /usr/bin/env python
-# -*- coding: iso-8859-1 -*-
-
-# chimera - observatory automation system
-# Copyright (C) 2006-2007  P. Henrique Silva <henrique@astro.ufsc.br>
-
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License
-# as published by the Free Software Foundation; either version 2
-# of the License, or (at your option) any later version.
-
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
-# 02110-1301, USA.
-
 import logging
 import logging.handlers
 import sys
 import os.path
 
 from chimera.core.constants import (SYSTEM_CONFIG_LOG_NAME,
-                                    SYSTEM_CONFIG_DIRECTORY)
+                                    SYSTEM_CONFIG_DIRECTORY,
+                                    MANAGER_DEFAULT_HOST,
+                                    MANAGER_DEFAULT_PORT)
 
-# try to use fatser (C)StringIO, use slower one if not available
+# try to use faster (C)StringIO, use slower one if not available
 try:
     import cStringIO as StringIO
 except ImportError:
@@ -39,7 +20,7 @@ from chimera.core.exceptions import printException
 __all__ = ['setConsoleLevel']
 
 
-class ChimeraFormatter (logging.Formatter):
+class ChimeraFormatter(logging.Formatter):
 
     def __init__(self, fmt, datefmt):
         logging.Formatter.__init__(self, fmt, datefmt)
@@ -54,8 +35,17 @@ class ChimeraFormatter (logging.Formatter):
             stream.close()
 
 
-fmt = ChimeraFormatter(fmt='%(asctime)s.%(msecs)d %(levelname)s %(name)s %(filename)s:%(lineno)d %(message)s',
-                       datefmt='%d-%m-%Y %H:%M:%S')
+class ChimeraFilter(logging.Filter):
+
+    def __init__(self):
+    # Explicitely set this filter for all loggers.
+        logging.Filter.__init__(self, name='')
+
+    def filter(self, record):
+        # Get the manager:port info
+        record.origin = '[[' + MANAGER_DEFAULT_HOST + \
+            ':' + str(MANAGER_DEFAULT_PORT) + ']]'
+        return True
 
 try:
     if not os.path.exists(SYSTEM_CONFIG_DIRECTORY):
@@ -67,20 +57,29 @@ root = logging.getLogger("chimera")
 root.setLevel(logging.DEBUG)
 root.propagate = False
 
+fmt = ChimeraFormatter(
+    fmt='%(asctime)s.%(msecs)d %(origin)s %(levelname)s %(name)s %(filename)s:%(lineno)d %(message)s',
+    datefmt='%d-%m-%Y %H:%M:%S')
+
+flt = ChimeraFilter()
+
 consoleHandler = logging.StreamHandler(sys.stderr)
 consoleHandler.setFormatter(fmt)
 consoleHandler.setLevel(logging.WARNING)
+consoleHandler.addFilter(flt)
 root.addHandler(consoleHandler)
-
 
 def setConsoleLevel(level):
     consoleHandler.setLevel(level)
 
 try:
     fileHandler = logging.handlers.RotatingFileHandler(SYSTEM_CONFIG_LOG_NAME,
-                                                       maxBytes=5 * 1024 * 1024, backupCount=10)
+                                                       maxBytes=5 *
+                                                       1024 * 1024,
+                                                       backupCount=10)
     fileHandler.setFormatter(fmt)
     fileHandler.setLevel(logging.DEBUG)
+    fileHandler.addFilter(flt)
     root.addHandler(fileHandler)
 except Exception, e:
     root.warning("Couldn't start Log System FileHandler (%s)" % e)

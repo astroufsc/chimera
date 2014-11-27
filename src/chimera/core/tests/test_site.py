@@ -22,8 +22,6 @@ from chimera.core.manager    import Manager
 from chimera.core.site       import Site
 from chimera.core.exceptions import printException
 
-import chimera.core.log
-
 from chimera.util.coord    import Coord
 from chimera.util.position import Position
 
@@ -73,7 +71,7 @@ class TestSite (object):
     def test_sidereal_clock (self):
 
         return True
-        
+
         site = self.manager.getProxy(Site)
 
         times = []
@@ -111,19 +109,19 @@ class TestSite (object):
             sunset_twilight_begin = site.sunset_twilight_begin()
             sunset_twilight_end   = site.sunset_twilight_end()
             sunset_twilight_duration = relativedelta(sunset_twilight_end, sunset_twilight_begin)
-            
+
             sunrise_twilight_begin = site.sunrise_twilight_begin()
             sunrise_twilight_end = site.sunrise_twilight_end()
-            sunrise_twilight_duration = relativedelta(sunrise_twilight_end, sunrise_twilight_begin)            
-            
+            sunrise_twilight_duration = relativedelta(sunrise_twilight_end, sunrise_twilight_begin)
+
             print "next sunset twilight begins at:", sunset_twilight_begin
             print "next sunset twilight ends   at:", sunset_twilight_end
             print "sunset twilight duration      :", sunset_twilight_duration
             print
             print "next sunrise twilight begins at:", sunrise_twilight_begin
             print "next sunrise twilight ends   at:", sunrise_twilight_end
-            print "sunrise twilight duration      :", sunrise_twilight_duration            
+            print "sunrise twilight duration      :", sunrise_twilight_duration
 
         except Exception, e:
             printException(e)
-        
+
