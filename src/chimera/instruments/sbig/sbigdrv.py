@@ -16,7 +16,8 @@
 
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301, USA.
 
 
 import math
@@ -32,21 +33,22 @@ log = logging.getLogger(__name__)
 from chimera.core.exceptions import ChimeraException
 from chimera.interfaces.camera import ReadoutMode
 
+
 class SBIGException (ChimeraException):
 
-    def __init__ (self, code, msg=""):
+    def __init__(self, code, msg=""):
         ChimeraException.__init__(self, msg)
         self.code = code
 
-    def __str__ (self):
+    def __str__(self):
         return "%s (%d)" % (self.message, self.code)
 
 
 class SBIGReadoutMode(ReadoutMode):
 
     def __init__(self, mode):
-        self.mode =  mode.mode
-        self.gain = float(hex(mode.gain).split('x')[1].split('L')[0]) / 100.0
+        self.mode = mode.mode
+        self.gain = float(hex(mode.gain).split('x')[1]) / 100.0
         self.width = mode.width
         self.height = mode.height
         self.pixelWidth = float(hex(mode.pixel_width).split('x')[1].split('L')[0]) / 100.0
@@ -69,7 +71,7 @@ class TemperatureSetPoint(object):
           "amb": 45.0}
 
     @classmethod
-    def toAD (cls, temp, sensor = "ccd"):
+    def toAD(cls, temp, sensor="ccd"):
 
         if sensor not in ["ccd", "amb"]:
             sensor = "ccd"
@@ -81,22 +83,24 @@ class TemperatureSetPoint(object):
             temp = -50.0
         elif temp > 35.0:
             temp = 35.0
-        
-        r = cls.r0 * math.exp ((math.log (cls.r_ratio[sensor]) * (cls.t0 - temp)) / cls.dt[sensor])
+
+        r = cls.r0 * \
+            math.exp(
+                (math.log(cls.r_ratio[sensor]) * (cls.t0 - temp)) / cls.dt[sensor])
 
         SetPoint = (cls.max_ad / ((cls.r_bridge[sensor] / r) + 1.0)) + 0.5
 
-        #print "from %f to %d" % (temp, int(SetPoint))
+        # print "from %f to %d" % (temp, int(SetPoint))
 
         return int(SetPoint)
 
     @classmethod
-    def toDegrees (cls, SetPoint, sensor = "ccd"):
+    def toDegrees(cls, SetPoint, sensor="ccd"):
 
         if sensor not in ["ccd", "amb"]:
             sensor = "ccd"
 
-        SetPoint = int (SetPoint)
+        SetPoint = int(SetPoint)
 
         # limits from CSBIGCam
         if SetPoint < 1:
@@ -106,28 +110,30 @@ class TemperatureSetPoint(object):
 
         r = cls.r_bridge[sensor] / ((float(cls.max_ad) / SetPoint) - 1.0)
 
-        temp = cls.t0 - (cls.dt[sensor] * (math.log (r/cls.r0) / math.log (cls.r_ratio[sensor])))
+        temp = cls.t0 - \
+            (cls.dt[sensor] *
+             (math.log(r / cls.r0) / math.log(cls.r_ratio[sensor])))
 
-        #print "from %f to %f" % (SetPoint, temp)
+        # print "from %f to %f" % (SetPoint, temp)
 
         return temp
- 
+
 
 class SBIGDrv(object):
 
     lpt1 = udrv.DEV_LPT1
     lpt2 = udrv.DEV_LPT2
     lpt3 = udrv.DEV_LPT3
-    usb  = udrv.DEV_USB
+    usb = udrv.DEV_USB
     usb1 = udrv.DEV_USB1
     usb2 = udrv.DEV_USB2
     usb3 = udrv.DEV_USB3
     usb4 = udrv.DEV_USB4
-    
+
     imaging = udrv.CCD_IMAGING
     tracking = udrv.CCD_TRACKING
 
-    openShutter  = udrv.SC_OPEN_SHUTTER
+    openShutter = udrv.SC_OPEN_SHUTTER
     closeShutter = udrv.SC_CLOSE_SHUTTER
     leaveShutter = udrv.SC_LEAVE_SHUTTER
 
@@ -143,15 +149,15 @@ class SBIGDrv(object):
                5: udrv.CFWP_5}
 
     # private
-    _imgIdle       = 0x0
+    _imgIdle = 0x0
     _imgInProgress = 0x2
-    _imgComplete   = 0x3
-    _trkIdle       = 0x0
+    _imgComplete = 0x3
+    _trkIdle = 0x0
     _trkInProgress = 0x8
-    _trkComplete   = 0xc
+    _trkComplete = 0xc
 
     def __init__(self):
-        #FIXME: check device permissions and module status
+        # FIXME: check device permissions and module status
         pass
 
     def openDriver(self):
@@ -196,7 +202,8 @@ class SBIGDrv(object):
         return err
 
     def isLinked(self):
-        # FIXME: ask SBIG to get a better CC_GET_LINK_STATUS.. this one it too bogus
+        # FIXME: ask SBIG to get a better CC_GET_LINK_STATUS.. this one it too
+        # bogus
         glsr = udrv.GetLinkStatusResults()
         self._cmd(udrv.CC_GET_LINK_STATUS, None, glsr)
         return bool(glsr.linkEstablished)
@@ -219,12 +226,14 @@ class SBIGDrv(object):
 
     def exposing(self, ccd):
         if ccd == self.imaging:
-            return ((self._status(udrv.CC_START_EXPOSURE) & self._imgComplete) == self._imgInProgress)
+            return (
+                (self._status(udrv.CC_START_EXPOSURE) & self._imgComplete) == self._imgInProgress)
 
         if ccd == self.tracking:
-            return ((self._status(udrv.CC_START_EXPOSURE) & self._trkComplete) == self._trkInProgress)
+            return (
+                (self._status(udrv.CC_START_EXPOSURE) & self._trkComplete) == self._trkInProgress)
 
-    def startReadout(self, ccd, mode = 0, window = None):
+    def startReadout(self, ccd, mode=0, window=None):
 
         if mode not in self.readoutModes[ccd].keys():
             raise ValueError("Invalid readout mode")
@@ -233,7 +242,7 @@ class SBIGDrv(object):
         readoutMode = self.readoutModes[ccd][mode]
 
         window = (window or []) or readoutMode.getWindow()
-        
+
         if (window[0] < 0 or window[0] > readoutMode.height):
             raise ValueError("Invalid window top point")
 
@@ -249,9 +258,9 @@ class SBIGDrv(object):
         srp = udrv.StartReadoutParams()
         srp.ccd = ccd
         srp.readoutMode = mode
-        srp.top    = window[0]
-        srp.left   = window[1]
-        srp.width  = window[2]
+        srp.top = window[0]
+        srp.left = window[1]
+        srp.width = window[2]
         srp.height = window[3]
 
         return self._cmd(udrv.CC_START_READOUT, srp, None)
@@ -260,8 +269,8 @@ class SBIGDrv(object):
         erp = udrv.EndReadoutParams()
         erp.ccd = ccd
         return self._cmd(udrv.CC_END_READOUT, erp, None)
-    
-    def readoutLine(self, ccd, mode = 0, line = None):
+
+    def readoutLine(self, ccd, mode=0, line=None):
 
         if mode not in self.readoutModes[ccd].keys():
             raise ValueError("Invalid readout mode")
@@ -273,7 +282,7 @@ class SBIGDrv(object):
 
         if (line[0] < 0 or line[0] > readoutMode.width):
             raise ValueError("Invalid pixel start")
-            
+
         if (line[1] < 0 or line[1] > readoutMode.width):
             raise ValueError("Invalid pixel lenght")
 
@@ -305,7 +314,7 @@ class SBIGDrv(object):
                 cams.append(cam.name)
 
         return cams
-    
+
     def queryDriverInfo(self):
         pass
 
@@ -336,33 +345,32 @@ class SBIGDrv(object):
 
         return True
 
-
     # temperature
-    def setTemperature (self, regulation, setpoint, autofreeze = True):
+    def setTemperature(self, regulation, setpoint, autofreeze=True):
 
         strp = udrv.SetTemperatureRegulationParams()
 
-        if regulation == True:
+        if regulation is True:
             strp.regulation = udrv.REGULATION_ON
         else:
             strp.regulation = udrv.REGULATION_OFF
-        
-        strp.ccdSetpoint = TemperatureSetPoint.toAD (setpoint)
+
+        strp.ccdSetpoint = TemperatureSetPoint.toAD(setpoint)
 
         self._cmd(udrv.CC_SET_TEMPERATURE_REGULATION, strp, None)
 
         # activate autofreeze if enabled
-        if autofreeze == True:
+        if autofreeze is True:
             strp = udrv.SetTemperatureRegulationParams()
             strp.regulation = udrv.REGULATION_ENABLE_AUTOFREEZE
             return self._cmd(udrv.CC_SET_TEMPERATURE_REGULATION, strp, None)
 
         return True
 
-    def getTemperature (self, ccd = True):
+    def getTemperature(self, ccd=True):
         """
-	@returns: a tuple with (is cooling enabled, current cooling power (0-100), setpoint temperature, current ccd temperature)
-	"""
+        @returns: a tuple with (is cooling enabled, current cooling power (0-100), setpoint temperature, current ccd temperature)
+        """
 
         # USB based cameras have only one thermistor on the top of the CCD
         # Ambient thermistor value will be always 25.0 oC
@@ -372,7 +380,7 @@ class SBIGDrv(object):
 
         qtsr = udrv.QueryTemperatureStatusResults()
 
-        self._cmd (udrv.CC_QUERY_TEMPERATURE_STATUS, None, qtsr)
+        self._cmd(udrv.CC_QUERY_TEMPERATURE_STATUS, None, qtsr)
 
         return (qtsr.enabled,
                 (qtsr.power / 255.0) * 100.0,
@@ -394,18 +402,18 @@ class SBIGDrv(object):
         return bool(int(status & 0x8))
 
     # filter wheel
-    def getFilterPosition (self):
+    def getFilterPosition(self):
         cfwp = udrv.CFWParams()
-        cfwp.cfwModel   = udrv.CFWSEL_CFW8
+        cfwp.cfwModel = udrv.CFWSEL_CFW8
         cfwp.cfwCommand = udrv.CFWC_QUERY
 
         cfwr = udrv.CFWResults()
 
-        self._cmd (udrv.CC_CFW, cfwp, cfwr)
+        self._cmd(udrv.CC_CFW, cfwp, cfwr)
 
         return cfwr.cfwPosition
 
-    def setFilterPosition (self, position):
+    def setFilterPosition(self, position):
         cfwp = udrv.CFWParams()
         cfwp.cfwModel = udrv.CFWSEL_CFW8
         cfwp.cfwCommand = udrv.CFWC_GOTO
@@ -413,16 +421,16 @@ class SBIGDrv(object):
 
         cfwr = udrv.CFWResults()
 
-        return self._cmd (udrv.CC_CFW, cfwp, cfwr)
+        return self._cmd(udrv.CC_CFW, cfwp, cfwr)
 
-    def getFilterStatus (self):
+    def getFilterStatus(self):
         cfwp = udrv.CFWParams()
         cfwp.cfwModel = udrv.CFWSEL_CFW8
         cfwp.cfwCommand = udrv.CFWC_QUERY
 
         cfwr = udrv.CFWResults()
 
-        self._cmd (udrv.CC_CFW, cfwp, cfwr)
+        self._cmd(udrv.CC_CFW, cfwp, cfwr)
 
         return cfwr.cfwStatus
 
@@ -440,12 +448,12 @@ class SBIGDrv(object):
             gesr = udrv.GetErrorStringResults()
 
             gesp.errorNo = err
-            
+
             udrv.SBIGUnivDrvCommand(udrv.CC_GET_ERROR_STRING, gesp, gesr)
-            
-            #dumpObj(gesp)
-            #dumpObj(gesr)
-            
+
+            # dumpObj(gesp)
+            # dumpObj(gesr)
+
             #log.warning('You may need to restart the SBIGDriver!')
 
             raise SBIGException(err, gesr.errorString)

@@ -6,7 +6,7 @@ import os
 import time
 
 class TestImage (object):
-    
+
     base = os.path.dirname(__file__)
 
     def test_headers (self):
@@ -14,12 +14,9 @@ class TestImage (object):
         img = Image.fromFile(os.path.join(self.base, "teste-sem-wcs.fits"), fix=False)
 
         print
-        
+
         for k, v in img.items():
             print k,v, type(v)
-
-        #img += ("TEST", 10, "test header")
-        #img.save()
 
     def test_wcs (self):
 
@@ -31,14 +28,10 @@ class TestImage (object):
         assert world.ra.D != None
         assert world.dec.D != None
 
-        img = Image.fromFile(os.path.join(self.base, "teste-sem-wcs.fits"), fix=False)
-        assert_raises(WCSNotFoundException, img.worldAt, 0, 0)
-
-
     def test_extractor (self):
 
         for f in ["teste-com-wcs.fits", "teste-sem-wcs.fits"]:
-            
+
             img = Image.fromFile(os.path.join(self.base, f), fix=False)
 
             stars = img.extract()
@@ -48,7 +41,7 @@ class TestImage (object):
 
             for star in stars[:10]:
                 print star["NUMBER"], star["XWIN_IMAGE"], star["YWIN_IMAGE"], star["FLUX_BEST"]
-                    
+
     def test_make_filename (self):
 
         names = []
@@ -58,14 +51,19 @@ class TestImage (object):
             names.append(name)
             file(name, "w").close()
 
-        print
-        for n in names: print n
+        for name in names:
+            assert os.path.exists(name)
+            os.unlink(name)
 
     def test_create (self):
 
         img = Image.create(N.zeros((100,100)), filename="autogen-teste.fits")
-        print img.width, img.height
-        
-        
-                       
-        
+        assert os.path.exists(img.filename())
+        assert img.width() == 100
+        assert img.height() == 100
+
+        os.unlink(img.filename())
+
+
+
+

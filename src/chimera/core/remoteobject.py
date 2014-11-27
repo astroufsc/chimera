@@ -16,14 +16,15 @@
 
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301, USA.
 
 
 try:
     import Pyro.core
     import Pyro.constants
 except ImportError, e:
-    raise RuntimeError ("You must have Pyro version >= 3.6 installed.")
+    raise RuntimeError("You must have Pyro version >= 3.6 installed.")
 
 
 import time
@@ -37,17 +38,17 @@ __all__ = ['RemoteObject']
 
 class RemoteObject (Pyro.core.ObjBase):
 
-    def __init__ (self):
-        Pyro.core.ObjBase.__init__ (self)
+    def __init__(self):
+        Pyro.core.ObjBase.__init__(self)
 
         self.__lastUsed = None
 
         self.daemon = None
 
-    def __ping__ (self):
+    def __ping__(self):
         return 1
 
-    def getProxy (self):
+    def getProxy(self):
 
         if not self.daemon:
             return False
@@ -68,7 +69,7 @@ class RemoteObject (Pyro.core.ObjBase):
             #  (a,b,(va1,va2,va3...),{kw1:?,...})
             keywords = args[-1]
             args = args[:-1]
-            
+
         if flags & Pyro.constants.RIF_Varargs:
             # reconstruct the varargs from a tuple like (a,b,(va1,va2,va3...))
             args = args[:-1] + args[-1]
@@ -78,38 +79,39 @@ class RemoteObject (Pyro.core.ObjBase):
         # remote attributes won't work with delegates for instance, because the
         # delegate object doesn't implement _r_xa. (remote_xxxattr)
         if method in dir(Pyro.core.ObjBase):
-            return getattr(self, method) (*args, **keywords)
+            return getattr(self, method)(*args, **keywords)
 
         else:
 
-            # try..except to deal with obsoleted string exceptions (raise "blahblah")
-            try :
+            # try..except to deal with obsoleted string exceptions (raise
+            # "blahblah")
+            try:
 
                 # object name can be composed name1.name2 to allow events and async pattern
-                # so, check if this is a camposed call and look for name2 on name1 indeed.
-                target = method.split (".")
+                # so, check if this is a camposed call and look for name2 on
+                # name1 indeed.
+                target = method.split(".")
 
                 if len(target) == 1:
-                    return getattr(self, method) (*args, **keywords)
+                    return getattr(self, method)(*args, **keywords)
                 elif len(target) == 2:
-                    tmp = getattr (self, target[0])
+                    tmp = getattr(self, target[0])
 
                     if target[1] in dir(tmp):
-                        return getattr (tmp, target[1]) (*args, **keywords)
+                        return getattr(tmp, target[1])(*args, **keywords)
                 else:
-                    raise Exception ("Invalid method %s." % method)
+                    raise Exception("Invalid method %s." % method)
 
-            except :
+            except:
                 exc_info = sys.exc_info()
                 try:
-                    if type(exc_info[0]) == StringType :
-                        if exc_info[1] == None :
+                    if type(exc_info[0]) == StringType:
+                        if exc_info[1] == None:
                             raise Exception, exc_info[0], exc_info[2]
-                        else :
-                            raise Exception, "%s: %s" % (exc_info[0], exc_info[1]), exc_info[2]
-                    else :
+                        else:
+                            raise Exception, "%s: %s" % (
+                                exc_info[0], exc_info[1]), exc_info[2]
+                    else:
                         raise
                 finally:
                     del exc_info   # delete frame to allow proper GC
-
-

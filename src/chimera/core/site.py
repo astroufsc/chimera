@@ -16,7 +16,8 @@
 
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301, USA.
 
 
 from chimera.core.chimeraobject import ChimeraObject
@@ -33,66 +34,68 @@ import numpy as np
 
 __all__ = ['Site']
 
-#More conversion functions.
+# More conversion functions.
+
+
 def datetimeFromJD(jd):
     """Returns a date corresponding to the given Julian day number."""
     if not isinstance(jd, float):
         raise TypeError, "%s is not an integer." % str(n)
 
-    n = int( np.floor( jd ) )
-    if jd > np.floor( jd ) + 0.5 :
-        n+=1
+    n = int(np.floor(jd))
+    if jd > np.floor(jd) + 0.5:
+        n += 1
 
     a = n + 32044
-    b = (4*a + 3)//146097
-    c = a - (146097*b)//4
-    d = (4*c + 3)//1461
-    e = c - (1461*d)//4
-    m = (5*e + 2)//153
-    
-    jd+=0.5
+    b = (4 * a + 3) // 146097
+    c = a - (146097 * b) // 4
+    d = (4 * c + 3) // 1461
+    e = c - (1461 * d) // 4
+    m = (5 * e + 2) // 153
 
-    hh = ( jd - np.floor(jd) ) * 24. 
-    mm = int( np.floor( ( hh - np.floor(hh) ) * 60. ) )
-    hh = int( np.floor( hh ) )
+    jd += 0.5
 
-    ret = dt.datetime(year = 100*b + d - 4800 + m/10, 
-                      month = m + 3 - 12*(m//10), 
-                      day = e + 1 - (153*m + 2)//5,
-                      hour = hh,
-                      minute = mm )
+    hh = (jd - np.floor(jd)) * 24.
+    mm = int(np.floor((hh - np.floor(hh)) * 60.))
+    hh = int(np.floor(hh))
+
+    ret = dt.datetime(year=100 * b + d - 4800 + m / 10,
+                      month=m + 3 - 12 * (m // 10),
+                      day=e + 1 - (153 * m + 2) // 5,
+                      hour=hh,
+                      minute=mm)
 
     return ret
 
 
 class Site (ChimeraObject):
-    
-    __config__ = dict(name       = "UFSC",
-                      latitude   = Coord.fromDMS("-23 00 00"),
-                      longitude  = Coord.fromDMS(-48.5),
-                      altitude   = 20,
-                      flat_alt   = Coord.fromDMS(80),
-                      flat_az    = Coord.fromDMS(0))
 
-    def __init__ (self):
+    __config__ = dict(name="UFSC",
+                      latitude=Coord.fromDMS("-23 00 00"),
+                      longitude=Coord.fromDMS(-48.5),
+                      altitude=20,
+                      flat_alt=Coord.fromDMS(80),
+                      flat_az=Coord.fromDMS(0))
+
+    def __init__(self):
         ChimeraObject.__init__(self)
 
-        self._sun  = ephem.Sun()
+        self._sun = ephem.Sun()
         self._moon = ephem.Moon()
 
-    def __main__ (self):
+    def __main__(self):
         pass
 
     def _getEphem(self, date=None):
         site = ephem.Observer()
-        site.lat  = self["latitude"].strfcoord('%(d)d:%(m)d:%(s).2f')
+        site.lat = self["latitude"].strfcoord('%(d)d:%(m)d:%(s).2f')
         site.long = self["longitude"].strfcoord('%(d)d:%(m)d:%(s).2f')
         site.elev = self['altitude']
         site.date = date or self.ut()
-        site.epoch='2000/1/1 00:00:00'
+        site.epoch = '2000/1/1 00:00:00'
         return site
 
-    def _Date2local (self, Date):
+    def _Date2local(self, Date):
         # convert Date to a non-naive datetime with TZ set to UTC
         time_tuple = Date.tuple()
         time_tuple = tuple((int(t) for t in time_tuple))
@@ -100,48 +103,48 @@ class Site (ChimeraObject):
         d_utc = dt.datetime(*time_tuple)
         # then return it in local timezone
         return d_utc.astimezone(self.local_tz)
-        
-    local_tz = property(lambda self: tz.tzlocal())
-    utc_tz   = property(lambda self: tz.tzutc())
 
-    def getEphemSite (self, date):
+    local_tz = property(lambda self: tz.tzlocal())
+    utc_tz = property(lambda self: tz.tzutc())
+
+    def getEphemSite(self, date):
         return self._getEphem(date)
 
-    def JD (self, t=None):
+    def JD(self, t=None):
         if not t:
             t = self.ut()
         return ephem.julian_date(t)
 
-    def MJD (self, t=None):
+    def MJD(self, t=None):
         # JD - julian date at November 17, 1858 (thanks Sputinik!)
         # http://www.slac.stanford.edu/~rkj/crazytime.txt
         if not t:
             t = self.ut()
         return self.JD(t) - 2400000.5
 
-    def localtime (self):
+    def localtime(self):
         return dt.datetime.now(self.local_tz)
 
-    def ut (self):
+    def ut(self):
         return dt.datetime.now(self.utc_tz)
-    
+
     def utcoffset(self):
-	offset = self.localtime().utcoffset()
-        return (offset.days*86400 + offset.seconds)/3600.0
-    
+        offset = self.localtime().utcoffset()
+        return (offset.days * 86400 + offset.seconds) / 3600.0
+
     def LST_inRads(self):
         return float(self._getEphem(date=self.ut()).sidereal_time())
 
-    def LST (self):
+    def LST(self):
         """
         Mean Local Sidereal Time
         """
         #lst = self._getEphem(self.ut()).sidereal_time()
-        #required since a Coord cannot be constructed from an Ephem.Angle
+        # required since a Coord cannot be constructed from an Ephem.Angle
         lst_c = Coord.fromR(self.LST_inRads())
         return lst_c.toHMS()
 
-    def GST (self):
+    def GST(self):
         """
         Mean Greenwhich Sidereal Time
         """
@@ -149,17 +152,17 @@ class Site (ChimeraObject):
         gst = (lst - self["longitude"].toH()) % Coord.fromH(24)
         return gst
 
-    def sunrise (self, date=None):
+    def sunrise(self, date=None):
         date = date or self.localtime()
         site = self._getEphem(date)
         return self._Date2local(site.next_rising(self._sun))
 
-    def sunset (self, date=None):
+    def sunset(self, date=None):
         date = date or self.localtime()
         site = self._getEphem(date)
         return self._Date2local(site.next_setting(self._sun))
 
-    def sunset_twilight_begin (self, date=None):
+    def sunset_twilight_begin(self, date=None):
         # http://aa.usno.navy.mil/faq/docs/RST_defs.php
         date = date or self.localtime()
         site = self._getEphem(date)
@@ -167,81 +170,72 @@ class Site (ChimeraObject):
         site.horizon = '-12:00:00'
         return self._Date2local(site.next_setting(self._sun))
 
-    def sunset_twilight_end (self, date=None):
+    def sunset_twilight_end(self, date=None):
         date = date or self.localtime()
         site = self._getEphem(date)
         site.elev = 0
         site.horizon = '-18:00:00'
         return self._Date2local(site.next_setting(self._sun))
 
-    def sunrise_twilight_begin (self, date=None):
+    def sunrise_twilight_begin(self, date=None):
         date = date or self.localtime()
         site = self._getEphem(date)
-        site.elev = 0        
+        site.elev = 0
         site.horizon = '-18:00:00'
         return self._Date2local(site.next_rising(self._sun))
 
-    def sunrise_twilight_end (self, date=None):
+    def sunrise_twilight_end(self, date=None):
         date = date or self.localtime()
         site = self._getEphem(date)
-        site.elev = 0        
+        site.elev = 0
         site.horizon = '-12:00:00'
         return self._Date2local(site.next_rising(self._sun))
 
-    def sunpos (self, date=None):
+    def sunpos(self, date=None):
         date = date or self.localtime()
         self._sun.compute(self._getEphem(date))
 
-        return Position.fromAltAz(Coord.fromR(self._sun.alt), Coord.fromR(self._sun.az))
+        return Position.fromAltAz(
+            Coord.fromR(self._sun.alt), Coord.fromR(self._sun.az))
 
-    def moonrise (self, date=None):
+    def moonrise(self, date=None):
         date = date or self.localtime()
         site = self._getEphem(date)
         return self._Date2local(site.next_rising(self._moon))
-    
-    def moonset (self, date=None):
+
+    def moonset(self, date=None):
         date = date or self.localtime()
         site = self._getEphem(date)
         return self._Date2local(site.next_setting(self._moon))
 
-    def moonpos (self, date=None):
+    def moonpos(self, date=None):
         date = date or self.localtime()
         self._moon.compute(self._getEphem(date))
 
-        return Position.fromAltAz(Coord.fromR(self._moon.alt), Coord.fromR(self._moon.az))
+        return Position.fromAltAz(
+            Coord.fromR(self._moon.alt), Coord.fromR(self._moon.az))
 
-    def moonphase (self, date=None):
+    def moonphase(self, date=None):
         date = date or self.localtime()
         self._moon.compute(self._getEphem(date))
-        return self._moon.phase/100.0
-    
+        return self._moon.phase / 100.0
+
     def raToHa(self, ra):
         return CoordUtil.raToHa(ra, self.LST_inRads())
 
     def haToRa(self, ha):
         return CoordUtil.raToHa(ha, self.LST_inRads())
-    
-    def raDecToAltAz(self, raDec, lst=None):
-		if not lst:
-			return Position.raDecToAltAz(raDec, self['latitude'], self.LST_inRads())
-		else:
-			return Position.raDecToAltAz(raDec, self['latitude'], lst)
+
+    def raDecToAltAz(self, raDec):
+        return Position.raDecToAltAz(raDec, self['latitude'], self.LST_inRads())
 
     def altAzToRaDec(self, altAz):
-        return Position.altAzToRaDec(altAz, self['latitude'], self.LST_inRads())    
+        return Position.altAzToRaDec(altAz, self['latitude'], self.LST_inRads())
 
     def getMetadata(self, request):
         return [
-                ('SITE',self['name'], 'Site name (in config)'),
-                ('LATITUDE',str(self['latitude']), 'Site latitude'),
-                ('LONGITUD',str(self['longitude']), 'Site longitude'),
-                ('ALTITUDE',str(self['altitude']), 'Site altitude'),
-                ]
-
-    def sec_z(self,altAz):
-		"""Compute airmass"""
-		#if altAz.alt < ephem.degrees('03:00:00'):
-		#	altAz.alt = ephem.degrees('03:00:00')
-		sz = 1.0/np.sin(altAz*np.pi/180.) - 1.0
-		xp = 1.0 + sz*(0.9981833 - sz*(0.002875 + 0.0008083*sz))
-		return xp
+            ('SITE', self['name'], 'Site name (in config)'),
+            ('LATITUDE', str(self['latitude']), 'Site latitude'),
+            ('LONGITUD', str(self['longitude']), 'Site longitude'),
+            ('ALTITUDE', str(self['altitude']), 'Site altitude'),
+        ]

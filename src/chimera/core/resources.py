@@ -16,13 +16,14 @@
 
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301, USA.
 
 
-from chimera.core.location   import Location
+from chimera.core.location import Location
 from chimera.core.exceptions import InvalidLocationException, \
-                                    ObjectNotFoundException, \
-                                    ChimeraException
+    ObjectNotFoundException, \
+    ChimeraException
 
 import time
 import sys
@@ -30,43 +31,50 @@ import sys
 
 class Resource (object):
 
-    def __init__ (self):
+    def __init__(self):
         self._location = None
         self._instance = None
-        self._bases    = []
-        self._created  = time.time ()
-        self._loop     = None
-        self._uri      = None        
+        self._bases = []
+        self._created = time.time()
+        self._loop = None
+        self._uri = None
 
-    location = property (lambda self: self._location, lambda self, value: setattr (self, '_location', value))
-    instance = property (lambda self: self._instance, lambda self, value: setattr (self, '_instance', value))
-    bases    = property (lambda self: self._bases,    lambda self, value: setattr (self, '_bases', value))
-    created  = property (lambda self: self._created,  lambda self, value: setattr (self, '_created', value))
-    loop     = property (lambda self: self._loop,     lambda self, value: setattr (self, '_loop', value))    
-    uri      = property (lambda self: self._uri,      lambda self, value: setattr (self, '_uri', value))
-    
-    def __str__ (self):
+    location = property(lambda self: self._location,
+                        lambda self, value: setattr(self, '_location', value))
+    instance = property(lambda self: self._instance,
+                        lambda self, value: setattr(self, '_instance', value))
+    bases = property(
+        lambda self: self._bases, lambda self, value: setattr(self, '_bases', value))
+    created = property(lambda self: self._created,
+                       lambda self, value: setattr(self, '_created', value))
+    loop = property(
+        lambda self: self._loop, lambda self, value: setattr(self, '_loop', value))
+    uri = property(
+        lambda self: self._uri, lambda self, value: setattr(self, '_uri', value))
+
+    def __str__(self):
         return "<%s (%s) at %s>" % (self.location, self.instance, self.uri)
 
 
 class ResourcesManager (object):
-    
-    def __init__ (self):
-        self._res = {}
-    
-    def add (self, location, instance, uri, loop=None):
 
-        location = self._validLocation (location)
+    def __init__(self):
+        self._res = {}
+
+    def add(self, location, instance, uri, loop=None):
+
+        location = self._validLocation(location)
 
         if location in self:
-            raise InvalidLocationException("Location already on the resource pool.")
+            raise InvalidLocationException(
+                "Location already on the resource pool.")
 
-        entry = Resource ()
+        entry = Resource()
         entry.location = location
         entry.instance = instance
         if entry.instance is not None:
-            entry.bases = [ b.__name__ for b in type(entry.instance).mro() ]
-        entry.loop     = loop
+            entry.bases = [b.__name__ for b in type(entry.instance).mro()]
+        entry.loop = loop
         entry.uri = uri
 
         self._res[location] = entry
@@ -75,12 +83,12 @@ class ResourcesManager (object):
         # and not including parents (minus 1 to start couting at 0)
         return len(self.getByClass(location.cls, checkBases=False)) - 1
 
-    def remove (self, location):
+    def remove(self, location):
         entry = self.get(location)
         del self._res[entry.location]
         return True
 
-    def get (self, item):
+    def get(self, item):
 
         location = self._validLocation(item)
 
@@ -91,10 +99,10 @@ class ResourcesManager (object):
             # not a numbered instance
             pass
 
-        return self._get (location)
+        return self._get(location)
 
     def getByClass(self, cls, checkBases=True):
-        
+
         toRet = []
 
         for k, v in self.items():
@@ -107,24 +115,23 @@ class ResourcesManager (object):
                 if cls == k.cls or cls in v.bases:
                     toRet.append(self._res[k])
 
-        toRet.sort (key=lambda entry: entry.created)
+        toRet.sort(key=lambda entry: entry.created)
         return toRet
 
-    def _get (self, item):
+    def _get(self, item):
 
-        location = self._validLocation (item)
+        location = self._validLocation(item)
         locations = [x.location for x in self.getByClass(location.cls)]
-        
+
         if location in locations:
             ret = filter(lambda x: x == location, self.keys())
             return self._res[ret[0]]
         else:
             raise ObjectNotFoundException("Couldn't find %s." % location)
 
-
     def _getByIndex(self, item, index):
 
-        location = self._validLocation (item)
+        location = self._validLocation(item)
 
         insts = self.getByClass(location.cls)
 
@@ -132,17 +139,17 @@ class ResourcesManager (object):
             try:
                 return self._res[insts[index].location]
             except IndexError:
-                raise ObjectNotFoundException("Couldn't find %s instance #%d." % (location, index))
+                raise ObjectNotFoundException(
+                    "Couldn't find %s instance #%d." % (location, index))
         else:
             raise ObjectNotFoundException("Couldn't find %s." % location)
 
+    def _validLocation(self, item):
 
-    def _validLocation (self, item):
-       
         ret = item
 
-        if not isinstance (item, Location):
-            ret = Location (item)
+        if not isinstance(item, Location):
+            ret = Location(item)
 
         return ret
 
@@ -153,12 +160,12 @@ class ResourcesManager (object):
         except ChimeraException:
             raise KeyError("Couldn't find %s" % item), None, sys.exc_info()[2]
 
-    def __contains__ (self, item):
+    def __contains__(self, item):
 
         # note that our 'in'/'not in' tests are for keys (locations) and
         # not for values
 
-        item = self._validLocation (item)
+        item = self._validLocation(item)
 
         if item in self.keys():
             return True
@@ -174,13 +181,11 @@ class ResourcesManager (object):
                 # nor a valid object
                 return False
 
+    __iter__ = lambda self: self._res.__iter__()
+    __len__ = lambda self: self._res.__len__()
 
-    __iter__     = lambda self: self._res.__iter__ ()
-    __len__      = lambda self: self._res.__len__ ()
-
-    keys      = lambda self: self._res.keys ()
-    values    = lambda self: self._res.values ()
-    items     = lambda self: self._res.items ()
-    iterkeys  = lambda self: self._res.iterkeys ()
-    iteritems = lambda self: self._res.iteritems ()
-
+    keys = lambda self: self._res.keys()
+    values = lambda self: self._res.values()
+    items = lambda self: self._res.items()
+    iterkeys = lambda self: self._res.iterkeys()
+    iteritems = lambda self: self._res.iteritems()

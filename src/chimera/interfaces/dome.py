@@ -16,11 +16,12 @@
 
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301, USA.
 
 
-from chimera.core.interface  import Interface
-from chimera.core.event      import event
+from chimera.core.interface import Interface
+from chimera.core.event import event
 from chimera.core.exceptions import ChimeraException
 
 from chimera.util.enum import Enum
@@ -38,42 +39,43 @@ Style = Enum("Rolloff", "Classic", "Other")
 DomeStatus = Enum("OK", "ABORTED")
 
 
-class InvalidDomePositionException (ChimeraException):
+class InvalidDomePositionException(ChimeraException):
     """
     Raised when trying to slew to an invalid azimuth angle.
     """
 
 
-class Dome (Interface):
-    """A Roll-off or classic dome.
+class Dome(Interface):
+    """
+    A Roll-off or classic dome.
     """
 
-    __config__ = {"device"   : "/dev/ttyS1",
+    __config__ = {"device": "/dev/ttyS1",
                   "telescope": "/Telescope/0",
-                  "mode"     : Mode.Stand,
+                  "mode": Mode.Stand,
 
-                  "model"    : "Fake Domes Inc.",
-                  "style"    : Style.Classic,
-                  
-                  'park_position'    : Coord.fromD(155),
-                  'park_on_shutdown' : False,
+                  "model": "Fake Domes Inc.",
+                  "style": Style.Classic,
+
+                  'park_position': Coord.fromD(155),
+                  'park_on_shutdown': False,
                   'close_on_shutdown': False,
 
                   "az_resolution": 2,  # dome position resolution in degrees
-                  "slew_timeout" : 120,
+                  "slew_timeout": 120,
                   "abort_timeout": 60,
-                  "init_timeout" : 5,
-                  "open_timeout" : 20,
+                  "init_timeout": 5,
+                  "open_timeout": 20,
                   "close_timeout": 20}
 
-    def stand (self):
+    def stand(self):
         """
         Tells the Dome to stand and only move when asked to.
 
         @rtype: None
         """
 
-    def track (self):
+    def track(self):
         """
         Tells the Dome to track the telescope azimuth. Dome will use
         the telescope given in 'telescope' config parameter.
@@ -81,21 +83,21 @@ class Dome (Interface):
         @rtype: None
         """
 
-    def syncWithTel (self):
+    def syncWithTel(self):
         """
         If dome was in Track mode, sync dome position with current scope position.
 
         @rtype: None
         """
 
-    def isSyncWithTel (self):
+    def isSyncWithTel(self):
         """
         If dome was in Track mode, returns wether the dome slit is synchronized with telescope azimuth.
 
         @rtype: bool
         """
-        
-    def getMode (self):
+
+    def getMode(self):
         """
         Get the current Dome mode, Stand or Track, currently.
 
@@ -103,8 +105,9 @@ class Dome (Interface):
         @rtype: Mode
         """
 
-    def slewToAz (self, az):
-        """Slew to the given Azimuth.
+    def slewToAz(self, az):
+        """
+        Slew to the given Azimuth.
 
         @param az: Azimuth in degrees. Can be anything
         L{Coord.fromDMS} can accept.
@@ -116,84 +119,95 @@ class Dome (Interface):
         @rtype: None
         """
 
-    def isSlewing (self):
-        """Ask if the dome is slewing right now.
+    def isSlewing(self):
+        """
+        Ask if the dome is slewing right now.
 
         @return: True if the dome is slewing, False otherwise.
         @rtype: bool
         """
 
-    def abortSlew (self):
-        """Try to abort the current slew.
+    def abortSlew(self):
+        """
+        Try to abort the current slew.
 
         @return: False if slew couldn't be aborted, True otherwise.
         @rtype: bool
         """
 
-    def openSlit (self):
-        """Open the dome slit.
+    def openSlit(self):
+        """
+        Open the dome slit.
 
         @rtype: None
         """
 
-    def closeSlit (self):
-        """Close the dome slit.
+    def closeSlit(self):
+        """
+        Close the dome slit.
 
         @rtype: None
         """
 
-    def isSlitOpen (self):
-        """Ask the dome if the slit is opened.
+    def isSlitOpen(self):
+        """
+        Ask the dome if the slit is opened.
 
         @return: True when open, False otherwise.
         @rtype: bool
         """
 
-    def lightsOn (self):
-        """Ask the dome to turn on flat lights, if any.
+    def lightsOn(self):
+        """
+        Ask the dome to turn on flat lights, if any.
         @return: None
         @rtype: None
         """
 
-    def lightsOff (self):
-        """Ask the dome to turn off flat lights, if any.
+    def lightsOff(self):
+        """
+        Ask the dome to turn off flat lights, if any.
         @return: None
         @rtype: None
         """
 
-    def getAz (self):
-        """Get the current dome Azimuth (Az)
+    def getAz(self):
+        """
+        Get the current dome Azimuth (Az)
 
         @return: Dome's current Az (decimal degrees)
         @rtype: float
         """
 
     @event
-    def syncBegin (self):
+    def syncBegin(self):
         """
         Indicates that the dome was asked and is starting to sync with the telescope (if any).
         """
 
     @event
-    def syncComplete (self):
+    def syncComplete(self):
         """
         Indicates that the dome was asked and finished the sync with the telescope (if any).
         """
 
     @event
-    def slewBegin (self, position):
-        """Indicates that the a new slew operation started.
+    def slewBegin(self, position):
+        """
+        Indicates that the a new slew operation started.
 
         @param position: The dome current position when the slew started
         @type  position: Coord
         """
 
     @event
-    def slewComplete (self, position, status):
-        """Indicates that the last slew operation finished (with or
+    def slewComplete(self, position, status):
+        """
+        Indicates that the last slew operation finished (with or
         without success, check L{status} field for more information.).
 
-        @param position: The dome current position when the slew finished in decimal degrees.
+        @param position: The dome current position when the slew finished in
+                         decimal degrees.
         @type  position: Coord
 
         @param status: Status of the slew command
@@ -201,15 +215,17 @@ class Dome (Interface):
         """
 
     @event
-    def slitOpened (self, az):
-        """Indicates that the slit was just opened
+    def slitOpened(self, az):
+        """
+        Indicates that the slit was just opened
 
         @param az: The azimuth when the slit opend
         @type  az: Coord
         """
     @event
-    def slitClosed (self, az):
-        """Indicates that the slit was just closed.
+    def slitClosed(self, az):
+        """
+        Indicates that the slit was just closed.
 
         @param az: The azimuth when the slit closed.
         @type  az: Coord

@@ -16,7 +16,8 @@
 
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301, USA.
 
 from chimera.core.cli import ChimeraCLI, action
 from chimera.core.constants import DEFAULT_PROGRAM_DATABASE
@@ -35,15 +36,19 @@ import os
 import shutil
 import time
 
+
 class ChimeraSched (ChimeraCLI):
-    
-    def __init__ (self):
-        ChimeraCLI.__init__(self, "chimera-sched", "Scheduler controller", 0.1, port=9010)
-    
+
+    def __init__(self):
+        ChimeraCLI.__init__(
+            self, "chimera-sched", "Scheduler controller", 0.1, port=9010)
 
         self.addHelpGroup("SCHEDULER", "Scheduler")
-        self.addController(name="scheduler", cls="Scheduler", required=True,
-                           help="Scheduler controller to be used", helpGroup="SCHEDULER")
+        self.addController(name="scheduler",
+                           cls="Scheduler",
+                           required=True,
+                           help="Scheduler controller to be used",
+                           helpGroup="SCHEDULER")
 
         databaseHelp = """Database options\n\tThe file must have the following format:
 
@@ -56,24 +61,32 @@ class ChimeraSched (ChimeraCLI):
 
         # type name       N[*(f1:t1:n1, ...)]
         FLAT   flat       3*(V:10:1, R:8:2, B:9:3)
-        BIAS   bias       1*(V:0)  
+        BIAS   bias       1*(V:0)
         DARK   dark       1*(V:1:4)
         OBJECT \"NGC 5272\" 1*(B:10:10)
         """
 
-        self.addHelpGroup("DB" , databaseHelp)
-        self.addHelpGroup("RUN" , "Start/Stop/Info")
+        self.addHelpGroup("DB", databaseHelp)
+        self.addHelpGroup("RUN", "Start/Stop/Info")
 
-        self.addParameters(dict(name="filename", long="file", short="f", helpGroup="DB", default="",
-                                help="Filename of the input database.", metavar="FILENAME"))
+        self.addParameters(dict(name="filename",
+                                long="file",
+                                short="f",
+                                helpGroup="DB",
+                                default="",
+                                help="Filename of the input database.",
+                                metavar="FILENAME"))
 
-    @action(long="new", help="Generate a new database from a text file (excluding all programs already in database)",
-            helpGroup="DB", actionGroup="DB")
+    @action(long="new",
+            help="Generate a new database from a text file (excluding all programs already in database)",
+            helpGroup="DB",
+            actionGroup="DB")
     def newDatabase(self, options):
 
         # save a copy
         if os.path.exists(DEFAULT_PROGRAM_DATABASE):
-            shutil.copy(DEFAULT_PROGRAM_DATABASE, "%s.%s.bak" % (DEFAULT_PROGRAM_DATABASE, time.strftime("%Y%m%d%H%M%S")))
+            shutil.copy(DEFAULT_PROGRAM_DATABASE, "%s.%s.bak" %
+                        (DEFAULT_PROGRAM_DATABASE, time.strftime("%Y%m%d%H%M%S")))
 
         # delete all programs
         session = Session()
@@ -95,34 +108,37 @@ class ChimeraSched (ChimeraCLI):
             f = open(options.filename, "r")
         except:
             self.exit("Could not find '%s'." % options.filename)
-    
+
         session = Session()
 
         lineRe = re.compile('(?P<coord>(?P<ra>[\d:-]+)\s+(?P<dec>\+?[\d:-]+)\s+(?P<epoch>[\dnowNOWJjBb\.]+)\s+)?(?P<imagetype>[\w]+)'
                             '\s+(?P<objname>\'([^\\n\'\\\\]|\\\\.)*\'|"([^\\n"\\\\]|\\\\.)*"|([^ \\n"\\\\]|\\\\.)*)\s+(?P<exposures>[\w\d\s:\*\(\),]*)')
         programs = []
-    
+
         for i, line in enumerate(f):
-    
-            if line.startswith("#"): continue
-            if len(line) == 1: continue
-    
+
+            if line.startswith("#"):
+                continue
+            if len(line) == 1:
+                continue
+
             matchs = lineRe.search(line)
-    
+
             if matchs is None:
                 print "Couldn't process line #%d" % i
                 continue
-    
+
             params = matchs.groupdict()
 
             position = None
-            objname  = None
+            objname = None
 
             if params.get("coord", None):
-                position  = Position.fromRaDec(params['ra'], params['dec'], params['epoch'])
+                position = Position.fromRaDec(
+                    params['ra'], params['dec'], params['epoch'])
 
             imagetype = params['imagetype'].upper()
-            objname   = params['objname'].replace("\"", "")
+            objname = params['objname'].replace("\"", "")
 
             multiplier, exps = params['exposures'].split("*")
             try:
@@ -131,10 +147,8 @@ class ChimeraSched (ChimeraCLI):
                 multiplier = 1
 
             exps = exps.replace("(", "").replace(")", "").strip().split(",")
-            
+
             for i in range(multiplier):
-    
-                program = Program(name="%s-%03d" % (objname.replace(" ", ""), i))
 
                 self.out("# program: %s" % program.pid)
 
@@ -146,13 +160,14 @@ class ChimeraSched (ChimeraCLI):
 
                 if imagetype == "FLAT":
                     site = self._remoteManager.getProxy("/Site/0")
-                    flatPosition = Position.fromAltAz(site['flat_alt'], site['flat_az'])
+                    flatPosition = Position.fromAltAz(
+                        site['flat_alt'], site['flat_az'])
                     program.actions.append(Point(targetAltAz=flatPosition))
-    
-                #if i == 0:
+
+                # if i == 0:
                 #    program.actions.append(AutoFocus(start=1500, end=3000, step=250, filter="R", exptime=10))
                 #    program.actions.append(PointVerify(here=True))
-    
+
                 for exp in exps:
                     if exp.count(":") > 1:
                         filter, exptime, frames = exp.strip().split(":")
@@ -171,10 +186,12 @@ class ChimeraSched (ChimeraCLI):
                     if imagetype in ("BIAS", "DARK"):
                         filter = None
 
-                    self.out("%s %s %s filter=%s exptime=%s frames=%s" % (imagetype, objname, str(position), filter, exptime, frames))
-    
+                    self.out("%s %s %s filter=%s exptime=%s frames=%s" % (
+                        imagetype, objname, str(position), filter, exptime, frames))
+
                     program.actions.append(Expose(shutter=shutter,
-                                                  filename="%s-$DATE-$TIME" % objname.replace(" ", ""),
+                                                  filename="%s-$DATE-$TIME" % objname.replace(
+                                                      " ", ""),
                                                   filter=filter,
                                                   frames=frames,
                                                   exptime=exptime,
@@ -182,20 +199,19 @@ class ChimeraSched (ChimeraCLI):
                                                   objectName=objname))
                 self.out("")
                 programs.append(program)
-    
+
         session.add_all(programs)
         session.commit()
 
         self.out("Restart the scheduler to run it with the new database.")
 
-    
     @action(help="Start the scheduler", helpGroup="RUN", actionGroup="RUN")
     def start(self, options):
-        self.out("="*40)
+        self.out("=" * 40)
         self.out("Starting ...", end="")
         self.scheduler.start()
         self.out("%s" % green("OK"))
-        self.out("="*40)
+        self.out("=" * 40)
         self.monitor(options)
 
     @action(help="Stop the scheduler", helpGroup="RUN", actionGroup="RUN")
@@ -205,17 +221,17 @@ class ChimeraSched (ChimeraCLI):
 
     @action(help="Restart the scheduler", helpGroup="RUN", actionGroup="RUN")
     def restart(self, options):
-        self.out("="*40)
+        self.out("=" * 40)
         self.out("Restarting ...", end="")
         self.scheduler.stop()
         self.scheduler.start()
         self.out("%s" % green("OK"))
-        self.out("="*40)
+        self.out("=" * 40)
         self.monitor(options)
 
     @action(help="Print scheduler information", helpGroup="RUN")
     def info(self, options):
-        self.out("="*40)
+        self.out("=" * 40)
         self.out("Scheduler: %s" % self.scheduler.getLocation())
         self.out("State: %s" % self.scheduler.state())
         if self.scheduler.state() == State.BUSY and self.scheduler.currentAction():
@@ -224,7 +240,7 @@ class ChimeraSched (ChimeraCLI):
             program = session.query(Program).filter(Program.id == action.program_id).one()
             self.out("Working on: %s (%s)" % (program.pid, str(action)))
 
-        self.out("="*40)
+        self.out("=" * 40)
 
     @action(help="Monitor scheduler actions", helpGroup="RUN")
     def monitor(self, options):
@@ -264,27 +280,28 @@ class ChimeraSched (ChimeraCLI):
         @callback(self.localManager)
         def stateChangedClbk(newState, oldState):
             if newState == State.OFF:
-                self.out("="*40)
+                self.out("=" * 40)
                 self.out("%s finished all programs" % blue("[scheduler]"))
-                self.out("="*40)
+                self.out("=" * 40)
                 self.exit()
 
-        self.scheduler.programBegin    += programBeginClbk
+        self.scheduler.programBegin += programBeginClbk
         self.scheduler.programComplete += programCompleteClbk
-        self.scheduler.actionBegin     += actionBeginClbk
-        self.scheduler.actionComplete  += actionCompleteClbk
-        self.scheduler.stateChanged    += stateChangedClbk
+        self.scheduler.actionBegin += actionBeginClbk
+        self.scheduler.actionComplete += actionCompleteClbk
+        self.scheduler.stateChanged += stateChangedClbk
 
         if self.scheduler.state() == State.OFF:
             self.out("%s no programs to do" % blue("[scheduler]"))
         else:
             self.wait(abort=False)
 
+
 def main():
     cli = ChimeraSched()
     cli.run(sys.argv)
     cli.wait()
-    
+
 if __name__ == '__main__':
 
     main()

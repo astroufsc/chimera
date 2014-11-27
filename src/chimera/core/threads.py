@@ -16,10 +16,11 @@
 
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301, USA.
 
 
-import chimera.core.log
+#import chimera.core.log
 
 import threading
 import logging
@@ -43,11 +44,10 @@ class ThreadPool:
     """Flexible thread pool class.  Creates a pool of threads, then
     accepts tasks that will be dispatched to the next available
     thread."""
-    
-    def __init__(self, numThreads = 10):
 
+    def __init__(self, numThreads=10):
         """Initialize the thread pool with numThreads workers."""
-        
+
         self.__threads = []
         self.__resizeLock = threading.Condition(threading.Lock())
         self.__taskLock = threading.Condition(threading.Lock())
@@ -56,15 +56,16 @@ class ThreadPool:
         self.setThreadCount(numThreads)
 
     def setThreadCount(self, newNumThreads):
-
-        """ External method to set the current pool size.  Acquires
+        """
+        External method to set the current pool size.  Acquires
         the resizing lock, then calls the internal version to do real
-        work."""
-        
+        work.
+        """
+
         # Can't change the thread count if we're shutting down the pool!
         if self.__isJoining:
             return False
-        
+
         self.__resizeLock.acquire()
         try:
             self.__setThreadCountNolock(newNumThreads)
@@ -73,11 +74,12 @@ class ThreadPool:
         return True
 
     def __setThreadCountNolock(self, newNumThreads):
-        
-        """Set the current pool size, spawning or terminating threads
+        """
+        Set the current pool size, spawning or terminating threads
         if necessary.  Internal use only; assumes the resizing lock is
-        held."""
-        
+        held.
+        """
+
         # If we need to grow the pool, do so
         while newNumThreads > len(self.__threads):
             newThread = ThreadPoolThread(self)
@@ -89,25 +91,25 @@ class ThreadPool:
             del self.__threads[0]
 
     def getThreadCount(self):
-
         """Return the number of threads in the pool."""
-        
+
         self.__resizeLock.acquire()
         try:
             return len(self.__threads)
         finally:
             self.__resizeLock.release()
 
-    def queueTask(self, task, args=( ), kwargs = { }, taskCallback=None):
+    def queueTask(self, task, args=(), kwargs = {}, taskCallback=None):
+        """
+        Insert a task into the queue.  task must be callable;
+        args and taskCallback can be None.
+        """
 
-        """Insert a task into the queue.  task must be callable;
-        args and taskCallback can be None."""
-        
-        if self.__isJoining == True:
+        if self.__isJoining is True:
             return False
         if not callable(task):
             return False
-        
+
         self.__taskLock.acquire()
         try:
             self.__tasks.append((task, args, kwargs, taskCallback))
@@ -116,10 +118,11 @@ class ThreadPool:
             self.__taskLock.release()
 
     def getNextTask(self):
+        """
+        Retrieve the next task from the task queue.  For use
+        only by ThreadPoolThread objects contained in the pool.
+        """
 
-        """ Retrieve the next task from the task queue.  For use
-        only by ThreadPoolThread objects contained in the pool."""
-        
         self.__taskLock.acquire()
         try:
             if self.__tasks == []:
@@ -128,12 +131,13 @@ class ThreadPool:
                 return self.__tasks.pop(0)
         finally:
             self.__taskLock.release()
-    
-    def joinAll(self, waitForTasks = True, waitForThreads = True):
 
-        """ Clear the task queue and terminate all pooled threads,
-        optionally allowing the tasks and threads to finish."""
-        
+    def joinAll(self, waitForTasks=True, waitForThreads=True):
+        """
+        Clear the task queue and terminate all pooled threads,
+        optionally allowing the tasks and threads to finish.
+        """
+
         # Mark the pool as joining to prevent any more task queueing
         self.__isJoining = True
 
@@ -159,28 +163,32 @@ class ThreadPool:
         finally:
             self.__resizeLock.release()
 
-        
+
 class ThreadPoolThread(threading.Thread):
 
-    """ Pooled thread class. """
-    
+    """
+    Pooled thread class.
+    """
+
     threadSleepTime = 0.1
 
     def __init__(self, pool):
+        """
+        Initialize the thread and remember the pool.
+    """
 
-        """ Initialize the thread and remember the pool. """
-        
         threading.Thread.__init__(self)
         self.__pool = pool
         self.__isDying = False
 
         self.setDaemon(True)
-        
-    def run(self):
 
-        """ Until told to quit, retrieve the next task and execute
-        it, calling the callback if any.  """
-        
+    def run(self):
+        """
+        Until told to quit, retrieve the next task and execute
+        it, calling the callback if any.
+        """
+
         while self.__isDying == False:
             cmd, args, kwargs, callback = self.__pool.getNextTask()
 
@@ -197,9 +205,8 @@ class ThreadPoolThread(threading.Thread):
                     callback(cmd(*args, **kwargs))
 
     def goAway(self):
+        """ 
+        Exit the run loop next time through.
+        """
 
-        """ Exit the run loop next time through."""
-        
         self.__isDying = True
-
-

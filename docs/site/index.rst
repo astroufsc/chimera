@@ -1,11 +1,33 @@
+.. Chimera documentation master file, created by
+   sphinx-quickstart on Fri Sep  5 13:54:04 2014.
+   You can adapt this file completely to your liking, but it should at least
+   contain the root `toctree` directive.
+
+***********************************
+Welcome to Chimera's documentation!
+***********************************
+
+Introduction
+============
+
+:program:`Chimera` was originally thought of as a *Command Line Interface* to
+*Observatory Control Systems* in the context of astronomical observation. As such it possesses a very complete and
+strong implementation of tools oriented to terminal based interaction. It is also essentially **distributed** in nature,
+meaning it can run across computers, operating systems and networks and provide an integrated control system.
+
+In time, **Chimera** has acquired wider functionality, like e.g. graphical user 
+interface(s), included support for devices: instruments, cameras, telescopes/domes, 
+etc., access to on line catalogs, integration of external tools.
 
 Chimera: Observatory Automation System
 ======================================
 
-Chimera is a package to control astronomical observatories aiming the
-creation of remote and even autonomous observatories with just a few
-clicks. Using Chimera you can easily control telescopes, CCD cameras,
-focusers and domes in a very integrated way.
+**Chimera** is a package for control of astronomical observatories, aiming at the
+creation of remote and even autonomous ("robotic") observatories in a simple manner. 
+Using **Chimera** you can easily control telescopes, CCD cameras, focusers and domes 
+in a very integrated way.
+
+Chimera is:
 
 **Distributed**
    Fully distributed system. You can use different machines to
@@ -15,117 +37,135 @@ focusers and domes in a very integrated way.
    Very powerful autonomous mode. Give a target and exposure parameters
    and Chimera does the rest.
 
-**Web interface**
-   Web interface to schedule and monitor observations (`in development`).
+**Hardware friendly**
+   Support for most common off-the-shelf components. See `supported devices`_.
 
-**Hardware support**
-   Support for most common off-the-shelf components. See `supported
-   devices`_.
-
-   Very easy to add support for new instruments (it's Python code!).
+**Extensible**
+   Very easy to add support for new devices.
 
 **Flexible**
    Chimera can be used in a very integrated mode but also in standalone
    mode to control just one instrument.
 
 **Free**
-   It's free (as in *free beer*) and written in a very modern
-   language. Python!.
+   It's free (as in *free beer*), licensed under the GNU_  license.
 
-Getting started
----------------
+   .. _GNU: https://gnu.org/
 
-.. To try out Chimera, follow the installation instructions and make sure
-.. that you have at least one `supported devices`_.
+**A Python Package**
+ 	All these qualities are the consequence  of the chosen programming language: Python_.
 
-.. The easiest way to install Chimera is to use `easy_install
-.. <http://peak.telecommunity.com/DevCenter/EasyInstall>`_::
+ 	.. _Python: https://www.python.org/
 
-..    sudo easy_install chimera-python
+Contents
+========
 
-.. ... and that's it! All dependencies are automagically installed.
+.. toctree::
+   :maxdepth: 2
 
-.. You can also download the sources at `Chimera Development page
-.. <http://code.google.com/p/chimera>`_ and try to install it *by hands*.
+   using
+   configuring
+   advanced
+   chimerafordevs
+   supported
 
-To install chimera, you just have to download it at `Chimera github page
-<http://github.com/astroufsc/chimera>`_ and install it by following the
-INSTALL document.
+Getting Started
+===============
 
-Use our `Quickstart <http://chimera.sf.net/quick-start>`_ document
-to guide yout through the first steps of using Chimera. There is also a
-`PDF <http://chimera.sf.net/quick-start/chimera-quick-start.pdf>`_ version as well.
+Prerequisites
+-------------
 
-Help and Development
---------------------
+Your platform of choice will need to have the following software installed:
 
-You can help Chimera development, we are always looking for
-contributors. If you don't write code, no problem! You can write
-documentation, help with this site, marketing. Everyone can help!
+* Python 2.7; **Chimera** has not been ported to Python3 yet.
+* Git;
 
-See our `Development <http://code.google.com/p/chimera>`_ page for
-more information, to report a bug or just follow Chimera's development
-closely.
+Installation
+------------
 
-To start coding, look at our `Getting Started with Chimera <http://chimera.sf.net/getting-started>`_ document.
-You can download it in `PDF <http://chimera.sf.net/getting-started/chimera-getting-started.pdf>`_ as well.
+Current build status: |build_status|
 
-.. _supported_devices:
+.. |build_status| image:: https://travis-ci.org/astroufsc/chimera.svg?branch=master
+    :target: https://travis-ci.org/astroufsc/chimera
 
-Supported Devices
------------------
+.. _above:
 
-**Telescopes**
-   `Meade <http://www.meade.com>`_ based LX-200 (Meade, Losmandy).
+**Chimera** currently lives in Github_. To install it, go to your install directory, and run:
 
-   `Paramount ME <http://www.bisque.com>`_ using TheSky COM+ interfaces.
+.. _Github: https://github.com/astroufsc/chimera
 
-**CCD Cameras**
-   `SBIG <http://www.sbig.com>`_ USB cameras.
+::
 
-**Focusers**
-   `OPTEC <http://www.optecinc.com>`_  NGF-S
+	git clone https://github.com/astroufsc/chimera.git
 
-**Domes**
-   COTE/LNA Dome (`LNA <http://www.lna.br>`_ specific).
+This will clone the official repository to the working directory. Go to this 
+directory; you will find in its content the typical files used in a distutils based 
+python install, notably *setup.py*. Your next step is to type:
+
+::
+
+	python setup.py install
+
+Distutils will run, generate eggs, etc., and will install the following python dependencies:
+
+* CherryPy: 3.2.4
+* PyYAML: 3.10
+* Pyro: 3.16
+* RO: 3.3.0
+* SQLAlchemy: 0.9.1
+* numpy: 1.8.0
+* pyephem: 3.7.5.2
+* pyfits: : 3.2
+* pyserial: 2.7
+* pysnmp: 4.2.5
+* python-dateutil: 2.2
+* python-sbigudrv: 0.5
+* pywcs: 1.10.2
+* suds: 0.4
 
 
-In Development 
-^^^^^^^^^^^^^^
+Alternative Methods
+-------------------
 
-**Controllers**
+Python virtual environment
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-**CCD Cameras**
-   `Apogee <http://www.ccd.com>`_  USB/Ethernet cameras.
-   
-   `Finger Lake Instruments Cameras <http://www.flicamera.com>`_
+For those constrained by limited access to their platform, restrictions to the system
+provided python or any other reason, the python tool *virtualenv* provides an 
+isolated environment in which to install **Chimera**.
 
-.. note::
-   If you need support for any device which Chimera's doesn't
-   support, call us and we can try to develop it or help you to do it.
-   
-For more information, take a look on our `Development wiki 
-<https://github.com/astroufsc/chimera/wiki>`_ or contact us at
-chimera@astro.ufsc.br.
+* Install virtualenv_;
+* Go to your install dir, and run:
+  
+  ::
+
+  	virtualenv v_name
+
+* This will generate a directory named *v_name*; go in and type
+  
+  ::
+
+  	source bin/activate
+
+  (See the documentation for details).
+
+* From tyhe same directory, you can now proceed to install as described above_.
+
+.. _virtualenv: https://virtualenv.pypa.io/en/latest/
+
+Virtualization Options
+^^^^^^^^^^^^^^^^^^^^^^
+
+We are currently exploring things like Docker_ as options to enable undisturbing
+installations; additionally we think it will allow more streamlined support for cross 
+platform development.
+
+.. _Docker: https://docker.io/
+
 
 License
 -------
 
 Chimera is Free/Open Software licensed by `GPL v2
 <http://www.gnu.org/licenses/gpl.html>`_ or later (at your choice).
-
-
-Authors
--------
-
-Chimera was designed  by Paulo Henrique Silva at `Universidade Federal
-de Santa Catarina <http://www.ufsc.br>`_ in collaboration with his
-advisor Antonio Kanaan and other contributors.
-
-Contact us at chimera@astro.ufsc.br.
-
-Chimera is sponsored by `Laboratorio Nacional de Astrofisica
-<http://www.lna.br>`_ through a `CNPq <http://www.cnpq.br>`_ grant.
-Chimera is also supported by Brazilian INCT-A and FAPESP. 
-
 

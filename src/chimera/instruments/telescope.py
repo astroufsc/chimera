@@ -16,7 +16,8 @@
 
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301, USA.
 
 
 from chimera.core.chimeraobject import ChimeraObject
@@ -43,7 +44,7 @@ class TelescopeBase(ChimeraObject,
         ChimeraObject.__init__(self)
 
         self._park_position = None
-        
+
     @lock
     def slewToObject(self, name):
         target = Simbad.lookup(name)
@@ -54,11 +55,11 @@ class TelescopeBase(ChimeraObject,
         raise NotImplementedError()
 
     def _validateRaDec(self, position):
-        
+
         site = self.getManager().getProxy("/Site/0")
         lst = site.LST()
         latitude = site["latitude"]
-        
+
         altAz = Position.raDecToAltAz(position,
                                       latitude,
                                       lst)
@@ -68,24 +69,29 @@ class TelescopeBase(ChimeraObject,
     def _validateAltAz(self, position):
 
         if position.alt <= self["min_altitude"]:
-            raise ObjectTooLowException("Object too close to horizon (alt=%d limit=%d)" % (position.alt,
-                                                                                           self["min_altitude"]))
+            raise ObjectTooLowException(
+                "Object too close to horizon (alt=%d limit=%d)" %
+                (position.alt, self["min_altitude"])
+                )
 
         return True
 
     def _getFinalPosition(self, position):
 
         if str(position.epoch).lower() != str(Epoch.NOW).lower():
-            self.log.info("Precessing position (%s) from %s to current epoch." % (str(position), position.epoch))
+            self.log.info(
+                "Precessing position (%s) from %s to current epoch." %
+                (str(position), position.epoch))
             position_now = position.precess(Epoch.NOW)
         else:
-            self.log.info("Current position (%s), no precession needed." % str(position))
+            self.log.info(
+                "Current position (%s), no precession needed." % str(position))
             position_now = position
-            
+
         self.log.info("Final precessed position %s" % str(position_now))
 
         return position_now
-       
+
     @lock
     def slewToAltAz(self, position):
         raise NotImplementedError()
@@ -115,16 +121,16 @@ class TelescopeBase(ChimeraObject,
     @lock
     def moveOffset(self, offsetRA, offsetDec, rate=SlewRate.GUIDE):
 
-        if offsetRA == 0 :
+        if offsetRA == 0:
             pass
-        elif offsetRA > 0 :
+        elif offsetRA > 0:
             self.moveEast(offsetRA, rate)
         else:
             self.moveWest(abs(offsetRA), rate)
 
-        if offsetDec == 0 :
+        if offsetDec == 0:
             pass
-        elif offsetDec > 0 :
+        elif offsetDec > 0:
             self.moveNorth(offsetDec, rate)
         else:
             self.moveSouth(abs(offsetDec), rate)
@@ -170,7 +176,7 @@ class TelescopeBase(ChimeraObject,
     def unpark(self):
         raise NotImplementedError()
 
-    def isParked (self):
+    def isParked(self):
         raise NotImplementedError()
 
     @lock
@@ -180,35 +186,42 @@ class TelescopeBase(ChimeraObject,
     def getParkPosition(self):
         return self._park_position or self["default_park_position"]
 
-    def startTracking (self):
+    def startTracking(self):
         raise NotImplementedError()
 
-    def stopTracking (self):
+    def stopTracking(self):
         raise NotImplementedError()
 
-    def isTracking (self):
+    def isTracking(self):
         raise NotImplementedError()
-        
+
     def getMetadata(self, request):
         return [('TELESCOP', self['model'], 'Telescope Model'),
                 ('OPTICS',   self['optics'], 'Telescope Optics Type'),
                 ('MOUNT', self['mount'], 'Telescope Mount Type'),
                 ('APERTURE', self['aperture'], 'Telescope aperture size [mm]'),
-                ('F_LENGTH', self['focal_length'], 'Telescope focal length [mm]'),
-                ('F_REDUCT', self['focal_reduction'], 'Telescope focal reduction'),
-                #TODO: Convert coordinates to proper equinox
-                #TODO: How to get ra,dec at start of exposure (not end)
-                ('RA', self.getRa().toHMS().__str__(), 'Right ascension of the observed object'),
-                ('DEC', self.getDec().toDMS().__str__(), 'Declination of the observed object'),
+                ('F_LENGTH', self['focal_length'],
+                 'Telescope focal length [mm]'),
+                ('F_REDUCT', self['focal_reduction'],
+                 'Telescope focal reduction'),
+                # TODO: Convert coordinates to proper equinox
+                # TODO: How to get ra,dec at start of exposure (not end)
+                ('RA', self.getRa().toHMS().__str__(),
+                 'Right ascension of the observed object'),
+                ('DEC', self.getDec().toDMS().__str__(),
+                 'Declination of the observed object'),
                 ("EQUINOX", 2000.0, "coordinate epoch"),
-                ('ALT', self.getAlt().toDMS().__str__(), 'Altitude of the observed object'),
-                ('AZ', self.getAz().toDMS().__str__(),'Azimuth of the observed object'),
+                ('ALT', self.getAlt().toDMS().__str__(),
+                 'Altitude of the observed object'),
+                ('AZ', self.getAz().toDMS().__str__(),
+                 'Azimuth of the observed object'),
                 ("WCSAXES", 2, "wcs dimensionality"),
                 ("RADESYS", "ICRS", "frame of reference"),
-                ("CRVAL1", self.getTargetRaDec().ra.D, "coordinate system value at reference pixel"),
-                ("CRVAL2", self.getTargetRaDec().dec.D, "coordinate system value at reference pixel"),
+                ("CRVAL1", self.getTargetRaDec().ra.D,
+                 "coordinate system value at reference pixel"),
+                ("CRVAL2", self.getTargetRaDec().dec.D,
+                 "coordinate system value at reference pixel"),
                 ("CTYPE1", 'RA---TAN', "name of the coordinate axis"),
                 ("CTYPE2", 'DEC---TAN', "name of the coordinate axis"),
                 ("CUNIT1", 'deg', "units of coordinate value"),
                 ("CUNIT2", 'deg', "units of coordinate value")]
-

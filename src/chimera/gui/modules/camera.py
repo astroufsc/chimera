@@ -17,11 +17,12 @@ import os
 import threading
 import copy
 
+
 class ImageViewer:
-    
+
     def __init__(self, main):
         self.main = main
-        
+
         self.notebook = self.main.builder.get_object("imagesNotebook")
         self.notebook.append_page(gtk.Label("No images"))
         self.first_image = True
@@ -32,30 +33,31 @@ class ImageViewer:
 
         if self.first_image:
             self.notebook.remove_page(0)
-            self.first_image = False            
+            self.first_image = False
 
-        tab_num = self.notebook.append_page(canvas.window, gtk.Label(os.path.basename(image.filename())))
-            
+        tab_num = self.notebook.append_page(
+            canvas.window, gtk.Label(os.path.basename(image.filename())))
+
         self.notebook.set_current_page(tab_num)
 
 
 class CameraController:
 
-    def __init__ (self, module):
+    def __init__(self, module):
         self.module = module
         self.camera = None
         self.wheel = None
 
     def setCamera(self, camera):
-        self.camera = camera        
+        self.camera = camera
 
         @callback(self.module.manager)
         def exposeBegin(request):
             self.module.view.exposeBegin(request)
-            
+
         @callback(self.module.manager)
         def exposeComplete(request, status):
-            if status == CameraStatus.OK:           
+            if status == CameraStatus.OK:
                 self.module.view.exposeComplete(request)
             else:
                 self.module.view.abort()
@@ -63,17 +65,17 @@ class CameraController:
         @callback(self.module.manager)
         def readoutBegin(request):
             self.module.view.readoutBegin(request)
-                
+
         @callback(self.module.manager)
         def readoutComplete(image, status):
             if status == CameraStatus.OK:
                 self.module.view.readoutComplete(image)
             else:
                 self.module.view.abort()
-                                    
-        self.camera.exposeBegin     += exposeBegin
-        self.camera.exposeComplete  += exposeComplete
-        self.camera.readoutBegin    += readoutBegin
+
+        self.camera.exposeBegin += exposeBegin
+        self.camera.exposeComplete += exposeComplete
+        self.camera.readoutBegin += readoutBegin
         self.camera.readoutComplete += readoutComplete
 
     def getCamera(self):
@@ -91,33 +93,35 @@ class CameraController:
     def expose(self):
 
         camera = self.getCamera()
-        
+
         durationSpin = self.module.builder.get_object("durationSpin")
         duration = durationSpin.get_value()
-        
+
         framesSpin = self.module.builder.get_object("framesSpin")
         frames = framesSpin.get_value()
-        
+
         shutterOpen = self.module.builder.get_object("shutterOpen")
 
         if(shutterOpen.get_active()):
-          shutterState = "OPEN"
-        else: 
-          shutterState = "CLOSE"
+            shutterState = "OPEN"
+        else:
+            shutterState = "CLOSE"
 
-        filters = self.module.builder.get_object("filtersBox").get_children()[1].get_children()
+        filters = self.module.builder.get_object(
+            "filtersBox").get_children()[1].get_children()
         current = None
         for f in filters:
-            if f.get_active(): current = f
+            if f.get_active():
+                current = f
 
         filterName = current.get_label()
 
         self.module.view.begin(duration, frames)
 
         if self.getWheel().getFilter() != filterName:
-            self.module.view.beginFilterChange(filterName)        
+            self.module.view.beginFilterChange(filterName)
             self.getWheel().setFilter(filterName)
-            self.module.view.endFilterChange(filterName)                
+            self.module.view.endFilterChange(filterName)
 
         try:
             camera.expose({"exptime": duration,
@@ -128,18 +132,21 @@ class CameraController:
 
         finally:
             self.module.view.end()
-    
-    def abortExposure (self):
+
+    def abortExposure(self):
         self.getCamera().abortExposure()
         self.module.view.abort()
 
+
 class CameraView:
 
-    def __init__ (self, module):
+    def __init__(self, module):
         self.module = module
-        self.exposureStatusbar = self.module.builder.get_object("exposureStatusbar")
+        self.exposureStatusbar = self.module.builder.get_object(
+            "exposureStatusbar")
         self.exposureLabel = self.module.builder.get_object("exposureLabel")
-        self.exposureProgress = self.module.builder.get_object("exposureProgress")
+        self.exposureProgress = self.module.builder.get_object(
+            "exposureProgress")
 
         self.exposureLabel.hide()
         self.exposureProgress.hide()
@@ -148,52 +155,58 @@ class CameraView:
         self.frames = 0
         self.exptime = 0
         self.currentFrame = 0
-        
+
         self.exposeTimer = None
         self.readoutTimer = None
         self.filterTimer = None
-        
+
     def begin(self, exptime, frames):
         self.frames = frames
         self.exptime = exptime
         self.currentFrame = 0
 
         def ui():
-            
-            self.module.builder.get_object("abortExposureButton").set_sensitive(True)
+
+            self.module.builder.get_object(
+                "abortExposureButton").set_sensitive(True)
             self.module.builder.get_object("exposeButton").set_sensitive(False)
-            
-            self.exposureLabel.set_label("<b>%-2d/%-2d</b>" % (self.currentFrame, self.frames))
+
+            self.exposureLabel.set_label(
+                "<b>%-2d/%-2d</b>" % (self.currentFrame, self.frames))
             self.exposureProgress.set_fraction(0.0)
             self.exposureProgress.set_text("starting ...")
-            
+
             self.exposureLabel.show()
             self.exposureProgress.show()
 
         glib.idle_add(ui)
-        
+
     def exposeBegin(self, imageRequest):
 
         startTime = time.time()
         timeout = startTime + self.exptime
-        
+
         self.currentFrame += 1
 
         def ui():
-            
-            self.exposureLabel.set_label("<b>%-2d/%-2d</b>" % (self.currentFrame, self.frames))
+
+            self.exposureLabel.set_label(
+                "<b>%-2d/%-2d</b>" % (self.currentFrame, self.frames))
             self.exposureProgress.set_fraction(0.0)
 
             def exposeTimer(startTime, timeout):
                 now = time.time()
-                if now >= timeout: return False
-            
+                if now >= timeout:
+                    return False
+
                 counter = now - startTime
-                self.exposureProgress.set_fraction(counter/self.exptime)
-                self.exposureProgress.set_text("%.2f" % (self.exptime - counter))
+                self.exposureProgress.set_fraction(counter / self.exptime)
+                self.exposureProgress.set_text(
+                    "%.2f" % (self.exptime - counter))
                 return True
 
-            self.exposeTimer = glib.timeout_add(100, exposeTimer, startTime, timeout)
+            self.exposeTimer = glib.timeout_add(
+                100, exposeTimer, startTime, timeout)
 
         glib.idle_add(ui)
 
@@ -206,25 +219,25 @@ class CameraView:
             if self.exposeTimer:
                 glib.source_remove(self.exposeTimer)
                 self.exposeTimer = 0
-                
+
         glib.idle_add(ui)
 
     def readoutBegin(self, imageRequest):
 
         def ui():
-            
+
             self.exposureProgress.set_text("reading out and saving ...")
-        
+
             def readoutTimer():
                 self.exposureProgress.pulse()
                 return True
-        
+
             self.readoutTimer = glib.timeout_add(100, readoutTimer)
 
         glib.idle_add(ui)
-        
+
     def readoutComplete(self, image):
-        
+
         if self.readoutTimer:
             glib.source_remove(self.readoutTimer)
             self.readoutTimer = 0
@@ -233,7 +246,8 @@ class CameraView:
             self.exposureProgress.set_fraction(1.0)
             self.exposureProgress.set_text("readout and save complete ...")
             url = image.http()
-            imageFileName = urllib.urlretrieve(url, filename=os.path.basename(image.filename()))[0]
+            imageFileName = urllib.urlretrieve(
+                url, filename=os.path.basename(image.filename()))[0]
             imageFile = Image.fromFile(imageFileName)
             self.module.imageViewer.newImage(imageFile)
         glib.idle_add(ui)
@@ -244,7 +258,8 @@ class CameraView:
             self.exposureLabel.hide()
             self.exposureProgress.hide()
 
-            self.module.builder.get_object("abortExposureButton").set_sensitive(False)
+            self.module.builder.get_object(
+                "abortExposureButton").set_sensitive(False)
             self.module.builder.get_object("exposeButton").set_sensitive(True)
         glib.idle_add(ui)
 
@@ -252,7 +267,8 @@ class CameraView:
 
         def ui():
             self.exposureProgress.set_text("aborted!")
-            self.module.builder.get_object("abortExposureButton").set_sensitive(False)
+            self.module.builder.get_object(
+                "abortExposureButton").set_sensitive(False)
             self.module.builder.get_object("exposeButton").set_sensitive(True)
 
             def abortTimer():
@@ -264,11 +280,11 @@ class CameraView:
             if self.exposeTimer:
                 glib.source_remove(self.exposeTimer)
                 self.exposeTimer = 0
-            
+
             if self.readoutTimer:
                 glib.source_remove(self.readoutTimer)
                 self.readoutTimer = 0
-            
+
         glib.idle_add(ui)
 
     def beginFilterChange(self, filterName):
@@ -279,12 +295,13 @@ class CameraView:
         self.filterTimer = glib.timeout_add(50, filterTimer)
 
         def ui():
-            self.exposureProgress.set_text("switching to filter %s ..." % filterName)
-        
+            self.exposureProgress.set_text(
+                "switching to filter %s ..." % filterName)
+
         glib.idle_add(ui)
 
     def endFilterChange(self, filterName):
-        
+
         if self.filterTimer:
             glib.source_remove(self.filterTimer)
             self.filterTimer = 0
@@ -300,19 +317,20 @@ class CameraGUIModule(ChimeraGUIModule):
     module_controls = {"camera": "Camera",
                        "wheel": "FilterWheel"}
 
-    def __init__ (self, manager):
+    def __init__(self, manager):
         ChimeraGUIModule.__init__(self, manager)
 
         self.view = None
         self.controller = None
 
-    def setupGUI (self, objects):
+    def setupGUI(self, objects):
 
         camera = objects.get("camera", None)
-        wheel  = objects.get("wheel", None)
+        wheel = objects.get("wheel", None)
 
         self.builder = gtk.Builder()
-        self.builder.add_from_file(os.path.join(os.path.dirname(__file__), "camera.xml"))
+        self.builder.add_from_file(
+            os.path.join(os.path.dirname(__file__), "camera.xml"))
 
         self.view = CameraView(self)
         self.controller = CameraController(self)
@@ -336,27 +354,27 @@ class CameraGUIModule(ChimeraGUIModule):
                 radio = gtk.RadioButton(first, filter)
                 hbox.pack_start(radio)
                 hbox.show_all()
-        
+
             self.builder.get_object("filtersBox").pack_start(hbox)
-            
+
         self.builder.get_object("abortExposureButton").set_sensitive(False)
 
         win = self.builder.get_object("window")
         gui = self.builder.get_object("gui")
         win.remove(gui)
-        
+
         return [("Camera", gui, gdl.DOCK_LEFT)]
-        
-    def setupEvents (self):
+
+    def setupEvents(self):
 
         def camera_expose_action(action):
             self.builder.get_object("abortExposureButton").set_sensitive(True)
             self.builder.get_object("exposeButton").set_sensitive(False)
             threading.Thread(target=self.controller.expose).start()
-    
+
         def camera_abort_action(action):
             threading.Thread(target=self.controller.abortExposure).start()
-    
-        self.builder.connect_signals({"camera_expose_action": camera_expose_action,
-                                      "camera_abort_action" : camera_abort_action})
 
+        self.builder.connect_signals(
+            {"camera_expose_action": camera_expose_action,
+             "camera_abort_action": camera_abort_action})
