@@ -16,7 +16,8 @@
 
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301, USA.
 
 
 from chimera.interfaces.filterwheel import InvalidFilterPositionException
@@ -26,20 +27,20 @@ from chimera.core.lock import lock
 
 class FakeFilterWheel (FilterWheelBase):
 
-    def __init__ (self):
+    def __init__(self):
         FilterWheelBase.__init__(self)
 
         self._lastFilter = 0
 
-    def getFilter (self):
+    def getFilter(self):
         return self._getFilterName(self._lastFilter)
 
     @lock
-    def setFilter (self, filter):
+    def setFilter(self, filter):
 
         filterName = str(filter).upper()
 
-        if filterName not in self.getFilters() :
+        if filterName not in self.getFilters():
             raise InvalidFilterPositionException("Invalid filter %s." % filter)
 
         self.filterChange(filter, self._getFilterName(self._lastFilter))

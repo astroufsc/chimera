@@ -16,45 +16,46 @@
 
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301, USA.
 
 import time
 import threading
 
-from chimera.interfaces.telescope  import SlewRate, TelescopeStatus
+from chimera.interfaces.telescope import SlewRate, TelescopeStatus
 from chimera.instruments.telescope import TelescopeBase
 
 from chimera.core.lock import lock
 from chimera.core.site import Site
 
-from chimera.util.coord    import Coord
+from chimera.util.coord import Coord
 from chimera.util.position import Position, Epoch
 
 
 class FakeTelescope (TelescopeBase):
-    
-    def __init__ (self):
+
+    def __init__(self):
         TelescopeBase.__init__(self)
 
         self.__slewing = False
-        self._az  = Coord.fromDMS(0)
+        self._az = Coord.fromDMS(0)
         self._alt = Coord.fromDMS(70)
 
-        self._slewing  = False
+        self._slewing = False
         self._tracking = True
-        self._parked   = False
-        
+        self._parked = False
+
         self._abort = threading.Event()
-        
+
         try:
             self._site = self.getManager().getProxy("/Site/0")
-            self._gotSite=True
+            self._gotSite = True
         except:
             self._site = Site()
-            self._gotSite=False
-        
+            self._gotSite = False
+
         self._setRaDecFromAltAz()
-    
+
     def _getSite(self):
         if self._gotSite:
             self._site._transferThread()
@@ -62,46 +63,49 @@ class FakeTelescope (TelescopeBase):
         else:
             try:
                 self._site = self.getManager().getProxy("/Site/0")
-                self._gotSite=True
+                self._gotSite = True
             except:
                 pass
         return self._site
-    
+
     def _setRaDecFromAltAz(self):
-        raDec=self._getSite().altAzToRaDec(Position.fromAltAz(self._alt, self._az))
-        self._ra=raDec.ra
-        self._dec=raDec.dec
+        raDec = self._getSite().altAzToRaDec(
+            Position.fromAltAz(self._alt, self._az))
+        self._ra = raDec.ra
+        self._dec = raDec.dec
 
     def _setAltAzFromRaDec(self):
-        altAz=self._getSite().raDecToAltAz(Position.fromRaDec(self._ra, self._dec))
-        self._alt=altAz.alt
-        self._az=altAz.az
+        altAz = self._getSite().raDecToAltAz(
+            Position.fromRaDec(self._ra, self._dec))
+        self._alt = altAz.alt
+        self._az = altAz.az
 
-    def __start__ (self):
+    def __start__(self):
         self.setHz(1)
 
     @lock
-    def control (self):
+    def control(self):
         self._getSite()
         if not self._slewing:
             if self._tracking:
                 self._setAltAzFromRaDec()
             else:
-                self._setRaDecFromAltAz()                                                          
+                self._setRaDecFromAltAz()
         return True
 
     def slewToRaDec(self, position):
 
         if not isinstance(position, Position):
-            position = Position.fromRaDec(position[0], position[1], epoch=Epoch.J2000)
+            position = Position.fromRaDec(
+                position[0], position[1], epoch=Epoch.J2000)
 
         self.slewBegin(position)
 
         ra_steps = position.ra - self.getRa()
-        ra_steps = float(ra_steps/10.0)
+        ra_steps = float(ra_steps / 10.0)
 
         dec_steps = position.dec - self.getDec()
-        dec_steps = float(dec_steps/10.0)
+        dec_steps = float(dec_steps / 10.0)
 
         self._slewing = True
         self._abort.clear()
@@ -116,15 +120,15 @@ class FakeTelescope (TelescopeBase):
                 status = TelescopeStatus.ABORTED
                 break
 
-            self._ra  += ra_steps
+            self._ra += ra_steps
             self._dec += dec_steps
             self._setAltAzFromRaDec()
-            
+
             time.sleep(0.5)
             t += 0.5
-        
+
         self._slewing = False
-            
+
         self.slewComplete(self.getPositionRaDec(), status)
 
     @lock
@@ -136,10 +140,10 @@ class FakeTelescope (TelescopeBase):
         self.slewBegin(self._getSite().altAzToRaDec(position))
 
         alt_steps = position.alt - self.getAlt()
-        alt_steps = float(alt_steps/10.0)
+        alt_steps = float(alt_steps / 10.0)
 
         az_steps = position.az - self.getAz()
-        az_steps = float(az_steps/10.0)
+        az_steps = float(az_steps / 10.0)
 
         self._slewing = True
         self._abort.clear()
@@ -153,15 +157,15 @@ class FakeTelescope (TelescopeBase):
                 status = TelescopeStatus.ABORTED
                 break
 
-            self._alt  += alt_steps
+            self._alt += alt_steps
             self._az += az_steps
             self._setRaDecFromAltAz()
-            
+
             time.sleep(0.5)
             t += 0.5
-        
+
         self._slewing = False
-            
+
         self.slewComplete(self.getPositionRaDec(), status)
 
     def abortSlew(self):
@@ -171,7 +175,7 @@ class FakeTelescope (TelescopeBase):
 
         self._slewing = False
 
-    def isSlewing (self):
+    def isSlewing(self):
         return self._slewing
 
     @lock
@@ -182,7 +186,7 @@ class FakeTelescope (TelescopeBase):
         pos = self.getPositionRaDec()
         pos = Position.fromRaDec(pos.ra + Coord.fromAS(offset), pos.dec)
         self.slewBegin(pos)
-        
+
         self._ra += Coord.fromAS(offset)
         self._setAltAzFromRaDec()
 
@@ -196,7 +200,7 @@ class FakeTelescope (TelescopeBase):
         pos = self.getPositionRaDec()
         pos = Position.fromRaDec(pos.ra + Coord.fromAS(-offset), pos.dec)
         self.slewBegin(pos)
-        
+
         self._ra += Coord.fromAS(-offset)
         self._setAltAzFromRaDec()
 
@@ -210,7 +214,7 @@ class FakeTelescope (TelescopeBase):
         pos = self.getPositionRaDec()
         pos = Position.fromRaDec(pos.ra, pos.dec + Coord.fromAS(offset))
         self.slewBegin(pos)
-        
+
         self._dec += Coord.fromAS(offset)
         self._setAltAzFromRaDec()
 
@@ -224,7 +228,7 @@ class FakeTelescope (TelescopeBase):
         pos = self.getPositionRaDec()
         pos = Position.fromRaDec(pos.ra, pos.dec + Coord.fromAS(-offset))
         self.slewBegin(pos)
-        
+
         self._dec += Coord.fromAS(-offset)
         self._setAltAzFromRaDec()
 
@@ -264,7 +268,7 @@ class FakeTelescope (TelescopeBase):
         return Position.fromAltAz(self.getAlt(), self.getAz())
 
     @lock
-    def syncRaDec (self, position):
+    def syncRaDec(self, position):
         if not isinstance(position, Position):
             position = Position.fromRaDec(*position)
 
@@ -281,18 +285,18 @@ class FakeTelescope (TelescopeBase):
     def unpark(self):
         self.log.info("Unparking...")
         self._parked = False
-        self.unparkComplete()        
+        self.unparkComplete()
 
     def isParked(self):
         return self._parked
 
     @lock
-    def startTracking (self):
+    def startTracking(self):
         self._tracking = True
 
     @lock
-    def stopTracking (self):
+    def stopTracking(self):
         self._tracking = False
 
-    def isTracking (self):
+    def isTracking(self):
         return self._tracking

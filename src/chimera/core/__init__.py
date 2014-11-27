@@ -16,7 +16,8 @@
 
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301, USA.
 
 
 import os.path
@@ -30,27 +31,34 @@ from chimera.core.constants import (SYSTEM_CONFIG_DIRECTORY,
 
 logging.getLogger().setLevel(logging.DEBUG)
 
-def init_sysconfig ():
+
+def init_sysconfig():
 
     if not os.path.exists(SYSTEM_CONFIG_DIRECTORY):
         try:
-            logging.info("Default configuration directory not found (%s). Creating a new one." % SYSTEM_CONFIG_DIRECTORY)
+            logging.info(
+                "Default configuration directory not found (%s). Creating a new one." % SYSTEM_CONFIG_DIRECTORY)
             os.mkdir(SYSTEM_CONFIG_DIRECTORY)
         except IOError, e:
-            logging.error("Couldn't create default configuration directory at %s (%s)" % (SYSTEM_CONFIG_DIRECTORY, e))
+            logging.error("Couldn't create default configuration directory at %s (%s)" % (
+                SYSTEM_CONFIG_DIRECTORY, e))
 
     if not os.path.exists(SYSTEM_CONFIG_DEFAULT_FILENAME):
-        logging.info("Default chimera.config not found. Creating a sample at %s." % SYSTEM_CONFIG_DEFAULT_FILENAME)
+        logging.info("Default chimera.config not found. Creating a sample at %s." %
+                     SYSTEM_CONFIG_DEFAULT_FILENAME)
 
         try:
-            shutil.copyfile(SYSTEM_CONFIG_DEFAULT_SAMPLE, SYSTEM_CONFIG_DEFAULT_FILENAME)
+            shutil.copyfile(
+                SYSTEM_CONFIG_DEFAULT_SAMPLE, SYSTEM_CONFIG_DEFAULT_FILENAME)
         except IOError, e:
-            logging.error("Couldn't create default chimera.config at %s (%s)" % (SYSTEM_CONFIG_DEFAULT_FILENAME, e))
+            logging.error("Couldn't create default chimera.config at %s (%s)" % (
+                SYSTEM_CONFIG_DEFAULT_FILENAME, e))
 
     if not os.path.exists(SYSTEM_CONFIG_LOG_NAME):
         try:
             open(SYSTEM_CONFIG_LOG_NAME, 'w').close()
         except IOError, e:
-            logging.error("Couldn't create initial log file %s (%s)" % (SYSTEM_CONFIG_LOG_NAME, e))
+            logging.error(
+                "Couldn't create initial log file %s (%s)" % (SYSTEM_CONFIG_LOG_NAME, e))
 
 init_sysconfig()

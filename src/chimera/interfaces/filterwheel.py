@@ -16,7 +16,8 @@
 
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301, USA.
 
 
 from chimera.core.interface import Interface
@@ -24,24 +25,27 @@ from chimera.core.event import event
 
 from chimera.core.exceptions import ChimeraException
 
+
 class InvalidFilterPositionException (ChimeraException):
     pass
 
-class FilterWheel (Interface):
-    """ An interface for electromechanical filter wheels.
 
+class FilterWheel(Interface):
+    """
+    An interface for electromechanical filter wheels.
     Allow simple control and monitor filter changes    
     """
 
     __config__ = {"device": "/dev/ttyS0",
-                  "filter_wheel_model"   : "Fake Filters Inc.",
-                  "filters" : "R G B LUNAR CLEAR" # space separated
-                                                  # filter names (in position order)
+                  "filter_wheel_model": "Fake Filters Inc.",
+                  "filters": "R G B LUNAR CLEAR"  # space separated
+                  # filter names (in position
+                                                  # order)
                   }
-    
 
-    def setFilter (self, filter):
-        """Set the current filter.
+    def setFilter(self, filter):
+        """
+        Set the current filter.
 
         @param filter: The filter to use.
         @type  filter: str
@@ -49,23 +53,26 @@ class FilterWheel (Interface):
         @rtype: None
         """
 
-    def getFilter (self):
-        """Return the current filter.
+    def getFilter(self):
+        """
+        Return the current filter.
 
         @return: Current filter.
         @rtype: str
         """
 
-    def getFilters (self):
-        """Return a tuple with the available filter on this wheel.
+    def getFilters(self):
+        """
+        Return a tuple with the available filter on this wheel.
 
         @return: Tuple of all filters available.
         @rtype: tuple
         """
 
     @event
-    def filterChange (self, newFilter, oldFilter):
-        """Fired when the wheel changes the current filter.
+    def filterChange(self, newFilter, oldFilter):
+        """
+        Fired when the wheel changes the current filter.
 
         @param newFilter: The new current filter.
         @type  newFilter: str

@@ -18,6 +18,11 @@ develop-eggs
 lib
 lib64
 
+# eclipse files
+.settings
+.project
+.pydevproject
+
 # Installer logs
 pip-log.txt
 
@@ -38,5 +43,5 @@ nosetests.xml
 #Documentation auxfiles
 doc.pdf
 
-#scheduler link
-src/chimera/controllers/scheduler
+.idea
+.noseids

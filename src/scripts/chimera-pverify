@@ -16,45 +16,53 @@
 
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301, USA.
 
 
-from chimera.core.cli import ChimeraCLI, action, parameter
-from chimera.core.callback import callback
-from chimera.core.exceptions import ChimeraException
+from chimera.core.cli import ChimeraCLI, action
+#from chimera.core.callback import callback
+#from chimera.core.exceptions import ChimeraException
 from chimera.core.compat import freeze_support
 
 from chimera.interfaces.pointverify import CantPointScopeException, CanSetScopeButNotThisField, CantSetScopeException, PointVerify
 from chimera.util.astrometrynet import NoSolutionAstrometryNetException
-from chimera.util.sextractor import SExtractorException
+#from chimera.util.sextractor import SExtractorException
 
-from chimera.util.ds9 import DS9
+#from chimera.util.ds9 import DS9
 from chimera.util.astrometrynet import AstrometryNet
 
 import sys
-import time    
-import os
+#import time
+#import os
 
-class ChimeraPointVerify (ChimeraCLI):
-    
-    def __init__ (self):
-	# are these entities being created or am I referring to existing things?
+
+class ChimeraPointVerify(ChimeraCLI):
+
+    def __init__(self):
+        # are these entities being created or am I referring to existing things?
         # the first entry is how the script will be called
         # the second entry is an English language description of the script
         ChimeraCLI.__init__(self, "chimera-pverify", "Point Verifier", 0.1)
         self.addHelpGroup("PVERIFY", "PVerify")
-        self.addController(name="pverify", cls="PointVerify", required=True, helpGroup="PVERIFY", help="Pointing verification controller to be used")
-        self.addParameters(dict(name="pverify_file",long="fname",type="string",
-                                helpGroup="PVERIFY",help="Does astrometry on file",metavar="FILE"))
+        self.addController(name="pverify",
+                           cls="PointVerify",
+                           required=True,
+                           helpGroup="PVERIFY",
+                           help="Pointing verification controller to be used")
+        self.addParameters(dict(name="pverify_file",
+                                long="fname",
+                                type="string",
+                                helpGroup="PVERIFY",
+                            help="Does astrometry on file",
+                            metavar="FILE"))
 
-    
-
-    # ok, looks like action establishes that the following method is some 
-    # action performed by this script    
-    @action(long="choose", 
-            help="Chooses a field to point the scope to, moves the scope, takes an image and verifies the pointing", 
-           helpGroup="PVERIFY")
-    def checkPointing (self,options):
+    # ok, looks like action establishes that the following method is some
+    # action performed by this script
+    @action(long="choose",
+            help="Chooses a field to point the scope to, moves the scope, takes an image and verifies the pointing",
+            helpGroup="PVERIFY")
+    def checkPointing(self, options):
         """
         Chooses a field to point the scope to, moves the scope, 
         takes an image and verifies the pointing
@@ -62,52 +70,53 @@ class ChimeraPointVerify (ChimeraCLI):
         self.out("Choosing a field in the sky, moving scope and taking images")
         try:
             self.pverify.checkPointing()
-	# what is this e for ???
-        except CantSetScopeException, e:
+        # what is this e for ???
+        except CantSetScopeException:
             self.exit("Can't set scope")
         self.out("OK")
 
-
     @action(long="file",
             type="string",
-            help="Does astrometry on file" ,
+            help="Does astrometry on file",
             helpGroup="PVERIFY")
-    def file(self,options):
+    def file(self, options):
         """
         Returns a new image with new WCS
         """
-        self.out("Doing astrometry on file : %s\n",options.file)
+        self.out("Doing astrometry on file : %s\n", options.file)
         try:
-            AstrometryNet.solveField(options.file,findstarmethod="sex")
-        except NoSolutionAstrometryNetException, e:
-           try:
-              AstrometryNet.solveField(options.file,findstarmethod="astrometry.net")
-           except NoSolutionAstrometryNetException, e:
-              self.exit("Can't set scope")
+            AstrometryNet.solveField(options.file, findstarmethod="sex")
+        except NoSolutionAstrometryNetException:
+            try:
+                AstrometryNet.solveField(
+                    options.file, findstarmethod="astrometry.net")
+            except NoSolutionAstrometryNetException:
+                self.exit("Can't set scope")
         self.out("OK")
-
 
     @action(long="here",
             help="Takes an image where telescope is pointed to, tries to find image RA, DEC, and tries to recenter the telescope",
             helpGroup="PVERIFY")
-    def checkHere(self,options):
+    def checkHere(self, options):
         """
-        Takes an image where telescope is pointed to, 
-        tries to find image RA, DEC, 
+        Takes an image where telescope is pointed to,
+        tries to find image RA, DEC,
         and tries to recenter the telescope
         """
         self.out("Centering scope on current field")
         try:
             self.pverify.pointVerify()
-        except CanSetScopeButNotThisField, e:
-            self.out("The scope has been set on a standard field but it is impossible to set on this - either spotty clouds or too faint stars")
-        self.out("OK")		
-        
+        except CanSetScopeButNotThisField:
+            self.out(
+                "The scope has been set on a standard field but it is impossible to set on this - either spotty clouds or too faint stars")
+        self.out("OK")
+
+
 def main():
     cli = ChimeraPointVerify()
     cli.run(sys.argv)
     cli.wait()
-    
+
 if __name__ == '__main__':
     freeze_support()
     main()

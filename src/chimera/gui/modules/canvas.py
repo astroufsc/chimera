@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 
 import pygtk
 pygtk.require('2.0')
@@ -10,6 +9,7 @@ import goocanvas
 import sys
 import os
 
+
 class FITSCanvas(object):
 
     CONTRAST = 1
@@ -19,22 +19,24 @@ class FITSCanvas(object):
     def __init__(self, frame):
 
         self.dragging = False
-        self.lastPos = (0,0)
+        self.lastPos = (0, 0)
 
         self.tool = FITSCanvas.CONTRAST
 
         self.frame = frame
 
-        gtk.icon_theme_get_default().append_search_path(os.path.abspath(os.path.dirname(__file__)))
+        gtk.icon_theme_get_default().append_search_path(
+            os.path.abspath(os.path.dirname(__file__)))
 
         self.window = gtk.ScrolledWindow()
         self.window.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
 
         self.canvas = goocanvas.Canvas()
-        self.canvas.set_property("automatic-bounds", True)       
+        self.canvas.set_property("automatic-bounds", True)
 
         self.builder = gtk.Builder()
-        self.builder.add_from_file(os.path.join(os.path.dirname(__file__), "canvas.xml"))
+        self.builder.add_from_file(
+            os.path.join(os.path.dirname(__file__), "canvas.xml"))
         self.builder.connect_signals({"contrast_activate_cb": self.contrast_activate_cb,
                                       "zoom_activate_cb": self.zoom_activate_cb,
                                       "pan_activate_cb": self.pan_activate_cb,
@@ -45,7 +47,8 @@ class FITSCanvas(object):
                                       "invert_activate_cb": self.invert_activate_cb,
                                       "reset_contrast_activate_cb": self.reset_contrast_activate_cb})
 
-        w, h = self.frame.get_image().get_width(), self.frame.get_image().get_height()
+        w, h = self.frame.get_image().get_width(
+        ), self.frame.get_image().get_height()
 
         self.canvas.set_bounds(0, 0, w, h)
         canvasItem = goocanvas.Image(pixbuf=frame.get_pixbuf(), x=0, y=0)
@@ -54,17 +57,18 @@ class FITSCanvas(object):
 
         # connect canvas events
         self.canvas.connect("button-press-event", self.button_press_callback)
-        self.canvas.connect("button-release-event", self.button_release_callback)
+        self.canvas.connect(
+            "button-release-event", self.button_release_callback)
         self.canvas.connect("motion-notify-event", self.motion_notify_callback)
 
         # create our accelerator maps
         #gtk.accel_map_add_entry("<canvas>/Zoom", ord('z'), 0)
-        
+
         # connect accelerator
         #accel_group = self.builder.get_object("canvasAcceleratorGroup")
         #accel_group.connect_by_path("<canvas>/Zoom", self.zoom_activate_cb)
 
-        #self.window.get_parent().add_accel_group(accel_group)
+        # self.window.get_parent().add_accel_group(accel_group)
 
         # go!
         self.window.add(self.canvas)
@@ -90,7 +94,7 @@ class FITSCanvas(object):
         image.get_scaled().update()
         self.frame.update_pixbuf()
         self.canvasImage.set_property("pixbuf", self.frame.get_pixbuf())
-        
+
     def minmax_activate_cb(self, action):
         image = self.frame.get_image()
         start, end = image.get_stats().get_min(), image.get_stats().get_max()
@@ -113,16 +117,16 @@ class FITSCanvas(object):
         image.get_scaled().update()
         self.frame.update_pixbuf()
         self.canvasImage.set_property("pixbuf", self.frame.get_pixbuf())
-        
+
     def invert_activate_cb(self, action):
-        cmap =  self.frame.get_colormap()
+        cmap = self.frame.get_colormap()
         cmap.set_invert(not cmap.get_invert())
         cmap.update()
         self.frame.update_pixbuf()
         self.canvasImage.set_property("pixbuf", self.frame.get_pixbuf())
 
     def reset_contrast_activate_cb(self, action):
-        cmap =  self.frame.get_colormap()
+        cmap = self.frame.get_colormap()
         cmap.set_bias(0.5)
         cmap.set_contrast(1)
         cmap.update()
@@ -132,7 +136,8 @@ class FITSCanvas(object):
     def button_press_callback(self, canvas, event):
 
         if event.button == 3:
-            self.builder.get_object("popup").popup(None, None, None, event.button, event.time)
+            self.builder.get_object("popup").popup(
+                None, None, None, event.button, event.time)
 
         if event.button == 1:
             self.dragging = True
@@ -143,7 +148,7 @@ class FITSCanvas(object):
 
     def button_release_callback(self, canvas, event):
         self.dragging = False
-            
+
     def motion_notify_callback(self, canvas, event):
 
         if self.dragging:
@@ -154,26 +159,29 @@ class FITSCanvas(object):
             if self.tool == FITSCanvas.CONTRAST:
                 if abs(delta_x) >= 2 or abs(delta_y) >= 2:
                     self.changeContrast(event.x, event.y)
-                    
+
             if self.tool == FITSCanvas.PAN:
                 self.pan(delta_x, delta_y)
 
             self.lastPos = (event.x, event.y)
-
 
     def changeContrast(self, x, y):
         width = self.window.get_allocation().width
         height = self.window.get_allocation().height
 
         bias = (x / float(width))
-        if bias < 0: bias = 0
-        if bias > 1: bias = 1
+        if bias < 0:
+            bias = 0
+        if bias > 1:
+            bias = 1
 
         contrast = 10 * (y / float(height))
-        if contrast < 0: contrast = 0
-        if contrast > 10: contrast = 10
+        if contrast < 0:
+            contrast = 0
+        if contrast > 10:
+            contrast = 10
 
-        cmap =  self.frame.get_colormap()
+        cmap = self.frame.get_colormap()
         cmap.set_bias(bias)
         cmap.set_contrast(contrast)
         cmap.update()
@@ -184,7 +192,7 @@ class FITSCanvas(object):
         if ctrl:
             self.canvas.set_scale(self.canvas.get_scale() - 0.25)
         else:
-            self.canvas.set_scale(self.canvas.get_scale() + 0.25)        
+            self.canvas.set_scale(self.canvas.get_scale() + 0.25)
 
     def pan(self, dx, dy):
         h_adjust = self.window.get_hadjustment()
@@ -203,7 +211,7 @@ class FITS(object):
         self.img.get_scaled().set_min(start)
         self.img.get_scaled().set_max(end)
         self.img.get_scaled().update()
-        
+
         cmap = bip.bip_colormap_get_builtin(bip.COLORMAP_GRAY)
         cmap.set_invert(False)
         cmap.update()
@@ -224,4 +232,3 @@ if __name__ == "__main__":
     window.add(canvas.window)
     window.show_all()
     gtk.main()
-    

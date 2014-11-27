@@ -16,7 +16,8 @@
 
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301, USA.
 
 
 from chimera.core.interface import Interface
@@ -25,30 +26,34 @@ from chimera.core.event import event
 from chimera.util.enum import Enum
 from chimera.core.exceptions import ChimeraException
 
+
 class CantPointScopeException(ChimeraException):
     pass
 
+
 class CanSetScopeButNotThisField(ChimeraException):
     pass
+
 
 class CantSetScopeException(ChimeraException):
     pass
 
 Target = Enum("CURRENT", "AUTO")
 
-class PointVerify (Interface):
 
-    __config__ = {"telescope"          : "/Telescope/0",
-                  "camera"             : "/Camera/0",
-                  "filterwheel"        : "/FilterWheel/0",
-                  "tolra"              : 0.0166666666667,
-                  "toldec"             : 0.0166666666667,
-                  "exptime"            :  10.0,
-                  "filter"             :  "R",
-                  "max_trials"         : 5,
-                  "max_fields"         : 5}
+class PointVerify(Interface):
 
-    def checkPointing (self, debug=False):
+    __config__ = {"telescope": "/Telescope/0",
+                  "camera": "/Camera/0",
+                  "filterwheel": "/FilterWheel/0",
+                  "tolra": 0.0166666666667,
+                  "toldec": 0.0166666666667,
+                  "exptime":  10.0,
+                  "filter":  "R",
+                  "max_trials": 5,
+                  "max_fields": 5}
+
+    def checkPointing(self, debug=False):
         """
         Check pointing choosing field and using default exposure time
         """
@@ -56,8 +61,7 @@ class PointVerify (Interface):
     # this sounds like a good idea for point verify, need to think how
     # to implement
     @event
-    def pointComplete (self, position, star, frame):
+    def pointComplete(self, position, star, frame):
         """Raised after every step in the focus sequence with
         information about the last step.
         """
-

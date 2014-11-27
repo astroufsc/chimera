@@ -11,7 +11,8 @@
 # All configuration values have a default value; values that are commented out
 # serve to show the default value.
 
-import sys, os
+import os
+import sys
 
 # If your extensions are in another directory, add it here. If the directory
 # is relative to the documentation root, use os.path.abspath to make it
@@ -23,7 +24,7 @@ import sys, os
 
 # Add any Sphinx extension module names here, as strings. They can be extensions
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
-extensions = ['sphinx.ext.autodoc', 'sphinx.ext.coverage']
+extensions = ['sphinx.ext.autodoc', 'sphinx.ext.coverage', 'sphinx.ext.mathjax']
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['templates']
@@ -35,9 +36,8 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General substitutions.
-project = 'Chimera'
-#copyright = '2008, P. Henrique Silva'
-copyright = '2012, GAS - UFSC'
+project = u'chimera'
+copyright = u'2014, GAS - UFSC'
 
 # The default replacements for |version| and |release|, also used in various
 # other places throughout the built documents.
@@ -78,10 +78,23 @@ pygments_style = 'sphinx'
 # Options for HTML output
 # -----------------------
 
+# on_rtd is whether we are on readthedocs.org
+on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
+
+if not on_rtd:  # only import and set the theme if we're building docs locally
+    import sphinx_rtd_theme
+
+    html_theme = 'sphinx_rtd_theme'
+    html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
+
+# otherwise, readthedocs.org uses their theme by default, so no need to specify it
+else:
+    html_theme = 'default'
+
 # The style sheet to use for HTML and HTML Help pages. A file of that name
 # must exist either in Sphinx' static/ path, or in one of the custom paths
 # given in html_static_path.
-html_style = 'default.css'
+#html_style = 'default.css'
 
 # The name for this set of Sphinx documents.  If None, it defaults to
 # "<project> v<release> documentation".
@@ -133,16 +146,16 @@ htmlhelp_basename = 'Chimeradoc'
 # ------------------------
 
 # The paper size ('letter' or 'a4').
-latex_paper_size = 'a4'
+#latex_paper_size = 'a4'
 
 # The font size ('10pt', '11pt' or '12pt').
 #latex_font_size = '10pt'
 
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, document class [howto/manual]).
-latex_documents = [
-  ('index', 'Chimera.tex', 'Chimera Documentation', 'P. Henrique Silva', 'manual'),
-]
+#latex_documents = [
+#  ('index', 'Chimera.tex', 'Chimera Documentation', 'P. Henrique Silva', 'manual'),
+#]
 
 # The name of an image file (relative to this directory) to place at the top of
 # the title page.
