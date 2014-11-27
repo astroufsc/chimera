@@ -80,8 +80,8 @@ setup(
 
   # installation happens in the specified order
   install_requires = [
-    "Pyro",
-    "numpy",
+    "Pyro>=3.16",
+    "numpy>=1.8.0",
     "astropy",
     "PyYAML",
     "python-dateutil",
