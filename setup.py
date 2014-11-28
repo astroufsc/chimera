@@ -33,65 +33,65 @@ execfile(version_py)
 
 # chimera scripts
 chimera_scripts = ['src/scripts/chimera',
-  'src/scripts/chimera-cam',
-  'src/scripts/chimera-admin',
-  'src/scripts/chimera-filter',
-  'src/scripts/chimera-tel',
-  'src/scripts/chimera-dome',
-  'src/scripts/chimera-focus',
-  'src/scripts/chimera-pverify',
-  'src/scripts/chimera-console',
-  'src/scripts/chimera-sched',
-  'src/scripts/chimera-ppsched',
-  'src/scripts/chimera-taosched',
+                   'src/scripts/chimera-cam',
+                   'src/scripts/chimera-admin',
+                   'src/scripts/chimera-filter',
+                   'src/scripts/chimera-tel',
+                   'src/scripts/chimera-dome',
+                   'src/scripts/chimera-focus',
+                   'src/scripts/chimera-pverify',
+                   'src/scripts/chimera-console',
+                   'src/scripts/chimera-sched',
+                   'src/scripts/chimera-ppsched',
+                   'src/scripts/chimera-taosched',
 ]
 
 # platform specific requirements
 platform_deps = []
 
 if sys.platform == "win32":
-  platform_deps += [
-    "pywin32 == 218"
-  ]
+    platform_deps += [
+        "pywin32 == 218"
+    ]
 else:
-  platform_deps += [
-    "python-sbigudrv"
-  ]
+    platform_deps += [
+        "python-sbigudrv"
+    ]
 
 # go!
 setup(
-  name = 'chimera-python',
-  version = _chimera_version_,
-  description = _chimera_description_,
-  long_description = open("docs/site/index.rst").read(),
-  url = _chimera_url_,
+    name='chimera-python',
+    version=_chimera_version_,
+    description=_chimera_description_,
+    long_description=open("docs/site/index.rst").read(),
+    url=_chimera_url_,
 
-  author = _chimera_author_,
-  author_email = _chimera_author_email_,
+    author=_chimera_author_,
+    author_email=_chimera_author_email_,
 
-  license = _chimera_license_,
+    license=_chimera_license_,
 
-  package_dir = {"": "src"},
-  packages = find_packages("src", exclude=["*.tests"]),
+    package_dir={"": "src"},
+    packages=find_packages("src", exclude=["*.tests"]),
 
-  include_package_data = True,
+    include_package_data=True,
 
-  scripts = chimera_scripts,
+    scripts=chimera_scripts,
 
-  # installation happens in the specified order
-  install_requires = [
-    "Pyro",
-    "numpy",
-    "astropy",
-    "PyYAML",
-    "python-dateutil",
-    "pyephem",
-    "pyserial",
-    "RO",
-    "suds",
-    "SQLAlchemy",
-    "CherryPy",
-  ] + platform_deps,
+    # installation happens in the specified order
+    install_requires=[
+                         "Pyro>=3.16",
+                         "numpy>=1.8.0",
+                         "astropy",
+                         "PyYAML",
+                         "python-dateutil",
+                         "pyephem",
+                         "pyserial",
+                         "RO",
+                         "suds",
+                         "SQLAlchemy",
+                         "CherryPy",
+                     ] + platform_deps,
 
-  tests_require = ["nose", "coverage", "wheel"],
+    tests_require=["nose", "coverage", "wheel"],
 )
