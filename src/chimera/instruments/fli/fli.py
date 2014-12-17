@@ -1,14 +1,13 @@
 import logging
+import threading
 
-from FLI.device import USBDevice
+#from FLI.device import USBDevice
 from FLI.camera import USBCamera
-from FLI.filter_wheel import USBFilterWheel
+#from FLI.filter_wheel import USBFilterWheel
 
-from chimera.interfaces.camera import (CCD, CameraFeature, Bitpix)
-from chimera.controllers.imageserver.imagerequest import ImageRequest
-from chimera.instruments.camera import CameraBase
+from chimera.core.chimeraobject import ChimeraObject
+from chimera.interfaces.camera import (CCD, CameraFeature, Shutter, Bitpix)
 
-from chimera.instruments.fli import FLIDrv
 
 log = logging.getLogger(__name__)
 
@@ -23,11 +22,11 @@ class FLI():
 
                   "camera_model": "Finger Lakes Instrumentation PL4240",
                   "ccd_model": "E2V CCD42-40",
-                  "telescope_focal_length": 4000  # milimeter
+                  "telescope_focal_length": 80000  # milimeter
                   }
 
     def __init__(self):
-        CameraBase.__init__(self)
+        ChimeraObject.__init__(self)
         #FilterWheelBase.__init__(self)
         self.mode = 0
         self._supports = {CameraFeature.TEMPERATURE_CONTROL: True,
@@ -41,18 +40,20 @@ class FLI():
         # Find devices attached to the USB bus. Supposedly this call
         # returns a list...of USBDevice objects. How to recognize them:
         # by dev_name/flidev_t?
-        self._devs = USBDevice.find_devices()
-        # TODO: get the devices, instantiate them
-
+        # self._devs = USBDevice.find_devices()
+        # Patch: this is a camera class, let's assume we're talking to a
+        # camera!
+        self._cams = USBCamera.find_devices()
+        # While we're at it, let's assume there's only one camera on the
+        # USB bus...
+        self.thecam = self._cams[0]
         # This will provide the following dict pairs:
         # 'serial_number', 'hardware_rev', 'firmware_rev', 'pixel_size',
         # 'array_area', 'visible_area'.
-
-        #self.info = self._devs[???].get_info()
-
+        self.info = self.thecam.get_info()
         # Getting this here guarantees info is available no matter
         # in what order the methods are invoked...
-        #self.width, self.height, self.imgsz = self._devs[camera].get_image_size()
+        self.width, self.height, self.imgsz = self.thecam.get_image_size()
         self.pixelWidth = 13.5  # µm, from specs.
         self.pixelHeight = 13.5  # µm
 
@@ -87,7 +88,7 @@ class FLI():
     # From CameraTemperature()
     def startCooling(self, tempC):
         """
-        Start cooling the camera with SetPoint setted to tempC.
+        Start cooling the camera with SetPoint set to tempC.
 
         @param tempC: SetPoint temperature in degrees Celsius.
         @type  tempC: float or int
@@ -122,7 +123,7 @@ class FLI():
         @return: The current camera temperature in degrees Celsius.
         @rtype: float
         """
-        #return self._devs[camera].get_temperature()
+        return self.thecam.get_temperature()
 
     def getSetPoint(self):
         """
@@ -146,11 +147,11 @@ class FLI():
         NOTE: this is flagged as an "undocumented API function"!
         """
         # We might need this info one day...
-        # watts = self._devs[camera].get_cooler_power()
-        # if watts == 0:
-        #     return False
-        # else:
-        #     return True
+        watts = self.thecam.get_cooler_power()
+        if watts == 0:
+            return False
+        else:
+            return True
 
     # From CameraInformation
     def getCCDs(self):
@@ -184,6 +185,26 @@ class FLI():
         Start an exposure based upon the specified image request or
         create a new image request from kwargs
         """
+        # NOTE: AFAIK, there is no way an ImageRequest kw will be left
+        # with no value: if no ImageRequest is passed, any value not
+        # covered by kwargs will get a default from chimera-cam...right?
+        if request is not None:
+            exptime = request['exptime']
+            ftype = request['type']
+            # Is this the correct order?
+            hbin, vbin = request['binning'].split('x')
+            # It seems the bitdepth from the API is buggy... We leave it at
+            # its 16bit default. Next!
+        else:
+            exptime = kwargs['exptime']
+            ftype = kwargs['type']
+            hbin, vbin = kwargs['binning'].split('x')
+        self.thecam.set_flushes(8)
+        self.thecam.set_image_binning(hbin, vbin)
+        self.thecam.set_exposure(exptime, frametype=ftype)
+        # All set up, shoot. This method returns immediately.
+        self.thecam.start_exposure()
+        self.exposeBegin(request)
 
     def abortExposure(self, readout=True):
         """
@@ -200,86 +221,10 @@ class FLI():
         """
 
     def isExposing(self):
-        """
-        Ask if camera is exposing right now.(where exposing
-        includes both integration time and readout).
-
-        @return: The currently exposing ImageRequest if the camera is
-                 exposing, False otherwise.
-
-        @rtype: bool or L{ImageRequest}
-        """
-
-    @event
-    def exposeBegin(self, request):
-        """
-        Indicates that new exposure is starting.
-
-        When multiple frames are taken in a single shot, multiple
-        exposeBegin events will be fired.
-
-        @param request: The image request.
-        @type  request: L{ImageRequest}
-        """
-
-    @event
-    def exposeComplete(self, request, status):
-        """
-        Indicates that new exposure frame was taken.
-
-        When multiple frames are taken in a single shot, multiple
-        exposeComplete events will be fired.
-
-        @param request: The image request.
-        @type  request: L{ImageRequest}
-
-        @param status: The status of the current expose.
-        @type  status: L{CameraStatus}
-        """
-
-    @event
-    def readoutBegin(self, request):
-        """
-        Indicates that new readout is starting.
-
-        When multiple frames are taken in a single shot, multiple
-        readoutBegin events will be fired.
-
-        @param request: The image request.
-        @type  request: L{ImageRequest}
-        """
-
-    @event
-    def readoutComplete(self, proxy, status):
-        """Indicates that a new frame was exposed and saved.
-
-        @param request: The just taken Image (as a Proxy) or None is status=[ERROR or ABORTED]..
-        @type  request: L{Proxy} or None
-
-        @param status: current exposure status
-        @type  status: L{CameraStatus}
-        """
-
-    # Filter wheel
-    @lock
-    def setFilter(self, filter):
-        #self._devs[filterwheel].set_filter_pos(filter)
-        pass
-
-    def getFilter(self):
-        #return self._devs[filterwheel].get_filter_pos()
-        pass
-
-    def getFilters(self):
-        raise NotImplementedError()
-
-    # def _getFilterName(self, index):
-    #     try:
-    #         return self.getFilters()[index]
-    #     except (ValueError, TypeError):
-    #         raise InvalidFilterPositionException(
-    #             "Unknown filter (%s)." % str(index))
-
+        if not self.thecam.get_exposure_timeleft():
+            return True
+        else:
+            return False
 
     # Shutter
     def getMetadata(self, request):
