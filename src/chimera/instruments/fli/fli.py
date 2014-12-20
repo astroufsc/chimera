@@ -17,9 +17,7 @@ class FLI():
     __config__ = {"device": "USB",
                   "ccd": CCD.IMAGING,
                   "temp_delta": 2.0,
-
                   "ccd_saturation_level": 100000,
-
                   "camera_model": "Finger Lakes Instrumentation PL4240",
                   "ccd_model": "E2V CCD42-40",
                   "telescope_focal_length": 80000  # milimeter
@@ -50,6 +48,7 @@ class FLI():
         # This will provide the following dict pairs:
         # 'serial_number', 'hardware_rev', 'firmware_rev', 'pixel_size',
         # 'array_area', 'visible_area'.
+        # TODO: get shutter info
         self.info = self.thecam.get_info()
         # Getting this here guarantees info is available no matter
         # in what order the methods are invoked...
