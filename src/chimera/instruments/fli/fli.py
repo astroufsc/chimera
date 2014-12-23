@@ -12,12 +12,14 @@ from chimera.interfaces.camera import (CCD, CameraFeature, Shutter, Bitpix)
 log = logging.getLogger(__name__)
 
 
-class FLI():
+class FLI(ChimeraObject):
     # Some of the config values were taken from the specs for the cam & CCD.
     __config__ = {"device": "USB",
                   "ccd": CCD.IMAGING,
                   "temp_delta": 2.0,
+
                   "ccd_saturation_level": 100000,
+
                   "camera_model": "Finger Lakes Instrumentation PL4240",
                   "ccd_model": "E2V CCD42-40",
                   "telescope_focal_length": 80000  # milimeter
@@ -48,7 +50,6 @@ class FLI():
         # This will provide the following dict pairs:
         # 'serial_number', 'hardware_rev', 'firmware_rev', 'pixel_size',
         # 'array_area', 'visible_area'.
-        # TODO: get shutter info
         self.info = self.thecam.get_info()
         # Getting this here guarantees info is available no matter
         # in what order the methods are invoked...
@@ -87,13 +88,14 @@ class FLI():
     # From CameraTemperature()
     def startCooling(self, tempC):
         """
-        Start cooling the camera with SetPoint set to tempC.
+        .. method:: startCooling(tempC)
 
-        @param tempC: SetPoint temperature in degrees Celsius.
-        @type  tempC: float or int
+            Start cooling the camera with SetPoint set to tempC.
 
-        @return: True if successful, False otherwise.
-        @rtype: bool
+            :param int tempC: SetPoint temperature in degrees Celsius.
+
+            :return: True if successful, False otherwise.
+            :rtype: bool
         """
         raise NotImplementedError()
 
@@ -181,8 +183,14 @@ class FLI():
     # From CameraExpose!
     def expose(self, request=None, **kwargs):
         """
-        Start an exposure based upon the specified image request or
-        create a new image request from kwargs
+        .. method:: expose(request=None, **kwargs)
+
+            Start an exposure based upon the specified image request or
+            create a new image request from kwargs
+
+            :keyword request: ImageRequest object
+            :type request: ImageRequest or None
+            
         """
         # NOTE: AFAIK, there is no way an ImageRequest kw will be left
         # with no value: if no ImageRequest is passed, any value not
@@ -201,9 +209,10 @@ class FLI():
         self.thecam.set_flushes(8)
         self.thecam.set_image_binning(hbin, vbin)
         self.thecam.set_exposure(exptime, frametype=ftype)
+        # Signal the event
+        self.exposeBegin(request)
         # All set up, shoot. This method returns immediately.
         self.thecam.start_exposure()
-        self.exposeBegin(request)
 
     def abortExposure(self, readout=True):
         """
@@ -218,6 +227,9 @@ class FLI():
         @return: True if successful, False otherwise.
         @rtype: bool
         """
+        self.thecam.abort_exposure()
+        if readout:
+            return self.thecam.fetch_image()
 
     def isExposing(self):
         if not self.thecam.get_exposure_timeleft():
@@ -225,8 +237,10 @@ class FLI():
         else:
             return False
 
-    # Shutter
-    def getMetadata(self, request):
-        return [('FWHEEL', str(self['filter_wheel_model']), 'FilterWheel Model'),
-                ('FILTER', str(self.getFilter()),
-                 'Filter used for this observation')]
+    # Header
+    # def getMetadata(self, request):
+    #     return [
+    #             ('FWHEEL', str(self['filter_wheel_model']), 'FilterWheel Model'),
+    #             ('FILTER', str(self.getFilter()),
+    #              'Filter used for this observation')
+    #             ]
