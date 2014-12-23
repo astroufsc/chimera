@@ -1,5 +1,5 @@
 import logging
-import threading
+from multiprocessing import Process
 
 #from FLI.device import USBDevice
 from FLI.camera import USBCamera
@@ -27,7 +27,7 @@ class FLI(ChimeraObject):
 
     def __init__(self):
         ChimeraObject.__init__(self)
-        #FilterWheelBase.__init__(self)
+        # FilterWheelBase.__init__(self)
         self.mode = 0
         self._supports = {CameraFeature.TEMPERATURE_CONTROL: True,
                           CameraFeature.PROGRAMMABLE_GAIN: False,
@@ -190,7 +190,7 @@ class FLI(ChimeraObject):
 
             :keyword request: ImageRequest object
             :type request: ImageRequest or None
-            
+
         """
         # NOTE: AFAIK, there is no way an ImageRequest kw will be left
         # with no value: if no ImageRequest is passed, any value not
