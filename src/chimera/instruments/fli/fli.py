@@ -56,6 +56,7 @@ class FLI(ChimeraObject):
         self.width, self.height, self.imgsz = self.thecam.get_image_size()
         self.pixelWidth = 13.5  # µm, from specs.
         self.pixelHeight = 13.5  # µm
+        log.info('Camera: %s', self.thecam.info)
 
     # From ReadoutMode()
     def getSize(self):
@@ -101,28 +102,34 @@ class FLI(ChimeraObject):
 
     def stopCooling(self):
         """
-        Stop cooling the camera
+        .. method:: stopCooling()
 
-        @return: True if successful, False otherwise.
-        @rtype: bool
+            Stop cooling the camera
+
+            :return: True if successful, False otherwise.
+            :rtype: bool
         """
         raise NotImplementedError()
 
     def isCooling(self):
         """
-        Returns whether the camera is currently cooling.
+        .. method:: isCooling()
 
-        @return: True if cooling, False otherwise.
-        @rtype: bool
+            Returns whether the camera is currently cooling.
+
+            :return: True if cooling, False otherwise.
+            :rtype: bool
         """
         raise NotImplementedError()
 
     def getTemperature(self):
         """
-        Get the current camera temperature.
+        .. method:: getTemperature()
 
-        @return: The current camera temperature in degrees Celsius.
-        @rtype: float
+            Get the current camera temperature.
+
+            :return: The current camera temperature in degrees Celsius.
+            :rtype: float
         """
         return self.thecam.get_temperature()
 
