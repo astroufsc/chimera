@@ -1,5 +1,4 @@
 import logging
-import threading
 
 #from FLI.device import USBDevice
 from FLI.camera import USBCamera
@@ -14,7 +13,6 @@ log = logging.getLogger(__name__)
 
 
 class FLI(CameraBase):
-
     """
     .. class:: FLI(CameraBase)
 
