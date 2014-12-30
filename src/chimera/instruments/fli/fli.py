@@ -1,33 +1,41 @@
 import logging
-from multiprocessing import Process
+import threading
 
 #from FLI.device import USBDevice
 from FLI.camera import USBCamera
 #from FLI.filter_wheel import USBFilterWheel
 
-from chimera.core.chimeraobject import ChimeraObject
-from chimera.interfaces.camera import (CCD, CameraFeature, Shutter, Bitpix)
+from chimera.instruments.camera import CameraBase
+
+from chimera.interfaces.camera import (CCD, CameraFeature)
 
 
 log = logging.getLogger(__name__)
 
 
-class FLI(ChimeraObject):
+class FLI(CameraBase):
+
+    """
+    .. class:: FLI(CameraBase)
+
+        High level driver for Finger Lakes instruments cameras.
+        Uses the python fli bindings to the FLI provided library.
+    """
+
     # Some of the config values were taken from the specs for the cam & CCD.
     __config__ = {"device": "USB",
                   "ccd": CCD.IMAGING,
                   "temp_delta": 2.0,
-
                   "ccd_saturation_level": 100000,
-
                   "camera_model": "Finger Lakes Instrumentation PL4240",
                   "ccd_model": "E2V CCD42-40",
                   "telescope_focal_length": 80000  # milimeter
                   }
 
     def __init__(self):
-        ChimeraObject.__init__(self)
+        CameraBase.__init__(self)
         # FilterWheelBase.__init__(self)
+
         self.mode = 0
         self._supports = {CameraFeature.TEMPERATURE_CONTROL: True,
                           CameraFeature.PROGRAMMABLE_GAIN: False,
@@ -37,9 +45,6 @@ class FLI(ChimeraObject):
                           CameraFeature.PROGRAMMABLE_BIAS_LEVEL: False}
 
     def __start__(self):
-        # Find devices attached to the USB bus. Supposedly this call
-        # returns a list...of USBDevice objects. How to recognize them:
-        # by dev_name/flidev_t?
         # self._devs = USBDevice.find_devices()
         # Patch: this is a camera class, let's assume we're talking to a
         # camera!
@@ -58,11 +63,15 @@ class FLI(ChimeraObject):
         self.pixelHeight = 13.5  # µm
         log.info('Camera: %s', self.thecam.info)
 
-    # From ReadoutMode()
     def getSize(self):
         """
-        Gets the current CCD size, accounting for binning
-        factors.
+        .. method:: getSize()
+
+            Gets the current CCD size, accounting for binning
+            factors.
+
+            :return: set with values.
+            :rtype: int
         """
         return (self.width, self.height)
 
@@ -86,7 +95,6 @@ class FLI(ChimeraObject):
     def __repr__(self):
         return self.__str__()
 
-    # From CameraTemperature()
     def startCooling(self, tempC):
         """
         .. method:: startCooling(tempC)
@@ -135,24 +143,29 @@ class FLI(ChimeraObject):
 
     def getSetPoint(self):
         """
-        Get the current camera temperature SetPoint.
+        .. method:: getSetPoint()
 
-        @return: The current camera temperature SetPoint in degrees Celsius.
-        @rtype: float
+            Get the current camera temperature SetPoint.
+
+            :return: The current camera temperature SetPoint in degrees Celsius.
+            :rtype: float
         """
         raise NotImplementedError()
 
     def startFan(self, rate=None):
-        pass
+        raise NotImplementedError()
 
     def stopFan(self):
-        pass
+        raise NotImplementedError()
 
     def isFanning(self):
         """
-        Find out by means of querying the power consumption of the
-        camera's cooler.
-        NOTE: this is flagged as an "undocumented API function"!
+        .. method:: isFanning()
+
+            Find out by means of querying the power consumption of the
+            camera's cooler.
+
+        .. note:: this is flagged as an "undocumented API function"!
         """
         # We might need this info one day...
         watts = self.thecam.get_cooler_power()
@@ -161,33 +174,37 @@ class FLI(ChimeraObject):
         else:
             return True
 
-    # From CameraInformation
     def getCCDs(self):
-        pass
+        raise NotImplementedError()
 
     def getCurrentCCD(self):
-        pass
+        raise NotImplementedError()
 
     def getBinnings(self):
-        pass
+        raise NotImplementedError()
 
     def getADCs(self):
-        pass
+        raise NotImplementedError()
 
     def getPhysicalSize(self):
-        pass
+        raise NotImplementedError()
 
     def getOverscanSize(self):
-        pass
+        raise NotImplementedError()
 
     def getReadoutModes(self):
-        """Get readout modes supported by this camera.
-        The return value would have the following format:
-         {ccd1: {mode1: ReadoutMode(), mode2: ReadoutMode2()},
-          ccd2: {mode1: ReadoutMode(), mode2: ReadoutMode2()}}
         """
+        .. method:: getReadoutModes()
 
-    # From CameraExpose!
+            Get readout modes supported by this camera.
+            The return value would have the following format:
+            {ccd1: {mode1: ReadoutMode(), mode2: ReadoutMode2()},
+            ccd2: {mode1: ReadoutMode(), mode2: ReadoutMode2()}}
+
+            :return: dict of dicts describing per ccd modes.
+        """
+        raise NotImplementedError()
+
     def expose(self, request=None, **kwargs):
         """
         .. method:: expose(request=None, **kwargs)
@@ -223,16 +240,18 @@ class FLI(ChimeraObject):
 
     def abortExposure(self, readout=True):
         """
-        Try abort the current exposure, reading out the current
-        frame if asked to.
+        .. method:: abortExposure(readout=True)
 
-        @param readout: Whether to readout the current frame after
-                        abort, otherwise the current photons will be
-                        lost forever. Default is True
-        @type readout: bool
+            Try to abort the current exposure, reading out the current
+            frame if asked to.
 
-        @return: True if successful, False otherwise.
-        @rtype: bool
+            :keyword readout: Whether to readout the current frame after
+                                           abort, or loose the photons forever.
+                                           Default is True.
+            :type readout: bool
+
+            :return: True if successful, False otherwise.
+            :rtype: bool
         """
         self.thecam.abort_exposure()
         if readout:
