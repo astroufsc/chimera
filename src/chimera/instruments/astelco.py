@@ -42,7 +42,7 @@ from chimera.core.lock import lock
 from chimera.core.exceptions import ObjectNotFoundException, ChimeraException
 from chimera.core.constants import SYSTEM_CONFIG_DIRECTORY
 
-from chimera.util.tpl2 import TPL2
+from chimera.util.tpl2 import TPL2,SocketError
 
 
 Direction = Enum("E", "W", "N", "S")
@@ -93,7 +93,7 @@ class Astelco (TelescopeBase):  # converted to Astelco
             for direction in Direction:
                 self._calibration[rate][direction] = 1
 
-        self._user = self.user
+        self._user = "admin"
         self._password = self.password
         self._aahost = self.host
         self._aaport = self.port
@@ -187,7 +187,7 @@ class Astelco (TelescopeBase):  # converted to Astelco
             self._tpl.debug = False
             return True
 
-        except (TPL2.SocketError, IOError):
+        except (SocketError, IOError):
             raise AstelcoException("Error while opening %s." % self["device"])
 
     @lock
