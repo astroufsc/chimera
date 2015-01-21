@@ -45,3 +45,5 @@ doc.pdf
 
 .idea
 .noseids
+#Sublime stuff
+*.sublime-*
