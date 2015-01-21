@@ -44,7 +44,7 @@ class FLI(CameraBase):
 
     def __start__(self):
         # self._devs = USBDevice.find_devices()
-        # Patch: this is a camera class, let's assume we're talking to a
+        # Kludge: this is a camera class, let's assume we're talking to a
         # camera!
         self._cams = USBCamera.find_devices()
         # While we're at it, let's assume there's only one camera on the
