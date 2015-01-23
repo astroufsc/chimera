@@ -55,7 +55,7 @@ vector. Temperature compensation can also be performed.
 	__config__ = {	'user'			: 'admin',
 					'host'			: 'sim.tt-data.eu',
 					'password'		: 'a8zfuoad1',
-					'port'			: 65443,
+					'port'			: 65432,
 					'hexapod'		: True,
 					'naxis'			: 5 }
 

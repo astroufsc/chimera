@@ -235,7 +235,9 @@ class ChimeraTel (ChimeraCLI):
 
     @action(help="Print telescope information and exit")
     def info(self, options):
+
         telescope = self.telescope
+
 
         self.out(40 * "=")
         self.out("telescope: %s (%s)." % (telescope.getLocation(),

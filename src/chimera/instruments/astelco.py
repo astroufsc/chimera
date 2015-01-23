@@ -73,6 +73,8 @@ class Astelco (TelescopeBase):  # converted to Astelco
         self._target_az = None
         self._target_alt = None
 
+        self._poketime = 90.0
+
         # debug log
         self._debugLog = None
         try:
@@ -94,9 +96,9 @@ class Astelco (TelescopeBase):  # converted to Astelco
                 self._calibration[rate][direction] = 1
 
         self._user = "admin"
-        self._password = self.password
-        self._aahost = self.host
-        self._aaport = self.port
+        self._password = "admin" 
+        self._aahost = "192.168.10.3"
+        self._aaport = "65432"
 
     # -- ILifeCycle implementation --
 
@@ -154,6 +156,11 @@ class Astelco (TelescopeBase):  # converted to Astelco
                              "Site object not available. Telescope"
                              " attitude cannot be determined.")
 
+    def helloTPL(self):
+        self.log.debug(self._tpl.getobject('SERVER.UPTIME'))
+        self.sayhello = threading.Timer(self._poketime,self.helloTPL)
+        self.sayhello.start()
+
     @lock
     def open(self):  # converted to Astelco
         print 'Connecting to Astelco server ',
@@ -171,7 +178,7 @@ class Astelco (TelescopeBase):  # converted to Astelco
         print self._tpl.log
 
         try:
-            self._tpl.open()
+            self._tpl #.open()
 
             self._checkAstelco()
 
@@ -185,6 +192,9 @@ class Astelco (TelescopeBase):  # converted to Astelco
                 self._initTelescope()
 
             self._tpl.debug = False
+            self.sayhello = threading.Timer(self._poketime,self.helloTPL)
+            self.sayhello.start()
+
             return True
 
         except (SocketError, IOError):
@@ -192,6 +202,7 @@ class Astelco (TelescopeBase):  # converted to Astelco
 
     @lock
     def close(self):  # converted to Astelco
+        self.sayhello.cancel()
         self.log.debug("TPl2 log:\n")
         for lstr in self._tpl.log:
             self.log.debug(lstr)
@@ -236,6 +247,10 @@ class Astelco (TelescopeBase):  # converted to Astelco
     @lock
     def slewToRaDec(self, position):  # no need to convert to Astelco
         self._validateRaDec(position)
+
+        if not self._tpl.isListening():
+            self.log.warning('Lost connection to TPL...')
+            self.open()
 
         if self.isSlewing():
             # never should happens 'cause @lock
@@ -544,6 +559,7 @@ class Astelco (TelescopeBase):  # converted to Astelco
 
     @lock
     def getDec(self):  # converted to Astelco
+
         ret = self._tpl.getobject('POSITION.EQUATORIAL.DEC_J2000')
 
         return Coord.fromD(ret)
