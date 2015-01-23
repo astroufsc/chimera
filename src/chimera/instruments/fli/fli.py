@@ -1,3 +1,4 @@
+from __future__ import print_function
 import logging
 
 #from FLI.device import USBDevice
@@ -33,9 +34,7 @@ class FLI(CameraBase):
                   }
 
     def __init__(self):
-        """
-        Constructor.
-        """
+        """Constructor."""
         CameraBase.__init__(self)
         # FilterWheelBase.__init__(self)
 
@@ -64,8 +63,7 @@ class FLI(CameraBase):
         # Getting this here guarantees info is available no matter
         # in what order the methods are invoked...
         self.width, self.height, self.imgsz = self.thecam.get_image_size()
-        self.pixelWidth = 13500  # mm, from specs.
-        self.pixelHeight = 13500  # mm
+        self.pixelWidth, self.pixelHeight = self.info['pixel_size']
         log.info('Camera: %s', self.info)
 
     def getSize(self):
