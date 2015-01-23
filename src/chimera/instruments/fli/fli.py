@@ -51,7 +51,8 @@ class FLI(CameraBase):
         # camera!
         self._cams = USBCamera.find_devices()
         if self._cams == []:
-            log.critical('No devices on USB bus! Exit...')
+            # log.critical('No devices on USB bus! Exit...')
+            print('No devices on USB bus! Exit...')
             return None
         # While we're at it, let's assume there's only one camera on the
         # USB bus...
