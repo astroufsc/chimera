@@ -53,10 +53,10 @@ if sys.platform == "win32":
     platform_deps += [
         "pywin32 == 218"
     ]
-else:
-    platform_deps += [
-        "python-sbigudrv"
-    ]
+#else:
+#    platform_deps += [
+#        "python-sbigudrv"
+#    ]
 
 # go!
 setup(
