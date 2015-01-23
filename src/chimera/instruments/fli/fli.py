@@ -13,6 +13,7 @@ log = logging.getLogger(__name__)
 
 
 class FLI(CameraBase):
+
     """
     .. class:: FLI(CameraBase)
 
@@ -31,6 +32,9 @@ class FLI(CameraBase):
                   }
 
     def __init__(self):
+        """
+        Constructor.
+        """
         CameraBase.__init__(self)
         # FilterWheelBase.__init__(self)
 
@@ -44,7 +48,12 @@ class FLI(CameraBase):
 
         # Kludge: this is a camera class, let's assume we're talking to a
         # camera!
-        self._cams = USBCamera.find_devices()
+        try:
+            self._cams = USBCamera.find_devices()
+        except:
+            log.critical('No camera found! Exit...')
+            return None
+
         # While we're at it, let's assume there's only one camera on the
         # USB bus...
         self.thecam = self._cams[0]
@@ -80,16 +89,16 @@ class FLI(CameraBase):
     def getLine(self):
         return [0, self.width]
 
-    def __str__(self):
-        s = "mode: %d: \n\tgain: %.2f\n\tWxH: [%d,%d]" \
-            "\n\tpix WxH: [%.2f, %.2f]" % (self.mode,
-                                           self.gain,
-                                           self.width, self.height,
-                                           self.pixelWidth, self.pixelHeight)
-        return s
+    # def __str__(self):
+    #     s = "mode: %d: \n\tgain: %.2f\n\tWxH: [%d,%d]" \
+    #         "\n\tpix WxH: [%.2f, %.2f]" % (self.mode,
+    #                                        self.gain,
+    #                                        self.width, self.height,
+    #                                        self.pixelWidth, self.pixelHeight)
+    #     return s
 
-    def __repr__(self):
-        return self.__str__()
+    # def __repr__(self):
+    #     return self.__str__()
 
     def startCooling(self, tempC):
         """
@@ -236,10 +245,8 @@ class FLI(CameraBase):
 
     def abortExposure(self, readout=True):
         """
+        Abort the current exposure, reading out the current frame if asked to.
         .. method:: abortExposure(readout=True)
-
-            Try to abort the current exposure, reading out the current
-            frame if asked to.
 
             :keyword readout: Whether to readout the current frame after
                                            abort, or loose the photons forever.
