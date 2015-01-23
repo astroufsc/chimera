@@ -28,7 +28,8 @@ class FLI(CameraBase):
                   "ccd_saturation_level": 100000,
                   "camera_model": "Finger Lakes Instrumentation PL4240",
                   "ccd_model": "E2V CCD42-40",
-                  "telescope_focal_length": 80000  # milimeter
+                  "telescope_focal_length": 80000,  # milimeter
+                  "gain": 1
                   }
 
     def __init__(self):
@@ -64,8 +65,8 @@ class FLI(CameraBase):
         # Getting this here guarantees info is available no matter
         # in what order the methods are invoked...
         self.width, self.height, self.imgsz = self.thecam.get_image_size()
-        self.pixelWidth = 13.5  # µm, from specs.
-        self.pixelHeight = 13.5  # µm
+        self.pixelWidth = 13500  # mm, from specs.
+        self.pixelHeight = 13500  # mm
         log.info('Camera: %s', self.thecam.info)
 
     def getSize(self):
