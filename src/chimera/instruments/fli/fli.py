@@ -68,11 +68,11 @@ class FLI(CameraBase):
 
     def getSize(self):
         """
-        .. method:: getSize()
+        Return the current CCD size.
 
+        .. method:: getSize()
             Gets the current CCD size, accounting for binning
             factors.
-
             :return: set with values.
             :rtype: int
         """
