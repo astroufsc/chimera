@@ -66,7 +66,7 @@ class FLI(CameraBase):
         self.width, self.height, self.imgsz = self.thecam.get_image_size()
         self.pixelWidth = 13500  # mm, from specs.
         self.pixelHeight = 13500  # mm
-        log.info('Camera: %s', self.thecam.info)
+        log.info('Camera: %s', self.info)
 
     def getSize(self):
         """
