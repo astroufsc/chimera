@@ -42,8 +42,6 @@ class FLI(CameraBase):
                           CameraFeature.PROGRAMMABLE_LEDS: True,
                           CameraFeature.PROGRAMMABLE_BIAS_LEVEL: False}
 
-    def __start__(self):
-        # self._devs = USBDevice.find_devices()
         # Kludge: this is a camera class, let's assume we're talking to a
         # camera!
         self._cams = USBCamera.find_devices()
