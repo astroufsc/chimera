@@ -1,7 +1,7 @@
 from chimera.core.constants import DEFAULT_PROGRAM_DATABASE
 
 from sqlalchemy import (Column, String, Integer, DateTime, Boolean, ForeignKey,
-                        Float, PickleType, MetaData, create_engine)
+                        Float, PickleType, MetaData, Text, create_engine)
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relation, backref
 
@@ -16,50 +16,96 @@ Base = declarative_base(metadata=metaData)
 import datetime as dt
 
 class Targets(Base):
-    __tablename__ = "targets"
-    print "model.py"
-    
-    id     = Column(Integer, primary_key=True)
-    name   = Column(String, default="Program") 
-    type   = Column(String, default=None) 
-    lastObservation = Column(DateTime, default=None)
-    observed  = Column(Boolean, default=False)
-    scheduled  = Column(Boolean, default=False)
-    targetRa = Column(Float, default=0.0)
-    targetDec = Column(Float, default=0.0)
-    targetEpoch = Column(Float, default=2000.)
-    targetMag = Column(Float, default=0.0)
-    magFilter = Column(String, default=None)
+	__tablename__ = "targets"
+	print "model.py"
 
-    def __str__ (self):
-        if self.observed:
-            return "#%d %s [type: %s] #LastObverved@: %s" % (self.id, self.name, self.type,
-                                                        self.lastObservation)
-        else:
-            return "#%d %s [type: %s] #NeverObserved" % (self.id, self.name, self.type)
+	id     = Column(Integer, primary_key=True)
+	objname   = Column(String, default="Program")
+	type   = Column(String, default=None) 
+	lastObservation = Column(DateTime, default=None)
+	targetRa = Column(Float, default=0.0)
+	targetDec = Column(Float, default=0.0)
+	targetEpoch = Column(Float, default=2000.)
+	targetMag = Column(Float, default=0.0)
+	magFilter = Column(String, default=None)
+
+	def __str__ (self):
+		return "#%d %s [type: %s]" % (self.id, self.objname, self.type)
+
+class BlockPar(Base):
+	__tablename__ = "blockpar"
+	id     = Column(Integer, primary_key=True)
+	bid     = Column(Integer)
+	pid = Column(String,default='')
+	
+	maxairmass = Column(Float, default=2.5)
+	maxmoonBright = Column(Float, default=100.) # percent
+	minmoonBright = Column(Float, default=0.) # percent
+	minmoonDist = Column(Float, default=-1.) # in degrees
+	maxseeing = Column(Float, default=2.0) # seing
+	cloudcover = Column(Integer, default=0) # must be defined by user
+	schedalgorith = Column(Integer, default=0) # scheduling algorith
+	applyextcorr = Column(Boolean, default=False)
+
+class ObsBlock(Base):
+	__tablename__ = "obsblock"
+	id     = Column(Integer, primary_key=True)
+	objid   = Column(Integer, ForeignKey("targets.id"))
+	blockid   = Column(Integer, ForeignKey("blockpar.id"))
+	pid = Column(String, ForeignKey("projects.pid"))
+	observed  = Column(Boolean, default=False)
+	scheduled  = Column(Boolean, default=False)
+	def __str__(self):
+		return "#%i %s[%i] [observed: %i | scheduled: %i]"%(self.id,self.pid,self.objid,self.observed,self.scheduled)
+
+class BlockConfig(Base):
+	__tablename__ = "blockconfig"
+	id     = Column(Integer, primary_key=True)
+	bid    = Column(Integer, ForeignKey("obsblock.blockid"))
+	bparid = Column(Integer, ForeignKey("blockpar.bid"))
+	pid    = Column(String, ForeignKey("projects.pid"))
+	filter = Column(String, default=None)
+	exptime = Column(Float, default=1.0)
+	imagetype = Column(String, default=None)
+	nexp    = Column(Integer, default=1)
+
+	def __str__ (self):
+		return "#%i %s [filter: %s | exptime: %f | nexp: %i]" % (self.id, self.pid, self.filter, self.exptime, self.nexp)
+
+	
+class Projects(Base):
+	__tablename__ = "projects"
+
+	id     = Column(Integer, primary_key=True)
+	pid   = Column(String, default="PID")
+	pi     = Column(String, default="Anonymous Investigator")
+	abstract = Column(Text, default="")
+	url    = Column(String, default="")
+	priority = Column(Integer, default=0)
+			
+	def __str__ (self):
+		return "#%3d %s pi:%s #abstract: %s #url: %s" % (self.id, self.flag,
+										  self.pi, self.abstract,self.url)
 
 class Program(Base):
-    __tablename__ = "program"
-    print "model.py"
-    
-    id     = Column(Integer, primary_key=True)
-    tid    = Column(Integer, ForeignKey('targets.id'))
-    name   = Column(String, ForeignKey("targets.name"))
-    pi     = Column(String, default="Anonymous Investigator")
+	__tablename__ = "program"
+	print "model.py"
 
-    priority = Column(Integer, default=0)
+	id     = Column(Integer, primary_key=True)
+	blockid   = Column(Integer, ForeignKey("blockpar.id"))
+	pid = Column(String, ForeignKey("projects.pid"))
 
-    createdAt = Column(DateTime, default=dt.datetime.today())
-    finished  = Column(Boolean, default=False)
-    slewAt = Column(Float, default=0.0)
-    exposeAt = Column(Float, default=0.0)
-    
-    actions   = relation("Action", backref=backref("program", order_by="Action.id"),
-                         cascade="all, delete, delete-orphan")
+	createdAt = Column(DateTime, default=dt.datetime.today())
+	finished  = Column(Boolean, default=False)
+	slewAt = Column(Float, default=0.0)
+	exposeAt = Column(Float, default=0.0)
 
-    def __str__ (self):
-        return "#%d %s pi:%s #actions: %d" % (self.id, self.name,
-                                              self.pi, len(self.actions))
+	actions   = relation("Action", backref=backref("program", order_by="Action.id"),
+						 cascade="all, delete, delete-orphan")
+
+	def __str__ (self):
+		return "#%d %s #actions: %d" % (self.id, self.pid,
+										len(self.actions))
 
 class Action(Base):
 
@@ -76,8 +122,8 @@ class AutoFocus(Action):
     __mapper_args__ = {'polymorphic_identity': 'AutoFocus'}
 
     id     = Column(Integer, ForeignKey('action.id'), primary_key=True)
-    start   = Column(Integer, default=0)
-    end     = Column(Integer, default=1)
+    obsstart   = Column(Integer, default=0)
+    obsend     = Column(Integer, default=1)
     step    = Column(Integer, default=1)
     filter  = Column(String, default=None)
     exptime = Column(Float, default=1.0)
@@ -85,7 +131,7 @@ class AutoFocus(Action):
     window  = Column(String, default=None)
 
     def __str__ (self):
-        return "autofocus: start=%d end=%d step=%d exptime=%d" % (self.start, self.end, self.step, self.exptime)
+        return "autofocus: start=%d end=%d step=%d exptime=%d" % (self.obsstart, self.obsend, self.step, self.exptime)
     
 class PointVerify(Action):
     __tablename__ = "action_pv"
