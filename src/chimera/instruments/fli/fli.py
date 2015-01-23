@@ -49,19 +49,13 @@ class FLI(CameraBase):
 
         # Kludge: this is a camera class, let's assume we're talking to a
         # camera!
-        try:
-            self._cams = USBCamera.find_devices()
-        except:
+        self._cams = USBCamera.find_devices()
+        if self._cams == []:
             log.critical('No devices on USB bus! Exit...')
             return None
-
         # While we're at it, let's assume there's only one camera on the
         # USB bus...
         self.thecam = self._cams[0]
-        if self.thecam == []:
-            log.critical('No camera found. Exit...')
-            return None
-
         # This will provide the following dict pairs:
         # 'serial_number', 'hardware_rev', 'firmware_rev', 'pixel_size',
         # 'array_area', 'visible_area'.
