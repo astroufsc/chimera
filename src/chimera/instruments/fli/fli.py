@@ -226,7 +226,7 @@ class FLI(CameraBase):
             hbin, vbin = [1, 1]
         self.thecam.set_flushes(8)
         self.thecam.set_image_binning(hbin, vbin)
-        self.thecam.set_exposure(exptime, frametype=ftype)
+        self.thecam.set_exposure(int(exptime), frametype=ftype)
         # Signal the event
         self.exposeBegin(request)
         # All set up, shoot. This method returns immediately.
