@@ -213,7 +213,7 @@ class FLI(CameraBase):
         # covered by kwargs will get a default from chimera-cam...right?
         if request is not None:
             # debug
-            self.log.info('ImageRequest is: ', request)
+            self.log.debug('ImageRequest received')
             exptime = request['exptime']
             ftype = request['type']
             # Is this the correct order?
@@ -223,7 +223,7 @@ class FLI(CameraBase):
         else:
             exptime = kwargs['exptime']
             ftype = kwargs['type']
-            hbin, vbin = kwargs['binning'].split('x')
+            hbin, vbin = [1, 1]
         self.thecam.set_flushes(8)
         self.thecam.set_image_binning(hbin, vbin)
         self.thecam.set_exposure(exptime, frametype=ftype)
