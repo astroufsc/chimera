@@ -131,9 +131,7 @@ class FLI(CameraBase):
             :return: The current camera temperature in degrees Celsius.
             :rtype: float
         """
-        cam = self.thecam
-        return cam.get_temperature()
-        #return self.thecam.get_temperature()
+        return self.thecam.get_temperature()
 
     def getSetPoint(self):
         """
