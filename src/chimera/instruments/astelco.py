@@ -54,7 +54,11 @@ class AstelcoException(ChimeraException):
 
 class Astelco (TelescopeBase):  # converted to Astelco
 
-    __config__ = {'azimuth180Correct': False}
+    __config__ = {	'azimuth180Correct': False ,
+					'user'	: 'admin',
+					'password' : 'admin',
+					'ahost' : 'localhost',
+					'aport' : '65432'}
 
     def __init__(self):
         TelescopeBase.__init__(self)
@@ -101,11 +105,6 @@ class Astelco (TelescopeBase):  # converted to Astelco
             self._calibration[rate] = {}
             for direction in Direction:
                 self._calibration[rate][direction] = 1
-
-        self._user = "admin"
-        self._password = "admin" 
-        self._aahost = "192.168.10.3"
-        self._aaport = "65432"
 
     # -- ILifeCycle implementation --
 
@@ -170,13 +169,13 @@ class Astelco (TelescopeBase):  # converted to Astelco
 
     @lock
     def open(self):  # converted to Astelco
-        self.log.info('Connecting to Astelco server %s:%i'%(self._aahost,
-															int(self._aaport)))
+        self.log.info('Connecting to Astelco server %s:%i'%(self["ahost"],
+															int(self["aport"])))
 
-        self._tpl = TPL2(user=self._user,
-                        password=self._password,
-                        host=self._aahost,
-                        port=int(self._aaport),
+        self._tpl = TPL2(user=self["user"],
+                        password=self["password"],
+                        host=self["ahost"],
+                        port=int(self["aport"]),
                         echo=False,
                         verbose=False,
                         debug=True)
