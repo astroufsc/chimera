@@ -214,19 +214,29 @@ class FLI(CameraBase):
         if request is not None:
             # debug
             self.log.debug('ImageRequest received')
-            exptime = request['exptime']
+            exptime = int(request['exptime'])
             ftype = request['type']
             # Is this the correct order?
             hbin, vbin = request['binning'].split('x')
             # It seems the bitdepth from the API is buggy... We leave it at
             # its 16bit default. Next!
         else:
-            exptime = kwargs['exptime']
-            ftype = kwargs['type']
+            # exptime translation
+            exptime = int(kwargs['exptime'])
+            # ftype translation; onli dark and normal!
+            if kwargs['type'] == 'skyflat':
+                ftype = 'normal'
+            elif kwargs['type'] == 'bias':
+                ftype = 'normal'
+                exptime = 0
+            elif kwargs['type'] == 'flat':
+                ftype = 'normal'
+            else:
+                ftype = 'dark'
             hbin, vbin = [1, 1]
         self.thecam.set_flushes(8)
         self.thecam.set_image_binning(hbin, vbin)
-        self.thecam.set_exposure(int(exptime), frametype=ftype)
+        self.thecam.set_exposure(exptime, frametype=ftype)
         # Signal the event
         self.exposeBegin(request)
         # All set up, shoot. This method returns immediately.
