@@ -50,8 +50,8 @@ class FLI(CameraBase):
         # camera!
         self._cams = USBCamera.find_devices()
         if self._cams == []:
-            # log.critical('No devices on USB bus! Exit...')
-            print('No devices on USB bus! Exit...')
+            self.log.critical('No devices on USB bus! Exit...')
+            #print('No devices on USB bus! Exit...')
             return None
         # While we're at it, let's assume there's only one camera on the
         # USB bus...
@@ -86,17 +86,6 @@ class FLI(CameraBase):
 
     def getLine(self):
         return [0, self.width]
-
-    # def __str__(self):
-    #     s = "mode: %d: \n\tgain: %.2f\n\tWxH: [%d,%d]" \
-    #         "\n\tpix WxH: [%.2f, %.2f]" % (self.mode,
-    #                                        self.gain,
-    #                                        self.width, self.height,
-    #                                        self.pixelWidth, self.pixelHeight)
-    #     return s
-
-    # def __repr__(self):
-    #     return self.__str__()
 
     def startCooling(self, tempC):
         """
@@ -142,7 +131,9 @@ class FLI(CameraBase):
             :return: The current camera temperature in degrees Celsius.
             :rtype: float
         """
-        return self.thecam.get_temperature()
+        cam = self.thecam
+        return cam.get_temperature()
+        #return self.thecam.get_temperature()
 
     def getSetPoint(self):
         """
