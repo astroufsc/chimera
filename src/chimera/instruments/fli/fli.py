@@ -109,7 +109,7 @@ class FLI(CameraBase):
             :return: True if successful, False otherwise.
             :rtype: bool
         """
-        raise NotImplementedError()
+        pass
 
     def stopCooling(self):
         """
@@ -120,7 +120,7 @@ class FLI(CameraBase):
             :return: True if successful, False otherwise.
             :rtype: bool
         """
-        raise NotImplementedError()
+        pass
 
     def isCooling(self):
         """
@@ -131,7 +131,7 @@ class FLI(CameraBase):
             :return: True if cooling, False otherwise.
             :rtype: bool
         """
-        raise NotImplementedError()
+        pass
 
     def getTemperature(self):
         """
@@ -153,13 +153,13 @@ class FLI(CameraBase):
             :return: The current camera temperature SetPoint in degrees Celsius.
             :rtype: float
         """
-        raise NotImplementedError()
+        pass
 
     def startFan(self, rate=None):
-        raise NotImplementedError()
+        pass
 
     def stopFan(self):
-        raise NotImplementedError()
+        pass
 
     def isFanning(self):
         """
@@ -178,23 +178,22 @@ class FLI(CameraBase):
             return True
 
     def getCCDs(self):
-        raise NotImplementedError()
+        pass
 
     def getCurrentCCD(self):
-        raise NotImplementedError()
+        pass
 
     def getBinnings(self):
-        #raise NotImplementedError()
         pass
 
     def getADCs(self):
-        raise NotImplementedError()
+        pass
 
     def getPhysicalSize(self):
-        raise NotImplementedError()
+        pass
 
     def getOverscanSize(self):
-        raise NotImplementedError()
+        pass
 
     def getReadoutModes(self):
         """
@@ -207,7 +206,7 @@ class FLI(CameraBase):
 
             :return: dict of dicts describing per ccd modes.
         """
-        raise NotImplementedError()
+        pass
 
     def expose(self, request=None, **kwargs):
         """
