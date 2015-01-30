@@ -64,7 +64,7 @@ class FLI(CameraBase):
         # in what order the methods are invoked...
         self.width, self.height, self.imgsz = self.thecam.get_image_size()
         self.pixelWidth, self.pixelHeight = self.info['pixel_size']
-        log.info('Camera: %s', self.info)
+        self.log.info('Camera: %s', self.info)
 
     def getSize(self):
         """
@@ -184,7 +184,8 @@ class FLI(CameraBase):
         raise NotImplementedError()
 
     def getBinnings(self):
-        raise NotImplementedError()
+        #raise NotImplementedError()
+        pass
 
     def getADCs(self):
         raise NotImplementedError()
@@ -241,22 +242,22 @@ class FLI(CameraBase):
         # All set up, shoot. This method returns immediately.
         self.thecam.start_exposure()
 
-    def abortExposure(self, readout=True):
-        """
-        Abort the current exposure, reading out the current frame if asked to.
-        .. method:: abortExposure(readout=True)
+    # def abortExposure(self, readout=True):
+    #     """
+    #     Abort the current exposure, reading out the current frame if asked to.
+    #     .. method:: abortExposure(readout=True)
 
-            :keyword readout: Whether to readout the current frame after
-                                           abort, or loose the photons forever.
-                                           Default is True.
-            :type readout: bool
+    #         :keyword readout: Whether to readout the current frame after
+    #                                        abort, or loose the photons forever.
+    #                                        Default is True.
+    #         :type readout: bool
 
-            :return: True if successful, False otherwise.
-            :rtype: bool
-        """
-        self.thecam.abort_exposure()
-        if readout:
-            return self.thecam.fetch_image()
+    #         :return: True if successful, False otherwise.
+    #         :rtype: bool
+    #     """
+    #     self.thecam.abort_exposure()
+    #     if readout:
+    #         return self.thecam.fetch_image()
 
     def isExposing(self):
         if not self.thecam.get_exposure_timeleft():

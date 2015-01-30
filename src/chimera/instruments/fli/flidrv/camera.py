@@ -1,6 +1,6 @@
 """
  FLI.camera.py
- 
+
  Object-oriented interface for handling FLI USB cameras
  
  author:       Craig Wm. Versek, Yankee Environmental Systems 
