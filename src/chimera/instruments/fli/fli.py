@@ -212,6 +212,8 @@ class FLI(CameraBase):
         # with no value: if no ImageRequest is passed, any value not
         # covered by kwargs will get a default from chimera-cam...right?
         if request is not None:
+            # debug
+            self.log.info('ImageRequest is: ', request)
             exptime = request['exptime']
             ftype = request['type']
             # Is this the correct order?
