@@ -1,7 +1,5 @@
 """
- FLI.lib.py
-
- Python interface to the FLI (Finger Lakes Instrumentation) API
+ Python interface to the FLI (Finger Lakes Instrumentation) API.
 
  author:       Craig Wm. Versek, Yankee Environmental Systems 
  author_email: cwv@yesinc.com

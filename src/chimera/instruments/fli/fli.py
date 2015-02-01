@@ -70,7 +70,6 @@ class FLI(CameraBase):
         self._cams = USBCamera.find_devices()
         if self._cams == []:
             self.log.critical('No devices on USB bus! Exit...')
-            #print('No devices on USB bus! Exit...')
             return None
         # While we're at it, let's assume there's only one camera on the
         # USB bus...
@@ -85,7 +84,6 @@ class FLI(CameraBase):
         self.pixelWidth, self.pixelHeight = self.info['pixel_size']
         self.log.info('Camera: %s', self.info)
 
-
         readoutMode = ReadoutMode()
         readoutMode.mode = 0
         readoutMode.gain = 1.0
@@ -94,8 +92,7 @@ class FLI(CameraBase):
         readoutMode.pixelWidth = self.pixelWidth
         readoutMode.pixelHeight = self.pixelHeight
         self._readoutModes = {self._MY_CCD:
-                             {self._MY_READOUT_MODE: readoutMode}}
-
+                              {self._MY_READOUT_MODE: readoutMode}}
 
     def __stop__(self):
         pass
@@ -214,15 +211,15 @@ class FLI(CameraBase):
         return self._binnings
 
     def getADCs(self):
-        # Also provisory! Justo so info will work... 
+        # Also provisory! Justo so info will work...
         return self._adcs
 
     def getPhysicalSize(self):
-        return self.width,self.height
+        return self.width, self.height
 
     def getOverscanSize(self):
         # Provisory
-        return 0,0
+        return 0, 0
 
     def getReadoutModes(self):
         """
@@ -251,19 +248,19 @@ class FLI(CameraBase):
         # NOTE: AFAIK, there is no way an ImageRequest kw will be left
         # with no value: if no ImageRequest is passed, any value not
         # covered by kwargs will get a default from chimera-cam...right?
-        ftype='normal'
+        ftype = 'normal'
         if request is not None:
             # debug
             self.log.debug('ImageRequest received')
             exptime = int(request['exptime'])
             self.log.debug(request)
             if request['type'] == 'bias' or request['type'] == 'dark':
-                ftype = 'dark' #request['type']
+                ftype = 'dark'  # request['type']
             # Is this the correct order?
             if request['binning']:
                 hbin, vbin = request['binning'].split('x')
             else:
-                hbin,vbin = 1,1
+                hbin, vbin = 1, 1
             # It seems the bitdepth from the API is buggy... We leave it at
             # its 16bit default. Next!
         else:
@@ -280,17 +277,17 @@ class FLI(CameraBase):
             else:
                 ftype = 'dark'
             hbin, vbin = [1, 1]
-        
-        
+
         self.log.debug('Setting flush of the CCD to 1...')
         self.thecam.set_flushes(1)
-        self.log.debug('Setting binning of the CCD to %ix%i...'%(hbin,vbin))
+        self.log.debug('Setting binning of the CCD to %ix%i...' % (hbin, vbin))
         self.thecam.set_image_binning(hbin, vbin)
-        self.log.debug('Setting exposure time to %f and frametype to %s...'%(exptime,ftype))
-        self.thecam.set_exposure(exptime*1000,ftype) # miliseconds
-        #self.log.debug(request)
+        self.log.debug(
+            'Setting exposure time to %f and frametype to %s...' % (exptime, ftype))
+        self.thecam.set_exposure(exptime * 1000, ftype)  # miliseconds
+        # self.log.debug(request)
         # Signal the event
-        #return 0
+        # return 0
 
         self.exposeBegin(request)
         # All set up, shoot. This method returns immediately.
@@ -302,7 +299,7 @@ class FLI(CameraBase):
         self.lastFrameTemp = self.getTemperature()
 
         timestart = time.time()
-        
+
         while self.isExposing():
 
             self.log.debug('Exposing ...')
@@ -312,22 +309,21 @@ class FLI(CameraBase):
                 # [TIAGO] Need to do some cleaning at camera level?
                 status = CameraStatus.ABORTED
                 break
-            elif ( (time.time()-timestart) > 2.0*exptime):
+            elif ((time.time() - timestart) > 2.0 * exptime):
                 self.log.warning('Exposure timed-out')
                 status = CameraStatus.ABORTED
                 break
-            # this sleep is EXTREMELY important: without it, Python would stuck on this
-            # thread and abort will not work.
+            # this sleep is EXTREMELY important: without it, Python would stuck
+            # on this thread and abort will not work.
             time.sleep(5.0)
-
 
         self.exposeComplete(request, status)
         return True
 
         # end exposure and returns
-    #return self._endExposure(imageRequest, status)
+    # return self._endExposure(imageRequest, status)
 
-    def _readout(self,imageRequest):
+    def _readout(self, imageRequest):
 
         (mode, binning, top,  left,
          width, height) = self._getReadoutModeInfo(imageRequest["binning"],
@@ -337,7 +333,7 @@ class FLI(CameraBase):
 
         self.readoutBegin(imageRequest)
 
-        # [TIAGO] : I think this function must be either thread/locked 
+        # [TIAGO] : I think this function must be either thread/locked
         # or re-writed so that it enables chimera to abort.
         img = self.thecam.fetch_image()
 
@@ -379,10 +375,8 @@ class FLI(CameraBase):
     #              'Filter used for this observation')
     #             ]
 
-
     def supports(self, feature=None):
         if feature in self._supports:
             return self._supports[feature]
         else:
             return False
-

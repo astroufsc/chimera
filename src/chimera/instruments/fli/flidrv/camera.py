@@ -1,15 +1,3 @@
-"""
- FLI.camera.py
-
- Object-oriented interface for handling FLI USB cameras
- 
- author:       Craig Wm. Versek, Yankee Environmental Systems 
- author_email: cwv@yesinc.com
-"""
-
-__author__ = 'Craig Wm. Versek'
-__date__ = '2012-08-08'
-
 import sys
 import time
 
@@ -21,7 +9,6 @@ except ImportError:
 from ctypes import pointer, POINTER, byref, sizeof, Structure, c_char,\
     c_char_p, c_long, c_ubyte, c_uint8, c_uint16, c_double
 
-
 import numpy
 
 from lib import FLILibrary, FLIError, FLIWarning, flidomain_t, flidev_t,\
@@ -31,6 +18,19 @@ from lib import FLILibrary, FLIError, FLIWarning, flidomain_t, flidev_t,\
     FLI_TEMPERATURE_CCD, FLI_TEMPERATURE_BASE
 
 from device import USBDevice
+"""
+USB camera class.
+
+.. class:: USBCamera
+Object-oriented interface for handling FLI USB cameras
+
+ author:       Craig Wm. Versek, Yankee Environmental Systems 
+ author_email: cwv@yesinc.com
+"""
+
+__author__ = 'Craig Wm. Versek'
+__date__ = '2012-08-08'
+
 ###############################################################################
 DEBUG = False
 ###############################################################################
@@ -139,11 +139,16 @@ class USBCamera(USBDevice):
         return P.value
 
     def set_exposure(self, exptime, frametype="normal"):
-        """setup the exposure type:
-               exptime   - exposure time in milliseconds
-               frametype -  'normal'     - open shutter exposure
-                            'dark'       - exposure with shutter closed
-                            'rbi_flush'  - flood CCD with internal light, with shutter closed
+        """
+        Setup the exposure type.
+
+        .. method:: set_exposure(exptime, frametype)
+            Set parameters for the next frame.
+            :parameter exptime: exposure time in milliseconds
+            :keyword frametype: 'normal': open shutter exposure
+                                'dark': exposure with shutter closed
+                                'rbi_flush': flood CCD with internal light,
+                                             with shutter closed
         """
         exptime = c_long(exptime)
         if frametype == "normal":
@@ -193,11 +198,21 @@ class USBCamera(USBDevice):
         self._libfli.FLIExposeFrame(self._dev)
 
     def get_exposure_timeleft(self):
-        """ Returns the time left on the exposure in milliseconds.
+        """ 
+        Return the time left on the exposure in milliseconds.
         """
         timeleft = c_long()
         self._libfli.FLIGetExposureStatus(self._dev, byref(timeleft))
         return timeleft.value
+
+    def cancel_exposure(self):
+        """
+        Abort the current exposure.
+
+        .. method:: cancel_exposure()
+            Stops the current frame no matter the status.
+        """
+        self._libfli.FLICancelExposure(self._dev)
 
     def fetch_image(self):
         """ Fetch the image data for the last exposure.
