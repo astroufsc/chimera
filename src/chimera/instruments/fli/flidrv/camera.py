@@ -223,7 +223,7 @@ class USBCamera(USBDevice):
             Stops the current exposure, keeps photons (?).
         """
         self._libfli.FLIEndExposure(self._dev)
-        return self.fetch_image()
+        #return self.fetch_image()
 
     def fetch_image(self):
         """ Fetch the image data for the last exposure.
