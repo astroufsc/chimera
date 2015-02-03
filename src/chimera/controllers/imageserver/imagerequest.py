@@ -3,7 +3,7 @@ from chimera.interfaces.camera import (Shutter, Bitpix)
 from chimera.core.exceptions import ChimeraValueError, ObjectNotFoundException
 
 import logging
-#import chimera.core.log
+
 log = logging.getLogger(__name__)
 
 

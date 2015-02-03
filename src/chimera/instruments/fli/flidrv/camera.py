@@ -198,7 +198,7 @@ class USBCamera(USBDevice):
         self._libfli.FLIExposeFrame(self._dev)
 
     def get_exposure_timeleft(self):
-        """ 
+        """
         Return the time left on the exposure in milliseconds.
         """
         timeleft = c_long()
@@ -210,9 +210,20 @@ class USBCamera(USBDevice):
         Abort the current exposure.
 
         .. method:: cancel_exposure()
-            Stops the current frame no matter the status.
+            Stops the current frame no matter the status, discards accumulated
+            photons.
         """
         self._libfli.FLICancelExposure(self._dev)
+
+    def end_exposure(self):
+        """
+        Stop the current exposure.
+
+        .. method:: end_exposure()
+            Stops the current exposure, keeps photons (?).
+        """
+        self._libfli.FLIEndExposure(self._dev)
+        return self.fetch_image()
 
     def fetch_image(self):
         """ Fetch the image data for the last exposure.
