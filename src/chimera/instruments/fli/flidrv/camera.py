@@ -215,15 +215,15 @@ class USBCamera(USBDevice):
         """
         self._libfli.FLICancelExposure(self._dev)
 
-    def end_exposure(self):
-        """
-        Stop the current exposure.
+    # def end_exposure(self):
+    #     """
+    #     Stop the current exposure.
 
-        .. method:: end_exposure()
-            Stops the current exposure, keeps photons (?).
-        """
-        self._libfli.FLIEndExposure(self._dev)
-        # return self.fetch_image()
+    #     .. method:: end_exposure()
+    #         Stops the current exposure, keeps photons (?).
+    #     """
+    #     self._libfli.FLIEndExposure(self._dev)
+    #     # return self.fetch_image()
 
     def fetch_image(self):
         """ Fetch the image data for the last exposure.
