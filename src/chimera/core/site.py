@@ -102,7 +102,7 @@ class Site (ChimeraObject):
         time_tuple += (0, self.utc_tz)
         d_utc = dt.datetime(*time_tuple)
         # then return it in local timezone
-        return d_utc.astimezone(self.local_tz)
+        return d_utc.astimezone(self.utc_tz)
 
     local_tz = property(lambda self: tz.tzlocal())
     utc_tz = property(lambda self: tz.tzutc())
@@ -132,16 +132,20 @@ class Site (ChimeraObject):
         offset = self.localtime().utcoffset()
         return (offset.days * 86400 + offset.seconds) / 3600.0
 
-    def LST_inRads(self):
-        return float(self._getEphem(date=self.ut()).sidereal_time())
+    def LST_inRads(self,date=None):
+        if not date:
+			date = self.ut()
+        return float(self._getEphem(date=date).sidereal_time())
 
-    def LST(self):
+    def LST(self,date=None):
         """
         Mean Local Sidereal Time
         """
         #lst = self._getEphem(self.ut()).sidereal_time()
         # required since a Coord cannot be constructed from an Ephem.Angle
-        lst_c = Coord.fromR(self.LST_inRads())
+        if not date:
+			date = self.ut()
+        lst_c = Coord.fromR(self.LST_inRads(date))
         return lst_c.toHMS()
 
     def GST(self):
@@ -226,11 +230,16 @@ class Site (ChimeraObject):
     def haToRa(self, ha):
         return CoordUtil.raToHa(ha, self.LST_inRads())
 
-    def raDecToAltAz(self, raDec):
-        return Position.raDecToAltAz(raDec, self['latitude'], self.LST_inRads())
+    def raDecToAltAz(self, raDec,lst_inRads=None):
+		if not lst_inRads:
+			lst_inRads = self.LST_inRads()
+		return Position.raDecToAltAz(raDec, self['latitude'], lst_inRads)
 
-    def altAzToRaDec(self, altAz):
-        return Position.altAzToRaDec(altAz, self['latitude'], self.LST_inRads())
+    def altAzToRaDec(self, altAz,lst_inRads=None):
+        if not lst_inRads:
+			lst_inRads = self.LST_inRads()
+
+        return Position.altAzToRaDec(altAz, self['latitude'], lst_inRads)
 
     def getMetadata(self, request):
         return [
