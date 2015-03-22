@@ -33,7 +33,6 @@ __all__ = ['Mode',
            'Dome',
            'InvalidDomePositionException']
 
-
 Mode = Enum("Stand", "Track")
 Style = Enum("Rolloff", "Classic", "Other")
 DomeStatus = Enum("OK", "ABORTED")
@@ -68,6 +67,152 @@ class Dome(Interface):
                   "open_timeout": 20,
                   "close_timeout": 20}
 
+
+
+class DomeSlew(Dome):
+    """Slew to the given Azimuth."""
+
+    def slewToAz(self, az):
+        """
+        Slew to the given Azimuth.
+
+        @param az: Azimuth in degrees. Can be anything
+        L{Coord.fromDMS} can accept.
+        @type az: Coord, int or float
+
+        @raises InvalidDomePositionException: When the request Azimuth
+        is unreachable.
+
+        @rtype: None
+        """
+
+    def isSlewing(self):
+        """
+        Ask if the dome is slewing right now.
+
+        @return: True if the dome is slewing, False otherwise.
+        @rtype: bool
+        """
+
+
+    def abortSlew(self):
+        """
+        Try to abort the current slew.
+
+        @return: False if slew couldn't be aborted, True otherwise.
+        @rtype: bool
+        """
+
+    @event
+    def slewBegin(self, position):
+        """
+        Indicates that the a new slew operation started.
+
+        @param position: The dome current position when the slew started
+        @type  position: Coord
+        """
+
+    @event
+    def slewComplete(self, position, status):
+        """
+        Indicates that the last slew operation finished (with or
+        without success, check L{status} field for more information.).
+
+        @param position: The dome current position when the slew finished in
+        decimal degrees.
+        @type  position: Coord
+
+        @param status: Status of the slew command
+        @type  status: L{DomeStatus}
+        """
+
+
+
+
+class DomeSlit(Dome):
+    def openSlit(self):
+        """
+        Open the dome slit.
+
+        @rtype: None
+        """
+
+
+    def closeSlit(self):
+        """
+        Close the dome slit.
+
+        @rtype: None
+        """
+
+    def isSlitOpen(self):
+        """
+        Ask the dome if the slit is opened.
+
+        @return: True when open, False otherwise.
+        @rtype: bool
+        """
+
+
+    @event
+    def slitOpened(self, az):
+        """
+        Indicates that the slit was just opened
+
+        @param az: The azimuth when the slit opend
+        @type  az: Coord
+        """
+
+    @event
+    def slitClosed(self, az):
+        """
+        Indicates that the slit was just closed.
+
+        @param az: The azimuth when the slit closed.
+        @type  az: Coord
+        """
+
+
+
+class DomeLights(Dome):
+    def lightsOn(self):
+        """
+        Ask the dome to turn on flat lights, if any.
+        @return: None
+        @rtype: None
+        """
+
+    def lightsOff(self):
+        """
+        Ask the dome to turn off flat lights, if any.
+        @return: None
+        @rtype: None
+        """
+
+    def isLightsOn(self):
+        """
+        Ask the dome if the flat lights are on, if any.
+        @return: None
+        @rtype: None
+        """
+
+
+
+class DomeSync(Dome):
+    """  Synchronism operations with a chosen telescope.  """
+
+    @event
+    def syncBegin(self):
+        """
+        Indicates that the dome was asked and is starting to sync with the telescope (if any).
+        """
+
+    @event
+    def syncComplete(self):
+        """
+        Indicates that the dome was asked and finished the sync with the telescope (if any).
+        """
+
     def stand(self):
         """
         Tells the Dome to stand and only move when asked to.
@@ -79,7 +224,6 @@ class Dome(Interface):
         """
         Tells the Dome to track the telescope azimuth. Dome will use
         the telescope given in 'telescope' config parameter.
-
         @rtype: None
         """
 
@@ -105,72 +249,6 @@ class Dome(Interface):
         @rtype: Mode
         """
 
-    def slewToAz(self, az):
-        """
-        Slew to the given Azimuth.
-
-        @param az: Azimuth in degrees. Can be anything
-        L{Coord.fromDMS} can accept.
-        @type az: Coord, int or float
-
-        @raises InvalidDomePositionException: When the request Azimuth
-        is unreachable.
-
-        @rtype: None
-        """
-
-    def isSlewing(self):
-        """
-        Ask if the dome is slewing right now.
-
-        @return: True if the dome is slewing, False otherwise.
-        @rtype: bool
-        """
-
-    def abortSlew(self):
-        """
-        Try to abort the current slew.
-
-        @return: False if slew couldn't be aborted, True otherwise.
-        @rtype: bool
-        """
-
-    def openSlit(self):
-        """
-        Open the dome slit.
-
-        @rtype: None
-        """
-
-    def closeSlit(self):
-        """
-        Close the dome slit.
-
-        @rtype: None
-        """
-
-    def isSlitOpen(self):
-        """
-        Ask the dome if the slit is opened.
-
-        @return: True when open, False otherwise.
-        @rtype: bool
-        """
-
-    def lightsOn(self):
-        """
-        Ask the dome to turn on flat lights, if any.
-        @return: None
-        @rtype: None
-        """
-
-    def lightsOff(self):
-        """
-        Ask the dome to turn off flat lights, if any.
-        @return: None
-        @rtype: None
-        """
-
     def getAz(self):
         """
         Get the current dome Azimuth (Az)
@@ -179,54 +257,4 @@ class Dome(Interface):
         @rtype: float
         """
 
-    @event
-    def syncBegin(self):
-        """
-        Indicates that the dome was asked and is starting to sync with the telescope (if any).
-        """
 
-    @event
-    def syncComplete(self):
-        """
-        Indicates that the dome was asked and finished the sync with the telescope (if any).
-        """
-
-    @event
-    def slewBegin(self, position):
-        """
-        Indicates that the a new slew operation started.
-
-        @param position: The dome current position when the slew started
-        @type  position: Coord
-        """
-
-    @event
-    def slewComplete(self, position, status):
-        """
-        Indicates that the last slew operation finished (with or
-        without success, check L{status} field for more information.).
-
-        @param position: The dome current position when the slew finished in
-                         decimal degrees.
-        @type  position: Coord
-
-        @param status: Status of the slew command
-        @type  status: L{DomeStatus}
-        """
-
-    @event
-    def slitOpened(self, az):
-        """
-        Indicates that the slit was just opened
-
-        @param az: The azimuth when the slit opend
-        @type  az: Coord
-        """
-    @event
-    def slitClosed(self, az):
-        """
-        Indicates that the slit was just closed.
-
-        @param az: The azimuth when the slit closed.
-        @type  az: Coord
-        """
