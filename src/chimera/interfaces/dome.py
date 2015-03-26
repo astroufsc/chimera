@@ -68,9 +68,8 @@ class Dome(Interface):
                   "close_timeout": 20}
 
 
-
 class DomeSlew(Dome):
-    """Slew to the given Azimuth."""
+    """ Basic Interface for rotating observatory Domes."""
 
     def slewToAz(self, az):
         """
@@ -127,9 +126,11 @@ class DomeSlew(Dome):
         """
 
 
-
-
 class DomeSlit(Dome):
+    """
+    Dome with Slit
+    """
+
     def openSlit(self):
         """
         Open the dome slit.
@@ -173,8 +174,11 @@ class DomeSlit(Dome):
         """
 
 
-
 class DomeLights(Dome):
+    """"
+    Dome with lights
+    """
+
     def lightsOn(self):
         """
         Ask the dome to turn on flat lights, if any.
@@ -197,9 +201,10 @@ class DomeLights(Dome):
         """
 
 
-
 class DomeSync(Dome):
-    """  Synchronism operations with a chosen telescope.  """
+    """
+    Synchronism operations with a chosen telescope.
+    """
 
     @event
     def syncBegin(self):
