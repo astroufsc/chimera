@@ -43,8 +43,7 @@ class ChimeraFilter(logging.Filter):
 
     def filter(self, record):
         # Get the manager:port info
-        record.origin = '[[' + MANAGER_DEFAULT_HOST + \
-            ':' + str(MANAGER_DEFAULT_PORT) + ']]'
+        record.origin = '[' + MANAGER_DEFAULT_HOST + ':' + str(MANAGER_DEFAULT_PORT) + ']'
         return True
 
 try:
