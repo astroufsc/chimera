@@ -209,6 +209,22 @@ class ChimeraTel (ChimeraCLI):
         self.out("OK")
         self.out(40 * "=")
 
+    @action(help="Open telescope cover", helpGroup="PARK", actionGroup="PARK")
+    def open(self, options):
+        self.out(40 * "=")
+        self.out("Opening telescope cover ... ", end="")
+        self.telescope.c_open()
+        self.out("OK")
+        self.out(40 * "=")
+
+    @action(help="Close telescope cover", helpGroup="PARK", actionGroup="PARK")
+    def close(self, options):
+        self.out(40 * "=")
+        self.out("Closing telescope cover ... ", end="")
+        self.telescope.c_close()
+        self.out("OK")
+        self.out(40 * "=")
+
     @action(name="stop_tracking",
             long="stop-tracking",
             help="Stop telescope tracking",

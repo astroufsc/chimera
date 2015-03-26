@@ -209,6 +209,9 @@ class Image (DictMixin, RemoteObject):
 
     filename = lambda self: self._filename
 
+    def close(self):
+        self._fd.close()
+
     def compressedFilename(self):
         if os.path.exists(self._filename + ".bz2"):
             return self._filename + ".bz2"

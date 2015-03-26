@@ -31,7 +31,7 @@ from chimera.util.enum import Enum
 AlignMode = Enum("ALT_AZ", "POLAR", "LAND")
 SlewRate = Enum("GUIDE", "CENTER", "FIND", "MAX")
 
-TelescopeStatus = Enum("OK", "ABORTED", "OBJECT_TOO_LOW", "OBJECT_TOO_HIGH")
+TelescopeStatus = Enum("OK", "ERROR", "ABORTED", "OBJECT_TOO_LOW", "OBJECT_TOO_HIGH")
 
 
 class PositionOutsideLimitsException (ChimeraException):

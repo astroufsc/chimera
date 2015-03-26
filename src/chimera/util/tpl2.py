@@ -8,7 +8,10 @@ import socket
 import re
 import time
 import array
+import logging
 
+#FORMAT = '%(asctime)-15s @%(threadName)s %(funcName)s[%(lineno)d]: %(message)s'
+log = logging.getLogger(__name__)
 
 class Error(Exception):
 
@@ -43,7 +46,7 @@ class MaxTries(Error):
 
     def __init__(self, msg):
         self.msg = msg
-        print 'max_tries was reached without the expected answer for the message. Last answer was\n' + str(msg)
+        log.warning('max_tries was reached without the expected answer for the message. Last answer was\n' + str(msg))
 
 from threading import Thread
 
@@ -56,7 +59,7 @@ class Receiver(Thread):
         Thread.__init__(self)
 
     def run(self):
-        print 'Starting to listen on socket ' + str(self.tpl2.sock)
+        log.info( 'Starting to listen on socket ' + str(self.tpl2.sock) )
         while True:
             buf = self.tpl2.recv(quiet=True)
             if not self.keeplistening:
@@ -135,7 +138,7 @@ class TPL2(object):
             last = s
         if (not s) or (not s.group('OK')):
             self.sock.close()
-            print 'self.sock.recv()', 'Not authorized; Last answer from server was' + last
+            log.error('self.sock.recv() Not authorized; Last answer from server was ' + last)
             raise SocketError(
                 'self.sock.recv()', 'Not authorized; Last answer from server was' + last)
         self.read_level, self.write_level = int(
@@ -157,7 +160,7 @@ class TPL2(object):
         return (self.receiver) and (self.receiver.isAlive())
 
     def disconnect(self):
-        print "Disconnecting from ", self.host, ':', self.port
+        log.info( "Disconnecting from %s:%s"%( self.host, self.port))
         self.stoplistening()
         self.send('DISCONNECT')
 #        try:
@@ -175,10 +178,10 @@ class TPL2(object):
             buf = self.sock.recv(bufsize)
         except socket.timeout:
             if (not quiet):
-                print "recv() timed out"
+                log.warning( "recv() timed out" )
             buf = None
         if self.verbose and self.echo and buf:
-            print buf
+            log.debug( buf )
         if buf:
             self.log.append(('r', buf))
             self.received.append((len(self.log), buf))
@@ -215,7 +218,7 @@ class TPL2(object):
             obj = self.commands_sent[id]['object']
             self.received_objects[obj] = value
             if self.verbose:
-                print buf
+                log.debug( buf )
 
         s = re.search(
             '(?P<id>\d+)\s+(?P<data>DATA BINARY) (?P<object>\S+.*?):(?P<bytes>\S+.*?)\r?\n?', buf)
@@ -225,7 +228,7 @@ class TPL2(object):
             bytes = int(s.group('bytes'))
             obj = self.commands_sent[id]['object']
             if self.verbose:
-                print buf
+                log.debug( buf )
             buffer = self.sock.recv(bytes)
             arr = array('B')
             self.received_objects[obj] = arr.fromstring(buffer)
@@ -270,22 +273,58 @@ class TPL2(object):
     def succeeded(self, cmdid):
         ret = cmdid in self.commands_sent
         if ret:
+            ntries = 0
+            while not self.commands_sent[cmdid]['complete']:
+                log.debug( '[%3i/%i] Waiting cmd[%i] to complete'%(ntries,self.max_tries,cmdid) )
+                ntries+=1
+                time.sleep(self.sleep)
+                if ntries > self.max_tries:
+                    break
             ret = self.commands_sent[cmdid]['complete']
-        if ret:
-            if 'data' in self.commands_sent[cmdid]:
-                ret = self.commands_sent[cmdid]['data']
+        #if ret:
+        #    if 'data' in self.commands_sent[cmdid]:
+        #        ret = self.commands_sent[cmdid]['data']
+        #if not ret:
+        #    for i in self.commands_sent[cmdid].keys():
+        #        print '\t cmd_sent[%i][%s] = %s'%(cmdid,i,self.commands_sent[cmdid][i])
         return ret
 
+    def finished(self, cmdid):
+        return self.commands_sent[cmdid]['complete']
+
     def getobject(self, object):
+        
         ocmid = self.get(object + '!TYPE', wait=True)
+        
         st = self.commands_sent[ocmid]['status']
+        ntries = 0
+        
+        while not st == 'COMPLETE':
+            log.debug( '[%3i/%i] TPL2 getobject: got status "%s"'%(ntries,self.max_tries,st) )
+            ntries+=1
+            time.sleep(self.sleep)
+            st = self.commands_sent[ocmid]['status']
+            if ntries > self.max_tries:
+                break
+        
         if st != 'COMPLETE':
-            print 'TPL2 getobject: got status "', st, '"'
+            log.warning( 'TPL2 getobject: got status "', st, '"' )
             return None
+    
         ocmid = self.get(object, wait=True)
+        
         st = self.commands_sent[ocmid]['status']
+
+        while not st == 'COMPLETE':
+            log.debug( '[%3i/%i] TPL2 getobject: got status "%s"'%(ntries,self.max_tries,st) )
+            ntries+=1
+            time.sleep(self.sleep)
+            st = self.commands_sent[ocmid]['status']
+            if ntries > self.max_tries:
+                break
+
         if st != 'COMPLETE':
-            print 'TPL2 getobject: got status "', st, '"'
+            log.warning( 'TPL2 getobject: got status "', st, '"' )
             return None
         if self.debug:
             print self.received_objects
@@ -304,7 +343,7 @@ class TPL2(object):
 
     def send(self, message='\r\n'):
         if self.verbose:
-            print message
+            log.debug( message )
         self.sock.send(message)
         self.log.append(('s', message))
         self.sent.append((len(self.log), message))
@@ -327,7 +366,10 @@ class TPL2(object):
             return res
 
     def sendcomm(self, comm, object, wait=False, maxtries=10):
+    
+    
         ocmid = self.next_command_id
+        
         command = str(ocmid) + ' ' + comm + ' ' + object + '\r\n'
         self.send(command)
         self.commands_sent[ocmid] = {'sent': command,
@@ -345,21 +387,24 @@ class TPL2(object):
         if wait:
             while self.commands_sent[ocmid]['status'] == 'sent':
                 if self.debug:
-                    print 'Waiting for command completion'
+                    log.debug( 'Waiting for command completion' )
                 time.sleep(self.sleep)
+    
         return ocmid
 
     def get(self, object, wait=False, maxtries=10):
+        
         ret = self.sendcomm('GET', object, wait)
         tries = 1
+        
         if wait:
-            while (not self.commands_sent[ret]['data']) and (tries != maxtries):
-                if self.debug:
-                    print 'Waiting for command completion (', tries, '/', maxtries, ')'
-                    tries += 1
+            while (not self.commands_sent[ret]['data']) and (tries < maxtries):
+                log.debug('Waiting for command completion (%i/%i)'%(tries,maxtries))
+                tries += 1
                 time.sleep(self.sleep)
             if not self.commands_sent[ret]['data']:
-                print 'TPL2 get: maxtries reached, still no answer; giving up'
+                log.warning('TPL2 get: maxtries reached, still no answer; giving up')
+    
         return ret
 
     def set(self, object, value, wait=False, binary=False):
@@ -373,7 +418,7 @@ class TPL2(object):
         if wait:
             while not (self.commands_sent[cmid]['status'].split())[0] in ('OK', 'COMPLETE', 'ABORTED'):
                 if self.debug:
-                    print 'Waiting for command completion'
+                    log.debug( 'Waiting for command completion' )
                 time.sleep(self.sleep)
         return cmid
 

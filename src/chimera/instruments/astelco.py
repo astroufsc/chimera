@@ -42,7 +42,7 @@ from chimera.core.lock import lock
 from chimera.core.exceptions import ObjectNotFoundException, ChimeraException
 from chimera.core.constants import SYSTEM_CONFIG_DIRECTORY
 
-from chimera.util.tpl2 import TPL2
+from chimera.util.tpl2 import TPL2,SocketError
 
 
 Direction = Enum("E", "W", "N", "S")
@@ -54,7 +54,11 @@ class AstelcoException(ChimeraException):
 
 class Astelco (TelescopeBase):  # converted to Astelco
 
-    __config__ = {'azimuth180Correct': False}
+    __config__ = {	'azimuth180Correct': False ,
+					'user'	: 'admin',
+					'password' : 'admin',
+					'ahost' : 'localhost',
+					'aport' : '65432'}
 
     def __init__(self):
         TelescopeBase.__init__(self)
@@ -72,6 +76,15 @@ class Astelco (TelescopeBase):  # converted to Astelco
 
         self._target_az = None
         self._target_alt = None
+		
+        self._ra = None
+        self._dec = None
+		
+        self._az = None
+        self._alt = None
+
+
+        self._poketime = 90.0
 
         # debug log
         self._debugLog = None
@@ -92,11 +105,6 @@ class Astelco (TelescopeBase):  # converted to Astelco
             self._calibration[rate] = {}
             for direction in Direction:
                 self._calibration[rate][direction] = 1
-
-        self._user = "admin"
-        self._password = "admin"
-        self._aahost = "localhost"
-        self._aaport = "65432"
 
     # -- ILifeCycle implementation --
 
@@ -129,7 +137,7 @@ class Astelco (TelescopeBase):  # converted to Astelco
     def _checkAstelco(self):  # converted to Astelco
         align = self.getAlignMode()
 
-        if align < 0:
+        if int(align) < 0:
             raise AstelcoException(
                 "Couldn't find a Astelco telescope on '%s'." % self["device"])
 
@@ -154,24 +162,27 @@ class Astelco (TelescopeBase):  # converted to Astelco
                              "Site object not available. Telescope"
                              " attitude cannot be determined.")
 
+    def helloTPL(self):
+        self.log.debug(self._tpl.getobject('SERVER.UPTIME'))
+        self.sayhello = threading.Timer(self._poketime,self.helloTPL)
+        self.sayhello.start()
+
     @lock
     def open(self):  # converted to Astelco
-        print 'Connecting to Astelco server ',
-        self._aahost,
-        ':',
-        int(self._aaport)
+        self.log.info('Connecting to Astelco server %s:%i'%(self["ahost"],
+															int(self["aport"])))
 
-        self._tpl = TPL2(user=self._user,
-                        password=self._password,
-                        host=self._aahost,
-                        port=int(self._aaport),
+        self._tpl = TPL2(user=self["user"],
+                        password=self["password"],
+                        host=self["ahost"],
+                        port=int(self["aport"]),
                         echo=False,
                         verbose=False,
                         debug=True)
-        print self._tpl.log
+        self.log.debug(self._tpl.log)
 
         try:
-            self._tpl.open()
+            self._tpl #.open()
 
             self._checkAstelco()
 
@@ -185,13 +196,17 @@ class Astelco (TelescopeBase):  # converted to Astelco
                 self._initTelescope()
 
             self._tpl.debug = False
+            self.sayhello = threading.Timer(self._poketime,self.helloTPL)
+            self.sayhello.start()
+
             return True
 
-        except (TPL2.SocketError, IOError):
+        except (SocketError, IOError):
             raise AstelcoException("Error while opening %s." % self["device"])
 
     @lock
     def close(self):  # converted to Astelco
+        self.sayhello.cancel()
         self.log.debug("TPl2 log:\n")
         for lstr in self._tpl.log:
             self.log.debug(lstr)
@@ -235,49 +250,42 @@ class Astelco (TelescopeBase):  # converted to Astelco
 
     @lock
     def slewToRaDec(self, position):  # no need to convert to Astelco
+        self.log.debug('Validating position')
         self._validateRaDec(position)
-
+        self.log.debug('Ok')
+        
+        self.log.debug("Check if telescope is already slewing")
         if self.isSlewing():
             # never should happens 'cause @lock
             raise AstelcoException("Telescope already slewing.")
+        self.log.debug("OK")
 
+        self.log.debug('Setting target RA/DEC')
         self.setTargetRaDec(position.ra, position.dec)
-
+        self.log.debug('Done')
+        
         status = TelescopeStatus.OK
 
         try:
             status = self._slewToRaDec()
-            return True
+            #return True
         finally:
+            self._slewing = False
             self.slewComplete(self.getPositionRaDec(), status)
 
-        return False
+        return status
 
     def _slewToRaDec(self):  # converted to Astelco
         self._slewing = True
         self._abort.clear()
 
         # slew
-        print "Time to slew to RA/Dec is reported to be ",
-        self._tpl.getobject('POINTING.SLEWTIME'),
-        " s."
-        cmdid = self._tpl.set('POINTING.TRACK', 1, wait=True)
+        slewTime = self._tpl.getobject('POINTING.SLEWTIME')
+        self.log.info("Time to slew to RA/Dec is reported to be %f s"%( slewTime ))
 
-        # to handle timeout
-        start_time = time.time()
-
-        err = not self._tpl.succeeded(cmdid)
-
-        if err:
-            # check error message
-            msg = self._tpl.commands_sent[cmdid]['received']
-            self._slewing = False
-            raise AstelcoException(msg[:-1])
-
-        # slew possible
         target = self.getTargetRaDec()
 
-        return self._waitSlew(start_time, target)
+        return self._waitSlew(time.time(),target,slew_time=slewTime)
 
     @lock
     def slewToAltAz(self, position):  # no need to convert to Astelco
@@ -298,12 +306,12 @@ class Astelco (TelescopeBase):  # converted to Astelco
         try:
             self.setAlignMode(AlignMode.ALT_AZ)
             status = self._slewToAltAz()
-            return True
+            #return True
         finally:
             self.slewComplete(self.getPositionRaDec(), status)
             self.setAlignMode(lastAlignMode)
 
-        return False
+        return status
 
     def _slewToAltAz(self):  # converted to Astelco
         self._slewing = True
@@ -313,59 +321,83 @@ class Astelco (TelescopeBase):  # converted to Astelco
         print "Time to slew to Alt/Az is reported to be ",
         self._tpl.getobject('POINTING.SLEWTIME'),
         " s."
-        cmdid = self._tpl.set('POINTING.TRACK', 2, wait=True)
+        
+        target = self.getTargetAltAz()
 
-        # to handle timeout
-        start_time = time.time()
+        return self._waitSlew(time.time(), target, local=True)
 
+    def _waitSlew(self, start_time, target, local=False, slew_time=-1):  # converted to Astelco
+        self.slewBegin(target)
+        
+        # Set offset to zero
+        
+        self.log.debug('SEND: POINTING.TRACK 2')
+        cmdid = self._tpl.set('POINTING.TRACK',2,wait=True)
+        self.log.debug('PASSED')
+        
         err = not self._tpl.succeeded(cmdid)
 
         if err:
             # check error message
-            self._slewing = False
-            raise AstelcoException(
-                "Couldn't slew to ALT/AZ: '%s'." % self.getTargetAltAz())
+            msg = self._tpl.commands_sent[cmdid]['received']
+            self.log.error('Error pointing to %s'%target)
+            for line in msg:
+                self.log.error(line[:-1])
+            self.slewComplete(self.getPositionRaDec(),
+                              TelescopeStatus.ERROR)
 
-        # slew possible
-        target = self.getTargetAltAz()
+            return TelescopeStatus.ERROR
+    
+        self.log.debug('Wait cmd complete...')
+        status = self.waitCmd(cmdid,start_time,slew_time)
+        self.log.debug('Done')
+        
+        if not status == TelescopeStatus.OK:
+            self.log.warning('Pointing operations failed with status: %s...'%status)
+            self.slewComplete(self.getPositionRaDec(),
+                              status)
+            return status
+        
+        self.log.debug('SEND: POINTING.TRACK 1')
+        cmdid = self._tpl.set('POINTING.TRACK', 1, wait=True)
+        self.log.debug('PASSED')
+        
+        self.log.debug('Wait cmd complete...')
+        status = self.waitCmd(cmdid,start_time,slew_time)
+        self.log.debug('Done')
+        
+        # no need to check it here...
+        return status
 
-        return self._waitSlew(start_time, target, local=True)
 
-    def _waitSlew(self, start_time, target, local=False):  # converted to Astelco
-        self.slewBegin(target)
+    def waitCmd(self,cmdid,start_time,op_time=-1):
 
-        while True:
+        if op_time < 0:
+            op_time = self["max_slew_time"]+1
+        
+        while not self._tpl.finished(cmdid):
 
-            # check slew abort event
             if self._abort.isSet():
                 self._slewing = False
+                self.abortSlew()
+                self.slewComplete(self.getPositionRaDec(),
+                                  TelescopeStatus.ABORTED)
                 return TelescopeStatus.ABORTED
 
             # check timeout
             if time.time() >= (start_time + self["max_slew_time"]):
                 self.abortSlew()
                 self._slewing = False
+                self.log.error('Slew aborted. Max slew time reached.')
                 raise AstelcoException("Slew aborted. Max slew time reached.")
 
-            if local:
-                position = self.getPositionAltAz()
-            else:
-                position = self.getPositionRaDec()
-
-            if target.within(position, eps=Coord.fromAS(60)):
-                time.sleep(self["stabilization_time"])
-                self._slewing = False
-                cmdid = self._tpl.set('POINTING.TRACK', 1, wait=True)
-                if self._tpl.succeeded(cmdid):
-                    print "Tracking time available is ", self._tpl.getobject('POINTING.TRACKTIME'), " s."
-                    return TelescopeStatus.OK
-
-            print "RA,Dec: ", self.getPositionRaDec()
-            print "Alt,Az: ", self.getPositionAltAz()
-            print "target: ", target
+            if time.time() >= (start_time + op_time):
+                self.log.warning('Estimated slewtime has passed...')
+                op_time+=op_time
+            
             time.sleep(self["slew_idle_time"])
 
-        return TelescopeStatus.ERROR
+        return TelescopeStatus.OK
 
     def abortSlew(self):  # converted to Astelco
         if not self.isSlewing():
@@ -378,17 +410,27 @@ class Astelco (TelescopeBase):  # converted to Astelco
         time.sleep(self["stabilization_time"])
 
     def isSlewing(self):  # converted to Astelco
-        self._slewing = (
-            int(self._tpl.getobject('TELESCOPE.MOTION_STATE')) != 0) and (int(self._tpl.getobject('POINTING.TRACK')) != 1)
+        
+        # if this is true, then chimera issue a slewing command
+        if self._slewing:
+            return self._slewing
+        # if not, need to check if a external command did that...
+        
+        self.log.debug('GET TELESCOPE.MOTION_STATE')
+        mstate = self._tpl.getobject('TELESCOPE.MOTION_STATE')
+        self.log.debug('GET POINTING.TRACK')
+        ptrack = self._tpl.getobject('POINTING.TRACK')
+        self.log.debug('Done')
+        
+        self._slewing = (int(mstate) != 0) and (int(ptrack) != 1)
         return self._slewing
 
-    def _move(self, direction, duration=1.0, slewRate=SlewRate.GUIDE):  # yet to convert to Astelco
-        if duration <= 0:
-            raise ValueError("Slew duration cannot be less than 0.")
+    def _move(self, direction, offset, slewRate=SlewRate.GUIDE):  # yet to convert to Astelco
 
-        # FIXME: concurrent slew commands? YES.. it should works!
         if self.isSlewing():
-            raise AstelcoException("Telescope is slewing. Cannot move.")  # REALLY? no.
+            self.log.warning('Telescope is slewing. Stopping current move...')
+            self._stopMove()
+            #raise AstelcoException("Telescope is slewing. Cannot move.")  # REALLY? no.
 
         if slewRate:
             self.setSlewRate(slewRate)
@@ -493,25 +535,25 @@ class Astelco (TelescopeBase):  # converted to Astelco
     @lock
     def moveEast(self, offset, slewRate=None):  # no need to convert to Astelco
         return self._move(Direction.E,
-                          self._calcDuration(offset, Direction.E, slewRate),
+                          offset,
                           slewRate)
 
     @lock
     def moveWest(self, offset, slewRate=None):  # no need to convert to Astelco
         return self._move(Direction.W,
-                          self._calcDuration(offset, Direction.W, slewRate),
+                          offset,
                           slewRate)
 
     @lock
     def moveNorth(self, offset, slewRate=None):  # no need to convert to Astelco
         return self._move(Direction.N,
-                          self._calcDuration(offset, Direction.N, slewRate),
+                          offset,
                           slewRate)
 
     @lock
-    def moveSout(self, offset, slewRate=None):  # no need to convert to Astelco
+    def moveSouth(self, offset, slewRate=None):  # no need to convert to Astelco
         return self._move(Direction.S,
-                          self._calcDuration(offset, Direction.S, slewRate),
+                          offset,
                           slewRate)
 
     @lock
@@ -539,14 +581,18 @@ class Astelco (TelescopeBase):  # converted to Astelco
     def getRa(self):  # converted to Astelco
 
         ret = self._tpl.getobject('POSITION.EQUATORIAL.RA_J2000')
-
-        return Coord.fromH(ret)
+        if ret:
+			self._ra = Coord.fromH(ret)
+        self.log.debug('Ra: %9.5f'%float(ret))
+        return self._ra
 
     @lock
     def getDec(self):  # converted to Astelco
         ret = self._tpl.getobject('POSITION.EQUATORIAL.DEC_J2000')
-
-        return Coord.fromD(ret)
+        if ret:
+			self._dec = Coord.fromD(ret)
+        self.log.debug('Dec: %9.5f'%float(ret))
+        return self._dec
 
     @lock
     def getPositionRaDec(self):  # no need to convert to Astelco
@@ -621,8 +667,11 @@ class Astelco (TelescopeBase):  # converted to Astelco
     @lock
     def getAz(self):  # converted to Astelco
         ret = self._tpl.getobject('POSITION.HORIZONTAL.AZ')
-
-        c = Coord.fromD(ret)
+        if ret:
+			self._az = Coord.fromD(ret)
+        self.log.debug('Az: %9.5f'%float(ret))
+		
+        c = self._az #Coord.fromD(ret)
 
         if self['azimuth180Correct']:
             if c.toD() >= 180:
@@ -635,8 +684,11 @@ class Astelco (TelescopeBase):  # converted to Astelco
     @lock
     def getAlt(self):  # converted to Astelco
         ret = self._tpl.getobject('POSITION.HORIZONTAL.ALT')
-
-        return Coord.fromD(ret)
+        if ret:
+			self._alt = Coord.fromD(ret)
+        self.log.debug('Alt: %9.5f'%float(ret))
+		
+        return self._alt
 
     def getTargetAlt(self):  # no need to convert to Astelco
         return self._target_alt
@@ -695,10 +747,10 @@ class Astelco (TelescopeBase):  # converted to Astelco
         if not isinstance(lat, Coord):
             lat = Coord.fromDMS(lat)
 
-        lat_float = lat.D
+        lat_float = float(lat.D)
 
         cmdid = self._tpl.set(
-            'POINTING.SETUP.LOCAL.LATITUDE', lat_float, wait=True)
+            'POINTING.SETUP.LOCAL.LATITUDE', float(lat_float), wait=True)
         ret = self._tpl.succeeded(cmdid)
         if not ret:
             raise AstelcoException(
@@ -846,8 +898,13 @@ class Astelco (TelescopeBase):  # converted to Astelco
 
         return True
 
-    def isParked(self):  # no need to convert to Astelco
-        return self._parked
+    def isParked(self):  # (yes) -no- need to convert to Astelco
+		self._parked = self._tpl.getobject('TELESCOPE.READY_STATE') == 0
+		return self._parked
+
+    def isOpen(self):  # (yes) -no- need to convert to Astelco
+		self._open = self._tpl.getobject('AUXILIARY.COVER.REALPOS') == 1
+		return self._open
 
     @lock
     def park(self):  # converted to Astelco
@@ -860,7 +917,17 @@ class Astelco (TelescopeBase):  # converted to Astelco
         site = self.getManager().getProxy("/Site/0")
         #self.slewToRaDec(Position.fromRaDec(str(self.getLocalSiderealTime()),
 #                                            site["latitude"]))
-        cmdid = self._tpl.set('TELESCIPE.READY', 0, wait=True)
+        cmdid = self._tpl.set('TELESCOPE.READY', 0, wait=True)
+
+        ready_state = self._tpl.getobject('TELESCOPE.READY_STATE')
+        while ready_state > 0.0:
+            self.log.debug("Powering down Astelco: %s"%(ready_state))
+            old_ready_state = ready_state
+            ready_state = self._tpl.getobject('TELESCOPE.READY_STATE')
+            if ready_state != old_ready_state:
+                self.log.debug("Powering down Astelco: %s"%(ready_state))
+                old_ready_state = ready_state
+            time.sleep(5.0)
 
         # 2. stop tracking
         #self.stopTracking ()
@@ -885,12 +952,13 @@ class Astelco (TelescopeBase):  # converted to Astelco
         #self.startTracking()
         ready_state = 0.0
         while ready_state < 1.0:
-            print "Powering up Astelco: ", ready_state*100.0, "%"
+            self.log.debug("Powering up Astelco: %s"%(ready_state))
             old_ready_state = ready_state
             ready_state = self._tpl.getobject('TELESCOPE.READY_STATE')
             if ready_state != old_ready_state:
-                print "Powering up Astelco: ", ready_state*100.0, "%"
+                self.log.debug("Powering up Astelco: %s"%(ready_state))
                 old_ready_state = ready_state
+            time.sleep(5.0)
 
         # 3. set location, date and time
         self._initTelescope()
@@ -908,6 +976,49 @@ class Astelco (TelescopeBase):  # converted to Astelco
         self.unparkComplete()
         self._parked = False
         return self._tpl.succeeded(cmdid)
+
+    @lock
+    def c_open(self):
+		if self.isOpen():
+			return True
+
+		cmdid = self._tpl.set('AUXILIARY.COVER.TARGETPOS', 1, wait=True)
+
+		self.log.debug('Opening telescope cover...')
+
+		ready_state = 0.0
+		while ready_state < 1.0:
+			self.log.debug("Opening telescope cover: %s"%(ready_state))
+			#old_ready_state = ready_state
+			ready_state = self._tpl.getobject('AUXILIARY.COVER.REALPOS')
+			#if ready_state != old_ready_state:
+			#    self.log.debug("Powering up Astelco: %s"%(ready_state))
+			#    old_ready_state = ready_state
+			time.sleep(5.0)
+
+
+		return self._tpl.succeeded(cmdid)
+
+    @lock
+    def c_close(self):
+		if not self.isOpen():
+			return True
+			
+		self.log.debug('Closing telescope cover...')
+
+		cmdid = self._tpl.set('AUXILIARY.COVER.TARGETPOS', 0, wait=True)
+
+		ready_state = 1.0
+		while ready_state > 0.0:
+			self.log.debug("Closing telescope cover: %s"%(ready_state))
+			#old_ready_state = ready_state
+			ready_state = self._tpl.getobject('AUXILIARY.COVER.REALPOS')
+			#if ready_state != old_ready_state:
+			#    self.log.debug("Powering up Astelco: %s"%(ready_state))
+			#    old_ready_state = ready_state
+			time.sleep(5.0)
+
+		return True #self._tpl.succeeded(cmdid)
 
     # low-level
     def _debug(self, msg):  # no need to convert to Astelco
