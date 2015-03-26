@@ -379,6 +379,7 @@ class Image (DictMixin, RemoteObject):
             bzfp.write(rawfp.read())
             bzfp.close()
             rawfp.close()
+            os.unlink(filename)
         elif format.lower() == "gzip":
             gzfilename = filename + '.gz'
             gzfp = gzip.GzipFile(gzfilename, 'wb', compresslevel=5)
@@ -386,11 +387,13 @@ class Image (DictMixin, RemoteObject):
             gzfp.write(rawfp.read())
             gzfp.close()
             rawfp.close()
+            os.unlink(filename)
         else:  # zip
             zipfilename = filename + '.zip'
             zipfp = zipfile.ZipFile(zipfilename, 'w', zipfile.ZIP_DEFLATED)
             zipfp.write(filename, os.path.basename(filename))
             zipfp.close()
+            os.unlink(filename)
 
     def compress(self, format="bz2", multiprocess=False):
 

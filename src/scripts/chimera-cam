@@ -110,7 +110,7 @@ class ChimeraCam (ChimeraCLI):
                                 helpGroup="EXPOSE",
                                 type=ParameterType.CHOICE,
                                 choices=["BZ2", "ZIP", "GZIP", "NO", "bz2", "zip", "gzip", "no"],
-                                default="BZ2"),
+                                default="no"),
                            dict(name="ignore_dome",
                                 long="ignore-dome",
                                 type=ParameterType.BOOLEAN,
