@@ -74,6 +74,9 @@ class Proxy (Pyro.core.DynamicProxy):
     def __getitem__(self, item):
         return ProxyMethod(self, "__getitem__")(item)
 
+    def __setitem__(self, item, value):
+        return ProxyMethod(self, "__setitem__")(item,value)
+
     def __iadd__(self, configDict):
         ProxyMethod(self, "__iadd__")(configDict)
         return self
