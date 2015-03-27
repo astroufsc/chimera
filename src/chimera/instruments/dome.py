@@ -24,22 +24,17 @@ import Queue
 import threading
 
 from chimera.core.chimeraobject import ChimeraObject
-
-from chimera.interfaces.dome import Dome, Mode, InvalidDomePositionException, DomeSlew, DomeSlit, DomeLights, DomeSync
-
+from chimera.interfaces.dome import Dome, Mode, DomeSlew, DomeSlit, DomeLights, DomeSync
 from chimera.core.lock import lock
-
 from chimera.core.exceptions import ObjectNotFoundException
 from chimera.core.exceptions import ChimeraException
-
 from chimera.util.coord import Coord
 
 
 __all__ = ['DomeBase']
 
 
-class DomeBase(ChimeraObject, InvalidDomePositionException,Dome, DomeSlew, DomeSlit, DomeLights, DomeSync ):
-
+class DomeBase(ChimeraObject, Dome, DomeSlew, DomeSlit, DomeLights, DomeSync):
     def __init__(self):
         ChimeraObject.__init__(self)
 
