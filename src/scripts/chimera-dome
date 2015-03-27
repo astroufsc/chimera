@@ -88,7 +88,7 @@ class ChimeraDome (ChimeraCLI):
     def track(self, options):
 
         if options.telescope:
-            self.dome["telescope"] = options.telescope
+            self.dome.setTelescope(options.telescope)
 
         self.out("Activating tracking ... ", end="")
         self.dome.track()

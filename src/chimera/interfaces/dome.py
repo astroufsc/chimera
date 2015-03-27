@@ -179,6 +179,14 @@ class Dome(Interface):
         @rtype: float
         """
 
+    def setTelescope(self,tel):
+        """
+        Set telescope to be tracked by dome.
+
+        @param tel: A string specifying the telescope to be tracked by the dome.
+        """
+        self["telescope"] = tel
+
     @event
     def syncBegin(self):
         """
