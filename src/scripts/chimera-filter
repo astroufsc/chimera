@@ -93,7 +93,7 @@ class ChimeraFilter(ChimeraCLI):
             helpGroup="FILTER_CHANGE")
     def changeFilter(self, options):
 
-        if self.options.filtername and filter not in self.wheel.getFilters():
+        if self.options.filtername not in self.wheel.getFilters():
             self.err("Invalid filter '%s'" % self.options.filtername)
             self.exit()
 
