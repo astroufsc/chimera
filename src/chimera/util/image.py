@@ -43,7 +43,7 @@ class ImageUtil (object):
         if type(datetime) == float:
             datetime = dt.datetime.fromtimestamp(datetime)
 
-        return datetime.strftime("%Y-%m-%dT%H:%M:%S")
+        return datetime.strftime("%Y-%m-%dT%H:%M:%S.%f")
 
     @staticmethod
     def makeFilename(path='$DATE-$TIME',
