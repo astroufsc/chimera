@@ -177,14 +177,14 @@ class TelescopeBase(ChimeraObject,
         raise NotImplementedError()
 
     @lock
-    def c_open(self):
+    def openCover(self):
         '''
         Open telescope cover.
         '''
         raise NotImplementedError()
 
     @lock
-    def c_close(self):
+    def closeCover(self):
         '''
         Close telescope cover.
         '''

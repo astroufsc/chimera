@@ -978,7 +978,7 @@ class Astelco (TelescopeBase):  # converted to Astelco
         return self._tpl.succeeded(cmdid)
 
     @lock
-    def c_open(self):
+    def openCover(self):
 		if self.isOpen():
 			return True
 
@@ -1000,7 +1000,7 @@ class Astelco (TelescopeBase):  # converted to Astelco
 		return self._tpl.succeeded(cmdid)
 
     @lock
-    def c_close(self):
+    def closeCover(self):
 		if not self.isOpen():
 			return True
 			
