@@ -89,14 +89,6 @@ class ChimeraFocus (ChimeraCLI):
                                 help="Which filter to use in the autofocus run.",
                                 default="use-current-filter"))
         
-        self.addHelpGroup("HEXAPOD", "Hexapod")
-        self.addParameters(dict(name="axes",
-										long="axes",
-										type="str",
-										helpGroup="HEXAPOD",
-										help="A sequence of character specifing the movement axes.",
-										metavar="AXES",
-										default="Z"))
         self.addHelpGroup("COMMANDS", "Commands")
 
     @parameter(long="range",
@@ -125,25 +117,17 @@ class ChimeraFocus (ChimeraCLI):
         self.out("Moving %d steps IN ... " % options.move_in, end="")
 
         try:
-			self.focuser.moveIn(options.move_in,options.axes)
+            self.focuser.moveIn(options.move_in)
         except InvalidFocusPositionException:
-			try:
-				self.exit("Invalid position. Current position %s,"
-						  " target position %s, valid range %s-%s." % (self.focuser.getPosition(),
+            self.exit("Invalid position. Current position %d,"
+                      " target position %d, valid range %d-%d." % (self.focuser.getPosition(),
 																	   self.focuser.getPosition() -
-																	   int(options.move_in),
-																	   self.focuser.getRange()[0], self.focuser.getRange()[1]))
-			except KeyError:
-				self.exit("Invalid position. Current position %s,"
-						  " target position %s, valid range %s-%s." % (self.focuser.getPosition()[self.focuser.getAxis(axis).index],
-																	   self.focuser.getPosition()[self.focuser.getAxis(axis).index] -
 																	   int(options.move_in),
 																	   self.focuser.getRange()[0], self.focuser.getRange()[1]))
 		
         self.out("OK")
 
         self._currentPosition(options)
-
 
     @action(long="out",
             type="int",
@@ -154,19 +138,12 @@ class ChimeraFocus (ChimeraCLI):
         self.out("Moving %d steps OUT ... " % options.move_out, end="")
 
         try:
-			self.focuser.moveOut(options.move_in,options.move_out)
-        except InvalidFocusPositionException:
-			try:
-				self.exit("Invalid position. Current position %s,"
-						  " target position %s, valid range %s-%s." % (self.focuser.getPosition(),
-																	   self.focuser.getPosition() -
-																	   int(options.move_in),
-																	   self.focuser.getRange()[0], self.focuser.getRange()[1]))
-			except KeyError:
-				self.exit("Invalid position. Current position %s,"
-						  " target position %s, valid range %s-%s." % (self.focuser.getPosition()[self.focuser.getAxis(axis).index],
-																	   self.focuser.getPosition()[self.focuser.getAxis(axis).index] -
-																	   int(options.move_in),
+            self.focuser.moveOut(options.move_out)
+        except InvalidFocusPositionException, e:
+            self.exit("Invalid position. Current position %d,"
+                      " target position %d, valid range %d-%d." % (self.focuser.getPosition(),
+                                                                   self.focuser.getPosition() +
+                                                                   int(options.move_out),
 																	   self.focuser.getRange()[0], self.focuser.getRange()[1]))
 
         self.out("OK")
@@ -182,9 +159,9 @@ class ChimeraFocus (ChimeraCLI):
         self.out("Moving to %d ... " % options.move_to, end="")
 
         try:
-            self.focuser.moveTo(options.move_to,options.axes)
+            self.focuser.moveTo(options.move_to)
         except InvalidFocusPositionException:
-            self.exit("Invalid position, must be between %s and %s," %
+            self.exit("Invalid position, must be between %d and %d," %
                       self.focuser.getRange())
 
         self.out("OK")
@@ -198,17 +175,7 @@ class ChimeraFocus (ChimeraCLI):
         self.out("Focuser: %s (%s)" %
                  (self.focuser.getLocation(), self.focuser["device"]))
         self._currentPosition(options)
-        try:
-			if self.focuser['hexapod']:
-				for i in range(self.focuser['naxis']):
-					self.out("[HEXA] Axis %i valid range: %s" % (i,self.focuser.getRange(i)))
-			else:
-				self.out("[HEXA] Valid range: %d-%d" % self.focuser.getRange())
-        except KeyError:
-			self.out("Valid range: %d-%d" % self.focuser.getRange())
-			pass
-        except:
-			raise
+        self.out("Valid range: %d-%d" % self.focuser.getRange())
 	
         if self.focuser.supports(FocuserFeature.TEMPERATURE_COMPENSATION):
             self.out("Temperature: %.2f oC" % self.focuser.getTemperature())
@@ -300,13 +267,8 @@ class ChimeraFocus (ChimeraCLI):
         time.sleep(1)
 
     def _currentPosition(self, options):
-		try:
-			if self.focuser['hexapod']:
-				return self.out("[HEXA] Current focuser position: %s" % self.focuser.getPosition())
-			else:
-				return self.out("[HEXA] Current focuser position: %s" % self.focuser.getPosition())
-		except KeyError:
 			return self.out("Current focuser position: %s" % self.focuser.getPosition())
+
 
 def main():
     cli = ChimeraFocus()
