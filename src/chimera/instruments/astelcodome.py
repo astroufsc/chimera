@@ -57,7 +57,6 @@ class AstelcoDome(DomeBase):
                   "stabilization_time": 5.}
 
 
-
     def __init__(self):
         DomeBase.__init__(self)
 
@@ -86,10 +85,9 @@ class AstelcoDome(DomeBase):
             self.log.warning("Could not create astelco debug file (%s)" % str(e))
 
 
-
     def __start__(self):
 
-        self.setHz(1./self["maxidletime"])
+        self.setHz(1. / self["maxidletime"])
 
         self.open()
 
@@ -114,7 +112,7 @@ class AstelcoDome(DomeBase):
         self.close()
 
     @lock
-    def slewToAz(self,az):
+    def slewToAz(self, az):
         # Astelco Dome will only enable slew if it is not tracking
         # If told to slew I will check if the dome is syncronized with
         # with the telescope. If it is not I will wait until it gets
@@ -139,17 +137,16 @@ class AstelcoDome(DomeBase):
                     self._slewing = False
                     self.slewComplete(self.getAz(), DomeStatus.ABORTED)
                     return 0
-                elif abs( caz - self.getAz() ) < 1e-6:
+                elif abs(caz - self.getAz()) < 1e-6:
                     self._slewing = False
                     self.slewComplete(self.getAz(), DomeStatus.OK)
                     return 0
                 else:
                     caz = self.getAz()
 
-
             self.slewComplete(self.getAz(), DomeStatus.OK)
         else:
-            self.log.info('Slewing to %f...'%az)
+            self.log.info('Slewing to %f...' % az)
 
             self.slewBegin(az)
 
@@ -158,7 +155,7 @@ class AstelcoDome(DomeBase):
             self._slewing = True
             caz = self.getAz()
 
-            self._tpl.set('POSITION.INSTRUMENTAL.DOME[0].TARGETPOS','%f'%az)
+            self._tpl.set('POSITION.INSTRUMENTAL.DOME[0].TARGETPOS', '%f' % az)
 
             time.sleep(self['stabilization_time'])
 
@@ -170,16 +167,15 @@ class AstelcoDome(DomeBase):
                     return 0
                 elif self._abort.isSet():
                     self._slewing = False
-                    self._tpl.set('POSITION.INSTRUMENTAL.DOME[0].TARGETPOS',caz)
+                    self._tpl.set('POSITION.INSTRUMENTAL.DOME[0].TARGETPOS', caz)
                     self.slewComplete(self.getAz(), DomeStatus.ABORTED)
                     return 0
-                elif abs( caz - self.getAz() ) < 1e-6:
+                elif abs(caz - self.getAz()) < 1e-6:
                     self._slewing = False
                     self.slewComplete(self.getAz(), DomeStatus.OK)
                     return 0
                 else:
                     caz = self.getAz()
-
 
             self.slewComplete(self.getAz(), DomeStatus.OK)
 
@@ -189,14 +185,14 @@ class AstelcoDome(DomeBase):
     @lock
     def stand(self):
         self.log.debug("[mode] standing...")
-        self._tpl.set('POINTING.SETUP.DOME.SYNCMODE',0)
+        self._tpl.set('POINTING.SETUP.DOME.SYNCMODE', 0)
         self._syncmode = self._tpl.getobject('POINTING.SETUP.DOME.SYNCMODE')
         self._mode = Mode.Stand
 
     @lock
     def track(self):
         self.log.debug("[mode] tracking...")
-        self._tpl.set('POINTING.SETUP.DOME.SYNCMODE',4)
+        self._tpl.set('POINTING.SETUP.DOME.SYNCMODE', 4)
         self._syncmode = self._tpl.getobject('POINTING.SETUP.DOME.SYNCMODE')
         self._mode = Mode.Track
 
@@ -208,7 +204,7 @@ class AstelcoDome(DomeBase):
         :return: True
         '''
 
-        self.log.debug('[control] %s'%self._tpl.getobject('SERVER.UPTIME'))
+        self.log.debug('[control] %s' % self._tpl.getobject('SERVER.UPTIME'))
 
         return True
 
@@ -244,7 +240,7 @@ class AstelcoDome(DomeBase):
 
     @lock
     def open(self):
-        self.log.info('Connecting to Astelco server %s:%i...'%(self['ahost'],int(self['aport'])))
+        self.log.info('Connecting to Astelco server %s:%i...' % (self['ahost'], int(self['aport'])))
 
         self._tpl = TPL2(user=self['user'],
                          password=self['password'],
@@ -288,7 +284,7 @@ class AstelcoDome(DomeBase):
         self._slitMoving = True
         self._abort.clear()
 
-        cmdid = self._tpl.set('AUXILIARY.DOME.TARGETPOS',1,wait=True)
+        cmdid = self._tpl.set('AUXILIARY.DOME.TARGETPOS', 1, wait=True)
 
         time_start = time.time()
 
@@ -301,7 +297,7 @@ class AstelcoDome(DomeBase):
                 self.log.info(line[:-1])
                 if ( (line.find('COMPLETE') > 0) and (not realpos == 1) and (not cmdComplete) ):
                     self.log.warning('Slit opened! Opening Flap...')
-                    cmdid = self._tpl.set('AUXILIARY.DOME.TARGETPOS',1,wait=True)
+                    cmdid = self._tpl.set('AUXILIARY.DOME.TARGETPOS', 1, wait=True)
                     cmdComplete = True
                     time_start = time.time()
 
@@ -312,7 +308,7 @@ class AstelcoDome(DomeBase):
             elif self._abort.isSet():
                 self._slitMoving = False
                 return DomeStatus.ABORTED
-            elif time.time() > time_start+self._maxSlewTime:
+            elif time.time() > time_start + self._maxSlewTime:
                 return DomeStatus.TIMEOUT
             else:
                 time.sleep(5.0)
@@ -327,7 +323,7 @@ class AstelcoDome(DomeBase):
 
         self.log.info("Closing slit")
 
-        cmdid = self._tpl.set('AUXILIARY.DOME.TARGETPOS',0)
+        cmdid = self._tpl.set('AUXILIARY.DOME.TARGETPOS', 0)
 
         time_start = time.time()
 
@@ -344,7 +340,7 @@ class AstelcoDome(DomeBase):
             elif self._abort.isSet():
                 self._slitMoving = False
                 return DomeStatus.ABORTED
-            elif time.time() > time_start+self._maxSlewTime:
+            elif time.time() > time_start + self._maxSlewTime:
                 return DomeStatus.TIMEOUT
             else:
                 time.sleep(5.0)
