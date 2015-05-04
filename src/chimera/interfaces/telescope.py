@@ -448,3 +448,24 @@ class TelescopeTracking (Telescope):
         @rtype: bool
 
         """
+
+class TelescopeCover(Telescope):
+    """
+    Telescope with support to open/close primary mirror cover.
+    """
+
+    def isOpen(self):
+        '''
+        Check if telescope cover is open.
+        '''
+
+
+    def openCover(self):
+        '''
+        Open telescope cover.
+        '''
+
+    def closeCover(self):
+        '''
+        Close telescope cover.
+        '''
