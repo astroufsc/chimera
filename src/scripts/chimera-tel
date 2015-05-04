@@ -93,6 +93,7 @@ class ChimeraTel (ChimeraCLI):
         self.addHelpGroup("INIT", "Initialization")
         self.addHelpGroup("SLEW", "Slew")
         self.addHelpGroup("PARK", "Park")
+        self.addHelpGroup("COVER", "Cover")
         self.addHelpGroup("TRACKING", "Tracking")
         self.addHelpGroup("HANDLE", "Virtual Handle",
                           "You can pass a int/float with number of arcseconds or use d:m:s notation. "
@@ -209,19 +210,19 @@ class ChimeraTel (ChimeraCLI):
         self.out("OK")
         self.out(40 * "=")
 
-    @action(help="Open telescope cover", helpGroup="PARK", actionGroup="PARK")
+    @action(help="Open telescope cover", long="open-cover", helpGroup="COVER", actionGroup="COVER")
     def open(self, options):
         self.out(40 * "=")
         self.out("Opening telescope cover ... ", end="")
-        self.telescope.c_open()
+        self.telescope.openCover()
         self.out("OK")
         self.out(40 * "=")
 
-    @action(help="Close telescope cover", helpGroup="PARK", actionGroup="PARK")
+    @action(help="Close telescope cover", long="close-cover", helpGroup="COVER", actionGroup="COVER")
     def close(self, options):
         self.out(40 * "=")
         self.out("Closing telescope cover ... ", end="")
-        self.telescope.c_close()
+        self.telescope.closeCover()
         self.out("OK")
         self.out(40 * "=")
 
