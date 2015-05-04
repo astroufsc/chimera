@@ -52,7 +52,7 @@ class AstelcoDome(DomeBase):
     __config__ = {'user': 'admin',
                   'password': 'admin',
                   'ahost': 'localhost',
-                  'aport': "65432"}
+                  'aport': "65432",
                   "maxidletime": 90.,
                   "stabilization_time": 5.}
 
