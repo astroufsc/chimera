@@ -25,7 +25,7 @@ import threading
 
 from chimera.util.coord import Coord
 
-from chimera.interfaces.dome import InvalidDomePositionException, DomeStatus
+from chimera.interfaces.dome import DomeStatus
 from chimera.instruments.dome import DomeBase
 from chimera.interfaces.dome import Mode
 
@@ -257,11 +257,8 @@ class AstelcoDome(DomeBase):
         self.log.debug(self._tpl.log)
 
         try:
-            self._tpl
             self._tpl.get('SERVER.INFO.DEVICE')
-            self._tpl.received_objects
             print self._tpl.getobject('SERVER.UPTIME')
-            self._tpl
             self._tpl.debug = True
             return True
 
@@ -357,5 +354,4 @@ class AstelcoDome(DomeBase):
     def isSlitOpen(self):
         self._slitPos = self._tpl.getobject('AUXILIARY.DOME.REALPOS')
         self._slitOpen = self._slitPos > 0
-        #self.log.debug(self._tpl.getobject('AUXILIARY.DOME.OPEN_MASK'))
         return self._slitOpen
