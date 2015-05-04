@@ -223,14 +223,14 @@ class AstelcoDome(DomeBase):
 
     @lock
     def getAz(self):
-        #        return Coord.fromD(self._position)
+
         ret = self._tpl.getobject('POSITION.INSTRUMENTAL.DOME[0].CURRPOS')
         if ret:
             self._position = ret
         elif not self._position:
             self._position = 0.
 
-        return Coord.fromD(self._position) #self._position
+        return Coord.fromD(self._position)
 
     def getMode(self):
 
@@ -289,7 +289,6 @@ class AstelcoDome(DomeBase):
         self._abort.clear()
 
         cmdid = self._tpl.set('AUXILIARY.DOME.TARGETPOS',1,wait=True)
-        #status = self._openSlit()
 
         time_start = time.time()
 
@@ -323,7 +322,7 @@ class AstelcoDome(DomeBase):
     @lock
     def closeSlit(self):
         if not self._slitOpen:
-            self.info('Slit already closed')
+            self.log.info('Slit already closed')
             return 0
 
         self.log.info("Closing slit")
