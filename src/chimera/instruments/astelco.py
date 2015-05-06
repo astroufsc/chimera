@@ -68,7 +68,9 @@ class Astelco (TelescopeBase):  # converted to Astelco
 					'aport' : '65432',
                     'maxidletime' : 90. ,
                     'parktimeout' : 600.,
-                    'tplsleep' : 0.01}
+                    'tplsleep' : 0.01,
+                    'sensors' : 7} # TODO: FIX tpl so I can get COUNT on an axis from TPL.
+
 
     def __init__(self):
         TelescopeBase.__init__(self)
@@ -182,6 +184,7 @@ class Astelco (TelescopeBase):  # converted to Astelco
                         verbose=False,
                         sleep=self["tplsleep"],
                         debug=False)
+
         self.log.debug(self._tpl.log)
 
         try:
@@ -1368,3 +1371,49 @@ class Astelco (TelescopeBase):  # converted to Astelco
     def getlog(self):
         return self._tpl.log
 
+    def getSensors(self):
+
+        sensors = []
+
+        for n in range(self["sensors"]):
+            description = self._tpl.getobject('AUXILIARY.SENSOR[%i].DESCRIPTION'%(n+1))
+            if not description:
+                continue
+            elif "FAILED" in description:
+                continue
+            value = self._tpl.getobject('AUXILIARY.SENSOR[%i].VALUE'%(n+1))
+            unit = self._tpl.getobject('AUXILIARY.SENSOR[%i].UNITY'%(n+1))
+            sensors.append((description,value,unit))
+
+        return sensors
+
+    def getMetadata(self, request):
+        return [('TELESCOP', self['model'], 'Telescope Model'),
+                ('OPTICS',   self['optics'], 'Telescope Optics Type'),
+                ('MOUNT', self['mount'], 'Telescope Mount Type'),
+                ('APERTURE', self['aperture'], 'Telescope aperture size [mm]'),
+                ('F_LENGTH', self['focal_length'],
+                 'Telescope focal length [mm]'),
+                ('F_REDUCT', self['focal_reduction'],
+                 'Telescope focal reduction'),
+                # TODO: Convert coordinates to proper equinox
+                # TODO: How to get ra,dec at start of exposure (not end)
+                ('RA', self.getRa().toHMS().__str__(),
+                 'Right ascension of the observed object'),
+                ('DEC', self.getDec().toDMS().__str__(),
+                 'Declination of the observed object'),
+                ("EQUINOX", 2000.0, "coordinate epoch"),
+                ('ALT', self.getAlt().toDMS().__str__(),
+                 'Altitude of the observed object'),
+                ('AZ', self.getAz().toDMS().__str__(),
+                 'Azimuth of the observed object'),
+                ("WCSAXES", 2, "wcs dimensionality"),
+                ("RADESYS", "ICRS", "frame of reference"),
+                ("CRVAL1", self.getTargetRaDec().ra.D,
+                 "coordinate system value at reference pixel"),
+                ("CRVAL2", self.getTargetRaDec().dec.D,
+                 "coordinate system value at reference pixel"),
+                ("CTYPE1", 'RA---TAN', "name of the coordinate axis"),
+                ("CTYPE2", 'DEC---TAN', "name of the coordinate axis"),
+                ("CUNIT1", 'deg', "units of coordinate value"),
+                ("CUNIT2", 'deg', "units of coordinate value")]+self.getSensors()
