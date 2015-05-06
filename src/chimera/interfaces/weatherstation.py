@@ -74,7 +74,7 @@ class WeatherStation (Interface):
                   "rain_delta": 1,
                   }
 
-    def humididy(self, deltaT=0, unit=Unit.PERCENTUAL):
+    def humidity(self, deltaT=0, unit=Unit.PERCENTUAL):
         pass
 
     def temperature(self, deltaT=0, unit=Unit.CELSIUS):
@@ -96,7 +96,7 @@ class WeatherStation (Interface):
         pass
 
     @event
-    def humitiyChange(self, humidity, unit, delta):
+    def humidityChange(self, humidity, unit, delta):
         pass
 
     @event
