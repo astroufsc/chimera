@@ -81,7 +81,7 @@ class WeatherStation (Interface):
     def wind(self, deltaT=0, unit=Unit.M_PER_S):
         pass
 
-    def dewPoint(self, deltaT=0, unit=Unit.CELSIUS):
+    def dew_point(self, deltaT=0, unit=Unit.CELSIUS):
         pass
 
     def pressure(self, deltaT=0, unit=Unit.MM_HG):
@@ -91,7 +91,7 @@ class WeatherStation (Interface):
         pass
 
     @event
-    def humidiyChange(self, humidity, unit, delta):
+    def humitiyChange(self, humidity, unit, delta):
         pass
 
     @event
