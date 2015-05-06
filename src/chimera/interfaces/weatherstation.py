@@ -31,7 +31,7 @@ Unit = Enum("PERCENTUAL",  # Humidity
             "KELVIN",
             "FAHRENHEIT",
 
-            "M_PER_S",    # Wind
+            "M_PER_S",    # Wind Speed
             "KM_PER_H",
             "MILES_PER_H",
             "FT_PER_S",
@@ -39,6 +39,8 @@ Unit = Enum("PERCENTUAL",  # Humidity
             "KMH",
             "FTS",
             "MPH",
+
+            "DEG",        # Wind Direction
 
             "M_BAR",      # Pressure
             "MM_HG",
@@ -78,7 +80,10 @@ class WeatherStation (Interface):
     def temperature(self, deltaT=0, unit=Unit.CELSIUS):
         pass
 
-    def wind(self, deltaT=0, unit=Unit.M_PER_S):
+    def wind_speed(self, deltaT=0, unit=Unit.M_PER_S):
+        pass
+
+    def wind_direction(self, deltaT=0, unit=Unit.DEG):
         pass
 
     def dew_point(self, deltaT=0, unit=Unit.CELSIUS):
