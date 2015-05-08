@@ -49,11 +49,7 @@ chimera_scripts = ['src/scripts/chimera',
 # platform specific requirements
 platform_deps = []
 
-if sys.platform == "win32":
-    platform_deps += [
-        "pywin32 == 218"
-    ]
-else:
+if sys.platform != "win32":
     platform_deps += [
         "python-sbigudrv"
     ]
