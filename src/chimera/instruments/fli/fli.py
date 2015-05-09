@@ -2,9 +2,9 @@ from __future__ import print_function
 import logging
 import time
 
-#from FLI.device import USBDevice
+# from FLI.device import USBDevice
 from chimera.instruments.fli.flidrv.camera import USBCamera
-#from FLI.filter_wheel import USBFilterWheel
+# from FLI.filter_wheel import USBFilterWheel
 
 from chimera.instruments.camera import CameraBase
 
@@ -29,15 +29,14 @@ class FLI(CameraBase):
     """
 
     # Some of the config values were taken from the specs for the cam & CCD.
-    __config__ = {"device": "USB",
-                  "ccd": CCD.IMAGING,
-                  "temp_delta": 2.0,
-                  "ccd_saturation_level": 100000,
-                  "camera_model": "Finger Lakes Instrumentation PL4240",
-                  "ccd_model": "E2V CCD42-40",
-                  "telescope_focal_length": 80000,  # milimeter
-                  "gain": 1
-                  }
+    __config__ = dict(device="USB",
+                      ccd=CCD.IMAGING,
+                      temp_delta=2.0,
+                      ccd_saturation_level=100000,
+                      camera_model="Finger Lakes Instrumentation PL4240",
+                      ccd_model="E2V CCD42-40",
+                      telescope_focal_length=80000,
+                      gain=1)
 
     def __init__(self):
         """Constructor."""
@@ -234,7 +233,7 @@ class FLI(CameraBase):
         """
         return self._readoutModes
 
-    def _expose(self, request):
+    def _expose(self, request, **kwargs):
         """
         .. method:: expose(request=None, **kwargs)
 
