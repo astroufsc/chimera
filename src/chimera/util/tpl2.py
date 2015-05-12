@@ -115,7 +115,7 @@ class TPL2(object):
         self.received_objects = {}
         self.echo = echo
         self.debug = debug
-        self.sleep = 0.01
+        self.sleep = sleep
         self.events = []
 
         self.connect()
