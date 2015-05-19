@@ -394,7 +394,7 @@ class ChimeraCLI (object):
                                     long="instruments-dir",
                                     helpGroup="PATHS",
                                     type=ParameterType.INCLUDE_PATH,
-                                    default=[ChimeraPath.instruments()],
+                                    default=ChimeraPath().instruments,
                                     help="Append PATH to %s load path. "
                                     "This option could be setted multiple "
                                     "times to add multiple directories." %
@@ -415,7 +415,7 @@ class ChimeraCLI (object):
                                     long="controllers-dir",
                                     helpGroup="PATHS",
                                     type=ParameterType.INCLUDE_PATH,
-                                    default=[ChimeraPath.controllers()],
+                                    default=ChimeraPath().controllers,
                                     help="Append PATH to controllers load path. "
                                     "This option could be setted multiple "
                                     "times to add multiple directories.",
