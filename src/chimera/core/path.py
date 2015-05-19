@@ -8,7 +8,7 @@ class ChimeraPath (object):
 
     def __init__(self):
         # Search for chimera plugins on the sys.path
-        self._instruments_plugins, self._controllers_plugins = find_chimera_plugins()
+        self._controllers_plugins, self._instruments_plugins = find_chimera_plugins()
         self._instruments = [os.path.join(self.root(), 'instruments')]
         self._instruments.extend(self._instruments_plugins)
         self._controllers = [os.path.join(self.root(), 'controllers')]
