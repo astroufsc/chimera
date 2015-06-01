@@ -61,7 +61,12 @@ class Receiver(Thread):
     def run(self):
         log.info( 'Starting to listen on socket ' + str(self.tpl2.sock) )
         while True:
+            # try:
             buf = self.tpl2.recv(quiet=True)
+            # except:
+            #     log.error('Error listening to socket...')
+            #     pass
+
             if not self.keeplistening:
                 break
 
@@ -413,11 +418,20 @@ class TPL2(object):
         self.next_command_id += 1
         if wait:
             ntries = 0
+            masterTries = 0
             while self.commands_sent[ocmid]['status'] == 'sent':
                 if self.debug:
                     log.debug( 'Waiting for command completion' )
                 time.sleep(self.sleep)
                 if ntries > self.max_tries:
+                    masterTries += 1
+                    ntries = 0
+                    log.warning('Max tries reached, resetting connection and trying again...')
+                    self.disconnect()
+                    time.sleep(self.sleep)
+                    self.connect()
+                    self.send(command)
+                if masterTries > self.max_tries:
                     log.error('Command timed-out...')
                     return ocmid
                 ntries+=1

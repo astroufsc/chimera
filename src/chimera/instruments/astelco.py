@@ -1118,7 +1118,11 @@ class Astelco(TelescopeBase):  # converted to Astelco
 
         :return: AstelcoTelescopeStatus{Enum}
         '''
-        status = self._tpl.getobject('TELESCOPE.STATUS.GLOBAL')
+        status = None
+
+        while not status:
+            status = self._tpl.getobject('TELESCOPE.STATUS.GLOBAL')
+            time.sleep(self['tplsleep'])
 
         if status == 0:
             return AstelcoTelescopeStatus.OK
@@ -1160,12 +1164,15 @@ class Astelco(TelescopeBase):  # converted to Astelco
             cmdid = self._tpl.set('TELESCOPE.STATUS.CLEAR', status)
             # if clear gets new value, acknowledge may have worked
             self.waitCmd(cmdid, time.time(), self["maxidletime"])
-            #clear = self._tpl.getobject('TELESCOPE.STATUS.CLEAR')
-            #if clear == status:
+            # clear = self._tpl.getobject('TELESCOPE.STATUS.CLEAR')
+            # if clear == status:
             #    self.log.debug("CLEAR accepted new value...")
             # I will go ahead and check status anyway...
             # if GLOBAL is zero, than acknowledge worked
+            oldstatus = status
             status = self._tpl.getobject('TELESCOPE.STATUS.GLOBAL')
+
+            self.log.debug('Telescope status: %s | Global status: %s'%(oldstatus,status))
             if status == 0:
                 self.log.debug('Acknowledge accepted...')
                 return True
@@ -1181,6 +1188,7 @@ class Astelco(TelescopeBase):  # converted to Astelco
 
         if not self.isParked():
             return True
+        # ToDo: Raise an exception if telescope is in local mode
         # 1. power on
         #self.powerOn ()
         cmdid = self._tpl.set('TELESCOPE.READY', 1, wait=True)
