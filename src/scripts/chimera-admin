@@ -72,8 +72,9 @@ class doStuff:
                       "controllers": []}
 
         # add system path
-        self.paths["instruments"].append(ChimeraPath.instruments())
-        self.paths["controllers"].append(ChimeraPath.controllers())
+        cp = ChimeraPath()
+        self.paths["instruments"].expand(cp.instruments)
+        self.paths["controllers"].expand(cp.controllers)
 
         log.info(
             "Setting objects include path from command line parameters...")
