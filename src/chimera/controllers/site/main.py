@@ -65,9 +65,11 @@ class SiteController (object):
         self.paths = {"instruments": [],
                       "controllers": []}
 
-        # add system path
-        self.paths["instruments"].append(ChimeraPath.instruments())
-        self.paths["controllers"].append(ChimeraPath.controllers())
+        # add system and plugins paths
+        Path = ChimeraPath()
+        self.paths["instruments"].extend(Path.instruments)
+        self.paths["controllers"].extend(Path.controllers)
+
 
     def parseArgs(self, args):
 
@@ -196,7 +198,7 @@ class SiteController (object):
         if not self.options.dry:
             log.info("Starting system.")
             log.info("Chimera: %s" % _chimera_version_)
-            log.info("Chimera prefix: %s" % ChimeraPath.root())
+            log.info("Chimera prefix: %s" % ChimeraPath().root())
             log.info("Python: %s" % platform.python_version())
             log.info("System: %s" % ' '.join(platform.uname()))
 
