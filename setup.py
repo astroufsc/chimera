@@ -77,7 +77,6 @@ setup(
                          "PyYAML",
                          "python-dateutil",
                          "pyephem",
-                         "pyserial",
                          "RO",
                          "suds",
                          "SQLAlchemy",
