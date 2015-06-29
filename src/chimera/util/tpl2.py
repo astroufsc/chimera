@@ -61,7 +61,12 @@ class Receiver(Thread):
     def run(self):
         log.info( 'Starting to listen on socket ' + str(self.tpl2.sock) )
         while True:
+            # try:
             buf = self.tpl2.recv(quiet=True)
+            # except:
+            #     log.error('Error listening to socket...')
+            #     pass
+
             if not self.keeplistening:
                 break
 
@@ -83,6 +88,7 @@ class TPL2(object):
                  max_tries=10,
                  verbose=True,
                  timeout=2,
+                 sleep=0.01,
                  echo=True,
                  debug=False):
         '''
@@ -114,12 +120,16 @@ class TPL2(object):
         self.received_objects = {}
         self.echo = echo
         self.debug = debug
-        self.sleep = 0.01
+        self.sleep = sleep
         self.events = []
+
+        self.connect()
+
+    def connect(self):
 
         # Open the socket
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.sock.connect((host, port))
+        self.sock.connect((self.host, self.port))
         self.sock.settimeout(self.timeout)
         s = self.expect(
             'TPL2\s+(?P<TPL2>\S+)\s+CONN\s+(?P<CONN>\d+)\s+AUTH\s+(?P<AUTH>\S+(,\S+)*)')
@@ -129,7 +139,7 @@ class TPL2(object):
                 'self.sock.connect((' + self.host + str(self.port) + ')', 'Got None as answer.')
         self.protocol_version, self.conn, self.auth_methods = s.group(
             'TPL2'), s.group('CONN'), s.group('AUTH')
-        self.send('AUTH PLAIN "' + user + '" "' + password + '"\r\n')
+        self.send('AUTH PLAIN "' + self.user + '" "' + self.password + '"\r\n')
         s = self.expect('AUTH\s+((?P<OK>OK)|(?P<FAILED>FAILED)|(?P<ERROR>ERROR)'
                         '|(?P<USUPPORTED>UNSUPPORTED)|(?P<DISABLED>DISABLED))(\s+(?P<read_level>\d))?(\s+(?P<write_level>\d))?')
         try:
@@ -163,10 +173,12 @@ class TPL2(object):
         log.info( "Disconnecting from %s:%s"%( self.host, self.port))
         self.stoplistening()
         self.send('DISCONNECT')
+        self.shutdown()
 #        try:
 #            s=self.expect('DISCONNECT\s+OK')
 #        except MaxTries:
 #            pass
+    def shutdown(self):
         self.sock.shutdown(socket.SHUT_RDWR)
         self.sock.close()
 
@@ -202,9 +214,15 @@ class TPL2(object):
                 id = int(d['cmdid'])
             if d['rcmdid']:
                 id = int(d['rmdid'])
-            self.commands_sent[id]['status'] = d['status']
-            self.commands_sent[id]['allstatus'].append(d['status'])
-            self.commands_sent[id]['ok'] = (d['status'] == 'OK')
+            try:
+                self.commands_sent[id]['status'] = d['status']
+                self.commands_sent[id]['allstatus'].append(d['status'])
+                self.commands_sent[id]['ok'] = (d['status'] == 'OK')
+            except:
+                #print id
+                #print d
+                #print self.commands_sent
+                return -1
 
         s = re.search(
             '(?P<id>\d+)\s+(?P<data>DATA INLINE) (?P<object>\S+.*?)=(?P<value>[\S \d]+.*?)\r?\n?', buf)
@@ -308,7 +326,7 @@ class TPL2(object):
                 break
         
         if st != 'COMPLETE':
-            log.warning( 'TPL2 getobject: got status "', st, '"' )
+            log.warning( 'TPL2 getobject: got status %s ...' %st)
             return None
     
         ocmid = self.get(object, wait=True)
@@ -324,10 +342,10 @@ class TPL2(object):
                 break
 
         if st != 'COMPLETE':
-            log.warning( 'TPL2 getobject: got status "', st, '"' )
+            log.warning( 'TPL2 getobject: got status  %s ...' %st )
             return None
         if self.debug:
-            print self.received_objects
+            log.debug(self.received_objects)
         if self.received_objects[object + '!TYPE'] == '0':
             self.received_objects[object] = None
         elif self.received_objects[object + '!TYPE'] == '1':
@@ -344,7 +362,21 @@ class TPL2(object):
     def send(self, message='\r\n'):
         if self.verbose:
             log.debug( message )
-        self.sock.send(message)
+        try:
+            self.sock.send(message)
+        except:
+            log.error('Looks like the connection was lost. Trying to reconnect...')
+
+            self.shutdown()
+
+            self.connect()
+            try:
+                self.sock.send(message)
+            except:
+                log.error('Could not connect again... Server down?')
+                pass
+            pass
+
         self.log.append(('s', message))
         self.sent.append((len(self.log), message))
 
@@ -385,11 +417,25 @@ class TPL2(object):
             self.commands_sent[ocmid]['data'] = False
         self.next_command_id += 1
         if wait:
+            ntries = 0
+            masterTries = 0
             while self.commands_sent[ocmid]['status'] == 'sent':
                 if self.debug:
                     log.debug( 'Waiting for command completion' )
                 time.sleep(self.sleep)
-    
+                if ntries > self.max_tries:
+                    masterTries += 1
+                    ntries = 0
+                    log.warning('Max tries reached, resetting connection and trying again...')
+                    self.disconnect()
+                    time.sleep(self.sleep)
+                    self.connect()
+                    self.send(command)
+                if masterTries > self.max_tries:
+                    log.error('Command timed-out...')
+                    return ocmid
+                ntries+=1
+
         return ocmid
 
     def get(self, object, wait=False, maxtries=10):

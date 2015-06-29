@@ -24,7 +24,7 @@ from chimera.core.chimeraobject import ChimeraObject
 
 from chimera.interfaces.telescope import (TelescopeSlew, TelescopeSync,
                                           TelescopePark, TelescopeTracking,
-                                          SlewRate)
+                                          TelescopeCover, SlewRate)
 
 from chimera.core.lock import lock
 from chimera.core.exceptions import ObjectTooLowException
@@ -38,7 +38,8 @@ __all__ = ["TelescopeBase"]
 
 class TelescopeBase(ChimeraObject,
                     TelescopeSlew, TelescopeSync,
-                    TelescopePark, TelescopeTracking):
+                    TelescopePark, TelescopeTracking,
+                    TelescopeCover):
 
     def __init__(self):
         ChimeraObject.__init__(self)
@@ -174,6 +175,12 @@ class TelescopeBase(ChimeraObject,
 
     @lock
     def unpark(self):
+        raise NotImplementedError()
+
+    def isOpen(self):
+        '''
+        Check if telescope cover is open.
+        '''
         raise NotImplementedError()
 
     @lock
