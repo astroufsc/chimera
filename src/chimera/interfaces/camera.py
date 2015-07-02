@@ -104,15 +104,11 @@ class Camera (Interface):
     """
 
     # config
-    __config__ = {"device": None,
-                  "ccd": None,
-                  "temp_delta": None,
-
-                  "ccd_saturation_level": None,
+    __config__ = {"device": "Unknown",
+                  "ccd": CCD.IMAGING,
 
                   "camera_model": "Unknown",
                   "ccd_model": "Unknown",
-                  "telescope_focal_length": None  # milimeter
                   }
 
 
