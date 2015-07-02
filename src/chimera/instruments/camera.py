@@ -191,7 +191,7 @@ class CameraBase (ChimeraObject,
                 ("CD2_1", 0.0, "transformation matrix element (2,1)"),
                 ("CD2_2", scale_y, "transformation matrix element (2,2)"),
 
-                ('CAMERA', str(self['camera_model']), 'Camera Model'),
+                ('INSTRUME', str(self['camera_model']), 'Name of instrument'),
                 ('CCD',    str(self['ccd_model']), 'CCD Model'),
                 ('CCD_DIMX', self.getPhysicalSize()
                  [0], 'CCD X Dimension Size'),

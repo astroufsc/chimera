@@ -104,15 +104,15 @@ class Camera (Interface):
     """
 
     # config
-    __config__ = {"device": "USB",
-                  "ccd": CCD.IMAGING,
-                  "temp_delta": 2.0,
+    __config__ = {"device": None,
+                  "ccd": None,
+                  "temp_delta": None,
 
-                  "ccd_saturation_level": 60000,
+                  "ccd_saturation_level": None,
 
-                  "camera_model": "Fake camera Inc.",
-                  "ccd_model": "KAF XYZ 10",
-                  "telescope_focal_length": 4000  # milimeter
+                  "camera_model": "Unknown",
+                  "ccd_model": "Unknown",
+                  "telescope_focal_length": None  # milimeter
                   }
 
 
