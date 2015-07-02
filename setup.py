@@ -42,8 +42,6 @@ chimera_scripts = ['src/scripts/chimera',
                    'src/scripts/chimera-pverify',
                    'src/scripts/chimera-console',
                    'src/scripts/chimera-sched',
-                   'src/scripts/chimera-ppsched',
-                   'src/scripts/chimera-taosched',
 ]
 
 # platform specific requirements
