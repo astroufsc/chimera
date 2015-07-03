@@ -67,6 +67,8 @@ setup(
 
     include_package_data=True,
 
+    package_data={'': ['jquery-1.3.2.js', 'webadmin.html']},
+
     scripts=chimera_scripts,
 
     # installation happens in the specified order
