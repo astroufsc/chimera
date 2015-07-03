@@ -29,10 +29,10 @@ class WebAdminRoot (object):
             # clean scheduler database
             self.controller.scheduler.restartAllPrograms()
             self.controller.scheduler.start()
-        except Exception:
-            return "Erro ao tentar iniciar o sistema!"
+        except Exception, e:
+            return "Error trying to START the system! %s" % str(e)
 
-        return "Sucesso!"
+        return "Success!"
 
     @cherrypy.expose
     def stop(self):
@@ -41,10 +41,10 @@ class WebAdminRoot (object):
             self.controller.scheduler.stop()
             self.controller.telescope.park()
             self.controller.dome.closeSlit()
-        except Exception:
-            return "Erro ao tentar parar o sistema!"
+        except Exception, e:
+            return "Error trying to STOP the system! %s" % str(e)
 
-        return "Sucesso!"
+        return "Success!"
 
     @cherrypy.expose
     def pause(self):
@@ -52,10 +52,10 @@ class WebAdminRoot (object):
             self.controller.dome.openSlit()
             self.controller.telescope.unpark()
             self.controller.scheduler.start()
-        except Exception:
-            return "Erro ao tentar continuar os trabalhos!"
+        except Exception, e:
+            return "Error trying to RESUME the observations! %s" % str(e)
 
-        return "Sucesso!"
+        return "Success!"
 
 
 class WebAdmin (ChimeraObject):
@@ -93,8 +93,8 @@ class WebAdmin (ChimeraObject):
         current_dir = os.path.dirname(os.path.abspath(__file__))
 
         app_config = {"/": {},
-                      "/jquery-1.3.2.js": {"tools.staticfile.on": True,
-                                           "tools.staticfile.filename": os.path.join(current_dir, "jquery-1.3.2.js")}
+                      "/jquery-1.11.3.min.js": {"tools.staticfile.on": True,
+                                                "tools.staticfile.filename": os.path.join(current_dir, "jquery-1.11.3.min.js")}
                       }
 
         def start():
