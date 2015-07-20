@@ -63,5 +63,5 @@ class WeatherBase(ChimeraObject, WeatherStation):
                 ('WINDDIR',  str(self.wind_direction()), '[deg] Weather station wind direction'),
                 ('METDEW',  str(self.dew_point()), '[degC] Weather station dew point'),
                 ('METPRES', str(self.pressure()), '[hPa] Weather station air pressure'),
-                ('METRAIN', str(self.pressure()), 'Weather station rain indicator'),
+                ('METRAIN', str(self.rain()), 'Weather station rain indicator'),
                 ]
