@@ -61,7 +61,7 @@ class WeatherStation (Interface):
 
     """
 
-    __config__ = {"device": "/dev/ttyS0",
+    __config__ = {"device": None,
 
                   "humidity_unit": Unit.MM_HG,
                   "temperature_unit": Unit.CELSIUS,
@@ -75,7 +75,6 @@ class WeatherStation (Interface):
                   "wind_delta": 1,
                   "dew_point_delta": 1,
                   "pressure_delta": 1,
-                  "rain_delta": 1,
                   }
 
     def humidity(self, unit=Unit.PERCENTUAL):
