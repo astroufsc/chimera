@@ -56,6 +56,10 @@ Unit = Enum("PERCENTUAL",  # Humidity
 
 
 class WeatherStation (Interface):
+    """
+    Instrument interface for weather stations
+
+    """
 
     __config__ = {"device": "/dev/ttyS0",
 
@@ -74,47 +78,88 @@ class WeatherStation (Interface):
                   "rain_delta": 1,
                   }
 
-    def humidity(self, deltaT=0, unit=Unit.PERCENTUAL):
+    def humidity(self, unit=Unit.PERCENTUAL):
+        """
+        Returns the 100% relative humidity (Default: Percentage).
+        :param unit: Unit in which the instrument should return the humidity.
+        :return: the humidity.
+        """
         pass
 
-    def temperature(self, deltaT=0, unit=Unit.CELSIUS):
+    def temperature(self, unit=Unit.CELSIUS):
+        """
+        Returns the temperature in the chosen unit (Default: Celsius).
+        :param unit:  Unit in which the instrument should return the temperature.
+        :return: the temperature.
+        """
         pass
 
-    def wind_speed(self, deltaT=0, unit=Unit.M_PER_S):
+    def wind_speed(self, unit=Unit.M_PER_S):
+        """
+        Returns the wind speed in the chosen unit (Default: Meters per second).
+        :param unit:  Unit in which the instrument should return the wind speed.
+        :return: the wind speed.
+        """
         pass
 
-    def wind_direction(self, deltaT=0, unit=Unit.DEG):
+    def wind_direction(self, unit=Unit.DEG):
+        """
+        Returns the wind direction in the chosen unit (Default: Degrees).
+        :param unit:  Unit in which the instrument should return the wind direction.
+        :return: the wind direction.
+        """
         pass
 
-    def dew_point(self, deltaT=0, unit=Unit.CELSIUS):
+    def dew_point(self, unit=Unit.CELSIUS):
+        """
+        Returns the dew point temperature in the chosen unit (Default: Celsius).
+        :param unit:  Unit in which the instrument should return the dew point.
+        :return: the dew point temperature.
+        """
         pass
 
-    def pressure(self, deltaT=0, unit=Unit.MM_HG):
+    def pressure(self, unit=Unit.MM_HG):
+        """
+        Returns the pressure in the chosen unit (Default: mmHg).
+        :param unit:  Unit in which the instrument should return the pressure.
+        :return: the pressure.
+        """
         pass
 
-    def rain(self, deltaT=0, unit=Unit.MM_PER_H):
+    def rain(self, unit=Unit.MM_PER_H):
+        """
+        Returns the precipitation rate in the chosen unit (Default: mm/H).
+        :param unit:  Unit in which the instrument should return the precipitation rate.
+        :return: the precipitation rate.
+        """
         pass
 
     @event
-    def humidityChange(self, humidity, unit, delta):
+    def humidityChange(self, humidity, unit):
+        """
+        Indicates a change in the humidity
+        :param humidity:
+        :param unit:
+        :return:
+        """
         pass
 
     @event
-    def temperatureChange(self, temperature, unit, delta):
+    def temperatureChange(self, temperature, unit):
         pass
 
     @event
-    def windChange(self, wind, unit, delta):
+    def windChange(self, wind, unit):
         pass
 
     @event
-    def dewPointChange(self, dewPoint, unit, delta):
+    def dewPointChange(self, dewPoint, unit):
         pass
 
     @event
-    def pressureChange(self, pressure, unit, delta):
+    def pressureChange(self, pressure, unit):
         pass
 
     @event
-    def rainChange(self, rain, unit, delta):
+    def rainChange(self, rain, unit):
         pass
