@@ -132,33 +132,3 @@ class WeatherStation (Interface):
         :return: the precipitation rate.
         """
         pass
-
-    @event
-    def humidityChange(self, humidity, unit):
-        """
-        Indicates a change in the humidity
-        :param humidity:
-        :param unit:
-        :return:
-        """
-        pass
-
-    @event
-    def temperatureChange(self, temperature, unit):
-        pass
-
-    @event
-    def windChange(self, wind, unit):
-        pass
-
-    @event
-    def dewPointChange(self, dewPoint, unit):
-        pass
-
-    @event
-    def pressureChange(self, pressure, unit):
-        pass
-
-    @event
-    def rainChange(self, rain, unit):
-        pass
