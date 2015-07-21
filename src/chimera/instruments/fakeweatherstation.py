@@ -65,11 +65,11 @@ class FakeWeatherStation(WeatherBase):
 
     def pressure(self, unit=Unit.MM_HG):
         """
-        Pressure at sea level
+        Pressure at 1.5 atm
         :param unit:
         :return:
         """
-        return 29.92
+        return 1140.
 
     def rain(self, unit=Unit.MM_PER_H):
 
