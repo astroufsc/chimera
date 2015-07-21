@@ -33,25 +33,25 @@ class WeatherBase(ChimeraObject, WeatherStation):
             self.log.info("Invalid feature: %s" % str(feature))
             return False
 
-    def humidity(self, deltaT=0, unit=Unit.PERCENTUAL):
+    def humidity(self, unit=Unit.PERCENTUAL):
         raise NotImplementedError()
 
-    def temperature(self, deltaT=0, unit=Unit.CELSIUS):
+    def temperature(self, unit=Unit.CELSIUS):
         raise NotImplementedError()
 
-    def wind_speed(self, deltaT=0, unit=Unit.M_PER_S):
+    def wind_speed(self, unit=Unit.M_PER_S):
         raise NotImplementedError()
 
-    def wind_direction(self, deltaT=0, unit=Unit.DEG):
+    def wind_direction(self, unit=Unit.DEG):
         raise NotImplementedError()
 
-    def dew_point(self, deltaT=0, unit=Unit.CELSIUS):
+    def dew_point(self, unit=Unit.CELSIUS):
         raise NotImplementedError()
 
-    def pressure(self, deltaT=0, unit=Unit.MM_HG):
+    def pressure(self, unit=Unit.MM_HG):
         raise NotImplementedError()
 
-    def rain(self, deltaT=0, unit=Unit.MM_PER_H):
+    def rain(self, unit=Unit.MM_PER_H):
         raise NotImplementedError()
 
     def getMetadata(self, request):
