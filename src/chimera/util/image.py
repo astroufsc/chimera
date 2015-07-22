@@ -173,7 +173,7 @@ class Image (DictMixin, RemoteObject):
         hdu = fits.PrimaryHDU(data)
 
         headers = [("DATE", ImageUtil.formatDate(dt.datetime.utcnow()), "date of file creation"),
-                   ("CREATOR", _chimera_name_, _chimera_long_description_)]
+                   ("AUTHOR", _chimera_name_, _chimera_long_description_)]
 
         # TODO: Implement BITPIX support
         hdu.scale('int16', '', bzero=32768, bscale=1)
