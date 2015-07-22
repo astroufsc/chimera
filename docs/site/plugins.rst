@@ -19,42 +19,43 @@ For details on installation, configuration and an updated list of tested devices
 page.
 
 
-* `chimera-apogee`_: For `Apogee Imaging Systems`_ cameras and filter wheels.
+* chimera-apogee_: For `Apogee Imaging Systems`_ cameras and filter wheels.
 
-* `chimera-ascom`_: For `ASCOM standard`_ compatible devices.
+* chimera-ascom_: For `ASCOM standard`_ compatible devices.
 
-* `chimera-astelco`_: For `ASTELCO`_ TPL2 communication standard telescopes.
+* chimera-astelco_: For `ASTELCO`_ TPL2 communication standard telescopes.
 
-* `chimera-avt`_: For `Allied Vision`_ video cameras.
+* chimera-avt_: For `Allied Vision`_ video cameras.
 
-* `chimera-bisque`_: For `Software Bisque's`_ TheSky versions 5 and 6 telescope control software.
+* chimera-bisque_: For `Software Bisque's`_ TheSky versions 5 and 6 telescope control software.
 
-* `chimera-fli`_: For `Finger Lakes Instrumets`_ cameras and filter wheels.
+* chimera-fli_: For `Finger Lakes Instrumets`_ cameras and filter wheels.
 
-* `chimera-jmismart232`_: For `JMI Smart 232`_ focusers.
+* chimera-jmismart232_: For `JMI Smart 232`_ focusers.
 
-* `chimera-meade`_: For `MEADE`_ GOTO telescopes.
+* chimera-meade_: For `MEADE`_ GOTO telescopes.
 
-* `chimera-optec`_: For `OPTEC`_ focusers.
+* chimera-optec_: For `OPTEC`_ focusers.
 
-* `chimera-sbig`_: For `Santa Barbara Instruments Group`_ cameras and filter wheels.
+* chimera-sbig_: For `Santa Barbara Instruments Group`_ cameras and filter wheels.
 
 
 Controllers
 -----------
 
-* chimera-autofocus: Focus your telescope automatically every time you need.
+* chimera-autofocus: Focus your telescope automatically every time you need. *On the main chimera package*
 
-* `chimera-autoguider`_: Easy automatic guiding using chimera.
+* chimera-autoguider_: Easy automatic guiding using chimera.
 
-* chimera-gui: A simple Graphical User Interface to chimera.
+* chimera-gui: A simple Graphical User Interface to chimera. *On the main chimera package*
 
-* chimera-pverify: Verify the telescope pointing accuracy easily.
+* chimera-pverify: Verify the telescope pointing accuracy easily. *On the main chimera package*
 
-* chimera-stellarium: ...
+* chimera-stellarium_: Integrates Stellarium_ ephemeris software with chimera.
 
-* chimera-webadmin: ...
+* chimera-webadmin_: Start/Stop/Resume your robotic observatory from a web page.
 
+* chimera-xephem_: Integrates XEphem_ ephemeris software with chimera.
 
 
 .. _call us: http://groups.google.com/group/chimera-discuss
@@ -70,6 +71,8 @@ Controllers
 .. _MEADE: http://www.meade.com/
 .. _OPTEC: http://www.optecinc.com
 .. _Santa Barbara Instruments Group: http://www.sbig.com/
+.. _Stellarium: http://www.stellarium.org/
+.. _XEphem: http://www.clearskyinstitute.com/xephem/
 
 .. _chimera-apogee: https://github.com/astroufsc/chimera-apogee
 .. _chimera-ascom: https://github.com/astroufsc/chimera-ascom
@@ -83,5 +86,8 @@ Controllers
 .. _chimera-meade: https://github.com/astroufsc/chimera-meade
 .. _chimera-optec: https://github.com/astroufsc/chimera-optec
 .. _chimera-sbig: https://github.com/astroufsc/chimera-sbig
+.. _chimera-stellarium: https://github.com/astroufsc/chimera-stellarium
 .. _chimera-template: https://github.com/astroufsc/chimera-template
+.. _chimera-xephem: https://github.com/astroufsc/chimera-xephem
+.. _chimera-webadmin: https://github.com/astroufsc/chimera-webadmin
 .. _chimera for devs: chimerafordevs.html
