@@ -99,6 +99,8 @@ class FakeTelescope (TelescopeBase):
             position = Position.fromRaDec(
                 position[0], position[1], epoch=Epoch.J2000)
 
+        self._validateRaDec(position)
+
         self.slewBegin(position)
 
         ra_steps = position.ra - self.getRa()
@@ -136,6 +138,8 @@ class FakeTelescope (TelescopeBase):
 
         if not isinstance(position, Position):
             position = Position.fromAltAz(*position)
+
+        self._validateAltAz(position)
 
         self.slewBegin(self._getSite().altAzToRaDec(position))
 
