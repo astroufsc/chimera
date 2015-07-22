@@ -404,7 +404,10 @@ class Autofocus(ChimeraObject, IAutofocus):
         config['PIXEL_SCALE'] = 0  # use WCS info
         config['BACK_TYPE'] = "AUTO"
 
-        config['SATUR_LEVEL'] = self.getCam()["ccd_saturation_level"]
+        try:
+            config['SATUR_LEVEL'] = self.getCam()["ccd_saturation_level"]
+        except KeyError:
+            pass  # If there is no ccd_saturation_level on the config, it will use the default saturation level
 
         # improve speed with higher threshold
         config['DETECT_THRESH'] = 3.0
