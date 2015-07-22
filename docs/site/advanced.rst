@@ -21,33 +21,95 @@ These are terms commonly found within the software; they represent concepts that
 Advanced Chimera Configuration
 ------------------------------
 
-Every **ChimeraObject** has a *class attribute*, a python dictionary that defines possible configuration options for the object, along with sensible defaults for each. This attribute, named :attr:`__config__`, can be referred to when looking for options to include in the *configuration file*. For example, the telescope interface default :attr:`__config__`::
+Every **ChimeraObject** has a *class attribute*, a python dictionary that defines possible configuration options for
+the object, along with sensible defaults for each. This attribute, named :attr:`__config__`, can be referred to when
+looking for options to include in the *configuration file*. For example, the telescope interface default
+:attr:`__config__`:
 
-    __config__ = {"device": "/dev/ttyS0",
-                  "model": "Fake Telescopes Inc.",
-                  "optics": ["Newtonian", "SCT", "RCT"],
-                  "mount": "Mount type Inc.",
-                  "aperture": 100.0,  # mm
-                  "focal_length": 1000.0,  # mm
-                  # unit (ex., 0.5 for a half length focal reducer)
-                  "focal_reduction": 1.0,
-                  }
+.. literalinclude:: ../../src/chimera/interfaces/telescope.py
+    :lines: 47-54
 
-can have attribute members overwritten and/or added from the configuration file, the others will keep their default values:
 
-	# Meade telescope on serial port
+can have attribute members overwritten and/or added from the plugin and from the configuration file and the others will
+keep their default values.
 
-	telescope:
+For example, on the meade plugin, besides the default options listed above, we add the configuration option on the
+instrument class::
 
-	    driver: Meade [#]_
+    __config__ = {'azimuth180Correct': True}
 
-	    device:/dev/ttyS1 [#]_
+and, on the configuration, we can change the defaults to a different value:
 
-.. rubric:: Footnotes
+::
 
-.. [#] added
-.. [#] overwritten
+    # Meade telescope on serial port
+    telescope:
+        driver: Meade
+        device:/dev/ttyS1      # Overwritten from the interface
+        my_custom_option: 3.0  # Added on configuration file
 
-Chimera Scripts Advanced Options
---------------------------------
+
+
+Default configuration parameters by interface type
+--------------------------------------------------
+
+* **Site**
+
+.. literalinclude:: ../../src/chimera/core/site.py
+    :lines: 73-78
+
+* Auto-focus
+
+.. literalinclude:: ../../src/chimera/interfaces/autofocus.py
+    :lines: 40-43
+
+* Autoguider
+
+.. literalinclude:: ../../src/chimera/interfaces/autoguider.py
+    :lines: 37-46
+
+* Camera
+
+.. literalinclude:: ../../src/chimera/interfaces/camera.py
+    :lines: 107-116
+
+* Dome
+
+.. literalinclude:: ../../src/chimera/interfaces/dome.py
+    :lines: 52-68
+
+* Filter wheel
+
+.. literalinclude:: ../../src/chimera/interfaces/filterwheel.py
+    :lines: 39-43
+
+* Focuser
+
+.. literalinclude:: ../../src/chimera/interfaces/focuser.py
+    :lines: 51-55
+
+* Point Verify
+
+.. literalinclude:: ../../src/chimera/interfaces/pointverify.py
+    :lines: 46-54
+
+* Telescope
+
+.. literalinclude:: ../../src/chimera/interfaces/telescope.py
+    :lines: 47-54,63-72,356
+
+* Weather Station
+
+.. literalinclude:: ../../src/chimera/interfaces/weatherstation.py
+    :lines: 60-75
+
+
+Fake Instruments default configuration parameters
+-------------------------------------------------
+
+* Camera
+
+.. literalinclude:: ../../src/chimera/instruments/fakecamera.py
+    :lines: 44-46
+
 
