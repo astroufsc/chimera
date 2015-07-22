@@ -51,6 +51,9 @@ class FocuserBase (ChimeraObject, Focuser):
     def getRange(self):
         raise NotImplementedError()
 
+    def getTemperature(self):
+        raise NotImplementedError()
+
     def supports(self, feature=None):
         if feature in self._supports:
             return self._supports[feature]
@@ -59,6 +62,11 @@ class FocuserBase (ChimeraObject, Focuser):
             return False
 
     def getMetadata(self, request):
-        return [('FOCUSER', str(self['model']), 'Focuser Model'),
-                ('FOCUS',  self.getPosition(),
-                 'Focuser position used for this observation')]
+        md = [('FOCUSER', str(self['model']), 'Focuser Model'),
+              ('FOCUS', self.getPosition(), 'Focuser position used for this observation')]
+        try:
+            md += [('FOCUSTEM', self.getTemperature(), 'Focuser Temperature at Exposure End [deg. C]')]
+        except NotImplementedError:
+            pass
+
+        return md
