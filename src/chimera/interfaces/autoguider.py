@@ -42,6 +42,7 @@ class Autoguider (Interface):
                   "point_verify": "/PointVerify/0",
                   'site': '/Site/0',
                   "max_tries": 3,
+                  "nlost": 3,
                   "Noffset": 0.,
                   "Eoffset": 0.}
 
@@ -56,6 +57,6 @@ class Autoguider (Interface):
         """
 
     @event
-    def guideStopped(self, state, msg=None):
+    def guideStop(self, state, msg=None):
         """Raised when a guider sequence stops.
         """
