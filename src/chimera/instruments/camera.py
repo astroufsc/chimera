@@ -211,7 +211,7 @@ class CameraBase (ChimeraObject,
         proxy = server.register(img)
 
         # and finally compress the image if asked
-        if imageRequest['compress']:
+        if imageRequest['compress_format'].lower() != 'no':
             img.compress(format=imageRequest['compress_format'], multiprocess=True)
 
         return proxy

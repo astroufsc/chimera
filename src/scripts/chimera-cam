@@ -422,10 +422,6 @@ class ChimeraCam (ChimeraCLI):
                 expTimes.extend(exps)
 
         compress_format = options.compress
-        if compress_format.lower() != "no":
-            compress = True
-        else:
-            compress = False
 
         # DS9
         ds9 = None
@@ -561,7 +557,6 @@ class ChimeraCam (ChimeraCLI):
                                       binning=options.binning or None,
                                       window=options.subframe or None,
                                       shutter=options.shutter,
-                                      compress=compress,
                                       compress_format=compress_format,
                                       wait_dome=not options.ignore_dome,
                                       object_name=object_name)
@@ -575,7 +570,6 @@ class ChimeraCam (ChimeraCLI):
                                   binning=options.binning or None,
                                   window=options.subframe or None,
                                   shutter=options.shutter,
-                                  compress=compress,
                                   compress_format=compress_format,
                                   wait_dome=not options.ignore_dome,
                                   object_name=object_name)
