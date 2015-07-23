@@ -40,6 +40,16 @@ currentFrameExposeStart = 0
 currentFrameReadoutStart = 0
 
 
+def get_compressed_name(filename, compression):
+    if compression.lower() == 'no':
+        return filename
+    if compression.lower() == 'bz2':
+        return filename+'.bz2'
+    if compression.lower() == 'gzip':
+        return filename+'.gz'
+    if compression.lower() == 'zip':
+        return filename+'.zip'
+
 class ChimeraCam (ChimeraCLI):
 
     def __init__(self):
@@ -462,7 +472,7 @@ class ChimeraCam (ChimeraCLI):
                 self.out("OK (took %.3f s)" %
                          (time.time() - currentFrameExposeStart))
 
-                self.out(" (%s) " % image.compressedFilename(), end="")
+                self.out(" (%s) " % get_compressed_name(image.filename(), compress_format), end="")
                 self.out("OK (took %.3f s)" %
                          (time.time() - currentFrameReadoutStart))
                 self.out("[%03d/%03d] took %.3fs" % (currentFrame, options.frames,
