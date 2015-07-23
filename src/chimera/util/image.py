@@ -215,8 +215,8 @@ class Image (DictMixin, RemoteObject):
     def compressedFilename(self):
         if os.path.exists(self._filename + ".bz2"):
             return self._filename + ".bz2"
-        elif os.path.exists(self._filename + ".gzip"):
-            return self._filename + ".gzip"
+        elif os.path.exists(self._filename + ".gz"):
+            return self._filename + ".gz"
         elif os.path.exists(self._filename + ".zip"):
             return self._filename + ".zip"
         else:
