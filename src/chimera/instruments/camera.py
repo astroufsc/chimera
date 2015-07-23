@@ -156,7 +156,6 @@ class CameraBase (ChimeraObject,
 
         pix_w, pix_h = self.getPixelSize()
 
-        t0 = time.time()
         img = Image.create(imageData, imageRequest)
 
         try:
@@ -211,8 +210,9 @@ class CameraBase (ChimeraObject,
         server = getImageServer(self.getManager())
         proxy = server.register(img)
 
-        # and finally compress the image
-        img.compress(multiprocess=True)
+        # and finally compress the image if asked
+        if imageRequest['compress']:
+            img.compress(format=imageRequest['compress_format'], multiprocess=True)
 
         return proxy
 
@@ -280,7 +280,7 @@ class CameraBase (ChimeraObject,
             binning = self.getBinnings().keys().pop(
                 self.getBinnings().keys().index("1x1"))
 
-        return (mode, binning, top, left, width, height)
+        return mode, binning, top, left, width, height
 
     def isExposing(self):
         return self.__isExposing.isSet()
