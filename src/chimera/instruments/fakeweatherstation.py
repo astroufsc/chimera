@@ -58,10 +58,26 @@ class FakeWeatherStation(WeatherBase):
         return 10
 
     def wind_direction(self, unit=Unit.DEG):
-        return 90
+        """
+        Returns the wind direction in the chosen unit in the range between 0 to 360 degrees.
+        :param unit:  Unit in which the instrument should return the angle.
+        :return: the angle.
+        """
+
+        hour = datetime.datetime.now().hour
+
+        return 180 * math.sin(self._hourinradians(hour)) + 180
 
     def dew_point(self, unit=Unit.CELSIUS):
-        return 0
+        """
+        Some simulations ran on 'http://www.cactus2000.de/uk/unit/masshum.shtml' suggests that
+        the dew point at 1.5mm Hg and low temperatures are very low, around -20 C.
+        Here I'm using -10 C.
+
+        :param unit:  Unit in which the instrument should return the temperature.
+        :return: the angle.
+        """
+        return -10
 
     def pressure(self, unit=Unit.MM_HG):
         """
@@ -72,6 +88,11 @@ class FakeWeatherStation(WeatherBase):
         return 1140.
 
     def rain(self, unit=Unit.MM_PER_H):
+        """
+        For testing purposes, it never rains.
+        :param unit:
+        :return:
+        """
 
         return 0.
 
