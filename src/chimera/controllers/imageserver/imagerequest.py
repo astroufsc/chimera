@@ -27,8 +27,8 @@ class ImageRequest (dict):
                     'window': None,
                     'bitpix': Bitpix.uint16,
                     'filename': '$DATE-$TIME',
-                    'compress': True,
-                    'compress_format': "BZ2",
+                    'compress': False,
+                    'compress_format': "NO",
                     'type': 'object',
                     'wait_dome': True,
                     'object_name': ''}
