@@ -103,12 +103,12 @@ class Camera (Interface):
     Base camera interface.
     """
 
-    # config
-    __config__ = {"device": "Unknown",
-                  "ccd": CCD.IMAGING,
-
-                  "camera_model": "Unknown",
-                  "ccd_model": "Unknown",
+    __config__ = {"device": "Unknown",            # Bus address identifier for this camera. E.g. USB, LPT1, ...
+                  "ccd": CCD.IMAGING,             # CCD to be used when multiple ccd camera. IMAGING or TRACKING.
+                  "camera_model": "Unknown",      # Camera model string. To be used by metadata purposes
+                  "ccd_model": "Unknown",         # CCD model string. To be used by metadata purposes
+                  "ccd_saturation_level": None,   # CCD level at which arises saturation (in ADUs)
+                  "telescope_focal_length": None  # Telescope focal length (in millimeters)
                   }
 
 
