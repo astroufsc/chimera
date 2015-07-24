@@ -24,7 +24,7 @@ import threading
 import time
 import os
 import datetime as dt
-from math import pi
+from math import cos,sin,pi
 
 from chimera.core.chimeraobject import ChimeraObject
 from chimera.interfaces.camera import (CameraExpose, CameraTemperature,
@@ -169,12 +169,16 @@ class CameraBase (ChimeraObject,
             CRPIX1 = ((int(full_width / 2.0)) - left) - 1
             CRPIX2 = ((int(full_height / 2.0)) - top) - 1
 
+            # Adding WCS coordinates according to FITS standard.
+            # Quick sheet: http://www.astro.iag.usp.br/~moser/notes/GAi_FITSimgs.html
+            # http://adsabs.harvard.edu/abs/2002A%26A...395.1061G
+            # http://adsabs.harvard.edu/abs/2002A%26A...395.1077C
             img += [("CRPIX1", CRPIX1, "coordinate system reference pixel"),
                 ("CRPIX2", CRPIX2, "coordinate system reference pixel"),
-                ("CD1_1", scale_x, "transformation matrix element (1,1)"),
-                ("CD1_2", 0.0, "transformation matrix element (1,2)"),
-                ("CD2_1", 0.0, "transformation matrix element (2,1)"),
-                ("CD2_2", scale_y, "transformation matrix element (2,2)")]
+                ("CD1_1",  scale_x * cos(self["rotation"]*pi/180.), "transformation matrix element (1,1)"),
+                ("CD1_2", -scale_y * sin(self["rotation"]*pi/180.), "transformation matrix element (1,2)"),
+                ("CD2_1", scale_x * sin(self["rotation"]*pi/180.), "transformation matrix element (2,1)"),
+                ("CD2_2", scale_y * cos(self["rotation"]*pi/180.), "transformation matrix element (2,2)")]
 
         except KeyError:  # If there is no telescope_focal_length defined, don't store WCS
             pass

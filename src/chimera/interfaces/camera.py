@@ -109,6 +109,7 @@ class Camera (Interface):
 
                   "camera_model": "Unknown",
                   "ccd_model": "Unknown",
+                  "rotation": 0.
                   }
 
 
