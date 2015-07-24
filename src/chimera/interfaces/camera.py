@@ -108,7 +108,8 @@ class Camera (Interface):
                   "camera_model": "Unknown",      # Camera model string. To be used by metadata purposes
                   "ccd_model": "Unknown",         # CCD model string. To be used by metadata purposes
                   "ccd_saturation_level": None,   # CCD level at which arises saturation (in ADUs)
-                  "telescope_focal_length": None  # Telescope focal length (in millimeters)
+                  "telescope_focal_length": None, # Telescope focal length (in millimeters)
+                  "rotation": 0.
                   }
 
 
