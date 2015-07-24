@@ -107,7 +107,9 @@ class Camera (Interface):
                   "ccd": CCD.IMAGING,             # CCD to be used when multiple ccd camera. IMAGING or TRACKING.
                   "camera_model": "Unknown",      # Camera model string. To be used by metadata purposes
                   "ccd_model": "Unknown",         # CCD model string. To be used by metadata purposes
-                  "ccd_saturation_level": None,   # CCD level at which arises saturation (in ADUs)
+                  "ccd_saturation_level": None,   # CCD level at which arises saturation (in ADUs).
+                                                  # Needed by SExtractor when doing auto-focus, autoguiding...
+
                   # WCS configuration parameters  #
                   "telescope_focal_length": None, # Telescope focal length (in millimeters)
                   "rotation": 0.                  # Angle between the North and the second axis of the image counted
