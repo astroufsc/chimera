@@ -31,7 +31,8 @@ Unit = Enum("PERCENTUAL",  # Humidity
             "KELVIN",
             "FAHRENHEIT",
 
-            "M_PER_S",    # Wind Speed
+
+            "M_PER_S", # Wind Speed
             "KM_PER_H",
             "MILES_PER_H",
             "FT_PER_S",

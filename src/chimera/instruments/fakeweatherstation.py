@@ -24,10 +24,26 @@ from chimera.interfaces.weatherstation import Unit
 import datetime
 
 
-
 class FakeWeatherStation(WeatherBase):
     def __init__(self):
         WeatherBase.__init__(self)
+
+
+    def _celsius_to_kelvin(self, temperature):
+        """
+        Given a temperature in Celsius, returns it in Kelvin
+        :param temperature: in Celsius
+        :return: temperature em Kelvin
+        """
+        return temperature + 273.15
+
+    def _celsius_to_fahrenheit(self, temperature):
+        """
+        Given a temperature in Celsius, returns it in Fahrenheit
+        :param temperature: in Celsius
+        :return: temperature em Fahrenheit
+        """
+        return (temperature * 9./5.) + 32.
 
     def _hourinradians(self, hour):
         return (math.pi/12.) * hour
@@ -51,11 +67,34 @@ class FakeWeatherStation(WeatherBase):
 
         hour = datetime.datetime.now().hour
 
-        return 25 * math.sin(self._hourinradians(hour) - math.pi/2) + 15
+        temperature = 25 * math.sin(self._hourinradians(hour) - math.pi/2.) + 15.
+
+        if unit == Unit.FAHRENHEIT:
+            temperature = self._celsius_to_fahrenheit(temperature)
+        elif unit == Unit.KELVIN:
+            temperature = self._celsius_to_kelvin(temperature)
+
+        return temperature
 
     def wind_speed(self, unit=Unit.M_PER_S):
+        """
+        Returns the wind speed in the chosen unit (Default: Meters per second).
+        :param unit:  Unit in which the instrument should return the wind speed.
+        :return: the wind speed.
+        """
 
-        return 10
+        reference_speed = 10  # M_PER_S
+
+        if unit == Unit.M_PER_S or unit == Unit.MS:
+            speed = reference_speed
+        if unit == Unit.KM_PER_H or unit == Unit.KMH:
+            speed = reference_speed * 3.6
+        elif unit == Unit.MILES_PER_H or unit == Unit.MPH:
+            speed = reference_speed * 2.237
+        elif unit == Unit.FT_PER_S or unit == Unit.FTS:
+            speed = reference_speed * 3.28
+
+        return speed
 
     def wind_direction(self, unit=Unit.DEG):
         """
@@ -77,7 +116,15 @@ class FakeWeatherStation(WeatherBase):
         :param unit:  Unit in which the instrument should return the temperature.
         :return: the angle.
         """
-        return -10
+
+        temperature = -10  #CELSIUS
+
+        if unit == Unit.FAHRENHEIT:
+            temperature = self._celsius_to_fahrenheit(temperature)
+        elif unit == Unit.KELVIN:
+            temperature = self._celsius_to_kelvin(temperature)
+
+        return temperature
 
     def pressure(self, unit=Unit.MM_HG):
         """
@@ -85,7 +132,24 @@ class FakeWeatherStation(WeatherBase):
         :param unit:
         :return:
         """
-        return 1140.
+        pressure_reference = 1140.  # MM_HG
+
+        if unit == Unit.MM_HG:
+            pressure = pressure_reference
+        elif unit == Unit.M_BAR:
+            pressure = pressure_reference*1.3333
+        elif unit == Unit.TORR:
+            pressure = pressure_reference  # for practical effects, MM_HG = TORR
+        elif unit == Unit.ATM:
+            pressure = pressure_reference * 1.315e-3
+        elif unit == Unit.PA:
+            pressure = pressure_reference * 133.322
+        elif unit == Unit.PSI:
+            pressure = pressure_reference * 19.336e-3
+
+
+
+        return pressure
 
     def rain(self, unit=Unit.MM_PER_H):
         """
@@ -101,12 +165,11 @@ if __name__ == '__main__':
 
     fws = FakeWeatherStation()
 
-    print('Humididy: %.2f %%.' % fws.humidity())
+    print('Humidity: %.2f %%.' % fws.humidity())
     print('Temperature: %.2f C.' % fws.temperature())
 
     print('Wind Speed: %.2f m/s.' % fws.wind_speed())
     print('Wind Direction: %.2f deg.' % fws.wind_direction())
     print('Dew Point: %.2f C.' % fws.dew_point())
-    print('Pressure: %.2f mmHg.' % fws.
-          pressure())
+    print('Pressure: %.2f mmHg.' % fws.pressure())
     print('Rain: %.2f mm/h.' % fws.rain())
