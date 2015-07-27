@@ -34,17 +34,14 @@ class StarNotFoundException (ChimeraException):
 
 class Autoguider (Interface):
 
-    __config__ = {"telescope": "/Telescope/0",
-                  "camera": "/Camera/0",
-                  "filterwheel": "/FilterWheel/0",
-                  "focuser": "/Focuser/0",
-                  "autofocus": "/Autofocus/0",
-                  "point_verify": "/PointVerify/0",
-                  'site': '/Site/0',
-                  "max_tries": 3,
-                  "nlost": 3,
-                  "Noffset": 0.,
-                  "Eoffset": 0.}
+    __config__ = {"site": '/Site/0',            # Telescope Site.
+                  "telescope": "/Telescope/0",  # Telescope instrument that will be guided by the autoguider.
+                  "camera": "/Camera/0",        # Guider camera instrument.
+                  "filterwheel": None,          # Filter wheel instrument, if there is one.
+                  "focuser": None,              # Guider camera focuser, if there is one.
+                  "autofocus": None,            # Autofocus controller, if there is one.
+                  "max_acquire_tries": 3,       # Number of tries to find a guiding star.
+                  "max_fit_tries": 3}           # Number of tries to acquire the guide star offset before being lost.
 
     @event
     def offsetComplete(self, offset):
