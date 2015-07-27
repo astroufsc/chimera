@@ -159,7 +159,7 @@ class CameraBase (ChimeraObject,
         t0 = time.time()
         img = Image.create(imageData, imageRequest)
 
-        try:
+        if self["telescope_focal_length"] is not None:  # If there is no telescope_focal_length defined, don't store WCS
             focal_length = self["telescope_focal_length"]
 
             scale_x = binFactor * (((180 / pi) / focal_length) * (pix_w * 0.001))
@@ -179,9 +179,6 @@ class CameraBase (ChimeraObject,
                 ("CD1_2", -scale_y * sin(self["rotation"]*pi/180.), "transformation matrix element (1,2)"),
                 ("CD2_1", scale_x * sin(self["rotation"]*pi/180.), "transformation matrix element (2,1)"),
                 ("CD2_2", scale_y * cos(self["rotation"]*pi/180.), "transformation matrix element (2,2)")]
-
-        except KeyError:  # If there is no telescope_focal_length defined, don't store WCS
-            pass
 
         img += [('DATE-OBS',
                  ImageUtil.formatDate(
