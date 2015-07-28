@@ -212,15 +212,6 @@ class Image (DictMixin, RemoteObject):
     def close(self):
         self._fd.close()
 
-    def compressedFilename(self):
-        if os.path.exists(self._filename + ".bz2"):
-            return self._filename + ".bz2"
-        elif os.path.exists(self._filename + ".gzip"):
-            return self._filename + ".gzip"
-        elif os.path.exists(self._filename + ".zip"):
-            return self._filename + ".zip"
-        else:
-            return self._filename
 
     def http(self, http=None):
         if http:
