@@ -270,10 +270,9 @@ class FakeCamera (CameraBase, FilterWheelBase):
         if (pix is None):
             pix = N.zeros((ccd_height, ccd_width), dtype=N.int32)
 
-        proxy = self._saveImage(
-            imageRequest, pix, {"frame_start_time": self.__lastFrameStart,
-                                "frame_temperature": self.getTemperature(),
-                                "binning_factor": self._binning_factors[binning]})
+        proxy = self._saveImage(imageRequest, pix, {"frame_start_time": self.__lastFrameStart,
+                                                    "frame_temperature": self.getTemperature(),
+                                                    "binning_factor": self._binning_factors[binning]})
 
         # [ABORT POINT]
         if self.abort.isSet():
@@ -313,7 +312,7 @@ class FakeCamera (CameraBase, FilterWheelBase):
         self.__isFanning = False
 
     def isFanning(self):
-        self.__isFanning
+        return self.__isFanning
 
     def getCCDs(self):
         return self._ccds
