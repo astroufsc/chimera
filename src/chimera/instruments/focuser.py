@@ -62,6 +62,11 @@ class FocuserBase (ChimeraObject, Focuser):
             return False
 
     def getMetadata(self, request):
+        # Check first if there is metadata from an metadata override method.
+        md = self.getMetadataOverride(request)
+        if md is not None:
+            return md
+        # If not, just go on with the instrument's default metadata.
         md = [('FOCUSER', str(self['model']), 'Focuser Model'),
               ('FOCUS', self.getPosition(), 'Focuser position used for this observation')]
         try:

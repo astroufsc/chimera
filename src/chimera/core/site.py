@@ -242,6 +242,11 @@ class Site (ChimeraObject):
         return Position.altAzToRaDec(altAz, self['latitude'], lst_inRads)
 
     def getMetadata(self, request):
+        # Check first if there is metadata from an metadata override method.
+        md = self.getMetadataOverride(request)
+        if md is not None:
+            return md
+        # If not, just go on with the instrument's default metadata.
         return [
             ('SITE', self['name'], 'Site name (in config)'),
             ('LATITUDE', str(self['latitude']), 'Site latitude'),
