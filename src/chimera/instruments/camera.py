@@ -18,24 +18,20 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 # 02110-1301, USA.
-
+from math import pi, cos, sin
 
 import threading
 import time
 import os
 import datetime as dt
-from math import cos,sin,pi
 
 from chimera.core.chimeraobject import ChimeraObject
 from chimera.interfaces.camera import (CameraExpose, CameraTemperature,
                                        CameraInformation,
                                        InvalidReadoutMode, Shutter)
-
 from chimera.controllers.imageserver.imagerequest import ImageRequest
 from chimera.controllers.imageserver.util import getImageServer
-
 from chimera.core.lock import lock
-
 from chimera.util.image import Image, ImageUtil
 
 
@@ -50,8 +46,13 @@ class CameraBase (ChimeraObject,
 
         self.__isExposing = threading.Event()
 
+        self.extra_header_info = dict()
+
     def __stop__(self):
         self.abortExposure(readout=False)
+
+    def get_extra_header_info(self):
+        return self.extra_header_info
 
     @lock
     def expose(self, request=None, **kwargs):
@@ -146,66 +147,14 @@ class CameraBase (ChimeraObject,
 
         return True
 
-    def _saveImage(self, imageRequest, imageData, extra):
+    def _saveImage(self, imageRequest, imageData, extras=None):
 
-        (mode, binning, top, left,
-         width, height) = self._getReadoutModeInfo(imageRequest["binning"],
-                                                   imageRequest["window"])
-
-        binFactor = extra.get("binning_factor", 1.0)
-
-        pix_w, pix_h = self.getPixelSize()
+        if extras is not None:
+            self.extra_header_info = extras
 
         img = Image.create(imageData, imageRequest)
 
-        if self["telescope_focal_length"] is not None:  # If there is no telescope_focal_length defined, don't store WCS
-            focal_length = self["telescope_focal_length"]
-
-            scale_x = binFactor * (((180 / pi) / focal_length) * (pix_w * 0.001))
-            scale_y = binFactor * (((180 / pi) / focal_length) * (pix_h * 0.001))
-
-            full_width, full_height = self.getPhysicalSize()
-            CRPIX1 = ((int(full_width / 2.0)) - left) - 1
-            CRPIX2 = ((int(full_height / 2.0)) - top) - 1
-
-            # Adding WCS coordinates according to FITS standard.
-            # Quick sheet: http://www.astro.iag.usp.br/~moser/notes/GAi_FITSimgs.html
-            # http://adsabs.harvard.edu/abs/2002A%26A...395.1061G
-            # http://adsabs.harvard.edu/abs/2002A%26A...395.1077C
-            img += [("CRPIX1", CRPIX1, "coordinate system reference pixel"),
-                ("CRPIX2", CRPIX2, "coordinate system reference pixel"),
-                ("CD1_1",  scale_x * cos(self["rotation"]*pi/180.), "transformation matrix element (1,1)"),
-                ("CD1_2", -scale_y * sin(self["rotation"]*pi/180.), "transformation matrix element (1,2)"),
-                ("CD2_1", scale_x * sin(self["rotation"]*pi/180.), "transformation matrix element (2,1)"),
-                ("CD2_2", scale_y * cos(self["rotation"]*pi/180.), "transformation matrix element (2,2)")]
-
-        img += [('DATE-OBS',
-                 ImageUtil.formatDate(
-                     extra.get("frame_start_time", dt.datetime.utcnow())),
-                 'Date exposure started'),
-
-                ('CCD-TEMP', extra.get("frame_temperature", -275.0),
-                 'CCD Temperature at Exposure Start [deg. C]'),
-
-                ("EXPTIME", float(imageRequest['exptime']) or -1,
-                 "exposure time in seconds"),
-
-                ('IMAGETYP', imageRequest['type'].strip(),
-                 'Image type'),
-
-                ('SHUTTER', str(imageRequest['shutter']),
-                 'Requested shutter state'),
-
-                ('INSTRUME', str(self['camera_model']), 'Name of instrument'),
-                ('CCD',    str(self['ccd_model']), 'CCD Model'),
-                ('CCD_DIMX', self.getPhysicalSize()
-                 [0], 'CCD X Dimension Size'),
-                ('CCD_DIMY', self.getPhysicalSize()
-                 [1], 'CCD Y Dimension Size'),
-                ('CCDPXSZX', self.getPixelSize()[0],
-                 'CCD X Pixel Size [micrometer]'),
-                ('CCDPXSZY', self.getPixelSize()[1],
-                 'CCD Y Pixel Size [micrometer]')]
+        img += self.getMetadata(imageRequest)
 
         # register image on ImageServer
         server = getImageServer(self.getManager())
@@ -342,3 +291,53 @@ class CameraBase (ChimeraObject,
 
     def supports(self, feature=None):
         raise NotImplementedError()
+
+    def getMetadata(self, request):
+        # Check first if there is metadata from an metadata override method.
+        md = self.getMetadataOverride(request)
+        if md is not None:
+            return md
+        # If not, just go on with the instrument's default metadata.
+        md = [('DATE-OBS', ImageUtil.formatDate(self.extra_header_info.get("frame_start_time", dt.datetime.utcnow())),
+               'Date exposure started'),
+              ("EXPTIME", float(request['exptime']) or -1, "exposure time in seconds"),
+              ('IMAGETYP', request['type'].strip(), 'Image type'),
+              ('SHUTTER', str(request['shutter']), 'Requested shutter state'),
+              ('INSTRUME', str(self['camera_model']), 'Name of instrument'),
+              ('CCD',    str(self['ccd_model']), 'CCD Model'),
+              ('CCD_DIMX', self.getPhysicalSize()[0], 'CCD X Dimension Size'),
+              ('CCD_DIMY', self.getPhysicalSize()[1], 'CCD Y Dimension Size'),
+              ('CCDPXSZX', self.getPixelSize()[0], 'CCD X Pixel Size [micrometer]'),
+              ('CCDPXSZY', self.getPixelSize()[1], 'CCD Y Pixel Size [micrometer]')]
+
+        if "frame_temperature" in self.extra_header_info.keys():
+              md += [('CCD-TEMP', self.extra_header_info["frame_temperature"],
+                      'CCD Temperature at Exposure Start [deg. C]')]
+
+        focal_length = self["telescope_focal_length"]
+        if focal_length is not None:  # If there is no telescope_focal_length defined, don't store WCS
+            mode, binning, top, left, width, height = self._getReadoutModeInfo(request["binning"], request["window"])
+            binFactor = self.extra_header_info.get("binning_factor", 1.0)
+            pix_w, pix_h = self.getPixelSize()
+            focal_length = self["telescope_focal_length"]
+
+            scale_x = binFactor * (((180 / pi) / focal_length) * (pix_w * 0.001))
+            scale_y = binFactor * (((180 / pi) / focal_length) * (pix_h * 0.001))
+
+            full_width, full_height = self.getPhysicalSize()
+            CRPIX1 = ((int(full_width / 2.0)) - left) - 1
+            CRPIX2 = ((int(full_height / 2.0)) - top) - 1
+
+            # Adding WCS coordinates according to FITS standard.
+            # Quick sheet: http://www.astro.iag.usp.br/~moser/notes/GAi_FITSimgs.html
+            # http://adsabs.harvard.edu/abs/2002A%26A...395.1061G
+            # http://adsabs.harvard.edu/abs/2002A%26A...395.1077C
+            md += [("CRPIX1", CRPIX1, "coordinate system reference pixel"),
+                   ("CRPIX2", CRPIX2, "coordinate system reference pixel"),
+                   ("CD1_1",  scale_x * cos(self["rotation"]*pi/180.), "transformation matrix element (1,1)"),
+                   ("CD1_2", -scale_y * sin(self["rotation"]*pi/180.), "transformation matrix element (1,2)"),
+                   ("CD2_1", scale_x * sin(self["rotation"]*pi/180.), "transformation matrix element (2,1)"),
+                   ("CD2_2", scale_y * cos(self["rotation"]*pi/180.), "transformation matrix element (2,2)")]
+
+        return md
+
