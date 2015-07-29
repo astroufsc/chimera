@@ -20,19 +20,18 @@
 # 02110-1301, USA.
 
 
-from chimera.core.chimeraobject import ChimeraObject
-
-from chimera.util.coord import Coord, CoordUtil
-from chimera.util.position import Position
+import datetime as dt
 
 from dateutil import tz
 import ephem
-
-import datetime as dt
-
 import numpy as np
 
+from chimera.core.chimeraobject import ChimeraObject
+from chimera.util.coord import Coord, CoordUtil
+from chimera.util.position import Position
+
 __all__ = ['Site']
+
 
 # More conversion functions.
 
@@ -40,7 +39,7 @@ __all__ = ['Site']
 def datetimeFromJD(jd):
     """Returns a date corresponding to the given Julian day number."""
     if not isinstance(jd, float):
-        raise TypeError, "%s is not an integer." % str(n)
+        raise TypeError, "%s is not an integer." % str(jd)
 
     n = int(np.floor(jd))
     if jd > np.floor(jd) + 0.5:
@@ -68,8 +67,7 @@ def datetimeFromJD(jd):
     return ret
 
 
-class Site (ChimeraObject):
-
+class Site(ChimeraObject):
     __config__ = dict(name="UFSC",
                       latitude=Coord.fromDMS("-23 00 00"),
                       longitude=Coord.fromDMS(-48.5),
@@ -132,19 +130,19 @@ class Site (ChimeraObject):
         offset = self.localtime().utcoffset()
         return (offset.days * 86400 + offset.seconds) / 3600.0
 
-    def LST_inRads(self,date=None):
+    def LST_inRads(self, date=None):
         if not date:
-			date = self.ut()
+            date = self.ut()
         return float(self._getEphem(date=date).sidereal_time())
 
-    def LST(self,date=None):
+    def LST(self, date=None):
         """
         Mean Local Sidereal Time
         """
-        #lst = self._getEphem(self.ut()).sidereal_time()
+        # lst = self._getEphem(self.ut()).sidereal_time()
         # required since a Coord cannot be constructed from an Ephem.Angle
         if not date:
-			date = self.ut()
+            date = self.ut()
         lst_c = Coord.fromR(self.LST_inRads(date))
         return lst_c.toHMS()
 
@@ -230,14 +228,14 @@ class Site (ChimeraObject):
     def haToRa(self, ha):
         return CoordUtil.raToHa(ha, self.LST_inRads())
 
-    def raDecToAltAz(self, raDec,lst_inRads=None):
-		if not lst_inRads:
-			lst_inRads = self.LST_inRads()
-		return Position.raDecToAltAz(raDec, self['latitude'], lst_inRads)
-
-    def altAzToRaDec(self, altAz,lst_inRads=None):
+    def raDecToAltAz(self, raDec, lst_inRads=None):
         if not lst_inRads:
-			lst_inRads = self.LST_inRads()
+            lst_inRads = self.LST_inRads()
+        return Position.raDecToAltAz(raDec, self['latitude'], lst_inRads)
+
+    def altAzToRaDec(self, altAz, lst_inRads=None):
+        if not lst_inRads:
+            lst_inRads = self.LST_inRads()
 
         return Position.altAzToRaDec(altAz, self['latitude'], lst_inRads)
 
