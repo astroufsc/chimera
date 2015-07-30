@@ -17,17 +17,15 @@
 # 02110-1301, USA.
 
 from chimera.core.chimeraobject import ChimeraObject
-from chimera.interfaces.weatherstation import WeatherStation, Unit
+from chimera.interfaces.weatherstation import WeatherStation
 
 import astropy.units as units
 
 
 class WeatherBase(ChimeraObject, WeatherStation):
-
     _accepted_humidity_units_ = (
         units.pct
     )
-
 
     def __init__(self):
         ChimeraObject.__init__(self)

@@ -19,7 +19,6 @@
 import math
 
 from chimera.instruments.weatherstation import WeatherBase
-from chimera.interfaces.weatherstation import Unit
 from chimera.core.exceptions import OptionConversionException
 
 import astropy

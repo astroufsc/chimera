@@ -23,8 +23,36 @@
 from chimera.core.interface import Interface
 from astropy import units
 from astropy.units import cds
+from chimera.util.enum import Enum
 
+Unit = Enum("PERCENTUAL",  # Humidity
 
+            "CELSIUS",    # Temperature, Dew point
+            "KELVIN",
+            "FAHRENHEIT",
+
+            "M_PER_S",    # Wind Speed
+            "KM_PER_H",
+            "MILES_PER_H",
+            "FT_PER_S",
+            "MS",
+            "KMH",
+            "FTS",
+            "MPH",
+
+            "DEG",        # Wind Direction
+
+            "M_BAR",      # Pressure
+            "MM_HG",
+            "TORR",
+            "ATM",
+            "PA",
+            "PSI",
+
+            "MM_PER_H",       # Rain
+            "CM_PER_H",
+            "FT_PER_H",
+            )
 
 class WeatherStation (Interface):
     """
@@ -34,13 +62,29 @@ class WeatherStation (Interface):
 
     __config__ = {"device": None,
 
-                  "humidity_unit": units.pct,
-                  "temperature_unit": units.Celsius,
-                  "wind_unit": units.kilometers/units.hour,
-                  "wind_direction_unit": units.degree,
-                  "dew_point_unit": units.Celsius,
-                  "pressure_unit": units.cds.mmHg,
-                  "rain_unit": units.liter / units.hour,
+                  # "humidity_unit": units.pct,
+                  # "temperature_unit": units.Celsius,
+                  # "wind_unit": units.kilometer/units.hour,
+                  # "wind_direction_unit": units.degree,
+                  # "dew_point_unit": units.Celsius,
+                  # "pressure_unit": units.cds.mmHg,
+                  # "rain_unit": units.liter / units.hour,
+
+                  # "humidity_unit": "PERCENTAGE",
+                  # "temperature_unit": "CELSIUS",
+                  # "wind_unit": "KM_H",
+                  # "wind_direction_unit": "DEGREES",
+                  # "dew_point_unit": "CELSIUS",
+                  # "pressure_unit": "MM_HG",
+                  # "rain_unit": "L_H",
+
+                 "humidity_unit": Unit.MM_HG,
+                  "temperature_unit": Unit.CELSIUS,
+                  "wind_unit": Unit.KM_PER_H,
+                  "dew_point_unit": Unit.CELSIUS,
+                  "pressure_unit": Unit.PERCENTUAL,
+                  "rain_unit": Unit.MM_PER_H,
+
 
                   "humidity_delta": 1,
                   "temperature_delta": 1,
@@ -65,7 +109,7 @@ class WeatherStation (Interface):
         """
         pass
 
-    def wind_speed(self, unit_out=units.units.kilometers/units.hour):
+    def wind_speed(self, unit_out=units.kilometer/units.hour):
         """
         Returns the wind speed in the chosen unit (Default: Meters per second).
         :param unit:  Unit in which the instrument should return the wind speed.
