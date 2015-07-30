@@ -23,36 +23,49 @@
 from chimera.core.interface import Interface
 from astropy import units
 from astropy.units import cds
-from chimera.util.enum import Enum
+from collections import namedtuple
 
-Unit = Enum("PERCENTUAL",  # Humidity
+class Humidity(namedtuple('Humidity', 'time humidity')):
+    """
+    Named tuple that represents humidity
+    """
+    pass
 
-            "CELSIUS",    # Temperature, Dew point
-            "KELVIN",
-            "FAHRENHEIT",
 
-            "M_PER_S",    # Wind Speed
-            "KM_PER_H",
-            "MILES_PER_H",
-            "FT_PER_S",
-            "MS",
-            "KMH",
-            "FTS",
-            "MPH",
+class Temperature(namedtuple('Temperature', 'time temperature')):
+    """
+    Named tuple that represents temperature
+    """
+    pass
 
-            "DEG",        # Wind Direction
 
-            "M_BAR",      # Pressure
-            "MM_HG",
-            "TORR",
-            "ATM",
-            "PA",
-            "PSI",
+class Speed(namedtuple('Speed', 'time speed')):
+    """
+    Named tuple that represents speed
+    """
+    pass
 
-            "MM_PER_H",       # Rain
-            "CM_PER_H",
-            "FT_PER_H",
-            )
+
+class Direction(namedtuple('Direction', 'time direction')):
+    """
+    Named tuple that represents direction
+    """
+    pass
+
+
+class Pressure(namedtuple('Pressure', 'time pressure')):
+    """
+    Named tuple that represents the pressure
+    """
+    pass
+
+
+class Rain(namedtuple('Rain', 'time rain')):
+    """
+    Named tuple that represents the rain precipitation
+    """
+    pass
+
 
 class WeatherStation (Interface):
     """
