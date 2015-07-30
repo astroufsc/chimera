@@ -19,12 +19,26 @@
 from chimera.core.chimeraobject import ChimeraObject
 from chimera.interfaces.weatherstation import WeatherStation, Unit
 
+import astropy.units as units
+
 
 class WeatherBase(ChimeraObject, WeatherStation):
+
+    _accepted_humidity_units_ = (
+        units.pct
+    )
+
+
     def __init__(self):
         ChimeraObject.__init__(self)
 
         self._supports = {}
+
+    def _convert_units(self, value, unit_in, unit_out, equivalencies=None):
+        if unit_in == unit_out:
+            return value
+
+        return (value * unit_in).to(unit_out, equivalencies).value
 
     def supports(self, feature=None):
         if feature in self._supports:
@@ -33,25 +47,25 @@ class WeatherBase(ChimeraObject, WeatherStation):
             self.log.info("Invalid feature: %s" % str(feature))
             return False
 
-    def humidity(self, unit=Unit.PERCENTUAL):
+    def humidity(self, unit_out=units.pct):
         raise NotImplementedError()
 
-    def temperature(self, unit=Unit.CELSIUS):
+    def temperature(self, unit_out=units.Celsius):
         raise NotImplementedError()
 
-    def wind_speed(self, unit=Unit.M_PER_S):
+    def wind_speed(self, unit_out=units.meter/units.second):
         raise NotImplementedError()
 
-    def wind_direction(self, unit=Unit.DEG):
+    def wind_direction(self, unit_out=units.degree):
         raise NotImplementedError()
 
-    def dew_point(self, unit=Unit.CELSIUS):
+    def dew_point(self, unit_out=units.Celsius):
         raise NotImplementedError()
 
-    def pressure(self, unit=Unit.MM_HG):
+    def pressure(self, unit_out=units.cds.mmHg):
         raise NotImplementedError()
 
-    def rain(self, unit=Unit.MM_PER_H):
+    def rain(self, unit_out=units.liter / units.hour):
         raise NotImplementedError()
 
     def getMetadata(self, request):

@@ -21,39 +21,9 @@
 
 
 from chimera.core.interface import Interface
-from chimera.core.event import event
-from chimera.util.enum import Enum
+from astropy import units
+from astropy.units import cds
 
-
-Unit = Enum("PERCENTUAL",  # Humidity
-
-            "CELSIUS",    # Temperature, Dew point
-            "KELVIN",
-            "FAHRENHEIT",
-
-
-            "M_PER_S", # Wind Speed
-            "KM_PER_H",
-            "MILES_PER_H",
-            "FT_PER_S",
-            "MS",
-            "KMH",
-            "FTS",
-            "MPH",
-
-            "DEG",        # Wind Direction
-
-            "M_BAR",      # Pressure
-            "MM_HG",
-            "TORR",
-            "ATM",
-            "PA",
-            "PSI",
-
-            "MM_PER_H",       # Rain
-            "CM_PER_H",
-            "FT_PER_H",
-            )
 
 
 class WeatherStation (Interface):
@@ -64,12 +34,13 @@ class WeatherStation (Interface):
 
     __config__ = {"device": None,
 
-                  "humidity_unit": Unit.MM_HG,
-                  "temperature_unit": Unit.CELSIUS,
-                  "wind_unit": Unit.KM_PER_H,
-                  "dew_point_unit": Unit.CELSIUS,
-                  "pressure_unit": Unit.PERCENTUAL,
-                  "rain_unit": Unit.MM_PER_H,
+                  "humidity_unit": units.pct,
+                  "temperature_unit": units.Celsius,
+                  "wind_unit": units.kilometers/units.hour,
+                  "wind_direction_unit": units.degree,
+                  "dew_point_unit": units.Celsius,
+                  "pressure_unit": units.cds.mmHg,
+                  "rain_unit": units.liter / units.hour,
 
                   "humidity_delta": 1,
                   "temperature_delta": 1,
@@ -78,7 +49,7 @@ class WeatherStation (Interface):
                   "pressure_delta": 1,
                   }
 
-    def humidity(self, unit=Unit.PERCENTUAL):
+    def humidity(self, unit_out=units.pct):
         """
         Returns the 100% relative humidity (Default: Percentage).
         :param unit: Unit in which the instrument should return the humidity.
@@ -86,7 +57,7 @@ class WeatherStation (Interface):
         """
         pass
 
-    def temperature(self, unit=Unit.CELSIUS):
+    def temperature(self, unit_out=units.Celsius):
         """
         Returns the temperature in the chosen unit (Default: Celsius).
         :param unit:  Unit in which the instrument should return the temperature.
@@ -94,7 +65,7 @@ class WeatherStation (Interface):
         """
         pass
 
-    def wind_speed(self, unit=Unit.M_PER_S):
+    def wind_speed(self, unit_out=units.units.kilometers/units.hour):
         """
         Returns the wind speed in the chosen unit (Default: Meters per second).
         :param unit:  Unit in which the instrument should return the wind speed.
@@ -102,7 +73,7 @@ class WeatherStation (Interface):
         """
         pass
 
-    def wind_direction(self, unit=Unit.DEG):
+    def wind_direction(self, unit_out=units.degree):
         """
         Returns the wind direction in the chosen unit (Default: Degrees).
         :param unit:  Unit in which the instrument should return the wind direction.
@@ -110,7 +81,7 @@ class WeatherStation (Interface):
         """
         pass
 
-    def dew_point(self, unit=Unit.CELSIUS):
+    def dew_point(self, unit_out=units.Celsius):
         """
         Returns the dew point temperature in the chosen unit (Default: Celsius).
         :param unit:  Unit in which the instrument should return the dew point.
@@ -118,7 +89,7 @@ class WeatherStation (Interface):
         """
         pass
 
-    def pressure(self, unit=Unit.MM_HG):
+    def pressure(self, unit_out=units.cds.mmHg):
         """
         Returns the pressure in the chosen unit (Default: mmHg).
         :param unit:  Unit in which the instrument should return the pressure.
@@ -126,7 +97,7 @@ class WeatherStation (Interface):
         """
         pass
 
-    def rain(self, unit=Unit.MM_PER_H):
+    def rain(self, unit_out=units.liter/units.hour):
         """
         Returns the precipitation rate in the chosen unit (Default: mm/H).
         :param unit:  Unit in which the instrument should return the precipitation rate.
