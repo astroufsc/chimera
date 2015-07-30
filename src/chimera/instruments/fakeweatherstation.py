@@ -35,6 +35,9 @@ class FakeWeatherStation(WeatherBase):
         WeatherBase.__init__(self)
 
     def _hourinradians(self, hour):
+        """
+        For testing purposes, the function converts a given hour in radians.
+        """
         return (math.pi/12.) * hour
 
     def humidity(self, unit_out=units.pct):
@@ -45,7 +48,7 @@ class FakeWeatherStation(WeatherBase):
         """
         hour = datetime.datetime.now().hour
 
-        if unit_out not in self._accepted_humidity_units_:
+        if unit_out not in self.__accepted_humidity_units__:
             raise OptionConversionException("Invalid humidity unit %s." % unit_out)
 
         humidity = 40 * math.cos(self._hourinradians(hour)) + 60.
@@ -66,22 +69,16 @@ class FakeWeatherStation(WeatherBase):
 
         hour = datetime.datetime.now().hour
 
-        _accepted_temperature_unit = [
-            units.Celsius,
-            units.Kelvin,
-            units.imperial.deg_F
-        ]
-
-        if unit_out not in _accepted_temperature_unit:
+        if unit_out not in self.__accepted_temperature_units__:
             raise OptionConversionException("Invalid temperature unit %s." % unit_out)
 
         temperature = 25 * math.sin(self._hourinradians(hour) - math.pi/2.) + 15.
 
-        temperature = self.convert_units(
-          temperature,
-          units.Celsius,
-          unit_out,
-          equivalencies=units.equivalencies.temperature())
+        temperature = self._convert_units(
+            temperature,
+            units.Celsius,
+            unit_out,
+            equivalencies=units.equivalencies.temperature())
 
         return temperature
 
@@ -94,17 +91,10 @@ class FakeWeatherStation(WeatherBase):
 
         reference_speed = 10  # M_PER_S
 
-        _accepted_speed_unit = [
-            units.meter / units.second,
-            units.kilometer / units.hour,
-            units.imperial.mile / units.hour,
-            units.imperial.foot / units.second,
-        ]
-
-        if unit_out not in _accepted_speed_unit:
+        if unit_out not in self.__accepted_speed_units__:
             raise OptionConversionException("Invalid speed unit %s." % unit_out)
 
-        speed = self.convert_units(
+        speed = self._convert_units(
             reference_speed,
             units.meter / units.second,
             unit_out)
@@ -117,19 +107,14 @@ class FakeWeatherStation(WeatherBase):
         :param unit:  Unit in which the instrument should return the angle.
         :return: the angle.
         """
-        _accepted_direction_unit = [
-            units.degree,
-            units.radian
-        ]
-
-        if unit_out not in _accepted_direction_unit:
+        if unit_out not in self.__accepted_direction_unit__:
             raise OptionConversionException("Invalid direction unit %s." % unit_out)
 
         hour = datetime.datetime.now().hour
 
         reference_direction = 180 * math.sin(self._hourinradians(hour)) + 180
 
-        direction = self.convert_units(
+        direction = self._convert_units(
             reference_direction,
             units.degree,
             unit_out)
@@ -146,16 +131,10 @@ class FakeWeatherStation(WeatherBase):
         :return: the angle.
         """
 
-        _accepted_temperature_unit = [
-            units.Celsius,
-            units.Kelvin,
-            units.imperial.deg_F
-        ]
-
-        if unit_out not in _accepted_temperature_unit:
+        if unit_out not in self.__accepted_temperature_units__:
             raise OptionConversionException("Invalid temperature unit %s." % unit_out)
 
-        temperature = self.convert_units(
+        temperature = self._convert_units(
           10,
           units.Celsius,
           unit_out,
@@ -171,17 +150,10 @@ class FakeWeatherStation(WeatherBase):
         """
         pressure_reference = 1140.  # MM_HG
 
-        _accepted_pressures_unit = [
-            units.cds.mmHg,
-            units.bar,
-            units.cds.atm,
-            units.Pa]
-            # units.imperial.psi  - my astropy version does not have psi
-
-        if unit_out not in _accepted_pressures_unit :
+        if unit_out not in self.__accepted_pressures_unit__:
             raise OptionConversionException("Invalid pressure unit %s." % unit_out)
 
-        pressure = self.convert_units(
+        pressure = self._convert_units(
             pressure_reference,
             units.cds.mmHg,
             unit_out)
@@ -203,14 +175,9 @@ if __name__ == '__main__':
     fws = FakeWeatherStation()
 
     print('Humidity: %.2f %%.' % fws.humidity(units.pct))
-    # print('Temperature: %.2f %s.' % (fws.temperature(units.imperial.deg_F), units.imperial.deg_F))
-
-    # print('Wind Speed: %.2f %s.' % (fws.wind_speed(units.kilometer / units.hour), (units.kilometer/units.hour)))
-    # print('Wind Direction: %.2f %s.' % (fws.wind_direction(units.radian), units.radian))
-
-    # print('Dew Point: %.2f %s.' % (fws.dew_point(units.K), units.K))
-
-    # print('Pressure: %.2f %s.' % (fws.pressure(units.cds.atm), units.cds.atm))
-    # print('Rain: %.2f mm/h.' % fws.rain())
-
-
+    print('Temperature: %.2f %s.' % (fws.temperature(units.imperial.deg_F), units.imperial.deg_F))
+    print('Wind Speed: %.2f %s.' % (fws.wind_speed(units.kilometer / units.hour), (units.kilometer/units.hour)))
+    print('Wind Direction: %.2f %s.' % (fws.wind_direction(units.radian), units.radian))
+    print('Dew Point: %.2f %s.' % (fws.dew_point(units.K), units.K))
+    print('Pressure: %.2f %s.' % (fws.pressure(units.cds.atm), units.cds.atm))
+    print('Rain: %.2f mm/h.' % fws.rain())

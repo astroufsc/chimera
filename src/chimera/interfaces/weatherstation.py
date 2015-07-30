@@ -60,31 +60,60 @@ class WeatherStation (Interface):
 
     """
 
+    """
+    Humidity units accepted by the interface.
+    """
+    __accepted_humidity_units__ = [
+        units.pct
+    ]
+
+    """
+    Temperature units accepted by the interface.
+    """
+    __accepted_temperature_units__ = [
+        units.Celsius,
+        units.Kelvin,
+        units.imperial.deg_F
+    ]
+
+    """
+    Speed units accepted by the interface.
+    """
+    __accepted_speed_units__ = [
+        units.meter / units.second,
+        units.kilometer / units.hour,
+        units.imperial.mile / units.hour,
+        units.imperial.foot / units.second,
+    ]
+
+    """
+    Direction units accepted by the interface.
+    """
+    __accepted_direction_unit__ = [
+        units.degree,
+        units.radian
+    ]
+
+    """
+    Pressure units accepted by the interface.
+    """
+    __accepted_pressures_unit__ = [
+        units.cds.mmHg,
+        units.bar,
+        units.cds.atm,
+        units.Pa]
+
+
+
     __config__ = {"device": None,
 
-                  # "humidity_unit": units.pct,
-                  # "temperature_unit": units.Celsius,
-                  # "wind_unit": units.kilometer/units.hour,
-                  # "wind_direction_unit": units.degree,
-                  # "dew_point_unit": units.Celsius,
-                  # "pressure_unit": units.cds.mmHg,
-                  # "rain_unit": units.liter / units.hour,
-
-                  # "humidity_unit": "PERCENTAGE",
-                  # "temperature_unit": "CELSIUS",
-                  # "wind_unit": "KM_H",
-                  # "wind_direction_unit": "DEGREES",
-                  # "dew_point_unit": "CELSIUS",
-                  # "pressure_unit": "MM_HG",
-                  # "rain_unit": "L_H",
-
-                 "humidity_unit": Unit.MM_HG,
-                  "temperature_unit": Unit.CELSIUS,
-                  "wind_unit": Unit.KM_PER_H,
-                  "dew_point_unit": Unit.CELSIUS,
-                  "pressure_unit": Unit.PERCENTUAL,
-                  "rain_unit": Unit.MM_PER_H,
-
+                  "humidity_unit": "{0.unit}".format(1*units.pct),
+                  "temperature_unit": "{0.unit}".format(1*units.Celsius),
+                  "wind_unit": "{0.unit}".format(1*(units.kilometer/units.hour)),
+                  "wind_direction_unit": "{0.unit}".format(1*units.degree),
+                  "dew_point_unit": "{0.unit}".format(1*units.Celsius),
+                  "pressure_unit": "{0.unit}".format(1*units.cds.mmHg),
+                  "rain_unit": "{0.unit}".format(1*(units.liter / units.hour)),
 
                   "humidity_delta": 1,
                   "temperature_delta": 1,
