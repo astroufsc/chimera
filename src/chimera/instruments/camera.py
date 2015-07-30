@@ -24,7 +24,7 @@ import threading
 import time
 import os
 import datetime as dt
-from math import pi
+from math import cos,sin,pi
 
 from chimera.core.chimeraobject import ChimeraObject
 from chimera.interfaces.camera import (CameraExpose, CameraTemperature,
@@ -155,17 +155,29 @@ class CameraBase (ChimeraObject,
         binFactor = extra.get("binning_factor", 1.0)
 
         pix_w, pix_h = self.getPixelSize()
-        focal_length = self["telescope_focal_length"]
 
-        scale_x = binFactor * (((180 / pi) / focal_length) * (pix_w * 0.001))
-        scale_y = binFactor * (((180 / pi) / focal_length) * (pix_h * 0.001))
-
-        full_width, full_height = self.getPhysicalSize()
-        CRPIX1 = ((int(full_width / 2.0)) - left) - 1
-        CRPIX2 = ((int(full_height / 2.0)) - top) - 1
-
-        t0 = time.time()
         img = Image.create(imageData, imageRequest)
+
+        if self["telescope_focal_length"] is not None:  # If there is no telescope_focal_length defined, don't store WCS
+            focal_length = self["telescope_focal_length"]
+
+            scale_x = binFactor * (((180 / pi) / focal_length) * (pix_w * 0.001))
+            scale_y = binFactor * (((180 / pi) / focal_length) * (pix_h * 0.001))
+
+            full_width, full_height = self.getPhysicalSize()
+            CRPIX1 = ((int(full_width / 2.0)) - left) - 1
+            CRPIX2 = ((int(full_height / 2.0)) - top) - 1
+
+            # Adding WCS coordinates according to FITS standard.
+            # Quick sheet: http://www.astro.iag.usp.br/~moser/notes/GAi_FITSimgs.html
+            # http://adsabs.harvard.edu/abs/2002A%26A...395.1061G
+            # http://adsabs.harvard.edu/abs/2002A%26A...395.1077C
+            img += [("CRPIX1", CRPIX1, "coordinate system reference pixel"),
+                ("CRPIX2", CRPIX2, "coordinate system reference pixel"),
+                ("CD1_1",  scale_x * cos(self["rotation"]*pi/180.), "transformation matrix element (1,1)"),
+                ("CD1_2", -scale_y * sin(self["rotation"]*pi/180.), "transformation matrix element (1,2)"),
+                ("CD2_1", scale_x * sin(self["rotation"]*pi/180.), "transformation matrix element (2,1)"),
+                ("CD2_2", scale_y * cos(self["rotation"]*pi/180.), "transformation matrix element (2,2)")]
 
         img += [('DATE-OBS',
                  ImageUtil.formatDate(
@@ -184,14 +196,7 @@ class CameraBase (ChimeraObject,
                 ('SHUTTER', str(imageRequest['shutter']),
                  'Requested shutter state'),
 
-                ("CRPIX1", CRPIX1, "coordinate system reference pixel"),
-                ("CRPIX2", CRPIX2, "coordinate system reference pixel"),
-                ("CD1_1", scale_x, "transformation matrix element (1,1)"),
-                ("CD1_2", 0.0, "transformation matrix element (1,2)"),
-                ("CD2_1", 0.0, "transformation matrix element (2,1)"),
-                ("CD2_2", scale_y, "transformation matrix element (2,2)"),
-
-                ('CAMERA', str(self['camera_model']), 'Camera Model'),
+                ('INSTRUME', str(self['camera_model']), 'Name of instrument'),
                 ('CCD',    str(self['ccd_model']), 'CCD Model'),
                 ('CCD_DIMX', self.getPhysicalSize()
                  [0], 'CCD X Dimension Size'),
@@ -206,8 +211,9 @@ class CameraBase (ChimeraObject,
         server = getImageServer(self.getManager())
         proxy = server.register(img)
 
-        # and finally compress the image
-        img.compress(multiprocess=True)
+        # and finally compress the image if asked
+        if imageRequest['compress_format'].lower() != 'no':
+            img.compress(format=imageRequest['compress_format'], multiprocess=True)
 
         return proxy
 
@@ -275,7 +281,7 @@ class CameraBase (ChimeraObject,
             binning = self.getBinnings().keys().pop(
                 self.getBinnings().keys().index("1x1"))
 
-        return (mode, binning, top, left, width, height)
+        return mode, binning, top, left, width, height
 
     def isExposing(self):
         return self.__isExposing.isSet()

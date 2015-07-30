@@ -173,7 +173,7 @@ class Image (DictMixin, RemoteObject):
         hdu = fits.PrimaryHDU(data)
 
         headers = [("DATE", ImageUtil.formatDate(dt.datetime.utcnow()), "date of file creation"),
-                   ("CREATOR", _chimera_name_, _chimera_long_description_)]
+                   ("AUTHOR", _chimera_name_, _chimera_long_description_)]
 
         # TODO: Implement BITPIX support
         hdu.scale('int16', '', bzero=32768, bscale=1)
@@ -212,15 +212,6 @@ class Image (DictMixin, RemoteObject):
     def close(self):
         self._fd.close()
 
-    def compressedFilename(self):
-        if os.path.exists(self._filename + ".bz2"):
-            return self._filename + ".bz2"
-        elif os.path.exists(self._filename + ".gzip"):
-            return self._filename + ".gzip"
-        elif os.path.exists(self._filename + ".zip"):
-            return self._filename + ".zip"
-        else:
-            return self._filename
 
     def http(self, http=None):
         if http:

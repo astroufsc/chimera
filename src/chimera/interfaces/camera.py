@@ -103,16 +103,17 @@ class Camera (Interface):
     Base camera interface.
     """
 
-    # config
-    __config__ = {"device": "USB",
-                  "ccd": CCD.IMAGING,
-                  "temp_delta": 2.0,
+    __config__ = {"device": "Unknown",            # Bus address identifier for this camera. E.g. USB, LPT1, ...
+                  "ccd": CCD.IMAGING,             # CCD to be used when multiple ccd camera. IMAGING or TRACKING.
+                  "camera_model": "Unknown",      # Camera model string. To be used by metadata purposes
+                  "ccd_model": "Unknown",         # CCD model string. To be used by metadata purposes
+                  "ccd_saturation_level": None,   # CCD level at which arises saturation (in ADUs).
+                                                  # Needed by SExtractor when doing auto-focus, autoguiding...
 
-                  "ccd_saturation_level": 60000,
-
-                  "camera_model": "Fake camera Inc.",
-                  "ccd_model": "KAF XYZ 10",
-                  "telescope_focal_length": 4000  # milimeter
+                  # WCS configuration parameters  #
+                  "telescope_focal_length": None, # Telescope focal length (in millimeters)
+                  "rotation": 0.                  # Angle between the North and the second axis of the image counted
+                                                  # positive to the East (in degrees)
                   }
 
 

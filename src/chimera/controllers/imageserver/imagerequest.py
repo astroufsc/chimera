@@ -12,7 +12,7 @@ class ImageRequest (dict):
                   'interval', 'shutter',
                   'binning', 'window',
                   'bitpix', 'filename',
-                  'compress', 'compress_format',
+                  'compress_format',
                   'type', 'wait_dome',
                   'object_name']
 
@@ -26,8 +26,7 @@ class ImageRequest (dict):
                     'window': None,
                     'bitpix': Bitpix.uint16,
                     'filename': '$DATE-$TIME',
-                    'compress': True,
-                    'compress_format': "BZ2",
+                    'compress_format': "NO",
                     'type': 'object',
                     'wait_dome': True,
                     'object_name': ''}

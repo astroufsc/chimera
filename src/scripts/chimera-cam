@@ -40,6 +40,16 @@ currentFrameExposeStart = 0
 currentFrameReadoutStart = 0
 
 
+def get_compressed_name(filename, compression):
+    if compression.lower() == 'no':
+        return filename
+    if compression.lower() == 'bz2':
+        return filename+'.bz2'
+    if compression.lower() == 'gzip':
+        return filename+'.gz'
+    if compression.lower() == 'zip':
+        return filename+'.zip'
+
 class ChimeraCam (ChimeraCLI):
 
     def __init__(self):
@@ -422,10 +432,6 @@ class ChimeraCam (ChimeraCLI):
                 expTimes.extend(exps)
 
         compress_format = options.compress
-        if compress_format.lower() != "no":
-            compress = True
-        else:
-            compress = False
 
         # DS9
         ds9 = None
@@ -466,7 +472,7 @@ class ChimeraCam (ChimeraCLI):
                 self.out("OK (took %.3f s)" %
                          (time.time() - currentFrameExposeStart))
 
-                self.out(" (%s) " % image.compressedFilename(), end="")
+                self.out(" (%s) " % get_compressed_name(image.filename(), compress_format), end="")
                 self.out("OK (took %.3f s)" %
                          (time.time() - currentFrameReadoutStart))
                 self.out("[%03d/%03d] took %.3fs" % (currentFrame, options.frames,
@@ -561,7 +567,6 @@ class ChimeraCam (ChimeraCLI):
                                       binning=options.binning or None,
                                       window=options.subframe or None,
                                       shutter=options.shutter,
-                                      compress=compress,
                                       compress_format=compress_format,
                                       wait_dome=not options.ignore_dome,
                                       object_name=object_name)
@@ -575,7 +580,6 @@ class ChimeraCam (ChimeraCLI):
                                   binning=options.binning or None,
                                   window=options.subframe or None,
                                   shutter=options.shutter,
-                                  compress=compress,
                                   compress_format=compress_format,
                                   wait_dome=not options.ignore_dome,
                                   object_name=object_name)

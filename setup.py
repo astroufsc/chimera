@@ -42,8 +42,6 @@ chimera_scripts = ['src/scripts/chimera',
                    'src/scripts/chimera-pverify',
                    'src/scripts/chimera-console',
                    'src/scripts/chimera-sched',
-                   'src/scripts/chimera-ppsched',
-                   'src/scripts/chimera-taosched',
 ]
 
 # platform specific requirements
@@ -66,6 +64,8 @@ setup(
     packages=find_packages("src", exclude=["*.tests"]),
 
     include_package_data=True,
+
+    package_data={'': ['jquery-1.11.3.min.js', 'webadmin.html']},
 
     scripts=chimera_scripts,
 
