@@ -162,8 +162,6 @@ class FakeWeatherStation(WeatherBase):
 
         return Pressure(datetime.datetime.now(), pressure)
 
-        return pressure
-
     def rain(self, unit_out=units.liter / units.hour):
         """
         For testing purposes, it never rains.
