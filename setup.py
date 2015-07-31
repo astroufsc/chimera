@@ -22,9 +22,6 @@
 from setuptools import setup, find_packages
 
 import os
-import sys
-import glob
-import re
 
 # read version.py file to get version and metadata information
 here = os.path.abspath(os.path.dirname(__file__))
@@ -70,7 +67,7 @@ setup(
     scripts=chimera_scripts,
 
     # installation happens in the specified order
-    install_requires=[
+    install_requires=[  "astropy",
                          "Pyro>=3.16",
                          "numpy>=1.8.0",
                          "astropy",
