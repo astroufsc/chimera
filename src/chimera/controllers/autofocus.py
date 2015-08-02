@@ -2,7 +2,6 @@ from __future__ import division
 
 from chimera.core.chimeraobject import ChimeraObject
 from chimera.core.lock import lock
-from chimera.core.event import event
 from chimera.core.exceptions import ChimeraException, ClassLoaderException
 from chimera.core.constants import SYSTEM_CONFIG_DIRECTORY
 
@@ -13,7 +12,9 @@ from chimera.interfaces.focuser import InvalidFocusPositionException
 from chimera.controllers.imageserver.imagerequest import ImageRequest
 from chimera.controllers.imageserver.util         import getImageServer
 
-from chimera.util.image import Image
+import ntpath
+
+from chimera.util.image import Image, ImageUtil
 from chimera.util.output import red, green
 
 import numpy as N
@@ -234,7 +235,7 @@ class Autofocus(ChimeraObject, IAutofocus):
 
         self.log.debug("="*40)
         self.log.debug("[%s] Starting autofocus run." % time.strftime("%c"))
-        self.log.debug("="*40)        
+        self.log.debug("="*40)
         self.log.debug("Focus range: start=%d end=%d step=%d points=%d" % (start, end, step, len(positions)))
 
         # images for debug mode
@@ -308,8 +309,8 @@ class Autofocus(ChimeraObject, IAutofocus):
 
             focuser.moveTo(position)
 
-            frame = self._takeImage()
-            stars = self._findStars(frame)
+            frame_path, frame = self._takeImage()
+            stars = self._findStars(frame_path)
             star = self._findBrighterStar(stars)
 
             star["CHIMERA_FLAGS"] = green("OK")
@@ -328,22 +329,23 @@ class Autofocus(ChimeraObject, IAutofocus):
                 fwhm.append(star["FWHM_IMAGE"])
                 valid_positions.append(position)
 
-            self.stepComplete(position, star, frame)
+            self.stepComplete(position, star, frame_path)
 
         # fit a parabola to the points and save parameters
         try:
             if minmax:
                 self.log.debug("Minmax filtering FWHM (%.3f,%.3f)" % minmax)
 
-            fit = FocusFit.fit(N.array(valid_positions), N.array(fwhm),
-                               temperature=focuser.getTemperature(),
-                               minmax=minmax)
+            try:
+                temp = focuser.getTemperature()
+            except NotImplementedError:
+                temp = None
+            fit = FocusFit.fit(N.array(valid_positions), N.array(fwhm), temperature=temp, minmax=minmax)
         except Exception, e:
             focuser.moveTo(initial_position)
 
             raise FocusNotFoundException("Error trying to fit a focus curve. "
                                          "Leaving focuser at %04d" % initial_position)
-
 
         fit.plot(os.path.join(SYSTEM_CONFIG_DIRECTORY, self.currentRun, "autofocus.plot.png"))
         fit.log(os.path.join(SYSTEM_CONFIG_DIRECTORY, self.currentRun, "autofocus.plot.dat"))
@@ -365,8 +367,8 @@ class Autofocus(ChimeraObject, IAutofocus):
 
     def _takeImageAndResolveStars(self):
 
-        frame = self._takeImage()
-        stars = self._findStars(frame)
+        frame_path, frame = self._takeImage()
+        stars = self._findStars(frame_path)
 
         return stars
 
@@ -383,7 +385,7 @@ class Autofocus(ChimeraObject, IAutofocus):
             except IndexError:
                 raise ChimeraException("Cannot find debug images")
 
-        self.imageRequest["filename"] = os.path.join(SYSTEM_CONFIG_DIRECTORY, self.currentRun, "focus.fits")
+        self.imageRequest["filename"] = "focus-$DATE"
 
         cam = self.getCam()
 
@@ -391,14 +393,32 @@ class Autofocus(ChimeraObject, IAutofocus):
             filter = self.getFilter()
             filter.setFilter(self.filter)
 
-        frame = cam.expose(self.imageRequest)
+        frames = cam.expose(self.imageRequest)
 
-        if frame:
-            return frame[0]
+        if frames:
+            image = frames[0]
+            image_path = image.filename()
+            if not os.path.exists(image_path):  # If image is on a remote server, donwload it.
+
+                #  If remote is windows, image_path will be c:\...\image.fits, so use ntpath instead of os.path.
+                if ':\\' in image_path:
+                    modpath = ntpath
+                else:
+                    modpath = os.path
+                image_path = ImageUtil.makeFilename(os.path.join(getImageServer(self.getManager()).defaultNightDir(),
+                                                                 modpath.basename(image_path)))
+                t0 = time.time()
+                self.log.debug('Downloading image from server to %s' % image_path)
+                if not ImageUtil.download(image, image_path):
+                    raise ChimeraException('Error downloading image %s from %s' % (image_path, image.http()))
+                self.log.debug('Finished download. Took %3.2f seconds' % (time.time() - t0))
+            return image_path, image
         else:
-            raise Exception("Error taking image.")
+            raise Exception("Could not take an image")
 
-    def _findStars(self, frame):
+    def _findStars(self, frame_path):
+
+        frame = Image.fromFile(frame_path)
 
         config = {}
         config['PIXEL_SCALE'] = 0  # use WCS info
@@ -421,8 +441,10 @@ class Autofocus(ChimeraObject, IAutofocus):
                                      "FLUX_BEST", "FWHM_IMAGE",
                                      "FLAGS"]
 
-        catalogName = os.path.splitext(frame.filename())[0] + ".catalog"
-        configName = os.path.splitext(frame.filename())[0] + ".config"
+        aux_fname = os.path.join(SYSTEM_CONFIG_DIRECTORY, self.currentRun,
+                                 os.path.splitext(os.path.basename(frame_path))[0])
+        catalogName = aux_fname + ".catalog"
+        configName = aux_fname + ".config"
         return frame.extract(config, saveCatalog=catalogName, saveConfig=configName)
 
     def _findBestStarToFocus(self, catalog):
