@@ -1,6 +1,7 @@
 from subprocess import Popen
 import os
 import logging
+import time
 
 from chimera.util.sextractor import SExtractor
 from chimera.core.exceptions import ChimeraException
@@ -50,7 +51,7 @@ class AstrometryNet:
             raise AstrometryNetException("Need CRVAL1 and CRVAL2 and CD1_1 on header")
         width = image["NAXIS1"]
         height = image["NAXIS2"]
-        radius = 5.0 * abs(image["CD1_1"]) * width
+        radius = 10.0 * abs(image["CD1_1"]) * width
 
         wcs_filename = pathname + outfilename + ".wcs"
 
@@ -80,14 +81,17 @@ class AstrometryNet:
         # added as extension.
         is_solved = pathname + outfilename + ".solved"
         # if it is already there, make sure to delete it
-        if (os.path.exists(is_solved)):
+        if os.path.exists(is_solved):
             os.remove(is_solved)
         log.debug("SOLVE", line)
         # *** it would be nice to add a test here to check
         # whether astrometrynet is running OK, if not raise a new exception
         # like AstrometryNetInstallProblem
+        log.debug('Starting solve-field...')
+        t0 = time.time()
         solve = Popen(line.split())  # ,env=os.environ)
         solve.wait()
+        log.debug('Solve field finished. Took %3.2f sec' % (time.time() - t0))
         # if solution failed, there will be no file .solved
         if (os.path.exists(is_solved) == False):
             raise NoSolutionAstrometryNetException(

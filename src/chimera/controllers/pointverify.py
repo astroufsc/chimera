@@ -1,11 +1,12 @@
 from __future__ import division
 from math import fabs
 import os
+import ntpath
 import time
 
 from astropy.io import fits
-from chimera.controllers.imageserver.util import getImageServer
 
+from chimera.controllers.imageserver.util import getImageServer
 from chimera.util.catalogs.landolt import Landolt
 from chimera.core.chimeraobject import ChimeraObject
 from chimera.core.exceptions import (CantPointScopeException, CantSetScopeException, printException, ChimeraException)
@@ -52,9 +53,15 @@ class PointVerify(ChimeraObject, IPointVerify):
         if frames:
             image = frames[0]
             image_path = image.filename()
-            if not os.path.exists(image_path):
+            if not os.path.exists(image_path):  # If image is on a remote server, donwload it.
+
+                #  If remote is windows, image_path will be c:\...\image.fits, so use ntpath instead of os.path.
+                if ':\\' in image_path:
+                    modpath = ntpath
+                else:
+                    modpath = os.path
                 image_path = ImageUtil.makeFilename(os.path.join(getImageServer(self.getManager()).defaultNightDir(),
-                                                                 os.path.basename(image_path)))
+                                                                 modpath.basename(image_path)))
                 t0 = time.time()
                 self.log.debug('Downloading image from server to %s' % image_path)
                 if not ImageUtil.download(image, image_path):
@@ -81,7 +88,7 @@ class PointVerify(ChimeraObject, IPointVerify):
 
         try:
             image_path, image = self._takeImage()
-            self.log.debug("Taking image: image name %s", image_path)
+            self.log.debug("Taking image: image name %s" % image_path)
         except:
             self.log.error("Can't take image")
             raise
@@ -146,19 +153,9 @@ class PointVerify(ChimeraObject, IPointVerify):
         delta_ra = ra_img_center - ra_wcs_center
         delta_dec = dec_img_center - dec_wcs_center
 
-        print ("delta_ra: %s delta_dec: %s" % (delta_ra, delta_dec))
-        print ("ra_img_center: %s ra_wcs_center: %s" % (ra_img_center, ra_wcs_center))
-        print ("dec_img_center: %s dec_wcs_center: %s" % (dec_img_center, dec_wcs_center))
-
         # *** need to do real logging here
-        logstr = "%s %f %f %f %f %f %f" % (
-            image["DATE-OBS"],
-            ra_img_center,
-            dec_img_center,
-            ra_wcs_center,
-            dec_wcs_center,
-            delta_ra,
-            delta_dec)
+        logstr = "%s ra_tel = %f dec_tel = %f ra_img = %f dec_img = %f delta_ra = %f delta_dec = %f" % (
+        image["DATE-OBS"], ra_img_center, dec_img_center, ra_wcs_center, dec_wcs_center, delta_ra, delta_dec)
         self.log.debug(logstr)
 
         if (fabs(delta_ra) > self["tolra"]) or (fabs(delta_dec) > self["toldec"]):
@@ -170,8 +167,7 @@ class PointVerify(ChimeraObject, IPointVerify):
                     "Scope does not point with a precision of %f (RA) or %f (DEC) after %d trials\n" % (
                         self["tolra"], self["toldec"], self["max_trials"]))
             time.sleep(5)
-            tel.moveOffset(Coord.fromD(delta_ra).AS, Coord.fromD(
-                delta_dec).AS, rate=SlewRate.CENTER)
+            tel.moveOffset(Coord.fromD(delta_ra), Coord.fromD(delta_dec), rate=SlewRate.CENTER)
             self.pointVerify()
         else:
             # if we got here, we were succesfull, reset trials counter
