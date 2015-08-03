@@ -131,7 +131,7 @@ class PointVerify(ChimeraObject, IPointVerify):
             #    self.checkedpointing = False
             #    raise CanSetScopeButNotThisField("Able to set scope, but unable to verify this field %s" %(currentImageCenter))
         wcs_image = Image.fromFile(wcs_name)
-        ra_wcs_center, dec_wcs_center = wcs_image.worldAtCenter()
+        ra_wcs_center, dec_wcs_center = wcs_image.worldAt((image["NAXIS1"]/2., image["NAXIS2"]/2.))
         currentWCS = Position.fromRaDec(Coord.fromD(ra_wcs_center), Coord.fromD(dec_wcs_center))
 
         # save the position of first trial:
