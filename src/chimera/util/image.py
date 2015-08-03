@@ -303,6 +303,9 @@ class Image (DictMixin, RemoteObject):
         world = self._valueAt(self._wcs.wcs_pix2world, *pixel)
         return Position.fromRaDec(Coord.fromD(world[0]), Coord.fromD(world[1]))
 
+    def worldAtCenter(self):
+        return self.pixelAt(self.center())
+
     def _findWCS(self):
 
         if not self._wcs:

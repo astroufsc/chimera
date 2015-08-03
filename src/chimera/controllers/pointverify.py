@@ -13,7 +13,7 @@ from chimera.core.exceptions import (CantPointScopeException, CantSetScopeExcept
 from chimera.interfaces.camera import Shutter
 from chimera.interfaces.telescope import SlewRate
 from chimera.interfaces.pointverify import PointVerify as IPointVerify
-from chimera.util.image import ImageUtil
+from chimera.util.image import ImageUtil, Image
 from chimera.util.position import Position
 from chimera.util.coord import Coord
 from chimera.util.astrometrynet import AstrometryNet, NoSolutionAstrometryNetException
@@ -132,16 +132,14 @@ class PointVerify(ChimeraObject, IPointVerify):
             # else:
             #    self.checkedpointing = False
             #    raise CanSetScopeButNotThisField("Able to set scope, but unable to verify this field %s" %(currentImageCenter))
-        wcs = fits.getheader(wcs_name)
-        ra_wcs_center = wcs["CRVAL1"] + (wcs["IMAGEW"] / 2.0 - wcs["CRPIX1"]) * wcs["CD1_1"]
-        dec_wcs_center = wcs["CRVAL2"] + (wcs["IMAGEH"] / 2.0 - wcs["CRPIX2"]) * wcs["CD2_2"]
+        wcs_image = Image.fromFile(wcs_name)
+        ra_wcs_center, dec_wcs_center = wcs_image.worldAtCenter()
         currentWCS = Position.fromRaDec(Coord.fromD(ra_wcs_center), Coord.fromD(dec_wcs_center))
 
         # save the position of first trial:
         if self.ntrials == 0:
             initialPosition = Position.fromRaDec(
                 Coord.fromD(ra_img_center), Coord.fromD(dec_img_center))
-            initialWCS = Position.fromRaDec(currentWCS.ra, currentWCS.dec)
 
         # write down the two positions for later use in mount models
         if self.ntrials == 0:
