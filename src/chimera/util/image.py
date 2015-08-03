@@ -1,4 +1,3 @@
-#import chimera.core.log
 import urllib2
 
 from chimera.core.remoteobject import RemoteObject

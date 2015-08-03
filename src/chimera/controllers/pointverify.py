@@ -4,8 +4,6 @@ import os
 import ntpath
 import time
 
-from astropy.io import fits
-
 from chimera.controllers.imageserver.util import getImageServer
 from chimera.util.catalogs.landolt import Landolt
 from chimera.core.chimeraobject import ChimeraObject
