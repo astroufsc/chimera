@@ -68,16 +68,15 @@ setup(
 
     # installation happens in the specified order
     install_requires=[  "astropy",
-                         "Pyro>=3.16",
+                        "CherryPy",
                          "numpy>=1.8.0",
-                         "astropy",
-                         "PyYAML",
-                         "python-dateutil",
                          "pyephem",
+                         "Pyro>=3.16",
+                         "python-dateutil",
+                         "PyYAML",
                          "RO",
                          "suds",
                          "SQLAlchemy",
-                         "CherryPy",
                      ] + platform_deps,
 
     tests_require=["nose", "coverage", "wheel"],
