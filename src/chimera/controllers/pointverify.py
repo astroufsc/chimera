@@ -1,5 +1,5 @@
 from __future__ import division
-from math import sqrt
+from math import fabs
 import os
 import ntpath
 import time
@@ -81,7 +81,7 @@ class PointVerify(ChimeraObject, IPointVerify):
            move the scope
            take a new image
            test again
-           do this while ntrials < max_trials
+           do this while ntrials < max_tries
 
         Returns True if centering was succesful
                 False if not
@@ -159,14 +159,14 @@ class PointVerify(ChimeraObject, IPointVerify):
         image["DATE-OBS"], ra_img_center, dec_img_center, ra_wcs_center, dec_wcs_center, delta_ra, delta_dec)
         self.log.debug(logstr)
 
-        # if (fabs(delta_ra) > self["tolra"]) or (fabs(delta_dec) > self["toldec"]):
-        if sqrt(delta_ra.toD().v**2 + delta_dec.toD().v**2) > self["max_tolerance"]:
+        if (fabs(delta_ra) > self["ra_tolerance"]) or (fabs(delta_dec) > self["dec_tolerance"]):
             self.log.debug("Telescope not there yet. Trying again")
             self.ntrials += 1
-            if self.ntrials > self["max_trials"]:
+            if self.ntrials > self["max_tries"]:
                 self.ntrials = 0
-                raise CantPointScopeException("Scope does not point with a precision of %f arcminutes after %d trials\n"
-                                              % (self["max_tolerance"], self["max_trials"]))
+                raise CantPointScopeException(
+                    "Scope does not point with a precision of %f (RA) or %f (DEC) after %d trials\n" % (
+                        self["ra_tolerance"], self["dec_tolerance"], self["max_tries"]))
             tel.moveOffset(Coord.fromD(delta_ra), Coord.fromD(delta_dec), rate=SlewRate.CENTER)
             self.pointVerify()
         else:
