@@ -40,12 +40,17 @@ class PointVerify(ChimeraObject, IPointVerify):
     def getCam(self):
         return self.getManager().getProxy(self["camera"])
 
-    def getFilter(self):
+    def getFilterWheel(self):
         return self.getManager().getProxy(self["filterwheel"])
 
     def _takeImage(self):
 
         cam = self.getCam()
+        if cam["telescope_focal_length"] is None:
+            raise ChimeraException("telescope_focal_length parameter must be set on camera instrument configuration")
+        if self["filterwheel"] is not None:
+            fw = self.getFilterWheel()
+            fw.setFilter(self["filter"])
         frames = cam.expose(exptime=self["exptime"], frames=1, shutter=Shutter.OPEN, filename="pointverify-$DATE")
 
         if frames:
