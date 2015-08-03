@@ -25,44 +25,10 @@ from astropy import units
 from astropy.units import cds
 from collections import namedtuple
 
-class Humidity(namedtuple('Humidity', 'time humidity')):
-    """
-    Named tuple that represents humidity
-    """
-    pass
 
-
-class Temperature(namedtuple('Temperature', 'time temperature')):
+class WSValue(namedtuple('WSValue', 'time value')):
     """
-    Named tuple that represents temperature
-    """
-    pass
-
-
-class Speed(namedtuple('Speed', 'time speed')):
-    """
-    Named tuple that represents speed
-    """
-    pass
-
-
-class Direction(namedtuple('Direction', 'time direction')):
-    """
-    Named tuple that represents direction
-    """
-    pass
-
-
-class Pressure(namedtuple('Pressure', 'time pressure')):
-    """
-    Named tuple that represents the pressure
-    """
-    pass
-
-
-class Rain(namedtuple('Rain', 'time rain')):
-    """
-    Named tuple that represents the rain precipitation
+    Named tuple that represents a measure
     """
     pass
 
