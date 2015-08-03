@@ -195,3 +195,5 @@ if __name__ == '__main__':
 
     rain = fws.rain()
     print('Rain: %.2f @ %s.' % (rain.rain, rain.time))
+
+    print('Metadata: %s' %  (fws.getMetadata(None)),)

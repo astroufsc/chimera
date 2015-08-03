@@ -66,11 +66,11 @@ class WeatherBase(ChimeraObject, WeatherStation):
     def getMetadata(self, request):
         #TODO: Check if metadata parameter is implemented or not.
         return [('METMODEL', str(self['model']), 'Weather station Model'),
-                ('METRH', str(self.humidity()), '[%] Weather station relative humidity'),
-                ('METTEMP', str(self.temperature()), '[degC] Weather station temperature'),
-                ('METWINDS', str(self.wind_speed()), '[m/s] Weather station wind speed'),
-                ('WINDDIR',  str(self.wind_direction()), '[deg] Weather station wind direction'),
-                ('METDEW',  str(self.dew_point()), '[degC] Weather station dew point'),
-                ('METPRES', str(self.pressure()), '[hPa] Weather station air pressure'),
-                ('METRAIN', str(self.rain()), 'Weather station rain indicator'),
+                ('METRH', str(self.humidity().humidity), '[%] Weather station relative humidity'),
+                ('METTEMP', str(self.temperature().temperature), '[degC] Weather station temperature'),
+                ('METWINDS', str(self.wind_speed().speed), '[m/s] Weather station wind speed'),
+                ('WINDDIR',  str(self.wind_direction().direction), '[deg] Weather station wind direction'),
+                ('METDEW',  str(self.dew_point().temperature), '[degC] Weather station dew point'),
+                ('METPRES', str(self.pressure().pressure), '[hPa] Weather station air pressure'),
+                ('METRAIN', str(self.rain().rain), 'Weather station rain indicator'),
                 ]

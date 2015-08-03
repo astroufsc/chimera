@@ -73,6 +73,12 @@ class WeatherStation (Interface):
 
     """
 
+    __config__ = {"device": None,           # weather station device
+                  "model": "unknown",     # weather station model
+                  }
+
+
+
     """
     Humidity units accepted by the interface.
     """
@@ -115,25 +121,6 @@ class WeatherStation (Interface):
         units.bar,
         units.cds.atm,
         units.Pa]
-
-
-
-    __config__ = {"device": None,
-
-                  "humidity_unit": "{0.unit}".format(1*units.pct),
-                  "temperature_unit": "{0.unit}".format(1*units.Celsius),
-                  "wind_unit": "{0.unit}".format(1*(units.kilometer/units.hour)),
-                  "wind_direction_unit": "{0.unit}".format(1*units.degree),
-                  "dew_point_unit": "{0.unit}".format(1*units.Celsius),
-                  "pressure_unit": "{0.unit}".format(1*units.cds.mmHg),
-                  "rain_unit": "{0.unit}".format(1*(units.liter / units.hour)),
-
-                  "humidity_delta": 1,
-                  "temperature_delta": 1,
-                  "wind_delta": 1,
-                  "dew_point_delta": 1,
-                  "pressure_delta": 1,
-                  }
 
     def humidity(self, unit_out=units.pct):
         """
