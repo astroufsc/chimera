@@ -43,15 +43,16 @@ Target = Enum("CURRENT", "AUTO")
 
 class PointVerify(Interface):
 
-    __config__ = {"telescope": "/Telescope/0",
-                  "camera": "/Camera/0",
-                  "filterwheel": "/FilterWheel/0",
-                  "tolra": 0.0166666666667,
-                  "toldec": 0.0166666666667,
-                  "exptime":  10.0,
-                  "filter":  "R",
-                  "max_trials": 5,
-                  "max_fields": 5}
+    __config__ = {"camera": "/Camera/0",            # Camera attached to the telescope.
+                  "filterwheel": "/FilterWheel/0",  # Filterwheel, if exists.
+                  "telescope": "/Telescope/0",      # Telescope to verify pointing.
+                  
+                  "exptime":  10.0,                 # Exposure time.
+                  "filter":  "R",                   # Filter to expose.
+                  "max_fields": 5,                  # Maximum number of Landlodt fields to use.
+                  "max_tolerance": 0.017,           # Maximum pointing error tolerance (degrees). Default is 1 arcmin.
+                  "max_tries": 5,                   # Maximum number of tries to point the telescope correctly.
+                  }
 
     def checkPointing(self, debug=False):
         """

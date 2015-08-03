@@ -1,5 +1,5 @@
 from __future__ import division
-from math import fabs
+from math import sqrt
 import os
 import ntpath
 import time
@@ -159,15 +159,14 @@ class PointVerify(ChimeraObject, IPointVerify):
         image["DATE-OBS"], ra_img_center, dec_img_center, ra_wcs_center, dec_wcs_center, delta_ra, delta_dec)
         self.log.debug(logstr)
 
-        if (fabs(delta_ra) > self["tolra"]) or (fabs(delta_dec) > self["toldec"]):
+        # if (fabs(delta_ra) > self["tolra"]) or (fabs(delta_dec) > self["toldec"]):
+        if sqrt(delta_ra.toD().v**2 + delta_dec.toD().v**2) > self["max_tolerance"]:
             self.log.debug("Telescope not there yet. Trying again")
             self.ntrials += 1
-            if (self.ntrials > self["max_trials"]):
+            if self.ntrials > self["max_trials"]:
                 self.ntrials = 0
-                raise CantPointScopeException(
-                    "Scope does not point with a precision of %f (RA) or %f (DEC) after %d trials\n" % (
-                        self["tolra"], self["toldec"], self["max_trials"]))
-            time.sleep(5)
+                raise CantPointScopeException("Scope does not point with a precision of %f arcminutes after %d trials\n"
+                                              % (self["max_tolerance"], self["max_trials"]))
             tel.moveOffset(Coord.fromD(delta_ra), Coord.fromD(delta_dec), rate=SlewRate.CENTER)
             self.pointVerify()
         else:
@@ -176,9 +175,7 @@ class PointVerify(ChimeraObject, IPointVerify):
             self.currentField = 0
             # and save final position
             # write down the two positions for later use in mount models
-            logstr = "Pointing: final solution %s %s %s" % (image["DATE-OBS"],
-                                                            currentImageCenter,
-                                                            currentWCS)
+            logstr = "Pointing: final solution %s %s %s" % (image["DATE-OBS"], currentImageCenter, currentWCS)
             # self.log.debug("Synchronizing telescope on %s" % currentWCS)
             # tel.syncRaDec(currentWCS)
 
