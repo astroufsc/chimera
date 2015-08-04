@@ -58,7 +58,7 @@ class FakeWeatherStation(WeatherBase):
             units.pct,
             unit_out)
 
-        return WSValue(current_time, humidity)
+        return WSValue(current_time, humidity, unit_out)
 
     def temperature(self, unit_out=units.Celsius):
         """
@@ -80,7 +80,7 @@ class FakeWeatherStation(WeatherBase):
             unit_out,
             equivalencies=units.equivalencies.temperature())
 
-        return WSValue(current_time, temperature)
+        return WSValue(current_time, temperature, unit_out)
 
     def wind_speed(self, unit_out=units.meter/units.second):
         """
@@ -99,7 +99,7 @@ class FakeWeatherStation(WeatherBase):
             units.meter / units.second,
             unit_out)
 
-        return WSValue(datetime.datetime.now(), speed)
+        return WSValue(datetime.datetime.now(), speed, unit_out)
 
     def wind_direction(self, unit_out=units.degree):
         """
@@ -119,7 +119,7 @@ class FakeWeatherStation(WeatherBase):
             units.degree,
             unit_out)
 
-        return WSValue(datetime.datetime.now(), direction)
+        return WSValue(datetime.datetime.now(), direction, unit_out)
 
     def dew_point(self, unit_out=units.Celsius):
         """
@@ -140,9 +140,9 @@ class FakeWeatherStation(WeatherBase):
           unit_out,
           equivalencies=units.equivalencies.temperature())
 
-        return WSValue(datetime.datetime.now(), temperature)
+        return WSValue(datetime.datetime.now(), temperature, unit_out)
 
-    def pressure(self, unit_out=units.cds.mmHg):
+    def pressure(self, unit_out=units.Pa):
         """
         Pressure at 1.5 atm
         :param unit:
@@ -158,7 +158,7 @@ class FakeWeatherStation(WeatherBase):
             units.cds.mmHg,
             unit_out)
 
-        return WSValue(datetime.datetime.now(), pressure)
+        return WSValue(datetime.datetime.now(), pressure, unit_out)
 
     def rain(self, unit_out=units.liter / units.hour):
         """
@@ -167,7 +167,7 @@ class FakeWeatherStation(WeatherBase):
         :return:
         """
 
-        return WSValue(datetime.datetime.now(), 0)
+        return WSValue(datetime.datetime.now(), 0, unit_out)
 
 if __name__ == '__main__':
 
@@ -177,21 +177,21 @@ if __name__ == '__main__':
     print('Humidity: %.2f %% @ %s.' % (humidity.value, humidity.time))
 
     temperature = fws.temperature(units.imperial.deg_F)
-    print('Temperature: %.2f %s @ %s.' % (temperature.value, units.imperial.deg_F, temperature.time))
+    print('Temperature: %.2f %s @ %s.' % (temperature.value, temperature.unit, temperature.time))
 
     wind_speed = fws.wind_speed(units.kilometer / units.hour)
-    print('Wind Speed: %.2f %s @ %s.' % (wind_speed.value, (units.kilometer/units.hour), wind_speed.time))
+    print('Wind Speed: %.2f %s @ %s.' % (wind_speed.value, wind_speed.unit, wind_speed.time))
 
     wind_direction = fws.wind_direction(units.radian)
-    print('Wind Direction: %.2f %s @ %s.' % (wind_direction.value, units.radian, wind_direction.time))
+    print('Wind Direction: %.2f %s @ %s.' % (wind_direction.value, wind_direction.unit, wind_direction.time))
 
     dew_point = fws.dew_point(units.K)
-    print('Dew Point: %.2f %s @ %s.' % (dew_point.value, units.K, dew_point.time))
+    print('Dew Point: %.2f %s @ %s.' % (dew_point.value, dew_point.unit, dew_point.time))
 
     pressure = fws.pressure(units.cds.atm)
-    print('Pressure: %.2f %s @ %s.' % (pressure.value, units.cds.atm, pressure.time))
+    print('Pressure: %.2f %s @ %s.' % (pressure.value, pressure.unit, pressure.time))
 
     rain = fws.rain()
-    print('Rain: %.2f @ %s.' % (rain.value, rain.time))
+    print('Rain: %.2f %s @ %s.' % (rain.value, rain.unit, rain.time))
 
     print('Metadata: %s' %  (fws.getMetadata(None)),)

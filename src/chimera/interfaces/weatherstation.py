@@ -26,7 +26,7 @@ from astropy.units import cds
 from collections import namedtuple
 
 
-class WSValue(namedtuple('WSValue', 'time value')):
+class WSValue(namedtuple('WSValue', 'time value unit')):
     """
     Named tuple that represents a measure
     """
@@ -104,9 +104,9 @@ class WeatherStation (Interface):
         """
         pass
 
-    def wind_speed(self, unit_out=units.kilometer/units.hour):
+    def wind_speed(self, unit_out=units.meter/units.second):
         """
-        Returns the wind speed in the chosen unit (Default: Meters per second).
+        Returns the wind speed in the chosen unit (Default: meters per second).
         :param unit:  Unit in which the instrument should return the wind speed.
         :return: the wind speed.
         """
@@ -128,9 +128,9 @@ class WeatherStation (Interface):
         """
         pass
 
-    def pressure(self, unit_out=units.cds.mmHg):
+    def pressure(self, unit_out=units.Pa):
         """
-        Returns the pressure in the chosen unit (Default: mmHg).
+        Returns the pressure in the chosen unit (Default: units.Pa).
         :param unit:  Unit in which the instrument should return the pressure.
         :return: the pressure.
         """
