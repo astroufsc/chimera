@@ -51,7 +51,8 @@ class PointVerify(ChimeraObject, IPointVerify):
         if self["filterwheel"] is not None:
             fw = self.getFilterWheel()
             fw.setFilter(self["filter"])
-        frames = cam.expose(exptime=self["exptime"], frames=1, shutter=Shutter.OPEN, filename="pointverify-$DATE")
+        frames = cam.expose(exptime=self["exptime"], frames=1, shutter=Shutter.OPEN,
+                            filename=os.path.basename(ImageUtil.makeFilename("pointverify-$DATE")))
 
         if frames:
             image = frames[0]
