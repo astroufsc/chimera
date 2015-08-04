@@ -385,7 +385,7 @@ class Autofocus(ChimeraObject, IAutofocus):
             except IndexError:
                 raise ChimeraException("Cannot find debug images")
 
-        self.imageRequest["filename"] = "focus-$DATE"
+        self.imageRequest["filename"] = os.path.basename(ImageUtil.makeFilename("focus-$DATE"))
 
         cam = self.getCam()
 
@@ -455,7 +455,7 @@ class Autofocus(ChimeraObject, IAutofocus):
 
     def _findBrighterStar(self, catalog):
 
-        fluxes = [star for star in catalog if star["FLAGS"] == 0]
+        fluxes = [star for star in catalog if star["FLAGS"] == 0 and star["FWHM"] != 0]
 
         if not fluxes:  # empty catalog
             return False
