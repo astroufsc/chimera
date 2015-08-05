@@ -88,6 +88,14 @@ class WeatherStation (Interface):
         units.cds.atm,
         units.Pa]
 
+    """
+    Pressure units accepted by the interface.
+    """
+    __accepted_precipitation_unit__ = [
+        units.imperial.inch/units.hour,
+        units.millimeter/units.hour,
+    ]
+
     def humidity(self, unit_out=units.pct):
         """
         Returns the 100% relative humidity (Default: Percentage).
@@ -136,9 +144,9 @@ class WeatherStation (Interface):
         """
         pass
 
-    def rain(self, unit_out=units.liter/units.hour):
+    def rain(self, unit_out=units.imperial.inch/units.hour):
         """
-        Returns the precipitation rate in the chosen unit (Default: mm/H).
+        Returns the precipitation rate in the chosen unit (Default: in/H).
         :param unit:  Unit in which the instrument should return the precipitation rate.
         :return: the precipitation rate.
         """

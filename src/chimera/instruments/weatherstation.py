@@ -60,7 +60,7 @@ class WeatherBase(ChimeraObject, WeatherStation):
     def pressure(self, unit_out=units.Pa):
         raise NotImplementedError()
 
-    def rain(self, unit_out=units.liter / units.hour):
+    def rain(self, unit_out=units.imperial.inch/units.hour):
         raise NotImplementedError()
 
     def getMetadata(self, request):

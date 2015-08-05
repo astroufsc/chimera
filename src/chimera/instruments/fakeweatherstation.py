@@ -160,12 +160,16 @@ class FakeWeatherStation(WeatherBase):
 
         return WSValue(datetime.datetime.now(), pressure, unit_out)
 
-    def rain(self, unit_out=units.liter / units.hour):
+    # def rain(self, unit_out=units.imperial.inch/units.hour):
+    def rain(self, unit_out=units.imperial.inch/units.hour):
         """
         For testing purposes, it never rains.
         :param unit:
         :return:
         """
+
+        if unit_out not in self.__accepted_precipitation_unit__:
+            raise OptionConversionException("Invalid precipitation unit %s." % unit_out)
 
         return WSValue(datetime.datetime.now(), 0, unit_out)
 
@@ -191,7 +195,7 @@ if __name__ == '__main__':
     pressure = fws.pressure(units.cds.atm)
     print('Pressure: %.2f %s @ %s.' % (pressure.value, pressure.unit, pressure.time))
 
-    rain = fws.rain()
+    rain = fws.rain(unit_out=units.millimeter/units.hour)
     print('Rain: %.2f %s @ %s.' % (rain.value, rain.unit, rain.time))
 
     print('Metadata: %s' %  (fws.getMetadata(None)),)
