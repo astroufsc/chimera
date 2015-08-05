@@ -146,7 +146,7 @@ class WeatherStation (Interface):
 
     def rain(self, unit_out=units.imperial.inch/units.hour):
         """
-        Returns the precipitation rate in the chosen unit (Default: in/H).
+        Returns the precipitation rate in the chosen unit (Default: inch/h).
         :param unit:  Unit in which the instrument should return the precipitation rate.
         :return: the precipitation rate.
         """

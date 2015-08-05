@@ -160,7 +160,6 @@ class FakeWeatherStation(WeatherBase):
 
         return WSValue(datetime.datetime.now(), pressure, unit_out)
 
-    # def rain(self, unit_out=units.imperial.inch/units.hour):
     def rain(self, unit_out=units.imperial.inch/units.hour):
         """
         For testing purposes, it never rains.
