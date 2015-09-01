@@ -176,6 +176,16 @@ class TelescopeBase(ChimeraObject,
     def unpark(self):
         raise NotImplementedError()
 
+    def isParked(self):
+        raise NotImplementedError()
+
+    @lock
+    def setParkPosition(self, position):
+        self._park_position = position
+
+    def getParkPosition(self):
+        return self._park_position or self["default_park_position"]
+
     @lock
     def openCover(self):
         '''

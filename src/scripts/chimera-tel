@@ -265,6 +265,14 @@ class ChimeraTel (ChimeraCLI):
         else:
             self.out("tracking: disabled.")
 
+        try:
+            if telescope.isCoverOpen():
+                self.out("cover: open.")
+            else:
+                self.out("cover: closed.")
+        except NotImplementedError:
+            pass
+
         self.out(40 * "=")
 
     def _move(self, direction, cmd, offset):
