@@ -69,10 +69,7 @@ class ManagerAdapter (Pyro.core.Daemon):
         Pyro.core.initServer(banner=False)
 
         try:
-            Pyro.core.Daemon.__init__(self,
-                                      host=host or MANAGER_DEFAULT_HOST,
-                                      port=port or MANAGER_DEFAULT_PORT,
-                                      norange=0)
+            Pyro.core.Daemon.__init__(self, host=host, port=port, norange=0)
         except Pyro.errors.DaemonError:
             log.error("Couldn't start Chimera server. Check errors below.")
             raise
@@ -304,7 +301,7 @@ class Manager (RemoteObject):
             return (location.port == None or location.port == self.getPort())
         else:
             return (location.host == None or location.host in (meHost, meName)) and \
-                   (location.port == None or location.port == self.getPort())
+                   (location.port == None or location.port == mePort)
 
     # shutdown management
 
