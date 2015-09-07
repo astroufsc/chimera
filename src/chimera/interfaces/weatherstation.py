@@ -21,100 +21,133 @@
 
 
 from chimera.core.interface import Interface
-from chimera.core.event import event
-from chimera.util.enum import Enum
+from astropy import units
+from astropy.units import cds
+from collections import namedtuple
 
 
-Unit = Enum("PERCENTUAL",  # Humidity
-
-            "CELSIUS",    # Temperature, Dew point
-            "KELVIN",
-            "FAHRENHEIT",
-
-            "M_PER_S",    # Wind Speed
-            "KM_PER_H",
-            "MILES_PER_H",
-            "FT_PER_S",
-            "MS",
-            "KMH",
-            "FTS",
-            "MPH",
-
-            "DEG",        # Wind Direction
-
-            "M_BAR",      # Pressure
-            "MM_HG",
-            "TORR",
-            "ATM",
-            "PA",
-            "PSI",
-
-            "MM_PER_H",       # Rain
-            "CM_PER_H",
-            "FT_PER_H",
-            )
+class WSValue(namedtuple('WSValue', 'time value unit')):
+    """
+    Named tuple that represents a measure
+    """
+    pass
 
 
 class WeatherStation (Interface):
+    """
+    Instrument interface for weather stations
 
-    __config__ = {"device": "/dev/ttyS0",
+    """
 
-                  "humidity_unit": Unit.MM_HG,
-                  "temperature_unit": Unit.CELSIUS,
-                  "wind_unit": Unit.KM_PER_H,
-                  "dew_point_unit": Unit.CELSIUS,
-                  "pressure_unit": Unit.PERCENTUAL,
-                  "rain_unit": Unit.MM_PER_H,
-
-                  "humidity_delta": 1,
-                  "temperature_delta": 1,
-                  "wind_delta": 1,
-                  "dew_point_delta": 1,
-                  "pressure_delta": 1,
-                  "rain_delta": 1,
+    __config__ = {"device": None,           # weather station device
+                  "model": "unknown",     # weather station model
                   }
 
-    def humidity(self, deltaT=0, unit=Unit.PERCENTUAL):
+
+
+    """
+    Humidity units accepted by the interface.
+    """
+    __accepted_humidity_units__ = [
+        units.pct
+    ]
+
+    """
+    Temperature units accepted by the interface.
+    """
+    __accepted_temperature_units__ = [
+        units.Celsius,
+        units.Kelvin,
+        units.imperial.deg_F
+    ]
+
+    """
+    Speed units accepted by the interface.
+    """
+    __accepted_speed_units__ = [
+        units.meter / units.second,
+        units.kilometer / units.hour,
+        units.imperial.mile / units.hour,
+        units.imperial.foot / units.second,
+    ]
+
+    """
+    Direction units accepted by the interface.
+    """
+    __accepted_direction_unit__ = [
+        units.degree,
+        units.radian
+    ]
+
+    """
+    Pressure units accepted by the interface.
+    """
+    __accepted_pressures_unit__ = [
+        units.cds.mmHg,
+        units.bar,
+        units.cds.atm,
+        units.Pa]
+
+    """
+    Pressure units accepted by the interface.
+    """
+    __accepted_precipitation_unit__ = [
+        units.imperial.inch/units.hour,
+        units.millimeter/units.hour,
+    ]
+
+    def humidity(self, unit_out=units.pct):
+        """
+        Returns the 100% relative humidity (Default: Percentage).
+        :param unit: Unit in which the instrument should return the humidity.
+        :return: the humidity.
+        """
         pass
 
-    def temperature(self, deltaT=0, unit=Unit.CELSIUS):
+    def temperature(self, unit_out=units.Celsius):
+        """
+        Returns the temperature in the chosen unit (Default: Celsius).
+        :param unit:  Unit in which the instrument should return the temperature.
+        :return: the temperature.
+        """
         pass
 
-    def wind_speed(self, deltaT=0, unit=Unit.M_PER_S):
+    def wind_speed(self, unit_out=units.meter/units.second):
+        """
+        Returns the wind speed in the chosen unit (Default: meters per second).
+        :param unit:  Unit in which the instrument should return the wind speed.
+        :return: the wind speed.
+        """
         pass
 
-    def wind_direction(self, deltaT=0, unit=Unit.DEG):
+    def wind_direction(self, unit_out=units.degree):
+        """
+        Returns the wind direction in the chosen unit (Default: Degrees).
+        :param unit:  Unit in which the instrument should return the wind direction.
+        :return: the wind direction.
+        """
         pass
 
-    def dew_point(self, deltaT=0, unit=Unit.CELSIUS):
+    def dew_point(self, unit_out=units.Celsius):
+        """
+        Returns the dew point temperature in the chosen unit (Default: Celsius).
+        :param unit:  Unit in which the instrument should return the dew point.
+        :return: the dew point temperature.
+        """
         pass
 
-    def pressure(self, deltaT=0, unit=Unit.MM_HG):
+    def pressure(self, unit_out=units.Pa):
+        """
+        Returns the pressure in the chosen unit (Default: units.Pa).
+        :param unit:  Unit in which the instrument should return the pressure.
+        :return: the pressure.
+        """
         pass
 
-    def rain(self, deltaT=0, unit=Unit.MM_PER_H):
-        pass
-
-    @event
-    def humidityChange(self, humidity, unit, delta):
-        pass
-
-    @event
-    def temperatureChange(self, temperature, unit, delta):
-        pass
-
-    @event
-    def windChange(self, wind, unit, delta):
-        pass
-
-    @event
-    def dewPointChange(self, dewPoint, unit, delta):
-        pass
-
-    @event
-    def pressureChange(self, pressure, unit, delta):
-        pass
-
-    @event
-    def rainChange(self, rain, unit, delta):
+    def rain(self, unit_out=units.imperial.inch/units.hour):
+        """
+        Returns the precipitation rate in the chosen unit (Default: inch/h).
+        :param unit:  Unit in which the instrument should return the precipitation rate.
+        :return: the precipitation rate.
+        """
         pass
