@@ -217,8 +217,9 @@ class Site (ChimeraObject):
         date = date or self.localtime()
         self._moon.compute(self._getEphem(date))
 
-        return Position.fromAltAz(
-            Coord.fromR(self._moon.alt), Coord.fromR(self._moon.az))
+        return self.raDecToAltAz(Position.fromRaDec('%s'%self._moon.ra,
+                                                    '%s'%self._moon.dec),
+                                 self.LST_inRads(date))
 
     def moonphase(self, date=None):
         date = date or self.localtime()
