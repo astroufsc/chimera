@@ -49,19 +49,17 @@ class PointVerify(Interface):
 
                   "exptime":  10.0,                 # Exposure time.
                   "filter":  "R",                   # Filter to expose.
-                  "max_fields": 5,                  # Maximum number of Landlodt fields to use.
+                  "max_fields": 100,                # Maximum number of Landlodt fields to use.
                   "max_tries": 5,                   # Maximum number of tries to point the telescope correctly.
                   "dec_tolerance": 0.0167,          # Maximum declination error tolerance (degrees).
                   "ra_tolerance": 0.0167,           # Maximum right ascension error tolerance (degrees).
                   }
 
-    def checkPointing(self, debug=False):
+    def checkPointing(self, n_fields):
         """
         Check pointing choosing field and using default exposure time
         """
 
-    # this sounds like a good idea for point verify, need to think how
-    # to implement
     @event
     def pointComplete(self, position, star, frame):
         """Raised after every step in the focus sequence with

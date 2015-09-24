@@ -199,12 +199,15 @@ class PointVerify(ChimeraObject, IPointVerify):
 
         return True
 
-    def checkPointing(self):
+    def setCurrentField(self, f):
+        self.currentField = f
+        return True
+
+    def checkPointing(self, nfields=1):
         """
         This method *chooses* a field to verify the telescope pointing.
         Then it does the pointing and verifies it.
         If unsuccesfull e-mail the operator for help
-        isto em portugues eh chamado calagem
 
         Choice is based on some catalog (Landolt here)
         We choose the field closest to zenith

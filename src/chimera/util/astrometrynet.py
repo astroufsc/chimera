@@ -83,7 +83,7 @@ class AstrometryNet:
         # if it is already there, make sure to delete it
         if os.path.exists(is_solved):
             os.remove(is_solved)
-        log.debug("SOLVE", line)
+        log.debug("SOLVE %s" % line)
         # *** it would be nice to add a test here to check
         # whether astrometrynet is running OK, if not raise a new exception
         # like AstrometryNetInstallProblem
