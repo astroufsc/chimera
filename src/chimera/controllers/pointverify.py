@@ -97,11 +97,6 @@ class PointVerify(ChimeraObject, IPointVerify):
             self.log.error("Can't take image")
             raise
 
-        ra_img_center = image["CRVAL1"]  # expects to see this in image
-        dec_img_center = image["CRVAL2"]
-        currentImageCenter = Position.fromRaDec(Coord.fromD(ra_img_center),
-                                                Coord.fromD(dec_img_center))
-
         tel = self.getTel()
         # analyze the previous image using
         # AstrometryNet defined in util
@@ -142,8 +137,22 @@ class PointVerify(ChimeraObject, IPointVerify):
 
         # save the position of first trial:
         if self.ntrials == 0:
+            ra_img_center = image["CRVAL1"]  # expects to see this in image
+            dec_img_center = image["CRVAL2"]
+            currentImageCenter = Position.fromRaDec(Coord.fromD(ra_img_center),
+                                                    Coord.fromD(dec_img_center))
+            self._original_center = currentImageCenter
+            self._original_ra = ra_img_center
+            self._original_dec = dec_img_center
+            self.log.debug("Setting ra, dec for %s, %s" % (ra_img_center, dec_img_center))
+
             initialPosition = Position.fromRaDec(
                 Coord.fromD(ra_img_center), Coord.fromD(dec_img_center))
+        else:
+            currentImageCenter = self._original_center
+            ra_img_center = self._original_ra
+            dec_img_center = self._original_dec
+            self.log.debug("Using previous ra, dec.")
 
         # write down the two positions for later use in mount models
         if self.ntrials == 0:
