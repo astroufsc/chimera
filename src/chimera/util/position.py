@@ -311,6 +311,21 @@ class Position (object):
 
         return ephem.Equatorial(self.ra.R, self.dec.R, epoch=epoch)
 
+    def toEpoch(self, epoch=Epoch.J2000):
+        '''
+        Returns a new Coordinate with the specified Epoch
+        '''
+        if str(epoch).lower() == str(Epoch.J2000).lower():
+            eph_epoch = ephem.J2000
+        elif str(epoch).lower() == str(Epoch.B1950).lower():
+            eph_epoch = ephem.B1950
+        elif str(epoch).lower() == str(Epoch.NOW).lower():
+            eph_epoch = ephem.now()
+
+        coords = ephem.Equatorial(self.toEphem(), epoch=eph_epoch)
+
+        return Position.fromRaDec(Coord.fromR(coords.ra), Coord.fromR(coords.dec), epoch=epoch)
+
     def precess(self, epoch=Epoch.NOW):
         if str(epoch).lower() == str(Epoch.J2000).lower():
             epoch = ephem.J2000

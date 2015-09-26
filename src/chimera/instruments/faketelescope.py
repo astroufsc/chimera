@@ -96,12 +96,19 @@ class FakeTelescope (TelescopeBase):
     def slewToRaDec(self, position):
 
         if not isinstance(position, Position):
-            position = Position.fromRaDec(
-                position[0], position[1], epoch=Epoch.J2000)
+            position = Position.fromRaDec(position[0], position[1], epoch=Epoch.J2000)
 
         self._validateRaDec(position)
 
         self.slewBegin(position)
+
+        # Change position epoch to J2000.
+        # Most of the Telescopes must have this precession calculation, otherwise pointing to positions of epochs
+        # different of J2000 will point the telescope to a wrong position.
+        # This should be done after self.slewBegin()
+        if position.epoch != Epoch.J2000:
+            position = position.toEpoch(Epoch.J2000)
+
 
         ra_steps = position.ra - self.getRa()
         ra_steps = float(ra_steps / 10.0)
