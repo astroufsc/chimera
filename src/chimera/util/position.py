@@ -326,19 +326,6 @@ class Position (object):
 
         return Position.fromRaDec(Coord.fromR(coords.ra), Coord.fromR(coords.dec), epoch=epoch)
 
-    def precess(self, epoch=Epoch.NOW):
-        if str(epoch).lower() == str(Epoch.J2000).lower():
-            epoch = ephem.J2000
-        elif str(epoch).lower() == str(Epoch.B1950).lower():
-            epoch = ephem.B1950
-        elif str(epoch).lower() == str(Epoch.NOW).lower():
-            epoch = ephem.now()
-
-        j2000 = self.toEphem()
-        now = ephem.Equatorial(j2000, epoch=epoch)
-        return Position.fromRaDec(
-            Coord.fromR(now.ra), Coord.fromR(now.dec), epoch=Epoch.NOW)
-
     #
     # great circle distance
     #
