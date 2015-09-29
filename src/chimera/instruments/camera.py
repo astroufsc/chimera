@@ -300,7 +300,7 @@ class CameraBase (ChimeraObject,
         # If not, just go on with the instrument's default metadata.
         md = [('DATE-OBS', ImageUtil.formatDate(self.extra_header_info.get("frame_start_time", dt.datetime.utcnow())),
                'Date exposure started'),
-              ("EXPTIME", float(request['exptime']) or -1, "exposure time in seconds"),
+              ("EXPTIME", float(request['exptime']), "exposure time in seconds"),
               ('IMAGETYP', request['type'].strip(), 'Image type'),
               ('SHUTTER', str(request['shutter']), 'Requested shutter state'),
               ('INSTRUME', str(self['camera_model']), 'Name of instrument'),
