@@ -200,15 +200,11 @@ class TelescopeBase(ChimeraObject,
         '''
         raise NotImplementedError()
 
-    def isParked(self):
+    def isCoverOpen(self):
+        '''
+        Tells if cover is open or not.
+        '''
         raise NotImplementedError()
-
-    @lock
-    def setParkPosition(self, position):
-        self._park_position = position
-
-    def getParkPosition(self):
-        return self._park_position or self["default_park_position"]
 
     def startTracking(self):
         raise NotImplementedError()
