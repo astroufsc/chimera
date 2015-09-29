@@ -65,8 +65,6 @@ setup(
 
     include_package_data=True,
 
-    package_data={'': ['jquery-1.11.3.min.js', 'webadmin.html']},
-
     scripts=chimera_scripts,
 
     # installation happens in the specified order
