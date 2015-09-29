@@ -254,10 +254,10 @@ class ChimeraTel (ChimeraCLI):
         telescope = self.telescope
 
         self.out(40 * "=")
-        self.out("telescope: %s (%s)." % (telescope.getLocation(),
-                                          telescope["device"]))
+        self.out("telescope: %s (%s)." % (telescope.getLocation(), telescope["device"]))
 
-        self.out("current position ra/dec: %s" % telescope.getPositionRaDec())
+        position = telescope.getPositionRaDec()
+        self.out("current position ra/dec (%s): %s" % (position.epoch, position))
         self.out("current position alt/az: %s" % telescope.getPositionAltAz())
         if telescope.isTracking():
             self.out("tracking: enabled.")
