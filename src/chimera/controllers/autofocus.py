@@ -455,7 +455,7 @@ class Autofocus(ChimeraObject, IAutofocus):
 
     def _findBrighterStar(self, catalog):
 
-        fluxes = [star for star in catalog if star["FLAGS"] == 0 and star["FWHM"] != 0]
+        fluxes = [star for star in catalog if star["FLAGS"] == 0]
 
         if not fluxes:  # empty catalog
             return False
