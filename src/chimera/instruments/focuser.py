@@ -22,7 +22,7 @@
 from chimera.core.chimeraobject import ChimeraObject
 from chimera.core.lock import lock
 
-from chimera.interfaces.focuser import Focuser
+from chimera.interfaces.focuser import Focuser,HexapodAxis
 
 
 class FocuserBase (ChimeraObject, Focuser):
@@ -33,22 +33,22 @@ class FocuserBase (ChimeraObject, Focuser):
         self._supports = {}
 
     @lock
-    def moveIn(self, n):
+    def moveIn(self, n, axis=HexapodAxis.Z):
         raise NotImplementedError()
 
     @lock
-    def moveOut(self, n):
+    def moveOut(self, n, axis=HexapodAxis.Z):
         raise NotImplementedError()
 
     @lock
-    def moveTo(self, position):
+    def moveTo(self, position, axis=HexapodAxis.Z):
         raise NotImplementedError()
 
     @lock
-    def getPosition(self):
+    def getPosition(self, axis=HexapodAxis.Z):
         raise NotImplementedError()
 
-    def getRange(self):
+    def getRange(self, axis=HexapodAxis.Z):
         raise NotImplementedError()
 
     def getTemperature(self):
