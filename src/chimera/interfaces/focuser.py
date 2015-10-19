@@ -29,7 +29,7 @@ FocuserFeature = Enum("TEMPERATURE_COMPENSATION",
                       "POSITION_FEEDBACK",
                       "HEXAPOD")
 
-HexapodAxis = Enum("X","Y","Z","U","V","W")
+FocuserAxis = Enum("X","Y","Z","U","V","W")
 
 class InvalidFocusPositionException(ChimeraException):
     """
@@ -56,7 +56,7 @@ class Focuser(Interface):
                   "open_timeout": 10,
                   "move_timeout": 60}
 
-    def moveIn(self, n, axis=HexapodAxis.Z):
+    def moveIn(self, n, axis=FocuserAxis.Z):
         """
         Move the focuser IN by n steps. Steps could be absolute units
         (for focuser with absolute encoders) or just a pulse of
@@ -75,7 +75,7 @@ class Focuser(Interface):
         @rtype   : None
         """
 
-    def moveOut(self, n, axis=HexapodAxis.Z):
+    def moveOut(self, n, axis=FocuserAxis.Z):
         """
         Move the focuser OUT by n steps. Steps could be absolute units
         (for focuser with absolute encoders) or just a pulse of
@@ -94,7 +94,7 @@ class Focuser(Interface):
         @rtype   : None
         """
 
-    def moveTo(self, position, axis=HexapodAxis.Z):
+    def moveTo(self, position, axis=FocuserAxis.Z):
         """
         Move the focuser to the select position (if ENCODER_BASED
         supported).
@@ -111,7 +111,7 @@ class Focuser(Interface):
         @rtype   : None
         """
 
-    def getPosition(self, axis=HexapodAxis.Z):
+    def getPosition(self, axis=FocuserAxis.Z):
         """
         Gets the current focuser position (if the POSITION_FEEDBACK
         supported).
@@ -123,7 +123,7 @@ class Focuser(Interface):
         @return  : Current focuser position.
         """
 
-    def getRange(self, axis=HexapodAxis.Z):
+    def getRange(self, axis=FocuserAxis.Z):
         """
         Gets the focuser total range
         @rtype: tuple
