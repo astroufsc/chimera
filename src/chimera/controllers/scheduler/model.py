@@ -86,7 +86,36 @@ class AutoFocus(Action):
 
     def __str__ (self):
         return "autofocus: start=%d end=%d step=%d exptime=%d" % (self.start, self.end, self.step, self.exptime)
-    
+
+class AutoGuide(Action):
+    __tablename__ = "action_ag"
+    __mapper_args__ = {'polymorphic_identity': 'AutoGuide'}
+
+    id             = Column(Integer, ForeignKey('action.id'), primary_key=True)
+
+    min_exptime    = Column(Float,   default= 1.)
+    max_exptime    = Column(Float,   default=10.)
+    ntries         = Column(Integer, default= 3 )
+
+    filter     = Column(String,  default=None)
+    binning    = Column(String, default=None)
+    windowCCD  = Column(Boolean, default=True)
+    box        = Column(Integer, default=None)
+
+    stop       = Column(Boolean, default=False) # Add an action with stop = True at the end of each observing sequence
+
+    def __str__ (self):
+        if self.stop:
+            return "AutoGuide: End a running autoguider instance."
+        else:
+            return "AutoGuide: exptime=[%f:%f] ntries=%i filter=%s binning=%s windowCCD=%s box=%s"%(self.min_exptime,
+                                                                                                    self.max_exptime,
+                                                                                                    self.ntries,
+                                                                                                    self.filter,
+                                                                                                    self.binning,
+                                                                                                    self.windowCCD,
+                                                                                                   'auto' if self.box is None else self.box)
+
 class PointVerify(Action):
     __tablename__ = "action_pv"
     __mapper_args__ = {'polymorphic_identity': 'PointVerify'}
