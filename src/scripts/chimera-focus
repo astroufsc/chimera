@@ -25,7 +25,7 @@ from chimera.core.callback import callback
 # from chimera.core.exceptions import ChimeraException
 
 from chimera.interfaces.autofocus import StarNotFoundException, FocusNotFoundException
-from chimera.interfaces.focuser import InvalidFocusPositionException, FocuserFeature, FocuserAxis
+from chimera.interfaces.focuser import InvalidFocusPositionException, FocuserFeature, FocuserAxis, ControllableAxis
 from chimera.interfaces.filterwheel import InvalidFilterPositionException
 from chimera.util.sextractor import SExtractorException
 
@@ -277,23 +277,21 @@ class ChimeraFocus(ChimeraCLI):
 
     def _currentPosition(self, options):
 
-        if self.focuser.supports(FocuserFeature.HEXAPOD):
-            self.out("Current focuser position:")
-            for ax in FocuserAxis:
-                self.out('\t%s: %s'%(ax, self.focuser.getPosition(ax)))
-        else:
-            self.out("Current focuser position: %s" % self.focuser.getPosition())
+        self.out("Current focuser position: %s" % self.focuser.getPosition())
+
+        for ax in ControllableAxis:
+            if self.focuser.supports(ax):
+                self.out('\tAxis %s: %s'%(ControllableAxis[ax], self.focuser.getPosition(ControllableAxis[ax])))
 
         return
 
     def _validRange(self, options):
 
-        if self.focuser.supports(FocuserFeature.HEXAPOD):
-            self.out("Valid ranges:")
-            for ax in FocuserAxis:
-                self.out('\t%s: %s'%(ax, self.focuser.getRange(ax)))
-        else:
-            self.out("Valid range: %s-%s" % self.focuser.getRange())
+        self.out("Valid range: %s-%s" % self.focuser.getRange())
+
+        for ax in ControllableAxis:
+            if self.focuser.supports(ax):
+                self.out('\tRange %s: %s'%(ControllableAxis[ax], self.focuser.getRange(ControllableAxis[ax])))
 
         return
 

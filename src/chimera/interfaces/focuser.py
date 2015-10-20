@@ -27,9 +27,19 @@ from chimera.util.enum import Enum
 FocuserFeature = Enum("TEMPERATURE_COMPENSATION",
                       "ENCODER",
                       "POSITION_FEEDBACK",
-                      "HEXAPOD")
+                      "CONTROLLABLE_X",
+                      "CONTROLLABLE_Y",
+                      "CONTROLLABLE_U",
+                      "CONTROLLABLE_V",
+                      "CONTROLLABLE_W")
 
 FocuserAxis = Enum("X","Y","Z","U","V","W")
+
+ControllableAxis = {FocuserFeature.CONTROLLABLE_X : FocuserAxis.X,
+                    FocuserFeature.CONTROLLABLE_Y : FocuserAxis.Y,
+                    FocuserFeature.CONTROLLABLE_U : FocuserAxis.U,
+                    FocuserFeature.CONTROLLABLE_V : FocuserAxis.V,
+                    FocuserFeature.CONTROLLABLE_W : FocuserAxis.W}
 
 class InvalidFocusPositionException(ChimeraException):
     """

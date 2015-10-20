@@ -22,7 +22,7 @@
 from chimera.core.chimeraobject import ChimeraObject
 from chimera.core.lock import lock
 
-from chimera.interfaces.focuser import Focuser,FocuserAxis
+from chimera.interfaces.focuser import Focuser,FocuserAxis,FocuserFeature
 
 
 class FocuserBase (ChimeraObject, Focuser):
