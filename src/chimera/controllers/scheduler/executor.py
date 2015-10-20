@@ -1,7 +1,7 @@
 
 from chimera.controllers.scheduler.handlers import (ExposeHandler, PointHandler,
-                                                    AutoFocusHandler, PointVerifyHandler)
-from chimera.controllers.scheduler.model import Expose, Point, AutoFocus, PointVerify
+                                                    AutoFocusHandler, PointVerifyHandler, AutoGuiderHandler)
+from chimera.controllers.scheduler.model import Expose, Point, AutoFocus, PointVerify, AutoGuide
 from chimera.controllers.scheduler.handlers import ActionHandler
 from chimera.controllers.scheduler.status import SchedulerStatus
 
@@ -27,7 +27,9 @@ class ProgramExecutor(object):
         self.actionHandlers = {Expose     : ExposeHandler,
                                Point      : PointHandler,
                                AutoFocus  : AutoFocusHandler,
-                               PointVerify: PointVerifyHandler}
+                               PointVerify: PointVerifyHandler,
+                               AutoGuide  : AutoGuiderHandler,
+                               }
 
     def __start__ (self):
         for handler in self.actionHandlers.values():

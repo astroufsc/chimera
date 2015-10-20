@@ -28,7 +28,8 @@ from chimera.util.output import blue, green, red
 from chimera.controllers.scheduler.status import SchedulerStatus
 from chimera.controllers.scheduler.states import State
 from chimera.controllers.scheduler.model import (Session, Program, Point,
-                                                 Expose, PointVerify, AutoFocus)
+                                                 Expose, PointVerify, AutoFocus,
+                                                 AutoGuide)
 
 import re
 import sys
@@ -55,6 +56,23 @@ class ChimeraSched (ChimeraCLI):
         # RA      dec       epoch  type    name  N*(f1:t1:n1, f2:t2:n2, ......)
         14:00:00 -30:00:00  J2000  OBJECT  obj1  2*(V:7, R:6:2, B:5:2)
         15:00:00 -30:00:00  NOW    OBJECT  obj2  2*(V:7, R:6:2, B:5:2)
+
+        # To use the auto-guider just add a new column after the exposure setup with the auto-guider options
+        # in parentheses.
+        #
+        # Parameters are:
+        #
+        # min_exptime - Minimum exposure time to try and find a guiding star
+        # max_exptime - Maximum exposure time to try and find a guiding star
+        # ntries      - Number or tries (will increase exposure time linearly)
+        # filter      - Filter to be used
+        # binning     - Binning of guider camera
+        # windowCCD   - Window guider frame on exposures?
+        # box         - Size of guiding box (in pixels). None for auto-setup.
+
+        # RA      dec       epoch  type    name N*(f1:t1:n1, f2:t2:n2, ......) auto-guider
+        14:00:00 -30:00:00  J2000  OBJECT  obj1 2*(V:7, R:6:2, B:5:2)          (0.5,10.,5,None,None,True,None)
+        15:00:00 -30:00:00  NOW    OBJECT  obj2 2*(V:7, R:6:2, B:5:2)          (  5,30.,5,None,None,True,None)
 
         # special targets follow different format
         # for bias and dark, filter is ignored, we use same format just to keep it simple
@@ -103,6 +121,7 @@ class ChimeraSched (ChimeraCLI):
         self.generateDatabase(options)
 
     def generateDatabase(self, options):
+
         f = None
         try:
             f = open(options.filename, "r")
@@ -112,7 +131,8 @@ class ChimeraSched (ChimeraCLI):
         session = Session()
 
         lineRe = re.compile('(?P<coord>(?P<ra>[\d:-]+)\s+(?P<dec>\+?[\d:-]+)\s+(?P<epoch>[\dnowNOWJjBb\.]+)\s+)?(?P<imagetype>[\w]+)'
-                            '\s+(?P<objname>\'([^\\n\'\\\\]|\\\\.)*\'|"([^\\n"\\\\]|\\\\.)*"|([^ \\n"\\\\]|\\\\.)*)\s+(?P<exposures>[\w\d\s:\*\(\),]*)')
+                            '\s+(?P<objname>\'([^\\n\'\\\\]|\\\\.)*\'|"([^\\n"\\\\]|\\\\.)*"|([^ \\n"\\\\]|\\\\.)*)\s+(?P<exposures>[\w\d\s:\*\(\),]*)'
+                            '\s+(?P<AG>[\w\d\s\*\(,\.\)]+)?')
         programs = []
 
         for i, line in enumerate(f):
@@ -140,6 +160,16 @@ class ChimeraSched (ChimeraCLI):
             imagetype = params['imagetype'].upper()
             objname = params['objname'].replace("\"", "")
 
+            autoguider = None
+
+            if params.get("AG",None):
+                autoguider = params['AG'].replace('(','').replace(')','').replace('\n','').split(',')
+                for i,typecheck in enumerate((float,float,int,str,str,bool,int)):
+                    try:
+                        autoguider[i] = typecheck(autoguider[i])
+                    except:
+                        autoguider[i] = None
+
             multiplier, exps = params['exposures'].split("*")
             try:
                 multiplier = int(multiplier)
@@ -155,13 +185,22 @@ class ChimeraSched (ChimeraCLI):
 
                 self.out("# program: %s" % program.name)
 
-                if imagetype == "OBJECT":
+                if imagetype == "OBJECT" and i == 0:
                     if position:
                         program.actions.append(Point(targetRaDec=position))
                     else:
                         program.actions.append(Point(targetName=objname))
 
-                if imagetype == "FLAT":
+                    if autoguider is not None:
+                        program.actions.append(AutoGuide(min_exptime=autoguider[0],
+                                                         max_exptime=autoguider[1],
+                                                         ntries     =autoguider[2],
+                                                         filter     =autoguider[3],
+                                                         binning    =autoguider[4],
+                                                         windowCCD  =autoguider[5],
+                                                         box        =autoguider[6]))
+
+                if imagetype == "FLAT" and i == 0:
                     site = self._remoteManager.getProxy("/Site/0")
                     flatPosition = Position.fromAltAz(
                         site['flat_alt'], site['flat_az'])
@@ -200,7 +239,17 @@ class ChimeraSched (ChimeraCLI):
                                                   exptime=exptime,
                                                   imageType=imagetype,
                                                   objectName=objname))
+
                 self.out("")
+                programs.append(program)
+
+            if autoguider is not None:
+
+                program = Program(
+                    name="%s-stop-autoguider" % (objname.replace(" ", "")))
+
+                program.actions.append(AutoGuide(stop=True))
+
                 programs.append(program)
 
         session.add_all(programs)

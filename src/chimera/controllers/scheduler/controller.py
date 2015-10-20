@@ -27,6 +27,7 @@ class Scheduler(ChimeraObject):
                   "dome": "/Dome/0",
                   "autofocus": "/Autofocus/0",
                   "point_verify": "/PointVerify/0",
+                  "autoguider": "/AutoGuider/0",
                   'site': '/Site/0',
                   'algorithm': SchedulingAlgorithm.SEQUENTIAL}
 
