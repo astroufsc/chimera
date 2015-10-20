@@ -17,12 +17,12 @@
 # 02110-1301, USA.
 
 from chimera.core.chimeraobject import ChimeraObject
-from chimera.interfaces.weatherstation import WeatherStation
+from chimera.interfaces.weatherstation import IWeatherStation
 
 import astropy.units as units
 
 
-class WeatherBase(ChimeraObject, WeatherStation):
+class WeatherBase(ChimeraObject, IWeatherStation):
 
     def __init__(self):
         ChimeraObject.__init__(self)

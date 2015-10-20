@@ -33,10 +33,9 @@ class WSValue(namedtuple('WSValue', 'time value unit')):
     pass
 
 
-class WeatherStation (Interface):
+class IWeatherStation (Interface):
     """
     Instrument interface for weather stations
-
     """
 
     __config__ = {"device": None,           # weather station device
