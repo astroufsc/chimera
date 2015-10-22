@@ -448,3 +448,26 @@ class TelescopeTracking (Telescope):
         @rtype: bool
 
         """
+    @event
+    def trackingStarted(self,position):
+        """
+        Indicates that a tracking operation started.
+
+        @param position: The position where the telescope started track.
+        @type  position: L{Position}
+        """
+
+    @event
+    def trackingStopped(self,position, status):
+        """
+        Indicates that the last tracking operation stopped. This event
+        will be fired even when problems impedes tracking operation to resume
+        (altitude limits, for example). Check L{status} field if you
+        need more information.
+
+        @param position: The telescope position when tracking stopped.
+        @type  position: L{Position}
+
+        @param status: The status of the tracking operation.
+        @type  status: L{TelescopeStatus}
+        """
