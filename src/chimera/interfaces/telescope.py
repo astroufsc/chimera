@@ -417,6 +417,12 @@ class TelescopePark (Telescope):
         successfully.
         """
 
+class TelescopeCover(Telescope):
+    """
+    Telescope with mirror cover.
+    """
+
+
     def openCover(self):
         """
         Open the telescope cover
