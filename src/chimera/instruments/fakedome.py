@@ -119,7 +119,7 @@ class FakeDome (DomeBase):
     def closeSlit(self):
         self.log.info("Closing slit")
         if self.isFlapOpen():
-            self.log.warning("Dome flap opened. Closing it before closing the slit.")
+            self.log.warning("Dome flap open. Closing it before closing the slit.")
             self.closeFlap()
         time.sleep(2)
         self._slitOpen = False

@@ -195,7 +195,7 @@ class DomeFlap(Dome):
 
     def isFlapOpen(self):
         """
-        Ask the dome if the flap is opened.
+        Ask the dome if the flap is open.
 
         @return: True when open, False otherwise.
         @rtype: bool
