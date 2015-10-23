@@ -229,7 +229,7 @@ class ChimeraFocus(ChimeraCLI):
                 ds9.set("regions command { circle %d %d %d}" % (
                     int(star["XWIN_IMAGE"]), int(star["YWIN_IMAGE"]), int(star["FWHM_IMAGE"])))
                 ds9.set("scale mode 99.5")
-                #ds9.xpaset("pan to %d %d physical" % (int(star["XWIN_IMAGE"]), int(star["YWIN_IMAGE"])))
+                # ds9.xpaset("pan to %d %d physical" % (int(star["XWIN_IMAGE"]), int(star["YWIN_IMAGE"])))
 
         self.autofocus.stepComplete += stepComplete
 
@@ -281,7 +281,7 @@ class ChimeraFocus(ChimeraCLI):
 
         for ax in ControllableAxis:
             if self.focuser.supports(ax):
-                self.out('\tAxis %s: %s'%(ControllableAxis[ax], self.focuser.getPosition(ControllableAxis[ax])))
+                self.out('\tAxis %s: %s' % (ControllableAxis[ax], self.focuser.getPosition(ControllableAxis[ax])))
 
         return
 
@@ -291,9 +291,10 @@ class ChimeraFocus(ChimeraCLI):
 
         for ax in ControllableAxis:
             if self.focuser.supports(ax):
-                self.out('\tRange %s: %s'%(ControllableAxis[ax], self.focuser.getRange(ControllableAxis[ax])))
+                self.out('\tRange %s: %s' % (ControllableAxis[ax], self.focuser.getRange(ControllableAxis[ax])))
 
         return
+
 
 def main():
     cli = ChimeraFocus()
