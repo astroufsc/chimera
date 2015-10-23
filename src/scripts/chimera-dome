@@ -22,6 +22,8 @@
 
 from chimera.core.cli import ChimeraCLI, action
 from chimera.util.coord import Coord
+from chimera.core.exceptions import printException
+from chimera.util.output import blue, green, red
 
 from chimera.interfaces.dome import Mode
 
@@ -29,8 +31,7 @@ import sys
 import copy
 
 
-class ChimeraDome (ChimeraCLI):
-
+class ChimeraDome(ChimeraCLI):
     def __init__(self):
         ChimeraCLI.__init__(
             self, "chimera-dome", "Dome controller", 0.1, port=9001)
@@ -39,12 +40,18 @@ class ChimeraDome (ChimeraCLI):
         self.addInstrument(name="dome", cls="Dome", required=True,
                            help="Dome instrument to be used", helpGroup="DOME")
 
+        self.addHelpGroup("DOMEFANS", "DomeFans")
+        self.addInstrument(name="domefan",
+                           cls="DomeFan", required=False,
+                           help="Dome fan instrument to be used. If blank, try to guess from chimera.config",
+                           helpGroup="DOMEFANS")
+
         self.addHelpGroup("TELESCOPE", "Telescope Tracking Configuration")
         self.addParameters(dict(name="telescope",
                                 default="/Telescope/0",
                                 helpGroup="TELESCOPE",
                                 help="Tell the dome to follow TELESCOPE when tracking"
-                                "(only utilized when using --track"))
+                                     "(only utilized when using --track"))
 
         self.addHelpGroup("COMMANDS", "Commands")
 
@@ -118,6 +125,93 @@ class ChimeraDome (ChimeraCLI):
         self.dome.slewToAz(target)
         self.out("OK")
 
+    @action(long="setFanSpeed",
+            type="float",
+            help="Set fan speed.",
+            metavar="speed",
+            helpGroup="COMMANDS",
+            actionGroup="DOMEFANS")
+    def setFanSpeed(self, options):
+        domefan = self.domefan
+        if domefan is None:
+            self.exit(
+                "No Dome Fan found. Edit chimera.config or pass --domefan (see --help)")
+
+        self.out("=" * 40)
+        self.out("Changing fan speed to %.2f " % (options.setFanSpeed), end=" ")
+        try:
+            domefan.setRotation(options.setFanSpeed)
+        except Exception, e:
+            self.exit("%s. \n%s" % (red("FAILED"), printException(e)))
+
+        self.out("%s" % (green("OK")))
+        self.out("=" * 40)
+
+    @action(help="Print dome information",
+            helpGroup="COMMANDS",
+            actionGroup="DOMEFANS")
+    def getFanSpeed(self, options):
+        domefan = self.domefan
+        if domefan is None:
+            self.exit(
+                "No Dome Fan found. Edit chimera.config or pass --domefan (see --help)")
+
+        self.out("=" * 40)
+        self.out("DomeFan: %s (%s)" %
+                 (domefan.getLocation(), domefan["device"]))
+        self.out("Current speed: %f" % domefan.getRotation())
+        self.out("=" * 40)
+
+    @action(help="Start dome fan",
+            helpGroup="COMMANDS",
+            actionGroup="DOMEFANS")
+    def startFan(self, options):
+
+        domefan = self.domefan
+        if domefan is None:
+            self.exit(
+                "No Dome Fan found. Edit chimera.config or pass --domefan (see --help)")
+
+        if domefan.isFanRunning():
+            self.exit("Fan is already running... ")
+
+        self.out("=" * 40)
+
+        self.out("Starting... ", end="")
+        try:
+            if domefan.startFan():
+                self.out(green("OK"))
+            else:
+                self.out(red("FAILED"))
+            self.out("=" * 40)
+        except Exception, e:
+            self.exit("%s\n %s" % (red("FAILED"), printException(e)))
+
+    @action(help="Stop dome fan",
+            helpGroup="COMMANDS",
+            actionGroup="DOMEFANS")
+    def stopFan(self, options):
+
+        domefan = self.domefan
+        if domefan is None:
+            self.exit(
+                "No Dome Fan found. Edit chimera.config or pass --domefan (see --help)")
+
+        if not domefan.isFanRunning():
+            self.exit("Fan is not running... ")
+
+        self.out("=" * 40)
+
+        self.out("Stopping... ", end="")
+        try:
+            if domefan.stopFan():
+                self.out(green("OK"))
+            else:
+                self.out(red("FAILED"))
+            self.out("=" * 40)
+        except Exception, e:
+            self.exit("%s\n %s" % (red("FAILED"), printException(e)))
+
     @action(help="Print dome information",
             helpGroup="COMMANDS")
     def info(self, options):
@@ -135,6 +229,15 @@ class ChimeraDome (ChimeraCLI):
             self.out("Dome slit is open.")
         else:
             self.out("Dome slit is closed.")
+
+        domefan = self.domefan
+        if domefan is not None:
+            self.out("=" * 40)
+            self.out("DomeFan: %s (%s)." %
+                     (domefan.getLocation(), domefan["device"]))
+            self.out("Current fan status: %s" % domefan.status())
+            self.out("Current fan speed: %.2f" % domefan.getRotation())
+
         self.out("=" * 40)
 
     def __abort__(self):
@@ -151,6 +254,6 @@ def main():
     cli.run(sys.argv)
     cli.wait()
 
-if __name__ == '__main__':
 
+if __name__ == '__main__':
     main()
