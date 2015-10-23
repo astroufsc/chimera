@@ -449,7 +449,7 @@ class TelescopeTracking (Telescope):
 
         """
     @event
-    def trackingStarted(self,position):
+    def trackingStarted(self, position):
         """
         Indicates that a tracking operation started.
 
@@ -458,7 +458,7 @@ class TelescopeTracking (Telescope):
         """
 
     @event
-    def trackingStopped(self,position, status):
+    def trackingStopped(self, position, status):
         """
         Indicates that the last tracking operation stopped. This event
         will be fired even when problems impedes tracking operation to resume
