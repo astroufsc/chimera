@@ -49,7 +49,12 @@ Controllers
 
 * chimera-gui: A simple Graphical User Interface to chimera. *On the main chimera package*
 
+* chimera-headers_: Template plugin to modify FITS header keywords. *Advanced use*
+
 * chimera-pverify: Verify the telescope pointing accuracy easily. *On the main chimera package*
+
+* chimera-skyflats_: Wakes the telescope at the right time and make the exposure time calculations to make automatic
+skyflats.
 
 * chimera-stellarium_: Integrates Stellarium_ ephemeris software with chimera.
 
