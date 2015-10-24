@@ -65,7 +65,8 @@ class TestConfig (object):
         c = Config({"key_opt_int": [1, 2, 3],
                     "key_opt_float": [1, 2.0, 4.0],
                     "key_opt_bool": [1, False],
-                    "key_opt_str": ["one", "two", "three"]})
+                    "key_opt_str": ["one", "two", "three"],
+                    "key_opt_none": [None, None, None]})
 
         # valid
         for i in (1, 2, 3, True): # True == 1
@@ -113,7 +114,8 @@ class TestConfig (object):
              "save_on_temp" : False,
              "seq_num"      : 1,
              "observer"     : "observer name",
-             "obj_name"     : "object name"}
+             "obj_name"     : "object name",
+             "some_none_var": None}
 
         c = Config(d)
 

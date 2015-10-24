@@ -131,7 +131,8 @@ class SystemConfig (object):
                           "camera", "cameras",
                           "filterwheel", "filterwheels",
                           "dome", "domes",
-                          "focuser", "focusers"]
+                          "focuser", "focusers",
+                          "weatherstation", "weatherstations"]
 
         self._instrumentsSections = self._specials + \
             ["instrument", "instruments"]
