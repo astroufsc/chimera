@@ -417,6 +417,34 @@ class TelescopePark (Telescope):
         successfully.
         """
 
+class TelescopeCover(Telescope):
+    """
+    Telescope with mirror cover.
+    """
+
+
+    def openCover(self):
+        """
+        Open the telescope cover
+
+        :return: None
+        """
+
+    def closeCover(self):
+        """
+        Close the telescope cover
+
+        @:return: None
+        """
+
+    def isCoverOpen(self):
+        """
+        Ask if the telescope cover is open or not
+
+        @:return: True if cover is open, false otherwise
+        """
+
+
 
 class TelescopeTracking (Telescope):
 
