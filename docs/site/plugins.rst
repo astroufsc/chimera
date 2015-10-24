@@ -53,8 +53,8 @@ Controllers
 
 * chimera-pverify: Verify the telescope pointing accuracy easily. *On the main chimera package*
 
-* chimera-skyflats_: Wakes the telescope at the right time and make the exposure time calculations to make automatic
-skyflats.
+* chimera-skyflat_: Wakes the telescope at the right time and make the exposure time calculations to make automatic
+sky-flatting.
 
 * chimera-stellarium_: Integrates Stellarium_ ephemeris software with chimera.
 
@@ -96,3 +96,5 @@ skyflats.
 .. _chimera-xephem: https://github.com/astroufsc/chimera-xephem
 .. _chimera-webadmin: https://github.com/astroufsc/chimera-webadmin
 .. _chimera for devs: chimerafordevs.html
+.. _chimera-headers: https://github.com/astroufsc/chimera-headers
+.. _chimera-skyflat: https://github.com/astroufsc/chimera-skyflat
