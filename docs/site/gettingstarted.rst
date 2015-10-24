@@ -62,12 +62,12 @@ These steps were tested with `Anaconda`_ version 2.3.0.
 * Open the Anaconda Command Prompt and install chimera using pip:
 ::
 
-   pip install git+https://github.com/wschoenell/chimera.git
+   pip install git+https://github.com/astroufsc/chimera.git
 
 * After install, you can run chimera and its scripts by executing
 ::
 
-   python C:\Anaconda\Scripts\chimera
+   python C:\Anaconda\Scripts\chimera -vv
 
 On the first run, chimera creates a sample configuration file with fake instruments on ``%HOMEPATH%\chimera\chimera.config``
 
@@ -82,7 +82,7 @@ Python virtual environment
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 For those constrained by limited access to their platform, restrictions to the system
-provided python or any other reason, the python tool *virtualenv* provides an
+provided python or any other reason, the python tool virtualenv_ provides an
 isolated environment in which to install **Chimera**.
 
 * Install virtualenv_;
@@ -90,17 +90,17 @@ isolated environment in which to install **Chimera**.
 
   ::
 
-  	virtualenv v_name
+    virtualenv v_name
 
 * This will generate a directory named *v_name*; go in and type
 
   ::
 
-  	source bin/activate
+    source bin/activate
 
   (See the documentation for details).
 
-* From tyhe same directory, you can now proceed to install as described above_.
+* From tyhe same directory, you can now proceed to install as described above.
 
 .. _virtualenv: https://virtualenv.pypa.io/en/latest/
 

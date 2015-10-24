@@ -71,7 +71,7 @@ Default configuration parameters by interface type
 * Camera
 
 .. literalinclude:: ../../src/chimera/interfaces/camera.py
-    :lines: 107-116
+    :lines: 106-117
 
 * Dome
 
@@ -101,7 +101,7 @@ Default configuration parameters by interface type
 * Weather Station
 
 .. literalinclude:: ../../src/chimera/interfaces/weatherstation.py
-    :lines: 60-75
+    :lines: 42-44
 
 
 Fake Instruments default configuration parameters
