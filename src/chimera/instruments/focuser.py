@@ -22,7 +22,9 @@
 from chimera.core.chimeraobject import ChimeraObject
 from chimera.core.lock import lock
 
-from chimera.interfaces.focuser import Focuser, FocuserAxis, FocuserFeature
+from chimera.interfaces.focuser import (Focuser, FocuserAxis,
+                                        AxisControllable,
+                                        InvalidFocusPositionException)
 
 
 class FocuserBase(ChimeraObject, Focuser):
@@ -59,6 +61,10 @@ class FocuserBase(ChimeraObject, Focuser):
         else:
             self.log.info("Invalid feature: %s" % str(feature))
             return False
+
+    def _checkAxis(self, axis):
+        if not self.supports(AxisControllable[axis]):
+            raise InvalidFocusPositionException("Cannot move %s axis."%axis)
 
     def getMetadata(self, request):
         md = [('FOCUSER', str(self['model']), 'Focuser Model'),

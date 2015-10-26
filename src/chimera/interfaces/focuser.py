@@ -29,6 +29,7 @@ FocuserFeature = Enum("TEMPERATURE_COMPENSATION",
                       "POSITION_FEEDBACK",
                       "CONTROLLABLE_X",
                       "CONTROLLABLE_Y",
+                      "CONTROLLABLE_Z",
                       "CONTROLLABLE_U",
                       "CONTROLLABLE_V",
                       "CONTROLLABLE_W")
@@ -37,10 +38,19 @@ FocuserAxis = Enum("X", "Y", "Z", "U", "V", "W")
 
 ControllableAxis = {FocuserFeature.CONTROLLABLE_X: FocuserAxis.X,
                     FocuserFeature.CONTROLLABLE_Y: FocuserAxis.Y,
+                    FocuserFeature.CONTROLLABLE_Z: FocuserAxis.Z,
                     FocuserFeature.CONTROLLABLE_U: FocuserAxis.U,
                     FocuserFeature.CONTROLLABLE_V: FocuserAxis.V,
-                    FocuserFeature.CONTROLLABLE_W: FocuserAxis.W}
+                    FocuserFeature.CONTROLLABLE_W: FocuserAxis.W,
+                    }
 
+AxisControllable = {FocuserAxis.X: FocuserFeature.CONTROLLABLE_X,
+                    FocuserAxis.Y: FocuserFeature.CONTROLLABLE_Y,
+                    FocuserAxis.Z: FocuserFeature.CONTROLLABLE_Z,
+                    FocuserAxis.U: FocuserFeature.CONTROLLABLE_U,
+                    FocuserAxis.V: FocuserFeature.CONTROLLABLE_V,
+                    FocuserAxis.W: FocuserFeature.CONTROLLABLE_W,
+                    }
 
 class InvalidFocusPositionException(ChimeraException):
     """

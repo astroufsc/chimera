@@ -75,6 +75,7 @@ class DCFocuser (FocuserBase):
                           FocuserFeature.ENCODER: False,
                           FocuserFeature.CONTROLLABLE_X: False,
                           FocuserFeature.CONTROLLABLE_Y: False,
+                          FocuserFeature.CONTROLLABLE_Z: True,
                           FocuserFeature.CONTROLLABLE_U: False,
                           FocuserFeature.CONTROLLABLE_V: False,
                           FocuserFeature.CONTROLLABLE_W: False,
@@ -194,7 +195,3 @@ class DCFocuser (FocuserBase):
     def getRange(self, axis=FocuserAxis.Z):
         self._checkAxis(axis)
         return self._range
-
-    def _checkAxis(self, axis):
-        if axis != FocuserAxis.Z:
-            raise InvalidFocusPositionException("Cannot move %s axis."%axis)

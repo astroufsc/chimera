@@ -281,7 +281,7 @@ class ChimeraFocus(ChimeraCLI):
         self.out("Current focuser position: %s" % self.focuser.getPosition())
 
         for ax in ControllableAxis:
-            if self.focuser.supports(ax):
+            if self.focuser.supports(ax) and ax != FocuserFeature.CONTROLLABLE_Z:
                 self.out('\tAxis %s: %s' % (ControllableAxis[ax], self.focuser.getPosition(ControllableAxis[ax])))
 
         return
@@ -291,7 +291,7 @@ class ChimeraFocus(ChimeraCLI):
         self.out("Valid range: %s-%s" % self.focuser.getRange())
 
         for ax in ControllableAxis:
-            if self.focuser.supports(ax):
+            if self.focuser.supports(ax) and ax != FocuserFeature.CONTROLLABLE_Z:
                 self.out('\tRange %s: %s' % (ControllableAxis[ax], self.focuser.getRange(ControllableAxis[ax])))
 
         return

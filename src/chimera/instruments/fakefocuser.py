@@ -39,6 +39,7 @@ class FakeFocuser (FocuserBase):
                           FocuserFeature.ENCODER: True,
                           FocuserFeature.CONTROLLABLE_X: False,
                           FocuserFeature.CONTROLLABLE_Y: False,
+                          FocuserFeature.CONTROLLABLE_Z: True,
                           FocuserFeature.CONTROLLABLE_U: False,
                           FocuserFeature.CONTROLLABLE_V: False,
                           FocuserFeature.CONTROLLABLE_W: False,
@@ -95,8 +96,3 @@ class FakeFocuser (FocuserBase):
     def _inRange(self, n):
         min_pos, max_pos = self.getRange()
         return (min_pos <= n <= max_pos)
-
-    def _checkAxis(self, axis):
-        if axis != FocuserAxis.Z:
-            print axis != FocuserAxis.Z
-            raise InvalidFocusPositionException("Cannot move %s axis."%axis)
