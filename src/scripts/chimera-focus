@@ -50,9 +50,10 @@ class ChimeraFocus(ChimeraCLI):
                            help="Focuser instrument to be used")
         self.addParameters(dict(name="axis",
                                 long="axis",
-                                type="string",
                                 helpGroup="FOCUS",
                                 help="In case of multi-dimensional focuser, choose axis: X, Y, Z, U, V or W.",
+                                type=ParameterType.CHOICE,
+                                choices=["X","Y","Z","U","V","W"],
                                 metavar="AXIS",
                                 default='Z'))
 
@@ -124,7 +125,7 @@ class ChimeraFocus(ChimeraCLI):
         self.out("Moving %s %d steps IN ... " % (options.axis, options.move_in), end="")
 
         try:
-            self.focuser.moveIn(options.move_in, options.axis)
+            self.focuser.moveIn(options.move_in, FocuserAxis.fromStr(options.axis))
         except InvalidFocusPositionException:
             self.exit("Invalid position. Current position %d,"
                       " target position %d, valid range %d-%d." % (self.focuser.getPosition(),
@@ -146,7 +147,7 @@ class ChimeraFocus(ChimeraCLI):
         self.out("Moving %s %d steps OUT ... " % (options.axis, options.move_out), end="")
 
         try:
-            self.focuser.moveOut(options.move_out, options.axis)
+            self.focuser.moveOut(options.move_out, FocuserAxis.fromStr(options.axis))
         except InvalidFocusPositionException, e:
             self.exit("Invalid position. Current position %d,"
                       " target position %d, valid range %d-%d." % (self.focuser.getPosition(),
@@ -168,7 +169,7 @@ class ChimeraFocus(ChimeraCLI):
         self.out("Moving %s to %d ... " % (options.axis, options.move_to), end="")
 
         try:
-            self.focuser.moveTo(options.move_to, options.axis)
+            self.focuser.moveTo(options.move_to, FocuserAxis.fromStr(options.axis))
         except InvalidFocusPositionException:
             self.exit("Invalid position, must be between %d and %d," %
                       self.focuser.getRange())

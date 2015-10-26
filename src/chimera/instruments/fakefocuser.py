@@ -98,4 +98,5 @@ class FakeFocuser (FocuserBase):
 
     def _checkAxis(self, axis):
         if axis != FocuserAxis.Z:
+            print axis != FocuserAxis.Z
             raise InvalidFocusPositionException("Cannot move %s axis."%axis)
