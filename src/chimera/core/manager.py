@@ -304,7 +304,7 @@ class Manager (RemoteObject):
             return (location.port is None or location.port == self.getPort())
         else:
             return (location.host is None or location.host in (meHost, meName)) and \
-                   (location.port is None or location.port == self.getPort())
+                   (location.port is None or location.port == mePort)
 
     # shutdown management
 
