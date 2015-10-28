@@ -219,9 +219,9 @@ class ChimeraFocus (ChimeraCLI):
                 ds9.displayFile(filename)
                 ds9.set("regions command { circle %d %d %d}" % (
                     int(star["XWIN_IMAGE"]), int(star["YWIN_IMAGE"]), int(star["FWHM_IMAGE"])))
-                ds9.set("scale mode 99.5")
-                #ds9.xpaset("pan to %d %d physical" % (int(star["XWIN_IMAGE"]), int(star["YWIN_IMAGE"])))
-
+                ds9.set("zoom to fit")
+                ds9.set("scale mode zscale")
+                
         self.autofocus.stepComplete += stepComplete
 
         start, end = options.autofocus_range
