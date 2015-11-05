@@ -157,72 +157,70 @@ class Site (ChimeraObject):
         return gst
 
     def sunrise(self, date=None):
-        date = date or self.localtime()
+        date = date or self.ut()
         site = self._getEphem(date)
         return self._Date2local(site.next_rising(self._sun))
 
     def sunset(self, date=None):
-        date = date or self.localtime()
+        date = date or self.ut()
         site = self._getEphem(date)
         return self._Date2local(site.next_setting(self._sun))
 
     def sunset_twilight_begin(self, date=None):
         # http://aa.usno.navy.mil/faq/docs/RST_defs.php
-        date = date or self.localtime()
+        date = date or self.ut()
         site = self._getEphem(date)
         site.elev = 0
         site.horizon = '-12:00:00'
         return self._Date2local(site.next_setting(self._sun))
 
     def sunset_twilight_end(self, date=None):
-        date = date or self.localtime()
+        date = date or self.ut()
         site = self._getEphem(date)
         site.elev = 0
         site.horizon = '-18:00:00'
         return self._Date2local(site.next_setting(self._sun))
 
     def sunrise_twilight_begin(self, date=None):
-        date = date or self.localtime()
+        date = date or self.ut()
         site = self._getEphem(date)
         site.elev = 0
         site.horizon = '-18:00:00'
         return self._Date2local(site.next_rising(self._sun))
 
     def sunrise_twilight_end(self, date=None):
-        date = date or self.localtime()
+        date = date or self.ut()
         site = self._getEphem(date)
         site.elev = 0
         site.horizon = '-12:00:00'
         return self._Date2local(site.next_rising(self._sun))
 
     def sunpos(self, date=None):
-        date = date or self.localtime()
+        date = date or self.ut()
         self._sun.compute(self._getEphem(date))
 
-        return self.raDecToAltAz(Position.fromRaDec('%s'%self._sun.ra,
-                                                    '%s'%self._sun.dec),
-                                 self.LST_inRads(date))
+        return Position.fromAltAz(
+            Coord.fromR(self._sun.alt), Coord.fromR(self._sun.az))
 
     def moonrise(self, date=None):
-        date = date or self.localtime()
+        date = date or self.ut()
         site = self._getEphem(date)
         return self._Date2local(site.next_rising(self._moon))
 
     def moonset(self, date=None):
-        date = date or self.localtime()
+        date = date or self.ut()
         site = self._getEphem(date)
         return self._Date2local(site.next_setting(self._moon))
 
     def moonpos(self, date=None):
-        date = date or self.localtime()
+        date = date or self.ut()
         self._moon.compute(self._getEphem(date))
 
-        return self.raDecToAltAz(Position.fromRaDec('%s'%self._moon.ra,
-                                                    '%s'%self._moon.dec),
-                                 self.LST_inRads(date))
+        return Position.fromAltAz(
+            Coord.fromR(self._moon.alt), Coord.fromR(self._moon.az))
 
     def moonphase(self, date=None):
-        date = date or self.localtime()
+        date = date or self.ut()
         self._moon.compute(self._getEphem(date))
         return self._moon.phase / 100.0
 
