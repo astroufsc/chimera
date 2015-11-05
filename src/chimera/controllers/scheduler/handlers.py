@@ -46,7 +46,6 @@ class PointHandler(ActionHandler):
             elif action.targetName is not None:
                 telescope.slewToObject(action.targetName)
                 
-            dome.openSlit()
             
         except Exception, e:
             raise ProgramExecutionException(str(e))
