@@ -288,6 +288,13 @@ class DomeBase(ChimeraObject, DomeSlew, DomeSlit, DomeFlap, DomeLights, DomeSync
     def isFlapOpen(self):
         raise NotImplementedError()
 
+    @lock
+    def setDimmer(self,dimm):
+        raise NotImplementedError()
+
+    def getDimmer(self):
+        raise NotImplementedError()
+
     def getMetadata(self, request):
         if self.isSlitOpen():
             slit = 'Open'

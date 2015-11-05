@@ -49,6 +49,11 @@ class ChimeraDome (ChimeraCLI):
         self.addHelpGroup("COMMANDS", "Commands")
 
         self.addHelpGroup("LIGHT", "Dome lights control")
+        self.addParameters(dict(name="dimmer",
+                                default=None,
+                                type=float,
+                                helpGroup="LIGHT",
+                                help="Light dimmer level (in %)."))
 
     @action(help="Open dome slit", helpGroup="COMMANDS", actionGroup="SLIT")
     def openSlit(self, options):
@@ -92,6 +97,10 @@ class ChimeraDome (ChimeraCLI):
             helpGroup="LIGHT",
             actionGroup="LIGHT")
     def lightsOn(self, options):
+        if options.dimmer is not None:
+            self.out("Setting lights dimmer to %.2f... "%(options.dimmer))
+            self.dome.setDimmer(options.dimmer)
+
         self.out("Turning flat lights on ... ", end="")
         self.dome.lightsOn()
         self.out("OK")

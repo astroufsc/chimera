@@ -239,6 +239,22 @@ class DomeLights(Dome):
         @rtype: None
         """
 
+    def setDimmer(self,dimm):
+        """
+        Set the dim percentage of light power (0.:100.].
+
+        @param dimm: Dimmer level in %.
+        @type float:
+        """
+
+    def getDimmer(self):
+        """
+        Get dim level.
+
+        @return: dimm level
+        @rtype: float
+        """
+
     def isLightsOn(self):
         """
         Ask the dome if the flat lights are on, if any.
