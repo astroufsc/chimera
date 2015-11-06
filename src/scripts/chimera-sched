@@ -79,7 +79,7 @@ class ChimeraSched (ChimeraCLI):
                                 short="o",
                                 type="string",
                                 helpGroup="DB",
-                                help="Base filename including full path if needed.",
+                                help="Images base filename including full path if needed.",
                                 default="$NAME-$DATE-$TIME"))
 
 
