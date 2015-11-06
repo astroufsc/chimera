@@ -132,19 +132,19 @@ class Site (ChimeraObject):
         offset = self.localtime().utcoffset()
         return (offset.days * 86400 + offset.seconds) / 3600.0
 
-    def LST_inRads(self,date=None):
+    def LST_inRads(self, date=None):
         if not date:
-			date = self.ut()
+            date = self.ut()
         return float(self._getEphem(date=date).sidereal_time())
 
-    def LST(self,date=None):
+    def LST(self, date=None):
         """
         Mean Local Sidereal Time
         """
-        #lst = self._getEphem(self.ut()).sidereal_time()
+        # lst = self._getEphem(self.ut()).sidereal_time()
         # required since a Coord cannot be constructed from an Ephem.Angle
         if not date:
-			date = self.ut()
+            date = self.ut()
         lst_c = Coord.fromR(self.LST_inRads(date))
         return lst_c.toHMS()
 
@@ -157,70 +157,70 @@ class Site (ChimeraObject):
         return gst
 
     def sunrise(self, date=None):
-        date = date or self.localtime()
+        date = date or self.ut()
         site = self._getEphem(date)
         return self._Date2local(site.next_rising(self._sun))
 
     def sunset(self, date=None):
-        date = date or self.localtime()
+        date = date or self.ut()
         site = self._getEphem(date)
         return self._Date2local(site.next_setting(self._sun))
 
     def sunset_twilight_begin(self, date=None):
         # http://aa.usno.navy.mil/faq/docs/RST_defs.php
-        date = date or self.localtime()
+        date = date or self.ut()
         site = self._getEphem(date)
         site.elev = 0
         site.horizon = '-12:00:00'
         return self._Date2local(site.next_setting(self._sun))
 
     def sunset_twilight_end(self, date=None):
-        date = date or self.localtime()
+        date = date or self.ut()
         site = self._getEphem(date)
         site.elev = 0
         site.horizon = '-18:00:00'
         return self._Date2local(site.next_setting(self._sun))
 
     def sunrise_twilight_begin(self, date=None):
-        date = date or self.localtime()
+        date = date or self.ut()
         site = self._getEphem(date)
         site.elev = 0
         site.horizon = '-18:00:00'
         return self._Date2local(site.next_rising(self._sun))
 
     def sunrise_twilight_end(self, date=None):
-        date = date or self.localtime()
+        date = date or self.ut()
         site = self._getEphem(date)
         site.elev = 0
         site.horizon = '-12:00:00'
         return self._Date2local(site.next_rising(self._sun))
 
     def sunpos(self, date=None):
-        date = date or self.localtime()
+        date = date or self.ut()
         self._sun.compute(self._getEphem(date))
 
         return Position.fromAltAz(
             Coord.fromR(self._sun.alt), Coord.fromR(self._sun.az))
 
     def moonrise(self, date=None):
-        date = date or self.localtime()
+        date = date or self.ut()
         site = self._getEphem(date)
         return self._Date2local(site.next_rising(self._moon))
 
     def moonset(self, date=None):
-        date = date or self.localtime()
+        date = date or self.ut()
         site = self._getEphem(date)
         return self._Date2local(site.next_setting(self._moon))
 
     def moonpos(self, date=None):
-        date = date or self.localtime()
+        date = date or self.ut()
         self._moon.compute(self._getEphem(date))
 
         return Position.fromAltAz(
             Coord.fromR(self._moon.alt), Coord.fromR(self._moon.az))
 
     def moonphase(self, date=None):
-        date = date or self.localtime()
+        date = date or self.ut()
         self._moon.compute(self._getEphem(date))
         return self._moon.phase / 100.0
 
@@ -230,14 +230,14 @@ class Site (ChimeraObject):
     def haToRa(self, ha):
         return CoordUtil.raToHa(ha, self.LST_inRads())
 
-    def raDecToAltAz(self, raDec,lst_inRads=None):
-		if not lst_inRads:
-			lst_inRads = self.LST_inRads()
-		return Position.raDecToAltAz(raDec, self['latitude'], lst_inRads)
-
-    def altAzToRaDec(self, altAz,lst_inRads=None):
+    def raDecToAltAz(self, raDec, lst_inRads=None):
         if not lst_inRads:
-			lst_inRads = self.LST_inRads()
+            lst_inRads = self.LST_inRads()
+        return Position.raDecToAltAz(raDec, self['latitude'], lst_inRads)
+
+    def altAzToRaDec(self, altAz, lst_inRads=None):
+        if not lst_inRads:
+            lst_inRads = self.LST_inRads()
 
         return Position.altAzToRaDec(altAz, self['latitude'], lst_inRads)
 
