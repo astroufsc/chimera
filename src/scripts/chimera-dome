@@ -21,7 +21,9 @@
 
 
 from chimera.core.cli import ChimeraCLI, action
+from chimera.core.exceptions import ObjectNotFoundException
 from chimera.util.coord import Coord
+from chimera.util.output import green, red
 
 from chimera.interfaces.dome import Mode
 
@@ -45,6 +47,18 @@ class ChimeraDome (ChimeraCLI):
                                 helpGroup="TELESCOPE",
                                 help="Tell the dome to follow TELESCOPE when tracking"
                                 "(only utilized when using --track"))
+
+        self.addHelpGroup("CALIBRATIONLAMP", "CalibrationLamp")
+        self.addParameters(dict(name="calibrationlamp",
+                                default="/CalibrationLamp/0",
+                                helpGroup="CALIBRATIONLAMP",
+                                help="Calibration lamp to be used."))
+
+        self.addParameters(dict(name="intensity",
+                                default=None,
+                                type=float,
+                                helpGroup="CALIBRATIONLAMP",
+                                help="Select calibration lamp intensity (from 0 to 100.)."))
 
         self.addHelpGroup("COMMANDS", "Commands")
 
@@ -84,8 +98,12 @@ class ChimeraDome (ChimeraCLI):
             actionGroup="LIGHT")
     def lightsOff(self, options):
         self.out("Turning flat lights off ... ", end="")
-        self.dome.lightsOff()
-        self.out("OK")
+        try:
+            lamp = self.dome.getManager().getProxy(options.calibrationlamp)
+        except ObjectNotFoundException, e:
+            self.exit('%s: Could not find requested calibration lamp.'% red('ERROR'))
+        lamp.switchOff()
+        self.out(green("OK"))
 
     @action(long="lights-on",
             help="Turn flat light on",
@@ -93,8 +111,15 @@ class ChimeraDome (ChimeraCLI):
             actionGroup="LIGHT")
     def lightsOn(self, options):
         self.out("Turning flat lights on ... ", end="")
-        self.dome.lightsOn()
-        self.out("OK")
+        try:
+            lamp = self.dome.getManager().getProxy(options.calibrationlamp)
+        except ObjectNotFoundException, e:
+            self.exit('%s: Could not find requested calibration lamp.'% red('ERROR'))
+
+        if options.intensity is not None:
+            lamp.setIntensity(options.intensity)
+        lamp.switchOn()
+        self.out(green("OK"))
 
     @action(help="Track the telescope",
             helpGroup="COMMANDS",
@@ -142,6 +167,7 @@ class ChimeraDome (ChimeraCLI):
 
         self.out("Current dome azimuth: %s." % self.dome.getAz())
         self.out("Current dome mode: %s." % self.dome.getMode())
+
         if self.dome.getMode() == Mode.Track:
             self.out("Tracking: %s." % self.dome["telescope"])
 
@@ -150,6 +176,15 @@ class ChimeraDome (ChimeraCLI):
         else:
             self.out("Dome slit is closed.")
         self.out("=" * 40)
+
+        lampList = self.dome.getManager().getResourcesByClass("CalibrationLamp")
+
+        if len(lampList) > 0:
+            for lamp in lampList:
+                caliblamp = self.dome.getManager().getProxy(lamp)
+                onoff = green('ON') if caliblamp.isSwitchedOn() else red('OFF')
+                self.out('Lamp %s: %s'%(caliblamp.getLocation(),onoff) )
+            self.out("=" * 40)
 
     def __abort__(self):
         self.out("\naborting... ", endl="")

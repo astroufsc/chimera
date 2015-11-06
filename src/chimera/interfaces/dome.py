@@ -220,33 +220,6 @@ class DomeFlap(Dome):
         @type  az: Coord
         """
 
-class DomeLights(Dome):
-    """"
-    Dome with lights
-    """
-
-    def lightsOn(self):
-        """
-        Ask the dome to turn on flat lights, if any.
-        @return: None
-        @rtype: None
-        """
-
-    def lightsOff(self):
-        """
-        Ask the dome to turn off flat lights, if any.
-        @return: None
-        @rtype: None
-        """
-
-    def isLightsOn(self):
-        """
-        Ask the dome if the flat lights are on, if any.
-        @return: None
-        @rtype: None
-        """
-
-
 class DomeSync(Dome):
     """
     Synchronism operations with a chosen telescope.
