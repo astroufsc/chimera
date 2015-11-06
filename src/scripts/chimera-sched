@@ -140,8 +140,7 @@ class ChimeraSched (ChimeraCLI):
             objname = None
 
             if params.get("coord", None):
-                position = Position.fromRaDec(
-                    params['ra'], params['dec'], params['epoch'])
+                position = Position.fromRaDec(params['ra'], params['dec'], params['epoch'])
 
             imagetype = params['imagetype'].upper()
             objname = params['objname'].replace("\"", "")
@@ -169,13 +168,9 @@ class ChimeraSched (ChimeraCLI):
 
                 if imagetype == "FLAT":
                     site = self._remoteManager.getProxy("/Site/0")
-                    flatPosition = Position.fromAltAz(
-                        site['flat_alt'], site['flat_az'])
+                    flatPosition = Position.fromAltAz(site['flat_alt'], site['flat_az'])
                     program.actions.append(Point(targetAltAz=flatPosition))
 
-                # if i == 0:
-                #    program.actions.append(AutoFocus(start=1500, end=3000, step=250, filter="R", exptime=10))
-                #    program.actions.append(PointVerify(here=True))
 
                 for exp in exps:
                     if exp.count(":") > 1:
