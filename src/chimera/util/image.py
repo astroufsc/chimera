@@ -6,7 +6,6 @@ from chimera.core.version import _chimera_name_, _chimera_long_description_
 
 from chimera.util.coord import Coord
 from chimera.util.position import Position
-from chimera.util.filenamesequence import FilenameSequence
 from chimera.util.sextractor import SExtractor
 
 from astropy.io import fits
@@ -17,7 +16,6 @@ import numpy as N
 import os
 import string
 import datetime as dt
-import random
 
 import bz2
 import gzip
@@ -112,9 +110,7 @@ class ImageUtil (object):
         ext = string.Template(ext).safe_substitute(subs_dict)
 
         fullpath = os.path.join(dirname, basename)
-        seq_num = FilenameSequence(fullpath, extension=ext).next()
-        finalname = os.path.join(
-            dirname, "%s-%04d%s%s" % (basename, seq_num, os.path.extsep, ext))
+        finalname = os.path.join(dirname, "%s%s%s" % (basename, os.path.extsep, ext))
 
         if not os.path.exists(dirname):
             os.makedirs(dirname)
@@ -123,9 +119,17 @@ class ImageUtil (object):
             raise OSError(
                 "A file with the same name as the desired directory already exists. ('%s')" % dirname)
 
+        # If filename exists, append -NNN to the end of the file name.
+        # A maximum of 1000 files can be generated with the same filename.
         if os.path.exists(finalname):
-            finalname = os.path.join(
-                dirname, "%s-%04d%s%s" % (filename, int(random.random() * 1000), os.path.extsep, ext))
+            base, ext = os.path.splitext(finalname)
+            i = 1
+            while os.path.exists("%s-%03i%s" % (base, i, ext)):
+                i += 1
+                if i == 1000:
+                    raise OSError("Reached the maximum of 999 files with the same name (%s)." % finalname)
+
+            finalname = "%s-%03i%s" % (base, i, ext)
 
         return finalname
 
