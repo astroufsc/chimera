@@ -301,10 +301,10 @@ class Manager (RemoteObject):
         # if Manager's binded on (0.0.0.0), just check the port, host doesn't
         # matter.
         if meHost == "0.0.0.0":
-            return (location.port == None or location.port == self.getPort())
+            return (location.port is None or location.port == self.getPort())
         else:
-            return (location.host == None or location.host in (meHost, meName)) and \
-                   (location.port == None or location.port == self.getPort())
+            return (location.host is None or location.host in (meHost, meName)) and \
+                   (location.port is None or location.port == mePort)
 
     # shutdown management
 

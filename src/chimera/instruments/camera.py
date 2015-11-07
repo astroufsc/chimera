@@ -187,8 +187,7 @@ class CameraBase (ChimeraObject,
                 ('CCD-TEMP', extra.get("frame_temperature", -275.0),
                  'CCD Temperature at Exposure Start [deg. C]'),
 
-                ("EXPTIME", float(imageRequest['exptime']) or -1,
-                 "exposure time in seconds"),
+                ("EXPTIME", float(imageRequest['exptime']), "exposure time in seconds"),
 
                 ('IMAGETYP', imageRequest['type'].strip(),
                  'Image type'),

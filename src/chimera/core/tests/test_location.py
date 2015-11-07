@@ -15,8 +15,8 @@ class TestLocation (object):
         l = Location('/Class/name?option1=value1,option2=value2')
         assert l
 
-        assert l.host == None
-        assert l.port == None
+        assert l.host is None
+        assert l.port is None
         assert l.cls == "Class"
         assert l.name == "name"
         assert l.config == dict(option1="value1", option2="value2")
@@ -63,7 +63,7 @@ class TestLocation (object):
         l = Location(host='host.com.br', cls="Class", name="name", config=dict(option1="value1", option2="value2"))
         assert l
         assert l.host == 'host.com.br'
-        assert l.port == None
+        assert l.port is None
         assert l.cls == "Class"
         assert l.name == "name"
         assert l.config == dict(option1="value1", option2="value2")

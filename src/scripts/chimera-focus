@@ -37,7 +37,8 @@ import os
 import re
 
 
-class ChimeraFocus(ChimeraCLI):
+class ChimeraFocus (ChimeraCLI):
+
     def __init__(self):
         ChimeraCLI.__init__(
             self, "chimera-focus", "Focuser controller", 0.1, port=9003)
@@ -96,14 +97,14 @@ class ChimeraFocus(ChimeraCLI):
                                 helpGroup="AUTOFOCUS",
                                 help="Which filter to use in the autofocus run.",
                                 default="use-current-filter"))
-
+        
         self.addHelpGroup("COMMANDS", "Commands")
 
     @parameter(long="range",
                helpGroup="AUTOFOCUS",
                default="1000-6000",
                help="Defines autofocus focuser range to be covered."
-                    "Use start-end, as in 1000-6000 to run from 1000 to 6000.",
+               "Use start-end, as in 1000-6000 to run from 1000 to 6000.",
                metavar="START-END")
     def autofocus_range(self, value):
         r = re.compile("(?P<start>\d+)-(?P<end>\d+)")
@@ -217,21 +218,21 @@ class ChimeraFocus(ChimeraCLI):
                 pass
 
         @callback(self.localManager)
-        def stepComplete(position, star, frame):
+        def stepComplete(position, star, filename):
 
             self.out("#%04d (%4d, %4d) FWHM: %8.3f FLUX: %-9.3f (%s)" % (position,
                                                                          star["XWIN_IMAGE"], star[
-                "YWIN_IMAGE"],
+                                                                             "YWIN_IMAGE"],
                                                                          star["FWHM_IMAGE"], star[
                                                                              "FLUX_BEST"],
                                                                          star["CHIMERA_FLAGS"]))
             if ds9:
-                ds9.displayFile(frame.filename())
+                ds9.displayFile(filename)
                 ds9.set("regions command { circle %d %d %d}" % (
                     int(star["XWIN_IMAGE"]), int(star["YWIN_IMAGE"]), int(star["FWHM_IMAGE"])))
-                ds9.set("scale mode 99.5")
-                # ds9.xpaset("pan to %d %d physical" % (int(star["XWIN_IMAGE"]), int(star["YWIN_IMAGE"])))
-
+                ds9.set("zoom to fit")
+                ds9.set("scale mode zscale")
+                
         self.autofocus.stepComplete += stepComplete
 
         start, end = options.autofocus_range
@@ -249,7 +250,7 @@ class ChimeraFocus(ChimeraCLI):
         try:
             if not debug:
                 self.out("Looking for a star to focus on... (will try up to %d times) ..." % self.autofocus[
-                    "max_tries"])
+                         "max_tries"])
 
             result = self.autofocus.focus(exptime=options.autofocus_exptime,
                                           start=start,

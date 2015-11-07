@@ -40,6 +40,7 @@ class Autoguider (Interface):
                   "filterwheel": None,          # Filter wheel instrument, if there is one.
                   "focuser": None,              # Guider camera focuser, if there is one.
                   "autofocus": None,            # Autofocus controller, if there is one.
+                  "scheduler": None,            # Scheduler controller, if there is one.
                   "max_acquire_tries": 3,       # Number of tries to find a guiding star.
                   "max_fit_tries": 3}           # Number of tries to acquire the guide star offset before being lost.
 

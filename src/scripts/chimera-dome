@@ -51,7 +51,7 @@ class ChimeraDome (ChimeraCLI):
         self.addHelpGroup("LIGHT", "Dome lights control")
 
     @action(help="Open dome slit", helpGroup="COMMANDS", actionGroup="SLIT")
-    def open(self, options):
+    def openSlit(self, options):
         self.out("Opening dome slit ... ", end="")
         self.dome.openSlit()
         self.out("OK")
@@ -59,9 +59,23 @@ class ChimeraDome (ChimeraCLI):
     @action(help="Close dome slit",
             helpGroup="COMMANDS",
             actionGroup="SLIT")
-    def close(self, options):
+    def closeSlit(self, options):
         self.out("Closing dome slit ... ", end="")
         self.dome.closeSlit()
+        self.out("OK")
+
+    @action(help="Open dome flap", helpGroup="COMMANDS", actionGroup="FLAP")
+    def openFlap(self, options):
+        self.out("Opening dome flap ... ", end="")
+        self.dome.openFlap()
+        self.out("OK")
+
+    @action(help="Close dome flap",
+            helpGroup="COMMANDS",
+            actionGroup="FLAP")
+    def closeFlap(self, options):
+        self.out("Closing dome flap ... ", end="")
+        self.dome.closeFlap()
         self.out("OK")
 
     @action(long="lights-off",

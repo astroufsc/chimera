@@ -37,6 +37,7 @@ class FakeDome (DomeBase):
         self._position = 0
         self._slewing = False
         self._slitOpen = False
+        self._flapOpen = False
         self._abort = threading.Event()
         self._maxSlewTime = 5 / 180.0
 
@@ -117,9 +118,31 @@ class FakeDome (DomeBase):
     @lock
     def closeSlit(self):
         self.log.info("Closing slit")
+        if self.isFlapOpen():
+            self.log.warning("Dome flap open. Closing it before closing the slit.")
+            self.closeFlap()
         time.sleep(2)
         self._slitOpen = False
         self.slitClosed(self.getAz())
 
     def isSlitOpen(self):
         return self._slitOpen
+
+    @lock
+    def openFlap(self):
+        self.log.info("Opening flap")
+        if not self.isSlitOpen():
+            raise InvalidDomePositionException("Cannot open dome flap with slit closed.")
+        time.sleep(2)
+        self._flapOpen = True
+        self.flapOpened(self.getAz())
+
+    @lock
+    def closeFlap(self):
+        self.log.info("Closing flap")
+        time.sleep(2)
+        self._slitOpen = False
+        self.slitClosed(self.getAz())
+
+    def isFlapOpen(self):
+        return self._flapOpen

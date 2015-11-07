@@ -417,6 +417,34 @@ class TelescopePark (Telescope):
         successfully.
         """
 
+class TelescopeCover(Telescope):
+    """
+    Telescope with mirror cover.
+    """
+
+
+    def openCover(self):
+        """
+        Open the telescope cover
+
+        :return: None
+        """
+
+    def closeCover(self):
+        """
+        Close the telescope cover
+
+        @:return: None
+        """
+
+    def isCoverOpen(self):
+        """
+        Ask if the telescope cover is open or not
+
+        @:return: True if cover is open, false otherwise
+        """
+
+
 
 class TelescopeTracking (Telescope):
 
@@ -447,4 +475,27 @@ class TelescopeTracking (Telescope):
         @return: True if the telescope is tracking, False otherwise.
         @rtype: bool
 
+        """
+    @event
+    def trackingStarted(self, position):
+        """
+        Indicates that a tracking operation started.
+
+        @param position: The position where the telescope started track.
+        @type  position: L{Position}
+        """
+
+    @event
+    def trackingStopped(self, position, status):
+        """
+        Indicates that the last tracking operation stopped. This event
+        will be fired even when problems impedes tracking operation to resume
+        (altitude limits, for example). Check L{status} field if you
+        need more information.
+
+        @param position: The telescope position when tracking stopped.
+        @type  position: L{Position}
+
+        @param status: The status of the tracking operation.
+        @type  status: L{TelescopeStatus}
         """
