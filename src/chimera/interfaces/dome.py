@@ -173,6 +173,52 @@ class DomeSlit(Dome):
         @type  az: Coord
         """
 
+class DomeFlap(Dome):
+    """
+    Dome with Slit
+    """
+
+    def openFlap(self):
+        """
+        Open the dome flap.
+
+        @rtype: None
+        """
+
+
+    def closeFlap(self):
+        """
+        Close the dome flap.
+
+        @rtype: None
+        """
+
+    def isFlapOpen(self):
+        """
+        Ask the dome if the flap is open.
+
+        @return: True when open, False otherwise.
+        @rtype: bool
+        """
+
+
+    @event
+    def flapOpened(self, az):
+        """
+        Indicates that the flap was just opened
+
+        @param az: The azimuth when the flap opend
+        @type  az: Coord
+        """
+
+    @event
+    def flapClosed(self, az):
+        """
+        Indicates that the flap was just closed.
+
+        @param az: The azimuth when the flap closed.
+        @type  az: Coord
+        """
 
 class DomeLights(Dome):
     """"

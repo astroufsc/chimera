@@ -207,7 +207,7 @@ class ChimeraFocus (ChimeraCLI):
                 pass
 
         @callback(self.localManager)
-        def stepComplete(position, star, frame):
+        def stepComplete(position, star, filename):
 
             self.out("#%04d (%4d, %4d) FWHM: %8.3f FLUX: %-9.3f (%s)" % (position,
                                                                          star["XWIN_IMAGE"], star[
@@ -216,12 +216,12 @@ class ChimeraFocus (ChimeraCLI):
                                                                              "FLUX_BEST"],
                                                                          star["CHIMERA_FLAGS"]))
             if ds9:
-                ds9.displayFile(frame.filename())
+                ds9.displayFile(filename)
                 ds9.set("regions command { circle %d %d %d}" % (
                     int(star["XWIN_IMAGE"]), int(star["YWIN_IMAGE"]), int(star["FWHM_IMAGE"])))
-                ds9.set("scale mode 99.5")
-                #ds9.xpaset("pan to %d %d physical" % (int(star["XWIN_IMAGE"]), int(star["YWIN_IMAGE"])))
-
+                ds9.set("zoom to fit")
+                ds9.set("scale mode zscale")
+                
         self.autofocus.stepComplete += stepComplete
 
         start, end = options.autofocus_range

@@ -23,7 +23,7 @@ import time
 import threading
 
 from chimera.interfaces.telescope import SlewRate, TelescopeStatus
-from chimera.instruments.telescope import TelescopeBase
+from chimera.instruments.telescope import TelescopeBase, ObjectTooLowException
 
 from chimera.core.lock import lock
 from chimera.core.site import Site
@@ -89,6 +89,12 @@ class FakeTelescope (TelescopeBase):
         if not self._slewing:
             if self._tracking:
                 self._setAltAzFromRaDec()
+                try:
+                    self._validateAltAz(self.getPositionAltAz())
+                except ObjectTooLowException, msg:
+                    self.log.exception(msg)
+                    self._stopTracking()
+                    self.trackingStopped(self.getPositionRaDec(),TelescopeStatus.OBJECT_TOO_LOW)
             else:
                 self._setRaDecFromAltAz()
         return True
@@ -130,6 +136,8 @@ class FakeTelescope (TelescopeBase):
             t += 0.5
 
         self._slewing = False
+
+        self.startTracking()
 
         self.slewComplete(self.getPositionRaDec(), status)
 
@@ -297,9 +305,14 @@ class FakeTelescope (TelescopeBase):
     @lock
     def startTracking(self):
         self._tracking = True
+        self.trackingStarted(self.getPositionRaDec())
 
     @lock
     def stopTracking(self):
+        self._stopTracking()
+        self.trackingStopped(self.getPositionRaDec(),TelescopeStatus.ABORTED)
+
+    def _stopTracking(self):
         self._tracking = False
 
     def isTracking(self):
