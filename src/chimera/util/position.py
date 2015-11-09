@@ -317,7 +317,7 @@ class Position (object):
         '''
 
         # If coordinate epoch is already the right one, do nothing
-        if str(epoch).lower() == self.epoch.lower():
+        if str(epoch).lower() == str(self.epoch).lower():
             return self
 
         # Else, do the coordinate conversion...
