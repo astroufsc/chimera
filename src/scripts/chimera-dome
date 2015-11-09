@@ -21,11 +21,12 @@
 
 
 from chimera.core.cli import ChimeraCLI, action
-from chimera.core.exceptions import ObjectNotFoundException
+from chimera.core.exceptions import printException, ObjectNotFoundException
 from chimera.util.coord import Coord
 from chimera.util.output import green, red
 
 from chimera.interfaces.dome import Mode
+from chimera.interfaces.calibrationlamp import IntensityOutOfRangeException
 
 import sys
 import copy
@@ -53,12 +54,6 @@ class ChimeraDome (ChimeraCLI):
                                 default="/CalibrationLamp/0",
                                 helpGroup="LIGHT",
                                 help="Calibration lamp to be used."))
-
-        self.addParameters(dict(name="intensity",
-                                default=None,
-                                type=float,
-                                helpGroup="LIGHT",
-                                help="Select calibration lamp intensity."))
 
         self.addHelpGroup("COMMANDS", "Commands")
 
@@ -114,9 +109,30 @@ class ChimeraDome (ChimeraCLI):
         except ObjectNotFoundException, e:
             self.exit('%s: Could not find requested calibration lamp.'% red('ERROR'))
 
-        if options.intensity is not None:
-            lamp.setIntensity(options.intensity)
         lamp.switchOn()
+        self.out(green("OK"))
+
+    @action(long="intensity",
+            type="float",
+            help="Set light intensity to specified value.",
+            helpGroup="LIGHT",
+            actionGroup="LIGHT")
+    def intensity(self, options):
+        self.out("Setting light intensity to %.2f ... "% options.intensity, end="")
+
+        lamp = None
+        try:
+            lamp = self.dome.getManager().getProxy(options.calibrationlamp)
+            lamp.setIntensity(options.intensity)
+        except ObjectNotFoundException, e:
+            self.exit('%s: Could not find requested calibration lamp.'% red('ERROR'))
+        except IntensityOutOfRangeException, e:
+            self.exit('%s: (%s)'% (red('ERROR'),
+                                    printException(e)))
+        except Exception,e:
+            self.exit('%s: (%s).'% (red('ERROR'),
+                                    printException(e)))
+
         self.out(green("OK"))
 
     @action(help="Track the telescope",
