@@ -315,6 +315,12 @@ class Position (object):
         '''
         Returns a new Coordinate with the specified Epoch
         '''
+
+        # If coordinate epoch is already the right one, do nothing
+        if str(epoch).lower() == self.epoch.lower():
+            return self
+
+        # Else, do the coordinate conversion...
         if str(epoch).lower() == str(Epoch.J2000).lower():
             eph_epoch = ephem.J2000
         elif str(epoch).lower() == str(Epoch.B1950).lower():
