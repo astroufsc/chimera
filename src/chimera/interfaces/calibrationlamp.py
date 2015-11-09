@@ -81,7 +81,7 @@ class CalibrationLampDimmer(CalibrationLamp):
         '''
         Sets the intensity of the calibration lamp.
 
-        @param intensity: Desired intensity in percent (from 0. to 100.).
+        @param intensity: Desired intensity.
         @type  intensity: float
         '''
         pass
@@ -94,7 +94,15 @@ class CalibrationLampDimmer(CalibrationLamp):
         that the lamp in switched on. This will be implementation dependent. The best way to check if a lamp is
         on or off is with the "isSwitchedOn" function.
 
-        @return: Intensity in percentage, from 0. to 100.
+        @return: Current intensity
         @rtype: float
         '''
+        pass
+
+    def getRange(self):
+        """
+        Gets the dimmer total range
+        @rtype: tuple
+        @return: Start and end positions of the dimmer (start, end)
+        """
         pass

@@ -48,21 +48,19 @@ class ChimeraDome (ChimeraCLI):
                                 help="Tell the dome to follow TELESCOPE when tracking"
                                 "(only utilized when using --track"))
 
-        self.addHelpGroup("CALIBRATIONLAMP", "CalibrationLamp")
+        self.addHelpGroup("LIGHT", "Dome lights control")
         self.addParameters(dict(name="calibrationlamp",
                                 default="/CalibrationLamp/0",
-                                helpGroup="CALIBRATIONLAMP",
+                                helpGroup="LIGHT",
                                 help="Calibration lamp to be used."))
 
         self.addParameters(dict(name="intensity",
                                 default=None,
                                 type=float,
-                                helpGroup="CALIBRATIONLAMP",
-                                help="Select calibration lamp intensity (from 0 to 100.)."))
+                                helpGroup="LIGHT",
+                                help="Select calibration lamp intensity."))
 
         self.addHelpGroup("COMMANDS", "Commands")
-
-        self.addHelpGroup("LIGHT", "Dome lights control")
 
     @action(help="Open dome slit", helpGroup="COMMANDS", actionGroup="SLIT")
     def openSlit(self, options):

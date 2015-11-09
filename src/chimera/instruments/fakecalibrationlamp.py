@@ -35,6 +35,7 @@ class FakeCalibrationLamp (CalibrationLampBase, CalibrationLampDimmer):
 
         self._isOn = False
         self._intensity = 0.
+        self._irange = (0.,100.)
 
     @lock
     def switchOn(self):
@@ -56,12 +57,19 @@ class FakeCalibrationLamp (CalibrationLampBase, CalibrationLampDimmer):
 
     @lock
     def setIntensity(self,intensity):
-        if 0. < intensity <= 100.:
+        int_i, int_f = self.getRange()
+
+        if int_i < intensity <= int_f:
             self._intensity = intensity
             return True
         else:
-            raise IntensityOutOfRangeException('Intensity %.2f out of range. Must be between (0:100].')
+            raise IntensityOutOfRangeException('Intensity %.2f out of range. Must be between (%.2f:%.2f].'%(intensity,
+                                                                                                            int_i,
+                                                                                                            int_f))
 
     @lock
     def getIntensity(self):
         return self._intensity
+
+    def getRange(self):
+        return self._irange
