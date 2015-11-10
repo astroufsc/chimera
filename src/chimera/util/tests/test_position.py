@@ -2,7 +2,7 @@
 
 from nose.tools import assert_raises
 
-from chimera.util.position import Position
+from chimera.util.position import Position, Epoch
 from chimera.util.coord import Coord
 import ephem
 from datetime import datetime as dt
@@ -71,10 +71,10 @@ class TestPosition (object):
         assert p1.within(p2, Coord.fromD(29.99)) == False
         assert p1.within(p2, Coord.fromD(30.01)) == True
 
-    def test_precession(self):
+    def test_changeEpoch(self):
 
         sirius_j2000 = Position.fromRaDec("06 45 08.9173", "-16 42 58.017")
-        sirius_now = sirius_j2000.precess()
+        sirius_now = sirius_j2000.toEpoch(epoch=Epoch.NOW)
 
         print
         print sirius_j2000

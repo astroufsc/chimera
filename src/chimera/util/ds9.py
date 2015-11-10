@@ -73,10 +73,11 @@ class DS9(object):
             self.set("exit")
 
     def displayImage(self, image, frame=1):
-        try:
-            self.displayFile(filename=image.filename())
-        except IOError:
-            self.displayFile(url=image.http())
+
+        if os.path.exists(image.filename()):
+            self.displayFile(filename=image.filename(), frame=frame)
+        else:
+            self.displayFile(url=image.http(), frame=frame)
 
     def displayFile(self, filename=None, url=None, frame=1):
         """
