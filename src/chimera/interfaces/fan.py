@@ -31,13 +31,18 @@ FanDirection = Enum("FORWARD", "REVERSE")
 
 class Fan(Interface):
     """
-    Class for controlling basic fans with start/stop actions.
+    Basic fan interface.
     """
 
     __config__ = {"device": "Unknown",
 
                   "model": "Fake Domes Fan Inc.",
                   }
+
+class FanControl(Fan):
+    """
+    Basic class for starting/stopping fans.
+    """
 
     def startFan(self):
         '''
