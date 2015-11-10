@@ -41,7 +41,7 @@ class ChimeraDome(ChimeraCLI):
         self.addInstrument(name="dome", cls="Dome", required=True,
                            help="Dome instrument to be used", helpGroup="DOME")
 
-        self.addHelpGroup("DOMEFANS", "DomeFans")
+        self.addHelpGroup("DOMEFANS", "Dome fan control")
         self.addParameters(dict(name="domefan",
                                 default="/Fan/0",
                                 helpGroup="DOMEFANS",
@@ -57,29 +57,31 @@ class ChimeraDome(ChimeraCLI):
         self.addHelpGroup("COMMANDS", "Commands")
 
         self.addHelpGroup("LIGHT", "Dome lights control")
+        self.addHelpGroup("SLIT", "Dome slit control")
+        self.addHelpGroup("FLAP", "Dome flap control")
 
-    @action(help="Open dome slit", helpGroup="COMMANDS", actionGroup="SLIT")
+    @action(help="Open dome slit", helpGroup="SLIT", actionGroup="SLIT")
     def openSlit(self, options):
         self.out("Opening dome slit ... ", end="")
         self.dome.openSlit()
         self.out("OK")
 
     @action(help="Close dome slit",
-            helpGroup="COMMANDS",
+            helpGroup="SLIT",
             actionGroup="SLIT")
     def closeSlit(self, options):
         self.out("Closing dome slit ... ", end="")
         self.dome.closeSlit()
         self.out("OK")
 
-    @action(help="Open dome flap", helpGroup="COMMANDS", actionGroup="FLAP")
+    @action(help="Open dome flap", helpGroup="FLAP", actionGroup="FLAP")
     def openFlap(self, options):
         self.out("Opening dome flap ... ", end="")
         self.dome.openFlap()
         self.out("OK")
 
     @action(help="Close dome flap",
-            helpGroup="COMMANDS",
+            helpGroup="FLAP",
             actionGroup="FLAP")
     def closeFlap(self, options):
         self.out("Closing dome flap ... ", end="")
@@ -144,7 +146,7 @@ class ChimeraDome(ChimeraCLI):
             type="float",
             help="Set fan speed.",
             metavar="speed",
-            helpGroup="COMMANDS",
+            helpGroup="DOMEFANS",
             actionGroup="DOMEFANS")
     def setFanSpeed(self, options):
         try:
@@ -163,7 +165,7 @@ class ChimeraDome(ChimeraCLI):
         self.out("=" * 40)
 
     @action(help="Print dome information",
-            helpGroup="COMMANDS",
+            helpGroup="DOMEFANS",
             actionGroup="DOMEFANS")
     def getFanSpeed(self, options):
         try:
@@ -178,7 +180,7 @@ class ChimeraDome(ChimeraCLI):
         self.out("=" * 40)
 
     @action(help="Start dome fan",
-            helpGroup="COMMANDS",
+            helpGroup="DOMEFANS",
             actionGroup="DOMEFANS")
     def startFan(self, options):
 
@@ -203,7 +205,7 @@ class ChimeraDome(ChimeraCLI):
             self.exit("%s\n %s" % (red("FAILED"), printException(e)))
 
     @action(help="Stop dome fan",
-            helpGroup="COMMANDS",
+            helpGroup="DOMEFANS",
             actionGroup="DOMEFANS")
     def stopFan(self, options):
 
