@@ -29,53 +29,15 @@ FanStatus = Enum("RUNNING", "STOPPED", "ABORTED", "ERROR")
 FanDirection = Enum("FORWARD", "REVERSE")
 
 
-class DomeFan(Interface):
+class Fan(Interface):
     """
-    A Roll-off or classic dome.
+    Class for controlling basic fans with start/stop actions.
     """
 
     __config__ = {"device": "Unknown",
 
-                  "min_speed": 0.,
-                  "max_speed": 600.,
-
                   "model": "Fake Domes Fan Inc.",
                   }
-
-    def getRotation(self):
-        '''
-        Get fan current rotation speed.
-
-        @return: Rotation speed in Hz
-        @rtype: float
-        '''
-
-    def setRotation(self, freq):
-        '''
-        Set fan rotation speed.
-
-        @return: Nothing
-        @rtype:
-
-        '''
-
-    def getDirection(self):
-        '''
-        Get fan rotation direction.
-
-        @return: Fan direction
-        @rtype: Enum{FanDirection}
-
-        '''
-
-    def setDirection(self, direction):
-        '''
-        Set fan rotation direction.
-
-        @return: Nothing
-        @rtype:
-
-        '''
 
     def startFan(self):
         '''
@@ -124,3 +86,57 @@ class DomeFan(Interface):
         Indicates that fan has stopped
 
         '''
+
+class FanControllabeSpeed(Fan):
+    """
+    Fans with controllable speeds.
+    """
+
+    def getRotation(self):
+        '''
+        Get fan current rotation speed.
+
+        @return: Rotation speed in Hz
+        @rtype: float
+        '''
+
+    def setRotation(self, freq):
+        '''
+        Set fan rotation speed.
+
+        @return: Nothing
+        @rtype:
+
+        '''
+
+    def getRange(self):
+        """
+        Gets the fan valid speed range.
+
+        @rtype: tuple
+        @return: Minimum and maximum fan speed (min, max).
+        """
+
+class FanControllabeDirection(Fan):
+    """
+    Fans with controllable direction.
+    """
+
+    def getDirection(self):
+        '''
+        Get fan rotation direction.
+
+        @return: Fan direction
+        @rtype: Enum{FanDirection}
+
+        '''
+
+    def setDirection(self, direction):
+        '''
+        Set fan rotation direction.
+
+        @return: Nothing
+        @rtype:
+
+        '''
+

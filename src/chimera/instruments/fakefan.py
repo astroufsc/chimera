@@ -1,11 +1,11 @@
-from chimera.instruments.domefan import DomeFanBase
-from chimera.interfaces.domefan import FanDirection, FanStatus
+from chimera.instruments.fan import FanBase
+from chimera.interfaces.fan import FanControllabeSpeed, FanControllabeDirection, FanDirection, FanStatus
 from chimera.core.lock import lock
 
 
-class FakeDomeFan(DomeFanBase):
+class FakeFan(FanBase,FanControllabeSpeed,FanControllabeDirection):
     def __init__(self):
-        DomeFanBase.__init__(self)
+        FanBase.__init__(self)
 
         self._currentSpeed = 0.
         self._isrunning = False
@@ -17,12 +17,16 @@ class FakeDomeFan(DomeFanBase):
 
     @lock
     def setRotation(self, freq):
-        if float(self["min_speed"]) < freq < float(self["max_speed"]):
+        min_speed,max_speed = self.getRange()
+        if min_speed < freq < max_speed:
             self._currentSpeed = float(freq)
         else:
-            raise IOError("Fan speed must be between %.2f and %.2f. Got %.2f." % (float(self["min_speed"]),
-                                                                                  float(self["max_speed"]),
+            raise IOError("Fan speed must be between %.2f and %.2f. Got %.2f." % (min_speed,
+                                                                                  max_speed,
                                                                                   freq))
+
+    def getRange(self):
+        return (0.,100.)
 
     def getDirection(self):
         return self._currentDirection

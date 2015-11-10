@@ -21,6 +21,7 @@
 
 
 from chimera.core.cli import ChimeraCLI, action
+from chimera.core.exceptions import ObjectNotFoundException
 from chimera.util.coord import Coord
 from chimera.core.exceptions import printException
 from chimera.util.output import blue, green, red
@@ -41,10 +42,10 @@ class ChimeraDome(ChimeraCLI):
                            help="Dome instrument to be used", helpGroup="DOME")
 
         self.addHelpGroup("DOMEFANS", "DomeFans")
-        self.addInstrument(name="domefan",
-                           cls="DomeFan", required=False,
-                           help="Dome fan instrument to be used. If blank, try to guess from chimera.config",
-                           helpGroup="DOMEFANS")
+        self.addParameters(dict(name="domefan",
+                                default="/Fan/0",
+                                helpGroup="DOMEFANS",
+                                help="Fan instrument to be used."))
 
         self.addHelpGroup("TELESCOPE", "Telescope Tracking Configuration")
         self.addParameters(dict(name="telescope",
@@ -146,10 +147,10 @@ class ChimeraDome(ChimeraCLI):
             helpGroup="COMMANDS",
             actionGroup="DOMEFANS")
     def setFanSpeed(self, options):
-        domefan = self.domefan
-        if domefan is None:
-            self.exit(
-                "No Dome Fan found. Edit chimera.config or pass --domefan (see --help)")
+        try:
+            domefan = self.dome.getManager().getProxy(options.domefan)
+        except ObjectNotFoundException, e:
+            self.exit('%s: Could not find requested fan.'% red('ERROR'))
 
         self.out("=" * 40)
         self.out("Changing fan speed to %.2f " % (options.setFanSpeed), end=" ")
@@ -165,10 +166,10 @@ class ChimeraDome(ChimeraCLI):
             helpGroup="COMMANDS",
             actionGroup="DOMEFANS")
     def getFanSpeed(self, options):
-        domefan = self.domefan
-        if domefan is None:
-            self.exit(
-                "No Dome Fan found. Edit chimera.config or pass --domefan (see --help)")
+        try:
+            domefan = self.dome.getManager().getProxy(options.domefan)
+        except ObjectNotFoundException, e:
+            self.exit('%s: Could not find requested fan.'% red('ERROR'))
 
         self.out("=" * 40)
         self.out("DomeFan: %s (%s)" %
@@ -181,10 +182,10 @@ class ChimeraDome(ChimeraCLI):
             actionGroup="DOMEFANS")
     def startFan(self, options):
 
-        domefan = self.domefan
-        if domefan is None:
-            self.exit(
-                "No Dome Fan found. Edit chimera.config or pass --domefan (see --help)")
+        try:
+            domefan = self.dome.getManager().getProxy(options.domefan)
+        except ObjectNotFoundException, e:
+            self.exit('%s: Could not find requested fan.'% red('ERROR'))
 
         if domefan.isFanRunning():
             self.exit("Fan is already running... ")
@@ -206,10 +207,10 @@ class ChimeraDome(ChimeraCLI):
             actionGroup="DOMEFANS")
     def stopFan(self, options):
 
-        domefan = self.domefan
-        if domefan is None:
-            self.exit(
-                "No Dome Fan found. Edit chimera.config or pass --domefan (see --help)")
+        try:
+            domefan = self.dome.getManager().getProxy(options.domefan)
+        except ObjectNotFoundException, e:
+            self.exit('%s: Could not find requested fan.'% red('ERROR'))
 
         if not domefan.isFanRunning():
             self.exit("Fan is not running... ")
@@ -244,13 +245,16 @@ class ChimeraDome(ChimeraCLI):
         else:
             self.out("Dome slit is closed.")
 
-        domefan = self.domefan
-        if domefan is not None:
+        try:
+            domefan = self.dome.getManager().getProxy(options.domefan)
             self.out("=" * 40)
             self.out("DomeFan: %s (%s)." %
                      (domefan.getLocation(), domefan["device"]))
             self.out("Current fan status: %s" % domefan.status())
             self.out("Current fan speed: %.2f" % domefan.getRotation())
+        except ObjectNotFoundException, e:
+            self.out("No DomeFan")
+
 
         self.out("=" * 40)
 

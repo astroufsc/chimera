@@ -133,7 +133,7 @@ class SystemConfig (object):
                           "dome", "domes",
                           "focuser", "focusers",
                           "weatherstation", "weatherstations",
-                          "domefan","domefans"]
+                          "fan","fans"]
 
         self._instrumentsSections = self._specials + \
             ["instrument", "instruments"]
