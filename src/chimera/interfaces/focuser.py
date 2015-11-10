@@ -26,8 +26,31 @@ from chimera.util.enum import Enum
 
 FocuserFeature = Enum("TEMPERATURE_COMPENSATION",
                       "ENCODER",
-                      "POSITION_FEEDBACK")
+                      "POSITION_FEEDBACK",
+                      "CONTROLLABLE_X",
+                      "CONTROLLABLE_Y",
+                      "CONTROLLABLE_Z",
+                      "CONTROLLABLE_U",
+                      "CONTROLLABLE_V",
+                      "CONTROLLABLE_W")
 
+FocuserAxis = Enum("X", "Y", "Z", "U", "V", "W")
+
+ControllableAxis = {FocuserFeature.CONTROLLABLE_X: FocuserAxis.X,
+                    FocuserFeature.CONTROLLABLE_Y: FocuserAxis.Y,
+                    FocuserFeature.CONTROLLABLE_Z: FocuserAxis.Z,
+                    FocuserFeature.CONTROLLABLE_U: FocuserAxis.U,
+                    FocuserFeature.CONTROLLABLE_V: FocuserAxis.V,
+                    FocuserFeature.CONTROLLABLE_W: FocuserAxis.W,
+                    }
+
+AxisControllable = {FocuserAxis.X: FocuserFeature.CONTROLLABLE_X,
+                    FocuserAxis.Y: FocuserFeature.CONTROLLABLE_Y,
+                    FocuserAxis.Z: FocuserFeature.CONTROLLABLE_Z,
+                    FocuserAxis.U: FocuserFeature.CONTROLLABLE_U,
+                    FocuserAxis.V: FocuserFeature.CONTROLLABLE_V,
+                    FocuserAxis.W: FocuserFeature.CONTROLLABLE_W,
+                    }
 
 class InvalidFocusPositionException(ChimeraException):
     """
@@ -54,7 +77,7 @@ class Focuser(Interface):
                   "open_timeout": 10,
                   "move_timeout": 60}
 
-    def moveIn(self, n):
+    def moveIn(self, n, axis=FocuserAxis.Z):
         """
         Move the focuser IN by n steps. Steps could be absolute units
         (for focuser with absolute encoders) or just a pulse of
@@ -73,7 +96,7 @@ class Focuser(Interface):
         @rtype   : None
         """
 
-    def moveOut(self, n):
+    def moveOut(self, n, axis=FocuserAxis.Z):
         """
         Move the focuser OUT by n steps. Steps could be absolute units
         (for focuser with absolute encoders) or just a pulse of
@@ -92,7 +115,7 @@ class Focuser(Interface):
         @rtype   : None
         """
 
-    def moveTo(self, position):
+    def moveTo(self, position, axis=FocuserAxis.Z):
         """
         Move the focuser to the select position (if ENCODER_BASED
         supported).
@@ -109,7 +132,7 @@ class Focuser(Interface):
         @rtype   : None
         """
 
-    def getPosition(self):
+    def getPosition(self, axis=FocuserAxis.Z):
         """
         Gets the current focuser position (if the POSITION_FEEDBACK
         supported).
@@ -121,7 +144,7 @@ class Focuser(Interface):
         @return  : Current focuser position.
         """
 
-    def getRange(self):
+    def getRange(self, axis=FocuserAxis.Z):
         """
         Gets the focuser total range
         @rtype: tuple
