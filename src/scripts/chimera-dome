@@ -112,8 +112,9 @@ class ChimeraDome (ChimeraCLI):
         lamp.switchOn()
         self.out(green("OK"))
 
-    @action(long="intensity",
+    @action(long="lights-intensity",
             type="float",
+            metavar="intensity",
             help="Set light intensity to specified value.",
             helpGroup="LIGHT",
             actionGroup="LIGHT")
