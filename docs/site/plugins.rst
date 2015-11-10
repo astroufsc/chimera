@@ -53,8 +53,7 @@ Controllers
 
 * chimera-pverify: Verify the telescope pointing accuracy easily. *On the main chimera package*
 
-* chimera-skyflat_: Wakes the telescope at the right time and make the exposure time calculations to make automatic
-sky-flatting.
+* chimera-skyflat_: Wakes the telescope at the right time and make the exposure time calculations to make automatic sky-flatting.
 
 * chimera-stellarium_: Integrates Stellarium_ ephemeris software with chimera.
 
