@@ -26,7 +26,7 @@ class TestDS9(object):
 
         raise SkipTest()
 
-        filename = os.path.realpath(os.path.join(os.path.dirname(__file__), "clone-chimera-12112015-sem-wcs.fits"))
+        filename = os.path.realpath(os.path.join(os.path.dirname(__file__), "weatherstation-script-sem-wcs.fits"))
 
         p = subprocess.Popen("ds9 %s" % filename, shell=True)
         time.sleep(2)

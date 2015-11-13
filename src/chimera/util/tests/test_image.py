@@ -11,7 +11,7 @@ class TestImage (object):
 
     def test_headers (self):
 
-        img = Image.fromFile(os.path.join(self.base, "clone-chimera-12112015-sem-wcs.fits"), fix=False)
+        img = Image.fromFile(os.path.join(self.base, "weatherstation-script-sem-wcs.fits"), fix=False)
 
         print
 
@@ -20,7 +20,7 @@ class TestImage (object):
 
     def test_wcs (self):
 
-        img = Image.fromFile(os.path.join(self.base, "clone-chimera-12112015-com-wcs.fits"), fix=False)
+        img = Image.fromFile(os.path.join(self.base, "weatherstation-script-com-wcs.fits"), fix=False)
         world =  img.worldAt(0,0)
         print "world value at pixel 0,0:", world
         print "pixel value at world %s:" % world, img.pixelAt(world)
@@ -30,7 +30,7 @@ class TestImage (object):
 
     def test_extractor (self):
 
-        for f in ["clone-chimera-12112015-com-wcs.fits", "clone-chimera-12112015-sem-wcs.fits"]:
+        for f in ["weatherstation-script-com-wcs.fits", "weatherstation-script-sem-wcs.fits"]:
 
             img = Image.fromFile(os.path.join(self.base, f), fix=False)
 
@@ -57,7 +57,7 @@ class TestImage (object):
 
     def test_create (self):
 
-        img = Image.create(N.zeros((100,100)), filename="autogen-clone-chimera-12112015.fits")
+        img = Image.create(N.zeros((100,100)), filename="autogen-weatherstation-script.fits")
         assert os.path.exists(img.filename())
         assert img.width() == 100
         assert img.height() == 100
