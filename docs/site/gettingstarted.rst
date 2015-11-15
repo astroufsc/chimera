@@ -60,11 +60,13 @@ These steps were tested with `Anaconda`_ version 2.3.0.
 * Install Visual C++ 9.0 for Python 2.7 (for pyephem package): https://www.microsoft.com/en-us/download/details.aspx?id=44266
 
 * Open the Anaconda Command Prompt and install chimera using pip:
+
 ::
 
    pip install git+https://github.com/astroufsc/chimera.git
 
 * After install, you can run chimera and its scripts by executing
+
 ::
 
    python C:\Anaconda\Scripts\chimera -vv
