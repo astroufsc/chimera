@@ -160,6 +160,9 @@ class TelescopeBase(ChimeraObject,
     def getTargetAltAz(self):
         raise NotImplementedError()
 
+    def getSideOfPier(self):
+        raise NotImplementedError()
+
     @lock
     def syncObject(self, name):
         target = Simbad.lookup(name)
