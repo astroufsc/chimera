@@ -160,6 +160,9 @@ class TelescopeBase(ChimeraObject,
     def getTargetAltAz(self):
         raise NotImplementedError()
 
+    def getSideOfPier(self):
+        raise NotImplementedError()
+
     @lock
     def syncObject(self, name):
         target = Simbad.lookup(name)
@@ -217,6 +220,7 @@ class TelescopeBase(ChimeraObject,
         raise NotImplementedError()
 
     def getMetadata(self, request):
+        position = self.getPositionRaDec()
         return [('TELESCOP', self['model'], 'Telescope Model'),
                 ('OPTICS',   self['optics'], 'Telescope Optics Type'),
                 ('MOUNT', self['mount'], 'Telescope Mount Type'),
@@ -227,11 +231,9 @@ class TelescopeBase(ChimeraObject,
                  'Telescope focal reduction'),
                 # TODO: Convert coordinates to proper equinox
                 # TODO: How to get ra,dec at start of exposure (not end)
-                ('RA', self.getRa().toHMS().__str__(),
-                 'Right ascension of the observed object'),
-                ('DEC', self.getDec().toDMS().__str__(),
-                 'Declination of the observed object'),
-                ("EQUINOX", 2000.0, "coordinate epoch"),
+                ('RA', position.ra.toHMS().__str__(), 'Right ascension of the observed object'),
+                ('DEC', position.dec.toDMS().__str__(), 'Declination of the observed object'),
+                ("EQUINOX", position.epochString(), "coordinate epoch"),
                 ('ALT', self.getAlt().toDMS().__str__(),
                  'Altitude of the observed object'),
                 ('AZ', self.getAz().toDMS().__str__(),
