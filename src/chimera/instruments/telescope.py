@@ -230,7 +230,7 @@ class TelescopeBase(ChimeraObject,
                 # TODO: How to get ra,dec at start of exposure (not end)
                 ('RA', position.ra.toHMS().__str__(), 'Right ascension of the observed object'),
                 ('DEC', position.dec.toDMS().__str__(), 'Declination of the observed object'),
-                ("EQUINOX", position.epochString(), "coordinate epoch"),
+                ("EQUINOX", position.epochString()[1:], "coordinate epoch"),
                 ('ALT', self.getAlt().toDMS().__str__(),
                  'Altitude of the observed object'),
                 ('AZ', self.getAz().toDMS().__str__(),
