@@ -37,6 +37,7 @@ from chimera.instruments.camera import CameraBase
 from chimera.instruments.filterwheel import FilterWheelBase, InvalidFilterPositionException
 
 from chimera.core.lock import lock
+from chimera.util.position import Epoch
 
 
 class FakeCamera (CameraBase, FilterWheelBase):
@@ -183,15 +184,15 @@ class FakeCamera (CameraBase, FilterWheelBase):
 
         ccd_width, ccd_height = self.getPhysicalSize()
 
-        if (imageRequest["type"].upper() == "DARK"):
+        if imageRequest["type"].upper() == "DARK":
             self.log.info("making dark")
             pix = self.make_dark(
                 (ccd_height, ccd_width), N.float, imageRequest['exptime'])
-        elif (imageRequest["type"].upper() == "FLAT"):
+        elif imageRequest["type"].upper() == "FLAT":
             self.log.info("making flat")
             pix = (self.make_flat(
                 (ccd_height, ccd_width), N.float) / 1000)
-        elif (imageRequest["type"].upper() == "BIAS"):
+        elif imageRequest["type"].upper() == "BIAS":
             self.log.info("making bias")
             pix = self.make_dark((ccd_height, ccd_width), N.float, 0)
         else:
@@ -202,15 +203,18 @@ class FakeCamera (CameraBase, FilterWheelBase):
                     domeAZ = dome.getAz().toD()
                     telAZ = telescope.getAz().toD()
 
+                    tel_position = telescope.getPositionRaDec()
+                    tel_position = tel_position.toEpoch(Epoch.J2000)
+
                     self.log.debug(
                         "Dome AZ: " + str(domeAZ) + "  Tel AZ: " + str(telAZ))
-                    if (abs(domeAZ-telAZ) <= 3):
+                    if abs(domeAZ-telAZ) <= 3:
                         self.log.debug("Dome & Slit aligned -- getting DSS")
                         url = "http://stdatu.stsci.edu/cgi-bin/dss_search?"
                         query_args = {"r":
-                                      telescope.getRa().strfcoord('%(h)02d:%(m)02d:%(s)04d'),
+                                      tel_position.ra.strfcoord('%(h)02d:%(m)02d:%(s)04d'),
                                       "d":
-                                      telescope.getDec().strfcoord('%(d)02d:%(m)02d:%(s)04d', signed=True),
+                                      tel_position.dec.strfcoord('%(d)02d:%(m)02d:%(s)04d', signed=True),
                                       "f": "fits",
                                       "e": "j2000",
                                       "c": "gz",
@@ -218,7 +222,7 @@ class FakeCamera (CameraBase, FilterWheelBase):
 
                         # use POSS2-Red surbey ( -90 < d < -20 ) if below -25 deg declination, else use POSS1-Red (-30 < d < +90)
                         # http://www-gsss.stsci.edu/SkySurveys/Surveys.htm
-                        if telescope.getDec().D < -25:
+                        if tel_position.dec.D < -25:
                             query_args["v"] = "poss2ukstu_red"
                             query_args["h"] = ccd_height / 59.5  # ~1"/pix (~60 pix/arcmin) is the plate scale of DSS POSS2-Red
                             query_args["w"] = ccd_width / 59.5
