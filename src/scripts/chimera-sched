@@ -18,23 +18,22 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 # 02110-1301, USA.
+import string
+import re
+import sys
+import os
+import shutil
+import time
 
 from chimera.core.cli import ChimeraCLI, action
 from chimera.core.constants import DEFAULT_PROGRAM_DATABASE
 from chimera.core.callback import callback
 from chimera.util.position import Position
 from chimera.util.output import blue, green, red
-
 from chimera.controllers.scheduler.status import SchedulerStatus
 from chimera.controllers.scheduler.states import State
 from chimera.controllers.scheduler.model import (Session, Program, Point,
-                                                 Expose, PointVerify, AutoFocus)
-
-import re
-import sys
-import os
-import shutil
-import time
+                                                 Expose)
 
 
 class ChimeraSched (ChimeraCLI):
@@ -75,7 +74,14 @@ class ChimeraSched (ChimeraCLI):
                                 helpGroup="DB",
                                 default="",
                                 help="Filename of the input database.",
-                                metavar="FILENAME"))
+                                metavar="FILENAME"),
+                           dict(name="output",
+                                short="o",
+                                type="string",
+                                helpGroup="DB",
+                                help="Images base filename including full path if needed.",
+                                default="$NAME-$DATE-$TIME"))
+
 
     @action(long="new",
             help="Generate a new database from a text file (excluding all programs already in database)",
@@ -134,8 +140,7 @@ class ChimeraSched (ChimeraCLI):
             objname = None
 
             if params.get("coord", None):
-                position = Position.fromRaDec(
-                    params['ra'], params['dec'], params['epoch'])
+                position = Position.fromRaDec(params['ra'], params['dec'], params['epoch'])
 
             imagetype = params['imagetype'].upper()
             objname = params['objname'].replace("\"", "")
@@ -163,13 +168,9 @@ class ChimeraSched (ChimeraCLI):
 
                 if imagetype == "FLAT":
                     site = self._remoteManager.getProxy("/Site/0")
-                    flatPosition = Position.fromAltAz(
-                        site['flat_alt'], site['flat_az'])
+                    flatPosition = Position.fromAltAz(site['flat_alt'], site['flat_az'])
                     program.actions.append(Point(targetAltAz=flatPosition))
 
-                # if i == 0:
-                #    program.actions.append(AutoFocus(start=1500, end=3000, step=250, filter="R", exptime=10))
-                #    program.actions.append(PointVerify(here=True))
 
                 for exp in exps:
                     if exp.count(":") > 1:
@@ -193,12 +194,9 @@ class ChimeraSched (ChimeraCLI):
                         imagetype, objname, str(position), filter, exptime, frames))
 
                     program.actions.append(Expose(shutter=shutter,
-                                                  filename="%s-$DATE-$TIME" % objname.replace(
-                                                      " ", ""),
-                                                  filter=filter,
-                                                  frames=frames,
-                                                  exptime=exptime,
-                                                  imageType=imagetype,
+                                                  filename=string.Template(options.output).safe_substitute(
+                                                      {'NAME': objname.replace(" ", "")}),
+                                                  filter=filter, frames=frames, exptime=exptime, imageType=imagetype,
                                                   objectName=objname))
                 self.out("")
                 programs.append(program)
