@@ -21,7 +21,10 @@
 
 
 from chimera.core.cli import ChimeraCLI, action
+from chimera.core.exceptions import ObjectNotFoundException
 from chimera.util.coord import Coord
+from chimera.core.exceptions import printException
+from chimera.util.output import blue, green, red
 
 from chimera.interfaces.dome import Mode
 
@@ -29,8 +32,7 @@ import sys
 import copy
 
 
-class ChimeraDome (ChimeraCLI):
-
+class ChimeraDome(ChimeraCLI):
     def __init__(self):
         ChimeraCLI.__init__(
             self, "chimera-dome", "Dome controller", 0.1, port=9001)
@@ -39,39 +41,47 @@ class ChimeraDome (ChimeraCLI):
         self.addInstrument(name="dome", cls="Dome", required=True,
                            help="Dome instrument to be used", helpGroup="DOME")
 
+        self.addHelpGroup("DOMEFANS", "Dome fan control")
+        self.addParameters(dict(name="domefan",
+                                default="/Fan/0",
+                                helpGroup="DOMEFANS",
+                                help="Fan instrument to be used."))
+
         self.addHelpGroup("TELESCOPE", "Telescope Tracking Configuration")
         self.addParameters(dict(name="telescope",
                                 default="/Telescope/0",
                                 helpGroup="TELESCOPE",
                                 help="Tell the dome to follow TELESCOPE when tracking"
-                                "(only utilized when using --track"))
+                                     "(only utilized when using --track"))
 
         self.addHelpGroup("COMMANDS", "Commands")
 
         self.addHelpGroup("LIGHT", "Dome lights control")
+        self.addHelpGroup("SLIT", "Dome slit control")
+        self.addHelpGroup("FLAP", "Dome flap control")
 
-    @action(help="Open dome slit", helpGroup="COMMANDS", actionGroup="SLIT")
+    @action(help="Open dome slit", helpGroup="SLIT", actionGroup="SLIT")
     def openSlit(self, options):
         self.out("Opening dome slit ... ", end="")
         self.dome.openSlit()
         self.out("OK")
 
     @action(help="Close dome slit",
-            helpGroup="COMMANDS",
+            helpGroup="SLIT",
             actionGroup="SLIT")
     def closeSlit(self, options):
         self.out("Closing dome slit ... ", end="")
         self.dome.closeSlit()
         self.out("OK")
 
-    @action(help="Open dome flap", helpGroup="COMMANDS", actionGroup="FLAP")
+    @action(help="Open dome flap", helpGroup="FLAP", actionGroup="FLAP")
     def openFlap(self, options):
         self.out("Opening dome flap ... ", end="")
         self.dome.openFlap()
         self.out("OK")
 
     @action(help="Close dome flap",
-            helpGroup="COMMANDS",
+            helpGroup="FLAP",
             actionGroup="FLAP")
     def closeFlap(self, options):
         self.out("Closing dome flap ... ", end="")
@@ -132,6 +142,93 @@ class ChimeraDome (ChimeraCLI):
         self.dome.slewToAz(target)
         self.out("OK")
 
+    @action(long="setFanSpeed",
+            type="float",
+            help="Set fan speed.",
+            metavar="speed",
+            helpGroup="DOMEFANS",
+            actionGroup="DOMEFANS")
+    def setFanSpeed(self, options):
+        try:
+            domefan = self.dome.getManager().getProxy(options.domefan)
+        except ObjectNotFoundException, e:
+            self.exit('%s: Could not find requested fan.'% red('ERROR'))
+
+        self.out("=" * 40)
+        self.out("Changing fan speed to %.2f " % (options.setFanSpeed), end=" ")
+        try:
+            domefan.setRotation(options.setFanSpeed)
+        except Exception, e:
+            self.exit("%s. \n%s" % (red("FAILED"), printException(e)))
+
+        self.out("%s" % (green("OK")))
+        self.out("=" * 40)
+
+    @action(help="Print dome information",
+            helpGroup="DOMEFANS",
+            actionGroup="DOMEFANS")
+    def getFanSpeed(self, options):
+        try:
+            domefan = self.dome.getManager().getProxy(options.domefan)
+        except ObjectNotFoundException, e:
+            self.exit('%s: Could not find requested fan.'% red('ERROR'))
+
+        self.out("=" * 40)
+        self.out("DomeFan: %s (%s)" %
+                 (domefan.getLocation(), domefan["device"]))
+        self.out("Current speed: %f" % domefan.getRotation())
+        self.out("=" * 40)
+
+    @action(help="Start dome fan",
+            helpGroup="DOMEFANS",
+            actionGroup="DOMEFANS")
+    def startFan(self, options):
+
+        try:
+            domefan = self.dome.getManager().getProxy(options.domefan)
+        except ObjectNotFoundException, e:
+            self.exit('%s: Could not find requested fan.'% red('ERROR'))
+
+        if domefan.isFanRunning():
+            self.exit("Fan is already running... ")
+
+        self.out("=" * 40)
+
+        self.out("Starting... ", end="")
+        try:
+            if domefan.startFan():
+                self.out(green("OK"))
+            else:
+                self.out(red("FAILED"))
+            self.out("=" * 40)
+        except Exception, e:
+            self.exit("%s\n %s" % (red("FAILED"), printException(e)))
+
+    @action(help="Stop dome fan",
+            helpGroup="DOMEFANS",
+            actionGroup="DOMEFANS")
+    def stopFan(self, options):
+
+        try:
+            domefan = self.dome.getManager().getProxy(options.domefan)
+        except ObjectNotFoundException, e:
+            self.exit('%s: Could not find requested fan.'% red('ERROR'))
+
+        if not domefan.isFanRunning():
+            self.exit("Fan is not running... ")
+
+        self.out("=" * 40)
+
+        self.out("Stopping... ", end="")
+        try:
+            if domefan.stopFan():
+                self.out(green("OK"))
+            else:
+                self.out(red("FAILED"))
+            self.out("=" * 40)
+        except Exception, e:
+            self.exit("%s\n %s" % (red("FAILED"), printException(e)))
+
     @action(help="Print dome information",
             helpGroup="COMMANDS")
     def info(self, options):
@@ -149,6 +246,18 @@ class ChimeraDome (ChimeraCLI):
             self.out("Dome slit is open.")
         else:
             self.out("Dome slit is closed.")
+
+        try:
+            domefan = self.dome.getManager().getProxy(options.domefan)
+            self.out("=" * 40)
+            self.out("DomeFan: %s (%s)." %
+                     (domefan.getLocation(), domefan["device"]))
+            self.out("Current fan status: %s" % domefan.status())
+            self.out("Current fan speed: %.2f" % domefan.getRotation())
+        except ObjectNotFoundException, e:
+            self.out("No DomeFan")
+
+
         self.out("=" * 40)
 
     def __abort__(self):
@@ -165,6 +274,6 @@ def main():
     cli.run(sys.argv)
     cli.wait()
 
-if __name__ == '__main__':
 
+if __name__ == '__main__':
     main()
