@@ -22,8 +22,10 @@
 
 from chimera.core.cli import ChimeraCLI, action, ParameterType
 from chimera.core.callback import callback
-from chimera.core.exceptions import printException, ObjectNotFoundException
+from chimera.core.exceptions import ChimeraException, printException, ObjectNotFoundException
 from chimera.core.compat import freeze_support
+from chimera.core.systemconfig import SystemConfig
+from chimera.core.managerlocator import ManagerLocator
 
 from chimera.interfaces.filterwheel import InvalidFilterPositionException
 from chimera.interfaces.camera import CameraFeature, CameraStatus
@@ -609,6 +611,7 @@ class ChimeraCam (ChimeraCLI):
 
     def _downloadImage(self,image):
 
+        self.out('Downloading image %s from server.' % image.http())
         image_path = image.filename()
 
         #  If remote is windows, image_path will be c:\...\image.fits, so use ntpath instead of os.path.
@@ -616,8 +619,17 @@ class ChimeraCam (ChimeraCLI):
             modpath = ntpath
         else:
             modpath = os.path
-        image_path = ImageUtil.makeFilename(os.path.join(getImageServer(self.getManager()).defaultNightDir(),
+
+        sysconfig = SystemConfig.fromDefault()
+        host, port = sysconfig.chimera["host"], sysconfig.chimera["port"]
+
+        locManager = ManagerLocator.locate(host, port)
+
+        image_path = ImageUtil.makeFilename(os.path.join(getImageServer(locManager).defaultNightDir(),
                                                          modpath.basename(image_path)))
+        if not ImageUtil.download(image, image_path):
+            raise ChimeraException('Error downloading image %s from %s' % (image_path, image.http()))
+
         image.close() # Close image here
 
         return Image.fromFile(image_path)
