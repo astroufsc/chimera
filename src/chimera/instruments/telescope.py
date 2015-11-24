@@ -217,6 +217,11 @@ class TelescopeBase(ChimeraObject,
         raise NotImplementedError()
 
     def getMetadata(self, request):
+        # Check first if there is metadata from an metadata override method.
+        md = self.getMetadataOverride(request)
+        if md is not None:
+            return md
+        # If not, just go on with the instrument's default metadata.
         position = self.getPositionRaDec()
         return [('TELESCOP', self['model'], 'Telescope Model'),
                 ('OPTICS',   self['optics'], 'Telescope Optics Type'),

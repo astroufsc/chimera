@@ -193,7 +193,7 @@ class Image (DictMixin, RemoteObject):
                 log.warning("Couldn't add %s: %s" % (str(header), str(e)))
 
         hduList = fits.HDUList([hdu])
-        hduList.writeto(filename)
+        hduList.writeto(filename, checksum=True)
         hduList.close()
 
         del hduList
