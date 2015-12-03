@@ -20,7 +20,7 @@
 # 02110-1301, USA.
 
 from chimera.interfaces.focuser import (InvalidFocusPositionException,
-                                        FocuserFeature)
+                                        FocuserFeature, FocuserAxis)
 
 from chimera.instruments.focuser import FocuserBase
 from chimera.core.constants import SYSTEM_CONFIG_DIRECTORY
@@ -72,7 +72,14 @@ class DCFocuser (FocuserBase):
 
         self._supports = {FocuserFeature.TEMPERATURE_COMPENSATION: False,
                           FocuserFeature.POSITION_FEEDBACK: True,
-                          FocuserFeature.ENCODER: False}
+                          FocuserFeature.ENCODER: False,
+                          FocuserFeature.CONTROLLABLE_X: False,
+                          FocuserFeature.CONTROLLABLE_Y: False,
+                          FocuserFeature.CONTROLLABLE_Z: True,
+                          FocuserFeature.CONTROLLABLE_U: False,
+                          FocuserFeature.CONTROLLABLE_V: False,
+                          FocuserFeature.CONTROLLABLE_W: False,
+                          }
 
         self._position = 0
         self._range = None
@@ -121,15 +128,18 @@ class DCFocuser (FocuserBase):
         self._lastPositionLog.flush()
 
     @lock
-    def moveIn(self, n):
+    def moveIn(self, n, axis=FocuserAxis.Z):
+        self._checkAxis(axis)
         return self._move(Direction.IN, n)
 
     @lock
-    def moveOut(self, n):
+    def moveOut(self, n, axis=FocuserAxis.Z):
+        self._checkAxis(axis)
         return self._move(Direction.OUT, n)
 
     @lock
-    def moveTo(self, position):
+    def moveTo(self, position, axis=FocuserAxis.Z):
+        self._checkAxis(axis)
 
         current = self.getPosition()
 
@@ -178,8 +188,10 @@ class DCFocuser (FocuserBase):
 
         return (min_pos <= target <= max_pos)
 
-    def getPosition(self):
+    def getPosition(self, axis=FocuserAxis.Z):
+        self._checkAxis(axis)
         return self._position
 
-    def getRange(self):
+    def getRange(self, axis=FocuserAxis.Z):
+        self._checkAxis(axis)
         return self._range

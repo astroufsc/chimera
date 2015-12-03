@@ -1,5 +1,4 @@
 
-
 from chimera.core.chimeraobject import ChimeraObject
 from chimera.core.methodwrapper import MethodWrapper
 from chimera.core.event         import event
@@ -186,7 +185,20 @@ class TestChimeraObject (object):
 
     def test_methods (self):
 
-        class Minimo (ChimeraObject):
+
+        class BaseClass(ChimeraObject):
+
+            __config__ = {"baseConfig": True}
+
+            @event
+            def baseEvent (self):
+                pass
+            def baseMethod (self):
+                pass
+            def _basePrivateMethod (self):
+                pass
+
+        class Minimo (BaseClass):
 
             CONST = 42
 
@@ -203,7 +215,7 @@ class TestChimeraObject (object):
             def doMethod (self):
                 return self.answer
 
-            #def doEvent (self):
+            # def doEvent (self):
             #    self.eventDone("Event works!")
 
             def doRaise (self):
@@ -239,3 +251,6 @@ class TestChimeraObject (object):
         # exceptions
         assert_raises(Exception, m.doRaise, ())
 
+        # features
+        assert m.features(BaseClass)  # Minimo is a BaseClass subclass
+        assert not m.features(basestring)  # But not a basestring subclass

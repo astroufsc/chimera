@@ -120,11 +120,10 @@ class ChimeraTel (ChimeraCLI):
             self.out(40 * "=")
             if options.objectName:
                 coords = tuple(target)
-                self.out("slewing to %s (%s %s %s)... " % (
-                    options.objectName, coords[0], coords[1], target.epochString()), end="")
+                self.out("slewing to %s (%s %s %s)... " % (options.objectName, coords[0], coords[1],
+                                                           target.epochString()), end="")
             else:
-                self.out("slewing to %s (%s)... " %
-                         (target, target.epochString()), end="")
+                self.out("slewing to %s (%s)... " % (target, target.epochString()), end="")
 
         @callback(self.localManager)
         def slewComplete(position, status):
@@ -255,15 +254,23 @@ class ChimeraTel (ChimeraCLI):
         telescope = self.telescope
 
         self.out(40 * "=")
-        self.out("telescope: %s (%s)." % (telescope.getLocation(),
-                                          telescope["device"]))
+        self.out("telescope: %s (%s)." % (telescope.getLocation(), telescope["device"]))
 
-        self.out("current position ra/dec: %s" % telescope.getPositionRaDec())
+        position = telescope.getPositionRaDec()
+        self.out("current position ra/dec (%s): %s" % (position.epoch, position))
         self.out("current position alt/az: %s" % telescope.getPositionAltAz())
         if telescope.isTracking():
             self.out("tracking: enabled.")
         else:
             self.out("tracking: disabled.")
+
+        try:
+            if telescope.isCoverOpen():
+                self.out("cover: open.")
+            else:
+                self.out("cover: closed.")
+        except NotImplementedError:
+            pass
 
         self.out(40 * "=")
 
@@ -329,8 +336,7 @@ class ChimeraTel (ChimeraCLI):
 
         if (options.ra is not None) and (options.dec is not None):
             try:
-                target = Position.fromRaDec(
-                    options.ra, options.dec, epoch=options.epoch)
+                target = Position.fromRaDec(options.ra, options.dec, epoch=options.epoch)
             except Exception, e:
                 self.exit(str(e))
 

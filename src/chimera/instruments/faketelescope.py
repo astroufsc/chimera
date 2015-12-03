@@ -23,7 +23,7 @@ import time
 import threading
 
 from chimera.interfaces.telescope import SlewRate, TelescopeStatus
-from chimera.instruments.telescope import TelescopeBase
+from chimera.instruments.telescope import TelescopeBase, ObjectTooLowException
 
 from chimera.core.lock import lock
 from chimera.core.site import Site
@@ -89,6 +89,12 @@ class FakeTelescope (TelescopeBase):
         if not self._slewing:
             if self._tracking:
                 self._setAltAzFromRaDec()
+                try:
+                    self._validateAltAz(self.getPositionAltAz())
+                except ObjectTooLowException, msg:
+                    self.log.exception(msg)
+                    self._stopTracking()
+                    self.trackingStopped(self.getPositionRaDec(),TelescopeStatus.OBJECT_TOO_LOW)
             else:
                 self._setRaDecFromAltAz()
         return True
@@ -96,12 +102,19 @@ class FakeTelescope (TelescopeBase):
     def slewToRaDec(self, position):
 
         if not isinstance(position, Position):
-            position = Position.fromRaDec(
-                position[0], position[1], epoch=Epoch.J2000)
+            position = Position.fromRaDec(position[0], position[1], epoch=Epoch.J2000)
 
         self._validateRaDec(position)
 
         self.slewBegin(position)
+
+        # Change position epoch to J2000.
+        # Most of the Telescopes must have this precession calculation, otherwise pointing to positions of epochs
+        # different of J2000 will point the telescope to a wrong position.
+        # This should be done after self.slewBegin()
+        if position.epoch != Epoch.J2000:
+            position = position.toEpoch(Epoch.J2000)
+
 
         ra_steps = position.ra - self.getRa()
         ra_steps = float(ra_steps / 10.0)
@@ -130,6 +143,8 @@ class FakeTelescope (TelescopeBase):
             t += 0.5
 
         self._slewing = False
+
+        self.startTracking()
 
         self.slewComplete(self.getPositionRaDec(), status)
 
@@ -297,9 +312,14 @@ class FakeTelescope (TelescopeBase):
     @lock
     def startTracking(self):
         self._tracking = True
+        self.trackingStarted(self.getPositionRaDec())
 
     @lock
     def stopTracking(self):
+        self._stopTracking()
+        self.trackingStopped(self.getPositionRaDec(),TelescopeStatus.ABORTED)
+
+    def _stopTracking(self):
         self._tracking = False
 
     def isTracking(self):
