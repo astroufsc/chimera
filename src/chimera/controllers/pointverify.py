@@ -177,8 +177,8 @@ class PointVerify(ChimeraObject, IPointVerify):
                 raise CantPointScopeException(
                     "Scope does not point with a precision of %f (RA) or %f (DEC) after %d trials\n" % (
                         self["ra_tolerance"], self["dec_tolerance"], self["max_tries"]))
-            tel.moveOffset(Coord.fromD(delta_ra), Coord.fromD(delta_dec), rate=SlewRate.CENTER)
-            self.pointVerify()
+            tel.moveOffset(Coord.fromD(delta_ra).AS, Coord.fromD(delta_dec).AS, rate=SlewRate.CENTER)
+            # self.pointVerify()
         else:
             # if we got here, we were succesfull, reset trials counter
             self.ntrials = 0
@@ -196,6 +196,9 @@ class PointVerify(ChimeraObject, IPointVerify):
             # another idea is to sync if the delta_coords at first trial were
             # larger than some value
             self.log.info(logstr)
+
+        self.ntrials = 0
+        self.currentField = 0
 
         return True
 
