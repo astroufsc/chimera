@@ -51,7 +51,7 @@ Controllers
 
 * chimera-headers_: Template plugin to modify FITS header keywords. *Advanced use*
 
-* chimera-pverify: Verify the telescope pointing accuracy easily. *On the main chimera package*
+* chimera-pverify_: Verify the telescope pointing accuracy easily.
 
 * chimera-skyflat_: Wakes the telescope at the right time and make the exposure time calculations to make automatic sky-flatting.
 
@@ -91,6 +91,7 @@ Controllers
 .. _chimera-optec: https://github.com/astroufsc/chimera-optec
 .. _chimera-sbig: https://github.com/astroufsc/chimera-sbig
 .. _chimera-stellarium: https://github.com/astroufsc/chimera-stellarium
+.. _chimera-pverify: https://github.com/astroufsc/chimera-pverify
 .. _chimera-template: https://github.com/astroufsc/chimera-template
 .. _chimera-xephem: https://github.com/astroufsc/chimera-xephem
 .. _chimera-webadmin: https://github.com/astroufsc/chimera-webadmin
