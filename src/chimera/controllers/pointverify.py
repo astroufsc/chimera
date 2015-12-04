@@ -1,28 +1,23 @@
 from __future__ import division
 from math import fabs
+import os
+import ntpath
+import time
 
+from chimera.controllers.imageserver.util import getImageServer
 from chimera.util.catalogs.landolt import Landolt
 from chimera.core.chimeraobject import ChimeraObject
-from chimera.core.exceptions import (ChimeraException, CantPointScopeException,
-                                     CanSetScopeButNotThisField, CantSetScopeException,
-                                     printException)
-#from chimera.core.managerlocator import ManagerLocator
-
+from chimera.core.exceptions import (CantPointScopeException, CantSetScopeException, printException, ChimeraException)
 from chimera.interfaces.camera import Shutter
 from chimera.interfaces.telescope import SlewRate
 from chimera.interfaces.pointverify import PointVerify as IPointVerify
-
+from chimera.util.image import ImageUtil, Image
 from chimera.util.position import Position
 from chimera.util.coord import Coord
-from chimera.util.image import Image
-
 from chimera.util.astrometrynet import AstrometryNet, NoSolutionAstrometryNetException
 
-import time
 
-
-class PointVerify (ChimeraObject, IPointVerify):
-
+class PointVerify(ChimeraObject, IPointVerify):
     """
     Verifies telescope pointing.
     There are two ways of doing this:
@@ -34,15 +29,10 @@ class PointVerify (ChimeraObject, IPointVerify):
     # initialize the relevant variables
     def __init__(self):
         ChimeraObject.__init__(self)
-        self.ntrials = 0             # number times we try to center on a field
-        self.nfields = 0             # number of fields we try to center on
+        self.ntrials = 0  # number times we try to center on a field
+        self.nfields = 0  # number of fields we try to center on
         self.checkedpointing = False  # True = Standard field is verified
-        self.currentField = 0        # counts fields tried to verify
-
-    # def __start__ (self):
-        # self.pointVerify()
-        # self.checkPointing()
-        # return True
+        self.currentField = 0  # counts fields tried to verify
 
     def getTel(self):
         return self.getManager().getProxy(self["telescope"])
@@ -50,17 +40,38 @@ class PointVerify (ChimeraObject, IPointVerify):
     def getCam(self):
         return self.getManager().getProxy(self["camera"])
 
-    def getFilter(self):
+    def getFilterWheel(self):
         return self.getManager().getProxy(self["filterwheel"])
 
     def _takeImage(self):
 
         cam = self.getCam()
-        frames = cam.expose(
-            exptime=self["exptime"], frames=1, shutter=Shutter.OPEN, filename="pointverify-$DATE")
+        if cam["telescope_focal_length"] is None:
+            raise ChimeraException("telescope_focal_length parameter must be set on camera instrument configuration")
+        if self["filterwheel"] is not None:
+            fw = self.getFilterWheel()
+            fw.setFilter(self["filter"])
+        frames = cam.expose(exptime=self["exptime"], frames=1, shutter=Shutter.OPEN,
+                            filename=os.path.basename(ImageUtil.makeFilename("pointverify-$DATE")))
 
         if frames:
-            return frames[0]
+            image = frames[0]
+            image_path = image.filename()
+            if not os.path.exists(image_path):  # If image is on a remote server, donwload it.
+
+                #  If remote is windows, image_path will be c:\...\image.fits, so use ntpath instead of os.path.
+                if ':\\' in image_path:
+                    modpath = ntpath
+                else:
+                    modpath = os.path
+                image_path = ImageUtil.makeFilename(os.path.join(getImageServer(self.getManager()).defaultNightDir(),
+                                                                 modpath.basename(image_path)))
+                t0 = time.time()
+                self.log.debug('Downloading image from server to %s' % image_path)
+                if not ImageUtil.download(image, image_path):
+                    raise ChimeraException('Error downloading image %s from %s' % (image_path, image.http()))
+                self.log.debug('Finished download. Took %3.2f seconds' % (time.time() - t0))
+            return image_path, image
         else:
             raise Exception("Could not take an image")
 
@@ -71,33 +82,26 @@ class PointVerify (ChimeraObject, IPointVerify):
            move the scope
            take a new image
            test again
-           do this while ntrials < max_trials
+           do this while ntrials < max_tries
 
         Returns True if centering was succesful
                 False if not
         """
 
         # take an image and read its coordinates off the header
-        image = None
 
         try:
-            image = self._takeImage()
-            print "image name %s", image.filename()
+            image_path, image = self._takeImage()
+            self.log.debug("Taking image: image name %s" % image_path)
         except:
             self.log.error("Can't take image")
             raise
-
-        ra_img_center = image["CRVAL1"]    # expects to see this in image
-        dec_img_center = image["CRVAL2"]
-        currentImageCenter = Position.fromRaDec(Coord.fromD(ra_img_center),
-                                                Coord.fromD(dec_img_center))
 
         tel = self.getTel()
         # analyze the previous image using
         # AstrometryNet defined in util
         try:
-            wcs_name = AstrometryNet.solveField(
-                image.filename(), findstarmethod="sex")
+            wcs_name = AstrometryNet.solveField(image_path, findstarmethod="sex")
         except NoSolutionAstrometryNetException, e:
             raise e
             # why can't I select this exception?
@@ -106,7 +110,7 @@ class PointVerify (ChimeraObject, IPointVerify):
             # send the telescope back to checkPointing
             # if that fails, clouds or telescope problem
             # an exception will be raised there
-            #self.log.error("No WCS solution")
+            # self.log.error("No WCS solution")
             # if not self.checkedpointing:
             #    self.nfields += 1
             #    self.currentField += 1
@@ -127,73 +131,62 @@ class PointVerify (ChimeraObject, IPointVerify):
             # else:
             #    self.checkedpointing = False
             #    raise CanSetScopeButNotThisField("Able to set scope, but unable to verify this field %s" %(currentImageCenter))
-        wcs = Image.fromFile(wcs_name)
-        ra_wcs_center = wcs["CRVAL1"] + \
-            (wcs["NAXIS1"] / 2.0 - wcs["CRPIX1"]) * wcs["CD1_1"]
-        dec_wcs_center = wcs["CRVAL2"] + \
-            (wcs["NAXIS2"] / 2.0 - wcs["CRPIX2"]) * wcs["CD2_2"]
-        currentWCS = Position.fromRaDec(Coord.fromD(ra_wcs_center),
-                                        Coord.fromD(dec_wcs_center))
+        wcs_image = Image.fromFile(wcs_name)
+        ra_wcs_center, dec_wcs_center = wcs_image.worldAt((image["NAXIS1"]/2., image["NAXIS2"]/2.))
+        currentWCS = Position.fromRaDec(Coord.fromD(ra_wcs_center), Coord.fromD(dec_wcs_center))
 
         # save the position of first trial:
-        if (self.ntrials == 0):
+        if self.ntrials == 0:
+            ra_img_center = image["CRVAL1"]  # expects to see this in image
+            dec_img_center = image["CRVAL2"]
+            currentImageCenter = Position.fromRaDec(Coord.fromD(ra_img_center),
+                                                    Coord.fromD(dec_img_center))
+            self._original_center = currentImageCenter
+            self._original_ra = ra_img_center
+            self._original_dec = dec_img_center
+            self.log.debug("Setting ra, dec for %s, %s" % (ra_img_center, dec_img_center))
+
             initialPosition = Position.fromRaDec(
                 Coord.fromD(ra_img_center), Coord.fromD(dec_img_center))
-            initialWCS = Position.fromRaDec(currentWCS.ra, currentWCS.dec)
+        else:
+            currentImageCenter = self._original_center
+            ra_img_center = self._original_ra
+            dec_img_center = self._original_dec
+            self.log.debug("Using previous ra, dec.")
 
         # write down the two positions for later use in mount models
-        if (self.ntrials == 0):
+        if self.ntrials == 0:
             site = self.getManager().getProxy("/Site/0")
-            logstr = "Pointing Info for Mount Model: %s %s %s %s %s" % (
-                site.LST(),
-                site.MJD(),
-                image["DATE-OBS"],
-                initialPosition,
-                currentWCS)
+            logstr = "Pointing Info for Mount Model: %s %s %s %s %s" % (site.LST(), site.MJD(), image["DATE-OBS"],
+                                                                        initialPosition, currentWCS)
             self.log.info(logstr)
 
         delta_ra = ra_img_center - ra_wcs_center
         delta_dec = dec_img_center - dec_wcs_center
 
-        self.log.debug("delta_ra: %s delta_dec: %s" % (delta_ra, delta_dec))
-        self.log.debug("ra_img_center: %s ra_wcs_center: %s" %
-                       (ra_img_center, ra_wcs_center))
-        self.log.debug("dec_img_center: %s dec_wcs_center: %s" %
-                       (dec_img_center, dec_wcs_center))
-
         # *** need to do real logging here
-        logstr = "%s %f %f %f %f %f %f" % (
-            image["DATE-OBS"],
-            ra_img_center,
-            dec_img_center,
-            ra_wcs_center,
-            dec_wcs_center,
-            delta_ra,
-            delta_dec)
+        logstr = "%s ra_tel = %f dec_tel = %f ra_img = %f dec_img = %f delta_ra = %f delta_dec = %f" % (
+        image["DATE-OBS"], ra_img_center, dec_img_center, ra_wcs_center, dec_wcs_center, delta_ra, delta_dec)
         self.log.debug(logstr)
 
-        if (fabs(delta_ra) > self["tolra"]) or (fabs(delta_dec) > self["toldec"]):
-            print "Telescope not there yet."
-            print "Trying again"
+        if (fabs(delta_ra) > self["ra_tolerance"]) or (fabs(delta_dec) > self["dec_tolerance"]):
+            self.log.debug("Telescope not there yet. Trying again")
             self.ntrials += 1
-            if (self.ntrials > self["max_trials"]):
+            if self.ntrials > self["max_tries"]:
                 self.ntrials = 0
-                raise CantPointScopeException("Scope does not point with a precision of %f (RA) or %f (DEC) after %d trials\n" % (
-                    self["tolra"], self["toldec"], self["max_trials"]))
-            time.sleep(5)
-            tel.moveOffset(Coord.fromD(delta_ra).AS, Coord.fromD(
-                delta_dec).AS, rate=SlewRate.CENTER)
-            self.pointVerify()
+                raise CantPointScopeException(
+                    "Scope does not point with a precision of %f (RA) or %f (DEC) after %d trials\n" % (
+                        self["ra_tolerance"], self["dec_tolerance"], self["max_tries"]))
+            tel.moveOffset(Coord.fromD(delta_ra).AS, Coord.fromD(delta_dec).AS, rate=SlewRate.CENTER)
+            # self.pointVerify()
         else:
             # if we got here, we were succesfull, reset trials counter
             self.ntrials = 0
             self.currentField = 0
             # and save final position
             # write down the two positions for later use in mount models
-            logstr = "Pointing: final solution %s %s %s" % (image["DATE-OBS"],
-                                                            currentImageCenter,
-                                                            currentWCS)
-            #self.log.debug("Synchronizing telescope on %s" % currentWCS)
+            logstr = "Pointing: final solution %s %s %s" % (image["DATE-OBS"], currentImageCenter, currentWCS)
+            # self.log.debug("Synchronizing telescope on %s" % currentWCS)
             # tel.syncRaDec(currentWCS)
 
             # *** should we sync the scope ???
@@ -204,14 +197,20 @@ class PointVerify (ChimeraObject, IPointVerify):
             # larger than some value
             self.log.info(logstr)
 
-        return(True)
+        self.ntrials = 0
+        self.currentField = 0
 
-    def checkPointing(self):
+        return True
+
+    def setCurrentField(self, f):
+        self.currentField = f
+        return True
+
+    def checkPointing(self, nfields=1):
         """
         This method *chooses* a field to verify the telescope pointing.
         Then it does the pointing and verifies it.
         If unsuccesfull e-mail the operator for help
-        isto em portugues eh chamado calagem
 
         Choice is based on some catalog (Landolt here)
         We choose the field closest to zenith
@@ -222,8 +221,7 @@ class PointVerify (ChimeraObject, IPointVerify):
         lat = site["latitude"]
         coords = Position.fromRaDec(lst, lat)
 
-        self.log.info(
-            "Check pointing - Zenith coordinates: %f %f" % (lst, lat))
+        self.log.info("Check pointing - Zenith coordinates: %f %f" % (lst, lat))
 
         tel = self.getTel()
 
@@ -234,12 +232,12 @@ class PointVerify (ChimeraObject, IPointVerify):
         fld.useTarget(coords, radius=45)
         obj = fld.find(limit=self["max_fields"])
 
-        print "Objects returned from Landolt", obj
+        self.log.debug("Objects returned from Landolt: %s" % obj)
         # get ra, dec to call pointVerify
         ra = obj[self.currentField]["RA"]
         dec = obj[self.currentField]["DEC"]
         name = obj[self.currentField]["ID"]
-        print "Current object ", ra, dec, name
+        self.log.debug("Current object: %s, %s, %s", ra, dec, name)
 
         self.log.info("Chose %s %f %f" % (name, ra, dec))
         tel.slewToRaDec(Position.fromRaDec(ra, dec))
@@ -248,7 +246,7 @@ class PointVerify (ChimeraObject, IPointVerify):
         except Exception, e:
             printException(e)
             raise CantSetScopeException(
-                "Can't set scope on field %s %f %f we are in trouble, call for help" % 
+                "Can't set scope on field %s %f %f we are in trouble, call for help" %
                 (name, ra, dec))
         return True
 
@@ -288,8 +286,8 @@ class PointVerify (ChimeraObject, IPointVerify):
         should return a list of standard stars within the limits
         """
 
-if __name__ == "__main__":
 
+if __name__ == "__main__":
     x = PointVerify()
     # x.checkPointing()
     x.pointVerify()
