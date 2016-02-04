@@ -278,7 +278,7 @@ class TelescopeSlew(Telescope):
         @rtype: L{Position}
         """
 
-    def getSideOfPier(self):
+    def getPierSide(self):
         """
         Get the current side of pier of the telescope.
 

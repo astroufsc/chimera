@@ -160,7 +160,7 @@ class TelescopeBase(ChimeraObject,
     def getTargetAltAz(self):
         raise NotImplementedError()
 
-    def getSideOfPier(self):
+    def getPierSide(self):
         raise NotImplementedError()
 
     @lock
