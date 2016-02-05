@@ -50,8 +50,7 @@ class Telescope(Interface):
                   "optics": ["Newtonian", "SCT", "RCT"],
                   "mount": "Mount type Inc.",
                   "aperture": 100.0,  # mm
-                  "focal_length": 1000.0,  # mm
-                  # unit (ex., 0.5 for a half length focal reducer)
+                  "focal_length": 1000.0,  # mm unit (ex., 0.5 for a half length focal reducer)
                   "focal_reduction": 1.0,
                   }
 
