@@ -33,7 +33,7 @@ SlewRate = Enum("GUIDE", "CENTER", "FIND", "MAX")
 
 TelescopeStatus = Enum("OK", "ERROR", "ABORTED", "OBJECT_TOO_LOW", "OBJECT_TOO_HIGH")
 
-TelescopePierSide = Enum("EAST", "WEST")
+TelescopePierSide = Enum("EAST", "WEST", "UNKNOWN")
 
 class PositionOutsideLimitsException (ChimeraException):
     pass
@@ -277,14 +277,6 @@ class TelescopeSlew(Telescope):
         @rtype: L{Position}
         """
 
-    def getPierSide(self):
-        """
-        Get the current side of pier of the telescope.
-
-        @return: Telescope current pier side EAST or WEST.
-        @rtype: L{TelescopePierSide}
-        """
-
     @event
     def slewBegin(self, target):
         """
@@ -310,6 +302,17 @@ class TelescopeSlew(Telescope):
         @param status: The status of the slew operation.
         @type  status: L{TelescopeStatus}
         """
+
+class TelescopePier(Telescope):
+
+    def getPierSide(self):
+        """
+        Get the current side of pier of the telescope.
+
+        @return: Telescope current pier side: UNKNOWN, EAST or WEST.
+        @rtype: L{TelescopePierSide}
+        """
+
 
 
 class TelescopeSync(Telescope):
