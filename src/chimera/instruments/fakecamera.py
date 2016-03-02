@@ -258,7 +258,7 @@ class FakeCamera (CameraBase, FilterWheelBase):
 
         # without telescope/dome, or if dome/telescope aren't aligned, or the dome is closed
         # or we otherwise failed, just make a flat pattern with dark noise
-        if (pix == None):
+        if pix is None:
             try:
                 self.log.info(
                     "Making flat image: " + str(ccd_height) + "x" + str(ccd_width))

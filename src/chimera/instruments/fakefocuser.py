@@ -22,7 +22,7 @@
 from chimera.core.lock import lock
 
 from chimera.interfaces.focuser import (FocuserFeature,
-                                        InvalidFocusPositionException)
+                                        InvalidFocusPositionException, FocuserAxis)
 
 from chimera.instruments.focuser import FocuserBase
 
@@ -36,14 +36,22 @@ class FakeFocuser (FocuserBase):
 
         self._supports = {FocuserFeature.TEMPERATURE_COMPENSATION: False,
                           FocuserFeature.POSITION_FEEDBACK: True,
-                          FocuserFeature.ENCODER: True}
+                          FocuserFeature.ENCODER: True,
+                          FocuserFeature.CONTROLLABLE_X: False,
+                          FocuserFeature.CONTROLLABLE_Y: False,
+                          FocuserFeature.CONTROLLABLE_Z: True,
+                          FocuserFeature.CONTROLLABLE_U: False,
+                          FocuserFeature.CONTROLLABLE_V: False,
+                          FocuserFeature.CONTROLLABLE_W: False,
+                          }
 
     def __start__(self):
         self._position = int(self.getRange()[1] / 2.0)
         self["model"] = "Fake Focus v.1"
 
     @lock
-    def moveIn(self, n):
+    def moveIn(self, n, axis=FocuserAxis.Z):
+        self._checkAxis(axis)
         target = self.getPosition() - n
 
         if self._inRange(target):
@@ -53,7 +61,8 @@ class FakeFocuser (FocuserBase):
                                                 "boundaries." % target)
 
     @lock
-    def moveOut(self, n):
+    def moveOut(self, n, axis=FocuserAxis.Z):
+        self._checkAxis(axis)
         target = self.getPosition() + n
 
         if self._inRange(target):
@@ -63,7 +72,8 @@ class FakeFocuser (FocuserBase):
                                                 "boundaries." % target)
 
     @lock
-    def moveTo(self, position):
+    def moveTo(self, position, axis=FocuserAxis.Z):
+        self._checkAxis(axis)
         if self._inRange(position):
             self._setPosition(position)
         else:
@@ -71,10 +81,12 @@ class FakeFocuser (FocuserBase):
                                                 "boundaries." % int(position))
 
     @lock
-    def getPosition(self):
+    def getPosition(self, axis=FocuserAxis.Z):
+        self._checkAxis(axis)
         return self._position
 
-    def getRange(self):
+    def getRange(self, axis=FocuserAxis.Z):
+        self._checkAxis(axis)
         return (0, 7000)
 
     def _setPosition(self, n):
