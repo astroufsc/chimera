@@ -127,13 +127,16 @@ class SystemConfig (object):
         self.controllers = []
 
         # specials
-        self._specials = ["telescope", "telescopes",
+        self._specials = [
+                          "telescope", "telescopes",
                           "camera", "cameras",
                           "filterwheel", "filterwheels",
                           "dome", "domes",
                           "focuser", "focusers",
                           "weatherstation", "weatherstations",
-                          "seeingmonitor", "seeingmonitors"]
+                          "calibrationlamp", "calibrationlamps",
+                          "seeingmonitor", "seeingmonitors"
+                          ]
 
         self._instrumentsSections = self._specials + \
             ["instrument", "instruments"]
