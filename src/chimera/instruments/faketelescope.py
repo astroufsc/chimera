@@ -47,6 +47,8 @@ class FakeTelescope (TelescopeBase):
 
         self._abort = threading.Event()
 
+        self._epoch = Epoch.J2000
+
         try:
             self._site = self.getManager().getProxy("/Site/0")
             self._gotSite = True
@@ -108,14 +110,6 @@ class FakeTelescope (TelescopeBase):
 
         self.slewBegin(position)
 
-        # Change position epoch to J2000.
-        # Most of the Telescopes must have this precession calculation, otherwise pointing to positions of epochs
-        # different of J2000 will point the telescope to a wrong position.
-        # This should be done after self.slewBegin()
-        if position.epoch != Epoch.J2000:
-            position = position.toEpoch(Epoch.J2000)
-
-
         ra_steps = position.ra - self.getRa()
         ra_steps = float(ra_steps / 10.0)
 
@@ -123,6 +117,7 @@ class FakeTelescope (TelescopeBase):
         dec_steps = float(dec_steps / 10.0)
 
         self._slewing = True
+        self._epoch = position.epoch
         self._abort.clear()
 
         status = TelescopeStatus.OK
@@ -272,7 +267,7 @@ class FakeTelescope (TelescopeBase):
 
     @lock
     def getPositionRaDec(self):
-        return Position.fromRaDec(self.getRa(), self.getDec())
+        return Position.fromRaDec(self.getRa(), self.getDec(), epoch=self._epoch)
 
     @lock
     def getPositionAltAz(self):
