@@ -22,7 +22,7 @@
 import time
 import threading
 
-from chimera.interfaces.telescope import SlewRate, TelescopeStatus
+from chimera.interfaces.telescope import SlewRate, TelescopeStatus, TelescopeCover, TelescopePier, TelescopePierSide
 from chimera.instruments.telescope import TelescopeBase, ObjectTooLowException
 
 from chimera.core.lock import lock
@@ -32,7 +32,7 @@ from chimera.util.coord import Coord
 from chimera.util.position import Position, Epoch
 
 
-class FakeTelescope (TelescopeBase):
+class FakeTelescope (TelescopeBase, TelescopeCover, TelescopePier):
 
     def __init__(self):
         TelescopeBase.__init__(self)
@@ -48,6 +48,9 @@ class FakeTelescope (TelescopeBase):
         self._abort = threading.Event()
 
         self._epoch = Epoch.J2000
+
+        self._cover = False
+        self._pierside = TelescopePierSide.UNKNOWN
 
         try:
             self._site = self.getManager().getProxy("/Site/0")
@@ -319,3 +322,18 @@ class FakeTelescope (TelescopeBase):
 
     def isTracking(self):
         return self._tracking
+
+    def openCover(self):
+        self._cover = True
+
+    def closeCover(self):
+        self._cover = False
+
+    def isCoverOpen(self):
+        return self._cover
+
+    def setPierSide(self, side):
+        self._pierside = side
+
+    def getPierSide(self):
+        return self._pierside
