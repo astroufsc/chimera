@@ -22,7 +22,7 @@
 import time
 import threading
 
-from chimera.interfaces.telescope import SlewRate, TelescopeStatus
+from chimera.interfaces.telescope import SlewRate, TelescopeStatus, TelescopeCover, TelescopePier, TelescopePierSide
 from chimera.instruments.telescope import TelescopeBase, ObjectTooLowException
 
 from chimera.core.lock import lock
@@ -32,7 +32,7 @@ from chimera.util.coord import Coord
 from chimera.util.position import Position, Epoch
 
 
-class FakeTelescope (TelescopeBase):
+class FakeTelescope (TelescopeBase, TelescopeCover, TelescopePier):
 
     def __init__(self):
         TelescopeBase.__init__(self)
@@ -46,6 +46,11 @@ class FakeTelescope (TelescopeBase):
         self._parked = False
 
         self._abort = threading.Event()
+
+        self._epoch = Epoch.J2000
+
+        self._cover = False
+        self._pierside = TelescopePierSide.UNKNOWN
 
         try:
             self._site = self.getManager().getProxy("/Site/0")
@@ -102,8 +107,7 @@ class FakeTelescope (TelescopeBase):
     def slewToRaDec(self, position):
 
         if not isinstance(position, Position):
-            position = Position.fromRaDec(
-                position[0], position[1], epoch=Epoch.J2000)
+            position = Position.fromRaDec(position[0], position[1], epoch=Epoch.J2000)
 
         self._validateRaDec(position)
 
@@ -116,6 +120,7 @@ class FakeTelescope (TelescopeBase):
         dec_steps = float(dec_steps / 10.0)
 
         self._slewing = True
+        self._epoch = position.epoch
         self._abort.clear()
 
         status = TelescopeStatus.OK
@@ -265,7 +270,7 @@ class FakeTelescope (TelescopeBase):
 
     @lock
     def getPositionRaDec(self):
-        return Position.fromRaDec(self.getRa(), self.getDec())
+        return Position.fromRaDec(self.getRa(), self.getDec(), epoch=self._epoch)
 
     @lock
     def getPositionAltAz(self):
@@ -317,3 +322,18 @@ class FakeTelescope (TelescopeBase):
 
     def isTracking(self):
         return self._tracking
+
+    def openCover(self):
+        self._cover = True
+
+    def closeCover(self):
+        self._cover = False
+
+    def isCoverOpen(self):
+        return self._cover
+
+    def setPierSide(self, side):
+        self._pierside = side
+
+    def getPierSide(self):
+        return self._pierside

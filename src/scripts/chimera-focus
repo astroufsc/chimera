@@ -22,10 +22,10 @@
 
 from chimera.core.cli import ChimeraCLI, action, parameter, ParameterType
 from chimera.core.callback import callback
-#from chimera.core.exceptions import ChimeraException
+# from chimera.core.exceptions import ChimeraException
 
 from chimera.interfaces.autofocus import StarNotFoundException, FocusNotFoundException
-from chimera.interfaces.focuser import InvalidFocusPositionException, FocuserFeature
+from chimera.interfaces.focuser import InvalidFocusPositionException, FocuserFeature, FocuserAxis, ControllableAxis
 from chimera.interfaces.filterwheel import InvalidFilterPositionException
 from chimera.util.sextractor import SExtractorException
 
@@ -49,6 +49,15 @@ class ChimeraFocus (ChimeraCLI):
                            required=True,
                            helpGroup="FOCUS",
                            help="Focuser instrument to be used")
+        self.addParameters(dict(name="axis",
+                                long="axis",
+                                helpGroup="FOCUS",
+                                help="In case of multi-dimensional focuser, choose axis: X, Y, Z, U, V or W.",
+                                type=ParameterType.CHOICE,
+                                choices=["X","Y","Z","U","V","W"],
+                                metavar="AXIS",
+                                default='Z'))
+
         self.addController(name="autofocus",
                            cls="Autofocus",
                            required=False,
@@ -114,17 +123,18 @@ class ChimeraFocus (ChimeraCLI):
             metavar="N",
             helpGroup="COMMANDS")
     def move_in(self, options):
-        self.out("Moving %d steps IN ... " % options.move_in, end="")
+        self.out("Moving %s %d steps IN ... " % (options.axis, options.move_in), end="")
 
         try:
-            self.focuser.moveIn(options.move_in)
+            self.focuser.moveIn(options.move_in, FocuserAxis.fromStr(options.axis))
         except InvalidFocusPositionException:
             self.exit("Invalid position. Current position %d,"
                       " target position %d, valid range %d-%d." % (self.focuser.getPosition(),
-																	   self.focuser.getPosition() -
-																	   int(options.move_in),
-																	   self.focuser.getRange()[0], self.focuser.getRange()[1]))
-		
+                                                                   self.focuser.getPosition() -
+                                                                   int(options.move_in),
+                                                                   self.focuser.getRange()[0],
+                                                                   self.focuser.getRange()[1]))
+
         self.out("OK")
 
         self._currentPosition(options)
@@ -135,16 +145,17 @@ class ChimeraFocus (ChimeraCLI):
             metavar="N",
             helpGroup="COMMANDS")
     def move_out(self, options):
-        self.out("Moving %d steps OUT ... " % options.move_out, end="")
+        self.out("Moving %s %d steps OUT ... " % (options.axis, options.move_out), end="")
 
         try:
-            self.focuser.moveOut(options.move_out)
+            self.focuser.moveOut(options.move_out, FocuserAxis.fromStr(options.axis))
         except InvalidFocusPositionException, e:
             self.exit("Invalid position. Current position %d,"
                       " target position %d, valid range %d-%d." % (self.focuser.getPosition(),
                                                                    self.focuser.getPosition() +
                                                                    int(options.move_out),
-																	   self.focuser.getRange()[0], self.focuser.getRange()[1]))
+                                                                   self.focuser.getRange()[0],
+                                                                   self.focuser.getRange()[1]))
 
         self.out("OK")
 
@@ -156,10 +167,10 @@ class ChimeraFocus (ChimeraCLI):
             metavar="POSITION",
             helpGroup="COMMANDS")
     def move_to(self, options):
-        self.out("Moving to %d ... " % options.move_to, end="")
+        self.out("Moving %s to %d ... " % (options.axis, options.move_to), end="")
 
         try:
-            self.focuser.moveTo(options.move_to)
+            self.focuser.moveTo(options.move_to, FocuserAxis.fromStr(options.axis))
         except InvalidFocusPositionException:
             self.exit("Invalid position, must be between %d and %d," %
                       self.focuser.getRange())
@@ -175,8 +186,8 @@ class ChimeraFocus (ChimeraCLI):
         self.out("Focuser: %s (%s)" %
                  (self.focuser.getLocation(), self.focuser["device"]))
         self._currentPosition(options)
-        self.out("Valid range: %d-%d" % self.focuser.getRange())
-	
+        self._validRange(options)
+
         if self.focuser.supports(FocuserFeature.TEMPERATURE_COMPENSATION):
             self.out("Temperature: %.2f oC" % self.focuser.getTemperature())
 
@@ -190,8 +201,8 @@ class ChimeraFocus (ChimeraCLI):
 
     @action(helpGroup="AUTOFOCUS",
             help="Start an autofocus session using the selected parameters."
-            " You can select a focuser range and the size of the step for the sequence."
-            " This option is exclusive, you cannot move manually at the same time.")
+                 " You can select a focuser range and the size of the step for the sequence."
+                 " This option is exclusive, you cannot move manually at the same time.")
     def auto(self, options):
 
         if not self.autofocus:
@@ -267,7 +278,24 @@ class ChimeraFocus (ChimeraCLI):
         time.sleep(1)
 
     def _currentPosition(self, options):
-			return self.out("Current focuser position: %s" % self.focuser.getPosition())
+
+        self.out("Current focuser position: %s" % self.focuser.getPosition())
+
+        for ax in ControllableAxis:
+            if self.focuser.supports(ax) and ax != FocuserFeature.CONTROLLABLE_Z:
+                self.out('\tAxis %s: %s' % (ControllableAxis[ax], self.focuser.getPosition(ControllableAxis[ax])))
+
+        return
+
+    def _validRange(self, options):
+
+        self.out("Valid range: %s-%s" % self.focuser.getRange())
+
+        for ax in ControllableAxis:
+            if self.focuser.supports(ax) and ax != FocuserFeature.CONTROLLABLE_Z:
+                self.out('\tRange %s: %s' % (ControllableAxis[ax], self.focuser.getRange(ControllableAxis[ax])))
+
+        return
 
 
 def main():
@@ -275,6 +303,6 @@ def main():
     cli.run(sys.argv)
     cli.wait()
 
-if __name__ == '__main__':
 
+if __name__ == '__main__':
     main()

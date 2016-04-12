@@ -1,4 +1,4 @@
-#import chimera.core.log
+import urllib2
 
 from chimera.core.remoteobject import RemoteObject
 from chimera.core.exceptions import ChimeraException
@@ -132,6 +132,35 @@ class ImageUtil (object):
             finalname = "%s-%03i%s" % (base, i, ext)
 
         return finalname
+
+    @staticmethod
+    def download(image, out_file=None, overwrite=False, max_attempts=2):
+        """
+        Downloads the image from imageServer http to localfile.
+        :param image: Image object to download
+        :param out_file: Output filename
+        :param overwrite: If True, overwrites existing file
+        :param max_attempts: Number of maximum attempts to download
+        :return: True if ok, False otherwise
+        """
+        if out_file is None:
+            out_file = image.filename
+        if overwrite is False and os.path.exists(out_file):
+            return True
+        attempts = 0
+        while attempts < max_attempts:
+            try:
+                response = urllib2.urlopen(image.http())
+                content = response.read()
+                f = open(out_file, "wb")
+                f.write(content)
+                f.close()
+                return True
+            except urllib2.URLError as e:
+                attempts += 1
+        return False
+
+
 
 
 class Image (DictMixin, RemoteObject):
@@ -277,6 +306,9 @@ class Image (DictMixin, RemoteObject):
 
         world = self._valueAt(self._wcs.wcs_pix2world, *pixel)
         return Position.fromRaDec(Coord.fromD(world[0]), Coord.fromD(world[1]))
+
+    def worldAtCenter(self):
+        return self.pixelAt(self.center())
 
     def _findWCS(self):
 
