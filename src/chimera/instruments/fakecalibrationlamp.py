@@ -20,22 +20,19 @@
 # 02110-1301, USA.
 
 from chimera.core.lock import lock
-
 from chimera.interfaces.calibrationlamp import CalibrationLampDimmer, IntensityOutOfRangeException
 from chimera.instruments.calibrationlamp import CalibrationLampBase
-
 import time
 import threading
 
 
-class FakeCalibrationLamp (CalibrationLampBase, CalibrationLampDimmer):
-
+class FakeCalibrationLamp(CalibrationLampBase, CalibrationLampDimmer):
     def __init__(self):
         CalibrationLampBase.__init__(self)
 
         self._isOn = False
         self._intensity = 0.
-        self._irange = (0.,100.)
+        self._irange = (0., 100.)
 
     @lock
     def switchOn(self):
@@ -56,16 +53,16 @@ class FakeCalibrationLamp (CalibrationLampBase, CalibrationLampDimmer):
         return self._isOn
 
     @lock
-    def setIntensity(self,intensity):
+    def setIntensity(self, intensity):
         int_i, int_f = self.getRange()
 
         if int_i < intensity <= int_f:
             self._intensity = intensity
             return True
         else:
-            raise IntensityOutOfRangeException('Intensity %.2f out of range. Must be between (%.2f:%.2f].'%(intensity,
-                                                                                                            int_i,
-                                                                                                            int_f))
+            raise IntensityOutOfRangeException('Intensity %.2f out of range. Must be between (%.2f:%.2f].' % (intensity,
+                                                                                                              int_i,
+                                                                                                              int_f))
 
     @lock
     def getIntensity(self):

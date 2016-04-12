@@ -129,6 +129,7 @@ class SystemConfig (object):
         # specials
         self._specials = ["telescope", "telescopes",
                           "camera", "cameras",
+                          "calibrationlamp", "calibrationlamps",
                           "filterwheel", "filterwheels",
                           "dome", "domes",
                           "focuser", "focusers",

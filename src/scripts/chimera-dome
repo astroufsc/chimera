@@ -21,19 +21,16 @@
 
 
 from chimera.core.cli import ChimeraCLI, action
-from chimera.core.exceptions import printException, ObjectNotFoundException
+from chimera.core.exceptions import ObjectNotFoundException
 from chimera.util.coord import Coord
 from chimera.util.output import green, red
-
 from chimera.interfaces.dome import Mode
-from chimera.interfaces.calibrationlamp import IntensityOutOfRangeException
-
+from chimera.interfaces.calibrationlamp import IntensityOutOfRangeException, CalibrationLampDimmer
 import sys
 import copy
 
 
-class ChimeraDome (ChimeraCLI):
-
+class ChimeraDome(ChimeraCLI):
     def __init__(self):
         ChimeraCLI.__init__(
             self, "chimera-dome", "Dome controller", 0.1, port=9001)
@@ -47,7 +44,7 @@ class ChimeraDome (ChimeraCLI):
                                 default="/Telescope/0",
                                 helpGroup="TELESCOPE",
                                 help="Tell the dome to follow TELESCOPE when tracking"
-                                "(only utilized when using --track"))
+                                     "(only utilized when using --track"))
 
         self.addHelpGroup("LIGHT", "Dome lights control")
         self.addParameters(dict(name="calibrationlamp",
@@ -91,10 +88,11 @@ class ChimeraDome (ChimeraCLI):
             actionGroup="LIGHT")
     def lightsOff(self, options):
         self.out("Turning flat lights off ... ", end="")
+
         try:
             lamp = self.dome.getManager().getProxy(options.calibrationlamp)
         except ObjectNotFoundException, e:
-            self.exit('%s: Could not find requested calibration lamp.'% red('ERROR'))
+            self.exit('%s: Could not find requested calibration lamp.' % red('ERROR'))
         lamp.switchOff()
         self.out(green("OK"))
 
@@ -107,7 +105,7 @@ class ChimeraDome (ChimeraCLI):
         try:
             lamp = self.dome.getManager().getProxy(options.calibrationlamp)
         except ObjectNotFoundException, e:
-            self.exit('%s: Could not find requested calibration lamp.'% red('ERROR'))
+            self.exit('%s: Could not find requested calibration lamp.' % red('ERROR'))
 
         lamp.switchOn()
         self.out(green("OK"))
@@ -119,20 +117,27 @@ class ChimeraDome (ChimeraCLI):
             helpGroup="LIGHT",
             actionGroup="LIGHT")
     def intensity(self, options):
-        self.out("Setting light intensity to %.2f ... "% options.intensity, end="")
+        self.out("Setting light intensity to %.2f ... " % options.intensity, end="")
 
-        lamp = None
+        # lamp = None
+        # try:
         try:
             lamp = self.dome.getManager().getProxy(options.calibrationlamp)
-            lamp.setIntensity(options.intensity)
         except ObjectNotFoundException, e:
-            self.exit('%s: Could not find requested calibration lamp.'% red('ERROR'))
+            self.exit('%s: Could not find requested calibration lamp.' % red('ERROR'))
+        try:
+            if not lamp.isSwitchedOn():
+                self.exit('%s: Cannot set intensity with lamp OFF.' % red('ERROR'))
+            if lamp.features(CalibrationLampDimmer):
+                lamp.setIntensity(options.intensity)
+            else:
+                self.exit('Lamp does not support light intensity setting.')
+        # except ObjectNotFoundException, e:
+        #     self.exit('%s: Could not find requested calibration lamp.' % red('ERROR'))
         except IntensityOutOfRangeException, e:
-            self.exit('%s: (%s)'% (red('ERROR'),
-                                    printException(e)))
-        except Exception,e:
-            self.exit('%s: (%s).'% (red('ERROR'),
-                                    printException(e)))
+            self.exit('\n%s: Intensity out of range (%s)' % (red('ERROR'), lamp.getRange()))
+        # except Exception, e:
+        #     self.exit('%s: (%s).' % (red('ERROR'), printException(e)))
 
         self.out(green("OK"))
 
@@ -190,16 +195,16 @@ class ChimeraDome (ChimeraCLI):
             self.out("Dome slit is open.")
         else:
             self.out("Dome slit is closed.")
+
+        try:
+            lamp = self.dome.getManager().getProxy(options.calibrationlamp)
+            onoff = green('ON') if lamp.isSwitchedOn() else red('OFF')
+            dimming = ' / Intensity: %3.2f' % lamp.getIntensity() if lamp.features(CalibrationLampDimmer) else ''
+            self.out('Lamp %s: %s %s' % (lamp.getLocation(), onoff, dimming))
+        except ObjectNotFoundException:
+            pass
+
         self.out("=" * 40)
-
-        lampList = self.dome.getManager().getResourcesByClass("CalibrationLamp")
-
-        if len(lampList) > 0:
-            for lamp in lampList:
-                caliblamp = self.dome.getManager().getProxy(lamp)
-                onoff = green('ON') if caliblamp.isSwitchedOn() else red('OFF')
-                self.out('Lamp %s: %s'%(caliblamp.getLocation(),onoff) )
-            self.out("=" * 40)
 
     def __abort__(self):
         self.out("\naborting... ", endl="")
@@ -215,6 +220,6 @@ def main():
     cli.run(sys.argv)
     cli.wait()
 
-if __name__ == '__main__':
 
+if __name__ == '__main__':
     main()
