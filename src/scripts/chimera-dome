@@ -182,8 +182,7 @@ class ChimeraDome(ChimeraCLI):
     def info(self, options):
 
         self.out("=" * 40)
-        self.out("Dome: %s (%s)." %
-                 (self.dome.getLocation(), self.dome["device"]))
+        self.out("Dome: %s (%s)." % (self.dome.getLocation(), self.dome["device"]))
 
         self.out("Current dome azimuth: %s." % self.dome.getAz())
         self.out("Current dome mode: %s." % self.dome.getMode())
@@ -196,13 +195,14 @@ class ChimeraDome(ChimeraCLI):
         else:
             self.out("Dome slit is closed.")
 
-        try:
-            lamp = self.dome.getManager().getProxy(options.calibrationlamp)
-            onoff = green('ON') if lamp.isSwitchedOn() else red('OFF')
-            dimming = ' / Intensity: %3.2f' % lamp.getIntensity() if lamp.features(CalibrationLampDimmer) else ''
-            self.out('Lamp %s: %s %s' % (lamp.getLocation(), onoff, dimming))
-        except ObjectNotFoundException:
-            pass
+        lamps = self.dome.getManager().getResourcesByClass("CalibrationLamp")
+
+        if len(lamps) > 0:
+            for lamp in lamps:
+                lamp = self.dome.getManager().getProxy(lamp)
+                onoff = green('ON') if lamp.isSwitchedOn() else red('OFF')
+                dimming = ' / Intensity: %3.2f' % lamp.getIntensity() if lamp.features(CalibrationLampDimmer) else ''
+                self.out('Lamp %s: %s %s' % (lamp.getLocation(), onoff, dimming))
 
         self.out("=" * 40)
 
