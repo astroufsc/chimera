@@ -24,8 +24,8 @@ from chimera.core.chimeraobject import ChimeraObject
 from chimera.interfaces.calibrationlamp import CalibrationLampSwitch
 from chimera.core.lock import lock
 
-class CalibrationLampBase(ChimeraObject, CalibrationLampSwitch):
 
+class CalibrationLampBase(ChimeraObject, CalibrationLampSwitch):
     def __init__(self):
         ChimeraObject.__init__(self)
 

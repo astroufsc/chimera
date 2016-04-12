@@ -27,7 +27,7 @@ looking for options to include in the *configuration file*. For example, the tel
 :attr:`__config__`:
 
 .. literalinclude:: ../../src/chimera/interfaces/telescope.py
-    :lines: 47-54
+    :lines: 48-55
 
 
 can have attribute members overwritten and/or added from the plugin and from the configuration file and the others will
@@ -73,6 +73,12 @@ Default configuration parameters by interface type
 .. literalinclude:: ../../src/chimera/interfaces/camera.py
     :lines: 106-117
 
+* Calibration Lamp
+
+.. literalinclude:: ../../src/chimera/interfaces/calibrationlamp.py
+    :lines: 36-41
+
+
 * Dome
 
 .. literalinclude:: ../../src/chimera/interfaces/dome.py
@@ -86,22 +92,22 @@ Default configuration parameters by interface type
 * Focuser
 
 .. literalinclude:: ../../src/chimera/interfaces/focuser.py
-    :lines: 51-55
+    :lines: 74-78
 
 * Point Verify
 
 .. literalinclude:: ../../src/chimera/interfaces/pointverify.py
-    :lines: 46-54
+    :lines: 46-56
 
 * Telescope
 
 .. literalinclude:: ../../src/chimera/interfaces/telescope.py
-    :lines: 47-54,63-72,356
+    :lines: 48-55,64-73,374
 
 * Weather Station
 
 .. literalinclude:: ../../src/chimera/interfaces/weatherstation.py
-    :lines: 42-44
+    :lines: 41-43
 
 
 Fake Instruments default configuration parameters
@@ -110,6 +116,6 @@ Fake Instruments default configuration parameters
 * Camera
 
 .. literalinclude:: ../../src/chimera/instruments/fakecamera.py
-    :lines: 44-46
+    :lines: 45-47
 
 

@@ -33,17 +33,11 @@ class CalibrationLamp(Interface):
     Interface to calibration lamps.
     """
 
-    __config__ = {"device": "Unknown",
-
+    __config__ = {"device": None,
                   "switch_timeout": None,  # Maximum number of seconds to wait for lamp to switch on
-
                   "dome_az": None,  # Azimuth of the dome when taking a calibration image (flat field)
-
                   "telescope_alt": None,  # Altitude of the telescope when taking a calibration image
                   "telescope_az": None,   # Azimuth of the telescope when taking a calibration image
-
-
-
                  }
 
 class CalibrationLampSwitch(CalibrationLamp):
