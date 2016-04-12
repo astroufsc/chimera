@@ -45,7 +45,7 @@ class Telescope(Interface):
     Telescope base interface.
     """
 
-    __config__ = {"device": "/dev/ttyS0",
+    __config__ = {"device": None,
                   "model": "Fake Telescopes Inc.",
                   "optics": ["Newtonian", "SCT", "RCT"],
                   "mount": "Mount type Inc.",
@@ -313,6 +313,12 @@ class TelescopePier(Telescope):
         @rtype: L{TelescopePierSide}
         """
 
+    def setPierSide(self, side):
+        """
+        Sets side of pier of the telescope.
+
+        @param side: Side of pier: EAST or WEST
+        """
 
 
 class TelescopeSync(Telescope):
@@ -432,7 +438,6 @@ class TelescopeCover(Telescope):
     """
     Telescope with mirror cover.
     """
-
 
     def openCover(self):
         """
