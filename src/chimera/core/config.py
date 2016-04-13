@@ -413,14 +413,20 @@ class Config (object):
                 options[name] = Option(name, value, NoneChecker())
                 continue
 
-            # FIXME: for list and tuple we use the first element as default option
-            #        there is no way to specify other default for this types
+            # For list and tuple we use the first element as default option.
+            # If the list/tuple is empty, its value will be assigned None.
             if type(value) == ListType:
-                options[name] = Option(name, value[0], OptionsChecker(value))
+                if len(value) > 0:
+                    options[name] = Option(name, value[0], OptionsChecker(value))
+                else:
+                    options[name] = Option(name, None, NoneChecker())
                 continue
 
             if type(value) == TupleType:
-                options[name] = Option(name, value[0], RangeChecker(value))
+                if len(value) > 0:
+                    options[name] = Option(name, value[0], RangeChecker(value))
+                else:
+                    options[name] = Option(name, None, NoneChecker())
                 continue
 
             if type(value) == EnumValue:

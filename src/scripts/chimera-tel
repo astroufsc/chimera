@@ -21,13 +21,15 @@
 
 
 from chimera.core.cli import ChimeraCLI, action, ParameterType
-
+from chimera.interfaces.fan import FanStatus, FanControllabeSpeed, FanControllabeDirection, FanState
 from chimera.util.coord import Coord
+from chimera.util.output import green, yellow
+from chimera.util.output import red
 from chimera.util.position import Position
 from chimera.util.simbad import Simbad
 
 from chimera.core.callback import callback
-from chimera.core.exceptions import ObjectTooLowException, ObjectNotFoundException
+from chimera.core.exceptions import ObjectTooLowException, ObjectNotFoundException, printException
 from chimera.interfaces.telescope import SlewRate, TelescopeStatus, TelescopePierSide, TelescopePier, TelescopeCover
 import sys
 import copy
@@ -98,6 +100,9 @@ class ChimeraTel (ChimeraCLI):
         self.addHelpGroup("HANDLE", "Virtual Handle",
                           "You can pass a int/float with number of arcseconds or use d:m:s notation. "
                           "Remember that this is an offset relative to the current position.")
+
+        self.addHelpGroup("FANS", "Telescope fan control")
+        self.addParameters(dict(name="fan", default="/Fan/0", helpGroup="FANS", help="Fan instrument to be used."))
 
     @action(help="Initialize the telescope (Lat/long/Date/Time)",
             helpGroup="INIT")
@@ -259,6 +264,70 @@ class ChimeraTel (ChimeraCLI):
         self.out("OK")
         self.out(40 * "=")
 
+    @action(long="fan-speed", type="float", help="Set fan speed.", metavar="speed", helpGroup="FANS",
+            actionGroup="FANS")
+    def setFanSpeed(self, options):
+        try:
+            fan = self.telescope.getManager().getProxy(options.fan)
+        except ObjectNotFoundException, e:
+            self.exit('%s: Could not find requested fan.'% red('ERROR'))
+
+        self.out("=" * 40)
+        self.out("Changing fan speed to %.2f " % (options.setFanSpeed), end=" ")
+        try:
+            fan.setRotation(options.setFanSpeed)
+        except Exception, e:
+            self.exit("%s. \n%s" % (red("FAILED"), printException(e)))
+
+        self.out("%s" % (green("OK")))
+        self.out("=" * 40)
+
+    @action(long="fan-on", help="Start telescope fan", helpGroup="FANS", actionGroup="FANS")
+    def startFan(self, options):
+
+        try:
+            fan = self.telescope.getManager().getProxy(options.fan)
+        except ObjectNotFoundException, e:
+            self.exit('%s: Could not find requested fan.'% red('ERROR'))
+
+        if fan.isSwitchedOn():
+            self.exit("Fan is already running... ")
+
+        self.out("=" * 40)
+
+        self.out("Starting %s" % self.options.fan, end="")
+        try:
+            if fan.switchOn():
+                self.out(green("OK"))
+            else:
+                self.out(red("FAILED"))
+            self.out("=" * 40)
+        except Exception, e:
+            self.exit("%s\n %s" % (red("FAILED"), printException(e)))
+
+    @action(long="fan-off", help="Stop telescope fan", helpGroup="FANS", actionGroup="FANS")
+    def stopFan(self, options):
+
+        try:
+            fan = self.telescope.getManager().getProxy(options.fan)
+        except ObjectNotFoundException, e:
+            self.exit('%s: Could not find requested fan.'% red('ERROR'))
+
+        if not fan.isSwitchedOn():
+            self.exit("Fan is not running... ")
+
+        self.out("=" * 40)
+
+        self.out("Stopping %s" % self.options.fan, end="")
+        try:
+            if fan.switchOff():
+                self.out(green("OK"))
+            else:
+                self.out(red("FAILED"))
+            self.out("=" * 40)
+        except Exception, e:
+            self.exit("%s\n %s" % (red("FAILED"), printException(e)))
+
     @action(help="Print telescope information and exit")
     def info(self, options):
         telescope = self.telescope
@@ -274,6 +343,23 @@ class ChimeraTel (ChimeraCLI):
             self.out("telescope cover: %s " % ('open' if telescope.isCoverOpen() else 'closed'))
         if self.telescope.features(TelescopePier):
             self.out("current side of pier: %s " % telescope.getPierSide().__str__().lower())
+
+        if self.telescope['fans'] is not None:
+            for fan in self.telescope['fans']:
+                fan = self.telescope.getManager().getProxy(fan)
+                if fan.features(FanState):
+                    st = fan.status()
+                    if st == FanStatus.ON:
+                        stats = green("ON")
+                    elif st == FanStatus.OFF:
+                        stats = red("OFF")
+                    else:
+                        stats = yellow(st.__str__())
+                else:
+                    stats = green("ON") if fan.isSwitchedOn() else red("OFF")
+                rotation = ' speed %.2f' % fan.getRotation() if fan.features(FanControllabeSpeed) else ''
+                direction = ' direction %s' % fan.getDirection() if fan.features(FanControllabeDirection) else ''
+                self.out("Fan %s: %s%s%s" % (fan.getLocation(), stats, rotation, direction))
 
         self.out(40 * "=")
 
