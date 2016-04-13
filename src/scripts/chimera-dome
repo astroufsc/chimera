@@ -22,12 +22,12 @@
 
 from chimera.core.cli import ChimeraCLI, action
 from chimera.core.exceptions import ObjectNotFoundException
+from chimera.interfaces.fan import FanControllabeSpeed, FanControllabeDirection, FanStatus, FanState
 from chimera.util.coord import Coord
 from chimera.core.exceptions import printException
-from chimera.util.output import blue, green, red
-
+from chimera.util.output import blue, green, red, yellow
 from chimera.interfaces.dome import Mode
-from chimera.interfaces.calibrationlamp import IntensityOutOfRangeException, CalibrationLampDimmer
+from chimera.interfaces.lamp import IntensityOutOfRangeException, LampDimmer
 import sys
 import copy
 
@@ -42,7 +42,7 @@ class ChimeraDome(ChimeraCLI):
                            help="Dome instrument to be used", helpGroup="DOME")
 
         self.addHelpGroup("DOMEFANS", "Dome fan control")
-        self.addParameters(dict(name="domefan",
+        self.addParameters(dict(name="fan",
                                 default="/Fan/0",
                                 helpGroup="DOMEFANS",
                                 help="Fan instrument to be used."))
@@ -55,103 +55,89 @@ class ChimeraDome(ChimeraCLI):
                                      "(only utilized when using --track"))
 
         self.addHelpGroup("LIGHT", "Dome lights control")
-        self.addParameters(dict(name="calibrationlamp",
-                                default="/CalibrationLamp/0",
+        self.addParameters(dict(name="lamp",
+                                default="/Lamp/0",
                                 helpGroup="LIGHT",
                                 help="Calibration lamp to be used."))
 
         self.addHelpGroup("COMMANDS", "Commands")
+        self.addHelpGroup("SHUTTER", "Shutter")
+        self.addHelpGroup("DOMEFANS", "Dome Fans control")
 
-    @action(help="Open dome slit", helpGroup="COMMANDS", actionGroup="SLIT")
+    @action(long="open-slit", help="Open dome slit", helpGroup="SHUTTER", actionGroup="SLIT")
     def openSlit(self, options):
         self.out("Opening dome slit ... ", end="")
         self.dome.openSlit()
         self.out("OK")
 
-    @action(help="Close dome slit",
-            helpGroup="SLIT",
-            actionGroup="SLIT")
+    @action(long="close-slit", help="Close dome slit", helpGroup="SHUTTER", actionGroup="SLIT")
     def closeSlit(self, options):
         self.out("Closing dome slit ... ", end="")
         self.dome.closeSlit()
         self.out("OK")
 
-    @action(help="Open dome flap", helpGroup="FLAP", actionGroup="FLAP")
+    @action(long="open-flap", help="Open dome flap", helpGroup="SHUTTER", actionGroup="FLAP")
     def openFlap(self, options):
         self.out("Opening dome flap ... ", end="")
         self.dome.openFlap()
         self.out("OK")
 
-    @action(help="Close dome flap",
-            helpGroup="FLAP",
-            actionGroup="FLAP")
+    @action(long="close-flap", help="Close dome flap", helpGroup="SHUTTER", actionGroup="FLAP")
     def closeFlap(self, options):
         self.out("Closing dome flap ... ", end="")
         self.dome.closeFlap()
         self.out("OK")
 
-    @action(long="lights-off",
-            help="Turn flat light off",
-            helpGroup="LIGHT",
-            actionGroup="LIGHT")
-    def lightsOff(self, options):
-        self.out("Turning flat lights off ... ", end="")
+    @action(long="light-off", help="Turn light off", helpGroup="LIGHT", actionGroup="LIGHT")
+    def lightOff(self, options):
+        self.out("Turning light off ... ", end="")
 
         try:
-            lamp = self.dome.getManager().getProxy(options.calibrationlamp)
+            lamp = self.dome.getManager().getProxy(options.lamp)
         except ObjectNotFoundException, e:
             self.exit('%s: Could not find requested calibration lamp.' % red('ERROR'))
         lamp.switchOff()
         self.out(green("OK"))
 
-    @action(long="lights-on",
-            help="Turn flat light on",
-            helpGroup="LIGHT",
-            actionGroup="LIGHT")
-    def lightsOn(self, options):
-        self.out("Turning flat lights on ... ", end="")
+    @action(long="light-on", help="Turn light on", helpGroup="LIGHT", actionGroup="LIGHT")
+    def lightOn(self, options):
+        self.out("Turning light on ... ", end="")
         try:
-            lamp = self.dome.getManager().getProxy(options.calibrationlamp)
+            lamp = self.dome.getManager().getProxy(options.lamp)
         except ObjectNotFoundException, e:
             self.exit('%s: Could not find requested calibration lamp.' % red('ERROR'))
 
         lamp.switchOn()
         self.out(green("OK"))
 
-    @action(long="lights-intensity",
-            type="float",
-            metavar="intensity",
-            help="Set light intensity to specified value.",
-            helpGroup="LIGHT",
-            actionGroup="LIGHT")
+    @action(long="light-intensity", type="float", metavar="intensity", help="Set light intensity to specified value.",
+            helpGroup="LIGHT", actionGroup="LIGHT")
     def intensity(self, options):
         self.out("Setting light intensity to %.2f ... " % options.intensity, end="")
 
         # lamp = None
         # try:
         try:
-            lamp = self.dome.getManager().getProxy(options.calibrationlamp)
+            lamp = self.dome.getManager().getProxy(options.lamp)
         except ObjectNotFoundException, e:
             self.exit('%s: Could not find requested calibration lamp.' % red('ERROR'))
         try:
             if not lamp.isSwitchedOn():
                 self.exit('%s: Cannot set intensity with lamp OFF.' % red('ERROR'))
-            if lamp.features(CalibrationLampDimmer):
+            if lamp.features(LampDimmer):
                 lamp.setIntensity(options.intensity)
             else:
                 self.exit('Lamp does not support light intensity setting.')
         # except ObjectNotFoundException, e:
         #     self.exit('%s: Could not find requested calibration lamp.' % red('ERROR'))
         except IntensityOutOfRangeException, e:
-            self.exit('\n%s: Intensity out of range (%s)' % (red('ERROR'), lamp.getRange()))
+            self.exit('\n%s: Intensity out of range: %s' % (red('ERROR'), lamp.getRange()))
         # except Exception, e:
         #     self.exit('%s: (%s).' % (red('ERROR'), printException(e)))
 
         self.out(green("OK"))
 
-    @action(help="Track the telescope",
-            helpGroup="COMMANDS",
-            actionGroup="TRACKING")
+    @action(help="Track the telescope", helpGroup="TELESCOPE", actionGroup="TRACKING")
     def track(self, options):
 
         if options.telescope:
@@ -161,19 +147,13 @@ class ChimeraDome(ChimeraCLI):
         self.dome.track()
         self.out("OK")
 
-    @action(help="Stop tracking the telescope (stand)",
-            helpGroup="COMMANDS",
-            actionGroup="TRACKING")
+    @action(help="Stop tracking the telescope (stand)", helpGroup="TELESCOPE", actionGroup="TRACKING")
     def stand(self, options):
         self.out("Deactivating tracking ... ", end="")
         self.dome.stand()
         self.out("OK")
 
-    @action(long="to",
-            type="string",
-            help="Move dome to AZ azimuth",
-            metavar="AZ",
-            helpGroup="COMMANDS")
+    @action(long="to", type="string", help="Move dome to AZ azimuth", metavar="AZ", helpGroup="COMMANDS")
     def moveTo(self, options):
 
         try:
@@ -185,11 +165,7 @@ class ChimeraDome(ChimeraCLI):
         self.dome.slewToAz(target)
         self.out("OK")
 
-    @action(long="setFanSpeed",
-            type="float",
-            help="Set fan speed.",
-            metavar="speed",
-            helpGroup="DOMEFANS",
+    @action(long="fan-speed", type="float", help="Set fan speed.", metavar="speed", helpGroup="DOMEFANS",
             actionGroup="DOMEFANS")
     def setFanSpeed(self, options):
         try:
@@ -207,39 +183,22 @@ class ChimeraDome(ChimeraCLI):
         self.out("%s" % (green("OK")))
         self.out("=" * 40)
 
-    @action(help="Print dome information",
-            helpGroup="DOMEFANS",
-            actionGroup="DOMEFANS")
-    def getFanSpeed(self, options):
-        try:
-            domefan = self.dome.getManager().getProxy(options.domefan)
-        except ObjectNotFoundException, e:
-            self.exit('%s: Could not find requested fan.'% red('ERROR'))
-
-        self.out("=" * 40)
-        self.out("DomeFan: %s (%s)" %
-                 (domefan.getLocation(), domefan["device"]))
-        self.out("Current speed: %f" % domefan.getRotation())
-        self.out("=" * 40)
-
-    @action(help="Start dome fan",
-            helpGroup="DOMEFANS",
-            actionGroup="DOMEFANS")
+    @action(long="fan-on", help="Start dome fan", helpGroup="DOMEFANS", actionGroup="DOMEFANS")
     def startFan(self, options):
 
         try:
-            domefan = self.dome.getManager().getProxy(options.domefan)
+            domefan = self.dome.getManager().getProxy(options.fan)
         except ObjectNotFoundException, e:
             self.exit('%s: Could not find requested fan.'% red('ERROR'))
 
-        if domefan.isFanRunning():
+        if domefan.isSwitchedOn():
             self.exit("Fan is already running... ")
 
         self.out("=" * 40)
 
-        self.out("Starting... ", end="")
+        self.out("Starting %s" % self.options.fan, end="")
         try:
-            if domefan.startFan():
+            if domefan.switchOn():
                 self.out(green("OK"))
             else:
                 self.out(red("FAILED"))
@@ -247,24 +206,22 @@ class ChimeraDome(ChimeraCLI):
         except Exception, e:
             self.exit("%s\n %s" % (red("FAILED"), printException(e)))
 
-    @action(help="Stop dome fan",
-            helpGroup="DOMEFANS",
-            actionGroup="DOMEFANS")
+    @action(long="fan-off", help="Stop dome fan", helpGroup="DOMEFANS", actionGroup="DOMEFANS")
     def stopFan(self, options):
 
         try:
-            domefan = self.dome.getManager().getProxy(options.domefan)
+            domefan = self.dome.getManager().getProxy(options.fan)
         except ObjectNotFoundException, e:
             self.exit('%s: Could not find requested fan.'% red('ERROR'))
 
-        if not domefan.isFanRunning():
+        if not domefan.isSwitchedOn():
             self.exit("Fan is not running... ")
 
         self.out("=" * 40)
 
-        self.out("Stopping... ", end="")
+        self.out("Stopping %s" % self.options.fan, end="")
         try:
-            if domefan.stopFan():
+            if domefan.switchOff():
                 self.out(green("OK"))
             else:
                 self.out(red("FAILED"))
@@ -272,8 +229,7 @@ class ChimeraDome(ChimeraCLI):
         except Exception, e:
             self.exit("%s\n %s" % (red("FAILED"), printException(e)))
 
-    @action(help="Print dome information",
-            helpGroup="COMMANDS")
+    @action(help="Print dome information", helpGroup="COMMANDS")
     def info(self, options):
 
         self.out("=" * 40)
@@ -290,26 +246,29 @@ class ChimeraDome(ChimeraCLI):
         else:
             self.out("Dome slit is closed.")
 
-        lamps = self.dome.getManager().getResourcesByClass("CalibrationLamp")
-
-        if len(lamps) > 0:
-            for lamp in lamps:
+        if self.dome['lamps'] is not None:
+            for lamp in self.dome['lamps']:
                 lamp = self.dome.getManager().getProxy(lamp)
                 onoff = green('ON') if lamp.isSwitchedOn() else red('OFF')
-                dimming = ' / Intensity: %3.2f' % lamp.getIntensity() if lamp.features(CalibrationLampDimmer) else ''
+                dimming = ' intensity: %3.2f' % lamp.getIntensity() if lamp.features(LampDimmer) else ''
                 self.out('Lamp %s: %s %s' % (lamp.getLocation(), onoff, dimming))
 
-
-        try:
-            domefan = self.dome.getManager().getProxy(options.domefan)
-            self.out("=" * 40)
-            self.out("DomeFan: %s (%s)." %
-                     (domefan.getLocation(), domefan["device"]))
-            self.out("Current fan status: %s" % domefan.status())
-            self.out("Current fan speed: %.2f" % domefan.getRotation())
-        except ObjectNotFoundException, e:
-            self.out("No DomeFan")
-
+        if self.dome['fans'] is not None:
+            for fan in self.dome['fans']:
+                domefan = self.dome.getManager().getProxy(fan)
+                if domefan.features(FanState):
+                    st = domefan.status()
+                    if st == FanStatus.ON:
+                        stats = green("ON")
+                    elif st == FanStatus.OFF:
+                        stats = red("OFF")
+                    else:
+                        stats = yellow(st.__str__())
+                else:
+                    stats = green("ON") if domefan.isSwitchedOn() else red("OFF")
+                rotation = ' speed %.2f' % domefan.getRotation() if domefan.features(FanControllabeSpeed) else ''
+                direction = ' direction %s' % domefan.getDirection() if domefan.features(FanControllabeDirection) else ''
+                self.out("Fan %s: %s%s%s" % (domefan.getLocation(), stats, rotation, direction))
 
         self.out("=" * 40)
 
