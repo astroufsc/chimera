@@ -6,14 +6,11 @@ class FanBase(ChimeraObject, FanControl):
     def __init__(self):
         ChimeraObject.__init__(self)
 
-    def startFan(self):
+    def switchOn(self):
         raise NotImplementedError
 
-    def stopFan(self):
+    def switchOff(self):
         raise NotImplementedError
 
-    def isFanRunning(self):
-        raise NotImplementedError
-
-    def status(self):
+    def isSwitchedOn(self):
         raise NotImplementedError
