@@ -21,6 +21,8 @@
 
 from chimera.core.interface import Interface
 from chimera.core.exceptions import ChimeraException
+from chimera.interfaces.switch import Switch
+
 
 class IntensityOutOfRangeException(ChimeraException):
     '''
@@ -28,7 +30,8 @@ class IntensityOutOfRangeException(ChimeraException):
     '''
     pass
 
-class CalibrationLamp(Interface):
+
+class Lamp(Interface):
     """
     Interface to calibration lamps.
     """
@@ -37,41 +40,18 @@ class CalibrationLamp(Interface):
                   "switch_timeout": None,  # Maximum number of seconds to wait for lamp to switch on
                   "dome_az": None,  # Azimuth of the dome when taking a calibration image (flat field)
                   "telescope_alt": None,  # Altitude of the telescope when taking a calibration image
-                  "telescope_az": None,   # Azimuth of the telescope when taking a calibration image
-                 }
+                  "telescope_az": None,  # Azimuth of the telescope when taking a calibration image
+                  }
 
-class CalibrationLampSwitch(CalibrationLamp):
 
-    def switchOn(self):
-        '''
-        Switch calibration lamp on.
+class LampSwitch(Switch):
+    '''
+    Inherited from Switch
+    '''
 
-        @return: True if successful, False otherwise
-        @rtype: bool
-        '''
-        pass
 
-    def switchOff(self):
-        '''
-        Switch calibration lamp off.
-
-        @return: True if successful, False otherwise
-        @rtype: bool
-        '''
-        pass
-
-    def isSwitchedOn(self):
-        '''
-        Get current state of the calibration lamp.
-
-        @return: True if On, False otherwise
-        @rtype: bool
-        '''
-        pass
-
-class CalibrationLampDimmer(CalibrationLamp):
-
-    def setIntensity(self,intensity):
+class LampDimmer(Lamp):
+    def setIntensity(self, intensity):
         '''
         Sets the intensity of the calibration lamp.
 

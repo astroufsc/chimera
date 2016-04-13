@@ -21,11 +21,11 @@
 # 02110-1301, USA.
 
 from chimera.core.chimeraobject import ChimeraObject
-from chimera.interfaces.calibrationlamp import CalibrationLampSwitch
+from chimera.interfaces.lamp import LampSwitch
 from chimera.core.lock import lock
 
 
-class CalibrationLampBase(ChimeraObject, CalibrationLampSwitch):
+class LampBase(ChimeraObject, LampSwitch):
     def __init__(self):
         ChimeraObject.__init__(self)
 

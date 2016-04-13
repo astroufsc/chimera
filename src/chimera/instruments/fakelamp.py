@@ -20,15 +20,14 @@
 # 02110-1301, USA.
 
 from chimera.core.lock import lock
-from chimera.interfaces.calibrationlamp import CalibrationLampDimmer, IntensityOutOfRangeException
-from chimera.instruments.calibrationlamp import CalibrationLampBase
+from chimera.interfaces.lamp import LampDimmer, IntensityOutOfRangeException
+from chimera.instruments.lamp import LampBase
 import time
-import threading
 
 
-class FakeCalibrationLamp(CalibrationLampBase, CalibrationLampDimmer):
+class FakeLamp(LampBase, LampDimmer):
     def __init__(self):
-        CalibrationLampBase.__init__(self)
+        LampBase.__init__(self)
 
         self._isOn = False
         self._intensity = 0.
