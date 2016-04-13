@@ -125,7 +125,7 @@ class SystemConfig(object):
 
         # specials
         self._specials = [
-                            "calibrationlamp", "calibrationlamps",
+                            "lamp", "lamps",
                             "camera", "cameras",
                             "dome", "domes",
                             "fan", "fans",
