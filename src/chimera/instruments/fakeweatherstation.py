@@ -17,20 +17,18 @@
 # 02110-1301, USA.
 
 import math
-
 from chimera.instruments.weatherstation import WeatherBase
 from chimera.core.exceptions import OptionConversionException
-
-from chimera.interfaces.weatherstation import WSValue
-
+from chimera.interfaces.weatherstation import WSValue, WeatherTemperature, WeatherHumidity, WeatherPressure, \
+    WeatherWind, WeatherRain, WeatherTransparency
 from astropy import units
 from astropy.units import cds
-
-
+import numpy as np
 import datetime
 
 
-class FakeWeatherStation(WeatherBase):
+class FakeWeatherStation(WeatherBase, WeatherTemperature, WeatherHumidity, WeatherPressure, WeatherWind, WeatherRain,
+                         WeatherTransparency):
     def __init__(self):
         WeatherBase.__init__(self)
 
@@ -38,7 +36,7 @@ class FakeWeatherStation(WeatherBase):
         """
         For testing purposes, the function converts a given hour in radians.
         """
-        return (math.pi/12.) * hour
+        return (math.pi / 12.) * hour
 
     def humidity(self, unit_out=units.pct):
         """
@@ -72,7 +70,7 @@ class FakeWeatherStation(WeatherBase):
         if unit_out not in self.__accepted_temperature_units__:
             raise OptionConversionException("Invalid temperature unit %s." % unit_out)
 
-        temperature = 25 * math.sin(self._hourinradians(current_time.hour) - math.pi/2.) + 15.
+        temperature = 25 * math.sin(self._hourinradians(current_time.hour) - math.pi / 2.) + 15.
 
         temperature = self._convert_units(
             temperature,
@@ -82,7 +80,7 @@ class FakeWeatherStation(WeatherBase):
 
         return WSValue(current_time, temperature, unit_out)
 
-    def wind_speed(self, unit_out=units.meter/units.second):
+    def wind_speed(self, unit_out=units.meter / units.second):
         """
         Returns the wind speed in the chosen unit (Default: Meters per second).
         :param unit:  Unit in which the instrument should return the wind speed.
@@ -135,10 +133,10 @@ class FakeWeatherStation(WeatherBase):
             raise OptionConversionException("Invalid temperature unit %s." % unit_out)
 
         temperature = self._convert_units(
-          10,
-          units.Celsius,
-          unit_out,
-          equivalencies=units.equivalencies.temperature())
+            10,
+            units.Celsius,
+            unit_out,
+            equivalencies=units.equivalencies.temperature())
 
         return WSValue(datetime.datetime.utcnow(), temperature, unit_out)
 
@@ -148,21 +146,17 @@ class FakeWeatherStation(WeatherBase):
         :param unit:
         :return:
         """
-        raise NotImplementedError()
 
         pressure_reference = 1140.  # MM_HG
 
         if unit_out not in self.__accepted_pressures_unit__:
             raise OptionConversionException("Invalid pressure unit %s." % unit_out)
 
-        pressure = self._convert_units(
-            pressure_reference,
-            units.cds.mmHg,
-            unit_out)
+        pressure = self._convert_units(pressure_reference, units.cds.mmHg, unit_out)
 
         return WSValue(datetime.datetime.utcnow(), pressure, unit_out)
 
-    def rain(self, unit_out=units.imperial.inch/units.hour):
+    def rain_rate(self, unit_out=units.imperial.inch / units.hour):
         """
         For testing purposes, it never rains.
         :param unit:
@@ -174,8 +168,14 @@ class FakeWeatherStation(WeatherBase):
 
         return WSValue(datetime.datetime.utcnow(), 0, unit_out)
 
-if __name__ == '__main__':
+    def isRaining(self):
+        """
+        Returns True for rain 20% of the time
+        """
+        return np.random.rand < 0.2
 
+
+if __name__ == '__main__':
     fws = FakeWeatherStation()
 
     humidity = fws.humidity(units.pct)
@@ -196,7 +196,7 @@ if __name__ == '__main__':
     pressure = fws.pressure(units.cds.atm)
     print('Pressure: %.2f %s @ %s.' % (pressure.value, pressure.unit, pressure.time))
 
-    rain = fws.rain(unit_out=units.millimeter/units.hour)
+    rain = fws.rain_rate(unit_out=units.millimeter / units.hour)
     print('Rain: %.2f %s @ %s.' % (rain.value, rain.unit, rain.time))
 
-    print('Metadata: %s' %  (fws.getMetadata(None)),)
+    print('Metadata: %s' % (fws.getMetadata(None)))
