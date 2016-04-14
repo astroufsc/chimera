@@ -41,16 +41,16 @@ class SeeingBase(ChimeraObject, SeeingMonitor):
             return False
 
     def seeing(self, unit_out=units.arcsec):
-        raise NotImplementedError
+        raise NotImplementedError()
 
     def seeing_at_zenith(self, unit_out=units.arcsec):
-        raise NotImplementedError
+        raise NotImplementedError()
 
     def flux(self, unit_out=units.count):
-        raise NotImplementedError
+        raise NotImplementedError()
 
     def airmass(self, unit_out=units.dimensionless_unscaled):
-        raise NotImplementedError
+        raise NotImplementedError()
 
     def getMetadata(self, request):
         # TODO: Check if metadata parameter is implemented or not.

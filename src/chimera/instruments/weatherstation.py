@@ -43,25 +43,25 @@ class WeatherBase(ChimeraObject, WeatherStation):
             return False
 
     def humidity(self, unit_out=units.pct):
-        raise NotImplementedError
+        raise NotImplementedError()
 
     def temperature(self, unit_out=units.Celsius):
-        raise NotImplementedError
+        raise NotImplementedError()
 
     def wind_speed(self, unit_out=units.meter/units.second):
-        raise NotImplementedError
+        raise NotImplementedError()
 
     def wind_direction(self, unit_out=units.degree):
-        raise NotImplementedError
+        raise NotImplementedError()
 
     def dew_point(self, unit_out=units.Celsius):
-        raise NotImplementedError
+        raise NotImplementedError()
 
     def pressure(self, unit_out=units.Pa):
-        raise NotImplementedError
+        raise NotImplementedError()
 
     def rain(self, unit_out=units.imperial.inch/units.hour):
-        raise NotImplementedError
+        raise NotImplementedError()
 
     def getMetadata(self, request):
         #TODO: Check if metadata parameter is implemented or not.
