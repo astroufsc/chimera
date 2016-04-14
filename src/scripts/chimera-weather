@@ -32,7 +32,7 @@ class ChimeraWeather(ChimeraCLI):
         for attr in ('temperature', 'dew_point', 'humidity', 'wind_speed', 'wind_direction', 'pressure', 'rain'):
             try:
                 v = self.weatherstation.__getattr__(attr)()
-                if isinstance(v, exceptions.NotImplementedError):
+                if isinstance(v, exceptions.NotImplementedError) or not v:
                     continue
                 t = red(v.time.__str__()) if datetime.datetime.utcnow() - v.time > datetime.timedelta(
                     minutes=self.options.max_mins) else green(v.time.__str__())
