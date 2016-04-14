@@ -38,6 +38,8 @@ class ChimeraWeather(ChimeraCLI):
                 self.out(t + "  " + attr.replace('_', ' ') + ": {0.value:.2f} {0.unit:s} ".format(v))
             except NotImplementedError:
                 pass
+            except AttributeError:
+                pass
 
         self.out("=" * 80)
 
