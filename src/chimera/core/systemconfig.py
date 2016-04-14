@@ -1,26 +1,23 @@
-
 from chimera.core.location import Location
 from chimera.core.exceptions import ChimeraException
 from chimera.core.constants import (SYSTEM_CONFIG_DEFAULT_FILENAME,
                                     MANAGER_DEFAULT_HOST, MANAGER_DEFAULT_PORT)
-
 import yaml
-
-#import chimera.core.log
+# import chimera.core.log
 import logging
+
 log = logging.getLogger(__name__)
 
 
-class TypeNotFoundException (ChimeraException):
+class TypeNotFoundException(ChimeraException):
     pass
 
 
-class SystemConfigSyntaxException (ChimeraException):
+class SystemConfigSyntaxException(ChimeraException):
     pass
 
 
-class SystemConfig (object):
-
+class SystemConfig(object):
     """
 
     Chimera configuration system
@@ -127,20 +124,23 @@ class SystemConfig (object):
         self.controllers = []
 
         # specials
-        self._specials = ["telescope", "telescopes",
-                          "camera", "cameras",
-                          "calibrationlamp", "calibrationlamps",
-                          "filterwheel", "filterwheels",
-                          "dome", "domes",
-                          "focuser", "focusers",
-                          "weatherstation", "weatherstations",
-                          "seeingmonitor", "seeingmonitors"]
+        self._specials = [
+                            "camera", "cameras",
+                            "dome", "domes",
+                            "fan", "fans",
+                            "filterwheel", "filterwheels",
+                            "focuser", "focusers",
+                            "lamp", "lamps",
+                            "telescope", "telescopes",
+                            "seeingmonitor", "seeingmonitors",
+                            "weatherstation", "weatherstations",
+        ]
 
         self._instrumentsSections = self._specials + \
-            ["instrument", "instruments"]
+                                    ["instrument", "instruments"]
         self._controllersSections = ["controller", "controllers"]
         self._sections = self._instrumentsSections + \
-            self._controllersSections + ["site", "chimera"]
+                         self._controllersSections + ["site", "chimera"]
 
         # to create nice numbered names for objects without a name
         self._useCount = {}
@@ -213,7 +213,6 @@ class SystemConfig (object):
                 values = [values]
 
             for instance in values:
-
                 loc = self._parseLocation(key, instance)
                 objects[key].append(loc)
 
