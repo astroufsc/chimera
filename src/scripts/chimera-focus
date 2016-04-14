@@ -22,7 +22,6 @@
 
 from chimera.core.cli import ChimeraCLI, action, parameter, ParameterType
 from chimera.core.callback import callback
-# from chimera.core.exceptions import ChimeraException
 
 from chimera.interfaces.autofocus import StarNotFoundException, FocusNotFoundException
 from chimera.interfaces.focuser import InvalidFocusPositionException, FocuserFeature, FocuserAxis, ControllableAxis
