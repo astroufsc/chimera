@@ -3,6 +3,8 @@
 import datetime
 import sys
 
+import exceptions
+
 from chimera.core.cli import ChimeraCLI, action
 from chimera.util.output import red, green
 
@@ -30,6 +32,8 @@ class ChimeraSeeing(ChimeraCLI):
         for attr in ('seeing', 'seeing_at_zenith', 'airmass', 'flux'):
             try:
                 v = self.seeingmonitor.__getattr__(attr)()
+                if isinstance(v, exceptions.NotImplementedError):
+                    continue
                 t = red(v.time.__str__()) if datetime.datetime.utcnow() - v.time > datetime.timedelta(
                     minutes=self.options.max_mins) else green(v.time.__str__())
                 self.out(t + "  " + attr.replace('_', ' ') + ": {0.value:.2f} {0.unit:s} ".format(v))

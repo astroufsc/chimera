@@ -148,6 +148,8 @@ class FakeWeatherStation(WeatherBase):
         :param unit:
         :return:
         """
+        raise NotImplementedError()
+
         pressure_reference = 1140.  # MM_HG
 
         if unit_out not in self.__accepted_pressures_unit__:
