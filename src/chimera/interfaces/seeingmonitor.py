@@ -25,7 +25,7 @@ class SeeingMonitor(Interface):
     ]
 
     __accepted_flux_units__ = [
-        units.watt / (units.m ** 2)
+        units.count
     ]
 
     __accepted_airmass_units__ = [
