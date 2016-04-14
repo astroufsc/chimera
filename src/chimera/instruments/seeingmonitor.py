@@ -17,13 +17,11 @@
 # 02110-1301, USA.
 
 from chimera.core.chimeraobject import ChimeraObject
-from chimera.interfaces.seeingmonitor import ISeeingMonitor
-
+from chimera.interfaces.seeingmonitor import SeeingMonitor
 import astropy.units as units
 
 
-class SeeingBase(ChimeraObject, ISeeingMonitor):
-
+class SeeingBase(ChimeraObject, SeeingMonitor):
     def __init__(self):
         ChimeraObject.__init__(self)
 
@@ -42,19 +40,19 @@ class SeeingBase(ChimeraObject, ISeeingMonitor):
             self.log.info("Invalid feature: %s" % str(feature))
             return False
 
-    def getSeeing(self, unit_out=units.arcsec):
+    def seeing(self, unit_out=units.arcsec):
         raise NotImplementedError()
 
-    def getSeeingAtZenith(self, unit_out=units.arcsec):
+    def seeing_at_zenith(self, unit_out=units.arcsec):
         raise NotImplementedError()
 
-    def getFlux(self, unit_out=units.watt / (units.m**2)):
+    def flux(self, unit_out=units.count):
         raise NotImplementedError()
 
-    def getAirmass(self, unit_out=units.dimensionless_unscaled):
+    def airmass(self, unit_out=units.dimensionless_unscaled):
         raise NotImplementedError()
 
     def getMetadata(self, request):
-        #TODO: Check if metadata parameter is implemented or not.
+        # TODO: Check if metadata parameter is implemented or not.
         return [('SEEMOD', str(self['model']), 'Seeing monitor Model'),
                 ]

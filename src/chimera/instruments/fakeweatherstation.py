@@ -17,20 +17,18 @@
 # 02110-1301, USA.
 
 import math
-
 from chimera.instruments.weatherstation import WeatherBase
 from chimera.core.exceptions import OptionConversionException
-
-from chimera.interfaces.weatherstation import WSValue
-
+from chimera.interfaces.weatherstation import WSValue, WeatherTemperature, WeatherHumidity, WeatherPressure, \
+    WeatherWind, WeatherRain, WeatherTransparency
 from astropy import units
 from astropy.units import cds
-
-
+import numpy as np
 import datetime
 
 
-class FakeWeatherStation(WeatherBase):
+class FakeWeatherStation(WeatherBase, WeatherTemperature, WeatherHumidity, WeatherPressure, WeatherWind, WeatherRain,
+                         WeatherTransparency):
     def __init__(self):
         WeatherBase.__init__(self)
 
@@ -38,7 +36,7 @@ class FakeWeatherStation(WeatherBase):
         """
         For testing purposes, the function converts a given hour in radians.
         """
-        return (math.pi/12.) * hour
+        return (math.pi / 12.) * hour
 
     def humidity(self, unit_out=units.pct):
         """
@@ -46,7 +44,7 @@ class FakeWeatherStation(WeatherBase):
         :param unit: Unit in which the instrument should return the humidity.
         :return: the humidity.
         """
-        current_time = datetime.datetime.now()
+        current_time = datetime.datetime.utcnow()
 
         if unit_out not in self.__accepted_humidity_units__:
             raise OptionConversionException("Invalid humidity unit %s." % unit_out)
@@ -67,12 +65,12 @@ class FakeWeatherStation(WeatherBase):
         :return: the temperature.
         """
 
-        current_time = datetime.datetime.now()
+        current_time = datetime.datetime.utcnow()
 
         if unit_out not in self.__accepted_temperature_units__:
             raise OptionConversionException("Invalid temperature unit %s." % unit_out)
 
-        temperature = 25 * math.sin(self._hourinradians(current_time.hour) - math.pi/2.) + 15.
+        temperature = 25 * math.sin(self._hourinradians(current_time.hour) - math.pi / 2.) + 15.
 
         temperature = self._convert_units(
             temperature,
@@ -82,7 +80,7 @@ class FakeWeatherStation(WeatherBase):
 
         return WSValue(current_time, temperature, unit_out)
 
-    def wind_speed(self, unit_out=units.meter/units.second):
+    def wind_speed(self, unit_out=units.meter / units.second):
         """
         Returns the wind speed in the chosen unit (Default: Meters per second).
         :param unit:  Unit in which the instrument should return the wind speed.
@@ -99,7 +97,7 @@ class FakeWeatherStation(WeatherBase):
             units.meter / units.second,
             unit_out)
 
-        return WSValue(datetime.datetime.now(), speed, unit_out)
+        return WSValue(datetime.datetime.utcnow(), speed, unit_out)
 
     def wind_direction(self, unit_out=units.degree):
         """
@@ -110,7 +108,7 @@ class FakeWeatherStation(WeatherBase):
         if unit_out not in self.__accepted_direction_unit__:
             raise OptionConversionException("Invalid direction unit %s." % unit_out)
 
-        hour = datetime.datetime.now().hour
+        hour = datetime.datetime.utcnow().hour
 
         reference_direction = 180 * math.sin(self._hourinradians(hour)) + 180
 
@@ -119,7 +117,7 @@ class FakeWeatherStation(WeatherBase):
             units.degree,
             unit_out)
 
-        return WSValue(datetime.datetime.now(), direction, unit_out)
+        return WSValue(datetime.datetime.utcnow(), direction, unit_out)
 
     def dew_point(self, unit_out=units.Celsius):
         """
@@ -135,12 +133,12 @@ class FakeWeatherStation(WeatherBase):
             raise OptionConversionException("Invalid temperature unit %s." % unit_out)
 
         temperature = self._convert_units(
-          10,
-          units.Celsius,
-          unit_out,
-          equivalencies=units.equivalencies.temperature())
+            10,
+            units.Celsius,
+            unit_out,
+            equivalencies=units.equivalencies.temperature())
 
-        return WSValue(datetime.datetime.now(), temperature, unit_out)
+        return WSValue(datetime.datetime.utcnow(), temperature, unit_out)
 
     def pressure(self, unit_out=units.Pa):
         """
@@ -148,19 +146,17 @@ class FakeWeatherStation(WeatherBase):
         :param unit:
         :return:
         """
+
         pressure_reference = 1140.  # MM_HG
 
         if unit_out not in self.__accepted_pressures_unit__:
             raise OptionConversionException("Invalid pressure unit %s." % unit_out)
 
-        pressure = self._convert_units(
-            pressure_reference,
-            units.cds.mmHg,
-            unit_out)
+        pressure = self._convert_units(pressure_reference, units.cds.mmHg, unit_out)
 
-        return WSValue(datetime.datetime.now(), pressure, unit_out)
+        return WSValue(datetime.datetime.utcnow(), pressure, unit_out)
 
-    def rain(self, unit_out=units.imperial.inch/units.hour):
+    def rain_rate(self, unit_out=units.imperial.inch / units.hour):
         """
         For testing purposes, it never rains.
         :param unit:
@@ -170,10 +166,26 @@ class FakeWeatherStation(WeatherBase):
         if unit_out not in self.__accepted_precipitation_unit__:
             raise OptionConversionException("Invalid precipitation unit %s." % unit_out)
 
-        return WSValue(datetime.datetime.now(), 0, unit_out)
+        return WSValue(datetime.datetime.utcnow(), 0, unit_out)
+
+    def isRaining(self):
+        """
+        Returns True for rain 20% of the time
+        """
+        return np.random.rand < 0.2
+
+    def sky_transparency(self, unit_out=units.pct):
+        """
+        Returns, in percent, the sky transparency
+        :param unit_out:
+        """
+        if unit_out not in self.__accepted_transparency_unit__:
+            raise OptionConversionException("Invalid transparency unit %s." % unit_out)
+
+        return WSValue(datetime.datetime.utcnow(), np.random.rand() * 100, unit_out)
+
 
 if __name__ == '__main__':
-
     fws = FakeWeatherStation()
 
     humidity = fws.humidity(units.pct)
@@ -194,7 +206,7 @@ if __name__ == '__main__':
     pressure = fws.pressure(units.cds.atm)
     print('Pressure: %.2f %s @ %s.' % (pressure.value, pressure.unit, pressure.time))
 
-    rain = fws.rain(unit_out=units.millimeter/units.hour)
+    rain = fws.rain_rate(unit_out=units.millimeter / units.hour)
     print('Rain: %.2f %s @ %s.' % (rain.value, rain.unit, rain.time))
 
-    print('Metadata: %s' %  (fws.getMetadata(None)),)
+    print('Metadata: %s' % (fws.getMetadata(None)))
