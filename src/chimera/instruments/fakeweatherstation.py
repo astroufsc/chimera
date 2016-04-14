@@ -174,6 +174,16 @@ class FakeWeatherStation(WeatherBase, WeatherTemperature, WeatherHumidity, Weath
         """
         return np.random.rand < 0.2
 
+    def sky_transparency(self, unit_out=units.pct):
+        """
+        Returns, in percent, the sky transparency
+        :param unit_out:
+        """
+        if unit_out not in self.__accepted_transparency_unit__:
+            raise OptionConversionException("Invalid transparency unit %s." % unit_out)
+
+        return WSValue(datetime.datetime.utcnow(), np.random.rand() * 100, unit_out)
+
 
 if __name__ == '__main__':
     fws = FakeWeatherStation()

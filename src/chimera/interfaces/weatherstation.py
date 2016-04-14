@@ -162,3 +162,18 @@ class WeatherRain(WeatherStation):
         Returns True if it is raining and False otherwise
         """
 
+
+class WeatherTransparency(WeatherStation):
+    """
+    Methods related to cloud and sky transparency
+    """
+
+    __accepted_transparency_unit__ = [units.pct]
+
+    def sky_transparency(self, unit_out=units.pct):
+        """
+        Returns sky transparency, or 100% - clouds coverage.
+
+        For a system with only two/three stages, the suggestion is to use:
+        0% for overcast, 50% to cloudy and 100% to clear
+        """

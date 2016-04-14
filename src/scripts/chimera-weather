@@ -2,9 +2,7 @@
 
 import datetime
 import sys
-
 import exceptions
-
 from chimera.core.cli import ChimeraCLI, action
 from chimera.util.output import red, green
 
@@ -29,7 +27,8 @@ class ChimeraWeather(ChimeraCLI):
         self.out("Weather Station: %s %s (%s)" % (self.weatherstation.getLocation(), self.weatherstation["model"],
                                                   self.weatherstation["device"]))
 
-        for attr in ('temperature', 'dew_point', 'humidity', 'wind_speed', 'wind_direction', 'pressure', 'rain'):
+        for attr in ('temperature', 'dew_point', 'humidity', 'wind_speed', 'wind_direction', 'pressure', 'rain_rate',
+                     'sky_transparency'):
             try:
                 v = self.weatherstation.__getattr__(attr)()
                 if isinstance(v, exceptions.NotImplementedError) or not v:

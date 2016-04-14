@@ -63,4 +63,9 @@ class WeatherBase(ChimeraObject, WeatherStation):
             rate = self.rain_rate()
             md += [('METRAIN', str(rate.value), ('[%s] Weather station rain rate' % rate.unit))]
 
+        # Sky Transparency
+        if self.features(WeatherTransparency):
+            transp = self.sky_transparency()
+            md += [('METSKTR', str(transp.value), ('[%s] Weather station Sky Transparency' % transp.unit))]
+
         return md
