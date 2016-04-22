@@ -122,7 +122,8 @@ class AutoFocusHandler(ActionHandler):
 
         try:
             # TODO: filter=action.filter,
-            autofocus.focus (exptime=action.exptime,
+            autofocus.focus (filter=action.filter,
+                             exptime=action.exptime,
                              binning=action.binning,
                              window=action.window,
                              start=action.start,
