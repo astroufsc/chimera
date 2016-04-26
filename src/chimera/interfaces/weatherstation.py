@@ -177,3 +177,15 @@ class WeatherTransparency(WeatherStation):
         For a system with only two/three stages, the suggestion is to use:
         0% for overcast, 50% to cloudy and 100% to clear
         """
+
+class WeatherSafety(WeatherStation):
+    """
+    Methods related to weather enviroment safety.
+
+    Some weather stations can have some intelligency that returns to the OCS only if it is okay to open the dome or not.
+    """
+
+    def okToOpen(self):
+        """
+        Returns True if it is okay to open the dome and False otherwise.
+        """
