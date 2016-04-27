@@ -491,8 +491,9 @@ class ChimeraCam (ChimeraCLI):
 
         # do we have a Dome?
         dome = None
+        remoteManager = camera.getManager()
         try:
-            dome = camera.getManager().getProxy("/Dome/0")
+            dome = remoteManager.getProxy(remoteManager.getResourcesByClass("Dome")[0])
         except ObjectNotFoundException:
             pass
 
