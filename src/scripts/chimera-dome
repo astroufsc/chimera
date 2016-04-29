@@ -169,7 +169,7 @@ class ChimeraDome(ChimeraCLI):
             actionGroup="DOMEFANS")
     def setFanSpeed(self, options):
         try:
-            domefan = self.dome.getManager().getProxy(options.domefan)
+            domefan = self.dome.getManager().getProxy(options.fan)
         except ObjectNotFoundException, e:
             self.exit('%s: Could not find requested fan.'% red('ERROR'))
 
