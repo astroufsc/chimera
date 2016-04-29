@@ -20,18 +20,19 @@
 # 02110-1301, USA.
 
 
-import datetime as dt
-
-from dateutil import tz
-import ephem
-import numpy as np
-
 from chimera.core.chimeraobject import ChimeraObject
+
 from chimera.util.coord import Coord, CoordUtil
 from chimera.util.position import Position
 
-__all__ = ['Site']
+from dateutil import tz
+import ephem
 
+import datetime as dt
+
+import numpy as np
+
+__all__ = ['Site']
 
 # More conversion functions.
 
@@ -39,7 +40,7 @@ __all__ = ['Site']
 def datetimeFromJD(jd):
     """Returns a date corresponding to the given Julian day number."""
     if not isinstance(jd, float):
-        raise TypeError, "%s is not an integer." % str(jd)
+        raise TypeError, "%s is not an integer." % str(n)
 
     n = int(np.floor(jd))
     if jd > np.floor(jd) + 0.5:
@@ -67,7 +68,8 @@ def datetimeFromJD(jd):
     return ret
 
 
-class Site(ChimeraObject):
+class Site (ChimeraObject):
+
     __config__ = dict(name="UFSC",
                       latitude=Coord.fromDMS("-23 00 00"),
                       longitude=Coord.fromDMS(-48.5),
@@ -240,11 +242,6 @@ class Site(ChimeraObject):
         return Position.altAzToRaDec(altAz, self['latitude'], lst_inRads)
 
     def getMetadata(self, request):
-        # Check first if there is metadata from an metadata override method.
-        md = self.getMetadataOverride(request)
-        if md is not None:
-            return md
-        # If not, just go on with the instrument's default metadata.
         return [
             ('SITE', self['name'], 'Site name (in config)'),
             ('LATITUDE', str(self['latitude']), 'Site latitude'),

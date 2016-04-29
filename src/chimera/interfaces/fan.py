@@ -21,76 +21,32 @@
 
 
 from chimera.core.interface import Interface
-from chimera.core.event import event
-
+from chimera.interfaces.switch import Switch, SwitchStatus, SwitchState
 from chimera.util.enum import Enum
 
-FanStatus = Enum("RUNNING", "STOPPED", "ABORTED", "ERROR")
 FanDirection = Enum("FORWARD", "REVERSE")
-
+FanStatus = SwitchStatus
 
 class Fan(Interface):
     """
     Basic fan interface.
     """
 
-    __config__ = {"device": "Unknown",
-
-                  "model": "Fake Domes Fan Inc.",
+    __config__ = {"device": None,
+                  "model": "Unknown",
                   }
 
-class FanControl(Fan):
+class FanControl(Switch):
     """
-    Basic class for starting/stopping fans.
+    Class for starting/stopping fans.
+    All methods are inherited from Switch
     """
 
-    def startFan(self):
-        '''
-        Start fan.
-
-        @return: True if succeeded, False otherwise
-        @rtype: bool
-
-        '''
-
-    def stopFan(self):
-        '''
-        Stop fan.
-
-        @return: True if succeeded, False otherwise
-        @rtype: bool
-
-        '''
-
-    def isFanRunning(self):
-        """
-        Ask if the fan is running right now.
-
-        @return: True if the fan is running, False otherwise.
-        @rtype: bool
-        """
-
-    def status(self):
-        """
-
-        @return: Fan current status
-        @rtype: Enum{FanStatus}
-        """
-
-
-    @event
-    def fanStarted(self):
-        '''
-        Indicates that fan has started
-
-        '''
-
-    @event
-    def fanStopped(self):
-        '''
-        Indicates that fan has stopped
-
-        '''
+class FanState(SwitchState):
+    """
+    Class for fans status
+    All methods are inherited from Switch
+    """
 
 class FanControllabeSpeed(Fan):
     """

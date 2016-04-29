@@ -1,4 +1,4 @@
-#! /usr/bin/python
+# ! /usr/bin/env python
 # -*- coding: iso-8859-1 -*-
 
 # chimera - observatory automation system
@@ -22,9 +22,7 @@
 
 from chimera.core.chimeraobject import ChimeraObject
 
-from chimera.interfaces.telescope import (TelescopeSlew, TelescopeSync,
-                                          TelescopePark, TelescopeTracking,
-                                          SlewRate, TelescopeCover)
+from chimera.interfaces.telescope import (TelescopeSlew, TelescopeSync, TelescopePark, TelescopeTracking, SlewRate)
 
 from chimera.core.lock import lock
 from chimera.core.exceptions import ObjectTooLowException
@@ -36,10 +34,7 @@ from chimera.util.position import Epoch, Position
 __all__ = ["TelescopeBase"]
 
 
-class TelescopeBase(ChimeraObject,
-                    TelescopeSlew, TelescopeSync,
-                    TelescopePark, TelescopeTracking,
-                    TelescopeCover):
+class TelescopeBase(ChimeraObject, TelescopeSlew, TelescopeSync, TelescopePark, TelescopeTracking):
 
     def __init__(self):
         ChimeraObject.__init__(self)
@@ -186,26 +181,6 @@ class TelescopeBase(ChimeraObject,
 
     def getParkPosition(self):
         return self._park_position or self["default_park_position"]
-
-    @lock
-    def openCover(self):
-        '''
-        Open telescope cover.
-        '''
-        raise NotImplementedError()
-
-    @lock
-    def closeCover(self):
-        '''
-        Close telescope cover.
-        '''
-        raise NotImplementedError()
-
-    def isCoverOpen(self):
-        '''
-        Tells if cover is open or not.
-        '''
-        raise NotImplementedError()
 
     def startTracking(self):
         raise NotImplementedError()

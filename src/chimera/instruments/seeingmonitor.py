@@ -1,9 +1,5 @@
-#! /usr/bin/env python
-# -*- coding: iso-8859-1 -*-
-
 # chimera - observatory automation system
 # Copyright (C) 2006-2007  P. Henrique Silva <henrique@astro.ufsc.br>
-# Copyright (C) 2006-2007  Antonio Kanaan <kanaan@astro.ufsc.br>
 
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -21,21 +17,42 @@
 # 02110-1301, USA.
 
 from chimera.core.chimeraobject import ChimeraObject
-from chimera.interfaces.calibrationlamp import CalibrationLampSwitch
-from chimera.core.lock import lock
+from chimera.interfaces.seeingmonitor import SeeingMonitor
+import astropy.units as units
 
-class CalibrationLampBase(ChimeraObject, CalibrationLampSwitch):
 
+class SeeingBase(ChimeraObject, SeeingMonitor):
     def __init__(self):
         ChimeraObject.__init__(self)
 
-    @lock
-    def switchOn(self):
+        self._supports = {}
+
+    def _convert_units(self, value, unit_in, unit_out, equivalencies=None):
+        if unit_in == unit_out:
+            return value
+
+        return (value * unit_in).to(unit_out, equivalencies).value
+
+    def supports(self, feature=None):
+        if feature in self._supports:
+            return self._supports[feature]
+        else:
+            self.log.info("Invalid feature: %s" % str(feature))
+            return False
+
+    def seeing(self, unit_out=units.arcsec):
         raise NotImplementedError()
 
-    @lock
-    def switchOff(self):
+    def seeing_at_zenith(self, unit_out=units.arcsec):
         raise NotImplementedError()
 
-    def isSwitchedOn(self):
+    def flux(self, unit_out=units.count):
         raise NotImplementedError()
+
+    def airmass(self, unit_out=units.dimensionless_unscaled):
+        raise NotImplementedError()
+
+    def getMetadata(self, request):
+        # TODO: Check if metadata parameter is implemented or not.
+        return [('SEEMOD', str(self['model']), 'Seeing monitor Model'),
+                ]

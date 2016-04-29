@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#!/usr/bin/env python
 # -*- coding: iso-8859-1 -*-
 
 # chimera - observatory automation system
@@ -21,15 +21,16 @@
 
 
 from chimera.core.cli import ChimeraCLI, action, ParameterType
-
+from chimera.interfaces.fan import FanStatus, FanControllabeSpeed, FanControllabeDirection, FanState
 from chimera.util.coord import Coord
+from chimera.util.output import green, yellow
+from chimera.util.output import red
 from chimera.util.position import Position
 from chimera.util.simbad import Simbad
 
 from chimera.core.callback import callback
-from chimera.core.exceptions import ObjectTooLowException, ObjectNotFoundException
-from chimera.interfaces.telescope import SlewRate, TelescopeStatus
-
+from chimera.core.exceptions import ObjectTooLowException, ObjectNotFoundException, printException
+from chimera.interfaces.telescope import SlewRate, TelescopeStatus, TelescopePierSide, TelescopePier, TelescopeCover
 import sys
 import copy
 
@@ -94,10 +95,14 @@ class ChimeraTel (ChimeraCLI):
         self.addHelpGroup("SLEW", "Slew")
         self.addHelpGroup("PARK", "Park")
         self.addHelpGroup("COVER", "Cover")
+        self.addHelpGroup("PIERSIDE", "Side of Pier")
         self.addHelpGroup("TRACKING", "Tracking")
         self.addHelpGroup("HANDLE", "Virtual Handle",
                           "You can pass a int/float with number of arcseconds or use d:m:s notation. "
                           "Remember that this is an offset relative to the current position.")
+
+        self.addHelpGroup("FANS", "Telescope fan control")
+        self.addParameters(dict(name="fan", default="/Fan/0", helpGroup="FANS", help="Fan instrument to be used."))
 
     @action(help="Initialize the telescope (Lat/long/Date/Time)",
             helpGroup="INIT")
@@ -209,20 +214,30 @@ class ChimeraTel (ChimeraCLI):
         self.out("OK")
         self.out(40 * "=")
 
-    @action(help="Open telescope cover", long="open-cover", helpGroup="COVER", actionGroup="COVER")
+    @action(name="open_cover", help="Open telescope cover", long="open-cover", helpGroup="COVER", actionGroup="COVER")
     def open(self, options):
         self.out(40 * "=")
-        self.out("Opening telescope cover ... ", end="")
-        self.telescope.openCover()
-        self.out("OK")
+
+        if not self.telescope.features(TelescopeCover):
+            self.out("Telescope does not supports this action")
+        else:
+            self.out("Opening telescope cover ... ", end="")
+            self.telescope.openCover()
+            self.out("OK")
+
         self.out(40 * "=")
 
-    @action(help="Close telescope cover", long="close-cover", helpGroup="COVER", actionGroup="COVER")
+    @action(name="close_cover", help="Close telescope cover", long="close-cover", helpGroup="COVER", actionGroup="COVER")
     def close(self, options):
         self.out(40 * "=")
-        self.out("Closing telescope cover ... ", end="")
-        self.telescope.closeCover()
-        self.out("OK")
+
+        if not self.telescope.features(TelescopeCover):
+            self.out("Telescope does not supports this action")
+        else:
+            self.out("Closing telescope cover ... ", end="")
+            self.telescope.closeCover()
+            self.out("OK")
+
         self.out(40 * "=")
 
     @action(name="stop_tracking",
@@ -249,6 +264,70 @@ class ChimeraTel (ChimeraCLI):
         self.out("OK")
         self.out(40 * "=")
 
+    @action(long="fan-speed", type="float", help="Set fan speed.", metavar="speed", helpGroup="FANS",
+            actionGroup="FANS")
+    def setFanSpeed(self, options):
+        try:
+            fan = self.telescope.getManager().getProxy(options.fan)
+        except ObjectNotFoundException, e:
+            self.exit('%s: Could not find requested fan.'% red('ERROR'))
+
+        self.out("=" * 40)
+        self.out("Changing fan speed to %.2f " % (options.setFanSpeed), end=" ")
+        try:
+            fan.setRotation(options.setFanSpeed)
+        except Exception, e:
+            self.exit("%s. \n%s" % (red("FAILED"), printException(e)))
+
+        self.out("%s" % (green("OK")))
+        self.out("=" * 40)
+
+    @action(long="fan-on", help="Start telescope fan", helpGroup="FANS", actionGroup="FANS")
+    def startFan(self, options):
+
+        try:
+            fan = self.telescope.getManager().getProxy(options.fan)
+        except ObjectNotFoundException, e:
+            self.exit('%s: Could not find requested fan.'% red('ERROR'))
+
+        if fan.isSwitchedOn():
+            self.exit("Fan is already running... ")
+
+        self.out("=" * 40)
+
+        self.out("Starting %s" % self.options.fan, end="")
+        try:
+            if fan.switchOn():
+                self.out(green("OK"))
+            else:
+                self.out(red("FAILED"))
+            self.out("=" * 40)
+        except Exception, e:
+            self.exit("%s\n %s" % (red("FAILED"), printException(e)))
+
+    @action(long="fan-off", help="Stop telescope fan", helpGroup="FANS", actionGroup="FANS")
+    def stopFan(self, options):
+
+        try:
+            fan = self.telescope.getManager().getProxy(options.fan)
+        except ObjectNotFoundException, e:
+            self.exit('%s: Could not find requested fan.'% red('ERROR'))
+
+        if not fan.isSwitchedOn():
+            self.exit("Fan is not running... ")
+
+        self.out("=" * 40)
+
+        self.out("Stopping %s" % self.options.fan, end="")
+        try:
+            if fan.switchOff():
+                self.out(green("OK"))
+            else:
+                self.out(red("FAILED"))
+            self.out("=" * 40)
+        except Exception, e:
+            self.exit("%s\n %s" % (red("FAILED"), printException(e)))
+
     @action(help="Print telescope information and exit")
     def info(self, options):
         telescope = self.telescope
@@ -259,18 +338,28 @@ class ChimeraTel (ChimeraCLI):
         position = telescope.getPositionRaDec()
         self.out("current position ra/dec (%s): %s" % (position.epoch, position))
         self.out("current position alt/az: %s" % telescope.getPositionAltAz())
-        if telescope.isTracking():
-            self.out("tracking: enabled.")
-        else:
-            self.out("tracking: disabled.")
+        self.out("tracking: %s" % ('enabled' if telescope.isTracking() else 'disabled'))
+        if self.telescope.features(TelescopeCover):
+            self.out("telescope cover: %s " % ('open' if telescope.isCoverOpen() else 'closed'))
+        if self.telescope.features(TelescopePier):
+            self.out("current side of pier: %s " % telescope.getPierSide().__str__().lower())
 
-        try:
-            if telescope.isCoverOpen():
-                self.out("cover: open.")
-            else:
-                self.out("cover: closed.")
-        except NotImplementedError:
-            pass
+        if self.telescope['fans'] is not None:
+            for fan in self.telescope['fans']:
+                fan = self.telescope.getManager().getProxy(fan)
+                if fan.features(FanState):
+                    st = fan.status()
+                    if st == FanStatus.ON:
+                        stats = green("ON")
+                    elif st == FanStatus.OFF:
+                        stats = red("OFF")
+                    else:
+                        stats = yellow(st.__str__())
+                else:
+                    stats = green("ON") if fan.isSwitchedOn() else red("OFF")
+                rotation = ' speed %.2f' % fan.getRotation() if fan.features(FanControllabeSpeed) else ''
+                direction = ' direction %s' % fan.getDirection() if fan.features(FanControllabeDirection) else ''
+                self.out("Fan %s: %s%s%s" % (fan.getLocation(), stats, rotation, direction))
 
         self.out(40 * "=")
 
@@ -324,6 +413,33 @@ class ChimeraTel (ChimeraCLI):
             metavar="ARCSEC", helpGroup="HANDLE")
     def moveSouth(self, options):
         self._move("South", self.telescope.moveSouth, options.move_south)
+
+    @action(help="Move telescope to EAST pierside", long="side-east", helpGroup="PIERSIDE", actionGroup="PIERSIDE")
+    def setPierSideEast(self, options):
+        self.out(40 * "=")
+
+        if not self.telescope.features(TelescopePier):
+            self.out("Telescope does not supports this action")
+        else:
+            self.out("moving telescope to EAST pier side ... ", end="")
+            self.telescope.setPierSide(TelescopePierSide.EAST)
+            self.out("OK")
+
+        self.out(40 * "=")
+
+    @action(help="Move telescope to WEST pierside", long="side-west", helpGroup="PIERSIDE", actionGroup="PIERSIDE")
+    def setPierSideWest(self, options):
+        self.out(40 * "=")
+
+        if not self.telescope.features(TelescopePier):
+            self.out("Telescope does not supports this action")
+        else:
+            self.out("moving telescope to WEST pier side ... ", end="")
+            self.telescope.setPierSide(TelescopePierSide.WEST)
+            self.out("OK")
+
+        self.out(40 * "=")
+
 
     def _validateCoords(self, options):
 
