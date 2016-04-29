@@ -6,7 +6,6 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relation, backref
 
 engine = create_engine('sqlite:///%s' % DEFAULT_PROGRAM_DATABASE, echo=False)
-print '-- engine created with sqlite:///%s' % DEFAULT_PROGRAM_DATABASE
 metaData = MetaData()
 metaData.bind = engine
 
@@ -17,8 +16,7 @@ import datetime as dt
 
 class Targets(Base):
     __tablename__ = "targets"
-    print "model.py"
-    
+
     id     = Column(Integer, primary_key=True)
     name   = Column(String, default="Program") 
     type   = Column(String, default=None) 
@@ -40,8 +38,7 @@ class Targets(Base):
 
 class Program(Base):
     __tablename__ = "program"
-    print "model.py"
-    
+
     id     = Column(Integer, primary_key=True)
     tid    = Column(Integer, ForeignKey('targets.id'))
     name   = Column(String, ForeignKey("targets.name"))

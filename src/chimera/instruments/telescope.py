@@ -1,4 +1,4 @@
-#! /usr/bin/python
+# ! /usr/bin/env python
 # -*- coding: iso-8859-1 -*-
 
 # chimera - observatory automation system
@@ -22,9 +22,7 @@
 
 from chimera.core.chimeraobject import ChimeraObject
 
-from chimera.interfaces.telescope import (TelescopeSlew, TelescopeSync,
-                                          TelescopePark, TelescopeTracking,
-                                          SlewRate)
+from chimera.interfaces.telescope import (TelescopeSlew, TelescopeSync, TelescopePark, TelescopeTracking, SlewRate)
 
 from chimera.core.lock import lock
 from chimera.core.exceptions import ObjectTooLowException
@@ -36,9 +34,7 @@ from chimera.util.position import Epoch, Position
 __all__ = ["TelescopeBase"]
 
 
-class TelescopeBase(ChimeraObject,
-                    TelescopeSlew, TelescopeSync,
-                    TelescopePark, TelescopeTracking):
+class TelescopeBase(ChimeraObject, TelescopeSlew, TelescopeSync, TelescopePark, TelescopeTracking):
 
     def __init__(self):
         ChimeraObject.__init__(self)
@@ -176,20 +172,6 @@ class TelescopeBase(ChimeraObject,
     def unpark(self):
         raise NotImplementedError()
 
-    @lock
-    def openCover(self):
-        '''
-        Open telescope cover.
-        '''
-        raise NotImplementedError()
-
-    @lock
-    def closeCover(self):
-        '''
-        Close telescope cover.
-        '''
-        raise NotImplementedError()
-
     def isParked(self):
         raise NotImplementedError()
 
@@ -215,6 +197,7 @@ class TelescopeBase(ChimeraObject,
         if md is not None:
             return md
         # If not, just go on with the instrument's default metadata.
+        position = self.getPositionRaDec()
         return [('TELESCOP', self['model'], 'Telescope Model'),
                 ('OPTICS',   self['optics'], 'Telescope Optics Type'),
                 ('MOUNT', self['mount'], 'Telescope Mount Type'),
@@ -225,11 +208,9 @@ class TelescopeBase(ChimeraObject,
                  'Telescope focal reduction'),
                 # TODO: Convert coordinates to proper equinox
                 # TODO: How to get ra,dec at start of exposure (not end)
-                ('RA', self.getRa().toHMS().__str__(),
-                 'Right ascension of the observed object'),
-                ('DEC', self.getDec().toDMS().__str__(),
-                 'Declination of the observed object'),
-                ("EQUINOX", 2000.0, "coordinate epoch"),
+                ('RA', position.ra.toHMS().__str__(), 'Right ascension of the observed object'),
+                ('DEC', position.dec.toDMS().__str__(), 'Declination of the observed object'),
+                ("EQUINOX", position.epochString()[1:], "coordinate epoch"),
                 ('ALT', self.getAlt().toDMS().__str__(),
                  'Altitude of the observed object'),
                 ('AZ', self.getAz().toDMS().__str__(),

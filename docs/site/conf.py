@@ -13,6 +13,7 @@
 
 import os
 import sys
+import time
 
 # If your extensions are in another directory, add it here. If the directory
 # is relative to the documentation root, use os.path.abspath to make it
@@ -24,6 +25,7 @@ import sys
 
 # Add any Sphinx extension module names here, as strings. They can be extensions
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
+
 extensions = ['sphinx.ext.autodoc', 'sphinx.ext.coverage', 'sphinx.ext.mathjax']
 
 # Add any paths that contain templates here, relative to this directory.
@@ -37,7 +39,7 @@ master_doc = 'index'
 
 # General substitutions.
 project = u'chimera'
-copyright = u'2014, GAS - UFSC'
+copyright = u'2008-%s, GAS - UFSC' % time.strftime('%Y')
 
 # The default replacements for |version| and |release|, also used in various
 # other places throughout the built documents.

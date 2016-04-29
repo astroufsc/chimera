@@ -33,6 +33,7 @@ SlewRate = Enum("GUIDE", "CENTER", "FIND", "MAX")
 
 TelescopeStatus = Enum("OK", "ERROR", "ABORTED", "OBJECT_TOO_LOW", "OBJECT_TOO_HIGH")
 
+TelescopePierSide = Enum("EAST", "WEST", "UNKNOWN")
 
 class PositionOutsideLimitsException (ChimeraException):
     pass
@@ -44,13 +45,12 @@ class Telescope(Interface):
     Telescope base interface.
     """
 
-    __config__ = {"device": "/dev/ttyS0",
+    __config__ = {"device": None,
                   "model": "Fake Telescopes Inc.",
                   "optics": ["Newtonian", "SCT", "RCT"],
                   "mount": "Mount type Inc.",
                   "aperture": 100.0,  # mm
-                  "focal_length": 1000.0,  # mm
-                  # unit (ex., 0.5 for a half length focal reducer)
+                  "focal_length": 1000.0,  # mm unit (ex., 0.5 for a half length focal reducer)
                   "focal_reduction": 1.0,
                   }
 
@@ -303,6 +303,23 @@ class TelescopeSlew(Telescope):
         @type  status: L{TelescopeStatus}
         """
 
+class TelescopePier(Telescope):
+
+    def getPierSide(self):
+        """
+        Get the current side of pier of the telescope.
+
+        @return: Telescope current pier side: UNKNOWN, EAST or WEST.
+        @rtype: L{TelescopePierSide}
+        """
+
+    def setPierSide(self, side):
+        """
+        Sets side of pier of the telescope.
+
+        @param side: Side of pier: EAST or WEST
+        """
+
 
 class TelescopeSync(Telescope):
 
@@ -417,6 +434,33 @@ class TelescopePark (Telescope):
         successfully.
         """
 
+class TelescopeCover(Telescope):
+    """
+    Telescope with mirror cover.
+    """
+
+    def openCover(self):
+        """
+        Open the telescope cover
+
+        :return: None
+        """
+
+    def closeCover(self):
+        """
+        Close the telescope cover
+
+        @:return: None
+        """
+
+    def isCoverOpen(self):
+        """
+        Ask if the telescope cover is open or not
+
+        @:return: True if cover is open, false otherwise
+        """
+
+
 
 class TelescopeTracking (Telescope):
 
@@ -447,4 +491,27 @@ class TelescopeTracking (Telescope):
         @return: True if the telescope is tracking, False otherwise.
         @rtype: bool
 
+        """
+    @event
+    def trackingStarted(self, position):
+        """
+        Indicates that a tracking operation started.
+
+        @param position: The position where the telescope started track.
+        @type  position: L{Position}
+        """
+
+    @event
+    def trackingStopped(self, position, status):
+        """
+        Indicates that the last tracking operation stopped. This event
+        will be fired even when problems impedes tracking operation to resume
+        (altitude limits, for example). Check L{status} field if you
+        need more information.
+
+        @param position: The telescope position when tracking stopped.
+        @type  position: L{Position}
+
+        @param status: The status of the tracking operation.
+        @type  status: L{TelescopeStatus}
         """

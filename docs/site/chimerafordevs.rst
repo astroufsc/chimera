@@ -202,3 +202,17 @@ access to :class:`Example1` running on other :class:`Manager`
 specifies Location. For all purposes this :class:`Proxy` class acts
 like the original object, so you can call any method just like you
 would with the original object.
+
+
+Plugin development
+==================
+
+After trying to find inside the chimera core package, chimera tries to find controllers and instruments on packages with
+names starting with `chimera_`. This opens chimera to be customizable with third-party plugins of all kinds.
+
+To facilitate the development of those plugins, we created a plugin template which can be forked and changed to born a
+new plugin. Take a look on our chimera-template_ plugin and, if there is any doubt, don't hesitate to contact us by
+opening an issue on github or sending an e-mail to our `mailing list`_
+
+.. _chimera-template: https://github.com/astroufsc/chimera-template
+.. _mailing list: https://groups.google.com/forum/#!forum/chimera-discuss

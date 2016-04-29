@@ -129,10 +129,12 @@ class SystemConfig (object):
         # specials
         self._specials = ["telescope", "telescopes",
                           "camera", "cameras",
+                          "calibrationlamp", "calibrationlamps",
                           "filterwheel", "filterwheels",
                           "dome", "domes",
                           "focuser", "focusers",
-                          "weatherstation", "weatherstations"]
+                          "weatherstation", "weatherstations",
+                          "seeingmonitor", "seeingmonitors"]
 
         self._instrumentsSections = self._specials + \
             ["instrument", "instruments"]
@@ -176,6 +178,11 @@ class SystemConfig (object):
         # parse chimera section first, to get host/port or set defaults
         for type, values in config.items():
             if type.lower() == "chimera":
+                try:
+                    if values["host"] == "0.0.0.0":
+                        values["host"] = None
+                except KeyError:
+                    pass
                 self.chimera.update(values)
                 # BIGGG FIXME: read all files before create Locations,
                 # to avoid this hack

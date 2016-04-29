@@ -106,7 +106,7 @@ class RemoteObject (Pyro.core.ObjBase):
                 exc_info = sys.exc_info()
                 try:
                     if type(exc_info[0]) == StringType:
-                        if exc_info[1] == None:
+                        if exc_info[1] is None:
                             raise Exception, exc_info[0], exc_info[2]
                         else:
                             raise Exception, "%s: %s" % (

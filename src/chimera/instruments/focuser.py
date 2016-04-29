@@ -22,33 +22,34 @@
 from chimera.core.chimeraobject import ChimeraObject
 from chimera.core.lock import lock
 
-from chimera.interfaces.focuser import Focuser
+from chimera.interfaces.focuser import (Focuser, FocuserAxis,
+                                        AxisControllable,
+                                        InvalidFocusPositionException)
 
 
-class FocuserBase (ChimeraObject, Focuser):
-
+class FocuserBase(ChimeraObject, Focuser):
     def __init__(self):
         ChimeraObject.__init__(self)
 
         self._supports = {}
 
     @lock
-    def moveIn(self, n):
+    def moveIn(self, n, axis=FocuserAxis.Z):
         raise NotImplementedError()
 
     @lock
-    def moveOut(self, n):
+    def moveOut(self, n, axis=FocuserAxis.Z):
         raise NotImplementedError()
 
     @lock
-    def moveTo(self, position):
+    def moveTo(self, position, axis=FocuserAxis.Z):
         raise NotImplementedError()
 
     @lock
-    def getPosition(self):
+    def getPosition(self, axis=FocuserAxis.Z):
         raise NotImplementedError()
 
-    def getRange(self):
+    def getRange(self, axis=FocuserAxis.Z):
         raise NotImplementedError()
 
     def getTemperature(self):
@@ -60,6 +61,10 @@ class FocuserBase (ChimeraObject, Focuser):
         else:
             self.log.info("Invalid feature: %s" % str(feature))
             return False
+
+    def _checkAxis(self, axis):
+        if not self.supports(AxisControllable[axis]):
+            raise InvalidFocusPositionException("Cannot move %s axis."%axis)
 
     def getMetadata(self, request):
         # Check first if there is metadata from an metadata override method.

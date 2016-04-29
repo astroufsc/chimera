@@ -239,3 +239,12 @@ class ChimeraObject (RemoteObject, ILifeCycle):
         if self.__metadataOverrideMethod__ is not None:
             return self.getManager().getProxy(self.__metadataOverrideMethod__, lazy=True).getMetadata(request)
         return None
+
+    def features(self, interface):
+        """
+        Checks if self is an instance of a interface.
+        This is useful to check if some interface/capability is supported by an instrument
+        :param interface: One of from chimera interfaces
+        :return: True if is instance, False otherwise
+        """
+        return isinstance(self, interface)
