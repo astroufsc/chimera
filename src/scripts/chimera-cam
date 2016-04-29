@@ -18,7 +18,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 # 02110-1301, USA.
-
+import os
 
 from chimera.core.cli import ChimeraCLI, action, ParameterType
 from chimera.core.callback import callback
@@ -43,12 +43,14 @@ currentFrameReadoutStart = 0
 def get_compressed_name(filename, compression):
     if compression.lower() == 'no':
         return filename
-    if compression.lower() == 'bz2':
+    elif compression.lower() == 'bz2':
         return filename+'.bz2'
-    if compression.lower() == 'gzip':
+    elif compression.lower() == 'gzip':
         return filename+'.gz'
-    if compression.lower() == 'zip':
+    elif compression.lower() == 'zip':
         return filename+'.zip'
+    elif compression.lower() == 'fits_rice':
+        return os.path.splitext(filename)[0] + '.fz'
 
 class ChimeraCam (ChimeraCLI):
 
@@ -119,7 +121,7 @@ class ChimeraCam (ChimeraCLI):
                                 help="Compress the output file using FORMAT. Use --compress=no to disable it.",
                                 helpGroup="EXPOSE",
                                 type=ParameterType.CHOICE,
-                                choices=["BZ2", "ZIP", "GZIP", "NO", "bz2", "zip", "gzip", "no"],
+                                choices=["FITS_RICE", "BZ2", "ZIP", "GZIP", "NO", "fits_rice", "bz2", "zip", "gzip", "no"],
                                 default="no"),
                            dict(name="ignore_dome",
                                 long="ignore-dome",
