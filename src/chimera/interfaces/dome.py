@@ -49,7 +49,7 @@ class Dome(Interface):
     A Roll-off or classic dome.
     """
 
-    __config__ = {"device": "/dev/ttyS1",
+    __config__ = {"device": None,
                   "telescope": "/Telescope/0",
                   "mode": Mode.Stand,
 
@@ -65,7 +65,11 @@ class Dome(Interface):
                   "abort_timeout": 60,
                   "init_timeout": 5,
                   "open_timeout": 20,
-                  "close_timeout": 20}
+                  "close_timeout": 20,
+
+                  "fans": [],        # list of fans of the dome, i.e.: fans: ['/FakeFan/fake1', '/FakeFan/fake2']
+                  "lamps": [],       # list of lamps of the dome, i.e.: lamps: ['/FakeLamp/fake1']
+                  }
 
 
 class DomeSlew(Dome):

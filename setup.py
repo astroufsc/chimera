@@ -38,6 +38,8 @@ chimera_scripts = ['src/scripts/chimera',
                    'src/scripts/chimera-focus',
                    'src/scripts/chimera-console',
                    'src/scripts/chimera-sched',
+                   'src/scripts/chimera-weather',
+                   'src/scripts/chimera-seeing',
 ]
 
 # platform specific requirements

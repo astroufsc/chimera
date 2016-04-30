@@ -17,12 +17,12 @@
 # 02110-1301, USA.
 
 from chimera.core.chimeraobject import ChimeraObject
-from chimera.interfaces.weatherstation import IWeatherStation
+from chimera.interfaces.weatherstation import WeatherStation
 
 import astropy.units as units
 
 
-class WeatherBase(ChimeraObject, IWeatherStation):
+class WeatherBase(ChimeraObject, WeatherStation):
 
     def __init__(self):
         ChimeraObject.__init__(self)
@@ -64,6 +64,11 @@ class WeatherBase(ChimeraObject, IWeatherStation):
         raise NotImplementedError()
 
     def getMetadata(self, request):
+        # Check first if there is metadata from an metadata override method.
+        md = self.getMetadataOverride(request)
+        if md is not None:
+            return md
+        # If not, just go on with the instrument's default metadata.
         #TODO: Check if metadata parameter is implemented or not.
         return [('METMODEL', str(self['model']), 'Weather station Model'),
                 ('METRH', str(self.humidity().value), ('[%s] Weather station relative humidity' % self.humidity().unit)),
