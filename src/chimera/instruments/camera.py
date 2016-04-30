@@ -20,18 +20,23 @@
 # 02110-1301, USA.
 from math import pi, cos, sin
 
+
 import threading
 import time
 import os
 import datetime as dt
+from math import cos,sin,pi
 
 from chimera.core.chimeraobject import ChimeraObject
 from chimera.interfaces.camera import (CameraExpose, CameraTemperature,
                                        CameraInformation,
                                        InvalidReadoutMode, Shutter)
+
 from chimera.controllers.imageserver.imagerequest import ImageRequest
 from chimera.controllers.imageserver.util import getImageServer
+
 from chimera.core.lock import lock
+
 from chimera.util.image import Image, ImageUtil
 
 

@@ -289,11 +289,6 @@ class DomeBase(ChimeraObject, DomeSlew, DomeSlit, DomeFlap, DomeSync):
         raise NotImplementedError()
 
     def getMetadata(self, request):
-        # Check first if there is metadata from an metadata override method.
-        md = self.getMetadataOverride(request)
-        if md is not None:
-            return md
-        # If not, just go on with the instrument's default metadata.
         if self.isSlitOpen():
             slit = 'Open'
         else:

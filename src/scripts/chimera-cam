@@ -18,19 +18,24 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 # 02110-1301, USA.
-
+import os
 
 from chimera.core.cli import ChimeraCLI, action, ParameterType
 from chimera.core.callback import callback
-from chimera.core.exceptions import printException, ObjectNotFoundException
+from chimera.core.exceptions import ChimeraException, printException, ObjectNotFoundException
 from chimera.core.compat import freeze_support
+from chimera.core.systemconfig import SystemConfig
+from chimera.core.managerlocator import ManagerLocator
 
 from chimera.interfaces.filterwheel import InvalidFilterPositionException
 from chimera.interfaces.camera import CameraFeature, CameraStatus
 
+from chimera.controllers.imageserver.util import getImageServer
+from chimera.util.image import ImageUtil,Image
+
 from chimera.util.ds9 import DS9
 
-import sys
+import sys, os, ntpath
 import time
 #import threading
 import copy
@@ -43,12 +48,14 @@ currentFrameReadoutStart = 0
 def get_compressed_name(filename, compression):
     if compression.lower() == 'no':
         return filename
-    if compression.lower() == 'bz2':
+    elif compression.lower() == 'bz2':
         return filename+'.bz2'
-    if compression.lower() == 'gzip':
+    elif compression.lower() == 'gzip':
         return filename+'.gz'
-    if compression.lower() == 'zip':
+    elif compression.lower() == 'zip':
         return filename+'.zip'
+    elif compression.lower() == 'fits_rice':
+        return os.path.splitext(filename)[0] + '.fz'
 
 class ChimeraCam (ChimeraCLI):
 
@@ -119,7 +126,7 @@ class ChimeraCam (ChimeraCLI):
                                 help="Compress the output file using FORMAT. Use --compress=no to disable it.",
                                 helpGroup="EXPOSE",
                                 type=ParameterType.CHOICE,
-                                choices=["BZ2", "ZIP", "GZIP", "NO", "bz2", "zip", "gzip", "no"],
+                                choices=["FITS_RICE", "BZ2", "ZIP", "GZIP", "NO", "fits_rice", "bz2", "zip", "gzip", "no"],
                                 default="no"),
                            dict(name="ignore_dome",
                                 long="ignore-dome",
@@ -479,6 +486,12 @@ class ChimeraCam (ChimeraCLI):
                                                      time.time() - currentFrameExposeStart))
 
                 if ds9:
+                    # If file does not exists (as in remote cameras), try downloading it. Note that it will be
+                    # downloaded anyway by ds9 when trying to display it. But, if we do it here, we can take
+                    # advantage of the local file to do some analysis (like with IRAF).
+                    if not os.path.exists(image.filename()):
+                        image = self._downloadImage(image)
+
                     ds9.set("scale mode 99.5")
                     ds9.displayImage(image)
 
@@ -491,8 +504,9 @@ class ChimeraCam (ChimeraCLI):
 
         # do we have a Dome?
         dome = None
+        remoteManager = camera.getManager()
         try:
-            dome = camera.getManager().getProxy("/Dome/0")
+            dome = remoteManager.getProxy(remoteManager.getResourcesByClass("Dome")[0])
         except ObjectNotFoundException:
             pass
 
@@ -597,6 +611,31 @@ class ChimeraCam (ChimeraCLI):
             self.out("%s" % time.strftime("%c"))
             self.out(40 * "=")
 
+
+    def _downloadImage(self,image):
+
+        self.out('Downloading image %s from server.' % image.http())
+        image_path = image.filename()
+
+        #  If remote is windows, image_path will be c:\...\image.fits, so use ntpath instead of os.path.
+        if ':\\' in image_path:
+            modpath = ntpath
+        else:
+            modpath = os.path
+
+        sysconfig = SystemConfig.fromDefault()
+        host, port = sysconfig.chimera["host"], sysconfig.chimera["port"]
+
+        locManager = ManagerLocator.locate(host, port)
+
+        image_path = ImageUtil.makeFilename(os.path.join(getImageServer(locManager).defaultNightDir(),
+                                                         modpath.basename(image_path)))
+        if not ImageUtil.download(image, image_path):
+            raise ChimeraException('Error downloading image %s from %s' % (image_path, image.http()))
+
+        image.close() # Close image here
+
+        return Image.fromFile(image_path)
 
 def main():
     cli = ChimeraCam()

@@ -28,6 +28,7 @@ class ChimeraSeeing(ChimeraCLI):
         self.out("=" * 80)
         self.out("Seeing Monitor: %s %s (%s)" % (self.seeingmonitor.getLocation(), self.seeingmonitor["model"],
                                                  self.seeingmonitor["device"]))
+        self.out("=" * 80)
 
         for attr in ('seeing', 'seeing_at_zenith', 'airmass', 'flux'):
             try:

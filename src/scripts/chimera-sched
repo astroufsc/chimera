@@ -24,7 +24,7 @@ import sys
 import os
 import shutil
 import time
-
+import yaml
 from chimera.core.cli import ChimeraCLI, action
 from chimera.core.constants import DEFAULT_PROGRAM_DATABASE
 from chimera.core.callback import callback
@@ -32,12 +32,18 @@ from chimera.util.position import Position
 from chimera.util.output import blue, green, red
 from chimera.controllers.scheduler.status import SchedulerStatus
 from chimera.controllers.scheduler.states import State
-from chimera.controllers.scheduler.model import (Session, Program, Point,
+from chimera.controllers.scheduler.model import (Session, Program, AutoFocus,
+                                                 PointVerify, Point,
                                                  Expose)
 
+actionDict = {'autofocus': AutoFocus,
+              'pointverify': PointVerify,
+              'point': Point,
+              'expose': Expose,
+              }
 
-class ChimeraSched (ChimeraCLI):
 
+class ChimeraSched(ChimeraCLI):
     def __init__(self):
         ChimeraCLI.__init__(
             self, "chimera-sched", "Scheduler controller", 0.1, port=9010)
@@ -49,7 +55,10 @@ class ChimeraSched (ChimeraCLI):
                            help="Scheduler controller to be used",
                            helpGroup="SCHEDULER")
 
-        databaseHelp = """Database options\n\tThe file must have the following format:
+        databaseHelp = """Database options.
+
+        The quickest and less configurable way to configure the scheduler database is to use
+        a file with the following format:
 
         # RA      dec       epoch  type    name  N*(f1:t1:n1, f2:t2:n2, ......)
         14:00:00 -30:00:00  J2000  OBJECT  obj1  2*(V:7, R:6:2, B:5:2)
@@ -63,6 +72,153 @@ class ChimeraSched (ChimeraCLI):
         BIAS   bias       1*(V:0)
         DARK   dark       1*(V:1:4)
         OBJECT \"NGC 5272\" 1*(B:10:10)
+
+        It is also possible to use a ".yaml" file with the database configuration for each program. The file
+        must have a .yaml extension so the script knows how to parse it.
+
+        programs:
+            # You can configure each database to its fullest.
+
+            -   program:
+                name: PRG01           # (optional)
+                pi: Tiago Ribeiro     # (optional)
+                priority: 1           # (optional)
+                slewAt: 57500.030     # Add time to slew in MJD (optional)
+                exposeAt: 57500.040   # Add time to expose in MJD (optional)
+
+                # Add actions in the order they are intended to be performed.
+                actions:
+                    -   action: point
+                        ra: 14:00:00
+                        dec: -30:00:00
+                        epoch: J2000
+
+                    -   action: autofocus
+                        start: 100
+                        end: 200
+                        step: 10
+                        filter: R
+                        exptime: 10
+
+                    -   action: pointverify
+                        here: True
+
+                    -   action: expose
+                        filter: V
+                        frames: 1
+                        exptime: 7
+                        imageType: OBJECT
+                        objectName: obj1 acq
+
+                    -   action: expose
+                        filter: R
+                        frames: 2
+                        exptime: 6
+                        imageType: OBJECT
+                        objectName: obj1 acq
+
+                    -   action: expose
+                        filter: B
+                        frames: 2
+                        exptime: 5
+                        imageType: OBJECT
+                        objectName: obj1 acq
+
+            # new target with no autofocus or pointverify
+            -   program:
+                name: PRG02
+                pi: William Schoenell
+                priority: 2
+                actions:
+                    -   action: point
+                        ra: 15:00:00
+                        dec: -30:00:00
+                        epoch: NOW
+
+                    -   action: expose
+                        filter: V
+                        frames: 1
+                        exptime: 7
+                        imageType: OBJECT
+                        objectName: obj1 acq
+
+                    -   action: expose
+                        filter: R
+                        frames: 2
+                        exptime: 6
+                        imageType: OBJECT
+                        objectName: obj1 acq
+
+                    -   action: expose
+                        filter: B
+                        frames: 2
+                        exptime: 5
+                        imageType: OBJECT
+                        objectName: obj1 acq
+
+            # Point to a target name
+            -   program:
+                name: PROG03
+                pi: Antonio Kanaan
+                priority: 3
+                actions:
+                    -   action: point
+                        name: NGC 5272
+
+                    -   action: expose
+                        filter: B
+                        frames: 10
+                        exptime: 10
+                        imageType: OBJECT
+                        objectName: NGC 5272
+
+        # calibrations
+
+            -   program:
+                name: DAYLIGHT CALIBRATIONS
+                pi: Tiago Ribeiro
+                actions:
+                    # BIAS
+                    -   action: expose
+                        frames: 10
+                        imageType: BIAS  # This will set shutter to close
+
+                    # DARK
+                    -   action: expose
+                        frames: 10
+                        exptime: 100
+                        imageType: DARK  # This will set shutter to close already
+
+                    # LIGHT DARK
+                    -   action: expose
+                        frames: 10
+                        exptime: 100
+                        shutter: OPEN    # In case you want to take light dark, you can specify shutter to be open
+                        imageType: DARK
+
+                    # FLAT FIELD
+                    -   action: point
+                        alt: 80:00:00
+                        az: 10:00:00
+
+                    -   action: expose
+                        frames: 10
+                        filter: V
+                        exptime: 10
+                        imageType: FLAT # This will turn flat field lamp on, by default
+
+                    -   action: expose
+                        frames: 10
+                        filter: R
+                        exptime: 8
+                        imageType: FLAT # This will turn flat field lamp on, by default
+
+                    -   action: expose
+                        frames: 9
+                        filter: B
+                        exptime: 20
+                        imageType: FLAT # This will turn flat field lamp on, by default
+
         """
 
         self.addHelpGroup("DB", databaseHelp)
@@ -81,7 +237,6 @@ class ChimeraSched (ChimeraCLI):
                                 helpGroup="DB",
                                 help="Images base filename including full path if needed.",
                                 default="$NAME-$DATE-$TIME"))
-
 
     @action(long="new",
             help="Generate a new database from a text file (excluding all programs already in database)",
@@ -109,6 +264,80 @@ class ChimeraSched (ChimeraCLI):
         self.generateDatabase(options)
 
     def generateDatabase(self, options):
+
+        if os.path.splitext(options.filename)[-1] == '.yaml':
+            self._generateDatabase_yaml(options)
+        else:
+            self._generateDatabase_basic(options)
+
+    def _generateDatabase_yaml(self, options):
+
+        with open(options.filename, 'r') as stream:
+            try:
+                prgconfig = yaml.load(stream)
+            except yaml.YAMLError as exc:
+                self.exit(exc)
+
+        session = Session()
+
+        programs = []
+
+        for prg in prgconfig['programs']:
+
+            # process program
+
+            program = Program()
+            for key in prg.keys():
+                if hasattr(program, key) and key != 'actions':
+                    try:
+                        setattr(program, key, prg[key])
+                    except:
+                        self.err('Could not set attribute %s = %s on Program' % (key, prg[key]))
+
+            self.out("# program: %s" % program.name)
+
+            # process actions
+            for actconfig in prg['actions']:
+                act = actionDict[actconfig['action']]()
+                self.out('Action: %s' % actconfig['action'])
+
+                if actconfig['action'] == 'point':
+                    if 'ra' in actconfig.keys() and 'dec' in actconfig.keys():
+                        epoch = 'J2000' if 'epoch' not in actconfig.keys() else actconfig['epoch']
+                        position = Position.fromRaDec(actconfig['ra'], actconfig['dec'], epoch)
+                        self.out('Coords: %s' % position)
+                        act.targetRaDec = position
+                        # act = Point(targetRaDec=position)
+                    elif 'alt' in actconfig.keys() and 'az' in actconfig.keys():
+                        position = Position.fromAltAz(actconfig['alt'], actconfig['az'])
+                        self.out('Coords: %s' % position)
+                        act.targetAltAz = position
+                    else:
+                        self.out('Target name: %s' % actconfig['name'])
+                        act.targetName = actconfig['name']
+
+                else:
+                    for key in actconfig.keys():
+                        if hasattr(act, key) and key != 'action':
+                            self.out('\t%s: %s' % (key, actconfig[key]))
+                            try:
+                                setattr(act, key, actconfig[key])
+                            except:
+                                self.err('Could not set attribute %s = %s on action %s' % (key,
+                                                                                           actconfig[key],
+                                                                                           actconfig['action']))
+                program.actions.append(act)
+
+            self.out("")
+            programs.append(program)
+
+        self.out("List contain %i programs" % len(programs))
+        session.add_all(programs)
+        session.commit()
+
+        self.out("Restart the scheduler to run it with the new database.")
+
+    def _generateDatabase_basic(self, options):
         f = None
         try:
             f = open(options.filename, "r")
@@ -117,8 +346,9 @@ class ChimeraSched (ChimeraCLI):
 
         session = Session()
 
-        lineRe = re.compile('(?P<coord>(?P<ra>[\d:-]+)\s+(?P<dec>\+?[\d:-]+)\s+(?P<epoch>[\dnowNOWJjBb\.]+)\s+)?(?P<imagetype>[\w]+)'
-                            '\s+(?P<objname>\'([^\\n\'\\\\]|\\\\.)*\'|"([^\\n"\\\\]|\\\\.)*"|([^ \\n"\\\\]|\\\\.)*)\s+(?P<exposures>[\w\d\s:\*\(\),]*)')
+        lineRe = re.compile(
+            '(?P<coord>(?P<ra>[\d:-]+)\s+(?P<dec>\+?[\d:-]+)\s+(?P<epoch>[\dnowNOWJjBb\.]+)\s+)?(?P<imagetype>[\w]+)'
+            '\s+(?P<objname>\'([^\\n\'\\\\]|\\\\.)*\'|"([^\\n"\\\\]|\\\\.)*"|([^ \\n"\\\\]|\\\\.)*)\s+(?P<exposures>[\w\d\s:\*\(\),]*)')
         programs = []
 
         for i, line in enumerate(f):
@@ -171,6 +401,20 @@ class ChimeraSched (ChimeraCLI):
                     flatPosition = Position.fromAltAz(site['flat_alt'], site['flat_az'])
                     program.actions.append(Point(targetAltAz=flatPosition))
 
+                if imagetype == "AUTOFOCUS":
+                    if position:
+                        program.actions.append(Point(targetRaDec=position))
+                    else:
+                        program.actions.append(Point(targetName=objname))
+                    exp = exps[0]
+                    if exp.count(":") > 1:
+                        filter, exptime, frames = exp.strip().split(":")
+                    else:
+                        filter, exptime = exp.strip().split(":")
+                        frames = 10
+                    program.actions.append(AutoFocus(filter=filter, exptime=exptime, step=multiplier, start=frames))
+                    programs.append(program)
+                    break
 
                 for exp in exps:
                     if exp.count(":") > 1:
@@ -200,7 +444,7 @@ class ChimeraSched (ChimeraCLI):
                                                   objectName=objname))
                 self.out("")
                 programs.append(program)
-
+        self.out("List contain %i programs" % len(programs))
         session.add_all(programs)
         session.commit()
 
@@ -306,6 +550,6 @@ def main():
     cli.run(sys.argv)
     cli.wait()
 
-if __name__ == '__main__':
 
+if __name__ == '__main__':
     main()
