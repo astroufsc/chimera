@@ -35,6 +35,11 @@ class WeatherBase(ChimeraObject, WeatherStation):
         return (value * unit_in).to(unit_out, equivalencies).value
 
     def getMetadata(self, request):
+        # Check first if there is metadata from an metadata override method.
+        md = self.getMetadataOverride(request)
+        if md is not None:
+            return md
+        # If not, just go on with the instrument's default metadata.
         md = [('METMODEL', str(self['model']), 'Weather station Model')]
 
         # Temperature
