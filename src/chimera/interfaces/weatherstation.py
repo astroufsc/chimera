@@ -33,7 +33,7 @@ class WSValue(namedtuple('WSValue', 'time value unit')):
     pass
 
 
-class IWeatherStation (Interface):
+class WeatherStation (Interface):
     """
     Instrument interface for weather stations
     """
