@@ -1,8 +1,7 @@
-from chimera.interfaces.camera import (Shutter, Bitpix)
-
-from chimera.core.exceptions import ChimeraValueError, ObjectNotFoundException
-
 import logging
+
+from chimera.interfaces.camera import (Shutter, Bitpix)
+from chimera.core.exceptions import ChimeraValueError, ObjectNotFoundException
 #import chimera.core.log
 log = logging.getLogger(__name__)
 
@@ -13,7 +12,7 @@ class ImageRequest (dict):
                   'interval', 'shutter',
                   'binning', 'window',
                   'bitpix', 'filename',
-                  'compress', 'compress_format',
+                  'compress_format',
                   'type', 'wait_dome',
                   'object_name']
 
@@ -27,8 +26,7 @@ class ImageRequest (dict):
                     'window': None,
                     'bitpix': Bitpix.uint16,
                     'filename': '$DATE-$TIME',
-                    'compress': True,
-                    'compress_format': "BZ2",
+                    'compress_format': "NO",
                     'type': 'object',
                     'wait_dome': True,
                     'object_name': ''}
@@ -127,7 +125,7 @@ class ImageRequest (dict):
     def _fetchPreHeaders(self, manager):
         auto = []
         if self.auto_collect_metadata:
-            for cls in ('Site', 'Camera', 'Dome', 'FilterWheel', 'Focuser', 'Telescope'):
+            for cls in ('Site', 'Camera', 'Dome', 'FilterWheel', 'Focuser', 'Telescope', 'WeatherStation'):
                 locations = manager.getResourcesByClass(cls)
                 if len(locations) == 1:
                     auto.append(str(locations[0]))
@@ -153,7 +151,6 @@ class ImageRequest (dict):
                 try:
                     self._proxies[location] = manager.getProxy(location)
                 except Exception:
-                    log.exception(
-                        'Unable to get metadata from %s' % (location))
+                    log.exception('Unable to get metadata from %s' % (location))
 
             self.headers += self._proxies[location].getMetadata(self)

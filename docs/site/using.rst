@@ -16,7 +16,7 @@ Once installed, Chimera provides a few command line programs:
  - :program:`chimera-cam`
  - :program:`chimera-dome`
  - :program:`chimera-focus`
- - :program:`chimera-admin`
+ - :program:`chimera-sched`
 
 
 Starting Chimera
@@ -53,7 +53,7 @@ Additionally, all **chimera** scripts have a common set of options:
 
 Say you want to take two frames of 10 seconds each and save to file names like :file:`fake-images-XXXX.fits`::
 
- chimera-cam --frames 2 --exptime 10 --output fake-images
+    chimera-cam --frames 2 --exptime 10 --output fake-images
 
 
 **chimera-dome**
@@ -68,7 +68,7 @@ In routine operations, the dome and the telescope devices are synchronized; it i
 
 Slew the scope::
 
- chimera-tel --slew --object M5
+    chimera-tel --slew --object M5
 
 As noted before, the dome will follow the telescope's position automatically. If the dome is still
 moving, :program:`chimera-cam` will wait until the dome finishes::
@@ -89,3 +89,12 @@ This script controls a configured (or fake) filter wheel::
 
 The former command will list the filters configured in :program:`chimera` (or the fakes), the latter moves the filter wheel to the position referred to by the filter's name.
 
+**chimera-sched**
+^^^^^^^^^^^^^^^^^
+
+This scripts controls a configured scheduler controller::
+
+    chimera-sched --new -f my_objects.txt
+
+For example, creates a new observation queue with the objects from ``my_objects.txt`` file. For more information about
+the scheduler types, please check ``chimera-sched --help``.

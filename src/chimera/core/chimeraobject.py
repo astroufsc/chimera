@@ -76,6 +76,9 @@ class ChimeraObject (RemoteObject, ILifeCycle):
         self._Hz = 2
         self._loop_abort = threading.Event()
 
+        # To override metadata default values
+        self.__metadataOverrideMethod__ = None
+
     # config implementation
     def __getitem__(self, item):
         # any thread can read if none writing at the time
@@ -220,4 +223,28 @@ class ChimeraObject (RemoteObject, ILifeCycle):
         return self.objectGUID
 
     def getMetadata(self, request):
+        # Check first if there is metadata from an metadata override method.
+        md = self.getMetadataOverride(request)
+        if md is not None:
+            return md
+        # If not, just go on with the instrument's default metadata.
         return []
+
+    def setMetadataMethod(self, location):
+        # Defines an alternative class to getMetadata()
+        self.__metadataOverrideMethod__ = location
+
+    def getMetadataOverride(self, request):
+        # Returns metadata from the override class or None if there is no override getMetadata() class.
+        if self.__metadataOverrideMethod__ is not None:
+            return self.getManager().getProxy(self.__metadataOverrideMethod__, lazy=True).getMetadata(request)
+        return None
+
+    def features(self, interface):
+        """
+        Checks if self is an instance of a interface.
+        This is useful to check if some interface/capability is supported by an instrument
+        :param interface: One of from chimera interfaces
+        :return: True if is instance, False otherwise
+        """
+        return isinstance(self, interface)

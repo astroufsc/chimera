@@ -49,7 +49,7 @@ class Dome(Interface):
     A Roll-off or classic dome.
     """
 
-    __config__ = {"device": "/dev/ttyS1",
+    __config__ = {"device": None,
                   "telescope": "/Telescope/0",
                   "mode": Mode.Stand,
 
@@ -65,7 +65,11 @@ class Dome(Interface):
                   "abort_timeout": 60,
                   "init_timeout": 5,
                   "open_timeout": 20,
-                  "close_timeout": 20}
+                  "close_timeout": 20,
+
+                  "fans": [],        # list of fans of the dome, i.e.: fans: ['/FakeFan/fake1', '/FakeFan/fake2']
+                  "lamps": [],       # list of lamps of the dome, i.e.: lamps: ['/FakeLamp/fake1']
+                  }
 
 
 class DomeSlew(Dome):
@@ -173,33 +177,52 @@ class DomeSlit(Dome):
         @type  az: Coord
         """
 
-
-class DomeLights(Dome):
-    """"
-    Dome with lights
+class DomeFlap(Dome):
+    """
+    Dome with Slit
     """
 
-    def lightsOn(self):
+    def openFlap(self):
         """
-        Ask the dome to turn on flat lights, if any.
-        @return: None
+        Open the dome flap.
+
         @rtype: None
         """
 
-    def lightsOff(self):
+
+    def closeFlap(self):
         """
-        Ask the dome to turn off flat lights, if any.
-        @return: None
+        Close the dome flap.
+
         @rtype: None
         """
 
-    def isLightsOn(self):
+    def isFlapOpen(self):
         """
-        Ask the dome if the flat lights are on, if any.
-        @return: None
-        @rtype: None
+        Ask the dome if the flap is open.
+
+        @return: True when open, False otherwise.
+        @rtype: bool
         """
 
+
+    @event
+    def flapOpened(self, az):
+        """
+        Indicates that the flap was just opened
+
+        @param az: The azimuth when the flap opend
+        @type  az: Coord
+        """
+
+    @event
+    def flapClosed(self, az):
+        """
+        Indicates that the flap was just closed.
+
+        @param az: The azimuth when the flap closed.
+        @type  az: Coord
+        """
 
 class DomeSync(Dome):
     """

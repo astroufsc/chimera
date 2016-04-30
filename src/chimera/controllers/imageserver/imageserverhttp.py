@@ -33,7 +33,7 @@ class ImageServerHTTPHandler(SimpleHTTPRequestHandler):
         self.wfile.write(txt)
 
     def response_file(self, filename, ctype):
-        f = open(filename)
+        f = open(filename,'rb')
         if not f:
             self.response(404, "Couldn't find")
         else:

@@ -1,26 +1,23 @@
-
 from chimera.core.location import Location
 from chimera.core.exceptions import ChimeraException
 from chimera.core.constants import (SYSTEM_CONFIG_DEFAULT_FILENAME,
                                     MANAGER_DEFAULT_HOST, MANAGER_DEFAULT_PORT)
-
 import yaml
-
-#import chimera.core.log
+# import chimera.core.log
 import logging
+
 log = logging.getLogger(__name__)
 
 
-class TypeNotFoundException (ChimeraException):
+class TypeNotFoundException(ChimeraException):
     pass
 
 
-class SystemConfigSyntaxException (ChimeraException):
+class SystemConfigSyntaxException(ChimeraException):
     pass
 
 
-class SystemConfig (object):
-
+class SystemConfig(object):
     """
 
     Chimera configuration system
@@ -127,17 +124,23 @@ class SystemConfig (object):
         self.controllers = []
 
         # specials
-        self._specials = ["telescope", "telescopes",
-                          "camera", "cameras",
-                          "filterwheel", "filterwheels",
-                          "dome", "domes",
-                          "focuser", "focusers"]
+        self._specials = [
+                            "camera", "cameras",
+                            "dome", "domes",
+                            "fan", "fans",
+                            "filterwheel", "filterwheels",
+                            "focuser", "focusers",
+                            "lamp", "lamps",
+                            "telescope", "telescopes",
+                            "seeingmonitor", "seeingmonitors",
+                            "weatherstation", "weatherstations",
+        ]
 
         self._instrumentsSections = self._specials + \
-            ["instrument", "instruments"]
+                                    ["instrument", "instruments"]
         self._controllersSections = ["controller", "controllers"]
         self._sections = self._instrumentsSections + \
-            self._controllersSections + ["site", "chimera"]
+                         self._controllersSections + ["site", "chimera"]
 
         # to create nice numbered names for objects without a name
         self._useCount = {}
@@ -175,6 +178,11 @@ class SystemConfig (object):
         # parse chimera section first, to get host/port or set defaults
         for type, values in config.items():
             if type.lower() == "chimera":
+                try:
+                    if values["host"] == "0.0.0.0":
+                        values["host"] = None
+                except KeyError:
+                    pass
                 self.chimera.update(values)
                 # BIGGG FIXME: read all files before create Locations,
                 # to avoid this hack
@@ -205,7 +213,6 @@ class SystemConfig (object):
                 values = [values]
 
             for instance in values:
-
                 loc = self._parseLocation(key, instance)
                 objects[key].append(loc)
 

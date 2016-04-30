@@ -24,7 +24,7 @@ import Queue
 import threading
 
 from chimera.core.chimeraobject import ChimeraObject
-from chimera.interfaces.dome import Mode, DomeSlew, DomeSlit, DomeLights, DomeSync
+from chimera.interfaces.dome import Mode, DomeSlew, DomeSlit, DomeFlap, DomeSync
 from chimera.core.lock import lock
 from chimera.core.exceptions import ObjectNotFoundException
 from chimera.core.exceptions import ChimeraException
@@ -34,7 +34,7 @@ from chimera.util.coord import Coord
 __all__ = ['DomeBase']
 
 
-class DomeBase(ChimeraObject, DomeSlew, DomeSlit, DomeLights, DomeSync):
+class DomeBase(ChimeraObject, DomeSlew, DomeSlit, DomeFlap, DomeSync):
     def __init__(self):
         ChimeraObject.__init__(self)
 
@@ -277,7 +277,23 @@ class DomeBase(ChimeraObject, DomeSlew, DomeSlit, DomeLights, DomeSync):
     def isSlitOpen(self):
         raise NotImplementedError()
 
+    @lock
+    def openFlap(self):
+        raise NotImplementedError()
+
+    @lock
+    def closeFlap(self):
+        raise NotImplementedError()
+
+    def isFlapOpen(self):
+        raise NotImplementedError()
+
     def getMetadata(self, request):
+        # Check first if there is metadata from an metadata override method.
+        md = self.getMetadataOverride(request)
+        if md is not None:
+            return md
+        # If not, just go on with the instrument's default metadata.
         if self.isSlitOpen():
             slit = 'Open'
         else:
