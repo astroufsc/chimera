@@ -25,7 +25,6 @@ import os
 import shutil
 import time
 import yaml
-
 from chimera.core.cli import ChimeraCLI, action
 from chimera.core.constants import DEFAULT_PROGRAM_DATABASE
 from chimera.core.callback import callback
@@ -37,14 +36,14 @@ from chimera.controllers.scheduler.model import (Session, Program, AutoFocus,
                                                  PointVerify, Point,
                                                  Expose)
 
-actionDict = {'autofocus' : AutoFocus,
-              'pointverify' : PointVerify,
-              'point' : Point,
-              'expose' : Expose,
+actionDict = {'autofocus': AutoFocus,
+              'pointverify': PointVerify,
+              'point': Point,
+              'expose': Expose,
               }
 
-class ChimeraSched (ChimeraCLI):
 
+class ChimeraSched(ChimeraCLI):
     def __init__(self):
         ChimeraCLI.__init__(
             self, "chimera-sched", "Scheduler controller", 0.1, port=9010)
@@ -80,9 +79,10 @@ class ChimeraSched (ChimeraCLI):
         programs:
             # You can configure each database to its fullest.
 
-            -   program: PROG01
-                pi: Tiago Ribeiro   # (optional)
-                priority: 1         # (optional)
+            -   program:
+                name: PRG01           # (optional)
+                pi: Tiago Ribeiro     # (optional)
+                priority: 1           # (optional)
                 slewAt: 57500.030     # Add time to slew in MJD (optional)
                 exposeAt: 57500.040   # Add time to expose in MJD (optional)
 
@@ -125,8 +125,9 @@ class ChimeraSched (ChimeraCLI):
                         objectName: obj1 acq
 
             # new target with no autofocus or pointverify
-            -   program: PROG02
-                pi: William Schoenel
+            -   program:
+                name: PRG02
+                pi: William Schoenell
                 priority: 2
                 actions:
                     -   action: point
@@ -156,7 +157,8 @@ class ChimeraSched (ChimeraCLI):
                         objectName: obj1 acq
 
             # Point to a target name
-            -   program: PROG03
+            -   program:
+                name: PROG03
                 pi: Antonio Kanaan
                 priority: 3
                 actions:
@@ -172,7 +174,8 @@ class ChimeraSched (ChimeraCLI):
 
         # calibrations
 
-            -   program: DAYLIGHT CALIBRATIONS
+            -   program:
+                name: DAYLIGHT CALIBRATIONS
                 pi: Tiago Ribeiro
                 actions:
                     # BIAS
@@ -235,7 +238,6 @@ class ChimeraSched (ChimeraCLI):
                                 help="Images base filename including full path if needed.",
                                 default="$NAME-$DATE-$TIME"))
 
-
     @action(long="new",
             help="Generate a new database from a text file (excluding all programs already in database)",
             helpGroup="DB",
@@ -263,12 +265,12 @@ class ChimeraSched (ChimeraCLI):
 
     def generateDatabase(self, options):
 
-        if os.path.splitext(options.filename)[1] == '.yaml':
+        if os.path.splitext(options.filename)[-1] == '.yaml':
             self._generateDatabase_yaml(options)
         else:
             self._generateDatabase_basic(options)
 
-    def _generateDatabase_yaml(self,options):
+    def _generateDatabase_yaml(self, options):
 
         with open(options.filename, 'r') as stream:
             try:
@@ -286,11 +288,11 @@ class ChimeraSched (ChimeraCLI):
 
             program = Program()
             for key in prg.keys():
-                if hasattr(program,key) and key != 'actions':
+                if hasattr(program, key) and key != 'actions':
                     try:
-                        setattr(program,key,prg[key])
+                        setattr(program, key, prg[key])
                     except:
-                        self.err('Could not set attribute %s = %s on Program' % (key,prg[key]))
+                        self.err('Could not set attribute %s = %s on Program' % (key, prg[key]))
 
             self.out("# program: %s" % program.name)
 
@@ -316,10 +318,10 @@ class ChimeraSched (ChimeraCLI):
 
                 else:
                     for key in actconfig.keys():
-                        if hasattr(act,key) and key != 'action':
-                            self.out('\t%s: %s' % (key,actconfig[key]))
+                        if hasattr(act, key) and key != 'action':
+                            self.out('\t%s: %s' % (key, actconfig[key]))
                             try:
-                                setattr(act,key,actconfig[key])
+                                setattr(act, key, actconfig[key])
                             except:
                                 self.err('Could not set attribute %s = %s on action %s' % (key,
                                                                                            actconfig[key],
@@ -335,9 +337,7 @@ class ChimeraSched (ChimeraCLI):
 
         self.out("Restart the scheduler to run it with the new database.")
 
-
-
-    def _generateDatabase_basic(self,options):
+    def _generateDatabase_basic(self, options):
         f = None
         try:
             f = open(options.filename, "r")
@@ -346,8 +346,9 @@ class ChimeraSched (ChimeraCLI):
 
         session = Session()
 
-        lineRe = re.compile('(?P<coord>(?P<ra>[\d:-]+)\s+(?P<dec>\+?[\d:-]+)\s+(?P<epoch>[\dnowNOWJjBb\.]+)\s+)?(?P<imagetype>[\w]+)'
-                            '\s+(?P<objname>\'([^\\n\'\\\\]|\\\\.)*\'|"([^\\n"\\\\]|\\\\.)*"|([^ \\n"\\\\]|\\\\.)*)\s+(?P<exposures>[\w\d\s:\*\(\),]*)')
+        lineRe = re.compile(
+            '(?P<coord>(?P<ra>[\d:-]+)\s+(?P<dec>\+?[\d:-]+)\s+(?P<epoch>[\dnowNOWJjBb\.]+)\s+)?(?P<imagetype>[\w]+)'
+            '\s+(?P<objname>\'([^\\n\'\\\\]|\\\\.)*\'|"([^\\n"\\\\]|\\\\.)*"|([^ \\n"\\\\]|\\\\.)*)\s+(?P<exposures>[\w\d\s:\*\(\),]*)')
         programs = []
 
         for i, line in enumerate(f):
@@ -411,7 +412,7 @@ class ChimeraSched (ChimeraCLI):
                     else:
                         filter, exptime = exp.strip().split(":")
                         frames = 10
-                    program.actions.append(AutoFocus(filter=filter,exptime=exptime,step=multiplier,start=frames))
+                    program.actions.append(AutoFocus(filter=filter, exptime=exptime, step=multiplier, start=frames))
                     programs.append(program)
                     break
 
@@ -549,6 +550,6 @@ def main():
     cli.run(sys.argv)
     cli.wait()
 
-if __name__ == '__main__':
 
+if __name__ == '__main__':
     main()
