@@ -2,10 +2,9 @@
 
 import datetime
 import sys
-
 import exceptions
-
 from chimera.core.cli import ChimeraCLI, action
+from chimera.interfaces.weatherstation import WeatherSafety
 from chimera.util.output import red, green
 
 
@@ -29,7 +28,13 @@ class ChimeraWeather(ChimeraCLI):
         self.out("Weather Station: %s %s (%s)" % (self.weatherstation.getLocation(), self.weatherstation["model"],
                                                   self.weatherstation["device"]))
 
-        for attr in ('temperature', 'dew_point', 'humidity', 'wind_speed', 'wind_direction', 'pressure', 'rain'):
+        if self.weatherstation.features(WeatherSafety):
+            self.out('Dome is %s to open' % green("OK") if self.weatherstation.okToOpen() else red("NOT OK"))
+
+        self.out("=" * 80)
+
+        for attr in ('temperature', 'dew_point', 'humidity', 'wind_speed', 'wind_direction', 'pressure', 'rain_rate',
+                     'sky_transparency'):
             try:
                 v = self.weatherstation.__getattr__(attr)()
                 if isinstance(v, exceptions.NotImplementedError) or not v:
@@ -38,6 +43,8 @@ class ChimeraWeather(ChimeraCLI):
                     minutes=self.options.max_mins) else green(v.time.__str__())
                 self.out(t + "  " + attr.replace('_', ' ') + ": {0.value:.2f} {0.unit:s} ".format(v))
             except NotImplementedError:
+                pass
+            except AttributeError:
                 pass
 
         self.out("=" * 80)
