@@ -136,6 +136,24 @@ class AutoFocusHandler(ActionHandler):
     def abort(action):
         pass
 
+class AutoFlatHandler(ActionHandler):
+
+    @staticmethod
+    @requires("autoflat")
+    def process(action):
+        autoflat = AutoFlatHandler.autoflat
+
+        try:
+            autoflat.getFlats(action.filter, n_flats=action.frames)
+        except Exception, e:
+            printException(e)
+            raise ProgramExecutionException("Error trying to take flats")
+
+    @staticmethod
+    def abort(action):
+        skyflat = copy.copy(AutoFlatHandler.autoflat)
+        skyflat.abort()
+
 class PointVerifyHandler(ActionHandler):
 
     @staticmethod

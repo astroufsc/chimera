@@ -83,7 +83,15 @@ class AutoFocus(Action):
 
     def __str__ (self):
         return "autofocus: start=%d end=%d step=%d exptime=%d" % (self.start, self.end, self.step, self.exptime)
-    
+
+class AutoFlat(Action):
+    __tablename__ = "action_flat"
+    __mapper_args__ = {'polymorphic_identity': 'AutoFlats'}
+
+    id     = Column(Integer, ForeignKey('action.id'), primary_key=True)
+    filter  = Column(String, default=None)
+    frames     = Column(Integer, default=1)
+
 class PointVerify(Action):
     __tablename__ = "action_pv"
     __mapper_args__ = {'polymorphic_identity': 'PointVerify'}
