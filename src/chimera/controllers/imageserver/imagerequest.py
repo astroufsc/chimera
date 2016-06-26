@@ -111,7 +111,7 @@ class ImageRequest (dict):
 
         if self["wait_dome"]:
             try:
-                dome = manager.getProxy("/Dome/0")
+                dome = manager.getProxy(manager.getResourcesByClass("Dome")[0])
                 dome.syncWithTel()
                 log.debug(
                     "Dome slit position synchronized with telescope position.")
