@@ -33,9 +33,15 @@ from chimera.util.output import blue, green, red
 from chimera.controllers.scheduler.status import SchedulerStatus
 from chimera.controllers.scheduler.states import State
 from chimera.controllers.scheduler.model import (Session, Program, AutoFocus,
-                                                 PointVerify, Point,
+                                                 AutoFlat, PointVerify, Point,
                                                  Expose)
 
+actionDict = {'autofocus' : AutoFocus,
+              'autoflat' : AutoFlat,
+              'pointverify' : PointVerify,
+              'point' : Point,
+              'expose' : Expose,
+              }
 
 class ChimeraSched (ChimeraCLI):
 
