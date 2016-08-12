@@ -1,41 +1,34 @@
+import bz2
+import datetime as dt
+import gzip
+import logging
+import os
+import shutil
+import string
+import sys
 import urllib2
+import zipfile
+from UserDict import DictMixin
 
-from chimera.core.remoteobject import RemoteObject
+import numpy as N
+from astropy import wcs
+from astropy.io import fits
+
 from chimera.core.exceptions import ChimeraException
-from chimera.core.version import _chimera_name_, _chimera_long_description_
-
+from chimera.core.remoteobject import RemoteObject
+from chimera.core.version import _chimera_name_
 from chimera.util.coord import Coord
 from chimera.util.position import Position
 from chimera.util.sextractor import SExtractor
 
-from astropy.io import fits
-from astropy import wcs
-
-import numpy as N
-
-import os
-import string
-import datetime as dt
-
-import bz2
-import gzip
-import zipfile
-
-import sys
-import shutil
-
-from UserDict import DictMixin
-
-import logging
 log = logging.getLogger(__name__)
 
 
-class WCSNotFoundException (ChimeraException):
+class WCSNotFoundException(ChimeraException):
     pass
 
 
-class ImageUtil (object):
-
+class ImageUtil(object):
     @staticmethod
     def formatDate(datetime):
         if type(datetime) == float:
@@ -161,10 +154,7 @@ class ImageUtil (object):
         return False
 
 
-
-
-class Image (DictMixin, RemoteObject):
-
+class Image(DictMixin, RemoteObject):
     """
     Class to manipulate FITS images with a Pythonic taste.
 
@@ -181,8 +171,8 @@ class Image (DictMixin, RemoteObject):
     """
 
     @staticmethod
-    def fromFile(filename, fix = False, mode = "update"):
-        fd = fits.open(filename, mode = mode)
+    def fromFile(filename, fix=False, mode="update"):
+        fd = fits.open(filename, mode=mode)
         img = Image(filename, fd)
 
         if fix:
@@ -203,30 +193,37 @@ class Image (DictMixin, RemoteObject):
 
         filename = ImageUtil.makeFilename(filename)
 
-        hdu = fits.PrimaryHDU(data)
-
         headers = [("DATE", ImageUtil.formatDate(dt.datetime.utcnow()), "date of file creation"),
                    ("AUTHOR", _chimera_name_, 'author of the data'),
                    ("FILENAME", os.path.basename(filename), "name of the file")]
 
+        hdu = fits.PrimaryHDU()
         # TODO: Implement BITPIX support
         hdu.scale('int16', '', bzero=32768, bscale=1)
 
+
+        for h in headers:
+            try:
+                hdu.header.set(*h)
+            except Exception, e:
+                log.warning("Couldn't add %s: %s" % (str(h), str(e)))
+
         if imageRequest:
             headers += imageRequest.headers
+            if imageRequest['compress_format'] == 'fits_rice':
+                filename = os.path.splitext(filename)[0] + ".fz"
+                img = fits.CompImageHDU(data=data, header=hdu.header, compression_type='RICE_1')
+                img.writeto(filename, checksum=True)
 
-        for header in headers:
-            try:
-                hdu.header.set(*header)
-            except Exception, e:
-                log.warning("Couldn't add %s: %s" % (str(header), str(e)))
+        if not imageRequest or imageRequest['compress_format'] != 'compress_rice':
+            hdu.data = data
 
-        hduList = fits.HDUList([hdu])
-        hduList.writeto(filename, checksum=True)
-        hduList.close()
+            hduList = fits.HDUList([hdu])
+            hduList.writeto(filename)
+            hduList.close()
 
-        del hduList
-        del hdu
+            del hduList
+            del hdu
 
         return Image.fromFile(filename)
 
@@ -245,7 +242,6 @@ class Image (DictMixin, RemoteObject):
 
     def close(self):
         self._fd.close()
-
 
     def http(self, http=None):
         if http:
@@ -416,6 +412,9 @@ class Image (DictMixin, RemoteObject):
             gzfp.close()
             rawfp.close()
             os.unlink(filename)
+        elif format.lower().startswith('fits_'):
+            # compression methods inherent to fits standard, are done when saving image.
+            return
         else:  # zip
             zipfilename = filename + '.zip'
             zipfp = zipfile.ZipFile(zipfilename, 'w', zipfile.ZIP_DEFLATED)
