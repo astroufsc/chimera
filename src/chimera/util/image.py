@@ -1,24 +1,25 @@
+import bz2
+import datetime as dt
+import gzip
+import logging
+import os
+import shutil
+import string
+import sys
 import urllib2
-from astropy.io.fits import Header
-from chimera.core.remoteobject import RemoteObject
+import zipfile
+from UserDict import DictMixin
+
+import numpy as N
+from astropy import wcs
+from astropy.io import fits
+
 from chimera.core.exceptions import ChimeraException
-from chimera.core.version import _chimera_name_, _chimera_long_description_
+from chimera.core.remoteobject import RemoteObject
+from chimera.core.version import _chimera_name_
 from chimera.util.coord import Coord
 from chimera.util.position import Position
 from chimera.util.sextractor import SExtractor
-from astropy.io import fits
-from astropy import wcs
-import numpy as N
-import os
-import string
-import datetime as dt
-import bz2
-import gzip
-import zipfile
-import sys
-import shutil
-from UserDict import DictMixin
-import logging
 
 log = logging.getLogger(__name__)
 
