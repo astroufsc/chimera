@@ -1,7 +1,8 @@
-from chimera.core.exceptions import ProgramExecutionException, printException
-from chimera.controllers.imageserver.imagerequest import ImageRequest
-
 import copy
+
+from chimera.controllers.imageserver.imagerequest import ImageRequest
+from chimera.core.exceptions import ProgramExecutionException, printException
+
 
 def requires(instrument):
     """Simple dependecy injection mechanism. See ProgramExecutor"""
@@ -81,16 +82,17 @@ class ExposeHandler(ActionHandler):
         # not considered in abort handling (should be fast enough to wait!)
         if action.filter is not None:
             filterwheel.setFilter(str(action.filter))
-            
-        ir = ImageRequest(frames   = int(action.frames),
-                          exptime  = float(action.exptime),
-                          shutter  = str(action.shutter),
-                          type     = str(action.imageType),
-                          filename = str(action.filename),
-                          object_name = str(action.objectName),
-                          window = action.window,
-                          binning = action.binning,
-                          wait_dome = True)
+
+        ir = ImageRequest(frames=int(action.frames),
+                          exptime=float(action.exptime),
+                          shutter=str(action.shutter),
+                          type=str(action.imageType),
+                          filename=str(action.filename),
+                          object_name=str(action.objectName),
+                          window=action.window,
+                          binning=action.binning,
+                          wait_dome=True,
+                          compress_format=action.compress_format)
 
         ir.headers += [("PROGRAM", str(action.program.name), "Program Name"),
                        ("PROG_PI", str(action.program.pi), "Principal Investigator")]

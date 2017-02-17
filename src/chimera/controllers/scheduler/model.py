@@ -142,6 +142,8 @@ class Expose(Action):
     filename   = Column(String, default="$DATE-$TIME")
     objectName = Column(String, default="")
 
+    compress_format = Column(String, default="NO")
+
     def __str__ (self):
         return "expose: exptime=%d frames=%d type=%s" % (self.exptime, self.frames, self.imageType)
 
