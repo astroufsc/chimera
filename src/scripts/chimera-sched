@@ -25,7 +25,7 @@ import os
 import shutil
 import time
 import yaml
-from chimera.core.cli import ChimeraCLI, action
+from chimera.core.cli import ChimeraCLI, action, ParameterType
 from chimera.core.constants import DEFAULT_PROGRAM_DATABASE
 from chimera.core.callback import callback
 from chimera.util.position import Position
@@ -237,7 +237,14 @@ class ChimeraSched (ChimeraCLI):
                                 type="string",
                                 helpGroup="DB",
                                 help="Images base filename including full path if needed.",
-                                default="$NAME-$DATE-$TIME"))
+                                default="$NAME-$DATE-$TIME"),
+                           dict(name="compress",
+                                help="Compress the output file using FORMAT. Use --compress=no to disable it.",
+                                helpGroup="EXPOSE",
+                                type=ParameterType.CHOICE,
+                                choices=["FITS_RICE", "BZ2", "ZIP", "GZIP", "NO", "fits_rice", "bz2", "zip", "gzip", "no"],
+                                default="no"),
+                           )
 
 
     @action(long="new",
@@ -428,7 +435,7 @@ class ChimeraSched (ChimeraCLI):
                                                   filename=string.Template(options.output).safe_substitute(
                                                       {'NAME': objname.replace(" ", "")}),
                                                   filter=filter, frames=frames, exptime=exptime, imageType=imagetype,
-                                                  objectName=objname))
+                                                  objectName=objname, compress_format=options.compress))
                 self.out("")
                 programs.append(program)
 
