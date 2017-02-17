@@ -125,7 +125,7 @@ class ImageRequest (dict):
     def _fetchPreHeaders(self, manager):
         auto = []
         if self.auto_collect_metadata:
-            for cls in ('Site', 'Camera', 'Dome', 'FilterWheel', 'Focuser', 'Telescope', 'WeatherStation'):
+            for cls in ('Site', 'Camera', 'Dome', 'FilterWheel', 'Focuser', 'Telescope', 'WeatherStation', 'SeeingMonitor'):
                 locations = manager.getResourcesByClass(cls)
                 if len(locations) == 1:
                     auto.append(str(locations[0]))
