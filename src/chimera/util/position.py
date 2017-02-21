@@ -389,5 +389,4 @@ class Position (object):
 
         ra = CoordUtil.haToRa(haR, lst)
 
-        return Position.fromRaDec(
-            CoordUtil.makeValid0to360(ra), CoordUtil.makeValid180to180(decR))
+        return Position.fromRaDec(CoordUtil.makeValid0to360(ra), CoordUtil.makeValid180to180(decR))

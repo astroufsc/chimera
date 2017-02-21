@@ -28,7 +28,6 @@ from types import StringType, LongType, IntType, FloatType
 TWO_PI = 2.0 * math.pi
 PI_OVER_TWO = (math.pi / 2.0)
 
-
 # to allow use of Coord outside of Chimera
 
 try:
@@ -47,16 +46,13 @@ except ImportError:
                     return True
             return False
 
-
 __all__ = ['Coord',
            'CoordUtil']
-
 
 State = Enum("HMS", "DMS", "D", "H", "R", "AS")
 
 
-class CoordUtil (object):
-
+class CoordUtil(object):
     COORD_RE = re.compile(
         '((?P<dd>(?P<sign>[+-]?)[\s]*\d+)[dh]?[\s:]*)?((?P<mm>\d+)[m]?[\s:]*)?((?P<ss>\d+)(?P<msec>\.\d*)?([\ss]*))?')
 
@@ -320,8 +316,8 @@ class CoordUtil (object):
     def haToRa(ha, lst):
         return Coord.fromR(CoordUtil.coordToR(lst) - CoordUtil.coordToR(ha))
 
-# coordRotate adopted from sidereal.py
-# http://www.nmt.edu/tcc/help/lang/python/examples/sidereal/ims/
+    # coordRotate adopted from sidereal.py
+    # http://www.nmt.edu/tcc/help/lang/python/examples/sidereal/ims/
 
     @staticmethod
     def coordRotate(x, y, z):
@@ -333,17 +329,17 @@ class CoordUtil (object):
               xt=arcsin(sin(x)*sin(y)+cos(x)*cos(y)*cos(z)) and
               yt=arccos((sin(x)-sin(y)*sin(xt))/(cos(y)*cos(xt))) ]
         """
-        #-- 1 --
+        # -- 1 --
         xt = math.asin(math.sin(x) * math.sin(y) +
                        math.cos(x) * math.cos(y) * math.cos(z))
-        #-- 2 --
+        # -- 2 --
         yt = math.acos((math.sin(x) - math.sin(y) * math.sin(xt)) /
                        (math.cos(y) * math.cos(xt)))
-        #-- 3 --
+        # -- 3 --
         if math.sin(z) > 0.0:
             yt = TWO_PI - yt
 
-        #-- 4 --
+        # -- 4 --
         return (xt, yt)
 
     # Great circle distance formulae:
@@ -398,8 +394,7 @@ class CoordUtil (object):
         return ans
 
 
-class Coord (object):
-
+class Coord(object):
     """
     L{Coord} represents a single angular coordinate.
 

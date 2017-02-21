@@ -167,3 +167,7 @@ class TestCoord (object):
 
         assert (str(c1) == "23:59:59.000")
         assert (str(c2) == "+359:59:59.000")
+
+if __name__ == '__main__':
+    t = TestCoord()
+    t.test_coords_boundaries()
