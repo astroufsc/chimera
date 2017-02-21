@@ -92,6 +92,9 @@ class AutoFlat(Action):
     filter  = Column(String, default=None)
     frames     = Column(Integer, default=1)
 
+    def __str__(self):
+        return "AutoFlat: filter %s  frames %i" % (self.filter, self.frames)
+
 class PointVerify(Action):
     __tablename__ = "action_pv"
     __mapper_args__ = {'polymorphic_identity': 'PointVerify'}

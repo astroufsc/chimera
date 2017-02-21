@@ -77,11 +77,18 @@ class ExposeHandler(ActionHandler):
     def process(action):
 
         camera = ExposeHandler.camera
-        filterwheel = ExposeHandler.filterwheel
+        try:
+            filterwheel = ExposeHandler.filterwheel
+        except:
+            filterwheel = camera
+
 
         # not considered in abort handling (should be fast enough to wait!)
         if action.filter is not None:
-            filterwheel.setFilter(str(action.filter))
+            try:
+                filterwheel.setFilter(str(action.filter))
+            except:
+                pass
 
         ir = ImageRequest(frames=int(action.frames),
                           exptime=float(action.exptime),
@@ -124,7 +131,8 @@ class AutoFocusHandler(ActionHandler):
 
         try:
             # TODO: filter=action.filter,
-            autofocus.focus (exptime=action.exptime,
+            autofocus.focus (filter=action.filter,
+                             exptime=action.exptime,
                              binning=action.binning,
                              window=action.window,
                              start=action.start,
