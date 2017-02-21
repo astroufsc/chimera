@@ -79,7 +79,7 @@ class PointHandler(ActionHandler):
         offsetNS_str = '' if action.offsetNS is None else ' north %s' % action.offsetNS \
             if action.offsetNS > 0 else ' south %s' % action.offsetNS
         offsetEW_str = '' if action.offsetEW is None else ' west %s' % action.offsetEW \
-            if action.offsetEW > 0 else ' east %s' % action.offsetNS
+            if action.offsetEW > 0 else ' east %s' % action.offsetEW
 
         offset = '' if action.offsetNS is None and action.offsetEW is None else ' offset:%s%s' % (offsetNS_str,
                                                                                                   offsetEW_str)
