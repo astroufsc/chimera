@@ -291,6 +291,14 @@ class ChimeraSched (ChimeraCLI):
 
         programs = []
 
+        def _validateOffset(value):
+            try:
+                offset = Coord.fromAS(int(value))
+            except ValueError:
+                offset = Coord.fromDMS(value)
+
+            return offset
+
         for prg in prgconfig['programs']:
 
             # process program
@@ -321,9 +329,32 @@ class ChimeraSched (ChimeraCLI):
                         position = Position.fromAltAz(actconfig['alt'], actconfig['az'])
                         self.out('Coords: %s' % position)
                         act.targetAltAz = position
-                    else:
+                    elif 'name' in actconfig:
                         self.out('Target name: %s' % actconfig['name'])
                         act.targetName = actconfig['name']
+                    elif 'offset' not in actconfig:
+                        self.exit('[%s] No target to point to or offset to perform!' % red('ERROR'))
+
+                    if 'offset' in actconfig:
+                        if 'north' in actconfig['offset']:
+                            offset = _validateOffset(actconfig['offset']['north'])
+                            self.out('Offset north: %s' % offset)
+                            act.offsetNS = offset
+                        elif 'south' in actconfig['offset']:
+                            offset = _validateOffset(actconfig['offset']['south'])
+                            self.out('Offset south: %s' % offset)
+                            act.offsetNS = Coord.fromAS(-offset.AS)
+
+                        if 'west' in actconfig['offset']:
+                            offset = _validateOffset(actconfig['offset']['west'])
+                            self.out('Offset west: %s' % offset)
+                            act.offsetEW = offset
+                        elif 'east' in actconfig['offset']:
+                            offset = _validateOffset(actconfig['offset']['east'])
+                            self.out('Offset east: %s' % offset)
+                            act.offsetEW = Coord.fromAS(-offset.AS)
+
+
 
                 else:
                     for key in actconfig.keys():

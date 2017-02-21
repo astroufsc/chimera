@@ -40,14 +40,27 @@ class PointHandler(ActionHandler):
         dome = PointHandler.dome
 
         try:
+            # First slew telescope to given position (or none)
             if action.targetRaDec is not None:
                 telescope.slewToRaDec(action.targetRaDec)
             elif action.targetAltAz is not None:
                 telescope.slewToAltAz(action.targetAltAz)
             elif action.targetName is not None:
                 telescope.slewToObject(action.targetName)
-                
-            
+
+            # After slewing apply any given offset
+            if action.offsetNS is not None:
+                if action.offsetNS.AS > 0.:
+                    telescope.moveNorth(action.offsetNS.AS)
+                else:
+                    telescope.moveSouth(-action.offsetNS.AS)
+
+            if action.offsetEW is not None:
+                if action.offsetEW.AS > 0.:
+                    telescope.moveWest(action.offsetEW.AS)
+                else:
+                    telescope.moveEast(-action.offsetEW.AS)
+
         except Exception, e:
             raise ProgramExecutionException(str(e))
 
@@ -62,12 +75,23 @@ class PointHandler(ActionHandler):
         
     @staticmethod
     def log(action):
+
+        offsetNS_str = '' if action.offsetNS is None else ' north %s' % action.offsetNS \
+            if action.offsetNS > 0 else ' south %s' % action.offsetNS
+        offsetEW_str = '' if action.offsetEW is None else ' west %s' % action.offsetEW \
+            if action.offsetEW > 0 else ' east %s' % action.offsetNS
+
+        offset = '' if action.offsetNS is None and action.offsetEW is None else ' offset:%s%s' % (offsetNS_str,
+                                                                                                  offsetEW_str)
+
         if action.targetRaDec is not None:
-            return "slewing telescope to (ra dec) %s" % action.targetRaDec
+            return "slewing telescope to (ra dec) %s%s" % (action.targetRaDec, offset)
         elif action.targetAltAz is not None:
-            return "slewing telescope to (alt az) %s" % action.targetAltAz
+            return "slewing telescope to (alt az) %s%s" % (action.targetAltAz, offset)
         elif action.targetName is not None:
-            return "slewing telescope to (object) %s" % action.targetName
+            return "slewing telescope to (object) %s%s" % (action.targetName, offset)
+        else:
+            return "applying telescope%s" % offset
 
 class ExposeHandler(ActionHandler):
 

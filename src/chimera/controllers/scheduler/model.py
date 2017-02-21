@@ -113,15 +113,29 @@ class Point(Action):
     id          = Column(Integer, ForeignKey('action.id'), primary_key=True)
     targetRaDec = Column(PickleType, default=None)
     targetAltAz = Column(PickleType, default=None)
+    offsetNS = Column(PickleType, default=None) # offset North (>0)/South (<0)
+    offsetEW = Column(PickleType, default=None) # offset West (>0)/East (<0)
     targetName  = Column(String, default=None)
 
     def __str__ (self):
+        offsetNS_str = '' if self.offsetNS is None else ' north %s' % self.offsetNS \
+            if self.offsetNS > 0 else ' south %s' % self.offsetNS
+        offsetEW_str = '' if self.offsetEW is None else ' west %s' % self.offsetEW \
+            if self.offsetEW > 0 else ' east %s' % self.offsetNS
+
+        offset = '' if self.offsetNS is None and self.offsetEW is None else 'offset: %s%s' % (offsetNS_str,
+                                                                                              offsetEW_str)
+
         if self.targetRaDec is not None:
-            return "point: (ra,dec) %s" % self.targetRaDec
+            return "point: (ra,dec) %s%s" % (self.targetRaDec, offset)
         elif self.targetAltAz is not None:
-            return "point: (alt,az) %s" % self.targetAltAz
+            return "point: (alt,az) %s%s" % (self.targetAltAz, offset)
         elif self.targetName is not None:
-            return "point: (object) %s" % self.targetName
+            return "point: (object) %s%s" % (self.targetName, offset)
+        elif self.offsetNS is not None or self.offsetEW is not None:
+            return offset
+        else:
+            return 'No target to point to.'
     
 class Expose(Action):
     __tablename__ = "action_expose"
