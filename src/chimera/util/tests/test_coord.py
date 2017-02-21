@@ -129,3 +129,41 @@ class TestCoord (object):
 
         print "#%d coords parsed in %.3fs (%.3f/s) and checked in %.3fs (%.3f/s) ..." % (len(coords), t_parse, len(coords)/t_parse,
                                                                                          t_check, len(coords)/t_check)
+
+    def test_coords_boundaries(self):
+
+        c1 = Coord.fromHMS("23:59:59")
+        c2 = Coord.fromDMS("359:59:59")
+        print c1.__str__(), c2.__str__()
+
+        # Test adding coords leads to correct answers
+        c1 += Coord.fromHMS("00:00:03")
+        c2 += Coord.fromDMS("00:00:03")
+        print c1.__str__(), c2.__str__()
+
+        assert(str(c1) == "00:00:02.000")
+        assert(str(c2) == "+00:00:02.000")
+
+        # And then test subtracting too...
+        c1 -= Coord.fromHMS("00:00:03")
+        c2 -= Coord.fromDMS("00:00:03")
+        print c1.__str__(), c2.__str__()
+
+        assert (str(c1) == "23:59:59.000")
+        assert (str(c2) == "+359:59:59.000")
+
+        # Test adding more than 360 deg
+        c1 += Coord.fromHMS("48:00:03")
+        c2 += Coord.fromDMS("720:00:03")
+        print c1.__str__(), c2.__str__()
+
+        assert(str(c1) == "00:00:02.000")
+        assert(str(c2) == "+00:00:02.000")
+
+        # And then test subtracting too...
+        c1 -= Coord.fromHMS("48:00:03")
+        c2 -= Coord.fromDMS("360:00:03")
+        print c1.__str__(), c2.__str__()
+
+        assert (str(c1) == "23:59:59.000")
+        assert (str(c2) == "+359:59:59.000")

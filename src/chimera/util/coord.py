@@ -721,7 +721,13 @@ class Coord (object):
                 other = Coord.fromState(other, self.state)
             else:
                 other = Coord.fromState(other, State.D)
-        return Coord(self.D + other.D, self.state)
+        coord = Coord(self.D + other.D, self.state)
+
+        # If coordinate angle is bigger than 360 deg, subtract to begin on 0 deg.
+        if coord.D > 360:
+            coord = Coord(coord.D - math.floor(coord.D / 360) * Coord.fromD(360), self.state)
+
+        return coord
 
     def __radd__(self, other):
         return self.__add__(other)
@@ -732,7 +738,14 @@ class Coord (object):
                 other = Coord.fromState(other, self.state)
             else:
                 other = Coord.fromState(other, State.D)
-        return Coord(self.D - other.D, self.state)
+        coord = Coord(self.D - other.D, self.state)
+
+        # If coordinate angle is smaller than 0 deg, sum 360 deg until bigger than zero.
+        if coord.D < 0:
+            print coord.R, coord.D
+            coord = Coord(coord.D - math.floor(coord.D / 360) * Coord.fromD(360), self.state)
+
+        return coord
 
     def __rsub__(self, other):
         if not isinstance(other, Coord):

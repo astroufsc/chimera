@@ -9,7 +9,7 @@ from datetime import datetime as dt
 from dateutil import tz
 
 def equal (a, b, e=0.0001):
-    return ( abs(a-b) <= e)
+    return abs(max(a, b) - min(a, b)) <= e
 
 class TestPosition (object):
 
