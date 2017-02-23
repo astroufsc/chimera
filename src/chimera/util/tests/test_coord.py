@@ -1,5 +1,6 @@
+from chimera.util.position import Position
 
-from chimera.util.coord import Coord
+from chimera.util.coord import Coord, CoordUtil
 
 from astropy.io import ascii
 
@@ -129,3 +130,48 @@ class TestCoord (object):
 
         print "#%d coords parsed in %.3fs (%.3f/s) and checked in %.3fs (%.3f/s) ..." % (len(coords), t_parse, len(coords)/t_parse,
                                                                                          t_check, len(coords)/t_check)
+
+class TestCoordUtil(object):
+
+    def test_makeValid0to360(self):
+
+        # Test RA
+        ## (+)
+        ra = Coord.fromHMS("23:59:59")
+        ra = CoordUtil.makeValid0to360(ra).toHMS()
+        assert Position._checkRange(float(ra), 0, 360)
+
+        ra += Coord.fromAS(1000)
+        ra = CoordUtil.makeValid0to360(ra).toHMS()
+        assert Position._checkRange(float(ra), 0, 360)
+
+        ## (-)
+        ra = Coord.fromHMS("00:00:00")
+        ra = CoordUtil.makeValid0to360(ra).toHMS()
+        assert Position._checkRange(float(ra), 0, 360)
+
+        ra -= Coord.fromAS(1000)
+        ra = CoordUtil.makeValid0to360(ra).toHMS()
+        assert Position._checkRange(float(ra), 0, 360)
+
+        # Test DEC offsets
+        ## (+)
+        dec = Coord.fromHMS("23:59:59")
+        dec = CoordUtil.makeValid0to360(dec).toHMS()
+        assert Position._checkRange(float(dec), -90, 360)
+
+        dec += Coord.fromAS(1000)
+        dec = CoordUtil.makeValid0to360(dec).toDMS()
+        print dec.toHMS()
+        assert Position._checkRange(float(dec), -90, 360)
+
+        ## (-)
+        dec = Coord.fromHMS("00:00:00")
+        dec = CoordUtil.makeValid0to360(dec).toHMS()
+        print dec.toHMS()
+        assert Position._checkRange(float(dec), -90, 360)
+
+        dec -= Coord.fromAS(1000)
+        dec = CoordUtil.makeValid0to360(dec).toDMS()
+        print dec.toHMS()
+        assert Position._checkRange(float(dec), -90, 360)

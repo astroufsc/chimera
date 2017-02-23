@@ -98,16 +98,14 @@ class Position (object):
                     ra = Coord.fromH(float(ra))
                     ra = ra.toHMS()
                 except ValueError:
-                    raise ValueError(
-                        "Invalid RA coordinate type %s. Expected numbers, strings or Coords." % str(type(ra)))
+                    raise ValueError("Invalid RA coordinate type %s. Expected numbers, strings or Coords." % str(type(ra)))
 
             Position._checkRange(float(ra), 0, 360)
 
         except ValueError, e:
             raise ValueError("Invalid RA coordinate %s" % str(ra))
         except PositionOutsideLimitsError:
-            raise ValueError(
-                "Invalid RA range %s. Must be between 0-24 hours or 0-360 deg." % str(ra))
+            raise ValueError("Invalid RA range %s. Must be between 0-24 hours or 0-360 deg." % str(ra))
 
         try:
             if type(dec) == StringType:
@@ -119,8 +117,7 @@ class Position (object):
                     dec = Coord.fromD(float(dec))
                     dec = dec.toDMS()
                 except ValueError:
-                    raise ValueError(
-                        "Invalid DEC coordinate type %s. Expected numbers, strings or Coords." % str(type(dec)))
+                    raise ValueError("Invalid DEC coordinate type %s. Expected numbers, strings or Coords." % str(type(dec)))
 
             Position._checkRange(float(dec), -90, 360)
 
