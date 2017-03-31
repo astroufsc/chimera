@@ -201,15 +201,15 @@ class Image(DictMixin, RemoteObject):
         # TODO: Implement BITPIX support
         hdu.scale('int16', '', bzero=32768, bscale=1)
 
-
-        for h in headers:
-            try:
-                hdu.header.set(*h)
-            except Exception, e:
-                log.warning("Couldn't add %s: %s" % (str(h), str(e)))
-
         if imageRequest:
             headers += imageRequest.headers
+
+            for h in headers:
+                try:
+                    hdu.header.set(*h)
+                except Exception, e:
+                    log.warning("Couldn't add %s: %s" % (str(h), str(e)))
+
             if imageRequest['compress_format'] == 'fits_rice':
                 filename = os.path.splitext(filename)[0] + ".fz"
                 img = fits.CompImageHDU(data=data, header=hdu.header, compression_type='RICE_1')
