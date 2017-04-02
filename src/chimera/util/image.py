@@ -214,16 +214,16 @@ class Image(DictMixin, RemoteObject):
                 filename = os.path.splitext(filename)[0] + ".fz"
                 img = fits.CompImageHDU(data=data, header=hdu.header, compression_type='RICE_1')
                 img.writeto(filename, checksum=True)
+                return Image.fromFile(filename)
+            
+        hdu.data = data
 
-        if not imageRequest or imageRequest['compress_format'] != 'compress_rice':
-            hdu.data = data
+        hduList = fits.HDUList([hdu])
+        hduList.writeto(filename)
+        hduList.close()
 
-            hduList = fits.HDUList([hdu])
-            hduList.writeto(filename)
-            hduList.close()
-
-            del hduList
-            del hdu
+        del hduList
+        del hdu
 
         return Image.fromFile(filename)
 
