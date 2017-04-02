@@ -338,6 +338,9 @@ class ChimeraSched(ChimeraCLI):
                         self.out('\tTarget name: %s' % actconfig['name'])
                         act.targetName = actconfig['name']
 
+                    if 'offset' not in actconfig and 'domeAz' not in actconfig and 'domeTracking' not in actconfig:
+                        self.exit('[%s] Nothing to point at!' % red('ERROR'))
+
                     if 'offset' in actconfig:
                         if 'north' in actconfig['offset']:
                             offset = _validateOffset(actconfig['offset']['north'])
@@ -371,8 +374,6 @@ class ChimeraSched(ChimeraCLI):
                         else:
                             self.out('\tDome tracking DISABLED')
                         act.domeTracking = actconfig["domeTracking"]
-                    else:
-                        self.exit('[%s] Nothing to point at!' % red('ERROR'))
 
                 else:
                     for key in actconfig.keys():
