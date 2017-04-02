@@ -61,6 +61,15 @@ class PointHandler(ActionHandler):
                 else:
                     telescope.moveEast(-action.offsetEW.AS)
 
+            # If dome azimuth is given, point there.
+            if action.domeTracking is not None:
+                if action.domeTracking:
+                    dome.track()
+                else:
+                    dome.stand()
+            if action.domeAz is not None:
+                dome.slewToAz(action.domeAz)
+
         except Exception, e:
             raise ProgramExecutionException(str(e))
 
@@ -90,8 +99,16 @@ class PointHandler(ActionHandler):
             return "slewing telescope to (alt az) %s%s" % (action.targetAltAz, offset)
         elif action.targetName is not None:
             return "slewing telescope to (object) %s%s" % (action.targetName, offset)
-        else:
+        elif offset != '':
             return "applying telescope%s" % offset
+        else:
+            if action.domeTracking is None:
+                tracking = "left AS IS"
+            elif action.domeTracking:
+                tracking = "STARTED"
+            else:
+                tracking = "STOPPED"
+            return "dome tracking %s" % tracking
 
 class ExposeHandler(ActionHandler):
 
