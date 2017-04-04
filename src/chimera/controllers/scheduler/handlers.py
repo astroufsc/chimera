@@ -139,10 +139,14 @@ class ExposeHandler(ActionHandler):
                        ("PROG_PI", str(action.program.pi), "Principal Investigator")]
 
         try:
-            camera.expose(ir)
+            images = camera.expose(ir)
         except Exception, e:
             printException(e)
             raise ProgramExecutionException("Error while exposing")
+
+        # Close image files after exposing... See issue #160 for more details...
+        for img in images:
+            img.close()
 
     @staticmethod
     def abort(action):
