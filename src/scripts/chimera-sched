@@ -338,7 +338,7 @@ class ChimeraSched(ChimeraCLI):
                         self.out('\tTarget name: %s' % actconfig['name'])
                         act.targetName = actconfig['name']
 
-                    if 'offset' not in actconfig and 'domeAz' not in actconfig and 'domeTracking' not in actconfig:
+                    if 'offset' not in actconfig and 'domeAz' not in actconfig and 'domeTracking' not in actconfig and 'name' not in actconfig:
                         self.exit('[%s] Nothing to point at!' % red('ERROR'))
 
                     if 'offset' in actconfig:
