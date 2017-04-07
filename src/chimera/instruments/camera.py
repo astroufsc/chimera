@@ -310,6 +310,13 @@ class CameraBase (ChimeraObject,
               ('CCDPXSZX', self.getPixelSize()[0], 'CCD X Pixel Size [micrometer]'),
               ('CCDPXSZY', self.getPixelSize()[1], 'CCD Y Pixel Size [micrometer]')]
 
+        if request['window'] is not None:
+            x0subf = int(request['window'].split(',')[0].split(':')[0])
+            y0subf = int(request['window'].split(',')[1].split(':')[0])
+
+            md += [('XORGSUBF', x0subf, 'X origin of subframe'),
+                   ('YORGSUBF', y0subf, 'Y origin of subframe')]
+
         if "frame_temperature" in self.extra_header_info.keys():
               md += [('CCD-TEMP', self.extra_header_info["frame_temperature"],
                       'CCD Temperature at Exposure Start [deg. C]')]
