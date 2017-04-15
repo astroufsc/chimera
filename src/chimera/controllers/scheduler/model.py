@@ -154,6 +154,8 @@ class Expose(Action):
 
     shutter    = Column(String, default="OPEN")
 
+    wait_dome = Column(Boolean, default=True)
+
     imageType  = Column(String, default="")
     filename   = Column(String, default="$DATE-$TIME")
     objectName = Column(String, default="")

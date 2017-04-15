@@ -117,6 +117,7 @@ class ChimeraSched(ChimeraCLI):
                         exptime: 7
                         imageType: OBJECT
                         objectName: obj1 acq
+                        wait_dome: False        # Do not wait to dome sync to take the exposure
 
                     -   action: expose
                         filter: R

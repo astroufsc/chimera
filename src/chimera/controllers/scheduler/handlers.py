@@ -132,7 +132,7 @@ class ExposeHandler(ActionHandler):
                           object_name=str(action.objectName),
                           window=action.window,
                           binning=action.binning,
-                          wait_dome=True,
+                          wait_dome=action.wait_dome,
                           compress_format=action.compress_format)
 
         ir.headers += [("PROGRAM", str(action.program.name), "Program Name"),
