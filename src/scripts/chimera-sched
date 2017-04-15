@@ -26,6 +26,7 @@ import sys
 import time
 
 import yaml
+from astropy.time import Time
 
 from chimera.controllers.scheduler.model import (Session, Program, AutoFocus,
                                                  AutoFlat, PointVerify, Point,
@@ -312,6 +313,8 @@ class ChimeraSched(ChimeraCLI):
             program = Program()
             for key in prg.keys():
                 if hasattr(program, key) and key != 'actions':
+                    if key == 'startAt' and 'T' in prg[key]:
+                        prg[key] = Time(prg[key], format='isot').mjd
                     try:
                         setattr(program, key, prg[key])
                     except:
