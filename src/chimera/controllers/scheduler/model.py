@@ -48,8 +48,8 @@ class Program(Base):
 
     createdAt = Column(DateTime, default=dt.datetime.today())
     finished  = Column(Boolean, default=False)
-    slewAt = Column(Float, default=0.0)
-    exposeAt = Column(Float, default=0.0)
+    startAt = Column(Float, default=0.0)
+    validFor = Column(Float, default=-1)
 
     actions   = relation("Action", backref=backref("program", order_by="Action.id"),
                          cascade="all, delete, delete-orphan")
