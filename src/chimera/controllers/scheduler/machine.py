@@ -141,12 +141,16 @@ class Machine(threading.Thread):
                 else:
                     if program.validFor >= 0.0:
                         if -waittime > program.validFor:
-                            log.debug("[start] Program is not valid anymore", program.startAt, program.validFor)
-                            self.controller.programComplete(program, SchedulerStatus.OK, "Program not valid anymore.")
+                            log.debug("[start] Program is not valid anymore. Start %f and valid for %f seconds", program.startAt, program.validFor)
+                            self.scheduler.done(task)
+                            self.controller.programComplete(program, SchedulerStatus.SKIPPED, "Start %f and valid for %f seconds" % (program.startAt, program.validFor))
+                            self.state(State.IDLE)
+                            session.commit()
+                            return
                     else:
                         log.debug("[start] Specified slew start MJD %s has already passed; proceeding without waiting",program.startAt)
             else:
-               log.debug("[start] No slew time specified, so no waiting")
+                log.debug("[start] No slew time specified, so no waiting")
             log.debug("[start] Current MJD is %f",site.MJD())
             log.debug("[start] Proceeding since MJD %f should have passed",program.startAt)
             self.controller.programBegin(program)
