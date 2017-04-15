@@ -69,8 +69,7 @@ class Machine(threading.Thread):
 
                 if program:
                     log.debug("[idle] there is something to do, processing...")
-                    log.debug("[idle] program slew start %s",program.slewAt)
-                    log.debug("[idle] program exposure start %s",program.exposeAt)
+                    log.debug("[idle] program slew start %s",program.startAt)
                     self.state(State.BUSY)
                     self.currentProgram = program
                     self._process(program)
@@ -133,18 +132,23 @@ class Machine(threading.Thread):
             site=Site()
             nowmjd=site.MJD()
             log.debug("[start] Current MJD is %f",nowmjd)
-            if program.slewAt:
-                waittime=(program.slewAt-nowmjd)*86.4e3
+            if program.startAt:
+                waittime=(program.startAt-nowmjd)*86.4e3
                 if waittime>0.0:
-                    log.debug("[start] Waiting until MJD %f to start slewing",program.slewAt)
+                    log.debug("[start] Waiting until MJD %f to start slewing",program.startAt)
                     log.debug("[start] Will wait for %f seconds",waittime)
                     time.sleep(waittime)
                 else:
-                    log.debug("[start] Specified slew start MJD %s has already passed; proceeding without waiting",program.slewAt)
+                    if program.validFor >= 0.0:
+                        if -waittime > program.validFor:
+                            log.debug("[start] Program is not valid anymore", program.startAt, program.validFor)
+                            self.controller.programComplete(program, SchedulerStatus.OK, "Program not valid anymore.")
+                    else:
+                        log.debug("[start] Specified slew start MJD %s has already passed; proceeding without waiting",program.startAt)
             else:
                log.debug("[start] No slew time specified, so no waiting")
             log.debug("[start] Current MJD is %f",site.MJD())
-            log.debug("[start] Proceeding since MJD %f should have passed",program.slewAt)
+            log.debug("[start] Proceeding since MJD %f should have passed",program.startAt)
             self.controller.programBegin(program)
 
             try:

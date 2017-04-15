@@ -87,8 +87,8 @@ class ChimeraSched(ChimeraCLI):
                 name: PRG01           # (optional)
                 pi: Tiago Ribeiro     # (optional)
                 priority: 1           # (optional)
-                slewAt: 57500.030     # Add time to slew in MJD (optional)
-                exposeAt: 57500.040   # Add time to expose in MJD (optional)
+                startAt: 57500.030    # Program start time in MJD or in ISO 8601 (yyyy-MM-ddTHH:mm:ss) (optional)
+                validFor: 50 #s       # Program only valid for N seconds after startAt (optional)
 
                 # Add actions in the order they are intended to be performed.
                 actions:
