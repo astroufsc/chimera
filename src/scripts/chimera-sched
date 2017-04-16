@@ -313,7 +313,7 @@ class ChimeraSched(ChimeraCLI):
             program = Program()
             for key in prg.keys():
                 if hasattr(program, key) and key != 'actions':
-                    if key == 'startAt' and 'T' in prg[key]:
+                    if key == 'startAt' and isinstance(prg[key], basestring):
                         prg[key] = Time(prg[key], format='isot').mjd
                     try:
                         setattr(program, key, prg[key])
