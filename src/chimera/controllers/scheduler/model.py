@@ -150,7 +150,7 @@ class Expose(Action):
     exptime    = Column(Integer, default=5)
 
     binning    = Column(Integer, default=None)
-    window     = Column(Float, default=None)
+    window     = Column(String, default=None)
 
     shutter    = Column(String, default="OPEN")
 
