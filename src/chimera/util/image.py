@@ -368,6 +368,8 @@ class Image(DictMixin, RemoteObject):
 
         # ok, here we go!
         try:
+            if not os.path.exists(self._filename):
+                self.save(self._filename)
             sex.run(self._filename, clean=False)
             result = sex.catalog()
             return result
