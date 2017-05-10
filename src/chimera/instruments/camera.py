@@ -318,9 +318,23 @@ class CameraBase (ChimeraObject,
               md += [('CCD-TEMP', self.extra_header_info["frame_temperature"],
                       'CCD Temperature at Exposure Start [deg. C]')]
 
+        mode, binning, top, left, width, height = self._getReadoutModeInfo(request["binning"], request["window"])
+        # Binning keyword: http://iraf.noao.edu/projects/ccdmosaic/imagedef/mosaic/MosaicV1.html
+        #    CCD on-chip summing given as two or four integer numbers.  These define
+        # the summing of CCD pixels in the amplifier readout order.  The first
+        # two numbers give the number of pixels summed in the serial and parallel
+        # directions respectively.  If the first pixel read out consists of fewer
+        # unbinned pixels along either direction the next two numbers give the
+        # number of pixels summed for the first serial and parallel pixels.  From
+        # this it is implicit how many pixels are summed for the last pixels
+        # given the size of the CCD section (CCDSEC).  It is highly recommended
+        # that controllers read out all pixels with the same summing in which
+        # case the size of the CCD section will be the summing factors times the
+        # size of the data section.
+        md += [("CCDSUM", binning.replace("x", " ")), "CCD on-chip summing"]
+
         focal_length = self["telescope_focal_length"]
         if focal_length is not None:  # If there is no telescope_focal_length defined, don't store WCS
-            mode, binning, top, left, width, height = self._getReadoutModeInfo(request["binning"], request["window"])
             binFactor = self.extra_header_info.get("binning_factor", 1.0)
             pix_w, pix_h = self.getPixelSize()
             focal_length = self["telescope_focal_length"]
