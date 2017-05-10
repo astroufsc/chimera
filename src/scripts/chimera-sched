@@ -444,6 +444,20 @@ class ChimeraSched (ChimeraCLI):
                     flatPosition = Position.fromAltAz(site['flat_alt'], site['flat_az'])
                     program.actions.append(Point(targetAltAz=flatPosition))
 
+                if imagetype == "AUTOFOCUS":
+                    if position:
+                        program.actions.append(Point(targetRaDec=position))
+                    else:
+                        program.actions.append(Point(targetName=objname))
+                    exp = exps[0]
+                    if exp.count(":") > 1:
+                        filter, exptime, frames = exp.strip().split(":")
+                    else:
+                        filter, exptime = exp.strip().split(":")
+                        frames = 10
+                    program.actions.append(AutoFocus(filter=filter, exptime=exptime, step=multiplier, start=frames))
+                    programs.append(program)
+                    break
 
                 for exp in exps:
                     if exp.count(":") > 1:
