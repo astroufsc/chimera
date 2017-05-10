@@ -310,6 +310,10 @@ class CameraBase (ChimeraObject,
               ('CCDPXSZX', self.getPixelSize()[0], 'CCD X Pixel Size [micrometer]'),
               ('CCDPXSZY', self.getPixelSize()[1], 'CCD Y Pixel Size [micrometer]')]
 
+        if request['window'] is not None:
+            md += [('DETSEC', request['window'],
+                    'Detector coodinates of the image')]
+
         if "frame_temperature" in self.extra_header_info.keys():
               md += [('CCD-TEMP', self.extra_header_info["frame_temperature"],
                       'CCD Temperature at Exposure Start [deg. C]')]
