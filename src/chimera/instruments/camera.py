@@ -331,7 +331,7 @@ class CameraBase (ChimeraObject,
         # that controllers read out all pixels with the same summing in which
         # case the size of the CCD section will be the summing factors times the
         # size of the data section.
-        md += [("CCDSUM", binning.replace("x", " ")), "CCD on-chip summing"]
+        md += [("CCDSUM", binning.replace("x", " "), "CCD on-chip summing")]
 
         focal_length = self["telescope_focal_length"]
         if focal_length is not None:  # If there is no telescope_focal_length defined, don't store WCS
