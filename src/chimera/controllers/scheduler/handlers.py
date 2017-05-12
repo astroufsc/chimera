@@ -186,8 +186,13 @@ class AutoFlatHandler(ActionHandler):
     def process(action):
         autoflat = AutoFlatHandler.autoflat
 
+        if action.binning is None:
+            request = {"binning": "1x1"}
+        else:
+            request = {"binning": action.binning}
+
         try:
-            autoflat.getFlats(action.filter, n_flats=action.frames)
+            autoflat.getFlats(action.filter, n_flats=action.frames, request=request)
         except Exception, e:
             printException(e)
             raise ProgramExecutionException("Error trying to take flats")

@@ -91,6 +91,10 @@ class AutoFlat(Action):
     id     = Column(Integer, ForeignKey('action.id'), primary_key=True)
     filter  = Column(String, default=None)
     frames     = Column(Integer, default=1)
+    binning = Column(String, default=None)
+
+    def __str__(self):
+        return "Flat fields: filter=%s frames=%d" % (self.filter, self.frames)
 
 class PointVerify(Action):
     __tablename__ = "action_pv"
@@ -149,7 +153,7 @@ class Expose(Action):
 
     exptime    = Column(Integer, default=5)
 
-    binning    = Column(Integer, default=None)
+    binning = Column(String, default=None)
     window     = Column(String, default=None)
 
     shutter    = Column(String, default="OPEN")
