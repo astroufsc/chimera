@@ -78,6 +78,16 @@ Bugs and feature requests can be sent over our `GitHub page`_.
 .. _mailing list: https://groups.google.com/forum/#!forum/chimera-discuss
 .. _GitHub page: https://github.com/astroufsc/chimera/
 
+Citing chimera
+--------------
+
+Chimera OCS v1.0 can be cited by the `DOI`_ below.
+
+.. _DOI: https://en.wikipedia.org/wiki/Digital_object_identifier
+
+.. image:: https://zenodo.org/badge/4820416.svg
+   :target: https://zenodo.org/badge/latestdoi/4820416
+
 License
 -------
 
