@@ -484,8 +484,6 @@ class ChimeraCam (ChimeraCLI):
                     ds9.set("scale mode 99.5")
                     ds9.displayImage(image)
 
-                image.close()
-
         camera.exposeBegin += exposeBegin
         camera.exposeComplete += exposeComplete
         camera.readoutBegin += readoutBegin
