@@ -152,9 +152,8 @@ class CameraBase (ChimeraObject,
         if extras is not None:
             self.extra_header_info = extras
 
+        imageRequest.headers += self.getMetadata(imageRequest)
         img = Image.create(imageData, imageRequest)
-
-        img += self.getMetadata(imageRequest)
 
         # register image on ImageServer
         server = getImageServer(self.getManager())
@@ -298,9 +297,7 @@ class CameraBase (ChimeraObject,
         if md is not None:
             return md
         # If not, just go on with the instrument's default metadata.
-        md = [('DATE-OBS', ImageUtil.formatDate(self.extra_header_info.get("frame_start_time", dt.datetime.utcnow())),
-               'Date exposure started'),
-              ("EXPTIME", float(request['exptime']), "exposure time in seconds"),
+        md = [("EXPTIME", float(request['exptime']), "exposure time in seconds"),
               ('IMAGETYP', request['type'].strip(), 'Image type'),
               ('SHUTTER', str(request['shutter']), 'Requested shutter state'),
               ('INSTRUME', str(self['camera_model']), 'Name of instrument'),
@@ -317,6 +314,10 @@ class CameraBase (ChimeraObject,
         if "frame_temperature" in self.extra_header_info.keys():
               md += [('CCD-TEMP', self.extra_header_info["frame_temperature"],
                       'CCD Temperature at Exposure Start [deg. C]')]
+
+        if "frame_start_time" in self.extra_header_info.keys():
+            md += [('DATE-OBS', ImageUtil.formatDate(self.extra_header_info.get("frame_start_time")),
+                    'Date exposure started')]
 
         mode, binning, top, left, width, height = self._getReadoutModeInfo(request["binning"], request["window"])
         # Binning keyword: http://iraf.noao.edu/projects/ccdmosaic/imagedef/mosaic/MosaicV1.html
