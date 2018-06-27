@@ -142,6 +142,9 @@ class CameraTest (object):
         # interval ranges
         assert_raises(ChimeraValueError, cam.expose, exptime=0, interval=-1)
 
+        # compression
+        cam.expose(exptime=0, compress_format="fits_rice")
+
     def test_expose_lock (self):
 
         cam = self.manager.getProxy(self.CAMERA)
