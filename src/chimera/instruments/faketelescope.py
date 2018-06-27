@@ -28,7 +28,7 @@ from chimera.instruments.telescope import TelescopeBase, ObjectTooLowException
 from chimera.core.lock import lock
 from chimera.core.site import Site
 
-from chimera.util.coord import Coord
+from chimera.util.coord import Coord, CoordUtil
 from chimera.util.position import Position, Epoch
 
 
@@ -201,10 +201,10 @@ class FakeTelescope (TelescopeBase, TelescopeCover, TelescopePier):
         self._slewing = True
 
         pos = self.getPositionRaDec()
-        pos = Position.fromRaDec(pos.ra + Coord.fromAS(offset), pos.dec)
+        pos = Position.fromRaDec(CoordUtil.makeValid0to360(pos.ra + Coord.fromAS(offset)), pos.dec)
         self.slewBegin(pos)
 
-        self._ra += Coord.fromAS(offset)
+        self._ra = pos.ra
         self._setAltAzFromRaDec()
 
         self._slewing = False
@@ -215,10 +215,10 @@ class FakeTelescope (TelescopeBase, TelescopeCover, TelescopePier):
         self._slewing = True
 
         pos = self.getPositionRaDec()
-        pos = Position.fromRaDec(pos.ra + Coord.fromAS(-offset), pos.dec)
+        pos = Position.fromRaDec(CoordUtil.makeValid0to360(pos.ra + Coord.fromAS(-offset)), pos.dec)
         self.slewBegin(pos)
 
-        self._ra += Coord.fromAS(-offset)
+        self._ra = pos.ra
         self._setAltAzFromRaDec()
 
         self._slewing = False
@@ -229,10 +229,10 @@ class FakeTelescope (TelescopeBase, TelescopeCover, TelescopePier):
         self._slewing = True
 
         pos = self.getPositionRaDec()
-        pos = Position.fromRaDec(pos.ra, pos.dec + Coord.fromAS(offset))
+        pos = Position.fromRaDec(pos.ra, float(CoordUtil.makeValid0to360(pos.dec + Coord.fromAS(offset))))
         self.slewBegin(pos)
 
-        self._dec += Coord.fromAS(offset)
+        self._dec = pos.dec
         self._setAltAzFromRaDec()
 
         self._slewing = False
@@ -243,10 +243,10 @@ class FakeTelescope (TelescopeBase, TelescopeCover, TelescopePier):
         self._slewing = True
 
         pos = self.getPositionRaDec()
-        pos = Position.fromRaDec(pos.ra, pos.dec + Coord.fromAS(-offset))
+        pos = Position.fromRaDec(pos.ra, CoordUtil.makeValid0to360(pos.dec + Coord.fromAS(-offset)))
         self.slewBegin(pos)
 
-        self._dec += Coord.fromAS(-offset)
+        self._dec = pos.dec
         self._setAltAzFromRaDec()
 
         self._slewing = False
