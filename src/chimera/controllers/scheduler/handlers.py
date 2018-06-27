@@ -147,13 +147,13 @@ class AutoFocusHandler(ActionHandler):
         autofocus = AutoFocusHandler.autofocus
 
         try:
-            # TODO: filter=action.filter,
-            autofocus.focus (exptime=action.exptime,
-                             binning=action.binning,
-                             window=action.window,
-                             start=action.start,
-                             end=action.end,
-                             step=action.step)
+            autofocus.focus(exptime=action.exptime,
+                            binning=action.binning,
+                            window=action.window,
+                            start=action.start,
+                            end=action.end,
+                            step=action.step,
+                            filter=action.filter)
         except Exception, e:
             printException(e)
             raise ProgramExecutionException("Error while autofocusing")
