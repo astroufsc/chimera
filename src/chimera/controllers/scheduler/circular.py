@@ -21,6 +21,7 @@ class CircularScheduler (SequentialScheduler):
                 program.finished = False
 
             session.commit()
+            session.close()
 
             self.reschedule(self.machine)
 
