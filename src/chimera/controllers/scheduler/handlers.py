@@ -181,7 +181,8 @@ class AutoFocusHandler(ActionHandler):
 
     @staticmethod
     def abort(action):
-        pass
+        autofocus = copy.copy(AutoFocusHandler.autofocus)
+        autofocus.abort()
 
 class AutoFlatHandler(ActionHandler):
 
