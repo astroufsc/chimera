@@ -67,7 +67,6 @@ setup(
 
     # installation happens in the specified order
     install_requires=[  "astropy",
-                        "CherryPy",
                          "numpy>=1.8.0",
                          "pyephem",
                          "Pyro>=3.16",
