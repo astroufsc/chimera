@@ -61,6 +61,15 @@ class PointHandler(ActionHandler):
                 else:
                     telescope.moveEast(-action.offsetEW.AS)
 
+            # If dome azimuth is given, point there.
+            if action.domeTracking is not None:
+                if action.domeTracking:
+                    dome.track()
+                else:
+                    dome.stand()
+            if action.domeAz is not None:
+                dome.slewToAz(action.domeAz)
+
         except Exception, e:
             raise ProgramExecutionException(str(e))
 
@@ -90,8 +99,16 @@ class PointHandler(ActionHandler):
             return "slewing telescope to (alt az) %s%s" % (action.targetAltAz, offset)
         elif action.targetName is not None:
             return "slewing telescope to (object) %s%s" % (action.targetName, offset)
-        else:
+        elif offset != '':
             return "applying telescope%s" % offset
+        else:
+            if action.domeTracking is None:
+                tracking = "left AS IS"
+            elif action.domeTracking:
+                tracking = "STARTED"
+            else:
+                tracking = "STOPPED"
+            return "dome tracking %s" % tracking
 
 class ExposeHandler(ActionHandler):
 
@@ -115,17 +132,21 @@ class ExposeHandler(ActionHandler):
                           object_name=str(action.objectName),
                           window=action.window,
                           binning=action.binning,
-                          wait_dome=True,
+                          wait_dome=action.wait_dome,
                           compress_format=action.compress_format)
 
         ir.headers += [("PROGRAM", str(action.program.name), "Program Name"),
                        ("PROG_PI", str(action.program.pi), "Principal Investigator")]
 
         try:
-            camera.expose(ir)
+            images = camera.expose(ir)
         except Exception, e:
             printException(e)
             raise ProgramExecutionException("Error while exposing")
+
+        # Close image files after exposing... See issue #160 for more details...
+        for img in images:
+            img.close()
 
     @staticmethod
     def abort(action):
@@ -160,7 +181,8 @@ class AutoFocusHandler(ActionHandler):
 
     @staticmethod
     def abort(action):
-        pass
+        autofocus = copy.copy(AutoFocusHandler.autofocus)
+        autofocus.abort()
 
 class AutoFlatHandler(ActionHandler):
 
@@ -169,8 +191,13 @@ class AutoFlatHandler(ActionHandler):
     def process(action):
         autoflat = AutoFlatHandler.autoflat
 
+        if action.binning is None:
+            request = {"binning": "1x1"}
+        else:
+            request = {"binning": action.binning}
+
         try:
-            autoflat.getFlats(action.filter, n_flats=action.frames)
+            autoflat.getFlats(action.filter, n_flats=action.frames, request=request)
         except Exception, e:
             printException(e)
             raise ProgramExecutionException("Error trying to take flats")

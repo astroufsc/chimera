@@ -198,6 +198,7 @@ class TelescopeBase(ChimeraObject, TelescopeSlew, TelescopeSync, TelescopePark, 
             return md
         # If not, just go on with the instrument's default metadata.
         position = self.getPositionRaDec()
+        alt = self.getAlt()
         return [('TELESCOP', self['model'], 'Telescope Model'),
                 ('OPTICS',   self['optics'], 'Telescope Optics Type'),
                 ('MOUNT', self['mount'], 'Telescope Mount Type'),
@@ -211,10 +212,9 @@ class TelescopeBase(ChimeraObject, TelescopeSlew, TelescopeSync, TelescopePark, 
                 ('RA', position.ra.toHMS().__str__(), 'Right ascension of the observed object'),
                 ('DEC', position.dec.toDMS().__str__(), 'Declination of the observed object'),
                 ("EQUINOX", position.epochString()[1:], "coordinate epoch"),
-                ('ALT', self.getAlt().toDMS().__str__(),
-                 'Altitude of the observed object'),
-                ('AZ', self.getAz().toDMS().__str__(),
-                 'Azimuth of the observed object'),
+                ('ALT', alt.toDMS().__str__(), 'Altitude of the observed object'),
+                ('AZ', self.getAz().toDMS().__str__(), 'Azimuth of the observed object'),
+                ('AIRMASS', alt.R, 'Airmass of the observed object'),
                 ("WCSAXES", 2, "wcs dimensionality"),
                 ("RADESYS", "ICRS", "frame of reference"),
                 ("CRVAL1", position.ra.D,
