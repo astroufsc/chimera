@@ -144,10 +144,6 @@ class ExposeHandler(ActionHandler):
             printException(e)
             raise ProgramExecutionException("Error while exposing")
 
-        # Close image files after exposing... See issue #160 for more details...
-        for img in images:
-            img.close()
-
     @staticmethod
     def abort(action):
         camera = copy.copy(ExposeHandler.camera)
