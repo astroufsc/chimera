@@ -66,7 +66,7 @@ setup(
     scripts=chimera_scripts,
 
     # installation happens in the specified order
-    install_requires=[  "astropy",
+    install_requires=[  "astropy<3",
                          "numpy>=1.8.0",
                          "pyephem",
                          "Pyro>=3.16",
