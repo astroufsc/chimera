@@ -1,9 +1,9 @@
 from chimera.util.votable import VOTable
 
-from httplib import HTTPConnection
+from http.client import HTTPConnection
 import tempfile
 import os
-import urllib
+import urllib.request, urllib.parse, urllib.error
 
 
 class VizQuery(object):
@@ -110,7 +110,7 @@ class VizQuery(object):
         # query the catalog in Vizier's database
         conn = HTTPConnection("webviz.u-strasbg.fr")
 
-        s = urllib.urlencode(self.args)
+        s = urllib.parse.urlencode(self.args)
 
         conn.request("POST", "/viz-bin/votable", s)
         resp = conn.getresponse()
@@ -126,6 +126,6 @@ class VizQuery(object):
 
         for linha in votable.getDataRows():
             v = [c.getContent() for c in linha.getNodeList()]
-            obj.append(dict(zip(self.columns, v)))
+            obj.append(dict(list(zip(self.columns, v))))
 
         return obj

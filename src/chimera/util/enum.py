@@ -66,8 +66,7 @@ class EnumException(Exception):
 
     def __init__(self):
         if self.__class__ is EnumException:
-            raise NotImplementedError, \
-                "%s is an abstract class for subclassing" % self.__class__
+            raise NotImplementedError("%s is an abstract class for subclassing" % self.__class__)
 
 
 class EnumEmptyError(AssertionError, EnumException):
@@ -170,7 +169,7 @@ class Enum(object):
             values[i] = value
             try:
                 super(Enum, self).__setattr__(key, value)
-            except TypeError, e:
+            except TypeError as e:
                 raise EnumBadKeyError(key)
 
         super(Enum, self).__setattr__('_keys', keys)
@@ -202,14 +201,14 @@ class Enum(object):
 
     def __contains__(self, value):
         is_member = False
-        if isinstance(value, basestring):
+        if isinstance(value, str):
             is_member = (value in self._keys)
         else:
             try:
                 is_member = (value in self._values)
             # EnumValueError isn't defined!
             # except EnumValueCompareError, e:
-            except Exception, e:
+            except Exception as e:
                 is_member = False
         return is_member
 

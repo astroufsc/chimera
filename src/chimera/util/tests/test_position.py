@@ -76,6 +76,6 @@ class TestPosition (object):
         sirius_j2000 = Position.fromRaDec("06 45 08.9173", "-16 42 58.017")
         sirius_now = sirius_j2000.toEpoch(epoch=Epoch.NOW)
 
-        print
-        print sirius_j2000
-        print sirius_now
+        print()
+        print(sirius_j2000)
+        print(sirius_now)

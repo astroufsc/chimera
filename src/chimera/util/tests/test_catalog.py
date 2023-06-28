@@ -23,7 +23,7 @@ class TestCatalog (object):
     def test_box (self):
 
         raise SkipTest()
-        print
+        print()
 
         #for catalog in [UCAC2, PPM, Landolt]:
         for catalog in [Landolt]:

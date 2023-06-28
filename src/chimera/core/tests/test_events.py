@@ -126,11 +126,11 @@ class TestEvents (object):
         
             sigma = math.sqrt(sum([ (t - mean)**2 for t in dt]) / len(dt))
 
-            print "#"*25
-            print "# %d events (%.3f s)" % (len(dt), (end-start))
-            print "# %.2f events/s" % (len(dt)/(end-start))
-            print "# min   : %-6.3f ms" % min(dt)
-            print "# max   : %-6.3f ms" % max(dt)        
-            print "# mean  : %-6.3f ms" % mean
-            print "# sigma : %-6.3f ms" % sigma
-            print "#"*25
+            print("#"*25)
+            print("# %d events (%.3f s)" % (len(dt), (end-start)))
+            print("# %.2f events/s" % (len(dt)/(end-start)))
+            print("# min   : %-6.3f ms" % min(dt))
+            print("# max   : %-6.3f ms" % max(dt))        
+            print("# mean  : %-6.3f ms" % mean)
+            print("# sigma : %-6.3f ms" % sigma)
+            print("#"*25)

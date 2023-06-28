@@ -145,14 +145,14 @@ Example of use:
 
 # ======================================================================
 
-import __builtin__
+import builtins
 
 import os
 import subprocess
 import re
 import copy
 
-from sexcatalog import *
+from .sexcatalog import *
 
 
 # ======================================================================
@@ -385,7 +385,7 @@ class SExtractor:
 
         self.config = (
             dict([(k, copy.deepcopy(SExtractor._SE_config[k]["value"]))
-                  for k in SExtractor._SE_config.keys()]))
+                  for k in list(SExtractor._SE_config.keys())]))
 
         # print self.config
 
@@ -423,24 +423,21 @@ class SExtractor:
                 continue
 
         if not(selected):
-            raise SExtractorException, \
-                """
+            raise SExtractorException("""
                   Cannot find SExtractor program. Check your PATH,
                   or provide the SExtractor program path in the constructor.
-                  """
+                  """)
 
         _program = selected
 
         # print versionline
         _version_match = re.search("[Vv]ersion ([0-9\.])+", versionline)
         if not _version_match:
-            raise SExtractorException, \
-                "Cannot determine SExtractor version."
+            raise SExtractorException("Cannot determine SExtractor version.")
 
         _version = _version_match.group()[8:]
         if not _version:
-            raise SExtractorException, \
-                "Cannot determine SExtractor version."
+            raise SExtractorException("Cannot determine SExtractor version.")
 
         # print "Use " + self.program + " [" + self.version + "]"
 
@@ -460,7 +457,7 @@ class SExtractor:
         rows = len(filter)
         cols = len(filter[0])   # May raise ValueError, OK
 
-        filter_f = __builtin__.open(self.config['FILTER_NAME'], 'w')
+        filter_f = builtins.open(self.config['FILTER_NAME'], 'w')
         filter_f.write("CONV NORM\n")
         filter_f.write("# %dx%d Generated from sextractor.py module.\n" %
                        (rows, cols))
@@ -472,22 +469,22 @@ class SExtractor:
 
         # -- Write parameter list file
 
-        parameters_f = __builtin__.open(self.config['PARAMETERS_NAME'], 'w')
+        parameters_f = builtins.open(self.config['PARAMETERS_NAME'], 'w')
         for parameter in self.config['PARAMETERS_LIST']:
-            print >>parameters_f, parameter
+            print(parameter, file=parameters_f)
 
         parameters_f.close()
 
         # -- Write NNW configuration file
 
-        nnw_f = __builtin__.open(self.config['STARNNW_NAME'], 'w')
+        nnw_f = builtins.open(self.config['STARNNW_NAME'], 'w')
         nnw_f.write(nnw_config)
         nnw_f.close()
 
         # -- Write main configuration file
-        main_f = __builtin__.open(self.config['CONFIG_FILE'], 'w')
+        main_f = builtins.open(self.config['CONFIG_FILE'], 'w')
 
-        for key in self.config.keys():
+        for key in list(self.config.keys()):
             if (key in SExtractor._SE_config_special_keys):
                 continue
 
@@ -496,8 +493,8 @@ class SExtractor:
             else:
                 value = str(self.config[key])
 
-            print >>main_f, ("%-16s       %-16s # %s" %
-                             (key, value, SExtractor._SE_config[key]['comment']))
+            print(("%-16s       %-16s # %s" %
+                             (key, value, SExtractor._SE_config[key]['comment'])), file=main_f)
 
         main_f.close()
 
@@ -528,8 +525,7 @@ class SExtractor:
         rcode = os.system(commandline)
 
         if (rcode):
-            raise SExtractorException, \
-                "SExtractor command [%s] failed." % commandline
+            raise SExtractorException("SExtractor command [%s] failed." % commandline)
 
         if clean:
             self.clean()

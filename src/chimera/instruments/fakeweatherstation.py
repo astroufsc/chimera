@@ -189,24 +189,24 @@ if __name__ == '__main__':
     fws = FakeWeatherStation()
 
     humidity = fws.humidity(units.pct)
-    print('Humidity: %.2f %% @ %s.' % (humidity.value, humidity.time))
+    print(('Humidity: %.2f %% @ %s.' % (humidity.value, humidity.time)))
 
     temperature = fws.temperature(units.imperial.deg_F)
-    print('Temperature: %.2f %s @ %s.' % (temperature.value, temperature.unit, temperature.time))
+    print(('Temperature: %.2f %s @ %s.' % (temperature.value, temperature.unit, temperature.time)))
 
     wind_speed = fws.wind_speed(units.kilometer / units.hour)
-    print('Wind Speed: %.2f %s @ %s.' % (wind_speed.value, wind_speed.unit, wind_speed.time))
+    print(('Wind Speed: %.2f %s @ %s.' % (wind_speed.value, wind_speed.unit, wind_speed.time)))
 
     wind_direction = fws.wind_direction(units.radian)
-    print('Wind Direction: %.2f %s @ %s.' % (wind_direction.value, wind_direction.unit, wind_direction.time))
+    print(('Wind Direction: %.2f %s @ %s.' % (wind_direction.value, wind_direction.unit, wind_direction.time)))
 
     dew_point = fws.dew_point(units.K)
-    print('Dew Point: %.2f %s @ %s.' % (dew_point.value, dew_point.unit, dew_point.time))
+    print(('Dew Point: %.2f %s @ %s.' % (dew_point.value, dew_point.unit, dew_point.time)))
 
     pressure = fws.pressure(units.cds.atm)
-    print('Pressure: %.2f %s @ %s.' % (pressure.value, pressure.unit, pressure.time))
+    print(('Pressure: %.2f %s @ %s.' % (pressure.value, pressure.unit, pressure.time)))
 
     rain = fws.rain_rate(unit_out=units.millimeter / units.hour)
-    print('Rain: %.2f %s @ %s.' % (rain.value, rain.unit, rain.time))
+    print(('Rain: %.2f %s @ %s.' % (rain.value, rain.unit, rain.time)))
 
-    print('Metadata: %s' % (fws.getMetadata(None)))
+    print(('Metadata: %s' % (fws.getMetadata(None))))

@@ -226,8 +226,8 @@ class CameraBase (ChimeraObject,
                 width, height = mode.getSize()
 
         if not binning:
-            binning = self.getBinnings().keys().pop(
-                self.getBinnings().keys().index("1x1"))
+            binning = list(self.getBinnings().keys()).pop(
+                list(self.getBinnings().keys()).index("1x1"))
 
         return mode, binning, top, left, width, height
 
@@ -311,11 +311,11 @@ class CameraBase (ChimeraObject,
             md += [('DETSEC', request['window'],
                     'Detector coodinates of the image')]
 
-        if "frame_temperature" in self.extra_header_info.keys():
+        if "frame_temperature" in list(self.extra_header_info.keys()):
               md += [('CCD-TEMP', self.extra_header_info["frame_temperature"],
                       'CCD Temperature at Exposure Start [deg. C]')]
 
-        if "frame_start_time" in self.extra_header_info.keys():
+        if "frame_start_time" in list(self.extra_header_info.keys()):
             md += [('DATE-OBS', ImageUtil.formatDate(self.extra_header_info.get("frame_start_time")),
                     'Date exposure started')]
 

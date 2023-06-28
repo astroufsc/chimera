@@ -14,6 +14,6 @@ class TestVizQuery (object):
         data = x.find(limit=5)
 
         for obj in data:
-            for k,v in obj.items():
-                print k, v
-            print
+            for k,v in list(obj.items()):
+                print(k, v)
+            print()

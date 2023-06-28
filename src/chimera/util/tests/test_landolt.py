@@ -14,10 +14,10 @@ class TestLandolt (object):
         data = landolt.find(limit=5)
 
         for obj in data:
-            for k,v in obj.items():
+            for k,v in list(obj.items()):
                 assert k
                 assert v
-                print k, v
+                print(k, v)
 
     def test_find_none (self):
 

@@ -65,7 +65,7 @@ class Machine(threading.Thread):
                 log.debug("[idle] looking for something to do...")
 
                 # find something to do
-                program = self.scheduler.next()
+                program = next(self.scheduler)
 
                 if program:
                     log.debug("[idle] there is something to do, processing...")
@@ -157,12 +157,12 @@ class Machine(threading.Thread):
                 self.scheduler.done(task)
                 self.controller.programComplete(program, SchedulerStatus.OK)
                 self.state(State.IDLE)
-            except ProgramExecutionException, e:
+            except ProgramExecutionException as e:
                 self.scheduler.done(task, error=e)
                 self.controller.programComplete(program, SchedulerStatus.ERROR, str(e))
                 self.state(State.IDLE)
                 log.debug("[error] %s (%s)" % (str(task), str(e)))
-            except ProgramExecutionAborted, e:
+            except ProgramExecutionAborted as e:
                 self.scheduler.done(task, error=e)
                 self.controller.programComplete(program, SchedulerStatus.ABORTED, "Aborted by user.")
                 self.state(State.OFF)

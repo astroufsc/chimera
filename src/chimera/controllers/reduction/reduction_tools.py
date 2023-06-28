@@ -20,9 +20,9 @@ def rmExistingDir(directory):
     check = os.path.exists(directory)
     if check:
         shutil.rmtree(directory)
-        print "Directory '%s' removed" % directory
+        print("Directory '%s' removed" % directory)
     else:
-        print "Directory '%s' does not exist; '%s' not removed"
+        print("Directory '%s' does not exist; '%s' not removed")
 
 
 def rmFile(fileroot):
@@ -34,18 +34,18 @@ def rmFile(fileroot):
     del_list = glob(fileroot + '*')
     for file in del_list:
         os.remove(file)
-        print "File %s removed" % file
+        print("File %s removed" % file)
 
 
 def makeDir(newdir):
     while(1):
         if os.path.exists(newdir):
-            print "Directory %s already exists" % newdir
+            print("Directory %s already exists" % newdir)
             return newdir
             break
         else:
             os.mkdir(newdir)
-            print "New Directory '%s' created" % newdir
+            print("New Directory '%s' created" % newdir)
             return newdir
             break
 
@@ -67,7 +67,7 @@ def copyNewFits(imlist, destdir):
             if not os.path.isfile(destdir + os.path.split(im)[-1]):
                 shutil.copy(im, destdir)
                 newloc = destdir + os.path.split(im)[-1]
-                print "Copied %s to %s" % (im, destdir)
+                print("Copied %s to %s" % (im, destdir))
                 copiedlist.append(newloc)
 
     return copiedlist

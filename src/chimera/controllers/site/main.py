@@ -188,7 +188,7 @@ class SiteController (object):
         # system config
         try:
             self.config = SystemConfig.fromFile(self.options.config_file)
-        except (InvalidLocationException, IOError), e:
+        except (InvalidLocationException, IOError) as e:
             log.exception(e)
             log.error(
                 "There was a problem reading your configuration file. (%s)" % e)
@@ -204,7 +204,7 @@ class SiteController (object):
 
             try:
                 self.manager = Manager(**self.config.chimera)
-            except ChimeraException, e:
+            except ChimeraException as e:
                 log.error(
                     "Chimera is already running on this machine. Use chimera-admin to manage it.")
                 sys.exit(1)
@@ -234,7 +234,7 @@ class SiteController (object):
         for inst in self.config.instruments + self.options.instruments:
 
             if self.options.dry:
-                print inst
+                print(inst)
             else:
                 self._add(inst, path=self.paths["instruments"], start=True)
 
@@ -242,7 +242,7 @@ class SiteController (object):
         for ctrl in self.config.controllers + self.options.controllers:
 
             if self.options.dry:
-                print ctrl
+                print(ctrl)
             else:
                 self._add(ctrl, path=self.paths["controllers"], start=True)
 
@@ -255,7 +255,7 @@ class SiteController (object):
     def _add(self, location, path, start):
         try:
             self.manager.addLocation(location, path, start)
-        except Exception, e:
+        except Exception as e:
             printException(e)
 
     def shutdown(self):

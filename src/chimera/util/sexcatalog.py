@@ -134,7 +134,7 @@ Examples:
 
 # ======================================================================
 
-import __builtin__
+import builtins
 
 #import sys
 #import exceptions
@@ -673,31 +673,27 @@ class SExtractorfile:
         self._firstline = True
 
         if self.mode != 'r':
-            raise ValueError, \
-                'only read-only access is now implemented.'
+            raise ValueError('only read-only access is now implemented.')
 
-        self._file = __builtin__.open(self.name, self.mode)
+        self._file = builtins.open(self.name, self.mode)
         self.closed = False
 
         # Reading header
 
         self._line = self._file.readline()
         if not(self._line):
-            raise WrongSExtractorfileException, \
-                'not a SExtractor text catalog (empty file)'
+            raise WrongSExtractorfileException('not a SExtractor text catalog (empty file)')
 
         while (self._line):
             __ll = (self._line).replace('\n', '')
             if __ll[0] == '#':   # Still in header
                 columns = __ll.split()
                 if len(columns) < 3:
-                    raise WrongSExtractorfileException, \
-                        'not a SExtractor text catalog (invalid header)'
+                    raise WrongSExtractorfileException('not a SExtractor text catalog (invalid header)')
                 name = columns[2]
-                if not(name in SExtractorfile._SE_keys.keys()):
-                    raise WrongSExtractorfileException, \
-                        'not a SExtractor text catalog (unknown keyword %s)'\
-                        % name
+                if not(name in list(SExtractorfile._SE_keys.keys())):
+                    raise WrongSExtractorfileException('not a SExtractor text catalog (unknown keyword %s)'\
+                        % name)
                 self._keys_positions[name] = int(columns[1]) - 1
                 self._keys.append(name)
             else:
@@ -705,8 +701,7 @@ class SExtractorfile:
             self._line = self._file.readline()
 
         if not(self._keys):
-            raise WrongSExtractorfileException, \
-                'not a SExtractor text catalog (empty header)'
+            raise WrongSExtractorfileException('not a SExtractor text catalog (empty header)')
 
         self._outdict = dict([(k, None) for k in self._keys])
         self._firstline = True
@@ -717,13 +712,13 @@ class SExtractorfile:
     def __iter__(self):
         return self
 
-    def next(self):
+    def __next__(self):
         rr = self.readline()
         if not(rr):
             raise StopIteration
         return rr
 
-    def __nonzero__(self):
+    def __bool__(self):
         return self._file
 
     def keys(self):
@@ -732,7 +727,7 @@ class SExtractorfile:
 
     def getcolumns(self):
         "Return the list of available parameters."
-        return self.keys()
+        return list(self.keys())
 
     def readline(self):
         """
@@ -748,7 +743,7 @@ class SExtractorfile:
             return None
         __ll = (self._line).replace('\n', '')
         __values = __ll.split()
-        self._outdict.update(dict(zip(self._keys, __values)))
+        self._outdict.update(dict(list(zip(self._keys, __values))))
         for i in self._keys:
             self._outdict[i] = (
                 SExtractorfile._SE_keys[i]["infunc"](self._outdict[i]))

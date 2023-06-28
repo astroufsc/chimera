@@ -70,7 +70,7 @@ class PointHandler(ActionHandler):
             if action.domeAz is not None:
                 dome.slewToAz(action.domeAz)
 
-        except Exception, e:
+        except Exception as e:
             raise ProgramExecutionException(str(e))
 
     @staticmethod
@@ -140,7 +140,7 @@ class ExposeHandler(ActionHandler):
 
         try:
             images = camera.expose(ir)
-        except Exception, e:
+        except Exception as e:
             printException(e)
             raise ProgramExecutionException("Error while exposing")
 
@@ -171,7 +171,7 @@ class AutoFocusHandler(ActionHandler):
                             end=action.end,
                             step=action.step,
                             filter=action.filter)
-        except Exception, e:
+        except Exception as e:
             printException(e)
             raise ProgramExecutionException("Error while autofocusing")
 
@@ -194,7 +194,7 @@ class AutoFlatHandler(ActionHandler):
 
         try:
             autoflat.getFlats(action.filter, n_flats=action.frames, request=request)
-        except Exception, e:
+        except Exception as e:
             printException(e)
             raise ProgramExecutionException("Error trying to take flats")
 
@@ -217,7 +217,7 @@ class PointVerifyHandler(ActionHandler):
                 pv.pointVerify()
             elif action.choose is not None:
                 pv.choose()
-        except Exception, e:
+        except Exception as e:
             raise ProgramExecutionException(str(e))
 
     @staticmethod

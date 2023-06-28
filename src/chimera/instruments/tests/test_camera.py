@@ -118,7 +118,7 @@ class CameraTest (object):
 
         try:
             frames = cam.expose(exptime=2, frames=2, interval=0.5, filename="autogen-expose.fits")
-        except Exception, e:
+        except Exception as e:
             log.exception("problems")
 
         assert len(frames) == 2  
@@ -191,7 +191,7 @@ class CameraTest (object):
 
         cam = self.manager.getProxy(self.CAMERA)
 
-        print
+        print()
         
         def doExpose():
             # need to get another Proxy as Proxies cannot be shared among threads
@@ -221,7 +221,7 @@ class CameraTest (object):
         cam = self.manager.getProxy(self.CAMERA)
         exposeComplete = threading.Event()
 
-        print
+        print()
         
         def doExpose():
             # need to get another Proxy as Proxies cannot be shared among threads
@@ -272,9 +272,9 @@ class CameraTest (object):
         cam.startCooling(cool)
         assert cam.isCooling() == True
 
-        print
+        print()
         while not eps_equal(cam.getTemperature(), cool, 0.25):
-            print "\rwaiting to cool to %d oC:" % cool, cam.getTemperature(),
+            print("\rwaiting to cool to %d oC:" % cool, cam.getTemperature(), end=' ')
             sys.stdout.flush()
             time.sleep(1)
 

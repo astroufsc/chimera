@@ -46,7 +46,7 @@ class MethodWrapper (object):
         self.dispatcher = dispatcher or MethodWrapperDispatcher
 
         # like a real duck!
-        self.__name__ = func.func_name
+        self.__name__ = func.__name__
 
     # resolver our specials dispatchers
     def __getattr__(self, attr):
@@ -78,11 +78,11 @@ class MethodWrapperDispatcher (object):
 
         # go duck, go!
         self.bound_name = "<bound method %s.%s.begin of %s>" % (self.cls.__name__,
-                                                                self.func.func_name,
+                                                                self.func.__name__,
                                                                 repr(self.instance))
 
         self.unbound_name = "<unbound method %s.%s>" % (
-            self.cls.__name__, self.func.func_name)
+            self.cls.__name__, self.func.__name__)
 
     def __repr__(self):
         if self.instance:
@@ -102,7 +102,7 @@ class MethodWrapperDispatcher (object):
                 raise TypeError(
                     "unbound method %s object must be called with %s instance "
                     "as first argument (got %s instance instead)" %
-                    (self.func.func_name, self.cls.__name__,
+                    (self.func.__name__, self.cls.__name__,
                      args[0].__class__.__name__))
             else:
                 return self.call(args[0], *args[1:], **kwargs)

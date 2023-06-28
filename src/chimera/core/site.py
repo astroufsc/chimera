@@ -39,7 +39,7 @@ __all__ = ['Site']
 def datetimeFromJD(jd):
     """Returns a date corresponding to the given Julian day number."""
     if not isinstance(jd, float):
-        raise TypeError, "%s is not a float." % str(jd)
+        raise TypeError("%s is not a float." % str(jd))
 
     n = int(np.floor(jd))
     if jd > np.floor(jd) + 0.5:

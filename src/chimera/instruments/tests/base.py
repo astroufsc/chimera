@@ -2,7 +2,7 @@
 from types import FunctionType
 
 def setAttribute(dict_, name, value):
-    for func_name, func in dict_.items():
+    for func_name, func in list(dict_.items()):
         if type(func) == FunctionType and not func_name.startswith("_"):
             setattr(func, name, value)
 
@@ -22,8 +22,8 @@ class FakeHardwareTestMetaClass(type):
         setAttribute(_dict, "fake", 1)
         return super(FakeHardwareTestMetaClass, meta).__new__(meta, clsname, bases, _dict)
 
-class RealHardwareTest(object):
-    __metaclass__ = RealHardwareTestMetaClass
+class RealHardwareTest(object, metaclass=RealHardwareTestMetaClass):
+    pass
     
-class FakeHardwareTest(object):
-    __metaclass__ = FakeHardwareTestMetaClass
+class FakeHardwareTest(object, metaclass=FakeHardwareTestMetaClass):
+    pass

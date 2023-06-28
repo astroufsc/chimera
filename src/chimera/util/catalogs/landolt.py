@@ -62,4 +62,4 @@ if __name__ == '__main__':
     test = Landolt()
     test.useTarget(coords, radius=45)
     obj = test.find(limit=1)
-    print obj
+    print(obj)

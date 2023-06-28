@@ -124,7 +124,7 @@ def notitles():
 def nocolor():
     "turn off colorization"
     havecolor = 0
-    for x in codes.keys():
+    for x in list(codes.keys()):
         codes[x] = ""
 
 

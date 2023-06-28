@@ -20,7 +20,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 # 02110-1301, USA.
 
-import Queue
+import queue
 import threading
 
 from chimera.core.chimeraobject import ChimeraObject
@@ -38,7 +38,7 @@ class DomeBase(ChimeraObject, DomeSlew, DomeSlit, DomeFlap, DomeSync):
     def __init__(self):
         ChimeraObject.__init__(self)
 
-        self.queue = Queue.Queue()
+        self.queue = queue.Queue()
         self._mode = None
 
         # to reuse telescope proxy on control method
@@ -83,14 +83,14 @@ class DomeBase(ChimeraObject, DomeSlew, DomeSlit, DomeFlap, DomeSync):
                 self.stand()
                 self.log.info("Parking the dome...")
                 self.slewToAz(self['park_position'])
-            except Exception, e:
+            except Exception as e:
                 self.log.warning('Unable to park dome: %s', str(e))
 
         if self['close_on_shutdown'] and self.isSlitOpen():
             try:
                 self.log.info("Closing the slit...")
                 self.closeSlit()
-            except Exception, e:
+            except Exception as e:
                 self.log.warning('Unable to close dome: %s', str(e))
 
         # telescope events

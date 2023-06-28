@@ -75,7 +75,7 @@ class Simbad (object):
                     if jpos is None:
                         continue
                     return Position.fromRaDec(*jpos.text.split())
-        except ExpatError, e:
+        except ExpatError as e:
             return False
 
         return False
@@ -86,12 +86,12 @@ if __name__ == '__main__':
 
     while True:
         try:
-            obj = raw_input("Give me an object name: ")
+            obj = input("Give me an object name: ")
             if obj:
                 o = s.lookup(obj)
                 if not o:
                     continue
-                print o.ra, o.dec
+                print(o.ra, o.dec)
         except (KeyboardInterrupt, EOFError):
-            print
+            print()
             break

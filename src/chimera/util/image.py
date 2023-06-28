@@ -6,7 +6,7 @@ import os
 import shutil
 import string
 import sys
-import urllib2
+import urllib.request, urllib.error, urllib.parse
 import zipfile
 from UserDict import DictMixin
 
@@ -143,13 +143,13 @@ class ImageUtil(object):
         attempts = 0
         while attempts < max_attempts:
             try:
-                response = urllib2.urlopen(image.http())
+                response = urllib.request.urlopen(image.http())
                 content = response.read()
                 f = open(out_file, "wb")
                 f.write(content)
                 f.close()
                 return True
-            except urllib2.URLError as e:
+            except urllib.error.URLError as e:
                 attempts += 1
         return False
 
@@ -207,7 +207,7 @@ class Image(DictMixin, RemoteObject):
             for h in headers:
                 try:
                     hdu.header.set(*h)
-                except Exception, e:
+                except Exception as e:
                     log.warning("Couldn't add %s: %s" % (str(h), str(e)))
 
             if imageRequest['compress_format'] == 'fits_rice':
@@ -311,7 +311,7 @@ class Image(DictMixin, RemoteObject):
         if not self._wcs:
             try:
                 self._wcs = wcs.WCS(self._fd["PRIMARY"].header)
-            except (KeyError, ValueError), e:
+            except (KeyError, ValueError) as e:
                 raise WCSNotFoundException(
                     "Couldn't find WCS information on %s ('%s')" % (self._filename, e))
 
@@ -448,20 +448,20 @@ class Image(DictMixin, RemoteObject):
         return self._fd["PRIMARY"].header.__delitem__(key)
 
     def keys(self):
-        return [item[0] for item in self._fd["PRIMARY"].header.items()]
+        return [item[0] for item in list(self._fd["PRIMARY"].header.items())]
 
     def items(self):
-        return self._fd["PRIMARY"].header.items()
+        return list(self._fd["PRIMARY"].header.items())
 
     def __contains__(self, key):
         return key in self._fd["PRIMARY"].header
 
     def __iter__(self):
-        for k in self.keys():
+        for k in list(self.keys()):
             yield k
 
     def iteritems(self):
-        for item in self.items():
+        for item in list(self.items()):
             yield item
 
     def __iadd__(self, headers):

@@ -10,9 +10,9 @@ from chimera.core.constants import (SYSTEM_CONFIG_LOG_NAME,
 
 # try to use faster (C)StringIO, use slower one if not available
 try:
-    import cStringIO as StringIO
+    import io as StringIO
 except ImportError:
-    import StringIO
+    import io
 
 from chimera.core.exceptions import printException
 
@@ -26,7 +26,7 @@ class ChimeraFormatter(logging.Formatter):
         logging.Formatter.__init__(self, fmt, datefmt)
 
     def formatException(self, exc_info):
-        stream = StringIO.StringIO()
+        stream = io.StringIO()
         printException(exc_info[1], stream=stream)
 
         try:
@@ -80,5 +80,5 @@ try:
     fileHandler.setLevel(logging.DEBUG)
     fileHandler.addFilter(flt)
     root.addHandler(fileHandler)
-except Exception, e:
+except Exception as e:
     root.warning("Couldn't start Log System FileHandler (%s)" % e)

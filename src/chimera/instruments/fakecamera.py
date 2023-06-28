@@ -22,7 +22,7 @@
 import time
 import datetime as dt
 import random
-import urllib
+import urllib.request, urllib.parse, urllib.error
 import os
 import shutil
 
@@ -231,12 +231,12 @@ class FakeCamera (CameraBase, FilterWheelBase):
                             query_args["h"] = ccd_height / 35.3 # 1.7"/pix (35.3 pix/arcmin) is the plate scale of DSS POSS1-Red
                             query_args["w"] = ccd_width / 35.3
 
-                        url += urllib.urlencode(query_args)
+                        url += urllib.parse.urlencode(query_args)
 
                         self.log.debug("Attempting URL: " + url)
                         try:
                             t0 = time.time()
-                            dssfile = urllib.urlretrieve(url)[0]
+                            dssfile = urllib.request.urlretrieve(url)[0]
                             self.log.debug(
                                 "download took: %.3f s" % (time.time() - t0))
                             fitsfile = dssfile + ".fits.gz"
@@ -245,7 +245,7 @@ class FakeCamera (CameraBase, FilterWheelBase):
                             pix = hdulist[0].data
                             hdulist.close()
                             os.remove(fitsfile)
-                        except Exception, e:
+                        except Exception as e:
                             self.log.warning(
                                 "General error getting DSS image: " + str(e))
 
@@ -256,7 +256,7 @@ class FakeCamera (CameraBase, FilterWheelBase):
                         try:
                             pix = (self.make_flat(
                                 (ccd_height,ccd_width), N.float) / 1000)
-                        except Exception, e:
+                        except Exception as e:
                             self.log.warning(
                                 "Error generating flat: " + str(e))
 
@@ -267,7 +267,7 @@ class FakeCamera (CameraBase, FilterWheelBase):
                 self.log.info(
                     "Making flat image: " + str(ccd_height) + "x" + str(ccd_width))
                 pix = self.make_flat((ccd_height, ccd_width), N.float)
-            except Exception, e:
+            except Exception as e:
                 self.log.warning("Make flat error: " + str(e))
 
         # Last resort if nothing else could make a picture
