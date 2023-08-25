@@ -1,7 +1,5 @@
 
 
-from nose.tools import assert_raises
-
 from chimera.util.position import Position, Epoch
 from chimera.util.coord import Coord
 import ephem

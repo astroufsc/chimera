@@ -151,7 +151,7 @@ class SystemConfig(object):
     def add(self, buffer):
 
         try:
-            config = yaml.load(buffer)
+            config = yaml.load(buffer, yaml.Loader)
             if not config:  # empty file
                 return
         except yaml.YAMLError as e:

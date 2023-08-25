@@ -1,3 +1,4 @@
+from chimera.core.location import Location
 from chimera.core.proxy import Proxy
 from chimera.core.util import getManagerURI
 from chimera.core.constants import MANAGER_DEFAULT_PORT
@@ -11,10 +12,10 @@ class ManagerNotFoundException(ChimeraException):
 class ManagerLocator (object):
 
     @staticmethod
-    def locate(host, port=None):
-        """Simple class to easily contact an Manager
+    def locate(host, port=6379):
+        """Simple class to easily contact a Manager
         """
-        p = Proxy(uri=getManagerURI(host, port or MANAGER_DEFAULT_PORT))
+        p = Proxy(Location(getManagerURI(host, port or MANAGER_DEFAULT_PORT)))
         if not p.ping():
             raise ManagerNotFoundException(
                 "Couldn't find manager running on %s:%d" % (host, port))

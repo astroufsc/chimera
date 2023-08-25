@@ -1,7 +1,6 @@
+import pytest
 
 from chimera.core.classloader import ClassLoader, ClassLoaderException
-
-from nose.tools import assert_raises
 
 import time
 import os.path
@@ -30,6 +29,9 @@ class TestClassLoader:
         loader._cache = {} # clear cache
         cls = loader.loadClass ("ClAsSloAdErHeLpErWoRkiNg", path=[os.path.dirname(__file__)])
         
-        assert_raises (ClassLoaderException, loader.loadClass, "ClassLoaderHelperNotFound")       
-        assert_raises (ClassLoaderException, loader.loadClass, "ClassLoaderHelperFoundWithoutClass")
-        assert_raises (ClassLoaderException, loader.loadClass, "ClassLoaderHelperFoundNotWorking1")
+        with pytest.raises(ClassLoaderException):
+            loader.loadClass("ClassLoaderHelperNotFound")
+        with pytest.raises(ClassLoaderException):
+            loader.loadClass("ClassLoaderHelperFoundWithoutClass")
+        with pytest.raises(ClassLoaderException):
+            loader.loadClass("ClassLoaderHelperFoundNotWorking1")

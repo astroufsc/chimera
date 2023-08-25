@@ -20,10 +20,9 @@
 # 02110-1301, USA.
 
 from chimera.core.metaobject import MetaObject
-from chimera.core.remoteobject import RemoteObject
-
 from chimera.core.config import Config
 from chimera.core.eventsproxy import EventsProxy
+from chimera.core.proxy import Proxy
 
 from chimera.core.state import State
 from chimera.core.location import Location
@@ -46,11 +45,9 @@ import threading
 __all__ = ['ChimeraObject']
 
 
-class ChimeraObject (RemoteObject, ILifeCycle, metaclass=MetaObject):
+class ChimeraObject (ILifeCycle, metaclass=MetaObject):
 
     def __init__(self):
-        RemoteObject.__init__(self)
-
         # event handling
         self.__events_proxy__ = EventsProxy()
 
@@ -165,21 +162,21 @@ class ChimeraObject (RemoteObject, ILifeCycle, metaclass=MetaObject):
 
             runCondition = self.control()
 
-            if self._loop_abort.isSet():
+            if self._loop_abort.is_set():
                 return True
 
             # FIXME: better idle loop
             # we can't sleep for the whole time because
             # if object set a long sleep time and Manager decides to
-            # shutdown, we must be alseep to receive his message and
+            # shutdown, we must be asleep to receive his message and
             # return.
             timeToWakeUp = 1.0 / self.getHz()
-            sleeped = 0
-            while sleeped < timeToWakeUp:
+            slept = 0
+            while slept < timeToWakeUp:
                 time.sleep(timeslice)
-                if self._loop_abort.isSet():
+                if self._loop_abort.is_set():
                     return True
-                sleeped += timeslice
+                slept += timeslice
 
         return True
 
@@ -203,25 +200,14 @@ class ChimeraObject (RemoteObject, ILifeCycle, metaclass=MetaObject):
     def __setlocation__(self, location):
 
         location = Location(location)
-
         self.__location__ = location
-        self.setGUID("/%s/%s" % (location.cls, location.name))
         return True
 
     def getManager(self):
-        if self.getDaemon():
-            return self.getDaemon().getProxyForObj(self.getDaemon().getManager())
-
-    def getProxy(self):
-        # just to put everthing together (no need to change the base
-        # implementation)
-        return super(ChimeraObject, self).getProxy()
-
-    def getGUID(self):
-        return self.objectGUID
+        return Proxy(f"{self.__location__.host}:{self.__location__.port}/Manager/manager")
 
     def getMetadata(self, request):
-        # Check first if there is metadata from an metadata override method.
+        # Check first if there is metadata from a metadata override method.
         md = self.getMetadataOverride(request)
         if md is not None:
             return md
@@ -240,9 +226,12 @@ class ChimeraObject (RemoteObject, ILifeCycle, metaclass=MetaObject):
 
     def features(self, interface):
         """
-        Checks if self is an instance of a interface.
+        Checks if self is an instance of an interface.
         This is useful to check if some interface/capability is supported by an instrument
         :param interface: One of from chimera interfaces
         :return: True if is instance, False otherwise
         """
         return isinstance(self, interface)
+
+    def getProxy(self):
+        return self.getManager().getProxy(self.__location__)

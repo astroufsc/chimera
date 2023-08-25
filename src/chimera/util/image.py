@@ -8,14 +8,13 @@ import string
 import sys
 import urllib.request, urllib.error, urllib.parse
 import zipfile
-from UserDict import DictMixin
+from collections import UserDict
 
 import numpy as N
 from astropy import wcs
 from astropy.io import fits
 
 from chimera.core.exceptions import ChimeraException
-from chimera.core.remoteobject import RemoteObject
 from chimera.core.version import _chimera_name_
 from chimera.util.coord import Coord
 from chimera.util.position import Position
@@ -154,7 +153,7 @@ class ImageUtil(object):
         return False
 
 
-class Image(DictMixin, RemoteObject):
+class Image(UserDict):
     """
     Class to manipulate FITS images with a Pythonic taste.
 
@@ -231,7 +230,7 @@ class Image(DictMixin, RemoteObject):
     # standard constructor
     #
     def __init__(self, filename, fd):
-        RemoteObject.__init__(self)
+        UserDict.__init__(self)
 
         self._fd = fd
         self._filename = filename

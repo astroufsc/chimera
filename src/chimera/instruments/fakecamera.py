@@ -343,7 +343,7 @@ class FakeCamera (CameraBase, FilterWheelBase):
         return self._readoutModes
 
     def supports(self, feature=None):
-        return self._supports[feature]
+        return self._supports.get(feature, False)
 
     #
     # filter wheel

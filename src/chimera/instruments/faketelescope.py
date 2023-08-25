@@ -52,26 +52,19 @@ class FakeTelescope (TelescopeBase, TelescopeCover, TelescopePier):
         self._cover = False
         self._pierside = TelescopePierSide.UNKNOWN
 
-        try:
-            self._site = self.getManager().getProxy("/Site/0")
-            self._gotSite = True
-        except:
-            self._site = Site()
-            self._gotSite = False
+        self._ra = Position.fromRaDec(0, 0).ra
+        self._dec = Position.fromRaDec(0, 0).dec
+        self._alt = Position.fromAltAz(0, 0).alt
+        self._az = Position.fromAltAz(0, 0).az
 
-        self._setRaDecFromAltAz()
+    def _setAltAzFromRaDec(self):
+        altAz = self._getSite().raDecToAltAz(
+            Position.fromRaDec(self._ra, self._dec))
+        self._alt = altAz.alt
+        self._az = altAz.az
 
     def _getSite(self):
-        if self._gotSite:
-            self._site._transferThread()
-            return self._site
-        else:
-            try:
-                self._site = self.getManager().getProxy("/Site/0")
-                self._gotSite = True
-            except:
-                pass
-        return self._site
+        return self.getManager().getProxy("/Site/0")
 
     def _setRaDecFromAltAz(self):
         raDec = self._getSite().altAzToRaDec(

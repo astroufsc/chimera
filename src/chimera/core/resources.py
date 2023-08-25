@@ -1,24 +1,5 @@
-#! /usr/bin/env python
-# -*- coding: iso-8859-1 -*-
-
-# chimera - observatory automation system
-# Copyright (C) 2006-2007  P. Henrique Silva <henrique@astro.ufsc.br>
-
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License
-# as published by the Free Software Foundation; either version 2
-# of the License, or (at your option) any later version.
-
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
-# 02110-1301, USA.
-
+# SPDX-License-Identifier: GPL-2.0-or-later
+# Copyright � 2006-2024  Paulo Henrique Silva <ph.silva@gmail.com>
 
 from chimera.core.location import Location
 from chimera.core.exceptions import InvalidLocationException, \
@@ -27,41 +8,28 @@ from chimera.core.exceptions import InvalidLocationException, \
 
 import time
 import sys
+from threading import Thread
+
+from dataclasses import dataclass, field
+from typing import Any, Type
 
 
-class Resource (object):
-
-    def __init__(self):
-        self._location = None
-        self._instance = None
-        self._bases = []
-        self._created = time.time()
-        self._loop = None
-        self._uri = None
-
-    location = property(lambda self: self._location,
-                        lambda self, value: setattr(self, '_location', value))
-    instance = property(lambda self: self._instance,
-                        lambda self, value: setattr(self, '_instance', value))
-    bases = property(
-        lambda self: self._bases, lambda self, value: setattr(self, '_bases', value))
-    created = property(lambda self: self._created,
-                       lambda self, value: setattr(self, '_created', value))
-    loop = property(
-        lambda self: self._loop, lambda self, value: setattr(self, '_loop', value))
-    uri = property(
-        lambda self: self._uri, lambda self, value: setattr(self, '_uri', value))
-
-    def __str__(self):
-        return "<%s (%s) at %s>" % (self.location, self.instance, self.uri)
+@dataclass
+class Resource:
+    location: Location | None = None
+    instance: Any | None = None
+    uri: str = ""
+    bases: list[Type] = field(default_factory=list)
+    created: float = field(default_factory=time.time)
+    loop: Thread | None = None
 
 
-class ResourcesManager (object):
+class ResourcesManager:
 
     def __init__(self):
         self._res = {}
 
-    def add(self, location, instance, uri, loop=None):
+    def add(self, location, instance, loop=None):
 
         location = self._validLocation(location)
 
@@ -75,12 +43,11 @@ class ResourcesManager (object):
         if entry.instance is not None:
             entry.bases = [b.__name__ for b in type(entry.instance).mro()]
         entry.loop = loop
-        entry.uri = uri
 
         self._res[location] = entry
 
         # get the number of instances of this specific class, counting this one
-        # and not including parents (minus 1 to start couting at 0)
+        # and not including parents (minus 1 to start counting at 0)
         return len(self.getByClass(location.cls, checkBases=False)) - 1
 
     def remove(self, location):
@@ -119,7 +86,6 @@ class ResourcesManager (object):
         return toRet
 
     def _get(self, item):
-
         location = self._validLocation(item)
         locations = [x.location for x in self.getByClass(location.cls)]
 
@@ -130,14 +96,11 @@ class ResourcesManager (object):
             raise ObjectNotFoundException("Couldn't find %s." % location)
 
     def _getByIndex(self, item, index):
-
         location = self._validLocation(item)
-
-        insts = self.getByClass(location.cls)
-
-        if insts:
+        instances = self.getByClass(location.cls)
+        if instances:
             try:
-                return self._res[insts[index].location]
+                return self._res[instances[index].location]
             except IndexError:
                 raise ObjectNotFoundException(
                     "Couldn't find %s instance #%d." % (location, index))
@@ -145,7 +108,6 @@ class ResourcesManager (object):
             raise ObjectNotFoundException("Couldn't find %s." % location)
 
     def _validLocation(self, item):
-
         ret = item
 
         if not isinstance(item, Location):
@@ -154,14 +116,12 @@ class ResourcesManager (object):
         return ret
 
     def __getitem__(self, item):
-
         try:
             return self.get(item)
         except ChimeraException:
             raise KeyError("Couldn't find %s" % item).with_traceback(sys.exc_info()[2])
 
     def __contains__(self, item):
-
         # note that our 'in'/'not in' tests are for keys (locations) and
         # not for values
 

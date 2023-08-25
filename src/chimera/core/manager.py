@@ -1,31 +1,13 @@
-#! /usr/bin/env python
-# -*- coding: iso-8859-1 -*-
-
-# chimera - observatory automation system
-# Copyright (C) 2006-2007  P. Henrique Silva <henrique@astro.ufsc.br>
-
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License
-# as published by the Free Software Foundation; either version 2
-# of the License, or (at your option) any later version.
-
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
-# 02110-1301, USA.
+# SPDX-License-Identifier: GPL-2.0-or-later
+# Copyright � 2006-2024  Paulo Henrique Silva <ph.silva@gmail.com>
 
 
 from chimera.core.classloader import ClassLoader
+from chimera.core.adapter import RedisAdapter
 from chimera.core.resources import ResourcesManager
 from chimera.core.location import Location
 
 from chimera.core.chimeraobject import ChimeraObject
-from chimera.core.remoteobject import RemoteObject
 from chimera.core.proxy import Proxy
 from chimera.core.util import getManagerURI
 from chimera.core.state import State
@@ -39,21 +21,12 @@ from chimera.core.exceptions import InvalidLocationException, \
 
 from chimera.core.path import ChimeraPath
 
-#import chimera.core.log
-
 from chimera.core.constants import MANAGER_DEFAULT_HOST, MANAGER_DEFAULT_PORT, MANAGER_LOCATION
-
-try:
-    import Pyro.core
-    import Pyro.errors
-except ImportError as e:
-    raise RuntimeError("You must have Pyro version >= 3.6 installed.")
 
 import logging
 import socket
 import threading
 import time
-from types import StringType
 
 
 __all__ = ['Manager']
@@ -62,54 +35,7 @@ __all__ = ['Manager']
 log = logging.getLogger(__name__)
 
 
-class ManagerAdapter (Pyro.core.Daemon):
-
-    def __init__(self, manager, host=None, port=None):
-
-        Pyro.core.initServer(banner=False)
-
-        try:
-            Pyro.core.Daemon.__init__(self,
-                                      host=host or MANAGER_DEFAULT_HOST,
-                                      port=port or MANAGER_DEFAULT_PORT,
-                                      norange=0)
-        except Pyro.errors.DaemonError:
-            log.error("Couldn't start Chimera server. Check errors below.")
-            raise
-
-        self.useNameServer(None)
-        self.connect(manager)
-
-        # saved here to give objects a manager when they ask
-        self.manager = manager
-
-        self.getAdapter().setTimeout(None)
-
-    def getManager(self):
-        return self.manager
-
-    def getProxyForObj(self, obj):
-        return Proxy(uri=Pyro.core.PyroURI(self.hostname,
-                                           obj.GUID(),
-                                           prtcol=self.protocol,
-                                           port=self.port))
-
-    def connect(self, obj, name=None, index=None):
-
-        URI = Pyro.core.PyroURI(
-            self.hostname, obj.GUID(), prtcol=self.protocol, port=self.port)
-
-        self.implementations[obj.GUID()] = (obj, name)
-
-        if index:
-            self.implementations[index] = (obj, name)
-
-        obj.setPyroDaemon(self)
-
-        return URI
-
-
-class Manager (RemoteObject):
+class Manager:
 
     """
     This is the main class of Chimera.
@@ -123,23 +49,17 @@ class Manager (RemoteObject):
     """
 
     def __init__(self, host=None, port=None):
-        RemoteObject.__init__(self)
-
         log.info("Starting manager.")
 
         self.resources = ResourcesManager()
         self.classLoader = ClassLoader()
 
-        # identity
-        self.setGUID(MANAGER_LOCATION)
-
         # shutdown event
         self.died = threading.Event()
 
         # our daemon server
-        self.adapter = ManagerAdapter(self, host, port)
-        self.adapterThread = threading.Thread(target=self.adapter.requestLoop)
-        self.adapterThread.setDaemon(True)
+        self.adapter = RedisAdapter(self, host, port)
+        self.adapterThread = threading.Thread(target=self.adapter.requestLoop, daemon=True)
         self.adapterThread.start()
 
         # register ourselves
@@ -151,15 +71,12 @@ class Manager (RemoteObject):
 
     # private
     def __repr__(self):
-        if hasattr(self, 'adapter') and self.adapter:
-            return "<Manager for %s:%d at %s>" % (self.adapter.hostname, self.adapter.port, hex(id(self)))
-        else:
-            return "<Manager at %s>" % hex(id(self))
+        return "<Manager for %s:%d at %s>" % (self.adapter.host, self.adapter.port, hex(id(self)))
 
     # adapter host/port
     def getHostname(self):
         if self.adapter:
-            return self.adapter.hostname
+            return self.adapter.host
         else:
             return None
 
@@ -185,7 +102,7 @@ class Manager (RemoteObject):
     def getDaemon(self):
         return self.adapter
 
-    def getProxy(self, location, name='0', host=None, port=None, lazy=False):
+    def getProxy(self, location, lazy=False):
         """
         Get a proxy for the object pointed by location. The given location
         can contain index instead of names, e.g. '/Object/0' to get objects
@@ -236,72 +153,38 @@ class Manager (RemoteObject):
         @rtype: Proxy
         """
 
+        location = Location(location)
+        resolved_location = Location(
+            host=location.host or self.adapter.host,
+            port=location.port or self.adapter.port,
+            cls=location.cls,
+            name=location.name,
+            config=location.config
+        )
+
+        return Proxy(resolved_location)
+
+    def getInstance(self, location):
         if not location:
             raise ObjectNotFoundException("Couldn't find an object at the"
                                           " given location %s" % location)
+        ret = self.resources.get(location)
 
-        if not isinstance(location, StringType) and not isinstance(location, Location):
+        if not ret:
+            raise ObjectNotFoundException("Couldn't found an object at the"
+                                          " given location %s" % location)
 
-            if issubclass(location, ChimeraObject):
-                location = Location(cls=location.__name__, name=name, host=host or self.getHostname(
-                ), port=port or self.getPort())
-            else:
-                raise NotValidChimeraObjectException(
-                    "Can't get a proxy from non ChimeraObject's descendent object (%s)." % location)
-
-        else:
-            location = Location(
-                location, host=host or self.getHostname(), port=port or self.getPort())
-
-        # who manages this location?
-        if self._belongsToMe(location):
-
-            ret = self.resources.get(location)
-
-            if not ret:
-                raise ObjectNotFoundException("Couldn't found an object at the"
-                                              " given location %s" % location)
-            p = Proxy(uri=ret.uri)
-            if lazy:
-                return p
-            else:
-                p.ping()
-                return p
-        else:
-
-            if lazy:
-                return Proxy(location)
-            else:
-                # contact other manager
-                try:
-                    other = Proxy(location=MANAGER_LOCATION,
-                                  host=location.host or host,
-                                  port=location.port or port)
-                except Pyro.errors.URIError as e:
-                    raise InvalidLocationException(
-                        "Invalid remote location given. '%s' (%s)." % (location, str(e)))
-
-                if not other.ping():
-                    raise ObjectNotFoundException(
-                        "Can't contact %s manager at %s." % (location, other.URI.address))
-
-                proxy = other.getProxy(location)
-
-                if not proxy:
-                    raise ObjectNotFoundException("Couldn't find an object at the"
-                                                  " given location %s" % location)
-                else:
-                    return proxy
+        return ret
 
     def _belongsToMe(self, location):
         meHost = self.getHostname()
         meName = socket.gethostbyname(meHost)
         mePort = self.getPort()
 
-        # if Manager's binded on (0.0.0.0), just check the port, host doesn't
+        # if Manager's bound on (0.0.0.0), just check the port, host doesn't
         # matter.
         if meHost == "0.0.0.0":
-            return (location.port is None or location.port == self.getPort())
+            return location.port is None or location.port == self.getPort()
         else:
             return (location.host is None or location.host in (meHost, meName)) and \
                    (location.port is None or location.port == mePort)
@@ -310,7 +193,7 @@ class Manager (RemoteObject):
 
     def shutdown(self):
         """
-        Ask the system to shutdown. Closing all sockets and stopping
+        Ask the system to shut down. Closing all sockets and stopping
         all threads.
 
         @return: Nothing
@@ -318,31 +201,29 @@ class Manager (RemoteObject):
         """
 
         # die, but only if we are alive ;)
-        if not self.died.isSet():
+        if not self.died.is_set():
 
-            log.info("Shuting down manager.")
+            log.info("Shutting down manager.")
 
             # stop objects
-            # damm 2.4, on 2.5 try/except/finally works
             try:
-                try:
 
-                    elderly_first = sorted(list(self.resources.values()),
-                                           cmp=lambda x, y: cmp(
-                                               x.created, y.created),
-                                           reverse=True)
+                elderly_first = sorted(self.resources.values(),
+                                       key=lambda res: res.created,
+                                       reverse=True
+                                       )
 
-                    for resource in elderly_first:
+                for resource in elderly_first:
 
-                        # except Manager
-                        if resource.location == MANAGER_LOCATION:
-                            continue
+                    # except Manager
+                    if resource.location == MANAGER_LOCATION:
+                        continue
 
-                        # stop object
-                        self.stop(resource.location)
+                    # stop object
+                    self.stop(resource.location)
 
-                except ChimeraException:
-                    pass
+            except ChimeraException:
+                pass
             finally:
                 # kill our adapter
                 self.adapter.shutdown(disconnect=True)
@@ -364,7 +245,7 @@ class Manager (RemoteObject):
 
         try:
             try:
-                while not self.died.isSet():
+                while not self.died.is_set():
                     time.sleep(1)
             except IOError:
                 # On Windows, Ctrl+C on a sleep call raise IOError 'cause
@@ -392,22 +273,14 @@ class Manager (RemoteObject):
         @raises NotValidChimeraObjectException: When an object which doesn't
                                                 inherit from ChimeraObject is
                                                 given in location.
-        @raises InvalidLocationException: When the requested location s invalid.   
+        @raises InvalidLocationException: When the requested location s invalid.
 
-        @return: retuns a proxy for the object if sucessuful, False otherwise.
+        @return: returns a proxy for the object if successful, False otherwise.
         @rtype: Proxy or bool
         """
 
         if type(location) != Location:
             location = Location(location)
-
-        if not self._belongsToMe(location):
-            # remote object, just add it to resource list.
-            # use a dummy instance to make things easier to Resources Manager
-            # getByClass feature.
-            cls = self.classLoader.loadClass(location.cls, path)
-            self.resources.add(location, cls(), None)
-            return True
 
         # get the class
         cls = None
@@ -431,14 +304,14 @@ class Manager (RemoteObject):
         @type start: bool
 
         @raises ChimeraObjectException: Internal error on managed (user) object.
-        @raises NotValidChimeraObjectException: When a object which doesn't inherites from ChimeraObject is given in location.
-        @raises InvalidLocationException: When the requested location s invalid.              
+        @raises NotValidChimeraObjectException: When an object which doesn't inherit from ChimeraObject is given in location.
+        @raises InvalidLocationException: When the requested location s invalid.
 
-        @return: retuns a proxy for the object if sucessuful, False otherwise.
+        @return: returns a proxy for the object if successful, False otherwise.
         @rtype: Proxy or bool
         """
 
-        location = Location(cls=cls.__name__, name=name, config=config)
+        location = Location(cls=cls.__name__, name=name, config=config, host=self.adapter.host, port=self.adapter.port)
 
         # names must not start with a digit
         if location.name[0] in "0123456789":
@@ -474,14 +347,13 @@ class Manager (RemoteObject):
         # connect
         obj.__setlocation__(location)
         next = len(self.resources.getByClass(location.cls))
-        uri = self.adapter.connect(
-            obj, index=str(Location(cls=location.cls, name=next)))
+        uri = self.adapter.connect(obj, location=location, index=next)
         self.resources.add(location, obj, uri)
 
         if start:
             self.start(location)
 
-        return Proxy(uri=uri)
+        return Proxy(uri)
 
     def remove(self, location):
         """
@@ -493,7 +365,7 @@ class Manager (RemoteObject):
 
         @raises ObjectNotFoundException: When te request object or the Manager was not found.
 
-        @return: retuns True if sucessfull. False otherwise.
+        @return: returns True if successful. False otherwise.
         @rtype: bool
         """
 
@@ -519,7 +391,7 @@ class Manager (RemoteObject):
         @raises ObjectNotFoundException: When te request object or the Manager was not found.
         @raises ChimeraObjectException: Internal error on managed (user) object.
 
-        @return: retuns True if sucessfull. False otherwise.
+        @return: returns True if successful. False otherwise.
         @rtype: bool
         """
 
@@ -546,9 +418,8 @@ class Manager (RemoteObject):
             # ok, now schedule object main in a new thread
             log.info("Running %s. __main___." % location)
 
-            loop = threading.Thread(target=resource.instance.__main__)
-            loop.setName(str(resource.location) + ".__main__")
-            loop.setDaemon(True)
+            loop = threading.Thread(target=resource.instance.__main__, daemon=True)
+            loop.name = (str(resource.location) + ".__main__")
             loop.start()
 
             resource.instance.__setstate__(State.RUNNING)
@@ -573,7 +444,7 @@ class Manager (RemoteObject):
         @raises ObjectNotFoundException: When the requested object or the Manager was not found.
         @raises ChimeraObjectException: Internal error on managed (user) object.
 
-        @return: retuns True if sucessfull. False otherwise.
+        @return: returns True if successful. False otherwise.
         @rtype: bool
         """
 
@@ -588,7 +459,7 @@ class Manager (RemoteObject):
         try:
 
             # stop control loop
-            if resource.loop and resource.loop.isAlive():
+            if resource.loop and resource.loop.is_alive():
                 resource.instance.__abort_loop__()
                 try:
                     resource.loop.join()
@@ -608,10 +479,3 @@ class Manager (RemoteObject):
                 location)
             raise ChimeraObjectException(
                 "Error running %s __stop__ method." % location)
-
-    def getGUID(self):
-        return self.objectGUID
-
-    @staticmethod
-    def getPath():
-        return ChimeraPath()

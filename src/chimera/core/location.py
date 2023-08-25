@@ -1,24 +1,5 @@
-#! /usr/bin/env python
-# -*- coding: iso-8859-1 -*-
-
-# chimera - observatory automation system
-# Copyright (C) 2006-2007  P. Henrique Silva <henrique@astro.ufsc.br>
-
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License
-# as published by the Free Software Foundation; either version 2
-# of the License, or (at your option) any later version.
-
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
-# 02110-1301, USA.
-
+# SPDX-License-Identifier: GPL-2.0-or-later
+# Copyright � 2006-2024  Paulo Henrique Silva <ph.silva@gmail.com>
 
 import re
 import sys
@@ -27,16 +8,14 @@ import sys
 import logging
 log = logging.getLogger(__name__)
 
-from types import StringType
-
 from chimera.core.exceptions import InvalidLocationException
 
 
 class Location(object):
 
     """
-    Location represents an specific resource available on the system.
-    This location is the resource address onthe system.
+    Location represents a specific resource available on the system.
+    This location is the resource address on the system.
 
     Location objects are immutable, so please, respect this or hash operations
     will fail.
@@ -44,10 +23,10 @@ class Location(object):
 
     if sys.version_info[0:2] >= (2, 5):
         _re = re.compile(
-            '^(?P<host>[\w.]+)?(?(host)(?P<sep>:))?(?(sep)(?P<port>[\d]+))/+(?P<class>[\w]*)/+(?P<name>[\w]*)(?P<sep2>\??)?(?(sep2)(?P<config>[\w\S\s=,]*))')
+            r'^(?P<host>[\w.]+)?(?(host)(?P<sep>:))?(?(sep)(?P<port>[\d]+))/+(?P<class>[\w]*)/+(?P<name>[\w]*)(?P<sep2>\??)?(?(sep2)(?P<config>[\w\S\s=,]*))')
     else:
         _re = re.compile(
-            '^(?P<host>[\w.]+)?(?P<port>:[\d]+)?/+(?P<class>[\w]*)/+(?P<name>[\w]*)(?P<config>\?[\w\S\s=,]+)?')
+            r'^(?P<host>[\w.]+)?(?P<port>:[\d]+)?/+(?P<class>[\w]*)/+(?P<name>[\w]*)(?P<config>\?[\w\S\s=,]+)?')
 
     def __init__(self, location=None, **options):
 
@@ -58,7 +37,7 @@ class Location(object):
         self._config = None
 
         # simple string
-        if isinstance(location, StringType):
+        if isinstance(location, str):
             (self._host, self._port, self._class,
              self._name, self._config) = self.parse(location)
             if not self._host and "host" in options:
@@ -125,7 +104,7 @@ class Location(object):
                     k, v = opt.split("=")
                     conf[k.strip()] = v.strip()
                 except ValueError:
-                    # split returned less/more than 2 srings
+                    # split returned less/more than 2 strings
                     raise InvalidLocationException(
                         "Cannot parse '%s' as a valid location. "
                         "Invalid config dict: '%s'" %
@@ -144,7 +123,7 @@ class Location(object):
             raise InvalidLocationException(
                 "Invalid location class name (must be non-blank).")
 
-        return (matches['host'], port, matches['class'], matches['name'], conf)
+        return matches['host'], port, matches['class'], matches['name'], conf
 
     def __eq__(self, loc):
 
@@ -158,7 +137,7 @@ class Location(object):
         return not self.__eq__(loc)
 
     def __hash__(self):
-        return (hash(self.cls) ^ hash(self.name))
+        return hash(self.cls) ^ hash(self.name)
 
     def __repr__(self):
 

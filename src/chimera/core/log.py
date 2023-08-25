@@ -1,3 +1,4 @@
+import io
 import logging
 import logging.handlers
 import sys
@@ -7,12 +8,6 @@ from chimera.core.constants import (SYSTEM_CONFIG_LOG_NAME,
                                     SYSTEM_CONFIG_DIRECTORY,
                                     MANAGER_DEFAULT_HOST,
                                     MANAGER_DEFAULT_PORT)
-
-# try to use faster (C)StringIO, use slower one if not available
-try:
-    import io as StringIO
-except ImportError:
-    import io
 
 from chimera.core.exceptions import printException
 

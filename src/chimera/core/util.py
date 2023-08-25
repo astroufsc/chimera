@@ -22,15 +22,10 @@
 
 from chimera.core.constants import MANAGER_DEFAULT_HOST, MANAGER_DEFAULT_PORT, MANAGER_LOCATION
 
-try:
-    import Pyro.core
-except ImportError as e:
-    raise RuntimeError("You must have Pyro version >= 3.6 installed.")
-
 
 def getManagerURI(host=None, port=None):
 
     host = host or MANAGER_DEFAULT_HOST
     port = port or MANAGER_DEFAULT_PORT
 
-    return Pyro.core.PyroURI(host, MANAGER_LOCATION, port)
+    return f"{host}:{port}/{MANAGER_LOCATION}"

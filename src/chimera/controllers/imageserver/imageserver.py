@@ -3,8 +3,6 @@ from chimera.controllers.imageserver.imageserverhttp import ImageServerHTTP
 
 from chimera.util.image import Image
 
-import Pyro.util
-
 import os
 
 from collections import OrderedDict
