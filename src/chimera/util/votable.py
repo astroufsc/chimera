@@ -43,7 +43,7 @@ class VONode(object):
 
     def addAttributes(self, attrs):
         self._attributes.update(attrs)
-        for k, v in attrs.items():
+        for k, v in list(attrs.items()):
             self.__dict__[k[1]] = v
 
     def __getitem__(self, idx):
@@ -57,7 +57,7 @@ class VONode(object):
         """ Returns all attributes.
         """
         res = {}
-        for (ns, n), at in self._attributes.items():
+        for (ns, n), at in list(self._attributes.items()):
             res[n] = at
         return res
 
@@ -190,7 +190,7 @@ class VONode(object):
                 and calls the provided function to output the content.
         """
         func("%s<%s" % (prefix, self.buildName(self._tagname)))
-        for ns, v in self._attributes.items():
+        for ns, v in list(self._attributes.items()):
             func(" %s='%s'" % (self.buildName((ns)), v))
         func(">")
 
@@ -228,8 +228,9 @@ class VOTableHandler (xml.sax.handler.ContentHandler):
         self.currNode = self.sentinel
         self.stack = []
 
-    def startElementNS(self, (urn, name), qname, attrs):
+    def startElementNS(self, xxx_todo_changeme, qname, attrs):
         # print "start ", name
+        (urn, name) = xxx_todo_changeme
         self.stack.append(self.currNode)
 
         self.currNode = self.vonode((urn, name))
@@ -241,8 +242,9 @@ class VOTableHandler (xml.sax.handler.ContentHandler):
             return
         self.currNode.addNode(buf)
 
-    def endElementNS(self, (urn, name), qname):
+    def endElementNS(self, xxx_todo_changeme1, qname):
         # print "end ", name
+        (urn, name) = xxx_todo_changeme1
         newNode = self.currNode
         self.currNode = self.stack.pop()
         self.currNode.addNode(newNode)
@@ -315,7 +317,7 @@ class VOTable(object):
         """
         fields = self.getFields()
         for coln, f in enumerate(fields):
-            if val in f._attributes.values():
+            if val in list(f._attributes.values()):
                 return coln
         return -1
 
@@ -400,4 +402,4 @@ if __name__ == '__main__':
     #votable.printAllNodes ()
     # print [x.getAttribute ('ID') for x in votable.getFields () ]
     # print votable.root.VOTABLE.RESOURCE.TABLE.DATA.TABLEDATA.TR[1].TD[1]
-    print votable.getFields()
+    print(votable.getFields())

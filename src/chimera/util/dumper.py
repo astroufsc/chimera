@@ -5,8 +5,8 @@
 
 
 def printDict(di, format="%-25s %s"):
-    for (key, val) in di.items():
-        print format % (str(key) + ':', val)
+    for (key, val) in list(di.items()):
+        print(format % (str(key) + ':', val))
 
 
 def dumpObj(obj, maxlen=77, lindent=24, maxspew=600):
@@ -77,7 +77,7 @@ def dumpObj(obj, maxlen=77, lindent=24, maxspew=600):
         elif (isinstance(attr, types.MethodType) or
               isinstance(attr, types.FunctionType)):
             methods.append((slot, attr))
-        elif isinstance(attr, types.TypeType):
+        elif isinstance(attr, type):
             classes.append((slot, attr))
         else:
             attrs.append((slot, attr))
@@ -107,57 +107,57 @@ def dumpObj(obj, maxlen=77, lindent=24, maxspew=600):
         objclass = type(obj).__name__
     intro = "Instance of class '%s' as defined in module %s with id %d" % \
             (objclass, objmodule, id(obj))
-    print '\n'.join(prettyPrint(intro, maxlen))
+    print('\n'.join(prettyPrint(intro, maxlen)))
 
     # Object's Docstring
     if objdoc is None:
         objdoc = str(objdoc)
     else:
         objdoc = ('"""' + objdoc.strip() + '"""')
-    print
-    print prettyPrintCols(('Documentation string:',
+    print()
+    print(prettyPrintCols(('Documentation string:',
                            truncstring(objdoc, maxspew)),
-                          normalwidths, ' ')
+                          normalwidths, ' '))
 
     # Built-in methods
     if builtins:
         bi_str = delchars(str(builtins), "[']") or str(None)
-        print
-        print prettyPrintCols(('Built-in Methods:',
+        print()
+        print(prettyPrintCols(('Built-in Methods:',
                                truncstring(bi_str, maxspew)),
-                              normalwidths, ', ')
+                              normalwidths, ', '))
 
     # Classes
     if classes:
-        print
-        print 'Classes:'
+        print()
+        print('Classes:')
     for (classname, classtype) in classes:
         classdoc = getattr(classtype, '__doc__', None) or '<No documentation>'
-        print prettyPrintCols(('',
+        print(prettyPrintCols(('',
                                classname,
                                truncstring(classdoc, maxspew)),
-                              tabbedwidths, ' ')
+                              tabbedwidths, ' '))
 
     # User methods
     if methods:
-        print
-        print 'Methods:'
+        print()
+        print('Methods:')
     for (methodname, method) in methods:
         methoddoc = getattr(method, '__doc__', None) or '<No documentation>'
-        print prettyPrintCols(('',
+        print(prettyPrintCols(('',
                                methodname,
                                truncstring(methoddoc, maxspew)),
-                              tabbedwidths, ' ')
+                              tabbedwidths, ' '))
 
     # Attributes
     if attrs:
-        print
-        print 'Attributes:'
+        print()
+        print('Attributes:')
     for (attr, val) in attrs:
-        print prettyPrintCols(('',
+        print(prettyPrintCols(('',
                                attr,
-                               truncstring(unicode(val), maxspew)),
-                              tabbedwidths, ' ')
+                               truncstring(str(val), maxspew)),
+                              tabbedwidths, ' '))
 
 
 def prettyPrintCols(strings, widths, split=' '):
@@ -167,7 +167,7 @@ def prettyPrintCols(strings, widths, split=' '):
 
     assert len(strings) == len(widths)
 
-    strings = map(nukenewlines, strings)
+    strings = list(map(nukenewlines, strings))
 
     # pretty print each column
     cols = [''] * len(strings)
@@ -178,7 +178,7 @@ def prettyPrintCols(strings, widths, split=' '):
     format = ''.join(["%%-%ds" % width for width in widths[0:-1]]) + "%s"
 
     def formatline(*cols):
-        return format % tuple(map(lambda s: (s or ''), cols))
+        return format % tuple([(s or '') for s in cols])
 
     # generate the formatted text
     return '\n'.join(map(formatline, *cols))

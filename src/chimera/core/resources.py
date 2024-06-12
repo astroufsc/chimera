@@ -105,7 +105,7 @@ class ResourcesManager (object):
 
         toRet = []
 
-        for k, v in self.items():
+        for k, v in list(self.items()):
 
             if not checkBases:
                 if k.cls == cls:
@@ -124,7 +124,7 @@ class ResourcesManager (object):
         locations = [x.location for x in self.getByClass(location.cls)]
 
         if location in locations:
-            ret = filter(lambda x: x == location, self.keys())
+            ret = [x for x in list(self.keys()) if x == location]
             return self._res[ret[0]]
         else:
             raise ObjectNotFoundException("Couldn't find %s." % location)
@@ -158,7 +158,7 @@ class ResourcesManager (object):
         try:
             return self.get(item)
         except ChimeraException:
-            raise KeyError("Couldn't find %s" % item), None, sys.exc_info()[2]
+            raise KeyError("Couldn't find %s" % item).with_traceback(sys.exc_info()[2])
 
     def __contains__(self, item):
 
@@ -167,7 +167,7 @@ class ResourcesManager (object):
 
         item = self._validLocation(item)
 
-        if item in self.keys():
+        if item in list(self.keys()):
             return True
         else:
             # is this a numbered instance?
@@ -184,8 +184,8 @@ class ResourcesManager (object):
     __iter__ = lambda self: self._res.__iter__()
     __len__ = lambda self: self._res.__len__()
 
-    keys = lambda self: self._res.keys()
-    values = lambda self: self._res.values()
-    items = lambda self: self._res.items()
-    iterkeys = lambda self: self._res.iterkeys()
-    iteritems = lambda self: self._res.iteritems()
+    keys = lambda self: list(self._res.keys())
+    values = lambda self: list(self._res.values())
+    items = lambda self: list(self._res.items())
+    iterkeys = lambda self: iter(self._res.keys())
+    iteritems = lambda self: iter(self._res.items())

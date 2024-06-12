@@ -3,8 +3,8 @@ import threading
 #import logging
 import os
 
-from SimpleHTTPServer import SimpleHTTPRequestHandler
-from BaseHTTPServer import HTTPServer
+from http.server import SimpleHTTPRequestHandler
+from http.server import HTTPServer
 
 
 class ImageServerHTTPHandler(SimpleHTTPRequestHandler):
@@ -58,7 +58,7 @@ class ImageServerHTTPHandler(SimpleHTTPRequestHandler):
     def list(self):
 
         toReturn = '<table><tr><th>Image ID</th><th>Path</th></tr>'
-        keys = self.server.ctrl.imagesByPath.keys()
+        keys = list(self.server.ctrl.imagesByPath.keys())
         keys.sort()
         for key in keys:
             image = self.server.ctrl.imagesByPath[key]

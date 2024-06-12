@@ -1,4 +1,4 @@
-from __future__ import division
+
 
 from chimera.core.chimeraobject import ChimeraObject
 from chimera.core.lock import lock
@@ -75,17 +75,17 @@ class FocusFit(object):
 
         log = open(filename, "w")
 
-        print >> log, "#", time.strftime("%c")
-        print >> log, "# A=%f B=%f C=%f" % tuple(self)
-        print >> log, "# best focus position: %.3f(FWHM %.3f)" % self.best_focus
+        print("#", time.strftime("%c"), file=log)
+        print("# A=%f B=%f C=%f" % tuple(self), file=log)
+        print("# best focus position: %.3f(FWHM %.3f)" % self.best_focus, file=log)
         if self.minmax:
-            print >> log, "# minmax filtering: %s" % str(self.minmax)
+            print("# minmax filtering: %s" % str(self.minmax), file=log)
 
         if self.temperature:
-            print >> log, "# focuser temperature: %.3f" % self.temperature
+            print("# focuser temperature: %.3f" % self.temperature, file=log)
 
         for position, fwhm in zip(self.position, self.fwhm):
-            print >> log, position, fwhm
+            print(position, fwhm, file=log)
 
         log.close()
 
@@ -101,7 +101,7 @@ class FocusFit(object):
     def __hash__(self):
         return hash((self.A, self.B, self.C, self.err))
 
-    def __nonzero__(self):
+    def __bool__(self):
         return (self.position != None) and (self.fwhm != None)
 
     @staticmethod
@@ -341,7 +341,7 @@ class Autofocus(ChimeraObject, IAutofocus):
             except NotImplementedError:
                 temp = None
             fit = FocusFit.fit(N.array(valid_positions), N.array(fwhm), temperature=temp, minmax=minmax)
-        except Exception, e:
+        except Exception as e:
             focuser.moveTo(initial_position)
 
             raise FocusNotFoundException("Error trying to fit a focus curve. "
@@ -357,7 +357,7 @@ class Autofocus(ChimeraObject, IAutofocus):
 
             self.log.debug("Best focus position: %.3f" % fit.best_focus[0])
             focuser.moveTo(int(fit.best_focus[0]))
-        except InvalidFocusPositionException, e:
+        except InvalidFocusPositionException as e:
             focuser.moveTo(initial_position)
             raise FocusNotFoundException("Best guess was %s, but could not move the focuser.\n"
                                          "%s\n"

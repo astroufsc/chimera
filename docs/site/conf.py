@@ -38,8 +38,8 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General substitutions.
-project = u'chimera'
-copyright = u'2008-%s, GAS - UFSC' % time.strftime('%Y')
+project = 'chimera'
+copyright = '2008-%s, GAS - UFSC' % time.strftime('%Y')
 
 # The default replacements for |version| and |release|, also used in various
 # other places throughout the built documents.

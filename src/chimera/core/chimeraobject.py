@@ -46,9 +46,7 @@ import threading
 __all__ = ['ChimeraObject']
 
 
-class ChimeraObject (RemoteObject, ILifeCycle):
-
-    __metaclass__ = MetaObject
+class ChimeraObject (RemoteObject, ILifeCycle, metaclass=MetaObject):
 
     def __init__(self):
         RemoteObject.__init__(self)
@@ -139,7 +137,7 @@ class ChimeraObject (RemoteObject, ILifeCycle):
         return getattr(self, METHODS_ATTRIBUTE_NAME)
 
     def __get_config__(self):
-        return getattr(self, CONFIG_PROXY_NAME).items()
+        return list(getattr(self, CONFIG_PROXY_NAME).items())
 
     # ILifeCycle implementation
     def __start__(self):

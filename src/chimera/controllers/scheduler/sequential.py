@@ -8,7 +8,7 @@ import logging
 
 log = logging.getLogger(__name__)
 
-from Queue import Queue
+from queue import Queue
 
 
 class SequentialScheduler (IScheduler):
@@ -35,7 +35,7 @@ class SequentialScheduler (IScheduler):
 
         machine.wakeup()
 
-    def next (self):
+    def __next__ (self):
         if not self.rq.empty():
             return self.rq.get()
 

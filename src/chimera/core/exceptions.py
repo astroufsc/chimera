@@ -10,11 +10,11 @@ from chimera.core.compat import *
 
 def printException(e, stream=sys.stdout):
 
-    print >> stream, ''.join(strException(e))
+    print(''.join(strException(e)), file=stream)
 
     if hasattr(e, 'cause') and getattr(e, 'cause') is not None:
-        print >> stream, "Caused by:",
-        print >> stream, ''.join(e.cause)
+        print("Caused by:", end=' ', file=stream)
+        print(''.join(e.cause), file=stream)
 
 
 def strException(e):

@@ -46,7 +46,7 @@ from chimera.core.constants import MANAGER_DEFAULT_HOST, MANAGER_DEFAULT_PORT, M
 try:
     import Pyro.core
     import Pyro.errors
-except ImportError, e:
+except ImportError as e:
     raise RuntimeError("You must have Pyro version >= 3.6 installed.")
 
 import logging
@@ -174,7 +174,7 @@ class Manager (RemoteObject):
         """
         Returns a list with the Location of all the available resources
         """
-        return self.resources.keys()
+        return list(self.resources.keys())
 
     def getResourcesByClass(self, cls):
         ret = self.resources.getByClass(cls)
@@ -277,7 +277,7 @@ class Manager (RemoteObject):
                     other = Proxy(location=MANAGER_LOCATION,
                                   host=location.host or host,
                                   port=location.port or port)
-                except Pyro.errors.URIError, e:
+                except Pyro.errors.URIError as e:
                     raise InvalidLocationException(
                         "Invalid remote location given. '%s' (%s)." % (location, str(e)))
 
@@ -464,9 +464,9 @@ class Manager (RemoteObject):
             raise ChimeraObjectException("Error in %s __init__." % location)
 
         try:
-            for k, v in location.config.items():
+            for k, v in list(location.config.items()):
                 obj[k] = v
-        except (OptionConversionException, KeyError), e:
+        except (OptionConversionException, KeyError) as e:
             log.exception("Error configuring %s." % location)
             raise ChimeraObjectException(
                 "Error configuring %s. (%s)" % (location, e))

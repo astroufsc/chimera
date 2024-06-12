@@ -50,7 +50,7 @@ class ImageRequest (dict):
         self.update(defaults)
 
         # validate keywords passed
-        not_valid = [k for k in kwargs.keys() if k not in defaults.keys()]
+        not_valid = [k for k in list(kwargs.keys()) if k not in list(defaults.keys())]
 
         if any(not_valid):
             if len(not_valid) > 1:

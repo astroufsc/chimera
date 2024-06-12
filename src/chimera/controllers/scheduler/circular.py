@@ -12,7 +12,7 @@ class CircularScheduler (SequentialScheduler):
     def __init__ (self):
         SequentialScheduler.__init__(self)
 
-    def next (self):
+    def __next__ (self):
         if self.rq.empty():
             session = Session()
             programs = session.query(Program).all()

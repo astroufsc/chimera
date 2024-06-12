@@ -54,7 +54,7 @@ class ImageServer(ChimeraObject):
         if self["httpd"]:
             self.http.stop()
 
-        for image in self.imagesByID.values():
+        for image in list(self.imagesByID.values()):
             self.unregister(image)
 
     def _loadImageDir(self, dir):
@@ -75,7 +75,7 @@ class ImageServer(ChimeraObject):
     def register(self, image):
         try:
             if len(self.imagesByID) > self['max_images']:
-                remove_items = self.imagesByID.keys()[:-self['max_images']]
+                remove_items = list(self.imagesByID.keys())[:-self['max_images']]
 
                 for item in remove_items:
                     self.log.debug('Unregistering image %s' % item)
@@ -94,16 +94,16 @@ class ImageServer(ChimeraObject):
             # save Image's HTTP address
             image.http(self.getHTTPByID(image.GUID()))
             return image.getProxy()
-        except Exception, e:
-            print ''.join(Pyro.util.getPyroTraceback(e))
+        except Exception as e:
+            print(''.join(Pyro.util.getPyroTraceback(e)))
 
     def unregister(self, image):
         try:
             self.getDaemon().disconnect(image)
             del self.imagesByID[image.GUID()]
             del self.imagesByPath[image.filename()]
-        except Exception, e:
-            print ''.join(Pyro.util.getPyroTraceback(e))
+        except Exception as e:
+            print(''.join(Pyro.util.getPyroTraceback(e)))
 
     def getImageByID(self, id):
         if id in self.imagesByID:

@@ -183,16 +183,16 @@ class TelescopeTest (object):
         raise SkipTest()
 
         def printPosition():
-            print self.tel.getPositionRaDec(), self.tel.getPositionAltAz()
+            print(self.tel.getPositionRaDec(), self.tel.getPositionAltAz())
             sys.stdout.flush()
             
-        print
+        print()
 
         ra  = self.tel.getRa()
         dec = self.tel.getDec()
 
-        print "current position:", self.tel.getPositionRaDec()
-        print "moving to:", (ra-"01 00 00"), (dec-"01 00 00")
+        print("current position:", self.tel.getPositionRaDec())
+        print("moving to:", (ra-"01 00 00"), (dec-"01 00 00"))
 
         self.tel.slewToRaDec(Position.fromRaDec(ra-Coord.fromH(1), dec-Coord.fromD(1)))
 
@@ -200,7 +200,7 @@ class TelescopeTest (object):
             printPosition()
             time.sleep(0.5)
 
-        print "parking..."
+        print("parking...")
         sys.stdout.flush()
         self.tel.park()
 
@@ -212,11 +212,11 @@ class TelescopeTest (object):
             time.sleep(0.5)
        
         while time.time() < t0+wait:
-            print "\rwaiting ... ",
+            print("\rwaiting ... ", end=' ')
             sys.stdout.flush()
             time.sleep(1)
 
-        print "unparking..."
+        print("unparking...")
         sys.stdout.flush()
 
         self.tel.unpark()
@@ -230,45 +230,45 @@ class TelescopeTest (object):
         # FIXME: make a real test.
         raise SkipTest()
 
-        print
+        print()
 
         dt = Coord.fromDMS("00:20:00")
 
         start = self.tel.getPositionRaDec()
         self.tel.moveNorth(dt, SlewRate.FIND)
-        print "North:", (start.ra - self.tel.getPositionRaDec().ra).AS, (start.dec - self.tel.getPositionRaDec().dec).AS
+        print("North:", (start.ra - self.tel.getPositionRaDec().ra).AS, (start.dec - self.tel.getPositionRaDec().dec).AS)
 
         start = self.tel.getPositionRaDec()
         self.tel.moveSouth(dt, SlewRate.FIND)
-        print "South:", (start.ra - self.tel.getPositionRaDec().ra).AS, (start.dec - self.tel.getPositionRaDec().dec).AS
+        print("South:", (start.ra - self.tel.getPositionRaDec().ra).AS, (start.dec - self.tel.getPositionRaDec().dec).AS)
 
         start = self.tel.getPositionRaDec()
         self.tel.moveWest(dt, SlewRate.FIND)
-        print "West :", (start.ra - self.tel.getPositionRaDec().ra).AS, (start.dec - self.tel.getPositionRaDec().dec).AS
+        print("West :", (start.ra - self.tel.getPositionRaDec().ra).AS, (start.dec - self.tel.getPositionRaDec().dec).AS)
 
         start = self.tel.getPositionRaDec()
         self.tel.moveEast(dt, SlewRate.FIND)
-        print "East :", (start.ra - self.tel.getPositionRaDec().ra).AS, (start.dec - self.tel.getPositionRaDec().dec).AS
+        print("East :", (start.ra - self.tel.getPositionRaDec().ra).AS, (start.dec - self.tel.getPositionRaDec().dec).AS)
 
         start = self.tel.getPositionRaDec()
         self.tel.moveNorth(dt, SlewRate.FIND)
         self.tel.moveEast(dt, SlewRate.FIND)
-        print "NE   :", (start.ra - self.tel.getPositionRaDec().ra).AS, (start.dec - self.tel.getPositionRaDec().dec).AS
+        print("NE   :", (start.ra - self.tel.getPositionRaDec().ra).AS, (start.dec - self.tel.getPositionRaDec().dec).AS)
 
         start = self.tel.getPositionRaDec()
         self.tel.moveSouth(dt, SlewRate.FIND)
         self.tel.moveEast(dt, SlewRate.FIND)
-        print "SE   :", (start.ra - self.tel.getPositionRaDec().ra).AS, (start.dec - self.tel.getPositionRaDec().dec).AS
+        print("SE   :", (start.ra - self.tel.getPositionRaDec().ra).AS, (start.dec - self.tel.getPositionRaDec().dec).AS)
 
         start = self.tel.getPositionRaDec()
         self.tel.moveNorth(dt, SlewRate.FIND)
         self.tel.moveWest(dt, SlewRate.FIND)
-        print "NW   :", (start.ra - self.tel.getPositionRaDec().ra).AS, (start.dec - self.tel.getPositionRaDec().dec).AS
+        print("NW   :", (start.ra - self.tel.getPositionRaDec().ra).AS, (start.dec - self.tel.getPositionRaDec().dec).AS)
 
         start = self.tel.getPositionRaDec()
         self.tel.moveSouth(dt, SlewRate.FIND)
         self.tel.moveWest(dt, SlewRate.FIND)
-        print "SW   :", (start.ra - self.tel.getPositionRaDec().ra).AS, (start.dec - self.tel.getPositionRaDec().dec).AS
+        print("SW   :", (start.ra - self.tel.getPositionRaDec().ra).AS, (start.dec - self.tel.getPositionRaDec().dec).AS)
 
 
 #

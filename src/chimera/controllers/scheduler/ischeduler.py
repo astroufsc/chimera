@@ -11,7 +11,7 @@ class IScheduler (object):
         scheduled items because of realtime constraints.
         """
 
-    def next (self):
+    def __next__ (self):
         """
         Called to get next runnable task after run phase-two
         scheduling on the current runqueue. It may use 'now'

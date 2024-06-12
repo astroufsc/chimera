@@ -1,6 +1,6 @@
 from pyraf import iraf
 
-import reduction_tools
+from . import reduction_tools
 
 iraf.noao.imred()
 iraf.noao.imred.ccdred()

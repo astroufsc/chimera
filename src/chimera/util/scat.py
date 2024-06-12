@@ -60,7 +60,7 @@ class SCatWrapper (object):
 
         # magnitude limits
         mags = [(k.split("mag")[1], v)
-                for k, v in conditions.items() if k.startswith("mag")]
+                for k, v in list(conditions.items()) if k.startswith("mag")]
 
         mag_faintest = None
         mag_brighter = None

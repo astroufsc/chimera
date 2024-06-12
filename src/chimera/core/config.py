@@ -25,7 +25,7 @@ from types import (IntType, FloatType, StringType, LongType,
                    NoneType)
 
 try:
-    import cPickle as pickle
+    import pickle as pickle
 except ImportError:
     import pickle
 
@@ -57,7 +57,7 @@ class Option(object):
             self._value = self._checker.check(value)
 
             return oldvalue
-        except OptionConversionException, e:
+        except OptionConversionException as e:
             log.debug("Error setting %s: %s." % (self._name, str(e)))
             raise e
 
@@ -327,7 +327,7 @@ class CoordOption (Option):
             oldvalue = self._value
             self._value = self._checker.check(value, self._state)
             return oldvalue
-        except OptionConversionException, e:
+        except OptionConversionException as e:
             log.debug("Error setting %s: %s." % (self._name, str(e)))
             raise e
 
@@ -362,7 +362,7 @@ class PositionOption (Option):
             oldvalue = self._value
             self._value = self._checker.check(value, self._system, self._epoch)
             return oldvalue
-        except OptionConversionException, e:
+        except OptionConversionException as e:
             log.debug("Error setting %s: %s." % (self._name, str(e)))
             raise e
 
@@ -391,7 +391,7 @@ class Config (object):
 
         options = {}
 
-        for name, value in opt.items():
+        for name, value in list(opt.items()):
 
             if type(value) in (IntType, LongType):
                 options[name] = Option(name, value, IntChecker())
@@ -476,7 +476,7 @@ class Config (object):
             raise KeyError("invalid option: %s." % name)
 
     def __iter__(self):
-        return self.iterkeys()
+        return iter(self.keys())
 
     def iterkeys(self):
         return self._options.__iter__()
@@ -490,13 +490,13 @@ class Config (object):
             yield (name, self._options[name].get())
 
     def keys(self):
-        return [key for key in self.iterkeys()]
+        return [key for key in self.keys()]
 
     def values(self):
-        return [value for value in self.itervalues()]
+        return [value for value in self.values()]
 
     def items(self):
-        return [(name, value) for name, value in self.iteritems()]
+        return [(name, value) for name, value in self.items()]
 
     def __iadd__(self, other):
 
@@ -506,7 +506,7 @@ class Config (object):
         if type(other) == DictType:
             other = Config(other)
 
-        for name, value in other._options.items():
+        for name, value in list(other._options.items()):
             if not name in self._options:
                 raise KeyError("invalid option: %s" % name)
 

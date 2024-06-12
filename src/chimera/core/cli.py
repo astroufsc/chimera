@@ -61,7 +61,7 @@ class Option (object):
 
     def __init__(self, **kw):
 
-        for key, value in kw.items():
+        for key, value in list(kw.items()):
 
             if hasattr(self, key):
                 setattr(self, key, value)
@@ -209,7 +209,7 @@ class CLIValues (object):
     def __init__(self, defaults=None):
 
         if defaults:
-            for (attr, val) in defaults.items():
+            for (attr, val) in list(defaults.items()):
                 setattr(self, attr, val)
 
         object.__setattr__(self, '__order__', [])
@@ -326,11 +326,11 @@ class ChimeraCLI (object):
         # base actions and parameters
 
         if verbosity:
-            self.addParameters(dict(name="quiet", short="q", long="quiet",
+            self.addParameters(dict(name="quiet", short="q", int="quiet",
                                     type=ParameterType.BOOLEAN, default=True,
                                     help="Don't display information while working."),
 
-                               dict(name="verbose", short="v", long="verbose",
+                               dict(name="verbose", short="v", int="verbose",
                                     type=ParameterType.BOOLEAN, default=False,
                                     help="Display information while working"))
 
@@ -391,7 +391,7 @@ class ChimeraCLI (object):
 
             self.addParameters(dict(name="inst_dir",
                                     short="I",
-                                    long="instruments-dir",
+                                    int="instruments-dir",
                                     helpGroup="PATHS",
                                     type=ParameterType.INCLUDE_PATH,
                                     default=ChimeraPath().instruments,
@@ -412,7 +412,7 @@ class ChimeraCLI (object):
 
             self.addParameters(dict(name="ctrl_dir",
                                     short="C",
-                                    long="controllers-dir",
+                                    int="controllers-dir",
                                     helpGroup="PATHS",
                                     type=ParameterType.INCLUDE_PATH,
                                     default=ChimeraPath().controllers,
@@ -509,16 +509,16 @@ class ChimeraCLI (object):
 
         # CLI requested objects
         instruments = dict(
-            [(x.name, x) for x in self._parameters.values() if x.type == ParameterType.INSTRUMENT])
+            [(x.name, x) for x in list(self._parameters.values()) if x.type == ParameterType.INSTRUMENT])
         controllers = dict(
-            [(x.name, x) for x in self._parameters.values() if x.type == ParameterType.CONTROLLER])
+            [(x.name, x) for x in list(self._parameters.values()) if x.type == ParameterType.CONTROLLER])
 
         # starts a local Manager (not using sysconfig) or a full sysconfig
         # backed if needed.
         self._startSystem(self.options)
 
         # create locations
-        for inst in instruments.values() + controllers.values():
+        for inst in list(instruments.values()) + list(controllers.values()):
 
             # use user instrument if given
             if inst.default != getattr(options, inst.name):
@@ -544,7 +544,7 @@ class ChimeraCLI (object):
                           (inst.name.capitalize(),
                            os.path.abspath(options.config)))
 
-        for inst in instruments.values() + controllers.values():
+        for inst in list(instruments.values()) + list(controllers.values()):
 
             inst_proxy = None
 
@@ -591,7 +591,7 @@ class ChimeraCLI (object):
                 elif type(payload) == Parameter:
                     self._parameters[payload.name] = payload
 
-        for action in self._actions.values():
+        for action in list(self._actions.values()):
 
             if not action.actionGroup:
                 action.actionGroup = action.name
@@ -612,7 +612,7 @@ class ChimeraCLI (object):
                                  action=kind, type=action.type,
                                  help=action.help, metavar=action.metavar)
 
-        for param in self._parameters.values():
+        for param in list(self._parameters.values()):
 
             if not param.type:
                 param.type = "string"
@@ -670,16 +670,16 @@ class ChimeraCLI (object):
             else:
                 group.add_option(param.long, **option_kwargs)
 
-        for group in self._helpGroups.values():
+        for group in list(self._helpGroups.values()):
             self.parser.add_option_group(group)
 
         defaults = {}
 
-        for action in self._actions.values():
+        for action in list(self._actions.values()):
             if action.default is not None:
                 defaults[action.name] = action.default
 
-        for param in self._parameters.values():
+        for param in list(self._parameters.values()):
             if param.default is not None:
                 defaults[param.name] = param.default
 
@@ -694,7 +694,7 @@ class ChimeraCLI (object):
         # add default actions
         # FIXME: there is no way to disable a default action?
         actions.extend(
-            [action for action in self._actions.values() if action.default == True])
+            [action for action in list(self._actions.values()) if action.default == True])
 
         if not actions:
             return []
@@ -718,9 +718,9 @@ class ChimeraCLI (object):
     def _validateParameters(self, options):
 
         paramValues = [getattr(options, param)
-                       for param in self._parameters.keys()]
+                       for param in list(self._parameters.keys())]
 
-        for name, value in zip(self._parameters.keys(), paramValues):
+        for name, value in zip(list(self._parameters.keys()), paramValues):
             param = self._parameters[name]
 
             try:
@@ -729,7 +729,7 @@ class ChimeraCLI (object):
                 if param.target is not None:
                     newValue = getattr(self, param.target.__name__)(value)
                     setattr(options, name, newValue or value)
-            except ValueError, e:
+            except ValueError as e:
                 self.exit("Invalid value for %s: %s" % (name, e))
 
     def _runAction(self, action, options):
@@ -738,7 +738,7 @@ class ChimeraCLI (object):
             if action.target is not None:
                 method = getattr(self, action.target.__name__)
                 method(options)
-        except Exception, e:
+        except Exception as e:
             self.err("Something wrong with '%s' action." % (action.name))
             printException(e)
             return False

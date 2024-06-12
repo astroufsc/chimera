@@ -154,7 +154,7 @@ class SystemConfig(object):
             config = yaml.load(buffer)
             if not config:  # empty file
                 return
-        except yaml.YAMLError, e:
+        except yaml.YAMLError as e:
             s = None
             if hasattr(e, 'problem_mark'):
                 mark = e.problem_mark
@@ -176,7 +176,7 @@ class SystemConfig(object):
                     sectionsOrder.append(token.value)
 
         # parse chimera section first, to get host/port or set defaults
-        for type, values in config.items():
+        for type, values in list(config.items()):
             if type.lower() == "chimera":
                 try:
                     if values["host"] == "0.0.0.0":
@@ -204,7 +204,7 @@ class SystemConfig(object):
 
         objects = {}
 
-        for type, values in config.items():
+        for type, values in list(config.items()):
 
             key = type.lower()
             objects[key] = []

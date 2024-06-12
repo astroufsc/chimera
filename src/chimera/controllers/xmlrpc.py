@@ -19,8 +19,8 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 # 02110-1301, USA.
 
-import SocketServer
-import SimpleXMLRPCServer
+import socketserver
+import xmlrpc.server
 
 import socket
 import sys
@@ -37,22 +37,22 @@ from chimera.util.position import Position
 from Pyro.util import getPyroTraceback
 
 
-class ThreadingXMLRPCServer (SocketServer.ThreadingTCPServer,
-                             SimpleXMLRPCServer.SimpleXMLRPCDispatcher):
+class ThreadingXMLRPCServer (socketserver.ThreadingTCPServer,
+                             xmlrpc.server.SimpleXMLRPCDispatcher):
 
     def __init__(self, addr,
-                 requestHandler=SimpleXMLRPCServer.SimpleXMLRPCRequestHandler,
+                 requestHandler=xmlrpc.server.SimpleXMLRPCRequestHandler,
                  logRequests=1, allow_none=True):
 
         self.logRequests = logRequests
 
         if sys.version_info[:2] == (2, 5):
-            SimpleXMLRPCServer.SimpleXMLRPCDispatcher.__init__(
+            xmlrpc.server.SimpleXMLRPCDispatcher.__init__(
                 self, False, sys.getdefaultencoding())
         else:
-            SimpleXMLRPCServer.SimpleXMLRPCDispatcher.__init__(self)
+            xmlrpc.server.SimpleXMLRPCDispatcher.__init__(self)
 
-        SocketServer.ThreadingTCPServer.__init__(self, addr, requestHandler)
+        socketserver.ThreadingTCPServer.__init__(self, addr, requestHandler)
 
         self.closed = False
 
@@ -144,9 +144,9 @@ class ChimeraXMLDispatcher:
             if self._ctrl['debug']:
                 self._ctrl.log.debug('AttributeError:Method not found')
             raise ValueError("Method not found")
-        except Exception, e:
+        except Exception as e:
             if self._ctrl['debug']:
-                print ''.join(getPyroTraceback(e))
+                print(''.join(getPyroTraceback(e)))
                 self._ctrl.log.debug(
                     'Other Error <%s>: %s' % (type(e), str(e)))
             raise
@@ -219,8 +219,7 @@ class XMLRPC(ChimeraObject):
         return True
 
     def getListOf(self, cls):
-        locations = filter(
-            lambda loc: loc.cls == cls, self.getManager().getResources())
+        locations = [loc for loc in self.getManager().getResources() if loc.cls == cls]
         return ["%s.%s" % (loc.cls, loc.name) for loc in locations]
 
     def __start__(self):
@@ -235,7 +234,7 @@ class XMLRPC(ChimeraObject):
             self._srv.register_function(self.isAlive, 'Chimera.isAlive')
             self._srv.register_function(self.getListOf, 'Chimera.getListOf')
             return True
-        except socket.error, e:
+        except socket.error as e:
             self.log.error("Error while starting Remote server (%s)" % e)
 
     def __stop__(self):
