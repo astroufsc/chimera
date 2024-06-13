@@ -32,7 +32,7 @@ class ProgramExecutor(object):
                                }
 
     def __start__ (self):
-        for handler in self.actionHandlers.values():
+        for handler in list(self.actionHandlers.values()):
             self._injectInstrument(handler)
 
     def execute(self, program):
@@ -65,7 +65,7 @@ class ProgramExecutor(object):
                 else:
                     self.controller.actionComplete(action, SchedulerStatus.OK)
 
-            except ProgramExecutionException, e:
+            except ProgramExecutionException as e:
                 self.controller.actionComplete(action, SchedulerStatus.ERROR)
                 raise
             except KeyError:
@@ -89,5 +89,5 @@ class ProgramExecutor(object):
             try:
                 setattr(handler, instrument,
                         self.controller.getManager().getProxy(self.controller[instrument]))
-            except ObjectNotFoundException, e:
+            except ObjectNotFoundException as e:
                 log.error("No instrument to inject on %s handler" % handler)

@@ -127,5 +127,5 @@ class TestCoord (object):
             assert coord[0] == str(coord[1]), (coord[0], "!=", str(coord[1]))
             t_check += time.clock()-t
 
-        print "#%d coords parsed in %.3fs (%.3f/s) and checked in %.3fs (%.3f/s) ..." % (len(coords), t_parse, len(coords)/t_parse,
-                                                                                         t_check, len(coords)/t_check)
+        print("#%d coords parsed in %.3fs (%.3f/s) and checked in %.3fs (%.3f/s) ..." % (len(coords), t_parse, len(coords)/t_parse,
+                                                                                         t_check, len(coords)/t_check))

@@ -23,7 +23,7 @@
 try:
     import Pyro.core
     import Pyro.constants
-except ImportError, e:
+except ImportError as e:
     raise RuntimeError("You must have Pyro version >= 3.6 installed.")
 
 
@@ -107,10 +107,10 @@ class RemoteObject (Pyro.core.ObjBase):
                 try:
                     if type(exc_info[0]) == StringType:
                         if exc_info[1] is None:
-                            raise Exception, exc_info[0], exc_info[2]
+                            raise Exception(exc_info[0]).with_traceback(exc_info[2])
                         else:
-                            raise Exception, "%s: %s" % (
-                                exc_info[0], exc_info[1]), exc_info[2]
+                            raise Exception("%s: %s" % (
+                                exc_info[0], exc_info[1])).with_traceback(exc_info[2])
                     else:
                         raise
                 finally:

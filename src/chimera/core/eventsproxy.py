@@ -84,7 +84,7 @@ class EventsProxy:
                 # proxy._setOneway ([handler["method"]]) should be faster but
                 # results say no!
                 dispatcher(*args, **kwargs)
-            except AttributeError, e:
+            except AttributeError as e:
                 tb_size = len(traceback.extract_tb(sys.exc_info()[2]))
                 if tb_size == 1:
                     log.debug("Invalid proxy method ('%s %s') for '%s' handler." %
@@ -96,12 +96,12 @@ class EventsProxy:
 
                 excluded.append(handler)
                 continue
-            except Pyro.errors.ProtocolError, e:
+            except Pyro.errors.ProtocolError as e:
                 log.debug(
                     "Unreachable handler (%s). Removing from subscribers list." % proxy)
                 excluded.append(handler)
                 continue
-            except Exception, e:
+            except Exception as e:
                 log.debug(
                     "Handler (%s) raised an exception. Removing from subscribers list." % proxy)
                 log.exception(e)

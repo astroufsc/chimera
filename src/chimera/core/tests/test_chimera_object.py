@@ -253,4 +253,4 @@ class TestChimeraObject (object):
 
         # features
         assert m.features(BaseClass)  # Minimo is a BaseClass subclass
-        assert not m.features(basestring)  # But not a basestring subclass
+        assert not m.features(str)  # But not a basestring subclass

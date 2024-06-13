@@ -90,7 +90,7 @@ class ClassLoader (object):
 
         cls = None
 
-        for k, v in vars(module).items():
+        for k, v in list(vars(module).items()):
             if k.lower() == clsname.lower():
                 cls = v
                 break

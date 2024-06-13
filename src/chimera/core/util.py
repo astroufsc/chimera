@@ -24,7 +24,7 @@ from chimera.core.constants import MANAGER_DEFAULT_HOST, MANAGER_DEFAULT_PORT, M
 
 try:
     import Pyro.core
-except ImportError, e:
+except ImportError as e:
     raise RuntimeError("You must have Pyro version >= 3.6 installed.")
 
 

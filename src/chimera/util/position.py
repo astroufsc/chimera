@@ -2,12 +2,12 @@
 try:
     from chimera.util.coord import Coord, CoordUtil
 except ImportError:
-    from coord import Coord, CoordUtil
+    from .coord import Coord, CoordUtil
 
 try:
     from chimera.util.enum import Enum
 except ImportError:
-    from enum import Enum
+    from .enum import Enum
 
 import ephem
 from types import StringType
@@ -103,7 +103,7 @@ class Position (object):
 
             Position._checkRange(float(ra), 0, 360)
 
-        except ValueError, e:
+        except ValueError as e:
             raise ValueError("Invalid RA coordinate %s" % str(ra))
         except PositionOutsideLimitsError:
             raise ValueError(
@@ -124,7 +124,7 @@ class Position (object):
 
             Position._checkRange(float(dec), -90, 360)
 
-        except ValueError, e:
+        except ValueError as e:
             raise ValueError("Invalid DEC coordinate %s" % str(dec))
         except PositionOutsideLimitsError:
             raise ValueError(
@@ -142,7 +142,7 @@ class Position (object):
 
             Position._checkRange(float(az), -180, 360)
 
-        except ValueError, e:
+        except ValueError as e:
             raise ValueError("Invalid AZ coordinate %s" % str(az))
         except PositionOutsideLimitsError:
             raise ValueError(
@@ -156,7 +156,7 @@ class Position (object):
 
             Position._checkRange(float(alt), -90, 180)
 
-        except ValueError, e:
+        except ValueError as e:
             raise ValueError("Invalid ALT coordinate %s" % str(alt))
         except PositionOutsideLimitsError:
             raise ValueError(
@@ -167,33 +167,33 @@ class Position (object):
     @staticmethod
     def fromLongLat(long, lat):
         return Position(
-            Position._genericLongLat(long, lat), system=System.TOPOCENTRIC)
+            Position._genericLongLat(int, lat), system=System.TOPOCENTRIC)
 
     @staticmethod
     def fromGalactic(long, lat):
         return Position(
-            Position._genericLongLat(long, lat), system=System.GALACTIC)
+            Position._genericLongLat(int, lat), system=System.GALACTIC)
 
     @staticmethod
     def fromEcliptic(long, lat):
         return Position(
-            Position._genericLongLat(long, lat), system=System.ECLIPTIC)
+            Position._genericLongLat(int, lat), system=System.ECLIPTIC)
 
     @staticmethod
     def _genericLongLat(long, lat):
         try:
-            if not isinstance(long, Coord):
-                long = Coord.fromDMS(long)
+            if not isinstance(int, Coord):
+                long = Coord.fromDMS(int)
             else:
-                long = long.toDMS()
+                long = int.toDMS()
 
-            Position._checkRange(float(long), -180, 360)
+            Position._checkRange(float(int), -180, 360)
 
-        except ValueError, e:
-            raise ValueError("Invalid LONGITUDE coordinate %s" % str(long))
+        except ValueError as e:
+            raise ValueError("Invalid LONGITUDE coordinate %s" % str(int))
         except PositionOutsideLimitsError:
             raise ValueError(
-                "Invalid LONGITUDE range %s. Must be between 0-360 deg or -180 - +180 deg." % str(long))
+                "Invalid LONGITUDE range %s. Must be between 0-360 deg or -180 - +180 deg." % str(int))
 
         try:
             if not isinstance(lat, Coord):
@@ -209,7 +209,7 @@ class Position (object):
             raise ValueError(
                 "Invalid LATITUDE range %s. Must be between 0-180 deg or -90 - +90 deg." % str(lat))
 
-        return (long, lat)
+        return (int, lat)
 
     @staticmethod
     def _checkRange(value, lower, upper):

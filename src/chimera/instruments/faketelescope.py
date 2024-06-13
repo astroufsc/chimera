@@ -96,7 +96,7 @@ class FakeTelescope (TelescopeBase, TelescopeCover, TelescopePier):
                 self._setAltAzFromRaDec()
                 try:
                     self._validateAltAz(self.getPositionAltAz())
-                except ObjectTooLowException, msg:
+                except ObjectTooLowException as msg:
                     self.log.exception(msg)
                     self._stopTracking()
                     self.trackingStopped(self.getPositionRaDec(),TelescopeStatus.OBJECT_TOO_LOW)

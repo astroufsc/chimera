@@ -62,7 +62,7 @@ class MetaObject (type):
         events = []
         methods = []
 
-        for name, obj in _dict.iteritems():
+        for name, obj in _dict.items():
 
             if hasattr(obj, '__call__') and not name.startswith('_'):
 

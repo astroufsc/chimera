@@ -128,9 +128,9 @@ class TestConfig (object):
         assert "stuff" not in c
 
         # iter protocol
-        assert c.keys() == c.keys()
-        assert c.values() == c.values()
-        assert c.items() == c.items()
+        assert list(c.keys()) == list(c.keys())
+        assert list(c.values()) == list(c.values())
+        assert list(c.items()) == list(c.items())
 
         # config using +=
         dd = {"new": 10}

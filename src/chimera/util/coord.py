@@ -34,7 +34,7 @@ PI_OVER_TWO = (math.pi / 2.0)
 try:
     from chimera.util.enum import Enum
 except ImportError:
-    from enum import Enum
+    from .enum import Enum
 
 try:
     from chimera.core.compat import *
@@ -145,7 +145,7 @@ class CoordUtil (object):
                     mm = int(mm)
                     ss = int(ss)
                     msec = float(msec)
-                except ValueError, e:
+                except ValueError as e:
                     raise ValueError(
                         "Invalid coordinate: '%s' (%s)." % (dms, e))
 
@@ -161,7 +161,7 @@ class CoordUtil (object):
                 # brute force float conversion
                 try:
                     return float(dms)
-                except ValueError, e:
+                except ValueError as e:
                     raise ValueError(
                         "Invalid coordinate: '%s' (%s)." % (dms, e))
 

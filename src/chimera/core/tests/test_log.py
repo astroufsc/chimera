@@ -31,7 +31,7 @@ class TestLog (object):
 
         try:
             simple.answer()
-        except ChimeraException, e:
+        except ChimeraException as e:
             assert e.cause != None
             log.exception("wow, something wrong")
 

@@ -39,7 +39,7 @@ def init_sysconfig():
             logging.info(
                 "Default configuration directory not found (%s). Creating a new one." % SYSTEM_CONFIG_DIRECTORY)
             os.mkdir(SYSTEM_CONFIG_DIRECTORY)
-        except IOError, e:
+        except IOError as e:
             logging.error("Couldn't create default configuration directory at %s (%s)" % (
                 SYSTEM_CONFIG_DIRECTORY, e))
 
@@ -50,14 +50,14 @@ def init_sysconfig():
         try:
             shutil.copyfile(
                 SYSTEM_CONFIG_DEFAULT_SAMPLE, SYSTEM_CONFIG_DEFAULT_FILENAME)
-        except IOError, e:
+        except IOError as e:
             logging.error("Couldn't create default chimera.config at %s (%s)" % (
                 SYSTEM_CONFIG_DEFAULT_FILENAME, e))
 
     if not os.path.exists(SYSTEM_CONFIG_LOG_NAME):
         try:
             open(SYSTEM_CONFIG_LOG_NAME, 'w').close()
-        except IOError, e:
+        except IOError as e:
             logging.error(
                 "Couldn't create initial log file %s (%s)" % (SYSTEM_CONFIG_LOG_NAME, e))
 

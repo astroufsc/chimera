@@ -13,18 +13,18 @@ class TestImage (object):
 
         img = Image.fromFile(os.path.join(self.base, "teste-sem-wcs.fits"), fix=False)
 
-        print
+        print()
 
-        for k, v in img.items():
-            print k,v, type(v)
+        for k, v in list(img.items()):
+            print(k,v, type(v))
 
     def test_wcs (self):
 
         img = Image.fromFile(os.path.join(self.base, "teste-com-wcs.fits"), fix=False)
         world =  img.worldAt(0,0)
-        print "world value at pixel 0,0:", world
-        print "pixel value at world %s:" % world, img.pixelAt(world)
-        print "world value at center pix %s:" % str(img.center()), img.worldAt(img.center())
+        print("world value at pixel 0,0:", world)
+        print("pixel value at world %s:" % world, img.pixelAt(world))
+        print("world value at center pix %s:" % str(img.center()), img.worldAt(img.center()))
         assert world.ra.D != None
         assert world.dec.D != None
 
@@ -36,11 +36,11 @@ class TestImage (object):
 
             stars = img.extract()
 
-            print
-            print "Found %d star(s) on image %s, showing first 10:" % (len(stars), img.filename)
+            print()
+            print("Found %d star(s) on image %s, showing first 10:" % (len(stars), img.filename))
 
             for star in stars[:10]:
-                print star["NUMBER"], star["XWIN_IMAGE"], star["YWIN_IMAGE"], star["FLUX_BEST"]
+                print(star["NUMBER"], star["XWIN_IMAGE"], star["YWIN_IMAGE"], star["FLUX_BEST"])
 
     def test_make_filename (self):
 
