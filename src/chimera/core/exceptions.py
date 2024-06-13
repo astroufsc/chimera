@@ -130,10 +130,6 @@ class CantSetScopeException(ChimeraException):
     fails there because of bright objects or other more astronomical reasons
     """
 
-class MeadeException(ChimeraException):
-    pass
-
-
 class ProgramExecutionException(ChimeraException):
     pass
 
