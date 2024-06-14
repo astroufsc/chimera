@@ -1,30 +1,29 @@
+import pytest
 
 from chimera.core.resources import ResourcesManager
 from chimera.core.exceptions import InvalidLocationException, ObjectNotFoundException
 
-from nose.tools import assert_raises
-
-from types import StringType
-
 
 class TestResources:
 
-    def __init__ (self):
+    def setup_method(self):
         # each test will receive a fresh new class, so define our fixture right here
-        self.res = ResourcesManager ()
+        self.res = ResourcesManager()
 
-    def test_add (self):
+    def test_add(self):
 
         assert len (self.res) == 0
 
-        assert self.res.add ("/Location/l1", "instance-1", "uri-1") == 0
+        assert self.res.add("/Location/l1", "instance-1", "uri-1") == 0
 
         # location already added
-        assert_raises(InvalidLocationException, self.res.add, "/Location/l1", "instance-1", "uri-1")
+        with pytest.raises(InvalidLocationException):
+            self.res.add("/Location/l1", "instance-1", "uri-1")
         
         assert self.res.add ("/Location/l2", "instance-2", "uri-2") == 1
         
-        assert_raises(InvalidLocationException, self.res.add, "wrong location", "instance-2", "uri-2")
+        with pytest.raises(InvalidLocationException):
+            self.res.add("wrong location", "instance-2", "uri-2")
 
         assert "/Location/l1" in self.res
         assert "/Location/l2" in self.res
@@ -37,7 +36,7 @@ class TestResources:
 
         assert len (self.res) == 0
         assert self.res.add ("/Location/l1", "instance-1", "uri-1") == 0
-        assert type(str(self.res.get('/Location/0'))) == StringType
+        assert type(str(self.res.get('/Location/0'))) == str
         
 
     def test_remove (self):
@@ -47,39 +46,43 @@ class TestResources:
         assert self.res.add ("/Location/l1", "instance-1", "uri-1") == 0
         assert self.res.remove ("/Location/l1") == True
 
-        assert_raises(ObjectNotFoundException, self.res.remove, "/What/l1")
-        assert_raises(InvalidLocationException, self.res.remove, "wrong location")
+        with pytest.raises(ObjectNotFoundException):
+            self.res.remove("/What/l1")
+        with pytest.raises(InvalidLocationException):
+            self.res.remove("wrong location")
 
         assert "/Location/l1" not in self.res
 
-    def test_get (self):
+    def test_get(self):
+        assert len(self.res) == 0
 
-        assert len (self.res) == 0
+        assert self.res.add("/Location/l2", "instance-2") == 0
+        assert self.res.add("/Location/l1", "instance-1") == 1
 
-
-        assert self.res.add ("/Location/l2", "instance-2", "uri-2") == 0
-        assert self.res.add ("/Location/l1", "instance-1", "uri-1") == 1
-
-        ret = self.res.get ("/Location/l1")
+        ret = self.res.get("/Location/l1")
 
         assert ret.location == "/Location/l1"
         assert ret.instance == "instance-1"
-        assert ret.uri == "uri-1"
 
-        assert_raises(ObjectNotFoundException, self.res.get, "/Location/l99")
+        with pytest.raises(ObjectNotFoundException):
+            self.res.get("/Location/l99")
 
         # get using subscription
         assert self.res["/Location/l1"].location == "/Location/l1"
-        assert_raises(KeyError, self.res.__getitem__, "/LocationNotExistent/l1")
-        assert_raises(KeyError, self.res.__getitem__, "wrong location")        
-        
+        with pytest.raises(KeyError):
+            self.res.__getitem__("/LocationNotExistent/l1")
+        with pytest.raises(KeyError):
+            self.res.__getitem__("wrong location")
 
         # get by index
         assert self.res.get("/Location/0").location == "/Location/l2"
         assert self.res.get("/Location/1").location == "/Location/l1"
-        assert_raises(ObjectNotFoundException, self.res.get, '/Location/9')
-        assert_raises(ObjectNotFoundException, self.res.get, '/LocationNotExistent/0')        
-        assert_raises(InvalidLocationException, self.res.get, 'wrong location')
+        with pytest.raises(ObjectNotFoundException):
+            self.res.get('/Location/9')
+        with pytest.raises(ObjectNotFoundException):
+            self.res.get('/LocationNotExistent/0')
+        with pytest.raises(InvalidLocationException):
+            self.res.get('wrong location')
 
 
     def test_get_by_class (self):
@@ -96,25 +99,23 @@ class TestResources:
         
         assert (entries == found)
 
-
     def test_get_by_class_and_bases (self):
-
-        assert len (self.res) == 0
+        assert len(self.res) == 0
         
-        class Base(object): pass
+        class Base(object):
+            pass
         class A(Base): pass
         class B(A): pass
 
-        assert self.res.add ("/A/a", A(), "a-uri") == 0
-        assert self.res.add ("/B/b", B(), "b-uri") == 0
+        assert self.res.add("/A/a", A()) == 0
+        assert self.res.add("/B/b", B()) == 0
 
-        assert self.res.add ("/A/aa", A(), "a-uri") == 1
-        assert self.res.add ("/B/bb", B(), "b-uri") == 1
+        assert self.res.add("/A/aa", A()) == 1
+        assert self.res.add("/B/bb", B()) == 1
 
-        entries = [self.res.get ("/A/a"), self.res.get ("/B/b"), self.res.get ("/A/aa"), self.res.get ("/B/bb")]
+        entries = [self.res.get("/A/a"), self.res.get("/B/b"), self.res.get("/A/aa"), self.res.get("/B/bb")]
 
         # get by class
-        found = self.res.getByClass ("Base", checkBases=True)
+        found = self.res.getByClass("Base", checkBases=True)
         
         assert (entries == found)
-

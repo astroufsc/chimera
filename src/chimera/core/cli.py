@@ -3,16 +3,14 @@ from chimera.core.constants import SYSTEM_CONFIG_DEFAULT_FILENAME
 from chimera.core.location import Location, InvalidLocationException
 
 from chimera.core.systemconfig import SystemConfig
-from chimera.core.manager import Manager
+from chimera.core.manager import Manager, ManagerNotFoundException
+from chimera.core.proxy import Proxy
 from chimera.core.path import ChimeraPath
 
 from chimera.controllers.site.main import SiteController
 from chimera.core.exceptions import ObjectNotFoundException, printException
-from chimera.core.managerlocator import ManagerLocator, ManagerNotFoundException
 
 from chimera.util.enum import Enum
-
-import Pyro.errors
 
 import sys
 import optparse
@@ -326,11 +324,11 @@ class ChimeraCLI (object):
         # base actions and parameters
 
         if verbosity:
-            self.addParameters(dict(name="quiet", short="q", int="quiet",
+            self.addParameters(dict(name="quiet", short="q", long="quiet",
                                     type=ParameterType.BOOLEAN, default=True,
                                     help="Don't display information while working."),
 
-                               dict(name="verbose", short="v", int="verbose",
+                               dict(name="verbose", short="v", long="verbose",
                                     type=ParameterType.BOOLEAN, default=False,
                                     help="Display information while working"))
 
@@ -391,7 +389,7 @@ class ChimeraCLI (object):
 
             self.addParameters(dict(name="inst_dir",
                                     short="I",
-                                    int="instruments-dir",
+                                    long="instruments-dir",
                                     helpGroup="PATHS",
                                     type=ParameterType.INCLUDE_PATH,
                                     default=ChimeraPath().instruments,
@@ -412,7 +410,7 @@ class ChimeraCLI (object):
 
             self.addParameters(dict(name="ctrl_dir",
                                     short="C",
-                                    int="controllers-dir",
+                                    long="controllers-dir",
                                     helpGroup="PATHS",
                                     type=ParameterType.INCLUDE_PATH,
                                     default=ChimeraPath().controllers,
@@ -459,7 +457,6 @@ class ChimeraCLI (object):
 
         # setup objects
         self._setupObjects(self.options)
-
         self.__start__(self.options, args)
 
         # run actions
@@ -485,7 +482,7 @@ class ChimeraCLI (object):
             self.sysconfig = SystemConfig.fromFile(options.config)
             self.localManager = Manager(
                 self.sysconfig.chimera["host"], getattr(options, 'port', 9000))
-            self._remoteManager = ManagerLocator.locate(
+            self._remoteManager = Manager.locate(
                 self.sysconfig.chimera["host"], self.sysconfig.chimera["port"])
         except ManagerNotFoundException:
             # FIXME: better way to start Chimera
@@ -549,13 +546,13 @@ class ChimeraCLI (object):
             inst_proxy = None
 
             try:
-                inst_proxy = self._remoteManager.getProxy(inst.location)
+                inst_proxy = Proxy(inst.location)
             except ObjectNotFoundException:
                 if inst.required == True:
                     self.exit(
                         "Couldn't find %s. (see --help for more information)" % inst.name.capitalize())
 
-            # save values in CLI object (which users are supposed to inherites
+            # save values in CLI object (which users are supposed to inherits
             # from).
             setattr(self, inst.name, inst_proxy)
 

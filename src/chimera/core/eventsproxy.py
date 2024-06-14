@@ -24,8 +24,6 @@ from chimera.core.proxy import Proxy
 import logging
 #import chimera.core.log
 
-import Pyro.errors
-
 import traceback
 import sys
 
@@ -77,7 +75,7 @@ class EventsProxy:
 
             # FIXME: reuse connections? if not, TIME_WAIT sockets start to slow
             # down things
-            proxy = Proxy(uri=handler["proxy"])
+            proxy = Proxy(handler["proxy"])
 
             try:
                 dispatcher = getattr(proxy, handler["method"])

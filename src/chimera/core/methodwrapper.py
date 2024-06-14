@@ -60,7 +60,7 @@ class MethodWrapper (object):
     # and a class
     def __get__(self, instance, cls=None):
 
-        # bind ourself to pass to our specials
+        # bind ourselves to pass to our specials
         self.cls = cls
         self.instance = instance
 

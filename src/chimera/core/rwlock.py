@@ -10,7 +10,7 @@ Released under the BSD-license.
 # Imports
 # -------
 
-from threading import Condition, Lock, currentThread
+from threading import Condition, Lock, current_thread
 from time import time
 
 
@@ -70,7 +70,7 @@ class ReadWriteLock(object):
 
         if timeout is not None:
             endtime = time() + timeout
-        me = currentThread()
+        me = current_thread()
         self.__condition.acquire()
         try:
             if self.__writer is me:
@@ -120,7 +120,7 @@ class ReadWriteLock(object):
 
         if timeout is not None:
             endtime = time() + timeout
-        me, upgradewriter = currentThread(), False
+        me, upgradewriter = current_thread(), False
         self.__condition.acquire()
         try:
             if self.__writer is me:
@@ -198,7 +198,7 @@ class ReadWriteLock(object):
         In case the current thread holds no lock, a ValueError is thrown.
         """
 
-        me = currentThread()
+        me = current_thread()
         self.__condition.acquire()
         try:
             if self.__writer is me:
@@ -208,7 +208,7 @@ class ReadWriteLock(object):
                     # No more write locks; take our writer position away and
                     # notify waiters of the new circumstances.
                     self.__writer = None
-                    self.__condition.notifyAll()
+                    self.__condition.notify_all()
             elif me in self.__readers:
                 # We are a reader currently, take one nesting depth away.
                 self.__readers[me] -= 1
@@ -218,7 +218,7 @@ class ReadWriteLock(object):
                     if not self.__readers:
                         # No more readers, notify waiters of the new
                         # circumstances.
-                        self.__condition.notifyAll()
+                        self.__condition.notify_all()
             else:
                 raise ValueError("Trying to release unheld lock")
         finally:

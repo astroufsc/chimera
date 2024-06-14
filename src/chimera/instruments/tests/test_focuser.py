@@ -25,7 +25,6 @@ from chimera.core.site     import Site
 
 from chimera.interfaces.focuser   import InvalidFocusPositionException
 
-from nose.tools import assert_raises
 
 
 class FocuserTest (object):

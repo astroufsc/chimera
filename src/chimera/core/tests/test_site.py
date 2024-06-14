@@ -1,5 +1,6 @@
 #! /usr/bin/env python
 # -*- coding: iso-8859-1 -*-
+import pytest
 
 # chimera - observatory automation system
 # Copyright (C) 2006-2007  P. Henrique Silva <henrique@astro.ufsc.br>
@@ -35,26 +36,21 @@ import logging
 
 class TestSite (object):
 
-    def setup (self):
+    def setup_method(self):
 
         self.manager = Manager(port=8000)
-
-        #self.manager.addClass(Site, "lna", {"name": "LNA",
-        #                                    "latitude": "-22 32 03",
-        #                                    "longitude": "-45 34 57",
-        #                                    "altitude": "1896"}
 
         self.manager.addClass(Site, "lna", {"name": "UFSC",
                                             "latitude": "-27 36 13 ",
                                             "longitude": "-48 31 20",
                                             "altitude": "20"})
 
-    def teardown (self):
+    def teardown_method(self):
         self.manager.shutdown()
 
     def test_times (self):
 
-        site = self.manager.getProxy(Site)
+        site = self.manager.getProxy("/Site/0")
 
         try:
             print()
@@ -65,14 +61,11 @@ class TestSite (object):
             print("LST  :", site.LST())
             print("GST  :", site.GST())
         except Exception as e:
-            printException(e)
+            print(e)
 
-
+    @pytest.mark.skip
     def test_sidereal_clock (self):
-
-        return True
-
-        site = self.manager.getProxy(Site)
+        site = self.manager.getProxy("/Site/0")
 
         times = []
         real_times = []
@@ -123,5 +116,5 @@ class TestSite (object):
             print("sunrise twilight duration      :", sunrise_twilight_duration)
 
         except Exception as e:
-            printException(e)
+            print(e)
 

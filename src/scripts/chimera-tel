@@ -160,7 +160,7 @@ class ChimeraTel (ChimeraCLI):
                     telescope.slewToAltAz(target)
                 else:
                     telescope.slewToRaDec(target)
-        except ObjectTooLowException, e:
+        except ObjectTooLowException as e:
             self.err("ERROR: %s" % str(e))
             self.exit()
 
@@ -269,14 +269,14 @@ class ChimeraTel (ChimeraCLI):
     def setFanSpeed(self, options):
         try:
             fan = self.telescope.getManager().getProxy(options.fan)
-        except ObjectNotFoundException, e:
+        except ObjectNotFoundException as e:
             self.exit('%s: Could not find requested fan.'% red('ERROR'))
 
         self.out("=" * 40)
         self.out("Changing fan speed to %.2f " % (options.setFanSpeed), end=" ")
         try:
             fan.setRotation(options.setFanSpeed)
-        except Exception, e:
+        except Exception as e:
             self.exit("%s. \n%s" % (red("FAILED"), printException(e)))
 
         self.out("%s" % (green("OK")))
@@ -287,7 +287,7 @@ class ChimeraTel (ChimeraCLI):
 
         try:
             fan = self.telescope.getManager().getProxy(options.fan)
-        except ObjectNotFoundException, e:
+        except ObjectNotFoundException as e:
             self.exit('%s: Could not find requested fan.'% red('ERROR'))
 
         if fan.isSwitchedOn():
@@ -302,7 +302,7 @@ class ChimeraTel (ChimeraCLI):
             else:
                 self.out(red("FAILED"))
             self.out("=" * 40)
-        except Exception, e:
+        except Exception as e:
             self.exit("%s\n %s" % (red("FAILED"), printException(e)))
 
     @action(long="fan-off", help="Stop telescope fan", helpGroup="FANS", actionGroup="FANS")
@@ -310,7 +310,7 @@ class ChimeraTel (ChimeraCLI):
 
         try:
             fan = self.telescope.getManager().getProxy(options.fan)
-        except ObjectNotFoundException, e:
+        except ObjectNotFoundException as e:
             self.exit('%s: Could not find requested fan.'% red('ERROR'))
 
         if not fan.isSwitchedOn():
@@ -325,7 +325,7 @@ class ChimeraTel (ChimeraCLI):
             else:
                 self.out(red("FAILED"))
             self.out("=" * 40)
-        except Exception, e:
+        except Exception as e:
             self.exit("%s\n %s" % (red("FAILED"), printException(e)))
 
     @action(help="Print telescope information and exit")
@@ -385,7 +385,7 @@ class ChimeraTel (ChimeraCLI):
             self.out("new position ra/dec: %s" % telescope.getPositionRaDec())
             self.out("new position:alt/az: %s" % telescope.getPositionAltAz())
 
-        except Exception, e:
+        except Exception as e:
             self.err("ERROR. (%s)" % e)
 
         self.out(40 * "=")
@@ -453,14 +453,14 @@ class ChimeraTel (ChimeraCLI):
         if (options.ra is not None) and (options.dec is not None):
             try:
                 target = Position.fromRaDec(options.ra, options.dec, epoch=options.epoch)
-            except Exception, e:
+            except Exception as e:
                 self.exit(str(e))
 
         elif (options.az is not None) and (options.alt is not None):
             try:
                 target = Position.fromAltAz(options.alt, options.az)
                 self.localSlew = True
-            except Exception, e:
+            except Exception as e:
                 self.exit(str(e))
 
         else:
@@ -473,8 +473,9 @@ class ChimeraTel (ChimeraCLI):
         self.out("\naborting... ", end="")
 
         # create a copy of telescope proxy
-        tel = copy.copy(self.telescope)
-        tel.abortSlew()
+        if hasattr(self, 'telescope'):
+            tel = copy.copy(self.telescope)
+            tel.abortSlew()
 
     def _validateOffset(self, value):
         try:

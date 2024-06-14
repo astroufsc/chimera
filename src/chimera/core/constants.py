@@ -45,6 +45,8 @@ CONFIG_ATTRIBUTE_NAME = '__config__'
 EVENTS_ATTRIBUTE_NAME = '__events__'
 METHODS_ATTRIBUTE_NAME = '__methods__'
 
+TRACEBACK_ATTRIBUTE = '__chimera_traceback__'
+
 # system config
 if sys.platform == "win32":
     SYSTEM_CONFIG_DIRECTORY = os.path.expanduser('~/chimera')

@@ -10,7 +10,6 @@ except ImportError:
     from .enum import Enum
 
 import ephem
-from types import StringType
 
 
 __all__ = ['Position']
@@ -89,7 +88,7 @@ class Position (object):
     def fromRaDec(ra, dec, epoch=Epoch.J2000):
 
         try:
-            if type(ra) == StringType:
+            if type(ra) == str:
                 ra = Coord.fromHMS(ra)
             elif isinstance(ra, Coord):
                 ra = ra.toHMS()
@@ -110,7 +109,7 @@ class Position (object):
                 "Invalid RA range %s. Must be between 0-24 hours or 0-360 deg." % str(ra))
 
         try:
-            if type(dec) == StringType:
+            if type(dec) == str:
                 dec = Coord.fromDMS(dec)
             elif isinstance(dec, Coord):
                 dec = dec.toDMS()
@@ -250,11 +249,11 @@ class Position (object):
         """
         return "%s %s" % tuple(str(c) for c in self.coords)
 
-    def __repr__(self):
-        """
-        @rtype: string
-        """
-        return self.__str__()
+    # def __repr__(self):
+    #     """
+    #     @rtype: string
+    #     """
+    #     return self.__str__()
 
     def epochString(self):
         if self.epoch == Epoch.J2000:

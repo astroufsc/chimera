@@ -23,7 +23,6 @@ import os
 from chimera.core.cli import ChimeraCLI, action, ParameterType
 from chimera.core.callback import callback
 from chimera.core.exceptions import printException, ObjectNotFoundException
-from chimera.core.compat import freeze_support
 
 from chimera.interfaces.filterwheel import InvalidFilterPositionException
 from chimera.interfaces.camera import CameraFeature, CameraStatus
@@ -56,7 +55,7 @@ class ChimeraCam (ChimeraCLI):
 
     def __init__(self):
         ChimeraCLI.__init__(
-            self, "chimera-cam", "Camera controller", 0.1, port=9000)
+            self, "chimera-cam", "Camera controller", 0.1, port=9010)
 
         self.addHelpGroup("CAM", "Camera and Filter Wheel configuration")
         self.addInstrument(name="camera",
@@ -302,7 +301,7 @@ class ChimeraCam (ChimeraCLI):
         ccds = camera.getCCDs()
         currentCCD = camera.getCurrentCCD()
         self.out("Available CCDs: ", end="")
-        for ccd in ccds.keys():
+        for ccd in list(ccds.keys()):
             if ccd == currentCCD:
                 self.out("*%s* " % str(ccds[ccd]), end="")
             else:
@@ -312,7 +311,7 @@ class ChimeraCam (ChimeraCLI):
         self.out("=" * 40)
         self.out("ADCs: ", end="")
         adcs = camera.getADCs()
-        for adc in adcs.keys():
+        for adc in list(adcs.keys()):
             self.out("%s " % adc, end="")
         self.out()
 
@@ -324,7 +323,7 @@ class ChimeraCam (ChimeraCLI):
 
         self.out("=" * 40)
         self.out("Available binnings: ", end="")
-        sortedBins = camera.getBinnings().keys()
+        sortedBins = list(camera.getBinnings().keys())
         sortedBins.sort()
 
         for bin in sortedBins:
@@ -363,7 +362,7 @@ class ChimeraCam (ChimeraCLI):
         binnings = camera.getBinnings()
 
         if options.binning:
-            if options.binning not in binnings.keys():
+            if options.binning not in list(binnings.keys()):
                 self.exit(
                     "Invalid binning mode. See --info for available binning modes")
 
@@ -539,7 +538,7 @@ class ChimeraCam (ChimeraCLI):
                     self.out("Changing to filter %s... " % f, end="")
                     self.wheel.setFilter(f)
                     self.out("OK")
-                except InvalidFilterPositionException, e:
+                except InvalidFilterPositionException as e:
                     self.err(
                         "ERROR. Couldn't move filter wheel to %s. (%s)" % (f, e))
                     self.exit()
@@ -585,9 +584,9 @@ class ChimeraCam (ChimeraCLI):
                                   wait_dome=not options.ignore_dome,
                                   object_name=object_name)
 
-            except IOError, e:
+            except IOError as e:
                 self.err("Error trying to take exposures (%s)" % str(e))
-            except Exception, e:
+            except Exception as e:
                 self.err("Error trying to take exposures. (%s)" %
                          printException(e))
         finally:
@@ -605,5 +604,4 @@ def main():
     cli.wait()
 
 if __name__ == '__main__':
-    freeze_support()
     main()

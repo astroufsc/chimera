@@ -23,7 +23,6 @@
 import math
 import re
 import sys
-from types import StringType, LongType, IntType, FloatType
 
 TWO_PI = 2.0 * math.pi
 PI_OVER_TWO = (math.pi / 2.0)
@@ -36,18 +35,6 @@ try:
 except ImportError:
     from .enum import Enum
 
-try:
-    from chimera.core.compat import *
-except ImportError:
-    if sys.version_info[:2] < (2, 5):
-
-        def any(iterable):
-            for element in iterable:
-                if element:
-                    return True
-            return False
-
-
 __all__ = ['Coord',
            'CoordUtil']
 
@@ -58,7 +45,7 @@ State = Enum("HMS", "DMS", "D", "H", "R", "AS")
 class CoordUtil (object):
 
     COORD_RE = re.compile(
-        '((?P<dd>(?P<sign>[+-]?)[\s]*\d+)[dh]?[\s:]*)?((?P<mm>\d+)[m]?[\s:]*)?((?P<ss>\d+)(?P<msec>\.\d*)?([\ss]*))?')
+        r'((?P<dd>(?P<sign>[+-]?)[\s]*\d+)[dh]?[\s:]*)?((?P<mm>\d+)[m]?[\s:]*)?((?P<ss>\d+)(?P<msec>\.\d*)?([\ss]*))?')
 
     _arcsec2deg = 1.0 / 3600
     _min2deg = 1.0 / 60
@@ -121,10 +108,10 @@ class CoordUtil (object):
     def dms2d(dms):
 
         # float/int case
-        if type(dms) in [FloatType, IntType, LongType]:
+        if type(dms) in [float, int]:
             return float(dms)
 
-        if type(dms) == StringType:
+        if type(dms) == str:
 
             # try to match the regular expression
             matches = CoordUtil.COORD_RE.match(dms.strip())
@@ -589,7 +576,7 @@ class Coord (object):
     @staticmethod
     def _from_float_to(c, state):
 
-        if type(c) == StringType:
+        if type(c) == str:
             try:
                 c = float(c)
             except ValueError:

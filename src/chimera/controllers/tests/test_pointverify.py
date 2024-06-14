@@ -28,13 +28,13 @@ from chimera.core.site     import Site
 
 from chimera.controllers.autofocus import Autofocus
 
-from chimera.instruments.camera import Camera
-from chimera.drivers.fakecamera import FakeCamera
-from chimera.drivers.sbig       import SBIG
+# from chimera.instruments.camera import Camera
+# from chimera.drivers.fakecamera import FakeCamera
+# from chimera.drivers.sbig       import SBIG
 
-from chimera.instruments.focuser import Focuser
-from chimera.drivers.fakefocuser import FakeFocuser
-from chimera.drivers.optectcfs   import OptecTCFS
+# from chimera.instruments.focuser import Focuser
+# from chimera.drivers.fakefocuser import FakeFocuser
+# from chimera.drivers.optectcfs   import OptecTCFS
 
 import chimera.core.log
 chimera.core.log.setConsoleLevel(logging.DEBUG)

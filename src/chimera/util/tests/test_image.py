@@ -1,4 +1,3 @@
-from nose.tools import assert_raises
 from chimera.util.image import Image, ImageUtil, WCSNotFoundException
 
 import numpy as N

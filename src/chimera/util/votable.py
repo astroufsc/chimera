@@ -5,7 +5,6 @@
 """
 
 import sys
-from types import *
 import xml.sax
 import xml.sax.handler
 
@@ -23,11 +22,11 @@ class VONode(object):
 
     def addNode(self, node):
         self._nodeList.append(node)
-        if not isinstance(node, (StringType, UnicodeType)):
+        if not isinstance(node, str):
             name = node.getNamePart()
             try:
                 val = self.__dict__[name]
-                if isinstance(val, ListType):
+                if isinstance(val, list):
                     val.append(node)
                 else:
                     self.__dict__[name] = [val, node]
@@ -196,7 +195,7 @@ class VONode(object):
 
         last = 0
         for n in self._nodeList:
-            if isinstance(n, (StringType, UnicodeType)):
+            if isinstance(n, str):
                 if last == 2:
                     func("\n%s" % prefix)
                 func("%s" % n)

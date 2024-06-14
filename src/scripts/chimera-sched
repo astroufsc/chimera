@@ -311,7 +311,7 @@ class ChimeraSched(ChimeraCLI):
             # process program
 
             program = Program()
-            for key in prg.keys():
+            for key in list(prg.keys()):
                 if hasattr(program, key) and key != 'actions':
                     if key == 'startAt' and 'T' in prg[key]:
                         prg[key] = Time(prg[key], format='isot').mjd
@@ -328,13 +328,13 @@ class ChimeraSched(ChimeraCLI):
                 self.out('Action: %s' % actconfig['action'])
 
                 if actconfig['action'] == 'point':
-                    if 'ra' in actconfig.keys() and 'dec' in actconfig.keys():
-                        epoch = 'J2000' if 'epoch' not in actconfig.keys() else actconfig['epoch']
+                    if 'ra' in list(actconfig.keys()) and 'dec' in list(actconfig.keys()):
+                        epoch = 'J2000' if 'epoch' not in list(actconfig.keys()) else actconfig['epoch']
                         position = Position.fromRaDec(actconfig['ra'], actconfig['dec'], epoch)
                         self.out('\tCoords: %s' % position)
                         act.targetRaDec = position
                         # act = Point(targetRaDec=position)
-                    elif 'alt' in actconfig.keys() and 'az' in actconfig.keys():
+                    elif 'alt' in list(actconfig.keys()) and 'az' in list(actconfig.keys()):
                         position = Position.fromAltAz(actconfig['alt'], actconfig['az'])
                         self.out('\tCoords: %s' % position)
                         act.targetAltAz = position
@@ -380,7 +380,7 @@ class ChimeraSched(ChimeraCLI):
                         act.domeTracking = actconfig["domeTracking"]
 
                 else:
-                    for key in actconfig.keys():
+                    for key in list(actconfig.keys()):
                         if hasattr(act, key) and key != 'action':
                             self.out('\t%s: %s' % (key, actconfig[key]))
                             try:
@@ -424,7 +424,7 @@ class ChimeraSched(ChimeraCLI):
             matchs = lineRe.search(line)
 
             if matchs is None:
-                print "Couldn't process line #%d" % i
+                print("Couldn't process line #%d" % i)
                 continue
 
             params = matchs.groupdict()

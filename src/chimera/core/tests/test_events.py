@@ -1,10 +1,9 @@
+import pytest
 
 from chimera.core.manager        import Manager
 from chimera.core.chimeraobject  import ChimeraObject
 from chimera.core.proxy          import Proxy
 from chimera.core.event          import event
-
-from nose.tools import assert_raises
 
 import time
 import math
@@ -56,24 +55,24 @@ class Subscriber (ChimeraObject):
         return self.results
 
 
-class TestEvents (object):
+@pytest.fixture
+def manager():
+    manager = Manager()
+    yield manager
+    manager.shutdown()
+    del manager
 
-    def setup (self):
-        self.manager = Manager()
+class TestEvents:
 
-    def teardown (self):
-        self.manager.shutdown()
-        del self.manager
+    def test_publish (self, manager):
 
-    def test_publish (self):
+        assert manager.addClass (Publisher, "p") != False
+        assert manager.addClass (Subscriber, "s") != False
 
-        assert self.manager.addClass (Publisher, "p") != False
-        assert self.manager.addClass (Subscriber, "s") != False
-
-        p = self.manager.getProxy("/Publisher/p")
+        p = manager.getProxy("/Publisher/p")
         assert isinstance(p, Proxy)
         
-        s = self.manager.getProxy("/Subscriber/s")
+        s = manager.getProxy("/Subscriber/s")
         assert isinstance(s, Proxy)
 
         p.fooDone += s.fooDoneClbk
@@ -97,15 +96,15 @@ class TestEvents (object):
         assert s.getCounter() == 2
         assert p.getCounter() == 2        
 
-    def test_performance (self):
+    def test_performance (self, manager):
 
-        assert self.manager.addClass (Publisher, "p") != False
-        assert self.manager.addClass (Subscriber, "s") != False
+        assert manager.addClass (Publisher, "p") != False
+        assert manager.addClass (Subscriber, "s") != False
 
-        p = self.manager.getProxy("/Publisher/p")
+        p = manager.getProxy("/Publisher/p")
         assert isinstance(p, Proxy)
         
-        s = self.manager.getProxy("/Subscriber/s")
+        s = manager.getProxy("/Subscriber/s")
         assert isinstance(s, Proxy)
 
         p.fooDone += s.fooDoneClbk

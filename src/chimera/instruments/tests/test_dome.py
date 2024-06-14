@@ -35,11 +35,8 @@ from chimera.util.enum import EnumValue
 
 from chimera.interfaces.dome import InvalidDomePositionException, DomeStatus
 
-from nose import SkipTest
-from nose.tools import assert_raises
-
 import chimera.core.log
-chimera.core.log.setConsoleLevel(1e10)
+chimera.core.log.setConsoleLevel(int(1e10))
 log = logging.getLogger("chimera.tests")
 
 # hack for event  triggering asserts

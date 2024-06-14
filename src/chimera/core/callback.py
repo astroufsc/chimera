@@ -57,10 +57,10 @@ def callback(manager):
 
     def clbk_deco(f):
         setattr(Callback, 'handler', staticmethod(f))
+        id = (str(time.time()) + str(random.random())).encode()
         return manager.addClass(Callback,
                                 'h' +
-                                hashlib.sha1(
-                                    str(time.time()) + str(random.random())).hexdigest(),
+                                hashlib.sha1(id).hexdigest(),
                                 start=False).handler
 
     return clbk_deco

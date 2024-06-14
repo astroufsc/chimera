@@ -431,7 +431,7 @@ class SExtractor:
         _program = selected
 
         # print versionline
-        _version_match = re.search("[Vv]ersion ([0-9\.])+", versionline)
+        _version_match = re.search("[Vv]ersion ([0-9.])+", versionline)
         if not _version_match:
             raise SExtractorException("Cannot determine SExtractor version.")
 

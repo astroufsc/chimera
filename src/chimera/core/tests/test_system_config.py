@@ -1,9 +1,8 @@
+import pytest
 
 from chimera.core.systemconfig import SystemConfig, TypeNotFoundException, SystemConfigSyntaxException
 from chimera.core.location     import InvalidLocationException
 from chimera.core.constants import MANAGER_DEFAULT_HOST, MANAGER_DEFAULT_PORT
-
-from nose.tools import assert_raises
 
 from chimera.core.log import setConsoleLevel
 import logging
@@ -143,14 +142,16 @@ class TestSystemConfig (object):
            name: tel1
         """
         # class cannot have $
-        assert_raises(InvalidLocationException, SystemConfig.fromString, s)
+        with pytest.raises(InvalidLocationException):
+                SystemConfig.fromString(s)
 
         s = """
         telescope
            name: 0
         """
         # syntax eror on first line (forgot ':' after telescope)
-        assert_raises(SystemConfigSyntaxException, SystemConfig.fromString, s)
+        with pytest.raises(SystemConfigSyntaxException):
+            SystemConfig.fromString(s)
 
     #
     # instrument primitive
@@ -187,7 +188,8 @@ class TestSystemConfig (object):
          name: simple
          #type: InstrumentType
         """
-        assert_raises(TypeNotFoundException, SystemConfig.fromString, s)
+        with pytest.raises(TypeNotFoundException):
+            SystemConfig.fromString(s)
 
     #
     # controller primitive
@@ -224,7 +226,8 @@ class TestSystemConfig (object):
          name: simple
          #type: ControllerType
         """
-        assert_raises(TypeNotFoundException, SystemConfig.fromString, s)
+        with pytest.raises(TypeNotFoundException):
+            SystemConfig.fromString(s)
 
 
         

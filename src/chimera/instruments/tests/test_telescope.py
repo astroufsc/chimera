@@ -23,7 +23,7 @@ import time
 import sys
 import logging
 
-from nose import SkipTest
+import pytest
 
 from chimera.core.manager  import Manager
 from chimera.core.callback import callback
@@ -43,7 +43,7 @@ def assertEpsEqual (a, b, e=60):
     assert abs(a.AS-b.AS) <= e
 
 import chimera.core.log
-chimera.core.log.setConsoleLevel(1e10)
+chimera.core.log.setConsoleLevel(int(1e10))
 log = logging.getLogger("chimera.tests")
 
 # hack for event  triggering asserts
@@ -177,11 +177,9 @@ class TelescopeTest (object):
 
         time.sleep(2)
 
+    @pytest.mark.skip
     def test_park (self):
         
-        # FIXME: make a real test.
-        raise SkipTest()
-
         def printPosition():
             print(self.tel.getPositionRaDec(), self.tel.getPositionAltAz())
             sys.stdout.flush()

@@ -1,10 +1,7 @@
+import pytest
 
 from chimera.core.location   import Location
 from chimera.core.exceptions import InvalidLocationException
-
-from nose.tools import assert_raises
-
-from types import StringType
 
 
 class TestLocation (object):
@@ -32,12 +29,18 @@ class TestLocation (object):
         assert l.config == dict(option1="value1", option2="value2")
 
         # from dict
-        assert_raises(InvalidLocationException, Location, cls="Class", config=dict(option1="value1", option2="value2"))
-        assert_raises(InvalidLocationException, Location, name="name", config=dict(option1="value1", option2="value2"))
-        assert_raises(InvalidLocationException, Location, config=dict(option1="value1", option2="value2"))
-        assert_raises(InvalidLocationException, Location, cls="Class", name="")
-        assert_raises(InvalidLocationException, Location, cls="", name="name")
-        assert_raises(InvalidLocationException, Location, cls="", name="")
+        with pytest.raises(InvalidLocationException):
+            Location(cls="Class", config=dict(option1="value1", option2="value2"))
+        with pytest.raises(InvalidLocationException):
+            Location(name="name", config=dict(option1="value1", option2="value2"))
+        with pytest.raises(InvalidLocationException):
+            Location(config=dict(option1="value1", option2="value2"))
+        with pytest.raises(InvalidLocationException):
+            Location(cls="Class", name="")
+        with pytest.raises(InvalidLocationException):
+            Location(cls="", name="name")
+        with pytest.raises(InvalidLocationException):
+            Location(cls="", name="")
         
         assert Location(cls="Class", name="0")
 
@@ -48,7 +51,7 @@ class TestLocation (object):
         assert l.cls == "Class"
         assert l.name == "name"
         assert l.config == dict(option1="value1", option2="value2")
-        assert type(str(l)) == StringType        
+        assert type(str(l)) == str
 
         # host version
         l = Location(host='host.com.br', port=1000, cls="Class", name="name", config=dict(option1="value1", option2="value2"))
@@ -58,7 +61,7 @@ class TestLocation (object):
         assert l.cls == "Class"
         assert l.name == "name"
         assert l.config == dict(option1="value1", option2="value2")
-        assert type(str(l)) == StringType
+        assert type(str(l)) == str
 
         l = Location(host='host.com.br', cls="Class", name="name", config=dict(option1="value1", option2="value2"))
         assert l
@@ -67,11 +70,14 @@ class TestLocation (object):
         assert l.cls == "Class"
         assert l.name == "name"
         assert l.config == dict(option1="value1", option2="value2")
-        assert type(str(l)) == StringType
+        assert type(str(l)) == str
 
-        assert_raises(InvalidLocationException, Location, host='host.com.br', port="xyz",
-                                                          cls="Class", name="name",
-                                                          config=dict(option1="value1", option2="value2"))
+        with pytest.raises(InvalidLocationException):
+            Location(
+                host='host.com.br', port="xyz",
+                cls="Class", name="name",
+                config=dict(option1="value1", option2="value2")
+            )
 
         # copy constructor
         l1 = Location('/Class/name')
@@ -129,4 +135,5 @@ class TestLocation (object):
                    ]
 
         for l in invalid:
-            assert_raises (InvalidLocationException, Location, l)
+            with pytest.raises(InvalidLocationException):
+                Location(l)

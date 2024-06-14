@@ -1,12 +1,8 @@
+import pytest
 
 from chimera.core.config import Config, OptionConversionException
 from chimera.util.enum import Enum, EnumValue
 from chimera.util.coord import Coord, State
-
-from nose import SkipTest
-from nose.tools import assert_raises
-
-from types import StringType, IntType, FloatType, BooleanType
 
 
 class TestConfig (object):
@@ -18,7 +14,7 @@ class TestConfig (object):
         # valid
         for i in ("valid", 1, True, 1.0, object):
             assert c.__setitem__("key_str", i) != False, "%s (%s) is a valid str configuration" % (i, type(i))
-            assert type(c.__getitem__("key_str")) == StringType, "should return str object"
+            assert type(c.__getitem__("key_str")) == str, "should return str object"
 
         # invalid
         # any?
@@ -31,15 +27,17 @@ class TestConfig (object):
         # valid
         for i in (1, 1.0, "1", "1.0", "-1", "-1.0", "   10  ", True):
             assert c.__setitem__("key_int", i) != False, "%s (%s) is a valid int configuration" % (i, type(i))
-            assert type(c.__getitem__("key_int")) == IntType, "should return int object"
+            assert type(c.__getitem__("key_int")) == int, "should return int object"
 
             assert c.__setitem__("key_float", i) != False, "%s (%s) is a valid float configuration" % (i, type(i))
-            assert type(c.__getitem__("key_float")) == FloatType, "should return str object"
+            assert type(c.__getitem__("key_float")) == float, "should return str object"
 
         # invalid
         for i in (object, "a10", "1.a"):
-            assert_raises (OptionConversionException, c.__setitem__, "key_int", i)
-            assert_raises (OptionConversionException, c.__setitem__, "key_float", i)
+            with pytest.raises (OptionConversionException):
+                c.__setitem__("key_int", i)
+            with pytest.raises (OptionConversionException):
+                c.__setitem__("key_float", i)
 
 
     def test_bool (self):
@@ -53,11 +51,12 @@ class TestConfig (object):
             # no assert because setitem returns the old and this can be False
             # we get errors if any set raises OptionConversionException
             c.__setitem__("key_bool", i)
-            assert type(c.__getitem__("key_bool")) == BooleanType, "should return bool object"
+            assert type(c.__getitem__("key_bool")) == bool, "should return bool object"
 
         # invalid
         for i in (object, "ok", 10):
-            assert_raises (OptionConversionException, c.__setitem__, "key_bool", i)
+            with pytest.raises (OptionConversionException):
+                c.__setitem__("key_bool", i)
 
 
     def test_options (self):
@@ -71,19 +70,21 @@ class TestConfig (object):
         # valid
         for i in (1, 2, 3, True): # True == 1
             assert c.__setitem__("key_opt_int", i) != False, "%s (%s) is a valid configuration" % (i, type(i))
-            assert type(c.__getitem__("key_opt_int")) == IntType, "should return int object"
+            assert type(c.__getitem__("key_opt_int")) == int, "should return int object"
 
         for i in ("one", "two", "three"):
             assert c.__setitem__("key_opt_str", i) != False, "%s (%s) is a valid configuration" % (i, type(i))
-            assert type(c.__getitem__("key_opt_str")) == StringType, "should return str object"
+            assert type(c.__getitem__("key_opt_str")) == str, "should return str object"
 
 
         # invalid
         for i in (4, 5, 6, "str", False):
-            assert_raises (OptionConversionException, c.__setitem__, "key_opt_int", i)
+            with pytest.raises (OptionConversionException):
+                c.__setitem__("key_opt_int", i)
 
         for i in ("four", "five", "six", 1, 2, 3, True, False):
-            assert_raises (OptionConversionException, c.__setitem__, "key_opt_str", i)
+            with pytest.raises (OptionConversionException):
+                c.__setitem__("key_opt_str", i)
 
 
     def test_range (self):
@@ -93,11 +94,12 @@ class TestConfig (object):
         # valid
         for i in range(1, 11):
             assert c.__setitem__("key_range", i) != False, "%s (%s) is a valid configuration" % (i, type(i))
-            assert type(c.__getitem__("key_range")) == IntType, "should return int object"
+            assert type(c.__getitem__("key_range")) == int, "should return int object"
 
         # invalid
         for i in (0, 11, "str"):
-            assert_raises (OptionConversionException, c.__setitem__, "key_range", i)
+            with pytest.raises (OptionConversionException):
+                c.__setitem__("key_range", i)
 
 
     def test_iter (self):
@@ -134,7 +136,8 @@ class TestConfig (object):
 
         # config using +=
         dd = {"new": 10}
-        assert_raises(KeyError, c.__iadd__, dd)
+        with pytest.raises(KeyError):
+            c.__iadd__(dd)
 
         assert not "new" in c
 
@@ -161,7 +164,8 @@ class TestConfig (object):
             assert type(c.__getitem__("key_enum")) == EnumValue, "should return EnumValue object"
 
         # invalid
-        assert_raises(KeyError, c.__getitem__, "WHATERVER")
+        with pytest.raises(KeyError):
+            c.__getitem__("WHATERVER")
 
     def test_coord (self):
 
@@ -177,6 +181,3 @@ class TestConfig (object):
         c["HMS"] = 20
         assert c["HMS"] == Coord.fromHMS(20)
         assert c["HMS"] == Coord.fromDMS(20*15)
-
-    def test_position (self):
-        raise SkipTest()
