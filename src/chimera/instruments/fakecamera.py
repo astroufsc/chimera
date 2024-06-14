@@ -26,7 +26,7 @@ import urllib.request, urllib.parse, urllib.error
 import os
 import shutil
 
-import numpy as N
+import numpy as np
 from astropy.io import fits
 
 from chimera.interfaces.camera import (CCD, CameraFeature,
@@ -121,11 +121,11 @@ class FakeCamera (CameraBase, FilterWheelBase):
         self.exposeComplete(imageRequest, status)
 
     def make_dark(self, shape, dtype, exptime):
-        ret = N.zeros(shape, dtype=dtype)
+        ret = np.zeros(shape, dtype=dtype)
         #Taken from specs for KAF-1603ME as found in ST-8XME
         #normtemp is now in ADU/pix/sec
         normtemp = ((10 * 2**((self.__temperature-25)/6.3)) * exptime)/2.3
-        ret += normtemp + N.random.random(shape)  # +/- 1 variance in readout
+        ret += normtemp + np.random.random(shape)  # +/- 1 variance in readout
         return ret
 
     def make_flat(self, shape, dtype):
@@ -136,20 +136,20 @@ class FakeCamera (CameraBase, FilterWheelBase):
          - plus a bad region with different mean level
         """
 
-        iadd = 15.0 / shape[0]
-        jadd = 10.0 / shape[1]
+        iadd = 15.0 // shape[0]
+        jadd = 10.0 // shape[1]
 
         badlevel = 0
 
-        badareai = shape[0] / 2
-        badareaj = shape[1] / 2
+        badareai = shape[0] // 2
+        badareaj = shape[1] // 2
 
         # this array is only to make sure we create our array
         # with the right dtype
-        ret = N.zeros(shape, dtype=dtype)
+        ret = np.zeros(shape, dtype=dtype)
 
-        ret += N.random.normal(1000, 1, shape)
-        ret += N.fromfunction(lambda i, j: i*jadd - j*jadd, shape)
+        ret += np.random.normal(1000, 1, shape)
+        ret += np.fromfunction(lambda i, j: i * iadd - j * jadd, shape)
 
         ret[badareai:, badareaj:] += badlevel
 
@@ -187,14 +187,14 @@ class FakeCamera (CameraBase, FilterWheelBase):
         if imageRequest["type"].upper() == "DARK":
             self.log.info("making dark")
             pix = self.make_dark(
-                (ccd_height, ccd_width), N.float, imageRequest['exptime'])
+                (ccd_height, ccd_width), np.float32, imageRequest['exptime'])
         elif imageRequest["type"].upper() == "FLAT":
             self.log.info("making flat")
             pix = (self.make_flat(
-                (ccd_height, ccd_width), N.float) / 1000)
+                (ccd_height, ccd_width), np.float32) / 1000)
         elif imageRequest["type"].upper() == "BIAS":
             self.log.info("making bias")
-            pix = self.make_dark((ccd_height, ccd_width), N.float, 0)
+            pix = self.make_dark((ccd_height, ccd_width), np.float32, 0)
         else:
             if telescope and dome:
                 self.log.debug("Dome open? " + str(dome.isSlitOpen()))
@@ -255,7 +255,7 @@ class FakeCamera (CameraBase, FilterWheelBase):
                             "Dome not aligned... making flat image...")
                         try:
                             pix = (self.make_flat(
-                                (ccd_height,ccd_width), N.float) / 1000)
+                                (ccd_height,ccd_width), np.float32) / 1000)
                         except Exception as e:
                             self.log.warning(
                                 "Error generating flat: " + str(e))
@@ -266,13 +266,13 @@ class FakeCamera (CameraBase, FilterWheelBase):
             try:
                 self.log.info(
                     "Making flat image: " + str(ccd_height) + "x" + str(ccd_width))
-                pix = self.make_flat((ccd_height, ccd_width), N.float)
+                pix = self.make_flat((ccd_height, ccd_width), np.float32)
             except Exception as e:
                 self.log.warning("Make flat error: " + str(e))
 
         # Last resort if nothing else could make a picture
         if (pix is None):
-            pix = N.zeros((ccd_height, ccd_width), dtype=N.int32)
+            pix = np.zeros((ccd_height, ccd_width), dtype=np.int32)
 
         proxy = self._saveImage(imageRequest, pix, {"frame_start_time": self.__lastFrameStart,
                                                     "frame_temperature": self.getTemperature(),

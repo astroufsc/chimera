@@ -48,6 +48,8 @@ __all__ = ['ChimeraObject']
 class ChimeraObject (ILifeCycle, metaclass=MetaObject):
 
     def __init__(self):
+        ILifeCycle.__init__(self)
+
         # event handling
         self.__events_proxy__ = EventsProxy()
 
@@ -56,7 +58,7 @@ class ChimeraObject (ILifeCycle, metaclass=MetaObject):
 
         self.__state__ = State.STOPPED
 
-        self.__location__ = ""
+        self.__location__: Location
 
         # logging.
         # put every logger on behalf of chimera's logger so
@@ -198,9 +200,7 @@ class ChimeraObject (ILifeCycle, metaclass=MetaObject):
         return self.__location__
 
     def __setlocation__(self, location):
-
-        location = Location(location)
-        self.__location__ = location
+        self.__location__ = Location(location)
         return True
 
     def getManager(self):

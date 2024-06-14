@@ -14,6 +14,7 @@ import numpy as N
 from astropy import wcs
 from astropy.io import fits
 
+from chimera.core.chimeraobject import ChimeraObject
 from chimera.core.exceptions import ChimeraException
 from chimera.core.version import _chimera_name_
 from chimera.util.coord import Coord
@@ -256,6 +257,7 @@ class Image(UserDict):
     #
     def __getstate__(self):
         self._fd.close()
+        self._fd = None
         return self.__dict__
 
     def __setstate__(self, args):

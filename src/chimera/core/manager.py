@@ -1,6 +1,5 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
-# Copyright � 2006-2024  Paulo Henrique Silva <ph.silva@gmail.com>
-
+# SPDX-FileCopyrightText: Copyright 2006-2024 Paulo Henrique Silva <ph.silva@gmail.com>
 
 from chimera.core.classloader import ClassLoader
 from chimera.core.adapter import RedisAdapter
@@ -9,7 +8,6 @@ from chimera.core.location import Location
 
 from chimera.core.chimeraobject import ChimeraObject
 from chimera.core.proxy import Proxy
-from chimera.core.util import getManagerURI
 from chimera.core.state import State
 
 from chimera.core.exceptions import InvalidLocationException, \
@@ -18,8 +16,6 @@ from chimera.core.exceptions import InvalidLocationException, \
     ChimeraObjectException, \
     ChimeraException, \
     OptionConversionException
-
-from chimera.core.path import ChimeraPath
 
 from chimera.core.constants import MANAGER_DEFAULT_HOST, MANAGER_DEFAULT_PORT, MANAGER_LOCATION
 
@@ -35,6 +31,18 @@ __all__ = ['Manager']
 log = logging.getLogger(__name__)
 
 
+class ManagerNotFoundException(ChimeraException):
+    pass
+
+
+def getManagerURI(host=None, port=None):
+
+    host = host or MANAGER_DEFAULT_HOST
+    port = port or MANAGER_DEFAULT_PORT
+
+    return f"{host}:{port}/{MANAGER_LOCATION}"
+
+
 class Manager:
 
     """
@@ -48,6 +56,14 @@ class Manager:
     @group Shutdown: wait, shutdown
     """
 
+    @staticmethod
+    def locate(host, port=MANAGER_DEFAULT_PORT):
+        p = Proxy(Location(getManagerURI(host, port )))
+        if not p.ping():
+            raise ManagerNotFoundException(
+                "Couldn't find manager running on %s:%d" % (host, port))
+        return p
+
     def __init__(self, host=None, port=None):
         log.info("Starting manager.")
 
@@ -59,15 +75,11 @@ class Manager:
 
         # our daemon server
         self.adapter = RedisAdapter(self, host, port)
-        self.adapterThread = threading.Thread(target=self.adapter.requestLoop, daemon=True)
+        self.adapterThread = threading.Thread(target=self.adapter.request_loop, daemon=True)
         self.adapterThread.start()
 
         # register ourselves
-        self.resources.add(
-            MANAGER_LOCATION,
-            self,
-            getManagerURI(self.getHostname(),
-                          self.getPort()))
+        self.resources.add(getManagerURI(self.getHostname(), self.getPort()), self),
 
     # private
     def __repr__(self):
@@ -346,9 +358,8 @@ class Manager:
 
         # connect
         obj.__setlocation__(location)
-        next = len(self.resources.getByClass(location.cls))
-        uri = self.adapter.connect(obj, location=location, index=next)
-        self.resources.add(location, obj, uri)
+        uri = self.adapter.connect(obj, location)
+        self.resources.add(location, obj)
 
         if start:
             self.start(location)

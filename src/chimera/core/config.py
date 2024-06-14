@@ -22,12 +22,6 @@
 
 from types import (NoneType)
 
-try:
-    import pickle as pickle
-except ImportError:
-    import pickle
-
-
 import logging
 log = logging.getLogger(__name__)
 

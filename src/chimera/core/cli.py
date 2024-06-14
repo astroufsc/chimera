@@ -3,13 +3,12 @@ from chimera.core.constants import SYSTEM_CONFIG_DEFAULT_FILENAME
 from chimera.core.location import Location, InvalidLocationException
 
 from chimera.core.systemconfig import SystemConfig
-from chimera.core.manager import Manager
+from chimera.core.manager import Manager, ManagerNotFoundException
 from chimera.core.proxy import Proxy
 from chimera.core.path import ChimeraPath
 
 from chimera.controllers.site.main import SiteController
 from chimera.core.exceptions import ObjectNotFoundException, printException
-from chimera.core.managerlocator import ManagerLocator, ManagerNotFoundException
 
 from chimera.util.enum import Enum
 
@@ -483,7 +482,7 @@ class ChimeraCLI (object):
             self.sysconfig = SystemConfig.fromFile(options.config)
             self.localManager = Manager(
                 self.sysconfig.chimera["host"], getattr(options, 'port', 9000))
-            self._remoteManager = ManagerLocator.locate(
+            self._remoteManager = Manager.locate(
                 self.sysconfig.chimera["host"], self.sysconfig.chimera["port"])
         except ManagerNotFoundException:
             # FIXME: better way to start Chimera
