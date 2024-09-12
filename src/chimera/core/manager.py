@@ -64,7 +64,7 @@ class Manager:
                 "Couldn't find manager running on %s:%d" % (host, port))
         return p
 
-    def __init__(self, host=None, port=None):
+    def __init__(self, host=MANAGER_DEFAULT_HOST, port=MANAGER_DEFAULT_PORT):
         log.info("Starting manager.")
 
         self.resources = ResourcesManager()
@@ -79,7 +79,7 @@ class Manager:
         self.adapterThread.start()
 
         # register ourselves
-        self.resources.add(getManagerURI(self.getHostname(), self.getPort()), self),
+        self.resources.add(getManagerURI(host, port), self),
 
     # private
     def __repr__(self):
@@ -87,16 +87,10 @@ class Manager:
 
     # adapter host/port
     def getHostname(self):
-        if self.adapter:
-            return self.adapter.host
-        else:
-            return None
+        return self.adapter.host
 
     def getPort(self):
-        if self.adapter:
-            return self.adapter.port
-        else:
-            return None
+        return self.adapter.port
 
     # reflection (console)
     def getResources(self):
@@ -110,10 +104,6 @@ class Manager:
         return [x.location for x in ret]
 
     # helpers
-
-    def getDaemon(self):
-        return self.adapter
-
     def getProxy(self, location, lazy=False):
         """
         Get a proxy for the object pointed by location. The given location
@@ -187,19 +177,6 @@ class Manager:
                                           " given location %s" % location)
 
         return ret
-
-    def _belongsToMe(self, location):
-        meHost = self.getHostname()
-        meName = socket.gethostbyname(meHost)
-        mePort = self.getPort()
-
-        # if Manager's bound on (0.0.0.0), just check the port, host doesn't
-        # matter.
-        if meHost == "0.0.0.0":
-            return location.port is None or location.port == self.getPort()
-        else:
-            return (location.host is None or location.host in (meHost, meName)) and \
-                   (location.port is None or location.port == mePort)
 
     # shutdown management
 

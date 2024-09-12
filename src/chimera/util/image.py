@@ -7,6 +7,7 @@ import shutil
 import string
 import sys
 import urllib.request, urllib.error, urllib.parse
+import uuid
 import zipfile
 from collections import UserDict
 
@@ -14,7 +15,6 @@ import numpy as N
 from astropy import wcs
 from astropy.io import fits
 
-from chimera.core.chimeraobject import ChimeraObject
 from chimera.core.exceptions import ChimeraException
 from chimera.core.version import _chimera_name_
 from chimera.util.coord import Coord
@@ -215,7 +215,7 @@ class Image(UserDict):
                 img = fits.CompImageHDU(data=data, header=hdu.header, compression_type='RICE_1')
                 img.writeto(filename, checksum=True)
                 return Image.fromFile(filename)
-            
+
         hdu.data = data
 
         hduList = fits.HDUList([hdu])
@@ -237,8 +237,15 @@ class Image(UserDict):
         self._filename = filename
         self._http = None
         self._wcs = None
+        self._id = uuid.uuid4().hex
 
-    filename = lambda self: self._filename
+    @property
+    def filename(self):
+        return self._filename
+
+    @property
+    def id(self):
+        return self._id
 
     def close(self):
         self._fd.close()

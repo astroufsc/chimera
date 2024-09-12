@@ -6,7 +6,7 @@ from rich import print, inspect
 from chimera.core.proxy import Proxy
 from chimera.core.location import Location
 
-telescope = Proxy(Location(host="127.0.0.1", port=9000, cls="FakeTelescope", name="0"))
+telescope = Proxy(Location(host="127.0.0.1", port=7666, cls="FakeTelescope", name="0"))
 
 # telescope.__getitem__("device")
 # p = telescope.getPositionRaDec()
