@@ -1,16 +1,20 @@
+from typing import Type
+
 from chimera.core.protocol import Request, Response
 from chimera.core.serializer import Serializer
 
 
 class Transport:
-    def __init__(self, serializer: Serializer, host: str, port: int):
-        self.serializer = serializer
+    def __init__(self, host: str, port: int, serializer: Type[Serializer]):
+        self.serializer = serializer()
         self.host = host
         self.port = port
 
-    def start(self): ...
+    def bind(self): ...
 
-    def stop(self): ...
+    def connect(self): ...
+
+    def close(self): ...
 
     def ping(self): ...
 

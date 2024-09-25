@@ -19,15 +19,15 @@ class Server:
         pool=ThreadPoolExecutor,
     ):
         self.resources = resources
-        self.transport = transport(serializer(), host, port)
+        self.transport = transport(host, port, serializer)
         self.pool = pool()
         self.protocol = protocol()
 
     def start(self):
-        self.transport.start()
+        self.transport.bind()
 
     def stop(self):
-        self.transport.stop()
+        self.transport.close()
 
     def ping(self):
         return self.transport.ping()

@@ -1,7 +1,10 @@
-import redis
+from typing import Type
 
+import redis
+import redislite
 from chimera.core.protocol import Request, Response
 from chimera.core.serializer import Serializer
+from chimera.core.serializer_pickle import PickleSerializer
 from chimera.core.transport import Transport
 
 
@@ -11,14 +14,18 @@ class RedisTransport(Transport):
     DEFAULT_TIMEOUT: int = 5 * 60  # 5 minutes
     LOOP_TICK: int = 1
 
-    def __init__(self, serializer: Serializer, host: str, port: int):
-        super().__init__(serializer, host, port)
-        self.r = redis.Redis(host=host, port=port)
+    def __init__(self, host: str, port: int, serializer: Type[Serializer] = PickleSerializer):
+        super().__init__(host, port, serializer)
+        self.r = None
 
-    def start(self):
+    def bind(self):
+        self.r = redislite.Redis(serverconfig={"bind": self.host, "port": self.port})
         self.r.delete(RedisTransport.REQUESTS_KEY)
 
-    def stop(self):
+    def connect(self):
+        self.r = redislite.Redis(host=self.host, port=self.port)
+
+    def close(self):
         self.r.close()
 
     def ping(self):

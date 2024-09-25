@@ -13,8 +13,9 @@ class Client:
         serializer=PickleSerializer,
     ):
         self.location = location
-        self.transport = transport(serializer(), location.host, location.port)
         self.protocol = protocol()
+        self.transport = transport(location.host, location.port, serializer)
+        self.transport.connect()
 
     def ping(self):
         return self.transport.ping()
