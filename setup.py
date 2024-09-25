@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 # chimera - observatory automation system
@@ -69,12 +70,14 @@ setup(
     install_requires=[  #"astropy<3",
                          "numpy>=1.8.0",
                          "pyephem",
-                         #"Pyro>=3.16",
                          "python-dateutil",
                          "PyYAML",
                          "RO",
                          "suds",
                          "SQLAlchemy",
+                        # redis
+                        # redislite
+                        # astropy
                      ] + platform_deps,
 
     tests_require=["nose", "coverage", "wheel"],

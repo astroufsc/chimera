@@ -1,4 +1,4 @@
-from chimera.core.adapter import create_adapter
+from chimera.core.client import Client
 from chimera.core.constants import EVENTS_PROXY_NAME
 from chimera.core.location import Location
 
@@ -13,12 +13,9 @@ log = logging.getLogger(__name__)
 
 class Proxy:
 
-    def __init__(self, location):
+    def __init__(self, location, channel=None):
         self.location = Location(location)
-        self.adapter = create_adapter(
-            host=self.location.host,
-            port=self.location.port,
-        )
+        self.client = Client(self.location)
 
     def __getstate__(self):
         return {"location": self.__dict__["location"]}
@@ -27,10 +24,10 @@ class Proxy:
         location = state["location"]
 
         setattr(self, "location", location)
-        setattr(self, "adapter", create_adapter(host=location.host, port=location.port))
+        setattr(self, "client", Client(location))
 
     def ping(self):
-        return self.__dict__["adapter"].ping()
+        return self.__dict__["client"].ping()
 
     def __getnewargs__(self):
         return tuple()
@@ -73,16 +70,17 @@ class ProxyMethod (object):
         return "[method proxy for %s %s method]" % (self.proxy.location,
                                                     self.method)
 
-    # synchronous call, just call method using our sender adapter
+    # synchronous call
     def __call__(self, *args, **kwargs):
-        return self.proxy.adapter.call(self.proxy.location, self.method, args, kwargs)
+        return self.proxy.client.request(self.method, args, kwargs)
 
-    # async pattern
+    # async pattern begin
     def begin(self, *args, **kwargs):
-        return self.proxy.adapter.call(self.proxy.location, "%s.begin" % self.method, args, kwargs)
+        return self.proxy.client.request(f"{self.method}.begin", args, kwargs)
 
+    # async pattern end
     def end(self, *args, **kwargs):
-        return self.proxy.adapter.call(self.proxy.location, "%s.end" % self.method, args, kwargs)
+        return self.proxy.client.request(f"{self.method}.end", args, kwargs)
 
     # event handling
 
@@ -108,7 +106,7 @@ class ProxyMethod (object):
         handler["handler"]["method"] = str(other.__name__)
 
         try:
-            self.proxy.adapter.call(self.proxy.location, "%s.%s" % (EVENTS_PROXY_NAME, action), (handler,), {})
+            self.proxy.client.request(f"{EVENTS_PROXY_NAME}.{action}", (handler,), {})
         except Exception:
             log.exception("Cannot %s to topic '%s' using proxy '%s'." %
                          (action, self.method, self.proxy))

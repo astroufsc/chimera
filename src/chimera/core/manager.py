@@ -2,7 +2,7 @@
 # SPDX-FileCopyrightText: Copyright 2006-2024 Paulo Henrique Silva <ph.silva@gmail.com>
 
 from chimera.core.classloader import ClassLoader
-from chimera.core.adapter import RedisAdapter
+from chimera.core.server import Server
 from chimera.core.resources import ResourcesManager
 from chimera.core.location import Location
 
@@ -20,7 +20,6 @@ from chimera.core.exceptions import InvalidLocationException, \
 from chimera.core.constants import MANAGER_DEFAULT_HOST, MANAGER_DEFAULT_PORT, MANAGER_LOCATION
 
 import logging
-import socket
 import threading
 import time
 
@@ -73,24 +72,25 @@ class Manager:
         # shutdown event
         self.died = threading.Event()
 
-        # our daemon server
-        self.adapter = RedisAdapter(self, host, port)
-        self.adapterThread = threading.Thread(target=self.adapter.request_loop, daemon=True)
-        self.adapterThread.start()
-
         # register ourselves
         self.resources.add(getManagerURI(host, port), self),
 
+        # our daemon server
+        self.server = Server(self.resources, host, port)
+        self.server.start()
+        self.serverThread = threading.Thread(target=self.server.loop, daemon=True)
+        self.serverThread.start()
+
     # private
     def __repr__(self):
-        return "<Manager for %s:%d at %s>" % (self.adapter.host, self.adapter.port, hex(id(self)))
+        return "<Manager for %s:%d at %s>" % (self.server.transport.host, self.server.transport.port, hex(id(self)))
 
-    # adapter host/port
+    # host/port
     def getHostname(self):
-        return self.adapter.host
+        return self.server.transport.host
 
     def getPort(self):
-        return self.adapter.port
+        return self.server.transport.port
 
     # reflection (console)
     def getResources(self):
@@ -157,8 +157,8 @@ class Manager:
 
         location = Location(location)
         resolved_location = Location(
-            host=location.host or self.adapter.host,
-            port=location.port or self.adapter.port,
+            host=location.host or self.getHostname(),
+            port=location.port or self.getPort(),
             cls=location.cls,
             name=location.name,
             config=location.config
@@ -214,8 +214,8 @@ class Manager:
             except ChimeraException:
                 pass
             finally:
-                # kill our adapter
-                self.adapter.shutdown(disconnect=True)
+                # kill our server
+                self.server.stop()
 
                 # die!
                 self.died.set()
@@ -300,7 +300,7 @@ class Manager:
         @rtype: Proxy or bool
         """
 
-        location = Location(cls=cls.__name__, name=name, config=config, host=self.adapter.host, port=self.adapter.port)
+        location = Location(cls=cls.__name__, name=name, config=config, host=self.getHostname(), port=self.getPort())
 
         # names must not start with a digit
         if location.name[0] in "0123456789":
@@ -335,13 +335,13 @@ class Manager:
 
         # connect
         obj.__setlocation__(location)
-        uri = self.adapter.connect(obj, location)
+        # uri = self.adapter.connect(obj, location)
         self.resources.add(location, obj)
 
         if start:
             self.start(location)
 
-        return Proxy(uri)
+        return Proxy(location)
 
     def remove(self, location):
         """
@@ -364,7 +364,7 @@ class Manager:
         self.stop(location)
 
         resource = self.resources.get(location)
-        self.adapter.disconnect(resource.instance)
+        # self.adapter.disconnect(resource.instance)
         self.resources.remove(location)
 
         return True

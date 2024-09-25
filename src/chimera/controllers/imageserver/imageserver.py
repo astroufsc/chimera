@@ -1,5 +1,6 @@
 from chimera.core.chimeraobject import ChimeraObject
 from chimera.controllers.imageserver.imageserverhttp import ImageServerHTTP
+from chimera.core.proxy import Proxy
 
 from chimera.util.image import Image
 

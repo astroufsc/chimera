@@ -144,7 +144,7 @@ class ImageUtil(object):
         while attempts < max_attempts:
             try:
                 response = urllib.request.urlopen(image.http())
-                content = response.read()
+                content = response.recv()
                 f = open(out_file, "wb")
                 f.write(content)
                 f.close()

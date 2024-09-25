@@ -1,0 +1,23 @@
+from chimera.core.protocol import Request, Response
+from chimera.core.serializer import Serializer
+
+
+class Transport:
+    def __init__(self, serializer: Serializer, host: str, port: int):
+        self.serializer = serializer
+        self.host = host
+        self.port = port
+
+    def start(self): ...
+
+    def stop(self): ...
+
+    def ping(self): ...
+
+    def send_request(self, request: Request) -> None: ...
+
+    def recv_request(self) -> Request: ...
+
+    def send_response(self, request: Request, response: Response) -> None: ...
+
+    def recv_response(self, request: Request) -> Response: ...
