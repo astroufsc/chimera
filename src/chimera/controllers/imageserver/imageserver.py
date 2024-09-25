@@ -72,37 +72,24 @@ class ImageServer(ChimeraObject):
                 self.register(Image.fromFile(file))
 
     def register(self, image):
-        try:
-            if len(self.imagesByID) > self['max_images']:
-                remove_items = list(self.imagesByID.keys())[:-self['max_images']]
+        if len(self.imagesByID) > self['max_images']:
+            remove_items = list(self.imagesByID.keys())[:-self['max_images']]
 
-                for item in remove_items:
-                    self.log.debug('Unregistering image %s' % item)
-                    self.unregister(self.imagesByID[item])
+            for item in remove_items:
+                self.log.debug('Unregistering image %s' % item)
+                self.unregister(self.imagesByID[item])
 
-            if "CHM_ID" in image:
-                image.setGUID(image["CHM_ID"])
-            else:
-                image += ("CHM_ID", image.GUID())
-                image.save()
+        self.imagesByID[image.id] = image
+        self.imagesByPath[image.filename] = image
 
-            self.getDaemon().connect(image)
-            self.imagesByID[image.GUID()] = image
-            self.imagesByPath[image.filename()] = image
+        # save Image's HTTP address
+        image.http(self.getHTTPByID(image.id))
 
-            # save Image's HTTP address
-            image.http(self.getHTTPByID(image.GUID()))
-            return image.getProxy()
-        except Exception as e:
-            print(''.join(Pyro.util.getPyroTraceback(e)))
+        return image
 
     def unregister(self, image):
-        try:
-            self.getDaemon().disconnect(image)
-            del self.imagesByID[image.GUID()]
-            del self.imagesByPath[image.filename()]
-        except Exception as e:
-            print(''.join(Pyro.util.getPyroTraceback(e)))
+        del self.imagesByID[image.id]
+        del self.imagesByPath[image.filename]
 
     def getImageByID(self, id):
         if id in self.imagesByID:

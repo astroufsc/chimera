@@ -275,8 +275,7 @@ class ChimeraDome(ChimeraCLI):
     def __abort__(self):
         self.out("\naborting... ", endl="")
 
-        # copy self.dome Proxy because we are running from a differente thread
-        # (yes, Pyro is tricky!)
+        # copy self.dome Proxy because we are running from a different thread
         dome = copy.copy(self.dome)
         dome.abortSlew()
 

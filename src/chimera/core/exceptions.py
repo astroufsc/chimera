@@ -4,14 +4,14 @@ from chimera.core.constants import TRACEBACK_ATTRIBUTE
 
 def printException(e, stream=sys.stdout):
 
-    print(''.join(strException(e)), file=stream)
+    print(''.join(_strException(e)), file=stream)
 
     if hasattr(e, 'cause') and getattr(e, 'cause') is not None:
         print("Caused by:", end=' ', file=stream)
         print(''.join(e.cause), file=stream)
 
 
-def strException(e):
+def _strException(e):
 
     def formatRemoteTraceback(remote_tb_lines):
         result = []
@@ -28,7 +28,6 @@ def strException(e):
         result.append("\n +--- End of remote traceback")
         return result
 
-    # almost copied form Pyro to allow personalization on format
     try:
         exc_type, exc_value, exc_tb = sys.exc_info()
         remote_tb = getattr(e, TRACEBACK_ATTRIBUTE, None)
