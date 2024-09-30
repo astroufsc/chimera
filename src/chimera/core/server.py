@@ -1,10 +1,14 @@
 import operator
+import logging
 from concurrent.futures import ThreadPoolExecutor
 
 from chimera.core.resources import ResourcesManager
 from chimera.core.serializer_pickle import PickleSerializer
 from chimera.core.protocol import Protocol
 from chimera.core.transport_redis import RedisTransport
+
+
+log = logging.getLogger(__name__)
 
 
 class Server:
@@ -27,7 +31,11 @@ class Server:
         self.transport.bind()
 
     def stop(self):
-        self.transport.close()
+        try:
+            self.transport.close()
+        except ConnectionRefusedError:
+            # server might be down already, just ignore
+            log.warning("Server is down already, exiting.")
 
     def ping(self):
         return self.transport.ping()

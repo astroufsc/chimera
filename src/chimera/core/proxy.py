@@ -8,12 +8,13 @@ import logging
 __all__ = ['Proxy',
            'ProxyMethod']
 
+
 log = logging.getLogger(__name__)
 
 
 class Proxy:
 
-    def __init__(self, location, channel=None):
+    def __init__(self, location):
         self.location = Location(location)
         self.client = Client(self.location)
 
