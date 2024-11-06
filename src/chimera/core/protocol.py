@@ -1,3 +1,4 @@
+import traceback
 import uuid
 from dataclasses import dataclass
 from typing import Any
@@ -44,10 +45,11 @@ class Protocol:
         )
 
     def error(self, e) -> Response:
+        tb = "".join(traceback.format_exception(e))
         return Response(
             id=self.new_id(),
             code=500,
-            error=f"{e.__class__.__name__}: {str(e)}",
+            error=f"{e.__class__.__name__}: {str(e)} (traceback={tb})",
         )
 
     def not_found(self, msg: str) -> Response:

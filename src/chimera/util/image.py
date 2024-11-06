@@ -263,8 +263,9 @@ class Image(UserDict):
     # we close before pickle and reopen after it
     #
     def __getstate__(self):
-        self._fd.close()
-        self._fd = None
+        if self._fd:
+            self._fd.close()
+            self._fd = None
         return self.__dict__
 
     def __setstate__(self, args):

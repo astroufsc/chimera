@@ -348,8 +348,9 @@ class ChimeraCam (ChimeraCLI):
 
         # copy self.camera Proxy because we are running from a different
         # thread
-        cam = copy.copy(self.camera)
-        cam.abortExposure()
+        if hasattr(self, "camera"):
+            cam = copy.copy(self.camera)
+            cam.abortExposure()
 
     @action(default=True,
             helpGroup="EXPOSE",

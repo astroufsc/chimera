@@ -1,3 +1,4 @@
+import logging
 from typing import Type
 
 import redis
@@ -6,6 +7,9 @@ from chimera.core.protocol import Request, Response
 from chimera.core.serializer import Serializer
 from chimera.core.serializer_pickle import PickleSerializer
 from chimera.core.transport import Transport
+
+
+log = logging.getLogger(__name__)
 
 
 class RedisTransport(Transport):
@@ -26,39 +30,40 @@ class RedisTransport(Transport):
         self.r = redislite.Redis(host=self.host, port=self.port)
 
     def close(self):
-        self.r.close()
+        self.r.shutdown()
 
-    def ping(self):
-        return self.r.ping()
+    def ping(self) -> bool:
+        try:
+            return self.r.ping()
+        except redis.exceptions.ConnectionError:
+            log.error("ping failed. Is server down?")
+            return False
 
     def send_request(self, request: Request) -> None:
         request_bytes = self.serializer.dumps(request)
-        self.r.rpush(self.REQUESTS_KEY, request_bytes)
 
-    def recv_request(self) -> Request:
         try:
-            data = self.r.blpop(
-                [
-                    self.REQUESTS_KEY,
-                ]
-            )
+            self.r.rpush(self.REQUESTS_KEY, request_bytes)
+        except redis.exceptions.ConnectionError:
+            # server is down, just ignore
+            return
+
+    def recv_request(self) -> Request | None:
+        try:
+            data = self.r.blpop([self.REQUESTS_KEY,])
             _, request_bytes = data
             return self.serializer.loads(request_bytes)
         except redis.exceptions.ConnectionError:
-            raise Exception("Connection error")
+            return None
 
     def send_response(self, request: Request, response: Response) -> None:
         response_bytes = self.serializer.dumps(response)
         self.r.rpush(f"chimera_response_{request.id}", response_bytes)
 
-    def recv_response(self, request: Request) -> Response:
+    def recv_response(self, request: Request) -> Response | None:
         try:
-            data = self.r.blpop(
-                [
-                    f"chimera_response_{request.id}",
-                ]
-            )
+            data = self.r.blpop([f"chimera_response_{request.id}",])
             _, request_bytes = data
             return self.serializer.loads(request_bytes)
         except redis.exceptions.ConnectionError:
-            raise Exception("Connection error")
+            return None

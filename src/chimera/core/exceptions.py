@@ -79,19 +79,11 @@ class ClassLoaderException (ChimeraException):
     pass
 
 
-class InstrumentBusyException (ChimeraException):
-    pass
-
-
 class OptionConversionException (ChimeraException):
     pass
 
 
 class ChimeraValueError (ChimeraException):
-    pass
-
-
-class NotImplementedException(ChimeraException):
     pass
 
 

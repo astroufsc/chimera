@@ -30,9 +30,12 @@ class Client:
         )
 
         self.transport.send_request(request)
-        response = self.transport.recv_response(request)
 
         # FIXME: timeout should be configurable, calls can take a long time.
+        response = self.transport.recv_response(request)
+        if response is None:
+            raise Exception("Server is down")
+
         if response.error:
             raise Exception(response.error)
 

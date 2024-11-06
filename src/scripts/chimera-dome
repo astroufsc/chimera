@@ -276,8 +276,9 @@ class ChimeraDome(ChimeraCLI):
         self.out("\naborting... ", endl="")
 
         # copy self.dome Proxy because we are running from a different thread
-        dome = copy.copy(self.dome)
-        dome.abortSlew()
+        if hasattr(self, "dome"):
+            dome = copy.copy(self.dome)
+            dome.abortSlew()
 
 
 def main():

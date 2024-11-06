@@ -43,6 +43,10 @@ class Server:
     def loop(self):
         while True:
             request = self.transport.recv_request()
+            if request is None:
+                # server is down, return to avoid infinite loop
+                return
+
             self.pool.submit(self._handle_request, request)
 
     def _handle_request(self, request):

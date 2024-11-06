@@ -1,3 +1,5 @@
+import enum
+
 from chimera.core.version import _chimera_version_, _chimera_description_
 from chimera.core.constants import SYSTEM_CONFIG_DEFAULT_FILENAME
 from chimera.core.location import Location, InvalidLocationException
@@ -9,8 +11,6 @@ from chimera.core.path import ChimeraPath
 
 from chimera.controllers.site.main import SiteController
 from chimera.core.exceptions import ObjectNotFoundException, printException
-
-from chimera.util.enum import Enum
 
 import sys
 import optparse
@@ -25,8 +25,13 @@ __all__ = ['ChimeraCLI',
            'action',
            'parameter']
 
-ParameterType = Enum(
-    "INSTRUMENT", "CONTROLLER", "BOOLEAN", "CHOICE", "INCLUDE_PATH", "CONSTANT")
+class ParameterType(enum.StrEnum):
+    INSTRUMENT = "INSTRUMENT"
+    CONTROLLER = "CONTROLLER"
+    BOOLEAN = "BOOLEAN"
+    CHOICE = "CHOICE"
+    INCLUDE_PATH = "INCLUDE_PATH"
+    CONSTANT = "CONSTANT"
 
 
 class Option (object):
@@ -431,8 +436,7 @@ class ChimeraCLI (object):
         sys.exit(ret)
 
     def run(self, cmdlineArgs):
-        t = threading.Thread(target=self._run, args=(cmdlineArgs,))
-        t.setDaemon(True)
+        t = threading.Thread(target=self._run, args=(cmdlineArgs,), daemon=True)
         t.start()
 
     def _run(self, cmdlineArgs):
@@ -470,7 +474,7 @@ class ChimeraCLI (object):
 
     def wait(self, abort=True):
         try:
-            while not self.died.isSet():
+            while not self.died.is_set():
                 time.sleep(0.1)
         except KeyboardInterrupt:
             if abort:
@@ -490,7 +494,7 @@ class ChimeraCLI (object):
             site.startup()
 
             self._keepRemoteManager = False
-            self._remoteManager = ManagerLocator.locate(
+            self._remoteManager = Manager.locate(
                 self.sysconfig.chimera["host"], self.sysconfig.chimera["port"])
 
     def _belongsTo(self, meHost, mePort, location):
@@ -563,11 +567,8 @@ class ChimeraCLI (object):
         if self.localManager:
             self.localManager.shutdown()
 
-        try:
-            if self._remoteManager and not self._keepRemoteManager:
-                self._remoteManager.shutdown()
-        except Pyro.errors.ConnectionClosedError:
-            pass
+        if self._remoteManager and not self._keepRemoteManager:
+            self._remoteManager.shutdown()
 
     def _createParser(self):
 
