@@ -31,7 +31,7 @@ class ChimeraSeeing(ChimeraCLI):
         for attr in ('seeing', 'seeing_at_zenith', 'airmass', 'flux'):
             try:
                 v = self.seeingmonitor.__getattr__(attr)()
-                if isinstance(v, exceptions.NotImplementedError) or not v:
+                if isinstance(v, NotImplementedError) or not v:
                     continue
                 t = red(v.time.__str__()) if datetime.datetime.utcnow() - v.time > datetime.timedelta(
                     minutes=self.options.max_mins) else green(v.time.__str__())

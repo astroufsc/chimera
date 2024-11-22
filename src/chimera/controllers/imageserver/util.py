@@ -1,7 +1,6 @@
 
 from chimera.core.exceptions import ChimeraException, ObjectNotFoundException, ClassLoaderException
 from chimera.core.path import ChimeraPath
-import Pyro.util
 
 
 def getImageServer(manager):

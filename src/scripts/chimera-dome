@@ -94,7 +94,7 @@ class ChimeraDome(ChimeraCLI):
 
         try:
             lamp = self.dome.getManager().getProxy(options.lamp)
-        except ObjectNotFoundException, e:
+        except ObjectNotFoundException as e:
             self.exit('%s: Could not find requested calibration lamp.' % red('ERROR'))
         lamp.switchOff()
         self.out(green("OK"))
@@ -104,7 +104,7 @@ class ChimeraDome(ChimeraCLI):
         self.out("Turning light on ... ", end="")
         try:
             lamp = self.dome.getManager().getProxy(options.lamp)
-        except ObjectNotFoundException, e:
+        except ObjectNotFoundException as e:
             self.exit('%s: Could not find requested calibration lamp.' % red('ERROR'))
 
         lamp.switchOn()
@@ -119,7 +119,7 @@ class ChimeraDome(ChimeraCLI):
         # try:
         try:
             lamp = self.dome.getManager().getProxy(options.lamp)
-        except ObjectNotFoundException, e:
+        except ObjectNotFoundException as e:
             self.exit('%s: Could not find requested calibration lamp.' % red('ERROR'))
         try:
             if not lamp.isSwitchedOn():
@@ -130,7 +130,7 @@ class ChimeraDome(ChimeraCLI):
                 self.exit('Lamp does not support light intensity setting.')
         # except ObjectNotFoundException, e:
         #     self.exit('%s: Could not find requested calibration lamp.' % red('ERROR'))
-        except IntensityOutOfRangeException, e:
+        except IntensityOutOfRangeException as e:
             self.exit('\n%s: Intensity out of range: %s' % (red('ERROR'), lamp.getRange()))
         # except Exception, e:
         #     self.exit('%s: (%s).' % (red('ERROR'), printException(e)))
@@ -158,7 +158,7 @@ class ChimeraDome(ChimeraCLI):
 
         try:
             target = Coord.fromDMS(options.moveTo)
-        except ValueError, e:
+        except ValueError as e:
             self.exit("Invalid azimuth (%s)" % e)
 
         self.out("Moving dome to %s ... " % target, end="")
@@ -170,14 +170,14 @@ class ChimeraDome(ChimeraCLI):
     def setFanSpeed(self, options):
         try:
             domefan = self.dome.getManager().getProxy(options.fan)
-        except ObjectNotFoundException, e:
+        except ObjectNotFoundException as e:
             self.exit('%s: Could not find requested fan.'% red('ERROR'))
 
         self.out("=" * 40)
         self.out("Changing fan speed to %.2f " % (options.setFanSpeed), end=" ")
         try:
             domefan.setRotation(options.setFanSpeed)
-        except Exception, e:
+        except Exception as e:
             self.exit("%s. \n%s" % (red("FAILED"), printException(e)))
 
         self.out("%s" % (green("OK")))
@@ -188,7 +188,7 @@ class ChimeraDome(ChimeraCLI):
 
         try:
             domefan = self.dome.getManager().getProxy(options.fan)
-        except ObjectNotFoundException, e:
+        except ObjectNotFoundException as e:
             self.exit('%s: Could not find requested fan.'% red('ERROR'))
 
         if domefan.isSwitchedOn():
@@ -203,7 +203,7 @@ class ChimeraDome(ChimeraCLI):
             else:
                 self.out(red("FAILED"))
             self.out("=" * 40)
-        except Exception, e:
+        except Exception as e:
             self.exit("%s\n %s" % (red("FAILED"), printException(e)))
 
     @action(long="fan-off", help="Stop dome fan", helpGroup="DOMEFANS", actionGroup="DOMEFANS")
@@ -211,7 +211,7 @@ class ChimeraDome(ChimeraCLI):
 
         try:
             domefan = self.dome.getManager().getProxy(options.fan)
-        except ObjectNotFoundException, e:
+        except ObjectNotFoundException as e:
             self.exit('%s: Could not find requested fan.'% red('ERROR'))
 
         if not domefan.isSwitchedOn():
@@ -226,7 +226,7 @@ class ChimeraDome(ChimeraCLI):
             else:
                 self.out(red("FAILED"))
             self.out("=" * 40)
-        except Exception, e:
+        except Exception as e:
             self.exit("%s\n %s" % (red("FAILED"), printException(e)))
 
     @action(help="Print dome information", helpGroup="COMMANDS")
@@ -275,10 +275,10 @@ class ChimeraDome(ChimeraCLI):
     def __abort__(self):
         self.out("\naborting... ", endl="")
 
-        # copy self.dome Proxy because we are running from a differente thread
-        # (yes, Pyro is tricky!)
-        dome = copy.copy(self.dome)
-        dome.abortSlew()
+        # copy self.dome Proxy because we are running from a different thread
+        if hasattr(self, "dome"):
+            dome = copy.copy(self.dome)
+            dome.abortSlew()
 
 
 def main():

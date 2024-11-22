@@ -37,11 +37,10 @@ from chimera.interfaces.camera import CameraStatus
 from chimera.util.enum import EnumValue
 
 import chimera.core.log
-chimera.core.log.setConsoleLevel(1e10)
+chimera.core.log.setConsoleLevel(int(1e10))
 log = logging.getLogger("chimera.tests")
 
 
-from nose.tools import assert_raises
 
 # hack for event  triggering asserts
 FiredEvents = {}

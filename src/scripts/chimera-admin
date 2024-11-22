@@ -59,7 +59,7 @@ class doStuff:
 
             self.locManager = ManagerLocator.locate(host, port)
         except ManagerNotFoundException:
-            print >> sys.stderr, "Couldn't find current Chimera instance. Is Chimera running?"
+            print("Couldn't find current Chimera instance. Is Chimera running?", file=sys.stderr)
             sys.exit(1)
 
         if options.verbose == 1:
@@ -96,68 +96,68 @@ class doStuff:
             try:
                 self.locManager.addLocation(
                     co, path=self.paths["instruments"], start=True)
-            except Exception, e:
+            except Exception as e:
                 log.warning('Failed to start ' + co + ': ' + e.message)
-                print ''.join(getPyroTraceback(e))
+                print(''.join(getPyroTraceback(e)))
         for co in options.controllers:
             log.info('Loading controller ' + co + '...')
             try:
                 self.locManager.addLocation(
                     co, path=self.paths["controllers"], start=True)
-            except Exception, e:
+            except Exception as e:
                 log.warning('Failed to start ' + co + ': ' + e.message)
-                print ''.join(getPyroTraceback(e))
+                print(''.join(getPyroTraceback(e)))
 
         for co in options.start:
             try:
                 log.debug('Attempting to start ' + remSite + co)
                 self.locManager.start(co)
                 log.info('Started ' + remSite + co)
-            except Exception, e:
+            except Exception as e:
                 log.warning('Unable to start ' + co + ': ' + e.message)
-                print ''.join(getPyroTraceback(e))
+                print(''.join(getPyroTraceback(e)))
 
         for co in options.stop:
             try:
                 log.debug('Attempting to stop ' + remSite + co)
                 self.locManager.stop(co)
                 log.info('Stopped ' + remSite + co)
-            except Exception, e:
+            except Exception as e:
                 log.warning('Unable to stop ' + co + ': ' + e.message)
-                print ''.join(getPyroTraceback(e))
+                print(''.join(getPyroTraceback(e)))
 
         for co in options.remove:
             try:
                 log.debug('Attempting to remove ' + remSite + co)
                 self.locManager.remove(co)
                 log.info('Started ' + remSite + co)
-            except Exception, e:
+            except Exception as e:
                 log.warning('Unable to remove ' + co + ': ' + e.message)
-                print ''.join(getPyroTraceback(e))
+                print(''.join(getPyroTraceback(e)))
 
         if options.list or options.listdetail:
-            print "Chimera - %s:%d" % (self.locManager.getHostname(), self.locManager.getPort())
+            print("Chimera - %s:%d" % (self.locManager.getHostname(), self.locManager.getPort()))
             for key in self.locManager.getResources():
 
                 if not self.locManager._belongsToMe(Location(key.__str__())):
-                    print ' - ' + key.__str__() + " [REMOTE]"
+                    print(' - ' + key.__str__() + " [REMOTE]")
                     continue
 
                 ro = self.locManager.getProxy(key.__str__())
                 try:
                     state = ' [' + ro.getState().__str__() + ']'
-                except Exception, e:
+                except Exception as e:
                     state = ''
-                print ' - ' + key.__str__() + state
+                print(' - ' + key.__str__() + state)
                 if options.listdetail:
                     try:
                         config = ro.__get_config__()
                         for key, value in sorted(config):
-                            print '      ' + key + ': ' + value.__str__()
+                            print('      ' + key + ': ' + value.__str__())
                     except AttributeError:
-                        print '      {Config not available}'
-                    except Exception, e:
-                        print e.message
+                        print('      {Config not available}')
+                    except Exception as e:
+                        print(e.message)
 
         self.endMe()
 

@@ -1,23 +1,17 @@
-import Pyro.constants
-
-import sys
 import traceback
-
-import logging
-
-from chimera.core.compat import *
-
+import sys
+from chimera.core.constants import TRACEBACK_ATTRIBUTE
 
 def printException(e, stream=sys.stdout):
 
-    print(''.join(strException(e)), file=stream)
+    print(''.join(_strException(e)), file=stream)
 
     if hasattr(e, 'cause') and getattr(e, 'cause') is not None:
         print("Caused by:", end=' ', file=stream)
         print(''.join(e.cause), file=stream)
 
 
-def strException(e):
+def _strException(e):
 
     def formatRemoteTraceback(remote_tb_lines):
         result = []
@@ -34,10 +28,9 @@ def strException(e):
         result.append("\n +--- End of remote traceback")
         return result
 
-    # almost copied form Pyro to allow personalization on format
     try:
         exc_type, exc_value, exc_tb = sys.exc_info()
-        remote_tb = getattr(e, Pyro.constants.TRACEBACK_ATTRIBUTE, None)
+        remote_tb = getattr(e, TRACEBACK_ATTRIBUTE, None)
         local_tb = traceback.format_exception(exc_type, exc_value, exc_tb)
 
         if remote_tb:
@@ -61,7 +54,9 @@ class ChimeraException (Exception):
         if not all(sys.exc_info()):
             self.cause = None
         else:
-            self.cause = strException(sys.exc_info()[1])
+            # self.cause = strException(sys.exc_info()[1])
+            # FIXME: remote exception handling
+            self.cause = None
 
 
 class InvalidLocationException(ChimeraException):
@@ -84,19 +79,11 @@ class ClassLoaderException (ChimeraException):
     pass
 
 
-class InstrumentBusyException (ChimeraException):
-    pass
-
-
 class OptionConversionException (ChimeraException):
     pass
 
 
 class ChimeraValueError (ChimeraException):
-    pass
-
-
-class NotImplementedException(ChimeraException):
     pass
 
 

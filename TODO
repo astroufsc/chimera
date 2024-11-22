@@ -1,3 +1,13 @@
 
+- convert files to UTF-8 and adjust header
+    #! /usr/bin/env python
+    # -*- coding: iso-8859-1 -*-
+
+- remove shebang from non-executable files
+- move to SPDX license description
+- remove enum and migrate to py3 enum
+
+
+
 See issues list on http://code.google.com/p/chimera/issues.
 

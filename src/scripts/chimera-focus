@@ -148,7 +148,7 @@ class ChimeraFocus (ChimeraCLI):
 
         try:
             self.focuser.moveOut(options.move_out, FocuserAxis.fromStr(options.axis))
-        except InvalidFocusPositionException, e:
+        except InvalidFocusPositionException as e:
             self.exit("Invalid position. Current position %d,"
                       " target position %d, valid range %d-%d." % (self.focuser.getPosition(),
                                                                    self.focuser.getPosition() +
@@ -262,16 +262,16 @@ class ChimeraFocus (ChimeraCLI):
             self.out("Best focus position found at %d." % result["best"])
             self.out("Moving focuser to %d .. OK" % result["best"])
 
-        except IOError, e:
+        except IOError as e:
             self.exit(str(e))
-        except FocusNotFoundException, e:
+        except FocusNotFoundException as e:
             self.exit(str(e))
-        except StarNotFoundException, e:
+        except StarNotFoundException as e:
             self.exit(str(e))
         except SExtractorException:
             self.exit(
                 "Couldn't find SExtractor. If you have it installed, please add it to yout PATH variable.")
-        except InvalidFilterPositionException, e:
+        except InvalidFilterPositionException as e:
             self.exit(str(e))
 
         time.sleep(1)

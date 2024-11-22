@@ -3,8 +3,6 @@ from chimera.core.chimeraobject import ChimeraObject
 from chimera.core.manager       import Manager
 from chimera.core.exceptions    import ChimeraException
 
-from nose.tools import assert_raises
-
 import logging
 
 log = logging.getLogger("chimera.test_log")
@@ -27,7 +25,7 @@ class TestLog (object):
         manager = Manager()
         manager.addClass(Simple, "simple")
 
-        simple = manager.getProxy(Simple)
+        simple = manager.getProxy("/Simple/simple")
 
         try:
             simple.answer()
