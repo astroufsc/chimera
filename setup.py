@@ -67,8 +67,7 @@ setup(
     scripts=chimera_scripts,
 
     # installation happens in the specified order
-    install_requires=[  #"astropy<3",
-                         "numpy>=1.8.0",
+    install_requires=[   "numpy>=1.8.0",
                          "pyephem",
                          "python-dateutil",
                          "PyYAML",

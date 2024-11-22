@@ -335,7 +335,6 @@ class Manager:
 
         # connect
         obj.__setlocation__(location)
-        # uri = self.adapter.connect(obj, location)
         self.resources.add(location, obj)
 
         if start:
