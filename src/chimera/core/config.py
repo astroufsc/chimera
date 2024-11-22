@@ -20,15 +20,7 @@
 # 02110-1301, USA.
 
 
-from types import (IntType, FloatType, StringType, LongType,
-                   DictType, TupleType, ListType, BooleanType,
-                   NoneType)
-
-try:
-    import pickle as pickle
-except ImportError:
-    import pickle
-
+from types import (NoneType)
 
 import logging
 log = logging.getLogger(__name__)
@@ -48,6 +40,9 @@ class Option(object):
         self._value = value
         self._default = value
         self._checker = checker
+
+    def __repr__(self):
+        return f"<Option {self._name}={self._value}>"
 
     def set(self, value):
 
@@ -90,10 +85,10 @@ class IntChecker (Checker):
         # if we can't get one from "value"
 
         # simple case
-        if type(value) in (IntType, LongType, FloatType, BooleanType):
+        if type(value) in (int, float, bool):
             return int(value)
 
-        if type(value) == StringType:
+        if type(value) == str:
             # try to convert to int (use float first and then cast (loosely)
             try:
                 tmp = float(value)
@@ -118,10 +113,10 @@ class FloatChecker (Checker):
         # if we can't get one from "value"
 
         # simple case
-        if type(value) in (FloatType, IntType, LongType, BooleanType):
+        if type(value) in (float, int, bool):
             return float(value)
 
-        if type(value) == StringType:
+        if type(value) == str:
 
             # try to convert to int
             try:
@@ -173,13 +168,13 @@ class BoolChecker (Checker):
         # we MUST return an bool or raise OptionConversionException
         # if we can't get one from "value"
 
-        if type(value) == BooleanType:
+        if type(value) == bool:
             return value
 
         # only accept 0 and 1 as valid booleans...
         # cause a lot of problems in OptionChecker accept the same as python
         # truth tables assume
-        if type(value) in (IntType, LongType, FloatType):
+        if type(value) in (int, float):
 
             if value == 1:
                 return True
@@ -187,7 +182,7 @@ class BoolChecker (Checker):
             if value == 0:
                 return False
 
-        if type(value) == StringType:
+        if type(value) == str:
 
             value = value.strip().lower()
 
@@ -216,22 +211,22 @@ class OptionsChecker (Checker):
 
         for value in opt:
 
-            if type(value) in (IntType, LongType):
+            if type(value) == int:
                 options.append({"value": value,
                                 "checker": IntChecker()})
                 continue
 
-            if type(value) == FloatType:
+            if type(value) == float:
                 options.append({"value": value,
                                 "checker": FloatChecker()})
                 continue
 
-            if type(value) == StringType:
+            if type(value) == str:
                 options.append({"value": value,
                                 "checker": StringChecker()})
                 continue
 
-            if type(value) == BooleanType:
+            if type(value) == bool:
                 options.append({"value": value,
                                 "checker": BoolChecker()})
                 continue
@@ -265,7 +260,7 @@ class RangeChecker (Checker):
         self._min = value[0]
         self._max = value[1]
 
-        if type(value[0]) == FloatType:
+        if type(value[0]) == float:
             self._checker = FloatChecker()
 
         else:
@@ -305,7 +300,7 @@ class EnumChecker (Checker):
             if value in self.enumtype:
                 return value
 
-        if type(value) == StringType:
+        if type(value) == str:
             ret = [v for v in self.enumtype if str(v).upper() == value.upper()]
             if ret:
                 return ret[0]
@@ -382,7 +377,7 @@ class Config (object):
 
     def __init__(self, obj):
 
-        if type(obj) == DictType:
+        if type(obj) == dict:
             self._options = self._readOptions(obj)
         else:
             self._options = self._readOptions(obj.__config__)
@@ -393,19 +388,19 @@ class Config (object):
 
         for name, value in list(opt.items()):
 
-            if type(value) in (IntType, LongType):
+            if type(value) == int:
                 options[name] = Option(name, value, IntChecker())
                 continue
 
-            if type(value) == FloatType:
+            if type(value) == float:
                 options[name] = Option(name, value, FloatChecker())
                 continue
 
-            if type(value) == StringType:
+            if type(value) == str:
                 options[name] = Option(name, value, StringChecker())
                 continue
 
-            if type(value) == BooleanType:
+            if type(value) == bool:
                 options[name] = Option(name, value, BoolChecker())
                 continue
 
@@ -415,14 +410,14 @@ class Config (object):
 
             # For list and tuple we use the first element as default option.
             # If the list/tuple is empty, its value will be assigned None.
-            if type(value) == ListType:
+            if type(value) == list:
                 if len(value) > 0:
                     options[name] = Option(name, value[0], OptionsChecker(value))
                 else:
                     options[name] = Option(name, None, NoneChecker())
                 continue
 
-            if type(value) == TupleType:
+            if type(value) == tuple:
                 if len(value) > 0:
                     options[name] = Option(name, value[0], RangeChecker(value))
                 else:
@@ -456,7 +451,7 @@ class Config (object):
 
     def __getitem__(self, name):
 
-        if type(name) != StringType:
+        if type(name) != str:
             raise TypeError
 
         if name in self:
@@ -490,20 +485,20 @@ class Config (object):
             yield (name, self._options[name].get())
 
     def keys(self):
-        return [key for key in self.keys()]
+        return [key for key in self._options.keys()]
 
     def values(self):
-        return [value for value in self.values()]
+        return [value for value in self._options.values()]
 
     def items(self):
-        return [(name, value) for name, value in self.items()]
+        return [(name, value) for name, value in self._options.items()]
 
     def __iadd__(self, other):
 
-        if type(other) not in (Config, DictType):
+        if type(other) not in (Config, dict):
             return self
 
-        if type(other) == DictType:
+        if type(other) == dict:
             other = Config(other)
 
         for name, value in list(other._options.items()):

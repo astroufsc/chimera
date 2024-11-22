@@ -14,8 +14,6 @@ from chimera.core.lock          import lock
 from chimera.core.manager import Manager
 from chimera.core.proxy   import Proxy
 
-from nose.tools import assert_raises
-
 
 class TestLock (object):
 
@@ -31,21 +29,21 @@ class TestLock (object):
             def doUnlocked (self):
                 time.sleep(1)
                 t = time.time()-self.t0
-                print("[unlocked] - %s - %.3f" % (threading.currentThread().getName(), t))
+                print("[unlocked] - %s - %.3f" % (threading.current_thread().name, t))
                 return t
 
             @lock
             def doLocked (self):
                 time.sleep(1)
                 t = time.time()-self.t0
-                print("[ locked ] - %s - %.3f" % (threading.currentThread().getName(), t))
+                print("[ locked ] - %s - %.3f" % (threading.current_thread().name, t))
                 return t
 
 #            def doLockedWith (self):
 #                with self:
 #                    time.sleep(1)
 #                    t = time.time()-self.t0
-#                    print "[ locked ] - %s - %.3f" % (threading.currentThread().getName(), t)
+#                    print "[ locked ] - %s - %.3f" % (threading.current_thread().name, t)
 #                    return t
                     
         def doTest (obj):
@@ -116,8 +114,8 @@ class TestLock (object):
             print("unlocked: mean: %.6f sigma: %.6f" % (unlocked_mean, unlocked_sigma))
             print("locked  : mean: %.6f sigma: %.6f" % (locked_mean, locked_sigma))
 
-            assert equals_eps(unlocked_sigma, 0.0, 0.5)
-            assert equals_eps(locked_sigma, 2.875, 1.0)
+            assert equals_eps(unlocked_sigma, 0.0, 0.5) is True
+            assert equals_eps(locked_sigma, 2.875, 1.0) is True
 
 
         # direct metaobject
@@ -128,7 +126,7 @@ class TestLock (object):
         manager = Manager()
         manager.addClass(Minimo, "m", start=True)
 
-        p = manager.getProxy(Minimo)
+        p = manager.getProxy("/Minimo/m")
         doTest(p)
 
         manager.shutdown()

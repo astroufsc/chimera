@@ -1,5 +1,4 @@
 
-from nose.tools import assert_raises
 from chimera.util.catalogs.landolt import Landolt
 from chimera.util.position import Position
 

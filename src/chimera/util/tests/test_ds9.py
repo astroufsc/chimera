@@ -1,18 +1,16 @@
+import pytest
 
 from chimera.util.ds9 import DS9
-from nose import SkipTest
 
 import os
 import signal
 import subprocess
 import time
 
+@pytest.mark.skip
 class TestDS9(object):
 
     def test_basics (self):
-
-        raise SkipTest()
-
         ds9 = DS9()
         assert ds9 != None
 
@@ -23,9 +21,6 @@ class TestDS9(object):
         assert ds9.isOpen() == False
 
     def test_use_global_ds9 (self):
-
-        raise SkipTest()
-
         filename = os.path.realpath(os.path.join(os.path.dirname(__file__), "teste-sem-wcs.fits"))
 
         p = subprocess.Popen("ds9 %s" % filename, shell=True)

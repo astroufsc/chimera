@@ -109,14 +109,14 @@ class CameraBase (ChimeraObject,
         for frame_num in range(frames):
 
             # [ABORT POINT]
-            if self.abort.isSet():
+            if self.abort.is_set():
                 return tuple(images)
 
             imageRequest.beginExposure(manager)
             self._expose(imageRequest)
 
             # [ABORT POINT]
-            if self.abort.isSet():
+            if self.abort.is_set():
                 return tuple(images)
 
             image = self._readout(imageRequest)
@@ -125,7 +125,7 @@ class CameraBase (ChimeraObject,
                 imageRequest.endExposure(manager)
 
             # [ABORT POINT]
-            if self.abort.isSet():
+            if self.abort.is_set():
                 return tuple(images)
 
             if (interval > 0 and frame_num < frames) and (not frames == 1):

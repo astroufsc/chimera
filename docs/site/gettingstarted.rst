@@ -34,7 +34,6 @@ Distutils will install automatically the following Python dependencies:
 
 * astropy
 * PyYAML: 3.10
-* Pyro: 3.16
 * RO: 3.3.0
 * SQLAlchemy: 0.9.1
 * numpy: 1.8.0

@@ -34,9 +34,6 @@ class ClassLoader (object):
     def loadClass(self, clsname, path=['.']):
         return self._lookupClass(clsname, path)
 
-    def reloadClass(self, clsname):
-        pass
-
     def _lookupClass(self, clsname, path):
         """
         Based on this recipe
@@ -59,12 +56,12 @@ class ClassLoader (object):
 
         except ImportError:
 
-            # Python trick: An ImportError exception catched here
-            # could came from both the __import__ above or from the
+            # Python trick: An ImportError exception caught here
+            # could come from both the __import__ above or from the
             # module imported by the __import__ above... So, we need a
             # way to know the difference between those exceptions.  A
             # simple (reliable?) way is to use the length of the
-            # exception traceback as a indicator. If the traceback had
+            # exception traceback as an indicator. If the traceback had
             # only 1 entry, the exceptions comes from the __import__
             # above, more than one the exception comes from the
             # imported module

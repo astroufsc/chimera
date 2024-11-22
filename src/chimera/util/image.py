@@ -7,15 +7,15 @@ import shutil
 import string
 import sys
 import urllib.request, urllib.error, urllib.parse
+import uuid
 import zipfile
-from UserDict import DictMixin
+from collections import UserDict
 
 import numpy as N
 from astropy import wcs
 from astropy.io import fits
 
 from chimera.core.exceptions import ChimeraException
-from chimera.core.remoteobject import RemoteObject
 from chimera.core.version import _chimera_name_
 from chimera.util.coord import Coord
 from chimera.util.position import Position
@@ -144,7 +144,7 @@ class ImageUtil(object):
         while attempts < max_attempts:
             try:
                 response = urllib.request.urlopen(image.http())
-                content = response.read()
+                content = response.recv()
                 f = open(out_file, "wb")
                 f.write(content)
                 f.close()
@@ -154,7 +154,7 @@ class ImageUtil(object):
         return False
 
 
-class Image(DictMixin, RemoteObject):
+class Image(UserDict):
     """
     Class to manipulate FITS images with a Pythonic taste.
 
@@ -215,7 +215,7 @@ class Image(DictMixin, RemoteObject):
                 img = fits.CompImageHDU(data=data, header=hdu.header, compression_type='RICE_1')
                 img.writeto(filename, checksum=True)
                 return Image.fromFile(filename)
-            
+
         hdu.data = data
 
         hduList = fits.HDUList([hdu])
@@ -231,14 +231,21 @@ class Image(DictMixin, RemoteObject):
     # standard constructor
     #
     def __init__(self, filename, fd):
-        RemoteObject.__init__(self)
+        UserDict.__init__(self)
 
         self._fd = fd
         self._filename = filename
         self._http = None
         self._wcs = None
+        self._id = uuid.uuid4().hex
 
-    filename = lambda self: self._filename
+    @property
+    def filename(self):
+        return self._filename
+
+    @property
+    def id(self):
+        return self._id
 
     def close(self):
         self._fd.close()
@@ -256,7 +263,9 @@ class Image(DictMixin, RemoteObject):
     # we close before pickle and reopen after it
     #
     def __getstate__(self):
-        self._fd.close()
+        if self._fd:
+            self._fd.close()
+            self._fd = None
         return self.__dict__
 
     def __setstate__(self, args):

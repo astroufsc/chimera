@@ -2,7 +2,6 @@
 
 import datetime
 import sys
-import exceptions
 from chimera.core.cli import ChimeraCLI, action
 from chimera.interfaces.weatherstation import WeatherSafety
 from chimera.util.output import red, green
@@ -37,7 +36,7 @@ class ChimeraWeather(ChimeraCLI):
                      'sky_transparency'):
             try:
                 v = self.weatherstation.__getattr__(attr)()
-                if isinstance(v, exceptions.NotImplementedError) or not v:
+                if isinstance(v, NotImplementedError) or not v:
                     continue
                 t = red(v.time.__str__()) if datetime.datetime.utcnow() - v.time > datetime.timedelta(
                     minutes=self.options.max_mins) else green(v.time.__str__())

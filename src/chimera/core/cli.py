@@ -1,18 +1,16 @@
+import enum
+
 from chimera.core.version import _chimera_version_, _chimera_description_
 from chimera.core.constants import SYSTEM_CONFIG_DEFAULT_FILENAME
 from chimera.core.location import Location, InvalidLocationException
 
 from chimera.core.systemconfig import SystemConfig
-from chimera.core.manager import Manager
+from chimera.core.manager import Manager, ManagerNotFoundException
+from chimera.core.proxy import Proxy
 from chimera.core.path import ChimeraPath
 
 from chimera.controllers.site.main import SiteController
 from chimera.core.exceptions import ObjectNotFoundException, printException
-from chimera.core.managerlocator import ManagerLocator, ManagerNotFoundException
-
-from chimera.util.enum import Enum
-
-import Pyro.errors
 
 import sys
 import optparse
@@ -27,8 +25,13 @@ __all__ = ['ChimeraCLI',
            'action',
            'parameter']
 
-ParameterType = Enum(
-    "INSTRUMENT", "CONTROLLER", "BOOLEAN", "CHOICE", "INCLUDE_PATH", "CONSTANT")
+class ParameterType(enum.StrEnum):
+    INSTRUMENT = "INSTRUMENT"
+    CONTROLLER = "CONTROLLER"
+    BOOLEAN = "BOOLEAN"
+    CHOICE = "CHOICE"
+    INCLUDE_PATH = "INCLUDE_PATH"
+    CONSTANT = "CONSTANT"
 
 
 class Option (object):
@@ -326,11 +329,11 @@ class ChimeraCLI (object):
         # base actions and parameters
 
         if verbosity:
-            self.addParameters(dict(name="quiet", short="q", int="quiet",
+            self.addParameters(dict(name="quiet", short="q", long="quiet",
                                     type=ParameterType.BOOLEAN, default=True,
                                     help="Don't display information while working."),
 
-                               dict(name="verbose", short="v", int="verbose",
+                               dict(name="verbose", short="v", long="verbose",
                                     type=ParameterType.BOOLEAN, default=False,
                                     help="Display information while working"))
 
@@ -391,7 +394,7 @@ class ChimeraCLI (object):
 
             self.addParameters(dict(name="inst_dir",
                                     short="I",
-                                    int="instruments-dir",
+                                    long="instruments-dir",
                                     helpGroup="PATHS",
                                     type=ParameterType.INCLUDE_PATH,
                                     default=ChimeraPath().instruments,
@@ -412,7 +415,7 @@ class ChimeraCLI (object):
 
             self.addParameters(dict(name="ctrl_dir",
                                     short="C",
-                                    int="controllers-dir",
+                                    long="controllers-dir",
                                     helpGroup="PATHS",
                                     type=ParameterType.INCLUDE_PATH,
                                     default=ChimeraPath().controllers,
@@ -433,8 +436,7 @@ class ChimeraCLI (object):
         sys.exit(ret)
 
     def run(self, cmdlineArgs):
-        t = threading.Thread(target=self._run, args=(cmdlineArgs,))
-        t.setDaemon(True)
+        t = threading.Thread(target=self._run, args=(cmdlineArgs,), daemon=True)
         t.start()
 
     def _run(self, cmdlineArgs):
@@ -459,7 +461,6 @@ class ChimeraCLI (object):
 
         # setup objects
         self._setupObjects(self.options)
-
         self.__start__(self.options, args)
 
         # run actions
@@ -473,7 +474,7 @@ class ChimeraCLI (object):
 
     def wait(self, abort=True):
         try:
-            while not self.died.isSet():
+            while not self.died.is_set():
                 time.sleep(0.1)
         except KeyboardInterrupt:
             if abort:
@@ -485,7 +486,7 @@ class ChimeraCLI (object):
             self.sysconfig = SystemConfig.fromFile(options.config)
             self.localManager = Manager(
                 self.sysconfig.chimera["host"], getattr(options, 'port', 9000))
-            self._remoteManager = ManagerLocator.locate(
+            self._remoteManager = Manager.locate(
                 self.sysconfig.chimera["host"], self.sysconfig.chimera["port"])
         except ManagerNotFoundException:
             # FIXME: better way to start Chimera
@@ -493,7 +494,7 @@ class ChimeraCLI (object):
             site.startup()
 
             self._keepRemoteManager = False
-            self._remoteManager = ManagerLocator.locate(
+            self._remoteManager = Manager.locate(
                 self.sysconfig.chimera["host"], self.sysconfig.chimera["port"])
 
     def _belongsTo(self, meHost, mePort, location):
@@ -549,13 +550,13 @@ class ChimeraCLI (object):
             inst_proxy = None
 
             try:
-                inst_proxy = self._remoteManager.getProxy(inst.location)
+                inst_proxy = Proxy(inst.location)
             except ObjectNotFoundException:
                 if inst.required == True:
                     self.exit(
                         "Couldn't find %s. (see --help for more information)" % inst.name.capitalize())
 
-            # save values in CLI object (which users are supposed to inherites
+            # save values in CLI object (which users are supposed to inherits
             # from).
             setattr(self, inst.name, inst_proxy)
 
@@ -566,11 +567,8 @@ class ChimeraCLI (object):
         if self.localManager:
             self.localManager.shutdown()
 
-        try:
-            if self._remoteManager and not self._keepRemoteManager:
-                self._remoteManager.shutdown()
-        except Pyro.errors.ConnectionClosedError:
-            pass
+        if self._remoteManager and not self._keepRemoteManager:
+            self._remoteManager.shutdown()
 
     def _createParser(self):
 

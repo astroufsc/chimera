@@ -59,7 +59,7 @@ class EventWrapperDispatcher (MethodWrapperDispatcher):
         if not isinstance(other, ProxyMethod):
             return copy.copy(self)
 
-        handler["handler"]["proxy"] = other.proxy.URI
+        handler["handler"]["proxy"] = other.proxy.location
         handler["handler"]["method"] = str(other.__name__)
 
         if hasattr(self.instance, EVENTS_PROXY_NAME):

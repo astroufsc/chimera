@@ -1,35 +1,7 @@
-#! /usr/bin/env python
-# -*- coding: iso-8859-1 -*-
-
-# chimera - observatory automation system
-# Copyright (C) 2006-2007  P. Henrique Silva <henrique@astro.ufsc.br>
-
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License
-# as published by the Free Software Foundation; either version 2
-# of the License, or (at your option) any later version.
-
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
-# 02110-1301, USA.
-
-
-try:
-    import Pyro.core
-except ImportError as e:
-    raise RuntimeError("You must have Pyro version >= 3.6 installed.")
-
-from chimera.core.constants import MANAGER_DEFAULT_HOST, MANAGER_DEFAULT_PORT
+from chimera.core.client import Client
 from chimera.core.constants import EVENTS_PROXY_NAME
 from chimera.core.location import Location
 
-#import chimera.core.log
 import logging
 
 
@@ -40,30 +12,23 @@ __all__ = ['Proxy',
 log = logging.getLogger(__name__)
 
 
-class Proxy (Pyro.core.DynamicProxy):
+class Proxy:
 
-    def __init__(self, location=None, host=None, port=None, uri=None):
-        Pyro.core.initClient(banner=0)
+    def __init__(self, location):
+        self.location = Location(location)
+        self.client = Client(self.location)
 
-        if not uri:
-            location = Location(location)
+    def __getstate__(self):
+        return {"location": self.__dict__["location"]}
 
-            host = (host or location.host) or MANAGER_DEFAULT_HOST
-            port = (port or location.port) or MANAGER_DEFAULT_PORT
+    def __setstate__(self, state):
+        location = state["location"]
 
-            uri = Pyro.core.PyroURI(host=host,
-                                    port=port,
-                                    objectID="/%s/%s" %
-                                    (location.cls, location.name))
-
-        Pyro.core.DynamicProxy.__init__(self, uri)
+        setattr(self, "location", location)
+        setattr(self, "client", Client(location))
 
     def ping(self):
-
-        try:
-            return self.__ping__()
-        except Pyro.errors.ProtocolError:
-            return 0
+        return self.__dict__["client"].ping()
 
     def __getnewargs__(self):
         return tuple()
@@ -82,10 +47,10 @@ class Proxy (Pyro.core.DynamicProxy):
         return self
 
     def __repr__(self):
-        return "<%s proxy at %s>" % (self.URI, hex(id(self)))
+        return "<%s proxy at %s>" % (self.location, hex(id(self)))
 
     def __str__(self):
-        return "[proxy for %s]" % self.URI
+        return "[proxy for %s]" % self.location
 
 
 class ProxyMethod (object):
@@ -94,29 +59,29 @@ class ProxyMethod (object):
 
         self.proxy = proxy
         self.method = method
-        self.sender = self.proxy._invokePYRO
 
         self.__name__ = method
 
     def __repr__(self):
-        return "<%s.%s method proxy at %s>" % (self.proxy.URI,
+        return "<%s.%s method proxy at %s>" % (self.proxy.location,
                                                self.method,
                                                hex(hash(self)))
 
     def __str__(self):
-        return "[method proxy for %s %s method]" % (self.proxy.URI,
+        return "[method proxy for %s %s method]" % (self.proxy.location,
                                                     self.method)
 
-    # synchronous call, just call method using our sender adapter
+    # synchronous call
     def __call__(self, *args, **kwargs):
-        return self.sender(self.method, args, kwargs)
+        return self.proxy.client.request(self.method, args, kwargs)
 
-    # async pattern
+    # async pattern begin
     def begin(self, *args, **kwargs):
-        return self.sender("%s.begin" % self.method, args, kwargs)
+        return self.proxy.client.request(f"{self.method}.begin", args, kwargs)
 
+    # async pattern end
     def end(self, *args, **kwargs):
-        return self.sender("%s.end" % self.method, args, kwargs)
+        return self.proxy.client.request(f"{self.method}.end", args, kwargs)
 
     # event handling
 
@@ -127,7 +92,7 @@ class ProxyMethod (object):
                                "method": ""}
                    }
 
-        # REMEBER: Return a copy of this wrapper as we are using +=
+        # REMEMBER: Return a copy of this wrapper as we are using +=
 
         # Can't add itself as a subscriber
         if other == self:
@@ -138,11 +103,11 @@ class ProxyMethod (object):
             log.debug("Invalid parameter: %s" % other)
             raise TypeError("Invalid parameter: %s" % other)
 
-        handler["handler"]["proxy"] = other.proxy.URI
+        handler["handler"]["proxy"] = other.proxy.location
         handler["handler"]["method"] = str(other.__name__)
 
         try:
-            self.sender("%s.%s" % (EVENTS_PROXY_NAME, action), (handler,), {})
+            self.proxy.client.request(f"{EVENTS_PROXY_NAME}.{action}", (handler,), {})
         except Exception:
             log.exception("Cannot %s to topic '%s' using proxy '%s'." %
                          (action, self.method, self.proxy))

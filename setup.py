@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 # chimera - observatory automation system
@@ -26,7 +27,7 @@ import os
 # read version.py file to get version and metadata information
 here = os.path.abspath(os.path.dirname(__file__))
 version_py = os.path.join(here, "src/chimera/core/version.py")
-execfile(version_py)
+exec(compile(open(version_py, "rb").read(), version_py, 'exec'))
 
 # chimera scripts
 chimera_scripts = ['src/scripts/chimera',
@@ -66,15 +67,15 @@ setup(
     scripts=chimera_scripts,
 
     # installation happens in the specified order
-    install_requires=[  "astropy<3",
-                         "numpy>=1.8.0",
+    install_requires=[   "numpy>=1.8.0",
                          "pyephem",
-                         "Pyro>=3.16",
                          "python-dateutil",
                          "PyYAML",
                          "RO",
                          "suds",
                          "SQLAlchemy",
+                         "redislite",
+                         "astropy"
                      ] + platform_deps,
 
     tests_require=["nose", "coverage", "wheel"],
