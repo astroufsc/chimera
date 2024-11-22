@@ -75,9 +75,8 @@ setup(
                          "RO",
                          "suds",
                          "SQLAlchemy",
-                        # redis
-                        # redislite
-                        # astropy
+                         "redislite",
+                         "astropy"
                      ] + platform_deps,
 
     tests_require=["nose", "coverage", "wheel"],
