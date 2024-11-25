@@ -29,7 +29,7 @@ import time
 import threading
 
 
-class FakeDome (DomeBase):
+class FakeDome(DomeBase):
 
     def __init__(self):
         DomeBase.__init__(self)
@@ -51,8 +51,9 @@ class FakeDome (DomeBase):
             az = Coord.fromDMS(az)
 
         if az > 360:
-            raise InvalidDomePositionException("Cannot slew to %s. "
-                                               "Outside azimuth limits." % az)
+            raise InvalidDomePositionException(
+                "Cannot slew to %s. " "Outside azimuth limits." % az
+            )
 
         self._abort.clear()
         self._slewing = True
@@ -132,7 +133,9 @@ class FakeDome (DomeBase):
     def openFlap(self):
         self.log.info("Opening flap")
         if not self.isSlitOpen():
-            raise InvalidDomePositionException("Cannot open dome flap with slit closed.")
+            raise InvalidDomePositionException(
+                "Cannot open dome flap with slit closed."
+            )
         time.sleep(2)
         self._flapOpen = True
         self.flapOpened(self.getAz())

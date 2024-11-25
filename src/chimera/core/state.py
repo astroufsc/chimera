@@ -22,5 +22,4 @@
 
 from chimera.util.enum import Enum
 
-State = Enum('RUNNING',
-             'STOPPED')
+State = Enum("RUNNING", "STOPPED")

@@ -7,6 +7,7 @@ class Foo:
         print(self, a, b)
         return a + b
 
+
 res = ResourcesManager()
 res.add("127.0.0.1:8088/Foo/foo", Foo())
 

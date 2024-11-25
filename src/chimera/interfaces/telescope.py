@@ -43,18 +43,17 @@ class Telescope(Interface):
     Telescope base interface.
     """
 
-    __config__ = {"device": None,
-                  "model": "Fake Telescopes Inc.",
-                  "optics": ["Newtonian", "SCT", "RCT"],
-                  "mount": "Mount type Inc.",
-                  "aperture": 100.0,  # mm
-                  "focal_length": 1000.0,  # mm unit (ex., 0.5 for a half length focal reducer)
-                  "focal_reduction": 1.0,
-
-                  "fans": [],  # Represents a list of fans of the telescope, i.e.:
-                               # fans: ['/FakeFan/fake1', '/FakeFan/fake2']
-
-                  }
+    __config__ = {
+        "device": None,
+        "model": "Fake Telescopes Inc.",
+        "optics": ["Newtonian", "SCT", "RCT"],
+        "mount": "Mount type Inc.",
+        "aperture": 100.0,  # mm
+        "focal_length": 1000.0,  # mm unit (ex., 0.5 for a half length focal reducer)
+        "focal_reduction": 1.0,
+        "fans": [],  # Represents a list of fans of the telescope, i.e.:
+        # fans: ['/FakeFan/fake1', '/FakeFan/fake2']
+    }
 
 
 class TelescopeSlew(Telescope):
@@ -62,16 +61,18 @@ class TelescopeSlew(Telescope):
     Basic interface for telescopes.
     """
 
-    __config__ = {"timeout": 30,  # s
-                  "slew_rate": SlewRate.MAX,
-                  "auto_align": True,
-                  "align_mode": AlignMode.POLAR,
-                  "slew_idle_time": 0.1,  # s
-                  "max_slew_time": 90.0,  # s
-                  "stabilization_time": 2.0,  # s
-                  "position_sigma_delta": 60.0,  # arcseconds
-                  "skip_init": False,
-                  "min_altitude": 20}
+    __config__ = {
+        "timeout": 30,  # s
+        "slew_rate": SlewRate.MAX,
+        "auto_align": True,
+        "align_mode": AlignMode.POLAR,
+        "slew_idle_time": 0.1,  # s
+        "max_slew_time": 90.0,  # s
+        "stabilization_time": 2.0,  # s
+        "position_sigma_delta": 60.0,  # arcseconds
+        "skip_init": False,
+        "min_altitude": 20,
+    }
 
     def slewToObject(self, name):
         """

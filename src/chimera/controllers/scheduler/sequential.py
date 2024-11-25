@@ -1,4 +1,3 @@
-
 from chimera.controllers.scheduler.ischeduler import IScheduler
 from chimera.controllers.scheduler.model import Session, Program
 
@@ -11,19 +10,24 @@ log = logging.getLogger(__name__)
 from queue import Queue
 
 
-class SequentialScheduler (IScheduler):
+class SequentialScheduler(IScheduler):
 
-    def __init__ (self):
+    def __init__(self):
         self.rq = None
         self.machine = None
 
-    def reschedule (self, machine):
+    def reschedule(self, machine):
 
         self.machine = machine
         self.rq = Queue(-1)
 
         session = Session()
-        programs = session.query(Program).order_by(desc(Program.priority)).filter(Program.finished == False).all()
+        programs = (
+            session.query(Program)
+            .order_by(desc(Program.priority))
+            .filter(Program.finished == False)
+            .all()
+        )
 
         if not programs:
             return
@@ -35,13 +39,13 @@ class SequentialScheduler (IScheduler):
 
         machine.wakeup()
 
-    def __next__ (self):
+    def __next__(self):
         if not self.rq.empty():
             return self.rq.get()
 
         return None
 
-    def done (self, task, error=None):
+    def done(self, task, error=None):
 
         if error:
             log.debug("Error processing program %s." % str(task))

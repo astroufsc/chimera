@@ -5,8 +5,9 @@ import subprocess
 
 try:
     # disable RO warning
-    warnings.filterwarnings(action='ignore', module='RO.DS9')
+    warnings.filterwarnings(action="ignore", module="RO.DS9")
     from RO.DS9 import DS9Win
+
     have_ds9 = True
 except ImportError:
     have_ds9 = False
@@ -15,8 +16,9 @@ except ImportError:
 def xpaaccess(template="ds9"):
 
     try:
-        p = subprocess.Popen("xpaaccess -v %s" %
-                             template, stdout=subprocess.PIPE, shell=True)
+        p = subprocess.Popen(
+            "xpaaccess -v %s" % template, stdout=subprocess.PIPE, shell=True
+        )
         p.wait()
 
         aps = p.stdout.read()
@@ -34,7 +36,6 @@ def xpaaccess(template="ds9"):
 
 
 class DS9(object):
-
     """
     A wrapper to enable programmatic control of DS9
     (http://www.astro.washington.edu/rowen/) instances. Thanks to
@@ -45,8 +46,10 @@ class DS9(object):
     def __init__(self, open=False):
 
         if not have_ds9:
-            raise IOError("No DS9 available. Check if you have DS9 and XPA"
-                          " installed and correctly accesible from Chimera's PATH.")
+            raise IOError(
+                "No DS9 available. Check if you have DS9 and XPA"
+                " installed and correctly accesible from Chimera's PATH."
+            )
 
         id = "ds9"
         ids = xpaaccess()
@@ -54,13 +57,13 @@ class DS9(object):
             id = ids[-1]
 
         try:
-            self.ds9 = DS9Win(
-                doRaise=True, doOpen=open, template=id, closeFDs=True)
+            self.ds9 = DS9Win(doRaise=True, doOpen=open, template=id, closeFDs=True)
         except RuntimeError:
             # even with RO installed, we still need XPA package to get DS9
             # working
             raise IOError(
-                "DS9 is not available, check if you have the XPA package installed. Display disabled.")
+                "DS9 is not available, check if you have the XPA package installed. Display disabled."
+            )
 
     def open(self):
         self.ds9.doOpen()

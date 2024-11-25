@@ -52,34 +52,31 @@ __author_name__ = "Ben Finney"
 __author_email__ = "ben+python@benfinney.id.au"
 __author__ = "%s <%s>" % (__author_name__, __author_email__)
 __date__ = "2007-01-24"
-__copyright__ = "Copyright © %s %s" % (
-    __date__.split('-')[0], __author_name__
-)
+__copyright__ = "Copyright © %s %s" % (__date__.split("-")[0], __author_name__)
 __license__ = "Choice of GPL or Python license"
 __url__ = "http://cheeseshop.python.org/pypi/enum/"
 __version__ = "0.4.3"
 
 
 class EnumException(Exception):
-
-    """ Base class for all exceptions in this module """
+    """Base class for all exceptions in this module"""
 
     def __init__(self):
         if self.__class__ is EnumException:
-            raise NotImplementedError("%s is an abstract class for subclassing" % self.__class__)
+            raise NotImplementedError(
+                "%s is an abstract class for subclassing" % self.__class__
+            )
 
 
 class EnumEmptyError(AssertionError, EnumException):
-
-    """ Raised when attempting to create an empty enumeration """
+    """Raised when attempting to create an empty enumeration"""
 
     def __str__(self):
         return "Enumerations cannot be empty"
 
 
 class EnumBadKeyError(TypeError, EnumException):
-
-    """ Raised when creating an Enum with non-string keys """
+    """Raised when creating an Enum with non-string keys"""
 
     def __init__(self, key):
         self.key = key
@@ -89,8 +86,7 @@ class EnumBadKeyError(TypeError, EnumException):
 
 
 class EnumImmutableError(TypeError, EnumException):
-
-    """ Raised when attempting to modify an Enum """
+    """Raised when attempting to modify an Enum"""
 
     def __init__(self, *args):
         self.args = args
@@ -100,21 +96,22 @@ class EnumImmutableError(TypeError, EnumException):
 
 
 class EnumValue(object):
-
-    """ A specific value of an enumerated type """
+    """A specific value of an enumerated type"""
 
     def __init__(self, enumtype, index, key):
-        """ Set up a new instance """
+        """Set up a new instance"""
         self.__enumtype = enumtype
         self.__index = index
         self.__key = key
 
     def __get_enumtype(self):
         return self.__enumtype
+
     enumtype = property(__get_enumtype)
 
     def __get_key(self):
         return self.__key
+
     key = property(__get_key)
 
     def __str__(self):
@@ -125,6 +122,7 @@ class EnumValue(object):
 
     def __get_index(self):
         return self.__index
+
     index = property(__get_index)
 
     def __repr__(self):
@@ -150,13 +148,12 @@ class EnumValue(object):
 
 
 class Enum(object):
-
-    """ Enumerated type """
+    """Enumerated type"""
 
     def __init__(self, *keys, **kwargs):
-        """ Create an enumeration instance """
+        """Create an enumeration instance"""
 
-        value_type = kwargs.get('value_type', EnumValue)
+        value_type = kwargs.get("value_type", EnumValue)
 
         if not keys:
             raise EnumEmptyError()
@@ -172,8 +169,8 @@ class Enum(object):
             except TypeError as e:
                 raise EnumBadKeyError(key)
 
-        super(Enum, self).__setattr__('_keys', keys)
-        super(Enum, self).__setattr__('_values', values)
+        super(Enum, self).__setattr__("_keys", keys)
+        super(Enum, self).__setattr__("_values", values)
 
     def fromStr(self, s):
         return self.__getattribute__(s)
@@ -202,10 +199,10 @@ class Enum(object):
     def __contains__(self, value):
         is_member = False
         if isinstance(value, str):
-            is_member = (value in self._keys)
+            is_member = value in self._keys
         else:
             try:
-                is_member = (value in self._values)
+                is_member = value in self._values
             # EnumValueError isn't defined!
             # except EnumValueCompareError, e:
             except Exception as e:
@@ -222,4 +219,4 @@ class Enum(object):
         """
 
         assert type(other) == type(self)
-        return cmp(getattr(self, '_keys'), getattr(other, '_keys'))
+        return cmp(getattr(self, "_keys"), getattr(other, "_keys"))

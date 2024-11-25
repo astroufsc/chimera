@@ -1,4 +1,3 @@
-
 from chimera.controllers.scheduler.sequential import SequentialScheduler
 from chimera.controllers.scheduler.model import Session, Program
 
@@ -7,12 +6,12 @@ import logging
 log = logging.getLogger(__name__)
 
 
-class CircularScheduler (SequentialScheduler):
+class CircularScheduler(SequentialScheduler):
 
-    def __init__ (self):
+    def __init__(self):
         SequentialScheduler.__init__(self)
 
-    def __next__ (self):
+    def __next__(self):
         if self.rq.empty():
             session = Session()
             programs = session.query(Program).all()
@@ -29,4 +28,3 @@ class CircularScheduler (SequentialScheduler):
             return self.rq.get()
 
         return None
-

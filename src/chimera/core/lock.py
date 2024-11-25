@@ -22,7 +22,7 @@
 
 from chimera.core.constants import LOCK_ATTRIBUTE_NAME
 
-__all__ = ['lock']
+__all__ = ["lock"]
 
 
 def lock(method):

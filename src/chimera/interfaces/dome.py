@@ -28,10 +28,7 @@ from chimera.util.enum import Enum
 from chimera.util.coord import Coord
 
 
-__all__ = ['Mode',
-           'Type',
-           'Dome',
-           'InvalidDomePositionException']
+__all__ = ["Mode", "Type", "Dome", "InvalidDomePositionException"]
 
 Mode = Enum("Stand", "Track")
 Style = Enum("Rolloff", "Classic", "Other")
@@ -49,31 +46,28 @@ class Dome(Interface):
     A Roll-off or classic dome.
     """
 
-    __config__ = {"device": None,
-                  "telescope": "/Telescope/0",
-                  "mode": Mode.Stand,
-
-                  "model": "Fake Domes Inc.",
-                  "style": Style.Classic,
-
-                  'park_position': Coord.fromD(155),
-                  'park_on_shutdown': False,
-                  'close_on_shutdown': False,
-
-                  "az_resolution": 2,  # dome position resolution in degrees
-                  "slew_timeout": 120,
-                  "abort_timeout": 60,
-                  "init_timeout": 5,
-                  "open_timeout": 20,
-                  "close_timeout": 20,
-
-                  "fans": [],        # list of fans of the dome, i.e.: fans: ['/FakeFan/fake1', '/FakeFan/fake2']
-                  "lamps": [],       # list of lamps of the dome, i.e.: lamps: ['/FakeLamp/fake1']
-                  }
+    __config__ = {
+        "device": None,
+        "telescope": "/Telescope/0",
+        "mode": Mode.Stand,
+        "model": "Fake Domes Inc.",
+        "style": Style.Classic,
+        "park_position": Coord.fromD(155),
+        "park_on_shutdown": False,
+        "close_on_shutdown": False,
+        "az_resolution": 2,  # dome position resolution in degrees
+        "slew_timeout": 120,
+        "abort_timeout": 60,
+        "init_timeout": 5,
+        "open_timeout": 20,
+        "close_timeout": 20,
+        "fans": [],  # list of fans of the dome, i.e.: fans: ['/FakeFan/fake1', '/FakeFan/fake2']
+        "lamps": [],  # list of lamps of the dome, i.e.: lamps: ['/FakeLamp/fake1']
+    }
 
 
 class DomeSlew(Dome):
-    """ Basic Interface for rotating observatory Domes."""
+    """Basic Interface for rotating observatory Domes."""
 
     def slewToAz(self, az):
         """
@@ -96,7 +90,6 @@ class DomeSlew(Dome):
         @return: True if the dome is slewing, False otherwise.
         @rtype: bool
         """
-
 
     def abortSlew(self):
         """
@@ -142,7 +135,6 @@ class DomeSlit(Dome):
         @rtype: None
         """
 
-
     def closeSlit(self):
         """
         Close the dome slit.
@@ -157,7 +149,6 @@ class DomeSlit(Dome):
         @return: True when open, False otherwise.
         @rtype: bool
         """
-
 
     @event
     def slitOpened(self, az):
@@ -177,6 +168,7 @@ class DomeSlit(Dome):
         @type  az: Coord
         """
 
+
 class DomeFlap(Dome):
     """
     Dome with Slit
@@ -188,7 +180,6 @@ class DomeFlap(Dome):
 
         @rtype: None
         """
-
 
     def closeFlap(self):
         """
@@ -204,7 +195,6 @@ class DomeFlap(Dome):
         @return: True when open, False otherwise.
         @rtype: bool
         """
-
 
     @event
     def flapOpened(self, az):
@@ -223,6 +213,7 @@ class DomeFlap(Dome):
         @param az: The azimuth when the flap closed.
         @type  az: Coord
         """
+
 
 class DomeSync(Dome):
     """
@@ -284,5 +275,3 @@ class DomeSync(Dome):
         @return: Dome's current Az (decimal degrees)
         @rtype: float
         """
-
-

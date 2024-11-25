@@ -22,9 +22,9 @@ import time
 import sys
 import logging
 
-from chimera.core.manager  import Manager
+from chimera.core.manager import Manager
 from chimera.core.callback import callback
-from chimera.core.site     import Site
+from chimera.core.site import Site
 
 from chimera.controllers.autofocus import Autofocus
 
@@ -37,11 +37,13 @@ from chimera.controllers.autofocus import Autofocus
 # from chimera.drivers.optectcfs   import OptecTCFS
 
 import chimera.core.log
+
 chimera.core.log.setConsoleLevel(logging.DEBUG)
 
-class TestPointVerify (object):
 
-    def setup (self):
+class TestPointVerify(object):
+
+    def setup(self):
 
         self.manager = Manager(port=8000)
 
@@ -49,28 +51,26 @@ class TestPointVerify (object):
         self.manager.addClass(SBIG, "sbig", {"device": "USB"})
         self.manager.addClass(Camera, "cam", {"driver": "/SBIG/0"})
 
-        self.manager.addClass(Site, "lna", {"name": "UFSC",
-                                            "latitude": "-27 36 13 ",
-                                            "longitude": "-48 31 20",
-                                            "altitude": "20"})
+        self.manager.addClass(
+            Site,
+            "lna",
+            {
+                "name": "UFSC",
+                "latitude": "-27 36 13 ",
+                "longitude": "-48 31 20",
+                "altitude": "20",
+            },
+        )
 
         self.manager.addClass(Meade, "meade", {"device": "/dev/ttyS6"})
         self.manager.addClass(Telescope, "meade", {"driver": "/Meade/meade"})
 
         self.manager.addClass(PointVerify, "Point")
 
-
-
-    def teardown (self):
+    def teardown(self):
         self.manager.shutdown()
         del self.manager
 
-    def test_point (self):
+    def test_point(self):
 
         point = self.manager.getProxy(PointVerify)
-
-        
-
-
-
-

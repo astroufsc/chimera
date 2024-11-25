@@ -26,20 +26,21 @@ from chimera.core.event import event
 from chimera.core.exceptions import ChimeraException
 
 
-class InvalidFilterPositionException (ChimeraException):
+class InvalidFilterPositionException(ChimeraException):
     pass
 
 
 class FilterWheel(Interface):
     """
     An interface for electromechanical filter wheels.
-    Allow simple control and monitor filter changes    
+    Allow simple control and monitor filter changes
     """
 
-    __config__ = {"device": "/dev/ttyS0",
-                  "filter_wheel_model": "Fake Filters Inc.",
-                  "filters": "R G B LUNAR CLEAR"  # space separated filter names (in position order)
-                  }
+    __config__ = {
+        "device": "/dev/ttyS0",
+        "filter_wheel_model": "Fake Filters Inc.",
+        "filters": "R G B LUNAR CLEAR",  # space separated filter names (in position order)
+    }
 
     def setFilter(self, filter):
         """

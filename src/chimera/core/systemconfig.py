@@ -1,8 +1,12 @@
 from chimera.core.location import Location
 from chimera.core.exceptions import ChimeraException
-from chimera.core.constants import (SYSTEM_CONFIG_DEFAULT_FILENAME,
-                                    MANAGER_DEFAULT_HOST, MANAGER_DEFAULT_PORT)
+from chimera.core.constants import (
+    SYSTEM_CONFIG_DEFAULT_FILENAME,
+    MANAGER_DEFAULT_HOST,
+    MANAGER_DEFAULT_PORT,
+)
 import yaml
+
 # import chimera.core.log
 import logging
 
@@ -125,22 +129,31 @@ class SystemConfig(object):
 
         # specials
         self._specials = [
-                            "camera", "cameras",
-                            "dome", "domes",
-                            "fan", "fans",
-                            "filterwheel", "filterwheels",
-                            "focuser", "focusers",
-                            "lamp", "lamps",
-                            "telescope", "telescopes",
-                            "seeingmonitor", "seeingmonitors",
-                            "weatherstation", "weatherstations",
+            "camera",
+            "cameras",
+            "dome",
+            "domes",
+            "fan",
+            "fans",
+            "filterwheel",
+            "filterwheels",
+            "focuser",
+            "focusers",
+            "lamp",
+            "lamps",
+            "telescope",
+            "telescopes",
+            "seeingmonitor",
+            "seeingmonitors",
+            "weatherstation",
+            "weatherstations",
         ]
 
-        self._instrumentsSections = self._specials + \
-                                    ["instrument", "instruments"]
+        self._instrumentsSections = self._specials + ["instrument", "instruments"]
         self._controllersSections = ["controller", "controllers"]
-        self._sections = self._instrumentsSections + \
-                         self._controllersSections + ["site", "chimera"]
+        self._sections = (
+            self._instrumentsSections + self._controllersSections + ["site", "chimera"]
+        )
 
         # to create nice numbered names for objects without a name
         self._useCount = {}
@@ -156,10 +169,9 @@ class SystemConfig(object):
                 return
         except yaml.YAMLError as e:
             s = None
-            if hasattr(e, 'problem_mark'):
+            if hasattr(e, "problem_mark"):
                 mark = e.problem_mark
-                s = "error at line %s column %s" % (
-                    mark.line + 1, mark.column + 1)
+                s = "error at line %s column %s" % (mark.line + 1, mark.column + 1)
             else:
                 s = str(e)
 
@@ -241,7 +253,7 @@ class SystemConfig(object):
 
     def _parseLocation(self, type, dic):
 
-        name = dic.pop('name', self._getDefaultName(type))
+        name = dic.pop("name", self._getDefaultName(type))
 
         # replace some invalid chars from object name
         name = name.replace(" ", "_")
@@ -251,16 +263,15 @@ class SystemConfig(object):
         if type == "site":  # keep name
             dic["name"] = name
 
-        cls = dic.pop('type', None)
+        cls = dic.pop("type", None)
 
         if not cls:
             if type in self._specials or type == "site":
                 cls = type.capitalize()
             else:
-                raise TypeNotFoundException("%s %s must have a type." % (type,
-                                                                         name))
+                raise TypeNotFoundException("%s %s must have a type." % (type, name))
 
-        host = dic.pop('host', self.chimera["host"])
-        port = dic.pop('port', self.chimera["port"])
+        host = dic.pop("host", self.chimera["host"])
+        port = dic.pop("port", self.chimera["port"])
 
         return Location(name=name, cls=cls, host=host, port=port, config=dic)

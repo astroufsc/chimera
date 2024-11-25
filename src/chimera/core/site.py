@@ -30,7 +30,7 @@ from chimera.core.chimeraobject import ChimeraObject
 from chimera.util.coord import Coord, CoordUtil
 from chimera.util.position import Position
 
-__all__ = ['Site']
+__all__ = ["Site"]
 
 
 # More conversion functions.
@@ -54,26 +54,30 @@ def datetimeFromJD(jd):
 
     jd += 0.5
 
-    hh = (jd - np.floor(jd)) * 24.
-    mm = int(np.floor((hh - np.floor(hh)) * 60.))
+    hh = (jd - np.floor(jd)) * 24.0
+    mm = int(np.floor((hh - np.floor(hh)) * 60.0))
     hh = int(np.floor(hh))
 
-    ret = dt.datetime(year=100 * b + d - 4800 + m / 10,
-                      month=m + 3 - 12 * (m // 10),
-                      day=e + 1 - (153 * m + 2) // 5,
-                      hour=hh,
-                      minute=mm)
+    ret = dt.datetime(
+        year=100 * b + d - 4800 + m / 10,
+        month=m + 3 - 12 * (m // 10),
+        day=e + 1 - (153 * m + 2) // 5,
+        hour=hh,
+        minute=mm,
+    )
 
     return ret
 
 
 class Site(ChimeraObject):
-    __config__ = dict(name="UFSC",
-                      latitude=Coord.fromDMS("-23 00 00"),
-                      longitude=Coord.fromDMS(-48.5),
-                      altitude=20,
-                      flat_alt=Coord.fromDMS(80),
-                      flat_az=Coord.fromDMS(0))
+    __config__ = dict(
+        name="UFSC",
+        latitude=Coord.fromDMS("-23 00 00"),
+        longitude=Coord.fromDMS(-48.5),
+        altitude=20,
+        flat_alt=Coord.fromDMS(80),
+        flat_az=Coord.fromDMS(0),
+    )
 
     def __init__(self):
         ChimeraObject.__init__(self)
@@ -86,11 +90,11 @@ class Site(ChimeraObject):
 
     def _getEphem(self, date=None):
         site = ephem.Observer()
-        site.lat = self["latitude"].strfcoord('%(d)d:%(m)d:%(s).2f')
-        site.long = self["longitude"].strfcoord('%(d)d:%(m)d:%(s).2f')
-        site.elev = self['altitude']
+        site.lat = self["latitude"].strfcoord("%(d)d:%(m)d:%(s).2f")
+        site.long = self["longitude"].strfcoord("%(d)d:%(m)d:%(s).2f")
+        site.elev = self["altitude"]
         site.date = date or self.ut()
-        site.epoch = '2000/1/1 00:00:00'
+        site.epoch = "2000/1/1 00:00:00"
         return site
 
     def _Date2local(self, Date):
@@ -169,36 +173,35 @@ class Site(ChimeraObject):
         date = date or self.ut()
         site = self._getEphem(date)
         site.elev = 0
-        site.horizon = '-12:00:00'
+        site.horizon = "-12:00:00"
         return self._Date2local(site.next_setting(self._sun))
 
     def sunset_twilight_end(self, date=None):
         date = date or self.ut()
         site = self._getEphem(date)
         site.elev = 0
-        site.horizon = '-18:00:00'
+        site.horizon = "-18:00:00"
         return self._Date2local(site.next_setting(self._sun))
 
     def sunrise_twilight_begin(self, date=None):
         date = date or self.ut()
         site = self._getEphem(date)
         site.elev = 0
-        site.horizon = '-18:00:00'
+        site.horizon = "-18:00:00"
         return self._Date2local(site.next_rising(self._sun))
 
     def sunrise_twilight_end(self, date=None):
         date = date or self.ut()
         site = self._getEphem(date)
         site.elev = 0
-        site.horizon = '-12:00:00'
+        site.horizon = "-12:00:00"
         return self._Date2local(site.next_rising(self._sun))
 
     def sunpos(self, date=None):
         date = date or self.ut()
         self._sun.compute(self._getEphem(date))
 
-        return Position.fromAltAz(
-            Coord.fromR(self._sun.alt), Coord.fromR(self._sun.az))
+        return Position.fromAltAz(Coord.fromR(self._sun.alt), Coord.fromR(self._sun.az))
 
     def moonrise(self, date=None):
         date = date or self.ut()
@@ -215,7 +218,8 @@ class Site(ChimeraObject):
         self._moon.compute(self._getEphem(date))
 
         return Position.fromAltAz(
-            Coord.fromR(self._moon.alt), Coord.fromR(self._moon.az))
+            Coord.fromR(self._moon.alt), Coord.fromR(self._moon.az)
+        )
 
     def moonphase(self, date=None):
         date = date or self.ut()
@@ -231,13 +235,13 @@ class Site(ChimeraObject):
     def raDecToAltAz(self, raDec, lst_inRads=None):
         if not lst_inRads:
             lst_inRads = self.LST_inRads()
-        return Position.raDecToAltAz(raDec, self['latitude'], lst_inRads)
+        return Position.raDecToAltAz(raDec, self["latitude"], lst_inRads)
 
     def altAzToRaDec(self, altAz, lst_inRads=None):
         if not lst_inRads:
             lst_inRads = self.LST_inRads()
 
-        return Position.altAzToRaDec(altAz, self['latitude'], lst_inRads)
+        return Position.altAzToRaDec(altAz, self["latitude"], lst_inRads)
 
     def getMetadata(self, request):
         # Check first if there is metadata from an metadata override method.
@@ -246,8 +250,8 @@ class Site(ChimeraObject):
             return md
         # If not, just go on with the instrument's default metadata.
         return [
-            ('SITE', self['name'], 'Site name (in config)'),
-            ('LATITUDE', str(self['latitude']), 'Site latitude'),
-            ('LONGITUD', str(self['longitude']), 'Site longitude'),
-            ('ALTITUDE', str(self['altitude']), 'Site altitude'),
+            ("SITE", self["name"], "Site name (in config)"),
+            ("LATITUDE", str(self["latitude"]), "Site latitude"),
+            ("LONGITUD", str(self["longitude"]), "Site longitude"),
+            ("ALTITUDE", str(self["altitude"]), "Site altitude"),
         ]

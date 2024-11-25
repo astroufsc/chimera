@@ -1,17 +1,15 @@
+from chimera.core.chimeraobject import ChimeraObject
 
 
-from chimera.core.chimeraobject  import ChimeraObject
+class ManagerHelperWithInitException(ChimeraObject):
 
-class ManagerHelperWithInitException (ChimeraObject):
-    
-    def __init__ (self):
+    def __init__(self):
         ChimeraObject.__init__(self)
 
         raise Exception("oops in __init__")
-    
-    def __start__ (self):
+
+    def __start__(self):
         return True
-    
-    def foo (self):
+
+    def foo(self):
         return 42
-    

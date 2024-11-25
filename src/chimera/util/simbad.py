@@ -26,17 +26,19 @@ from chimera.core.exceptions import ObjectNotFoundException
 from xml.parsers.expat import ExpatError
 
 import logging
+
 logging.getLogger("suds").setLevel(1000000000)
 
 from suds.xsd.sxbasic import Import
-Import.bind('http://schemas.xmlsoap.org/soap/encoding/')
+
+Import.bind("http://schemas.xmlsoap.org/soap/encoding/")
 
 from suds.client import Client
 
 
-class Simbad (object):
+class Simbad(object):
 
-    WSDL = 'http://cdsws.u-strasbg.fr/axis/services/Sesame?wsdl'
+    WSDL = "http://cdsws.u-strasbg.fr/axis/services/Sesame?wsdl"
 
     __cache = {}
     __client = None
@@ -52,7 +54,7 @@ class Simbad (object):
         if name in Simbad.__cache:
             return Simbad.__cache[name]
 
-        res = client.service.sesame(name, 'x', True)
+        res = client.service.sesame(name, "x", True)
         target = Simbad._parseSesame(res)
 
         if not target:
@@ -80,7 +82,8 @@ class Simbad (object):
 
         return False
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
 
     s = Simbad()
 

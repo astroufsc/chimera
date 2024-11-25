@@ -1,3 +1,2 @@
-
-class Coisa: pass
-
+class Coisa:
+    pass

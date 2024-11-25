@@ -25,9 +25,10 @@ from chimera.interfaces.switch import Switch
 
 
 class IntensityOutOfRangeException(ChimeraException):
-    '''
+    """
     Raise when the requested lamp intensity is out of range.
-    '''
+    """
+
     pass
 
 
@@ -36,32 +37,33 @@ class Lamp(Interface):
     Interface to calibration lamps.
     """
 
-    __config__ = {"device": None,
-                  "switch_timeout": None,  # Maximum number of seconds to wait for lamp to switch on
-                  "dome_az": None,  # Azimuth of the dome when taking a calibration image (flat field)
-                  "telescope_alt": None,  # Altitude of the telescope when taking a calibration image
-                  "telescope_az": None,  # Azimuth of the telescope when taking a calibration image
-                  }
+    __config__ = {
+        "device": None,
+        "switch_timeout": None,  # Maximum number of seconds to wait for lamp to switch on
+        "dome_az": None,  # Azimuth of the dome when taking a calibration image (flat field)
+        "telescope_alt": None,  # Altitude of the telescope when taking a calibration image
+        "telescope_az": None,  # Azimuth of the telescope when taking a calibration image
+    }
 
 
 class LampSwitch(Switch):
-    '''
+    """
     Inherited from Switch
-    '''
+    """
 
 
 class LampDimmer(Lamp):
     def setIntensity(self, intensity):
-        '''
+        """
         Sets the intensity of the calibration lamp.
 
         @param intensity: Desired intensity.
         @type  intensity: float
-        '''
+        """
         pass
 
     def getIntensity(self):
-        '''
+        """
         Return the current intensity level of the calibration lamp.
 
         Note that a intensity of 0 does not mean that the lamp is switched off and a intensity >0 does not mean
@@ -70,7 +72,7 @@ class LampDimmer(Lamp):
 
         @return: Current intensity
         @rtype: float
-        '''
+        """
         pass
 
     def getRange(self):

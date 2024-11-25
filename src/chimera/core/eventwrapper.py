@@ -27,10 +27,10 @@ from chimera.core.constants import EVENTS_PROXY_NAME
 
 import copy
 
-__all__ = ['EventWrapperDispatcher']
+__all__ = ["EventWrapperDispatcher"]
 
 
-class EventWrapperDispatcher (MethodWrapperDispatcher):
+class EventWrapperDispatcher(MethodWrapperDispatcher):
 
     def __init__(self, wrapper, instance, cls):
         MethodWrapperDispatcher.__init__(self, wrapper, instance, cls)
@@ -39,15 +39,14 @@ class EventWrapperDispatcher (MethodWrapperDispatcher):
 
         if hasattr(self.instance, EVENTS_PROXY_NAME):
             getattr(self.instance, EVENTS_PROXY_NAME).publish(
-                self.func.__name__, *args[1:], **kwargs)
+                self.func.__name__, *args[1:], **kwargs
+            )
 
         return True
 
     def __do(self, other, action):
 
-        handler = {"topic": self.func.__name__,
-                   "handler": {"proxy": "",
-                               "method": ""}}
+        handler = {"topic": self.func.__name__, "handler": {"proxy": "", "method": ""}}
 
         # REMEBER: Return a copy of this wrapper as we are using +=
 

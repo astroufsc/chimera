@@ -28,33 +28,33 @@ from chimera.core.exceptions import ChimeraException
 
 GuiderStatus = Enum("OK", "GUIDING", "OFF", "ERROR", "ABORTED")
 
-class StarNotFoundException (ChimeraException):
+
+class StarNotFoundException(ChimeraException):
     pass
 
 
-class Autoguider (Interface):
+class Autoguider(Interface):
 
-    __config__ = {"site": '/Site/0',            # Telescope Site.
-                  "telescope": "/Telescope/0",  # Telescope instrument that will be guided by the autoguider.
-                  "camera": "/Camera/0",        # Guider camera instrument.
-                  "filterwheel": None,          # Filter wheel instrument, if there is one.
-                  "focuser": None,              # Guider camera focuser, if there is one.
-                  "autofocus": None,            # Autofocus controller, if there is one.
-                  "scheduler": None,            # Scheduler controller, if there is one.
-                  "max_acquire_tries": 3,       # Number of tries to find a guiding star.
-                  "max_fit_tries": 3}           # Number of tries to acquire the guide star offset before being lost.
+    __config__ = {
+        "site": "/Site/0",  # Telescope Site.
+        "telescope": "/Telescope/0",  # Telescope instrument that will be guided by the autoguider.
+        "camera": "/Camera/0",  # Guider camera instrument.
+        "filterwheel": None,  # Filter wheel instrument, if there is one.
+        "focuser": None,  # Guider camera focuser, if there is one.
+        "autofocus": None,  # Autofocus controller, if there is one.
+        "scheduler": None,  # Scheduler controller, if there is one.
+        "max_acquire_tries": 3,  # Number of tries to find a guiding star.
+        "max_fit_tries": 3,
+    }  # Number of tries to acquire the guide star offset before being lost.
 
     @event
     def offsetComplete(self, offset):
-        """Raised after every offset is complete.
-        """
+        """Raised after every offset is complete."""
 
     @event
     def guideStart(self, position):
-        """Raised when a guider sequence starts.
-        """
+        """Raised when a guider sequence starts."""
 
     @event
     def guideStop(self, state, msg=None):
-        """Raised when a guider sequence stops.
-        """
+        """Raised when a guider sequence stops."""

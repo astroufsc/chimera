@@ -1,5 +1,5 @@
-
 from chimera.core.version import *
 
-class TestVersion (object):
+
+class TestVersion(object):
     pass

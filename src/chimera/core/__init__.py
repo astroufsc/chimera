@@ -24,10 +24,12 @@ import os.path
 import logging
 import shutil
 
-from chimera.core.constants import (SYSTEM_CONFIG_DIRECTORY,
-                                    SYSTEM_CONFIG_DEFAULT_FILENAME,
-                                    SYSTEM_CONFIG_DEFAULT_SAMPLE,
-                                    SYSTEM_CONFIG_LOG_NAME)
+from chimera.core.constants import (
+    SYSTEM_CONFIG_DIRECTORY,
+    SYSTEM_CONFIG_DEFAULT_FILENAME,
+    SYSTEM_CONFIG_DEFAULT_SAMPLE,
+    SYSTEM_CONFIG_LOG_NAME,
+)
 
 logging.getLogger().setLevel(logging.DEBUG)
 
@@ -37,28 +39,39 @@ def init_sysconfig():
     if not os.path.exists(SYSTEM_CONFIG_DIRECTORY):
         try:
             logging.info(
-                "Default configuration directory not found (%s). Creating a new one." % SYSTEM_CONFIG_DIRECTORY)
+                "Default configuration directory not found (%s). Creating a new one."
+                % SYSTEM_CONFIG_DIRECTORY
+            )
             os.mkdir(SYSTEM_CONFIG_DIRECTORY)
         except IOError as e:
-            logging.error("Couldn't create default configuration directory at %s (%s)" % (
-                SYSTEM_CONFIG_DIRECTORY, e))
+            logging.error(
+                "Couldn't create default configuration directory at %s (%s)"
+                % (SYSTEM_CONFIG_DIRECTORY, e)
+            )
 
     if not os.path.exists(SYSTEM_CONFIG_DEFAULT_FILENAME):
-        logging.info("Default chimera.config not found. Creating a sample at %s." %
-                     SYSTEM_CONFIG_DEFAULT_FILENAME)
+        logging.info(
+            "Default chimera.config not found. Creating a sample at %s."
+            % SYSTEM_CONFIG_DEFAULT_FILENAME
+        )
 
         try:
             shutil.copyfile(
-                SYSTEM_CONFIG_DEFAULT_SAMPLE, SYSTEM_CONFIG_DEFAULT_FILENAME)
+                SYSTEM_CONFIG_DEFAULT_SAMPLE, SYSTEM_CONFIG_DEFAULT_FILENAME
+            )
         except IOError as e:
-            logging.error("Couldn't create default chimera.config at %s (%s)" % (
-                SYSTEM_CONFIG_DEFAULT_FILENAME, e))
+            logging.error(
+                "Couldn't create default chimera.config at %s (%s)"
+                % (SYSTEM_CONFIG_DEFAULT_FILENAME, e)
+            )
 
     if not os.path.exists(SYSTEM_CONFIG_LOG_NAME):
         try:
-            open(SYSTEM_CONFIG_LOG_NAME, 'w').close()
+            open(SYSTEM_CONFIG_LOG_NAME, "w").close()
         except IOError as e:
             logging.error(
-                "Couldn't create initial log file %s (%s)" % (SYSTEM_CONFIG_LOG_NAME, e))
+                "Couldn't create initial log file %s (%s)" % (SYSTEM_CONFIG_LOG_NAME, e)
+            )
+
 
 init_sysconfig()

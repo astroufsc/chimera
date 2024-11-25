@@ -22,7 +22,8 @@
 from chimera.core.proxy import Proxy
 
 import logging
-#import chimera.core.log
+
+# import chimera.core.log
 
 import traceback
 import sys
@@ -30,7 +31,7 @@ import sys
 log = logging.getLogger(__name__)
 
 
-__all__ = ['EventsProxy']
+__all__ = ["EventsProxy"]
 
 
 class EventsProxy:
@@ -85,23 +86,30 @@ class EventsProxy:
             except AttributeError as e:
                 tb_size = len(traceback.extract_tb(sys.exc_info()[2]))
                 if tb_size == 1:
-                    log.debug("Invalid proxy method ('%s %s') for '%s' handler." %
-                              (handler["proxy"], handler["method"], topic))
+                    log.debug(
+                        "Invalid proxy method ('%s %s') for '%s' handler."
+                        % (handler["proxy"], handler["method"], topic)
+                    )
                 else:
                     log.debug(
-                        "Handler (%s) raised an exception. Removing from subscribers list." % proxy)
+                        "Handler (%s) raised an exception. Removing from subscribers list."
+                        % proxy
+                    )
                     log.exception(e)
 
                 excluded.append(handler)
                 continue
             except Pyro.errors.ProtocolError as e:
                 log.debug(
-                    "Unreachable handler (%s). Removing from subscribers list." % proxy)
+                    "Unreachable handler (%s). Removing from subscribers list." % proxy
+                )
                 excluded.append(handler)
                 continue
             except Exception as e:
                 log.debug(
-                    "Handler (%s) raised an exception. Removing from subscribers list." % proxy)
+                    "Handler (%s) raised an exception. Removing from subscribers list."
+                    % proxy
+                )
                 log.exception(e)
                 excluded.append(handler)
                 continue

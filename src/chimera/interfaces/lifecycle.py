@@ -23,7 +23,7 @@
 from chimera.core.interface import Interface
 
 
-__all__ = ['ILifeCycle']
+__all__ = ["ILifeCycle"]
 
 
 class ILifeCycle(Interface):

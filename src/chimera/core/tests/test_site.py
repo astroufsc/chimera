@@ -19,11 +19,11 @@ import pytest
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-from chimera.core.manager    import Manager
-from chimera.core.site       import Site
+from chimera.core.manager import Manager
+from chimera.core.site import Site
 from chimera.core.exceptions import printException
 
-from chimera.util.coord    import Coord
+from chimera.util.coord import Coord
 from chimera.util.position import Position
 
 from dateutil.relativedelta import relativedelta
@@ -33,22 +33,27 @@ import sys
 import logging
 
 
-
-class TestSite (object):
+class TestSite(object):
 
     def setup_method(self):
 
         self.manager = Manager(port=8000)
 
-        self.manager.addClass(Site, "lna", {"name": "UFSC",
-                                            "latitude": "-27 36 13 ",
-                                            "longitude": "-48 31 20",
-                                            "altitude": "20"})
+        self.manager.addClass(
+            Site,
+            "lna",
+            {
+                "name": "UFSC",
+                "latitude": "-27 36 13 ",
+                "longitude": "-48 31 20",
+                "altitude": "20",
+            },
+        )
 
     def teardown_method(self):
         self.manager.shutdown()
 
-    def test_times (self):
+    def test_times(self):
 
         site = self.manager.getProxy("/Site/0")
 
@@ -64,24 +69,24 @@ class TestSite (object):
             print(e)
 
     @pytest.mark.skip
-    def test_sidereal_clock (self):
+    def test_sidereal_clock(self):
         site = self.manager.getProxy("/Site/0")
 
         times = []
         real_times = []
 
-        for i in range (100):
+        for i in range(100):
             t0 = time.clock()
             t0_r = time.time()
-            print("\r%s" % site.LST(), end=' ')
-            times.append(time.clock()-t0)
-            real_times.append(time.time()-t0_r)
+            print("\r%s" % site.LST(), end=" ")
+            times.append(time.clock() - t0)
+            real_times.append(time.time() - t0_r)
 
         print()
         print(sum(times) / len(times))
         print(sum(real_times) / len(real_times))
 
-    def test_astros (self):
+    def test_astros(self):
 
         site = self.manager.getProxy(Site)
 
@@ -100,12 +105,16 @@ class TestSite (object):
             print()
 
             sunset_twilight_begin = site.sunset_twilight_begin()
-            sunset_twilight_end   = site.sunset_twilight_end()
-            sunset_twilight_duration = relativedelta(sunset_twilight_end, sunset_twilight_begin)
+            sunset_twilight_end = site.sunset_twilight_end()
+            sunset_twilight_duration = relativedelta(
+                sunset_twilight_end, sunset_twilight_begin
+            )
 
             sunrise_twilight_begin = site.sunrise_twilight_begin()
             sunrise_twilight_end = site.sunrise_twilight_end()
-            sunrise_twilight_duration = relativedelta(sunrise_twilight_end, sunrise_twilight_begin)
+            sunrise_twilight_duration = relativedelta(
+                sunrise_twilight_end, sunrise_twilight_begin
+            )
 
             print("next sunset twilight begins at:", sunset_twilight_begin)
             print("next sunset twilight ends   at:", sunset_twilight_end)
@@ -117,4 +126,3 @@ class TestSite (object):
 
         except Exception as e:
             print(e)
-

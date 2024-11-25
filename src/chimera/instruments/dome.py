@@ -31,7 +31,7 @@ from chimera.core.exceptions import ChimeraException
 from chimera.util.coord import Coord
 
 
-__all__ = ['DomeBase']
+__all__ = ["DomeBase"]
 
 
 class DomeBase(ChimeraObject, DomeSlew, DomeSlit, DomeFlap, DomeSync):
@@ -53,14 +53,16 @@ class DomeBase(ChimeraObject, DomeSlew, DomeSlit, DomeFlap, DomeSync):
 
     def __start__(self):
 
-        self.setHz(1 / 4.)
+        self.setHz(1 / 4.0)
 
         tel = self.getTelescope()
         if tel:
             self._connectTelEvents()
         else:
-            self.log.warning("Couldn't find telescope. Telescope events would"
-                             " not be monitored. Dome will stay in Stand mode.")
+            self.log.warning(
+                "Couldn't find telescope. Telescope events would"
+                " not be monitored. Dome will stay in Stand mode."
+            )
             self["mode"] = Mode.Stand
 
         if self["mode"] == Mode.Track:
@@ -68,8 +70,7 @@ class DomeBase(ChimeraObject, DomeSlew, DomeSlit, DomeFlap, DomeSync):
         elif self["mode"] == Mode.Stand:
             self.stand()
         else:
-            self.log.warning("Invalid dome mode: %s. "
-                             "Will use Stand mode instead.")
+            self.log.warning("Invalid dome mode: %s. " "Will use Stand mode instead.")
             self.stand()
 
         self.log.debug("Dome started in %s mode." % self.getMode())
@@ -78,20 +79,20 @@ class DomeBase(ChimeraObject, DomeSlew, DomeSlit, DomeFlap, DomeSync):
 
     def __stop__(self):
 
-        if self['park_on_shutdown']:
+        if self["park_on_shutdown"]:
             try:
                 self.stand()
                 self.log.info("Parking the dome...")
-                self.slewToAz(self['park_position'])
+                self.slewToAz(self["park_position"])
             except Exception as e:
-                self.log.warning('Unable to park dome: %s', str(e))
+                self.log.warning("Unable to park dome: %s", str(e))
 
-        if self['close_on_shutdown'] and self.isSlitOpen():
+        if self["close_on_shutdown"] and self.isSlitOpen():
             try:
                 self.log.info("Closing the slit...")
                 self.closeSlit()
             except Exception as e:
-                self.log.warning('Unable to close dome: %s', str(e))
+                self.log.warning("Unable to close dome: %s", str(e))
 
         # telescope events
         self._disconnectTelEvents()
@@ -101,9 +102,11 @@ class DomeBase(ChimeraObject, DomeSlew, DomeSlit, DomeFlap, DomeSync):
 
         tel = self.getTelescope()
         if not tel:
-            self.log.warning("Couldn't find telescope. Telescope events would"
-                             " not be monitored. Dome will stay in Stand mode.")
-            self['mode'] == Mode.Stand
+            self.log.warning(
+                "Couldn't find telescope. Telescope events would"
+                " not be monitored. Dome will stay in Stand mode."
+            )
+            self["mode"] == Mode.Stand
             return False
 
         tel.slewBegin += self.getProxy()._telSlewBeginClbk
@@ -129,12 +132,13 @@ class DomeBase(ChimeraObject, DomeSlew, DomeSlit, DomeFlap, DomeSync):
 
     def _telSlewCompleteClbk(self, target, status):
         self.log.debug(
-            "[event] telescope slew complete, position=%s status=%s." % (target, status))
+            "[event] telescope slew complete, position=%s status=%s." % (target, status)
+        )
 
     # utilitaries
     def getTelescope(self):
         try:
-            p = self.getManager().getProxy(self['telescope'], lazy=True)
+            p = self.getManager().getProxy(self["telescope"], lazy=True)
             if not p.ping():
                 return False
             else:
@@ -159,8 +163,7 @@ class DomeBase(ChimeraObject, DomeSlew, DomeSlit, DomeFlap, DomeSync):
                     return True
 
             if self._tel.isSlewing():
-                self.log.debug(
-                    "[control] telescope slewing... not checking az.")
+                self.log.debug("[control] telescope slewing... not checking az.")
                 self._waitAfterSlew.set()
                 return True
 
@@ -170,8 +173,9 @@ class DomeBase(ChimeraObject, DomeSlew, DomeSlit, DomeFlap, DomeSync):
             self._waitAfterSlew.clear()
 
         except ObjectNotFoundException:
-            raise ChimeraException("Couldn't found the selected telescope."
-                                   " Dome cannnot track.")
+            raise ChimeraException(
+                "Couldn't found the selected telescope." " Dome cannnot track."
+            )
 
         return True
 
@@ -182,11 +186,16 @@ class DomeBase(ChimeraObject, DomeSlew, DomeSlit, DomeFlap, DomeSync):
 
         if self._needToMove(az):
             self.log.debug(
-                "[control] adding %s to the queue (delta=%.2f)" % (az, abs(self.getAz() - az)))
+                "[control] adding %s to the queue (delta=%.2f)"
+                % (az, abs(self.getAz() - az))
+            )
             self.queue.put(az)
         else:
-            self.log.debug("[control] standing"
-                           " (dome az=%.2f, tel az=%.2f, delta=%.2f.)" % (self.getAz(), az, abs(self.getAz() - az)))
+            self.log.debug(
+                "[control] standing"
+                " (dome az=%.2f, tel az=%.2f, delta=%.2f.)"
+                % (self.getAz(), az, abs(self.getAz() - az))
+            )
 
     def _needToMove(self, az):
         return abs(az - self.getAz()) >= self["az_resolution"]
@@ -199,8 +208,7 @@ class DomeBase(ChimeraObject, DomeSlew, DomeSlit, DomeFlap, DomeSync):
         if self.queue.empty():
             return
 
-        self.log.debug(
-            "[control] processing queue... %d item(s)." % self.queue.qsize())
+        self.log.debug("[control] processing queue... %d item(s)." % self.queue.qsize())
 
         while not self.queue.empty():
 
@@ -227,7 +235,8 @@ class DomeBase(ChimeraObject, DomeSlew, DomeSlit, DomeFlap, DomeSync):
             self._mode = Mode.Track
         else:
             self.log.warning(
-                "Could not contact the given telescope, staying in Stand mode.")
+                "Could not contact the given telescope, staying in Stand mode."
+            )
 
     @lock
     def stand(self):
@@ -295,11 +304,13 @@ class DomeBase(ChimeraObject, DomeSlew, DomeSlit, DomeFlap, DomeSync):
             return md
         # If not, just go on with the instrument's default metadata.
         if self.isSlitOpen():
-            slit = 'Open'
+            slit = "Open"
         else:
-            slit = 'Closed'
+            slit = "Closed"
 
-        return [('DOME_MDL', str(self['model']), 'Dome Model'),
-                ('DOME_TYP', str(self['style']), 'Dome Type'),
-                ('DOME_TRK', str(self['mode']), 'Dome Tracking/Standing'),
-                ('DOME_SLT', str(slit), 'Dome slit status')]
+        return [
+            ("DOME_MDL", str(self["model"]), "Dome Model"),
+            ("DOME_TYP", str(self["style"]), "Dome Type"),
+            ("DOME_TRK", str(self["mode"]), "Dome Tracking/Standing"),
+            ("DOME_SLT", str(slit), "Dome slit status"),
+        ]

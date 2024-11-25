@@ -1,7 +1,6 @@
+class IScheduler(object):
 
-class IScheduler (object):
-
-    def reschedule (self, machine):
+    def reschedule(self, machine):
         """
         Re-schedule using current database state. This will setup a
         timer to wakeup the Machine to process the next runnable task.
@@ -11,7 +10,7 @@ class IScheduler (object):
         scheduled items because of realtime constraints.
         """
 
-    def __next__ (self):
+    def __next__(self):
         """
         Called to get next runnable task after run phase-two
         scheduling on the current runqueue. It may use 'now'
@@ -19,7 +18,7 @@ class IScheduler (object):
         reschedule and cut non-runnable items or reschedule again.
         """
 
-    def done (self, task, error=None):
+    def done(self, task, error=None):
         """
         Called to change runnable state of 'task'. When called, will
         remove 'task' from the runqueue (task can be either completed

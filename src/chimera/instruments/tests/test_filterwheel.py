@@ -21,14 +21,14 @@
 
 import time
 
-from chimera.core.manager  import Manager
+from chimera.core.manager import Manager
 from chimera.core.callback import callback
 
 # hack for event  triggering asserts
 FiredEvents = {}
 
 
-class FilterWheelTest (object):
+class FilterWheelTest(object):
 
     FILTER_WHEEL = ""
 
@@ -37,7 +37,7 @@ class FilterWheelTest (object):
         assert "filterChange" in FiredEvents
         assert isinstance(FiredEvents["filterChange"][1], str)
         assert isinstance(FiredEvents["filterChange"][2], str)
-        
+
     def setupEvents(self):
 
         @callback(self.manager)
@@ -46,20 +46,20 @@ class FilterWheelTest (object):
 
         fw = self.manager.getProxy(self.FILTER_WHEEL)
         fw.filterChange += filterChangeClbk
-        
-    def test_filters (self):
+
+    def test_filters(self):
 
         f = self.manager.getProxy(self.FILTER_WHEEL)
-        
+
         filters = f.getFilters()
 
         for filter in filters:
             f.setFilter(filter)
             assert f.getFilter() == filter
-            self.assertEvents()            
+            self.assertEvents()
 
-    def test_get_filters (self):
-        
+    def test_get_filters(self):
+
         f = self.manager.getProxy(self.FILTER_WHEEL)
         filters = f.getFilters()
 
@@ -72,36 +72,40 @@ class FilterWheelTest (object):
 
 from chimera.instruments.tests.base import FakeHardwareTest, RealHardwareTest
 
+
 class TestFakeFilterWheel(FakeHardwareTest, FilterWheelTest):
 
-    def setup (self):
+    def setup(self):
 
         self.manager = Manager(port=8000)
 
         from chimera.instruments.fakefilterwheel import FakeFilterWheel
-        self.manager.addClass(FakeFilterWheel, "fake", {"device": "/dev/ttyS0",
-                                                        "filters": "U B V R I"})
+
+        self.manager.addClass(
+            FakeFilterWheel, "fake", {"device": "/dev/ttyS0", "filters": "U B V R I"}
+        )
         self.FILTER_WHEEL = "/FakeFilterWheel/0"
 
         FiredEvents = {}
         self.setupEvents()
 
-    def teardown (self):
+    def teardown(self):
         self.manager.shutdown()
 
 
 class TestRealFilterWheel(RealHardwareTest, FilterWheelTest):
-    
-    def setup (self):
+
+    def setup(self):
 
         self.manager = Manager()
 
         from chimera.instruments.sbig import SBIG
+
         self.manager.addClass(SBIG, "sbig", {"filters": "R G B LUNAR CLEAR"})
         self.FILTER_WHEEL = "/SBIG/0"
 
         FiredEvents = {}
         self.setupEvents()
 
-    def teardown (self):
+    def teardown(self):
         self.manager.shutdown()

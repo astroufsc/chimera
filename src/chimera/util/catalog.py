@@ -2,7 +2,7 @@
 # -*- coding: iso-8859-1 -*-
 
 
-class Catalog (object):
+class Catalog(object):
 
     def getName(self):
         """

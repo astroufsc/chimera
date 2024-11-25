@@ -78,6 +78,7 @@ class SwitchState(Switch):
     """
     For switches that have status information
     """
+
     def status(self):
         """
         :return: state from SwitchStatus Enum

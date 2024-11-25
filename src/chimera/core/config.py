@@ -20,9 +20,10 @@
 # 02110-1301, USA.
 
 
-from types import (NoneType)
+from types import NoneType
 
 import logging
+
 log = logging.getLogger(__name__)
 
 from chimera.util.enum import EnumValue
@@ -60,13 +61,13 @@ class Option(object):
         return self._value
 
 
-class Checker (object):
+class Checker(object):
 
     def check(self, value):
         pass
 
 
-class IgnoreChecker (Checker):
+class IgnoreChecker(Checker):
 
     def __init__(self):
         Checker.__init__(self)
@@ -75,7 +76,7 @@ class IgnoreChecker (Checker):
         return value
 
 
-class IntChecker (Checker):
+class IntChecker(Checker):
 
     def __init__(self):
         Checker.__init__(self)
@@ -97,13 +98,15 @@ class IntChecker (Checker):
             except ValueError:
                 # couldn't convert, nothing to do
                 raise OptionConversionException(
-                    "couldn't convert '%s' to int value." % value)
+                    "couldn't convert '%s' to int value." % value
+                )
 
         raise OptionConversionException(
-            "couldn't convert '%s' to int." % str(type(value)))
+            "couldn't convert '%s' to int." % str(type(value))
+        )
 
 
-class FloatChecker (Checker):
+class FloatChecker(Checker):
 
     def __init__(self):
         Checker.__init__(self)
@@ -125,13 +128,15 @@ class FloatChecker (Checker):
             except ValueError:
                 # couldn't convert, nothing to do
                 raise OptionConversionException(
-                    "couldn't convert '%s' to float value." % value)
+                    "couldn't convert '%s' to float value." % value
+                )
 
         raise OptionConversionException(
-            "couldn't convert %s to float." % str(type(value)))
+            "couldn't convert %s to float." % str(type(value))
+        )
 
 
-class StringChecker (Checker):
+class StringChecker(Checker):
 
     def __init__(self):
         Checker.__init__(self)
@@ -145,7 +150,7 @@ class StringChecker (Checker):
         return str(value)
 
 
-class NoneChecker (Checker):
+class NoneChecker(Checker):
 
     def __init__(self):
         Checker.__init__(self)
@@ -155,7 +160,7 @@ class NoneChecker (Checker):
         return value
 
 
-class BoolChecker (Checker):
+class BoolChecker(Checker):
 
     def __init__(self):
         Checker.__init__(self)
@@ -189,15 +194,15 @@ class BoolChecker (Checker):
             if value in self._truthTable:
                 return value in self._trueValues
 
-            raise OptionConversionException(
-                "couldn't convert '%s' to bool." % value)
+            raise OptionConversionException("couldn't convert '%s' to bool." % value)
 
         # any other type, raise exception
         raise OptionConversionException(
-            "couldn't convert %s to bool." % str(type(value)))
+            "couldn't convert %s to bool." % str(type(value))
+        )
 
 
-class OptionsChecker (Checker):
+class OptionsChecker(Checker):
 
     def __init__(self, options):
         Checker.__init__(self)
@@ -212,23 +217,19 @@ class OptionsChecker (Checker):
         for value in opt:
 
             if type(value) == int:
-                options.append({"value": value,
-                                "checker": IntChecker()})
+                options.append({"value": value, "checker": IntChecker()})
                 continue
 
             if type(value) == float:
-                options.append({"value": value,
-                                "checker": FloatChecker()})
+                options.append({"value": value, "checker": FloatChecker()})
                 continue
 
             if type(value) == str:
-                options.append({"value": value,
-                                "checker": StringChecker()})
+                options.append({"value": value, "checker": StringChecker()})
                 continue
 
             if type(value) == bool:
-                options.append({"value": value,
-                                "checker": BoolChecker()})
+                options.append({"value": value, "checker": BoolChecker()})
                 continue
 
         return options
@@ -248,11 +249,10 @@ class OptionsChecker (Checker):
             except OptionConversionException:
                 continue
 
-        raise OptionConversionException(
-            "'%s' isn't a valid option." % str(value))
+        raise OptionConversionException("'%s' isn't a valid option." % str(value))
 
 
-class RangeChecker (Checker):
+class RangeChecker(Checker):
 
     def __init__(self, value):
         Checker.__init__(self)
@@ -273,8 +273,7 @@ class RangeChecker (Checker):
 
         except OptionConversionException:
 
-            raise OptionConversionException(
-                "'%s' isn't a valid option." % str(value))
+            raise OptionConversionException("'%s' isn't a valid option." % str(value))
 
         else:
 
@@ -283,11 +282,12 @@ class RangeChecker (Checker):
                 return tmp
             else:
                 raise OptionConversionException(
-                    "'%s' it's outside valid limits (%f <= x <= %f." %
-                    (str(value), self._min, self._max))
+                    "'%s' it's outside valid limits (%f <= x <= %f."
+                    % (str(value), self._min, self._max)
+                )
 
 
-class EnumChecker (Checker):
+class EnumChecker(Checker):
 
     def __init__(self, value):
         Checker.__init__(self)
@@ -306,11 +306,11 @@ class EnumChecker (Checker):
                 return ret[0]
 
         raise OptionConversionException(
-            'invalid enum value %s. not a %s enum.' %
-            (value, str(self.enumtype)))
+            "invalid enum value %s. not a %s enum." % (value, str(self.enumtype))
+        )
 
 
-class CoordOption (Option):
+class CoordOption(Option):
 
     def __init__(self, name, value, checker):
         Option.__init__(self, name, value, checker)
@@ -327,7 +327,7 @@ class CoordOption (Option):
             raise e
 
 
-class CoordChecker (Checker):
+class CoordChecker(Checker):
 
     def __init__(self, value):
         Checker.__init__(self)
@@ -341,10 +341,10 @@ class CoordChecker (Checker):
                 pass
 
         # any other type is ignored
-        raise OptionConversionException('invalid coord value %s.' % value)
+        raise OptionConversionException("invalid coord value %s." % value)
 
 
-class PositionOption (Option):
+class PositionOption(Option):
 
     def __init__(self, name, value, checker):
         Option.__init__(self, name, value, checker)
@@ -361,10 +361,11 @@ class PositionOption (Option):
             log.debug("Error setting %s: %s." % (self._name, str(e)))
             raise e
 
+
 # FIXME: check and convert positions
 
 
-class PositionChecker (Checker):
+class PositionChecker(Checker):
 
     def __init__(self, value):
         Checker.__init__(self)
@@ -373,7 +374,7 @@ class PositionChecker (Checker):
         return value
 
 
-class Config (object):
+class Config(object):
 
     def __init__(self, obj):
 

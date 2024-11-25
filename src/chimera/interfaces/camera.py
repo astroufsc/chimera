@@ -25,9 +25,8 @@ from chimera.core.event import event
 from chimera.util.enum import Enum
 from chimera.core.exceptions import ChimeraException
 
-Shutter = Enum('OPEN', 'CLOSE', 'LEAVE_AS_IS')
-Bitpix = Enum(
-    "char8", "uint16", "int16", "int32", "int64", "float32", "float64")
+Shutter = Enum("OPEN", "CLOSE", "LEAVE_AS_IS")
+Bitpix = Enum("char8", "uint16", "int16", "int32", "int64", "float32", "float64")
 CCD = Enum("IMAGING", "TRACKING")
 
 # Special features parameters can be passed as ImageRequest
@@ -35,18 +34,19 @@ CCD = Enum("IMAGING", "TRACKING")
 # to ask if the current camera support a given feature (useful for
 # interfaces, to decide when to display options to the user).
 
-CameraFeature = Enum("TEMPERATURE_CONTROL",
-                     "PROGRAMMABLE_GAIN",
-                     "PROGRAMMABLE_OVERSCAN",
-                     "PROGRAMMABLE_FAN",
-                     "PROGRAMMABLE_LEDS",
-                     "PROGRAMMABLE_BIAS_LEVEL")
+CameraFeature = Enum(
+    "TEMPERATURE_CONTROL",
+    "PROGRAMMABLE_GAIN",
+    "PROGRAMMABLE_OVERSCAN",
+    "PROGRAMMABLE_FAN",
+    "PROGRAMMABLE_LEDS",
+    "PROGRAMMABLE_BIAS_LEVEL",
+)
 
 CameraStatus = Enum("OK", "ERROR", "ABORTED")
 
 
 class ReadoutMode(object):
-
     """
     Store basic geometry for a given readout mode. Implementer should
     provide an constuctor from a modeString (some instrument specific
@@ -82,43 +82,44 @@ class ReadoutMode(object):
         return [0, self.width]
 
     def __str__(self):
-        s = "mode: %d: \n\tgain: %.2f\n\tWxH: [%d,%d]" \
-            "\n\tpix WxH: [%.2f, %.2f]" % (self.mode,
-                                           self.gain,
-                                           self.width, self.height,
-                                           self.pixelWidth, self.pixelHeight)
+        s = "mode: %d: \n\tgain: %.2f\n\tWxH: [%d,%d]" "\n\tpix WxH: [%.2f, %.2f]" % (
+            self.mode,
+            self.gain,
+            self.width,
+            self.height,
+            self.pixelWidth,
+            self.pixelHeight,
+        )
         return s
 
     def __repr__(self):
         return self.__str__()
 
 
-class InvalidReadoutMode (ChimeraException):
+class InvalidReadoutMode(ChimeraException):
     pass
 
 
-class Camera (Interface):
-
+class Camera(Interface):
     """
     Base camera interface.
     """
 
-    __config__ = {"device": "Unknown",            # Bus address identifier for this camera. E.g. USB, LPT1, ...
-                  "ccd": CCD.IMAGING,             # CCD to be used when multiple ccd camera. IMAGING or TRACKING.
-                  "camera_model": "Unknown",      # Camera model string. To be used by metadata purposes
-                  "ccd_model": "Unknown",         # CCD model string. To be used by metadata purposes
-                  "ccd_saturation_level": None,   # CCD level at which arises saturation (in ADUs).
-                                                  # Needed by SExtractor when doing auto-focus, autoguiding...
+    __config__ = {
+        "device": "Unknown",  # Bus address identifier for this camera. E.g. USB, LPT1, ...
+        "ccd": CCD.IMAGING,  # CCD to be used when multiple ccd camera. IMAGING or TRACKING.
+        "camera_model": "Unknown",  # Camera model string. To be used by metadata purposes
+        "ccd_model": "Unknown",  # CCD model string. To be used by metadata purposes
+        "ccd_saturation_level": None,  # CCD level at which arises saturation (in ADUs).
+        # Needed by SExtractor when doing auto-focus, autoguiding...
+        # WCS configuration parameters  #
+        "telescope_focal_length": None,  # Telescope focal length (in millimeters)
+        "rotation": 0.0,  # Angle between the North and the second axis of the image counted
+        # positive to the East (in degrees)
+    }
 
-                  # WCS configuration parameters  #
-                  "telescope_focal_length": None, # Telescope focal length (in millimeters)
-                  "rotation": 0.                  # Angle between the North and the second axis of the image counted
-                                                  # positive to the East (in degrees)
-                  }
 
-
-class CameraExpose (Camera):
-
+class CameraExpose(Camera):
     """
     Basic camera that can expose and abort exposures.
     """
@@ -155,7 +156,7 @@ class CameraExpose (Camera):
         includes both integration time and readout).
 
         @return: The currently exposing ImageRequest if the camera is
-        exposing, False otherwise.  
+        exposing, False otherwise.
 
         @rtype: bool or L{ImageRequest}
         """
@@ -211,8 +212,7 @@ class CameraExpose (Camera):
         """
 
 
-class CameraTemperature (Camera):
-
+class CameraTemperature(Camera):
     """
     A camera that supports temperature monitoring and control.
     """

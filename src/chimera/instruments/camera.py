@@ -26,17 +26,20 @@ import os
 import datetime as dt
 
 from chimera.core.chimeraobject import ChimeraObject
-from chimera.interfaces.camera import (CameraExpose, CameraTemperature,
-                                       CameraInformation,
-                                       InvalidReadoutMode, Shutter)
+from chimera.interfaces.camera import (
+    CameraExpose,
+    CameraTemperature,
+    CameraInformation,
+    InvalidReadoutMode,
+    Shutter,
+)
 from chimera.controllers.imageserver.imagerequest import ImageRequest
 from chimera.controllers.imageserver.util import getImageServer
 from chimera.core.lock import lock
 from chimera.util.image import Image, ImageUtil
 
 
-class CameraBase (ChimeraObject,
-                  CameraExpose, CameraTemperature, CameraInformation):
+class CameraBase(ChimeraObject, CameraExpose, CameraTemperature, CameraInformation):
 
     def __init__(self):
         ChimeraObject.__init__(self)
@@ -78,8 +81,8 @@ class CameraBase (ChimeraObject,
             else:
                 imageRequest = ImageRequest()
 
-        frames = imageRequest['frames']
-        interval = imageRequest['interval']
+        frames = imageRequest["frames"]
+        interval = imageRequest["interval"]
 
         # validate shutter
         if str(imageRequest["shutter"]).lower() == "open":
@@ -90,15 +93,15 @@ class CameraBase (ChimeraObject,
             imageRequest["shutter"] = Shutter.LEAVE_AS_IS
 
         # validate readout mode
-        self._getReadoutModeInfo(imageRequest["binning"],
-                                 imageRequest["window"])
+        self._getReadoutModeInfo(imageRequest["binning"], imageRequest["window"])
 
         # use image server if any and save image on server's default dir if
         # filename given as a relative path.
         server = getImageServer(self.getManager())
         if not os.path.isabs(imageRequest["filename"]):
             imageRequest["filename"] = os.path.join(
-                server.defaultNightDir(), imageRequest["filename"])
+                server.defaultNightDir(), imageRequest["filename"]
+            )
 
         # clear abort setting
         self.abort.clear()
@@ -160,8 +163,8 @@ class CameraBase (ChimeraObject,
         proxy = server.register(img)
 
         # and finally compress the image if asked
-        if imageRequest['compress_format'].lower() != 'no':
-            img.compress(format=imageRequest['compress_format'], multiprocess=True)
+        if imageRequest["compress_format"].lower() != "no":
+            img.compress(format=imageRequest["compress_format"], multiprocess=True)
 
         return proxy
 
@@ -206,19 +209,27 @@ class CameraBase (ChimeraObject,
 
                 if left < 0 or left >= mode.width:
                     raise InvalidReadoutMode(
-                        "Invalid subframe: left=%d, ccd width (in this binning)=%d" % (left, mode.width))
+                        "Invalid subframe: left=%d, ccd width (in this binning)=%d"
+                        % (left, mode.width)
+                    )
 
                 if top < 0 or top >= mode.height:
                     raise InvalidReadoutMode(
-                        "Invalid subframe: top=%d, ccd height (in this binning)=%d" % (top, mode.height))
+                        "Invalid subframe: top=%d, ccd height (in this binning)=%d"
+                        % (top, mode.height)
+                    )
 
                 if width > mode.width:
                     raise InvalidReadoutMode(
-                        "Invalid subframe: width=%d, ccd width (int this binning)=%d" % (width, mode.width))
+                        "Invalid subframe: width=%d, ccd width (int this binning)=%d"
+                        % (width, mode.width)
+                    )
 
                 if height > mode.height:
                     raise InvalidReadoutMode(
-                        "Invalid subframe: height=%d, ccd height (int this binning)=%d" % (height, mode.height))
+                        "Invalid subframe: height=%d, ccd height (int this binning)=%d"
+                        % (height, mode.height)
+                    )
 
             except ValueError:
                 left = 0
@@ -227,7 +238,8 @@ class CameraBase (ChimeraObject,
 
         if not binning:
             binning = list(self.getBinnings().keys()).pop(
-                list(self.getBinnings().keys()).index("1x1"))
+                list(self.getBinnings().keys()).index("1x1")
+            )
 
         return mode, binning, top, left, width, height
 
@@ -297,29 +309,44 @@ class CameraBase (ChimeraObject,
         if md is not None:
             return md
         # If not, just go on with the instrument's default metadata.
-        md = [("EXPTIME", float(request['exptime']), "exposure time in seconds"),
-              ('IMAGETYP', request['type'].strip(), 'Image type'),
-              ('SHUTTER', str(request['shutter']), 'Requested shutter state'),
-              ('INSTRUME', str(self['camera_model']), 'Name of instrument'),
-              ('CCD',    str(self['ccd_model']), 'CCD Model'),
-              ('CCD_DIMX', self.getPhysicalSize()[0], 'CCD X Dimension Size'),
-              ('CCD_DIMY', self.getPhysicalSize()[1], 'CCD Y Dimension Size'),
-              ('CCDPXSZX', self.getPixelSize()[0], 'CCD X Pixel Size [micrometer]'),
-              ('CCDPXSZY', self.getPixelSize()[1], 'CCD Y Pixel Size [micrometer]')]
+        md = [
+            ("EXPTIME", float(request["exptime"]), "exposure time in seconds"),
+            ("IMAGETYP", request["type"].strip(), "Image type"),
+            ("SHUTTER", str(request["shutter"]), "Requested shutter state"),
+            ("INSTRUME", str(self["camera_model"]), "Name of instrument"),
+            ("CCD", str(self["ccd_model"]), "CCD Model"),
+            ("CCD_DIMX", self.getPhysicalSize()[0], "CCD X Dimension Size"),
+            ("CCD_DIMY", self.getPhysicalSize()[1], "CCD Y Dimension Size"),
+            ("CCDPXSZX", self.getPixelSize()[0], "CCD X Pixel Size [micrometer]"),
+            ("CCDPXSZY", self.getPixelSize()[1], "CCD Y Pixel Size [micrometer]"),
+        ]
 
-        if request['window'] is not None:
-            md += [('DETSEC', request['window'],
-                    'Detector coodinates of the image')]
+        if request["window"] is not None:
+            md += [("DETSEC", request["window"], "Detector coodinates of the image")]
 
         if "frame_temperature" in list(self.extra_header_info.keys()):
-              md += [('CCD-TEMP', self.extra_header_info["frame_temperature"],
-                      'CCD Temperature at Exposure Start [deg. C]')]
+            md += [
+                (
+                    "CCD-TEMP",
+                    self.extra_header_info["frame_temperature"],
+                    "CCD Temperature at Exposure Start [deg. C]",
+                )
+            ]
 
         if "frame_start_time" in list(self.extra_header_info.keys()):
-            md += [('DATE-OBS', ImageUtil.formatDate(self.extra_header_info.get("frame_start_time")),
-                    'Date exposure started')]
+            md += [
+                (
+                    "DATE-OBS",
+                    ImageUtil.formatDate(
+                        self.extra_header_info.get("frame_start_time")
+                    ),
+                    "Date exposure started",
+                )
+            ]
 
-        mode, binning, top, left, width, height = self._getReadoutModeInfo(request["binning"], request["window"])
+        mode, binning, top, left, width, height = self._getReadoutModeInfo(
+            request["binning"], request["window"]
+        )
         # Binning keyword: http://iraf.noao.edu/projects/ccdmosaic/imagedef/mosaic/MosaicV1.html
         #    CCD on-chip summing given as two or four integer numbers.  These define
         # the summing of CCD pixels in the amplifier readout order.  The first
@@ -335,7 +362,9 @@ class CameraBase (ChimeraObject,
         md += [("CCDSUM", binning.replace("x", " "), "CCD on-chip summing")]
 
         focal_length = self["telescope_focal_length"]
-        if focal_length is not None:  # If there is no telescope_focal_length defined, don't store WCS
+        if (
+            focal_length is not None
+        ):  # If there is no telescope_focal_length defined, don't store WCS
             binFactor = self.extra_header_info.get("binning_factor", 1.0)
             pix_w, pix_h = self.getPixelSize()
             focal_length = self["telescope_focal_length"]
@@ -351,12 +380,29 @@ class CameraBase (ChimeraObject,
             # Quick sheet: http://www.astro.iag.usp.br/~moser/notes/GAi_FITSimgs.html
             # http://adsabs.harvard.edu/abs/2002A%26A...395.1061G
             # http://adsabs.harvard.edu/abs/2002A%26A...395.1077C
-            md += [("CRPIX1", CRPIX1, "coordinate system reference pixel"),
-                   ("CRPIX2", CRPIX2, "coordinate system reference pixel"),
-                   ("CD1_1",  scale_x * cos(self["rotation"]*pi/180.), "transformation matrix element (1,1)"),
-                   ("CD1_2", -scale_y * sin(self["rotation"]*pi/180.), "transformation matrix element (1,2)"),
-                   ("CD2_1", scale_x * sin(self["rotation"]*pi/180.), "transformation matrix element (2,1)"),
-                   ("CD2_2", scale_y * cos(self["rotation"]*pi/180.), "transformation matrix element (2,2)")]
+            md += [
+                ("CRPIX1", CRPIX1, "coordinate system reference pixel"),
+                ("CRPIX2", CRPIX2, "coordinate system reference pixel"),
+                (
+                    "CD1_1",
+                    scale_x * cos(self["rotation"] * pi / 180.0),
+                    "transformation matrix element (1,1)",
+                ),
+                (
+                    "CD1_2",
+                    -scale_y * sin(self["rotation"] * pi / 180.0),
+                    "transformation matrix element (1,2)",
+                ),
+                (
+                    "CD2_1",
+                    scale_x * sin(self["rotation"] * pi / 180.0),
+                    "transformation matrix element (2,1)",
+                ),
+                (
+                    "CD2_2",
+                    scale_y * cos(self["rotation"] * pi / 180.0),
+                    "transformation matrix element (2,2)",
+                ),
+            ]
 
         return md
-
