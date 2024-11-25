@@ -117,19 +117,6 @@ class CantSetScopeException(ChimeraException):
     fails there because of bright objects or other more astronomical reasons
     """
 
-
-class NoSolutionAstrometryNetException(ChimeraException):
-
-    """
-    This exception is raised to indicate solve-field from astrometry.net
-    could not find a solution to the field
-    """
-
-
-class MeadeException(ChimeraException):
-    pass
-
-
 class ProgramExecutionException(ChimeraException):
     pass
 
