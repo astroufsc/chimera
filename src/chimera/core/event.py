@@ -22,7 +22,7 @@
 
 from chimera.core.constants import EVENT_ATTRIBUTE_NAME
 
-__all__ = ['event']
+__all__ = ["event"]
 
 
 def event(method):

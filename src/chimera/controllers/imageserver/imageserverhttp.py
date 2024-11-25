@@ -1,6 +1,6 @@
-
 import threading
-#import logging
+
+# import logging
 import os
 
 from http.server import SimpleHTTPRequestHandler
@@ -16,10 +16,10 @@ class ImageServerHTTPHandler(SimpleHTTPRequestHandler):
             self.list()
 
     def log_message(self, format, *args):
-        self.server.ctrl.log.info("%s - - [%s] %s" %
-                                  (self.address_string(),
-                                   self.log_date_time_string(),
-                                   format % args))
+        self.server.ctrl.log.info(
+            "%s - - [%s] %s"
+            % (self.address_string(), self.log_date_time_string(), format % args)
+        )
 
     def send_head(self, response=200, ctype=None, length=None, modified=None):
         self.send_response(response)
@@ -33,12 +33,12 @@ class ImageServerHTTPHandler(SimpleHTTPRequestHandler):
         self.wfile.write(txt)
 
     def response_file(self, filename, ctype):
-        f = open(filename,'rb')
+        f = open(filename, "rb")
         if not f:
             self.response(404, "Couldn't find")
         else:
             fs = os.fstat(f.fileno())
-            self.send_head(200, "image/fits",  str(fs[6]), fs.st_mtime)
+            self.send_head(200, "image/fits", str(fs[6]), fs.st_mtime)
             self.copyfile(f, self.wfile)
             f.close()
 
@@ -57,7 +57,7 @@ class ImageServerHTTPHandler(SimpleHTTPRequestHandler):
 
     def list(self):
 
-        toReturn = '<table><tr><th>Image ID</th><th>Path</th></tr>'
+        toReturn = "<table><tr><th>Image ID</th><th>Path</th></tr>"
         keys = list(self.server.ctrl.imagesByPath.keys())
         keys.sort()
         for key in keys:
@@ -65,8 +65,9 @@ class ImageServerHTTPHandler(SimpleHTTPRequestHandler):
             id = image.GUID()
             path = image.filename()
             toReturn += (
-                '<tr><td><a href="/image/%s">%s</a></td><td><a href="/image/%s">%s</a></td></tr>' %
-                (id, id, id, path))
+                '<tr><td><a href="/image/%s">%s</a></td><td><a href="/image/%s">%s</a></td></tr>'
+                % (id, id, id, path)
+            )
 
         self.response(200, toReturn, "text/html")
 
@@ -86,10 +87,12 @@ class ImageServerHTTP(threading.Thread):
     def run(self):
 
         srv = HTTPServer(
-            (self.ctrl['http_host'], self.ctrl['http_port']),
-            ImageServerHTTPHandler)
-        self.ctrl.log.info("Starting HTTP server on %s:%d" %
-                           (self.ctrl['http_host'], self.ctrl['http_port']))
+            (self.ctrl["http_host"], self.ctrl["http_port"]), ImageServerHTTPHandler
+        )
+        self.ctrl.log.info(
+            "Starting HTTP server on %s:%d"
+            % (self.ctrl["http_host"], self.ctrl["http_port"])
+        )
 
         self.die.clear()
 

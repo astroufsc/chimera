@@ -1,7 +1,7 @@
-
 import os
 import shutil
-#import sys
+
+# import sys
 from glob import glob
 
 from pyraf import iraf
@@ -31,14 +31,14 @@ def rmFile(fileroot):
     @param fileroot: <root>*
     @type fileroot: str
     """
-    del_list = glob(fileroot + '*')
+    del_list = glob(fileroot + "*")
     for file in del_list:
         os.remove(file)
         print("File %s removed" % file)
 
 
 def makeDir(newdir):
-    while(1):
+    while 1:
         if os.path.exists(newdir):
             print("Directory %s already exists" % newdir)
             return newdir

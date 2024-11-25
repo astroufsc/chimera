@@ -21,15 +21,14 @@
 
 import logging
 
-#import chimera.core.log
+# import chimera.core.log
 log = logging.getLogger(__name__)
 
 
-__all__ = ['MethodWrapper',
-           'MethodWrapperDispatcher']
+__all__ = ["MethodWrapper", "MethodWrapperDispatcher"]
 
 
-class MethodWrapper (object):
+class MethodWrapper(object):
 
     __name__ = ""
 
@@ -67,7 +66,7 @@ class MethodWrapper (object):
         return self.dispatcher(self, instance, cls)
 
 
-class MethodWrapperDispatcher (object):
+class MethodWrapperDispatcher(object):
 
     def __init__(self, wrapper, instance, cls):
 
@@ -77,12 +76,16 @@ class MethodWrapperDispatcher (object):
         self.cls = cls
 
         # go duck, go!
-        self.bound_name = "<bound method %s.%s.begin of %s>" % (self.cls.__name__,
-                                                                self.func.__name__,
-                                                                repr(self.instance))
+        self.bound_name = "<bound method %s.%s.begin of %s>" % (
+            self.cls.__name__,
+            self.func.__name__,
+            repr(self.instance),
+        )
 
         self.unbound_name = "<unbound method %s.%s>" % (
-            self.cls.__name__, self.func.__name__)
+            self.cls.__name__,
+            self.func.__name__,
+        )
 
     def __repr__(self):
         if self.instance:
@@ -101,13 +104,17 @@ class MethodWrapperDispatcher (object):
             if not isinstance(args[0], self.cls):
                 raise TypeError(
                     "unbound method %s object must be called with %s instance "
-                    "as first argument (got %s instance instead)" %
-                    (self.func.__name__, self.cls.__name__,
-                     args[0].__class__.__name__))
+                    "as first argument (got %s instance instead)"
+                    % (
+                        self.func.__name__,
+                        self.cls.__name__,
+                        args[0].__class__.__name__,
+                    )
+                )
             else:
                 return self.call(args[0], *args[1:], **kwargs)
 
-        #log.debug("[calling] %s %s" % (self.instance, self.func.__name__))
+        # log.debug("[calling] %s %s" % (self.instance, self.func.__name__))
 
         return self.call(self.instance, *args, **kwargs)
 

@@ -25,10 +25,10 @@ import logging
 
 import pytest
 
-from chimera.core.manager  import Manager
+from chimera.core.manager import Manager
 from chimera.core.callback import callback
-from chimera.core.site     import Site
-from chimera.core.threads  import ThreadPool
+from chimera.core.site import Site
+from chimera.core.threads import ThreadPool
 
 from chimera.util.coord import Coord
 from chimera.util.enum import EnumValue
@@ -36,20 +36,24 @@ from chimera.util.position import Position
 
 from chimera.interfaces.telescope import SlewRate, TelescopeStatus
 
-def assertEpsEqual (a, b, e=60):
+
+def assertEpsEqual(a, b, e=60):
     """Assert wether a equals b withing eps precision, in
     arcseconds. Both a and b must be Coords.
     """
-    assert abs(a.AS-b.AS) <= e
+    assert abs(a.AS - b.AS) <= e
+
 
 import chimera.core.log
+
 chimera.core.log.setConsoleLevel(int(1e10))
 log = logging.getLogger("chimera.tests")
 
 # hack for event  triggering asserts
 FiredEvents = {}
 
-class TelescopeTest (object):
+
+class TelescopeTest(object):
 
     TELESCOPE = ""
 
@@ -57,14 +61,17 @@ class TelescopeTest (object):
 
         # for every exposure, we need to check if all events were fired in the right order
         # and with the right parameters
-        
+
         assert "slewBegin" in FiredEvents
         assert isinstance(FiredEvents["slewBegin"][1], Position)
 
         assert "slewComplete" in FiredEvents
         assert FiredEvents["slewComplete"][0] > FiredEvents["slewBegin"][0]
         assert isinstance(FiredEvents["slewComplete"][1], Position)
-        assert isinstance(FiredEvents["slewComplete"][2], EnumValue) and FiredEvents["slewComplete"][2] in TelescopeStatus
+        assert (
+            isinstance(FiredEvents["slewComplete"][2], EnumValue)
+            and FiredEvents["slewComplete"][2] in TelescopeStatus
+        )
         assert FiredEvents["slewComplete"][2] == slewStatus
 
     def setupEvents(self):
@@ -80,11 +87,11 @@ class TelescopeTest (object):
         tel = self.manager.getProxy(self.TELESCOPE)
         tel.slewBegin += slewBeginClbk
         tel.slewComplete += slewCompleteClbk
-        
-    def test_slew (self):
+
+    def test_slew(self):
 
         site = self.manager.getProxy("/Site/0")
-        
+
         dest = Position.fromRaDec(site.LST(), site["latitude"])
         real_dest = None
 
@@ -105,9 +112,8 @@ class TelescopeTest (object):
 
         # event checkings
         self.assertEvents(TelescopeStatus.OK)
-        
 
-    def test_slew_abort (self):
+    def test_slew_abort(self):
 
         site = self.manager.getProxy("/Site/0")
 
@@ -119,7 +125,7 @@ class TelescopeTest (object):
         FiredEvents = {}
 
         # drift it
-        dest = Position.fromRaDec(last.ra+Coord.fromH(1), last.dec+Coord.fromD(10))
+        dest = Position.fromRaDec(last.ra + Coord.fromH(1), last.dec + Coord.fromD(10))
         real_dest = None
 
         @callback(self.manager)
@@ -129,7 +135,7 @@ class TelescopeTest (object):
 
         @callback(self.manager)
         def slewCompleteClbk(position, status):
-            assert last.ra  < position.ra  < real_dest.ra
+            assert last.ra < position.ra < real_dest.ra
             assert last.dec < position.dec < real_dest.dec
 
         self.tel.slewBegin += slewBeginClbk
@@ -153,9 +159,8 @@ class TelescopeTest (object):
 
         # event checkings
         self.assertEvents(TelescopeStatus.ABORTED)
-        
 
-    def test_sync (self):
+    def test_sync(self):
 
         # get current position, drift the scope, and sync on the first
         # position (like done when aligning the telescope).
@@ -170,7 +175,7 @@ class TelescopeTest (object):
         self.tel.syncComplete += syncCompleteClbk
 
         # drift to "real" object coordinate
-        drift = Position.fromRaDec(real.ra+Coord.fromH(1), real.dec+Coord.fromD(1))
+        drift = Position.fromRaDec(real.ra + Coord.fromH(1), real.dec + Coord.fromD(1))
         self.tel.slewToRaDec(drift)
 
         self.tel.syncRaDec(real)
@@ -178,21 +183,23 @@ class TelescopeTest (object):
         time.sleep(2)
 
     @pytest.mark.skip
-    def test_park (self):
-        
+    def test_park(self):
+
         def printPosition():
             print(self.tel.getPositionRaDec(), self.tel.getPositionAltAz())
             sys.stdout.flush()
-            
+
         print()
 
-        ra  = self.tel.getRa()
+        ra = self.tel.getRa()
         dec = self.tel.getDec()
 
         print("current position:", self.tel.getPositionRaDec())
-        print("moving to:", (ra-"01 00 00"), (dec-"01 00 00"))
+        print("moving to:", (ra - "01 00 00"), (dec - "01 00 00"))
 
-        self.tel.slewToRaDec(Position.fromRaDec(ra-Coord.fromH(1), dec-Coord.fromD(1)))
+        self.tel.slewToRaDec(
+            Position.fromRaDec(ra - Coord.fromH(1), dec - Coord.fromD(1))
+        )
 
         for i in range(10):
             printPosition()
@@ -208,9 +215,9 @@ class TelescopeTest (object):
         for i in range(10):
             printPosition()
             time.sleep(0.5)
-       
-        while time.time() < t0+wait:
-            print("\rwaiting ... ", end=' ')
+
+        while time.time() < t0 + wait:
+            print("\rwaiting ... ", end=" ")
             sys.stdout.flush()
             time.sleep(1)
 
@@ -234,39 +241,71 @@ class TelescopeTest (object):
 
         start = self.tel.getPositionRaDec()
         self.tel.moveNorth(dt, SlewRate.FIND)
-        print("North:", (start.ra - self.tel.getPositionRaDec().ra).AS, (start.dec - self.tel.getPositionRaDec().dec).AS)
+        print(
+            "North:",
+            (start.ra - self.tel.getPositionRaDec().ra).AS,
+            (start.dec - self.tel.getPositionRaDec().dec).AS,
+        )
 
         start = self.tel.getPositionRaDec()
         self.tel.moveSouth(dt, SlewRate.FIND)
-        print("South:", (start.ra - self.tel.getPositionRaDec().ra).AS, (start.dec - self.tel.getPositionRaDec().dec).AS)
+        print(
+            "South:",
+            (start.ra - self.tel.getPositionRaDec().ra).AS,
+            (start.dec - self.tel.getPositionRaDec().dec).AS,
+        )
 
         start = self.tel.getPositionRaDec()
         self.tel.moveWest(dt, SlewRate.FIND)
-        print("West :", (start.ra - self.tel.getPositionRaDec().ra).AS, (start.dec - self.tel.getPositionRaDec().dec).AS)
+        print(
+            "West :",
+            (start.ra - self.tel.getPositionRaDec().ra).AS,
+            (start.dec - self.tel.getPositionRaDec().dec).AS,
+        )
 
         start = self.tel.getPositionRaDec()
         self.tel.moveEast(dt, SlewRate.FIND)
-        print("East :", (start.ra - self.tel.getPositionRaDec().ra).AS, (start.dec - self.tel.getPositionRaDec().dec).AS)
+        print(
+            "East :",
+            (start.ra - self.tel.getPositionRaDec().ra).AS,
+            (start.dec - self.tel.getPositionRaDec().dec).AS,
+        )
 
         start = self.tel.getPositionRaDec()
         self.tel.moveNorth(dt, SlewRate.FIND)
         self.tel.moveEast(dt, SlewRate.FIND)
-        print("NE   :", (start.ra - self.tel.getPositionRaDec().ra).AS, (start.dec - self.tel.getPositionRaDec().dec).AS)
+        print(
+            "NE   :",
+            (start.ra - self.tel.getPositionRaDec().ra).AS,
+            (start.dec - self.tel.getPositionRaDec().dec).AS,
+        )
 
         start = self.tel.getPositionRaDec()
         self.tel.moveSouth(dt, SlewRate.FIND)
         self.tel.moveEast(dt, SlewRate.FIND)
-        print("SE   :", (start.ra - self.tel.getPositionRaDec().ra).AS, (start.dec - self.tel.getPositionRaDec().dec).AS)
+        print(
+            "SE   :",
+            (start.ra - self.tel.getPositionRaDec().ra).AS,
+            (start.dec - self.tel.getPositionRaDec().dec).AS,
+        )
 
         start = self.tel.getPositionRaDec()
         self.tel.moveNorth(dt, SlewRate.FIND)
         self.tel.moveWest(dt, SlewRate.FIND)
-        print("NW   :", (start.ra - self.tel.getPositionRaDec().ra).AS, (start.dec - self.tel.getPositionRaDec().dec).AS)
+        print(
+            "NW   :",
+            (start.ra - self.tel.getPositionRaDec().ra).AS,
+            (start.dec - self.tel.getPositionRaDec().dec).AS,
+        )
 
         start = self.tel.getPositionRaDec()
         self.tel.moveSouth(dt, SlewRate.FIND)
         self.tel.moveWest(dt, SlewRate.FIND)
-        print("SW   :", (start.ra - self.tel.getPositionRaDec().ra).AS, (start.dec - self.tel.getPositionRaDec().dec).AS)
+        print(
+            "SW   :",
+            (start.ra - self.tel.getPositionRaDec().ra).AS,
+            (start.dec - self.tel.getPositionRaDec().dec).AS,
+        )
 
 
 #
@@ -275,18 +314,26 @@ class TelescopeTest (object):
 
 from chimera.instruments.tests.base import FakeHardwareTest, RealHardwareTest
 
+
 class TestFakeTelescope(FakeHardwareTest, TelescopeTest):
 
     def setup(self):
 
         self.manager = Manager(port=8000)
 
-        self.manager.addClass(Site, "lna", {"name": "UFSC",
-                                            "latitude": "-27 36 13 ",
-                                            "longitude": "-48 31 20",
-                                            "altitude": "20"})
+        self.manager.addClass(
+            Site,
+            "lna",
+            {
+                "name": "UFSC",
+                "latitude": "-27 36 13 ",
+                "longitude": "-48 31 20",
+                "altitude": "20",
+            },
+        )
 
         from chimera.instruments.faketelescope import FakeTelescope
+
         self.manager.addClass(FakeTelescope, "fake")
         self.TELESCOPE = "/FakeTelescope/0"
 
@@ -295,32 +342,36 @@ class TestFakeTelescope(FakeHardwareTest, TelescopeTest):
         FiredEvents = {}
         self.setupEvents()
 
-    def teardown (self):
+    def teardown(self):
         self.manager.shutdown()
 
-    
+
 class TestRealTelescope(RealHardwareTest, TelescopeTest):
-    
-    def setup (self):
+
+    def setup(self):
 
         self.manager = Manager(port=8000)
 
-        self.manager.addClass(Site, "lna", {"name": "UFSC",
-                                            "latitude": "-27 36 13 ",
-                                            "longitude": "-48 31 20",
-                                            "altitude": "20"})
+        self.manager.addClass(
+            Site,
+            "lna",
+            {
+                "name": "UFSC",
+                "latitude": "-27 36 13 ",
+                "longitude": "-48 31 20",
+                "altitude": "20",
+            },
+        )
 
         from chimera.instruments.meade import Meade
+
         self.manager.addClass(Meade, "meade", {"device": "/dev/ttyS6"})
         self.TELESCOPE = "/Meade/0"
-        #self.TELESCOPE = "150.162.110.3:7666/TheSkyTelescope/0"
+        # self.TELESCOPE = "150.162.110.3:7666/TheSkyTelescope/0"
         self.tel = self.manager.getProxy(self.TELESCOPE)
 
         FiredEvents = {}
         self.setupEvents()
 
-    def teardown (self):
+    def teardown(self):
         self.manager.shutdown()
-
-
-

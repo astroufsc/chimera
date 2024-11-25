@@ -25,9 +25,9 @@ import random
 import threading
 import logging
 
-from chimera.core.manager  import Manager
+from chimera.core.manager import Manager
 from chimera.core.callback import callback
-from chimera.core.site     import Site
+from chimera.core.site import Site
 
 from chimera.util.coord import Coord
 from chimera.util.position import Position
@@ -36,14 +36,21 @@ from chimera.util.enum import EnumValue
 from chimera.interfaces.dome import InvalidDomePositionException, DomeStatus
 
 import chimera.core.log
+
 chimera.core.log.setConsoleLevel(int(1e10))
 log = logging.getLogger("chimera.tests")
 
 # hack for event  triggering asserts
 FiredEvents = {}
 
+
 def assertDomeAz(domeAz, otherAz, eps):
-    assert abs(domeAz - otherAz) <= eps, "dome az=%s other az=%s (eps=%s)" % (domeAz, otherAz, eps)
+    assert abs(domeAz - otherAz) <= eps, "dome az=%s other az=%s (eps=%s)" % (
+        domeAz,
+        otherAz,
+        eps,
+    )
+
 
 class DomeTest(object):
 
@@ -55,7 +62,7 @@ class DomeTest(object):
 
         # for every exposure, we need to check if all events were fired in the right order
         # and with the right parameters
-        
+
         if slewStatus:
             assert "slewBegin" in FiredEvents
             assert isinstance(FiredEvents["slewBegin"][1], Coord)
@@ -63,7 +70,10 @@ class DomeTest(object):
             assert "slewComplete" in FiredEvents
             assert FiredEvents["slewComplete"][0] > FiredEvents["slewBegin"][0]
             assert isinstance(FiredEvents["slewComplete"][1], Coord)
-            assert isinstance(FiredEvents["slewComplete"][2], EnumValue) and FiredEvents["slewComplete"][2] in DomeStatus
+            assert (
+                isinstance(FiredEvents["slewComplete"][2], EnumValue)
+                and FiredEvents["slewComplete"][2] in DomeStatus
+            )
             assert FiredEvents["slewComplete"][2] == slewStatus
 
         if sync:
@@ -94,11 +104,11 @@ class DomeTest(object):
         dome.slewComplete += slewCompleteClbk
         dome.syncBegin += syncBeginClbk
         dome.syncComplete += syncCompleteClbk
-        
-    def test_stress_dome_track (self):
+
+    def test_stress_dome_track(self):
 
         dome = self.manager.getProxy(self.DOME)
-        tel  = self.manager.getProxy(self.TELESCOPE)
+        tel = self.manager.getProxy(self.TELESCOPE)
 
         dome.track()
 
@@ -107,18 +117,18 @@ class DomeTest(object):
             FiredEvents = {}
             self.setupEvents()
 
-            ra  = "%d %d 00" % (random.randint(7,15), random.randint(0,59))
-            dec = "%d %d 00" % (random.randint(-90,0), random.randint(0,59))
+            ra = "%d %d 00" % (random.randint(7, 15), random.randint(0, 59))
+            dec = "%d %d 00" % (random.randint(-90, 0), random.randint(0, 59))
             tel.slewToRaDec(Position.fromRaDec(ra, dec))
 
             dome.syncWithTel()
             assertDomeAz(dome.getAz(), tel.getAz(), dome["az_resolution"])
             self.assertEvents(sync=True)
 
-            time.sleep(random.randint(0,10))
+            time.sleep(random.randint(0, 10))
 
-    def test_stress_dome_slew (self):
-        
+    def test_stress_dome_slew(self):
+
         # just for visual testing
         raise SkipTest()
 
@@ -126,7 +136,7 @@ class DomeTest(object):
 
         quit = threading.Event()
 
-        def get_az_stress ():
+        def get_az_stress():
             while not quit.isSet():
                 dome.getAz()
                 time.sleep(0.5)
@@ -135,36 +145,35 @@ class DomeTest(object):
         az_thread.start()
 
         for i in range(10):
-            az = random.randint(0,359)
+            az = random.randint(0, 359)
             dome.slewToAz(Coord.fromD(az))
             time.sleep(5)
 
         quit.set()
         az_thread.join()
 
-
-    def test_get_az (self):
+    def test_get_az(self):
         dome = self.manager.getProxy(self.DOME)
         assert dome.getAz() >= 0
 
-    def test_slew_to_az (self):
+    def test_slew_to_az(self):
 
         dome = self.manager.getProxy(self.DOME)
 
         start = dome.getAz()
         delta = 20
-        
-        dome.slewToAz(start+delta)
-        
-        assertDomeAz(dome.getAz(), (start+delta), dome["az_resolution"])
+
+        dome.slewToAz(start + delta)
+
+        assertDomeAz(dome.getAz(), (start + delta), dome["az_resolution"])
 
         assert_raises(InvalidDomePositionException, dome.slewToAz, 9999)
 
         # event check
         self.assertEvents(DomeStatus.OK)
 
-    def test_slit (self):
-        
+    def test_slit(self):
+
         dome = self.manager.getProxy(self.DOME)
 
         dome.openSlit()
@@ -174,67 +183,83 @@ class DomeTest(object):
         assert dome.isSlitOpen() == False
 
 
-
 #
 # setup real and fake tests
 #
 
 from chimera.instruments.tests.base import FakeHardwareTest, RealHardwareTest
 
+
 class TestFakeDome(FakeHardwareTest, DomeTest):
 
-    def setup (self):
+    def setup(self):
 
         self.manager = Manager()
 
-        self.manager.addClass(Site, "lna", {"name": "UFSC",
-                                            "latitude": "-27 36 13 ",
-                                            "longitude": "-48 31 20",
-                                            "altitude": "20"})
+        self.manager.addClass(
+            Site,
+            "lna",
+            {
+                "name": "UFSC",
+                "latitude": "-27 36 13 ",
+                "longitude": "-48 31 20",
+                "altitude": "20",
+            },
+        )
 
         from chimera.instruments.faketelescope import FakeTelescope
         from chimera.instruments.fakedome import FakeDome
+
         self.manager.addClass(FakeTelescope, "fake")
-        self.manager.addClass(FakeDome, "dome", {"telescope": "/FakeTelescope/0",
-                                                 "mode": "Track"})
+        self.manager.addClass(
+            FakeDome, "dome", {"telescope": "/FakeTelescope/0", "mode": "Track"}
+        )
         self.TELESCOPE = "/FakeTelescope/0"
         self.DOME = "/FakeDome/0"
 
         FiredEvents = {}
         self.setupEvents()
 
-    def teardown (self):
+    def teardown(self):
         self.manager.shutdown()
 
 
 class TestRealDome(RealHardwareTest, DomeTest):
-    
-    def setup (self):
+
+    def setup(self):
 
         self.manager = Manager()
 
-        self.manager.addClass(Site, "lna", {"name": "UFSC",
-                                            "latitude": "-27 36 13 ",
-                                            "longitude": "-48 31 20",
-                                            "altitude": "20"})
+        self.manager.addClass(
+            Site,
+            "lna",
+            {
+                "name": "UFSC",
+                "latitude": "-27 36 13 ",
+                "longitude": "-48 31 20",
+                "altitude": "20",
+            },
+        )
 
         from chimera.instruments.domelna40cm import DomeLNA40cm
-        from chimera.instruments.meade       import Meade
+        from chimera.instruments.meade import Meade
+
         self.manager.addClass(Meade, "meade", {"device": "/dev/ttyS6"})
-        self.manager.addClass(DomeLNA40cm, "lna40", {"device": "/dev/ttyS9",
-                                                     "telescope": "/Meade/0",
-                                                     "mode": "Stand"})
+        self.manager.addClass(
+            DomeLNA40cm,
+            "lna40",
+            {"device": "/dev/ttyS9", "telescope": "/Meade/0", "mode": "Stand"},
+        )
 
         self.TELESCOPE = "/Meade/meade"
         self.DOME = "/DomeLNA40cm/0"
-       
+
         FiredEvents = {}
         self.setupEvents()
 
-    def teardown (self):
+    def teardown(self):
         self.manager.shutdown()
 
-    def test_stress_dome_track (self):
+    def test_stress_dome_track(self):
         # just for manual and visual testing
         raise SkipTest()
-

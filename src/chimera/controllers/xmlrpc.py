@@ -37,18 +37,24 @@ from chimera.util.position import Position
 from Pyro.util import getPyroTraceback
 
 
-class ThreadingXMLRPCServer (socketserver.ThreadingTCPServer,
-                             xmlrpc.server.SimpleXMLRPCDispatcher):
+class ThreadingXMLRPCServer(
+    socketserver.ThreadingTCPServer, xmlrpc.server.SimpleXMLRPCDispatcher
+):
 
-    def __init__(self, addr,
-                 requestHandler=xmlrpc.server.SimpleXMLRPCRequestHandler,
-                 logRequests=1, allow_none=True):
+    def __init__(
+        self,
+        addr,
+        requestHandler=xmlrpc.server.SimpleXMLRPCRequestHandler,
+        logRequests=1,
+        allow_none=True,
+    ):
 
         self.logRequests = logRequests
 
         if sys.version_info[:2] == (2, 5):
             xmlrpc.server.SimpleXMLRPCDispatcher.__init__(
-                self, False, sys.getdefaultencoding())
+                self, False, sys.getdefaultencoding()
+            )
         else:
             xmlrpc.server.SimpleXMLRPCDispatcher.__init__(self)
 
@@ -97,15 +103,16 @@ class ChimeraXMLDispatcher:
         # this dispatcher expects methods names like
         # ClassName.instance_name.method
 
-        if self._ctrl['debug']:
+        if self._ctrl["debug"]:
             self._ctrl.log.debug(
-                'XML Request for %s : %s' % (str(request), str(params)))
+                "XML Request for %s : %s" % (str(request), str(params))
+            )
 
         try:
             cls, instance, method = request.split(".")
         except ValueError:
-            if self._ctrl['debug']:
-                self._ctrl.log.debug('ValueError:Invalid Request')
+            if self._ctrl["debug"]:
+                self._ctrl.log.debug("ValueError:Invalid Request")
             raise ValueError("Invalid Request")
 
         loc = Location(cls=cls, name=instance)
@@ -115,9 +122,8 @@ class ChimeraXMLDispatcher:
                 obj = self._ctrl.getManager().getProxy(loc)
                 self._proxyCache[loc] = obj
             except ObjectNotFoundException:
-                if self._ctrl['debug']:
-                    self._ctrl.log.debug(
-                        'ObjectNotFoundException:Object Not Found')
+                if self._ctrl["debug"]:
+                    self._ctrl.log.debug("ObjectNotFoundException:Object Not Found")
                 raise ValueError("Object Not Found")
         else:
             try:
@@ -130,9 +136,8 @@ class ChimeraXMLDispatcher:
                     obj = self._ctrl.getManager().getProxy(loc)
                     self._proxyCache[loc] = obj
                 except ObjectNotFoundException:
-                    if self._ctrl['debug']:
-                        self._ctrl.log.debug(
-                            'ObjectNotFoundException:Object Not Found')
+                    if self._ctrl["debug"]:
+                        self._ctrl.log.debug("ObjectNotFoundException:Object Not Found")
                     raise ValueError("Object Not Found")
 
         handle = getattr(obj, method)
@@ -141,14 +146,13 @@ class ChimeraXMLDispatcher:
         try:
             ret = handle(*params)
         except AttributeError:
-            if self._ctrl['debug']:
-                self._ctrl.log.debug('AttributeError:Method not found')
+            if self._ctrl["debug"]:
+                self._ctrl.log.debug("AttributeError:Method not found")
             raise ValueError("Method not found")
         except Exception as e:
-            if self._ctrl['debug']:
-                print(''.join(getPyroTraceback(e)))
-                self._ctrl.log.debug(
-                    'Other Error <%s>: %s' % (type(e), str(e)))
+            if self._ctrl["debug"]:
+                print("".join(getPyroTraceback(e)))
+                self._ctrl.log.debug("Other Error <%s>: %s" % (type(e), str(e)))
             raise
 
         # do some conversions to help Java XML Server
@@ -170,42 +174,42 @@ class ChimeraXMLDispatcher:
                 else:
                     newret.append(arg)
 
-            if self._ctrl['debug']:
-                self._ctrl.log.debug('Returning: %s' % str(newret))
+            if self._ctrl["debug"]:
+                self._ctrl.log.debug("Returning: %s" % str(newret))
 
             return newret
 
         else:
             if isinstance(ret, (Position, Coord)):
-                if self._ctrl['debug']:
-                    self._ctrl.log.debug('Returning: %s' % str(ret))
+                if self._ctrl["debug"]:
+                    self._ctrl.log.debug("Returning: %s" % str(ret))
                     return str(ret)
             elif isinstance(ret, Location):
                 if "hash" in ret.config:
-                    if self._ctrl['debug']:
-                        self._ctrl.log.debug(
-                            'Returning: %s' % str(ret.config["hash"]))
+                    if self._ctrl["debug"]:
+                        self._ctrl.log.debug("Returning: %s" % str(ret.config["hash"]))
                     return str(ret.config["hash"])
                 else:
-                    if self._ctrl['debug']:
-                        self._ctrl.log.debug('Returning: %s' % str(ret))
+                    if self._ctrl["debug"]:
+                        self._ctrl.log.debug("Returning: %s" % str(ret))
                     return str(ret)
             elif isinstance(ret, type(None)):
-                if self._ctrl['debug']:
-                    self._ctrl.log.debug('Returning: %s' % str(True))
+                if self._ctrl["debug"]:
+                    self._ctrl.log.debug("Returning: %s" % str(True))
                 return True
             else:
-                if self._ctrl['debug']:
-                    self._ctrl.log.debug('Returning: %s' % str(ret))
+                if self._ctrl["debug"]:
+                    self._ctrl.log.debug("Returning: %s" % str(ret))
                 return ret
 
 
 class XMLRPC(ChimeraObject):
 
-    __config__ = {"host": "",
-                  "port": 7667,
-                  'debug': False,  # Log all XMLRPC communications
-                  }
+    __config__ = {
+        "host": "",
+        "port": 7667,
+        "debug": False,  # Log all XMLRPC communications
+    }
 
     def __init__(self):
         ChimeraObject.__init__(self)
@@ -231,22 +235,24 @@ class XMLRPC(ChimeraObject):
             self._srv = ThreadingXMLRPCServer((self.host, self["port"]))
             self._srv.register_introspection_functions()
             self._srv.register_instance(self._dispatcher)
-            self._srv.register_function(self.isAlive, 'Chimera.isAlive')
-            self._srv.register_function(self.getListOf, 'Chimera.getListOf')
+            self._srv.register_function(self.isAlive, "Chimera.isAlive")
+            self._srv.register_function(self.getListOf, "Chimera.getListOf")
             return True
         except socket.error as e:
             self.log.error("Error while starting Remote server (%s)" % e)
 
     def __stop__(self):
         self.log.info(
-            'Shutting down XMLRPC server at http://%s:%d' % (self.host, self["port"]))
+            "Shutting down XMLRPC server at http://%s:%d" % (self.host, self["port"])
+        )
         self._srvThread.shutdown()
 
     def control(self):
 
         if self._srv != None:
             self.log.info(
-                "Starting XML-RPC server at http://%s:%d" % (self.host, self["port"]))
+                "Starting XML-RPC server at http://%s:%d" % (self.host, self["port"])
+            )
             self._srvThread = serverThread(self._srv)
             self._srvThread.start()
 

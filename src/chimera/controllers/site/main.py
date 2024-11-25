@@ -30,10 +30,16 @@ from chimera.core.location import Location
 from chimera.core.manager import Manager
 from chimera.core.systemconfig import SystemConfig
 from chimera.core.version import _chimera_version_, _chimera_description_
-from chimera.core.exceptions import printException, InvalidLocationException, ChimeraException
-from chimera.core.constants import (MANAGER_DEFAULT_HOST,
-                                    MANAGER_DEFAULT_PORT,
-                                    SYSTEM_CONFIG_DEFAULT_FILENAME)
+from chimera.core.exceptions import (
+    printException,
+    InvalidLocationException,
+    ChimeraException,
+)
+from chimera.core.constants import (
+    MANAGER_DEFAULT_HOST,
+    MANAGER_DEFAULT_PORT,
+    SYSTEM_CONFIG_DEFAULT_FILENAME,
+)
 
 from chimera.core.site import Site
 from chimera.core.path import ChimeraPath
@@ -44,7 +50,7 @@ import chimera.core.log
 log = logging.getLogger(__name__)
 
 
-class SiteController (object):
+class SiteController(object):
 
     def __init__(self, args=[], wait=True):
 
@@ -54,22 +60,20 @@ class SiteController (object):
 
         if self.options.verbose == 1:
             chimera.core.log.setConsoleLevel(logging.INFO)
-            #log.setConsoleLevel(logging.INFO)
+            # log.setConsoleLevel(logging.INFO)
 
         if self.options.verbose > 1:
             chimera.core.log.setConsoleLevel(logging.DEBUG)
-            #log.setConsoleLevel(logging.DEBUG)
+            # log.setConsoleLevel(logging.DEBUG)
 
         self.manager = None
 
-        self.paths = {"instruments": [],
-                      "controllers": []}
+        self.paths = {"instruments": [], "controllers": []}
 
         # add system and plugins paths
         Path = ChimeraPath()
         self.paths["instruments"].extend(Path.instruments)
         self.paths["controllers"].extend(Path.controllers)
-
 
     def parseArgs(self, args):
 
@@ -77,8 +81,7 @@ class SiteController (object):
             try:
                 l = Location(value)
             except InvalidLocationException:
-                raise optparse.OptionValueError(
-                    "%s isnt't a valid location." % value)
+                raise optparse.OptionValueError("%s isnt't a valid location." % value)
 
             eval('parser.values.%s.append ("%s")' % (option.dest, value))
 
@@ -86,96 +89,140 @@ class SiteController (object):
 
             if not value or not os.path.isdir(os.path.abspath(value)):
                 raise optparse.OptionValueError(
-                    "Couldn't found %s include path." % value)
+                    "Couldn't found %s include path." % value
+                )
 
             eval('parser.values.%s.append ("%s")' % (option.dest, value))
 
         parser = optparse.OptionParser(
-            prog="chimera", version=_chimera_version_,
+            prog="chimera",
+            version=_chimera_version_,
             description=_chimera_description_,
-            usage="chimera --help for more information")
+            usage="chimera --help for more information",
+        )
 
         manag_group = optparse.OptionGroup(parser, "Basic options")
-        manag_group.add_option("-H", "--host", action="store",
-                               dest="pyro_host", type="string",
-                               help="Host name/IP address to run as; [default=%default]",
-                               metavar="HOST")
+        manag_group.add_option(
+            "-H",
+            "--host",
+            action="store",
+            dest="pyro_host",
+            type="string",
+            help="Host name/IP address to run as; [default=%default]",
+            metavar="HOST",
+        )
 
-        manag_group.add_option("-P", "--port", action="store",
-                               dest="pyro_port", type="string",
-                               help="Port on which to listen for requests; [default=%default]",
-                               metavar="PORT")
+        manag_group.add_option(
+            "-P",
+            "--port",
+            action="store",
+            dest="pyro_port",
+            type="string",
+            help="Port on which to listen for requests; [default=%default]",
+            metavar="PORT",
+        )
 
         config_group = optparse.OptionGroup(parser, "Configuration")
 
-        config_group.add_option("--config", dest="config_file",
-                                help="Start Chimera using configuration from FILE.", metavar="FILE")
+        config_group.add_option(
+            "--config",
+            dest="config_file",
+            help="Start Chimera using configuration from FILE.",
+            metavar="FILE",
+        )
 
-        config_group.add_option("--daemon", action="store_true", dest='daemon',
-                                help="Run Chimera in Daemon mode (will detach from current terminal).")
+        config_group.add_option(
+            "--daemon",
+            action="store_true",
+            dest="daemon",
+            help="Run Chimera in Daemon mode (will detach from current terminal).",
+        )
 
         misc_group = optparse.OptionGroup(parser, "General")
 
-        misc_group.add_option("--dry-run", action="store_true",
-                              dest="dry",
-                              help="Only list all configured objects (from command line and configuration files) without starting the system.")
+        misc_group.add_option(
+            "--dry-run",
+            action="store_true",
+            dest="dry",
+            help="Only list all configured objects (from command line and configuration files) without starting the system.",
+        )
 
-        misc_group.add_option("-v", "--verbose", action="count", dest='verbose',
-                              help="Increase log level (multiple v's to increase even more).")
+        misc_group.add_option(
+            "-v",
+            "--verbose",
+            action="count",
+            dest="verbose",
+            help="Increase log level (multiple v's to increase even more).",
+        )
 
         inst_group = optparse.OptionGroup(
-            parser, "Instruments and Controllers Management")
+            parser, "Instruments and Controllers Management"
+        )
 
-        inst_group.add_option("-i", "--instrument",
-                              action="callback",
-                              callback=check_location,
-                              dest="instruments",
-                              type="string",
-                              help="Load the instrument defined by LOCATION."
-                              "This option could be set many times to load multiple instruments.",
-                              metavar="LOCATION")
+        inst_group.add_option(
+            "-i",
+            "--instrument",
+            action="callback",
+            callback=check_location,
+            dest="instruments",
+            type="string",
+            help="Load the instrument defined by LOCATION."
+            "This option could be set many times to load multiple instruments.",
+            metavar="LOCATION",
+        )
 
-        inst_group.add_option("-c", "--controller",
-                              action="callback",
-                              callback=check_location,
-                              dest="controllers",
-                              type="string",
-                              help="Load the controller defined by LOCATION."
-                              "This option could be set many times to load multiple controllers.",
-                              metavar="LOCATION")
+        inst_group.add_option(
+            "-c",
+            "--controller",
+            action="callback",
+            callback=check_location,
+            dest="controllers",
+            type="string",
+            help="Load the controller defined by LOCATION."
+            "This option could be set many times to load multiple controllers.",
+            metavar="LOCATION",
+        )
 
-        inst_group.add_option("-I", "--instruments-dir",
-                              action="callback",
-                              callback=check_includepath,
-                              dest="inst_dir",
-                              type="string",
-                              help="Append PATH to instruments load path.",
-                              metavar="PATH")
+        inst_group.add_option(
+            "-I",
+            "--instruments-dir",
+            action="callback",
+            callback=check_includepath,
+            dest="inst_dir",
+            type="string",
+            help="Append PATH to instruments load path.",
+            metavar="PATH",
+        )
 
-        inst_group.add_option("-C", "--controllers-dir",
-                              action="callback",
-                              callback=check_includepath,
-                              dest="ctrl_dir",
-                              type="string",
-                              help="Append PATH to controllers load path.",
-                              metavar="PATH")
+        inst_group.add_option(
+            "-C",
+            "--controllers-dir",
+            action="callback",
+            callback=check_includepath,
+            dest="ctrl_dir",
+            type="string",
+            help="Append PATH to controllers load path.",
+            metavar="PATH",
+        )
 
         parser.add_option_group(manag_group)
         parser.add_option_group(config_group)
         parser.add_option_group(misc_group)
         parser.add_option_group(inst_group)
 
-        parser.set_defaults(instruments=[],
-                            controllers=[],
-                            config_file=SYSTEM_CONFIG_DEFAULT_FILENAME,
-                            inst_dir=[],
-                            ctrl_dir=[],
-                            drv_dir=[],
-                            dry=False,
-                            verbose=0,
-                            daemon=False,
-                            pyro_host=MANAGER_DEFAULT_HOST,
-                            pyro_port=MANAGER_DEFAULT_PORT)
+        parser.set_defaults(
+            instruments=[],
+            controllers=[],
+            config_file=SYSTEM_CONFIG_DEFAULT_FILENAME,
+            inst_dir=[],
+            ctrl_dir=[],
+            drv_dir=[],
+            dry=False,
+            verbose=0,
+            daemon=False,
+            pyro_host=MANAGER_DEFAULT_HOST,
+            pyro_port=MANAGER_DEFAULT_PORT,
+        )
 
         return parser.parse_args(args)
 
@@ -190,8 +237,7 @@ class SiteController (object):
             self.config = SystemConfig.fromFile(self.options.config_file)
         except (InvalidLocationException, IOError) as e:
             log.exception(e)
-            log.error(
-                "There was a problem reading your configuration file. (%s)" % e)
+            log.error("There was a problem reading your configuration file. (%s)" % e)
             sys.exit(1)
 
         # manager
@@ -200,19 +246,26 @@ class SiteController (object):
             log.info("Chimera: %s" % _chimera_version_)
             log.info("Chimera prefix: %s" % ChimeraPath().root())
             log.info("Python: %s" % platform.python_version())
-            log.info("System: %s" % ' '.join(platform.uname()))
+            log.info("System: %s" % " ".join(platform.uname()))
 
             try:
                 self.manager = Manager(**self.config.chimera)
             except ChimeraException as e:
                 log.error(
-                    "Chimera is already running on this machine. Use chimera-admin to manage it.")
+                    "Chimera is already running on this machine. Use chimera-admin to manage it."
+                )
                 sys.exit(1)
 
-            log.info("Chimera: running on " + self.manager.getHostname() +
-                     ":" + str(self.manager.getPort()))
-            log.info("Chimera: reading configuration from %s" %
-                     os.path.realpath(self.options.config_file))
+            log.info(
+                "Chimera: running on "
+                + self.manager.getHostname()
+                + ":"
+                + str(self.manager.getPort())
+            )
+            log.info(
+                "Chimera: reading configuration from %s"
+                % os.path.realpath(self.options.config_file)
+            )
 
         # add site object
         if not self.options.dry:
@@ -221,8 +274,7 @@ class SiteController (object):
                 self.manager.addClass(Site, site.name, site.config, True)
 
         # search paths
-        log.info(
-            "Setting objects include path from command line parameters...")
+        log.info("Setting objects include path from command line parameters...")
         for _dir in self.options.inst_dir:
             self.paths["instruments"].append(_dir)
 

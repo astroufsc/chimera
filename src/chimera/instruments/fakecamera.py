@@ -29,22 +29,21 @@ import shutil
 import numpy as np
 from astropy.io import fits
 
-from chimera.interfaces.camera import (CCD, CameraFeature,
-                                       ReadoutMode,
-                                       CameraStatus)
+from chimera.interfaces.camera import CCD, CameraFeature, ReadoutMode, CameraStatus
 
 from chimera.instruments.camera import CameraBase
-from chimera.instruments.filterwheel import FilterWheelBase, InvalidFilterPositionException
+from chimera.instruments.filterwheel import (
+    FilterWheelBase,
+    InvalidFilterPositionException,
+)
 
 from chimera.core.lock import lock
 from chimera.util.position import Epoch
 
 
-class FakeCamera (CameraBase, FilterWheelBase):
+class FakeCamera(CameraBase, FilterWheelBase):
 
-    __config__ = {"use_dss": True,
-                  "ccd_width": 512,
-                  "ccd_height": 512}
+    __config__ = {"use_dss": True, "ccd_width": 512, "ccd_height": 512}
 
     def __init__(self):
         CameraBase.__init__(self)
@@ -71,12 +70,14 @@ class FakeCamera (CameraBase, FilterWheelBase):
 
         self._binning_factors = {"1x1": 1}
 
-        self._supports = {CameraFeature.TEMPERATURE_CONTROL: True,
-                          CameraFeature.PROGRAMMABLE_GAIN: False,
-                          CameraFeature.PROGRAMMABLE_OVERSCAN: False,
-                          CameraFeature.PROGRAMMABLE_FAN: False,
-                          CameraFeature.PROGRAMMABLE_LEDS: True,
-                          CameraFeature.PROGRAMMABLE_BIAS_LEVEL: False}
+        self._supports = {
+            CameraFeature.TEMPERATURE_CONTROL: True,
+            CameraFeature.PROGRAMMABLE_GAIN: False,
+            CameraFeature.PROGRAMMABLE_OVERSCAN: False,
+            CameraFeature.PROGRAMMABLE_FAN: False,
+            CameraFeature.PROGRAMMABLE_LEDS: True,
+            CameraFeature.PROGRAMMABLE_BIAS_LEVEL: False,
+        }
 
         readoutMode = ReadoutMode()
         readoutMode.mode = 0
@@ -86,8 +87,7 @@ class FakeCamera (CameraBase, FilterWheelBase):
         readoutMode.pixelWidth = 9.0
         readoutMode.pixelHeight = 9.0
 
-        self._readoutModes = {self._MY_CCD:
-                             {self._MY_READOUT_MODE: readoutMode}}
+        self._readoutModes = {self._MY_CCD: {self._MY_READOUT_MODE: readoutMode}}
 
     def __start__(self):
         self["camera_model"] = "Fake Cameras Inc."
@@ -122,9 +122,9 @@ class FakeCamera (CameraBase, FilterWheelBase):
 
     def make_dark(self, shape, dtype, exptime):
         ret = np.zeros(shape, dtype=dtype)
-        #Taken from specs for KAF-1603ME as found in ST-8XME
-        #normtemp is now in ADU/pix/sec
-        normtemp = ((10 * 2**((self.__temperature-25)/6.3)) * exptime)/2.3
+        # Taken from specs for KAF-1603ME as found in ST-8XME
+        # normtemp is now in ADU/pix/sec
+        normtemp = ((10 * 2 ** ((self.__temperature - 25) / 6.3)) * exptime) / 2.3
         ret += normtemp + np.random.random(shape)  # +/- 1 variance in readout
         return ret
 
@@ -160,9 +160,9 @@ class FakeCamera (CameraBase, FilterWheelBase):
         telescope = None
         dome = None
 
-        (mode, binning, top,  left,
-         width, height) = self._getReadoutModeInfo(imageRequest["binning"],
-                                                   imageRequest["window"])
+        (mode, binning, top, left, width, height) = self._getReadoutModeInfo(
+            imageRequest["binning"], imageRequest["window"]
+        )
         self.readoutBegin(imageRequest)
 
         telescopes = self.getManager().getResourcesByClass("Telescope")
@@ -187,11 +187,11 @@ class FakeCamera (CameraBase, FilterWheelBase):
         if imageRequest["type"].upper() == "DARK":
             self.log.info("making dark")
             pix = self.make_dark(
-                (ccd_height, ccd_width), np.float32, imageRequest['exptime'])
+                (ccd_height, ccd_width), np.float32, imageRequest["exptime"]
+            )
         elif imageRequest["type"].upper() == "FLAT":
             self.log.info("making flat")
-            pix = (self.make_flat(
-                (ccd_height, ccd_width), np.float32) / 1000)
+            pix = self.make_flat((ccd_height, ccd_width), np.float32) / 1000
         elif imageRequest["type"].upper() == "BIAS":
             self.log.info("making bias")
             pix = self.make_dark((ccd_height, ccd_width), np.float32, 0)
@@ -207,28 +207,35 @@ class FakeCamera (CameraBase, FilterWheelBase):
                     tel_position = tel_position.toEpoch(Epoch.J2000)
 
                     self.log.debug(
-                        "Dome AZ: " + str(domeAZ) + "  Tel AZ: " + str(telAZ))
-                    if abs(domeAZ-telAZ) <= 3:
+                        "Dome AZ: " + str(domeAZ) + "  Tel AZ: " + str(telAZ)
+                    )
+                    if abs(domeAZ - telAZ) <= 3:
                         self.log.debug("Dome & Slit aligned -- getting DSS")
                         url = "http://stdatu.stsci.edu/cgi-bin/dss_search?"
-                        query_args = {"r":
-                                      tel_position.ra.strfcoord('%(h)02d:%(m)02d:%(s)04d'),
-                                      "d":
-                                      tel_position.dec.strfcoord('%(d)02d:%(m)02d:%(s)04d', signed=True),
-                                      "f": "fits",
-                                      "e": "j2000",
-                                      "c": "gz",
-                                      "fov": "NONE"}
+                        query_args = {
+                            "r": tel_position.ra.strfcoord("%(h)02d:%(m)02d:%(s)04d"),
+                            "d": tel_position.dec.strfcoord(
+                                "%(d)02d:%(m)02d:%(s)04d", signed=True
+                            ),
+                            "f": "fits",
+                            "e": "j2000",
+                            "c": "gz",
+                            "fov": "NONE",
+                        }
 
                         # use POSS2-Red surbey ( -90 < d < -20 ) if below -25 deg declination, else use POSS1-Red (-30 < d < +90)
                         # http://www-gsss.stsci.edu/SkySurveys/Surveys.htm
                         if tel_position.dec.D < -25:
                             query_args["v"] = "poss2ukstu_red"
-                            query_args["h"] = ccd_height / 59.5  # ~1"/pix (~60 pix/arcmin) is the plate scale of DSS POSS2-Red
+                            query_args["h"] = (
+                                ccd_height / 59.5
+                            )  # ~1"/pix (~60 pix/arcmin) is the plate scale of DSS POSS2-Red
                             query_args["w"] = ccd_width / 59.5
                         else:
                             query_args["v"] = "poss1_red"
-                            query_args["h"] = ccd_height / 35.3 # 1.7"/pix (35.3 pix/arcmin) is the plate scale of DSS POSS1-Red
+                            query_args["h"] = (
+                                ccd_height / 35.3
+                            )  # 1.7"/pix (35.3 pix/arcmin) is the plate scale of DSS POSS1-Red
                             query_args["w"] = ccd_width / 35.3
 
                         url += urllib.parse.urlencode(query_args)
@@ -237,8 +244,7 @@ class FakeCamera (CameraBase, FilterWheelBase):
                         try:
                             t0 = time.time()
                             dssfile = urllib.request.urlretrieve(url)[0]
-                            self.log.debug(
-                                "download took: %.3f s" % (time.time() - t0))
+                            self.log.debug("download took: %.3f s" % (time.time() - t0))
                             fitsfile = dssfile + ".fits.gz"
                             shutil.copy(dssfile, fitsfile)
                             hdulist = fits.open(fitsfile)
@@ -247,36 +253,44 @@ class FakeCamera (CameraBase, FilterWheelBase):
                             os.remove(fitsfile)
                         except Exception as e:
                             self.log.warning(
-                                "General error getting DSS image: " + str(e))
+                                "General error getting DSS image: " + str(e)
+                            )
 
                     # dome not aligned, take a 'dome flat'
                     else:
-                        self.log.debug(
-                            "Dome not aligned... making flat image...")
+                        self.log.debug("Dome not aligned... making flat image...")
                         try:
-                            pix = (self.make_flat(
-                                (ccd_height,ccd_width), np.float32) / 1000)
+                            pix = (
+                                self.make_flat((ccd_height, ccd_width), np.float32)
+                                / 1000
+                            )
                         except Exception as e:
-                            self.log.warning(
-                                "Error generating flat: " + str(e))
+                            self.log.warning("Error generating flat: " + str(e))
 
         # without telescope/dome, or if dome/telescope aren't aligned, or the dome is closed
         # or we otherwise failed, just make a flat pattern with dark noise
         if pix is None:
             try:
                 self.log.info(
-                    "Making flat image: " + str(ccd_height) + "x" + str(ccd_width))
+                    "Making flat image: " + str(ccd_height) + "x" + str(ccd_width)
+                )
                 pix = self.make_flat((ccd_height, ccd_width), np.float32)
             except Exception as e:
                 self.log.warning("Make flat error: " + str(e))
 
         # Last resort if nothing else could make a picture
-        if (pix is None):
+        if pix is None:
             pix = np.zeros((ccd_height, ccd_width), dtype=np.int32)
 
-        proxy = self._saveImage(imageRequest, pix, {"frame_start_time": self.__lastFrameStart,
-                                                    "frame_temperature": self.getTemperature(),
-                                                    "binning_factor": self._binning_factors[binning]})
+        proxy = self._saveImage(
+            imageRequest,
+            pix,
+            {
+                "frame_start_time": self.__lastFrameStart,
+                "frame_temperature": self.getTemperature(),
+                "binning_factor": self._binning_factors[binning],
+            },
+        )
 
         # [ABORT POINT]
         if self.abort.isSet():
@@ -354,9 +368,7 @@ class FakeCamera (CameraBase, FilterWheelBase):
     @lock
     def setFilter(self, filter):
         if filter not in self.getFilters():
-            raise InvalidFilterPositionException(
-                "%s is not a valid filter" % filter)
+            raise InvalidFilterPositionException("%s is not a valid filter" % filter)
 
         self.filterChange(filter, self.__lastFilter)
         self.__lastFilter = filter
-

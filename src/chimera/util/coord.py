@@ -25,7 +25,7 @@ import re
 import sys
 
 TWO_PI = 2.0 * math.pi
-PI_OVER_TWO = (math.pi / 2.0)
+PI_OVER_TWO = math.pi / 2.0
 
 
 # to allow use of Coord outside of Chimera
@@ -35,17 +35,17 @@ try:
 except ImportError:
     from .enum import Enum
 
-__all__ = ['Coord',
-           'CoordUtil']
+__all__ = ["Coord", "CoordUtil"]
 
 
 State = Enum("HMS", "DMS", "D", "H", "R", "AS")
 
 
-class CoordUtil (object):
+class CoordUtil(object):
 
     COORD_RE = re.compile(
-        r'((?P<dd>(?P<sign>[+-]?)[\s]*\d+)[dh]?[\s:]*)?((?P<mm>\d+)[m]?[\s:]*)?((?P<ss>\d+)(?P<msec>\.\d*)?([\ss]*))?')
+        r"((?P<dd>(?P<sign>[+-]?)[\s]*\d+)[dh]?[\s:]*)?((?P<mm>\d+)[m]?[\s:]*)?((?P<ss>\d+)(?P<msec>\.\d*)?([\ss]*))?"
+    )
 
     _arcsec2deg = 1.0 / 3600
     _min2deg = 1.0 / 60
@@ -121,7 +121,7 @@ class CoordUtil (object):
             # silently
             if any(matches.groups()):
                 m_dict = matches.groupdict()
-                sign = m_dict["sign"] or '+'
+                sign = m_dict["sign"] or "+"
                 dd = m_dict["dd"] or 0
                 mm = m_dict["mm"] or 0
                 ss = m_dict["ss"] or 0
@@ -133,13 +133,15 @@ class CoordUtil (object):
                     ss = int(ss)
                     msec = float(msec)
                 except ValueError as e:
-                    raise ValueError(
-                        "Invalid coordinate: '%s' (%s)." % (dms, e))
+                    raise ValueError("Invalid coordinate: '%s' (%s)." % (dms, e))
 
-                d = abs(dd) + mm * CoordUtil._min2deg + \
-                    ((ss + msec) * CoordUtil._arcsec2deg)
+                d = (
+                    abs(dd)
+                    + mm * CoordUtil._min2deg
+                    + ((ss + msec) * CoordUtil._arcsec2deg)
+                )
 
-                if sign == '-':
+                if sign == "-":
                     d *= -1
 
                 return d
@@ -149,11 +151,12 @@ class CoordUtil (object):
                 try:
                     return float(dms)
                 except ValueError as e:
-                    raise ValueError(
-                        "Invalid coordinate: '%s' (%s)." % (dms, e))
+                    raise ValueError("Invalid coordinate: '%s' (%s)." % (dms, e))
 
         raise ValueError(
-            "Invalid coordinate type: '%s'. Expecting string or numbers." % str(type(dms)))
+            "Invalid coordinate type: '%s'. Expecting string or numbers."
+            % str(type(dms))
+        )
 
     @staticmethod
     def hms2d(hms):
@@ -215,9 +218,9 @@ class CoordUtil (object):
         default = None
 
         if c.state == State.HMS:
-            default = '%(h)02d:%(m)02d:%(s)06.3f'
+            default = "%(h)02d:%(m)02d:%(s)06.3f"
         else:
-            default = '%(d)02d:%(m)02d:%(s)06.3f'
+            default = "%(d)02d:%(m)02d:%(s)06.3f"
 
         format = format or default
 
@@ -233,7 +236,7 @@ class CoordUtil (object):
         if need:
             try:
                 ss_index = format.index(need)
-                sec_prec = format[ss_index:format.index('f', ss_index)]
+                sec_prec = format[ss_index : format.index("f", ss_index)]
                 parts = sec_prec.split(".")
 
                 if len(parts) == 2:
@@ -255,7 +258,7 @@ class CoordUtil (object):
         else:
             sign_str = "+"
 
-        if '(h)' in format or '(hh)' in format:
+        if "(h)" in format or "(hh)" in format:
             m = hm
             s = hs
             if sign > 0:
@@ -264,10 +267,7 @@ class CoordUtil (object):
             m = dm
             s = ds
 
-        subs = dict(d=d, dd=d,
-                    m=m, mm=m,
-                    s=s, ss=s,
-                    h=h, hh=h)
+        subs = dict(d=d, dd=d, m=m, mm=m, s=s, ss=s, h=h, hh=h)
 
         if signed:
             return (sign_str + format) % subs
@@ -295,7 +295,7 @@ class CoordUtil (object):
         coordR = coordR % TWO_PI
         if coordR > math.pi:
             coordR -= TWO_PI
-        if coordR < (- math.pi):
+        if coordR < (-math.pi):
             coordR += TWO_PI
         return Coord.fromR(coordR)
 
@@ -307,8 +307,8 @@ class CoordUtil (object):
     def haToRa(ha, lst):
         return Coord.fromR(CoordUtil.coordToR(lst) - CoordUtil.coordToR(ha))
 
-# coordRotate adopted from sidereal.py
-# http://www.nmt.edu/tcc/help/lang/python/examples/sidereal/ims/
+    # coordRotate adopted from sidereal.py
+    # http://www.nmt.edu/tcc/help/lang/python/examples/sidereal/ims/
 
     @staticmethod
     def coordRotate(x, y, z):
@@ -320,17 +320,19 @@ class CoordUtil (object):
               xt=arcsin(sin(x)*sin(y)+cos(x)*cos(y)*cos(z)) and
               yt=arccos((sin(x)-sin(y)*sin(xt))/(cos(y)*cos(xt))) ]
         """
-        #-- 1 --
-        xt = math.asin(math.sin(x) * math.sin(y) +
-                       math.cos(x) * math.cos(y) * math.cos(z))
-        #-- 2 --
-        yt = math.acos((math.sin(x) - math.sin(y) * math.sin(xt)) /
-                       (math.cos(y) * math.cos(xt)))
-        #-- 3 --
+        # -- 1 --
+        xt = math.asin(
+            math.sin(x) * math.sin(y) + math.cos(x) * math.cos(y) * math.cos(z)
+        )
+        # -- 2 --
+        yt = math.acos(
+            (math.sin(x) - math.sin(y) * math.sin(xt)) / (math.cos(y) * math.cos(xt))
+        )
+        # -- 3 --
         if math.sin(z) > 0.0:
             yt = TWO_PI - yt
 
-        #-- 4 --
+        # -- 4 --
         return (xt, yt)
 
     # Great circle distance formulae:
@@ -380,13 +382,14 @@ class CoordUtil (object):
         """
         ra1, dec1 = vec1
         ra2, dec2 = vec2
-        ans = CoordUtil.ahav(CoordUtil.hav(
-            dec1 - dec2) + math.cos(dec1) * math.cos(dec2) * CoordUtil.hav(ra1 - ra2))
+        ans = CoordUtil.ahav(
+            CoordUtil.hav(dec1 - dec2)
+            + math.cos(dec1) * math.cos(dec2) * CoordUtil.hav(ra1 - ra2)
+        )
         return ans
 
 
-class Coord (object):
-
+class Coord(object):
     """
     L{Coord} represents a single angular coordinate.
 
@@ -503,19 +506,23 @@ class Coord (object):
 
     # internal state conversions from/to internal
     # representation (decimal degrees)
-    from_state = {State.HMS: CoordUtil.hms2d,
-                  State.DMS: CoordUtil.dms2d,
-                  State.D: lambda d: float(d),
-                  State.H: lambda h: h * 15.0,
-                  State.R: lambda r: r * Coord.rad2deg,
-                  State.AS: lambda AS: AS / 3600.0}
+    from_state = {
+        State.HMS: CoordUtil.hms2d,
+        State.DMS: CoordUtil.dms2d,
+        State.D: lambda d: float(d),
+        State.H: lambda h: h * 15.0,
+        State.R: lambda r: r * Coord.rad2deg,
+        State.AS: lambda AS: AS / 3600.0,
+    }
 
-    to_state = {State.HMS: CoordUtil.d2hms,
-                State.DMS: CoordUtil.d2dms,
-                State.D: lambda d: float(d),
-                State.H: lambda d: d / 15.0,
-                State.R: lambda d: d * Coord.deg2rad,
-                State.AS: lambda d: d * 3600.0}
+    to_state = {
+        State.HMS: CoordUtil.d2hms,
+        State.DMS: CoordUtil.d2dms,
+        State.D: lambda d: float(d),
+        State.H: lambda d: d / 15.0,
+        State.R: lambda d: d * Coord.deg2rad,
+        State.AS: lambda d: d * 3600.0,
+    }
 
     # DON'T CALL THIS CONSTRUCTOR DIRECTLY, USE from* FORMS
     def __init__(self, v, state):
@@ -566,12 +573,11 @@ class Coord (object):
 
     @staticmethod
     def fromState(c, state):
-        ctr = getattr(Coord, 'from%s' % state)
-        if hasattr(ctr, '__call__'):
+        ctr = getattr(Coord, "from%s" % state)
+        if hasattr(ctr, "__call__"):
             return ctr(c)
         else:
-            raise ValueError("Trying to create Coord "
-                             "from unknown state %s" % state)
+            raise ValueError("Trying to create Coord " "from unknown state %s" % state)
 
     @staticmethod
     def _from_float_to(c, state):
@@ -635,8 +641,12 @@ class Coord (object):
     #
 
     def __repr__(self):
-        return '<%s object %s (%s) at %s>' % (Coord.__name__, str(self),
-                                              self.state, hex(id(self))[:-1])
+        return "<%s object %s (%s) at %s>" % (
+            Coord.__name__,
+            str(self),
+            self.state,
+            hex(id(self))[:-1],
+        )
 
     def __str__(self):
         if self.state == State.DMS:
@@ -644,7 +654,7 @@ class Coord (object):
         elif self.state == State.HMS:
             return CoordUtil.hms2str(self)
         else:
-            return '%.2f' % self.get()
+            return "%.2f" % self.get()
 
     def strfcoord(self, *args, **kwargs):
         return CoordUtil.strfcoord(self, *args, **kwargs)

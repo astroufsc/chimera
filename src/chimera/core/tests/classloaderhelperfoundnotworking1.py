@@ -1,5 +1,5 @@
-
 import djsaldadsaidoaidaso
 
-class ClassLoaderHelperFoundNotWorking1: pass
 
+class ClassLoaderHelperFoundNotWorking1:
+    pass

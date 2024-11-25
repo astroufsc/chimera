@@ -30,8 +30,8 @@ class FakeLamp(LampBase, LampDimmer):
         LampBase.__init__(self)
 
         self._isOn = False
-        self._intensity = 0.
-        self._irange = (0., 100.)
+        self._intensity = 0.0
+        self._irange = (0.0, 100.0)
 
     @lock
     def switchOn(self):
@@ -59,9 +59,10 @@ class FakeLamp(LampBase, LampDimmer):
             self._intensity = intensity
             return True
         else:
-            raise IntensityOutOfRangeException('Intensity %.2f out of range. Must be between (%.2f:%.2f].' % (intensity,
-                                                                                                              int_i,
-                                                                                                              int_f))
+            raise IntensityOutOfRangeException(
+                "Intensity %.2f out of range. Must be between (%.2f:%.2f]."
+                % (intensity, int_i, int_f)
+            )
 
     @lock
     def getIntensity(self):

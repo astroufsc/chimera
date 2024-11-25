@@ -14,22 +14,26 @@ from chimera.util.enum import Enum
 SchedulingAlgorithm = Enum("SEQUENTIAL", "CIRCULAR")
 
 
-SchedulingAlgorithms = {SchedulingAlgorithm.SEQUENTIAL: SequentialScheduler(),
-                        SchedulingAlgorithm.CIRCULAR: CircularScheduler()}
+SchedulingAlgorithms = {
+    SchedulingAlgorithm.SEQUENTIAL: SequentialScheduler(),
+    SchedulingAlgorithm.CIRCULAR: CircularScheduler(),
+}
 
 
 class Scheduler(ChimeraObject):
 
-    __config__ = {"telescope": "/Telescope/0",
-                  "camera": "/Camera/0",
-                  "filterwheel": "/FilterWheel/0",
-                  "focuser": "/Focuser/0",
-                  "dome": "/Dome/0",
-                  "autofocus": "/Autofocus/0",
-                  "autoflat": "/Autoflat/0",
-                  "point_verify": "/PointVerify/0",
-                  'site': '/Site/0',
-                  'algorithm': SchedulingAlgorithm.SEQUENTIAL}
+    __config__ = {
+        "telescope": "/Telescope/0",
+        "camera": "/Camera/0",
+        "filterwheel": "/FilterWheel/0",
+        "focuser": "/Focuser/0",
+        "dome": "/Dome/0",
+        "autofocus": "/Autofocus/0",
+        "autoflat": "/Autoflat/0",
+        "point_verify": "/PointVerify/0",
+        "site": "/Site/0",
+        "algorithm": SchedulingAlgorithm.SEQUENTIAL,
+    }
 
     def __init__(self):
         ChimeraObject.__init__(self)
@@ -51,9 +55,9 @@ class Scheduler(ChimeraObject):
             return False
 
     def __stop__(self):
-        self.log.debug('Attempting to stop machine')
+        self.log.debug("Attempting to stop machine")
         self.shutdown()
-        self.log.debug('Machine stopped')
+        self.log.debug("Machine stopped")
         Session().commit()
         return True
 

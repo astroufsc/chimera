@@ -27,14 +27,17 @@ from chimera.util.enum import Enum
 FanDirection = Enum("FORWARD", "REVERSE")
 FanStatus = SwitchStatus
 
+
 class Fan(Interface):
     """
     Basic fan interface.
     """
 
-    __config__ = {"device": None,
-                  "model": "Unknown",
-                  }
+    __config__ = {
+        "device": None,
+        "model": "Unknown",
+    }
+
 
 class FanControl(Switch):
     """
@@ -42,11 +45,13 @@ class FanControl(Switch):
     All methods are inherited from Switch
     """
 
+
 class FanState(SwitchState):
     """
     Class for fans status
     All methods are inherited from Switch
     """
+
 
 class FanControllabeSpeed(Fan):
     """
@@ -54,21 +59,21 @@ class FanControllabeSpeed(Fan):
     """
 
     def getRotation(self):
-        '''
+        """
         Get fan current rotation speed.
 
         @return: Rotation speed in Hz
         @rtype: float
-        '''
+        """
 
     def setRotation(self, freq):
-        '''
+        """
         Set fan rotation speed.
 
         @return: Nothing
         @rtype:
 
-        '''
+        """
 
     def getRange(self):
         """
@@ -78,26 +83,26 @@ class FanControllabeSpeed(Fan):
         @return: Minimum and maximum fan speed (min, max).
         """
 
+
 class FanControllabeDirection(Fan):
     """
     Fans with controllable direction.
     """
 
     def getDirection(self):
-        '''
+        """
         Get fan rotation direction.
 
         @return: Fan direction
         @rtype: Enum{FanDirection}
 
-        '''
+        """
 
     def setDirection(self, direction):
-        '''
+        """
         Set fan rotation direction.
 
         @return: Nothing
         @rtype:
 
-        '''
-
+        """

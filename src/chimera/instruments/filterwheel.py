@@ -21,12 +21,11 @@
 
 
 from chimera.core.chimeraobject import ChimeraObject
-from chimera.interfaces.filterwheel import (FilterWheel,
-                                            InvalidFilterPositionException)
+from chimera.interfaces.filterwheel import FilterWheel, InvalidFilterPositionException
 from chimera.core.lock import lock
 
 
-class FilterWheelBase (ChimeraObject, FilterWheel):
+class FilterWheelBase(ChimeraObject, FilterWheel):
 
     def __init__(self):
         ChimeraObject.__init__(self)
@@ -45,13 +44,13 @@ class FilterWheelBase (ChimeraObject, FilterWheel):
         try:
             return self.getFilters()[index]
         except (ValueError, TypeError):
-            raise InvalidFilterPositionException(
-                "Unknown filter (%s)." % str(index))
+            raise InvalidFilterPositionException("Unknown filter (%s)." % str(index))
 
     def _getFilterPosition(self, name):
         return self.getFilters().index(name)
 
     def getMetadata(self, request):
-        return [('FWHEEL', str(self['filter_wheel_model']), 'FilterWheel Model'),
-                ('FILTER', str(self.getFilter()),
-                 'Filter used for this observation')]
+        return [
+            ("FWHEEL", str(self["filter_wheel_model"]), "FilterWheel Model"),
+            ("FILTER", str(self.getFilter()), "Filter used for this observation"),
+        ]

@@ -27,20 +27,21 @@ import os
 # read version.py file to get version and metadata information
 here = os.path.abspath(os.path.dirname(__file__))
 version_py = os.path.join(here, "src/chimera/core/version.py")
-exec(compile(open(version_py, "rb").read(), version_py, 'exec'))
+exec(compile(open(version_py, "rb").read(), version_py, "exec"))
 
 # chimera scripts
-chimera_scripts = ['src/scripts/chimera',
-                   'src/scripts/chimera-cam',
-                   'src/scripts/chimera-admin',
-                   'src/scripts/chimera-filter',
-                   'src/scripts/chimera-tel',
-                   'src/scripts/chimera-dome',
-                   'src/scripts/chimera-focus',
-                   'src/scripts/chimera-console',
-                   'src/scripts/chimera-sched',
-                   'src/scripts/chimera-weather',
-                   'src/scripts/chimera-seeing',
+chimera_scripts = [
+    "src/scripts/chimera",
+    "src/scripts/chimera-cam",
+    "src/scripts/chimera-admin",
+    "src/scripts/chimera-filter",
+    "src/scripts/chimera-tel",
+    "src/scripts/chimera-dome",
+    "src/scripts/chimera-focus",
+    "src/scripts/chimera-console",
+    "src/scripts/chimera-sched",
+    "src/scripts/chimera-weather",
+    "src/scripts/chimera-seeing",
 ]
 
 # platform specific requirements
@@ -48,35 +49,30 @@ platform_deps = []
 
 # go!
 setup(
-    name='chimera-python',
+    name="chimera-python",
     version=_chimera_version_,
     description=_chimera_description_,
     long_description=open("docs/site/index.rst").read(),
     url=_chimera_url_,
-
     author=_chimera_author_,
     author_email=_chimera_author_email_,
-
     license=_chimera_license_,
-
     package_dir={"": "src"},
     packages=find_packages("src", exclude=["*.tests"]),
-
     include_package_data=True,
-
     scripts=chimera_scripts,
-
     # installation happens in the specified order
-    install_requires=[   "numpy>=1.8.0",
-                         "pyephem",
-                         "python-dateutil",
-                         "PyYAML",
-                         "RO",
-                         "suds",
-                         "SQLAlchemy",
-                         "redislite",
-                         "astropy"
-                     ] + platform_deps,
-
+    install_requires=[
+        "numpy>=1.8.0",
+        "pyephem",
+        "python-dateutil",
+        "PyYAML",
+        "RO",
+        "suds",
+        "SQLAlchemy",
+        "redislite",
+        "astropy",
+    ]
+    + platform_deps,
     tests_require=["nose", "coverage", "wheel"],
 )

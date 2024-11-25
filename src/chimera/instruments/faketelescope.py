@@ -22,7 +22,13 @@
 import time
 import threading
 
-from chimera.interfaces.telescope import SlewRate, TelescopeStatus, TelescopeCover, TelescopePier, TelescopePierSide
+from chimera.interfaces.telescope import (
+    SlewRate,
+    TelescopeStatus,
+    TelescopeCover,
+    TelescopePier,
+    TelescopePierSide,
+)
 from chimera.instruments.telescope import TelescopeBase, ObjectTooLowException
 
 from chimera.core.lock import lock
@@ -32,7 +38,7 @@ from chimera.util.coord import Coord
 from chimera.util.position import Position, Epoch
 
 
-class FakeTelescope (TelescopeBase, TelescopeCover, TelescopePier):
+class FakeTelescope(TelescopeBase, TelescopeCover, TelescopePier):
 
     def __init__(self):
         TelescopeBase.__init__(self)
@@ -58,8 +64,7 @@ class FakeTelescope (TelescopeBase, TelescopeCover, TelescopePier):
         self._az = Position.fromAltAz(0, 0).az
 
     def _setAltAzFromRaDec(self):
-        altAz = self._getSite().raDecToAltAz(
-            Position.fromRaDec(self._ra, self._dec))
+        altAz = self._getSite().raDecToAltAz(Position.fromRaDec(self._ra, self._dec))
         self._alt = altAz.alt
         self._az = altAz.az
 
@@ -67,14 +72,12 @@ class FakeTelescope (TelescopeBase, TelescopeCover, TelescopePier):
         return self.getManager().getProxy("/Site/0")
 
     def _setRaDecFromAltAz(self):
-        raDec = self._getSite().altAzToRaDec(
-            Position.fromAltAz(self._alt, self._az))
+        raDec = self._getSite().altAzToRaDec(Position.fromAltAz(self._alt, self._az))
         self._ra = raDec.ra
         self._dec = raDec.dec
 
     def _setAltAzFromRaDec(self):
-        altAz = self._getSite().raDecToAltAz(
-            Position.fromRaDec(self._ra, self._dec))
+        altAz = self._getSite().raDecToAltAz(Position.fromRaDec(self._ra, self._dec))
         self._alt = altAz.alt
         self._az = altAz.az
 
@@ -92,7 +95,9 @@ class FakeTelescope (TelescopeBase, TelescopeCover, TelescopePier):
                 except ObjectTooLowException as msg:
                     self.log.exception(msg)
                     self._stopTracking()
-                    self.trackingStopped(self.getPositionRaDec(),TelescopeStatus.OBJECT_TOO_LOW)
+                    self.trackingStopped(
+                        self.getPositionRaDec(), TelescopeStatus.OBJECT_TOO_LOW
+                    )
             else:
                 self._setRaDecFromAltAz()
         return True
@@ -308,7 +313,7 @@ class FakeTelescope (TelescopeBase, TelescopeCover, TelescopePier):
     @lock
     def stopTracking(self):
         self._stopTracking()
-        self.trackingStopped(self.getPositionRaDec(),TelescopeStatus.ABORTED)
+        self.trackingStopped(self.getPositionRaDec(), TelescopeStatus.ABORTED)
 
     def _stopTracking(self):
         self._tracking = False

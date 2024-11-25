@@ -27,7 +27,7 @@ import random
 from chimera.core.chimeraobject import ChimeraObject
 
 
-__all__ = ['callback']
+__all__ = ["callback"]
 
 
 def callback(manager):
@@ -50,17 +50,16 @@ def callback(manager):
     @rtype: ProxyMethod
     """
 
-    class Callback (ChimeraObject):
+    class Callback(ChimeraObject):
 
         def __init__(self):
             ChimeraObject.__init__(self)
 
     def clbk_deco(f):
-        setattr(Callback, 'handler', staticmethod(f))
+        setattr(Callback, "handler", staticmethod(f))
         id = (str(time.time()) + str(random.random())).encode()
-        return manager.addClass(Callback,
-                                'h' +
-                                hashlib.sha1(id).hexdigest(),
-                                start=False).handler
+        return manager.addClass(
+            Callback, "h" + hashlib.sha1(id).hexdigest(), start=False
+        ).handler
 
     return clbk_deco

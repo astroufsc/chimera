@@ -136,8 +136,8 @@ Examples:
 
 import builtins
 
-#import sys
-#import exceptions
+# import sys
+# import exceptions
 
 # ======================================================================
 
@@ -162,7 +162,6 @@ class WrongSExtractorfileException(Exception):
 
 
 class SExtractorfile:
-
     """
     A class to manipulate SExtractor ASCII catalogs.
 
@@ -170,498 +169,538 @@ class SExtractorfile:
 
     """
 
-    _SE_keys = \
-        {"NUMBER": {"comment": "Running object number",
-                    "infunc": int,
-                    "format": "%10d",
-                    "unit": ""},
-
-         "FLAGS": {"comment": "Extraction flags",
-                   "infunc": int,
-                   "format": "%3d",
-                   "unit": ""},
-
-         "FLUX_ISO": {"comment": "Isophotal flux",
-                      "infunc": float,
-                      "format": "%12g",
-                      "unit": "count"},
-
-         "FLUXERR_ISO": {"comment": "RMS error for isophotal flux",
-                         "infunc": float,
-                         "format": "%12g",
-                         "unit": "count"},
-
-         "MAG_ISO": {"comment": "Isophotal magnitude",
-                     "infunc": float,
-                     "format": "%8.4f",
-                     "unit": "mag"},
-
-         "MAGERR_ISO": {"comment":
-                        "RMS error for isophotal magnitude",
-                        "infunc": float,
-                        "format": "%8.4f",
-                        "unit": "mag"},
-
-         "FLUX_ISOCOR": {"comment": "Corrected isophotal flux",
-                         "infunc": float,
-                         "format": "%12g",
-                         "unit": "count"},
-
-         "FLUXERR_ISOCOR": {"comment":
-                            "RMS error for corrected isophotal flux",
-                            "infunc": float,
-                            "format": "%12g",
-                            "unit": "count"},
-
-         "MAG_ISOCOR": {"comment": "Corrected isophotal magnitude",
-                        "infunc": float,
-                        "format": "%8.4f",
-                        "unit": "mag"},
-
-         "MAGERR_ISOCOR": {"comment":
-                           "RMS error for corrected isophotal magnitude",
-                           "infunc": float,
-                           "format": "%8.4f",
-                           "unit": "mag"},
-
-         "FLUX_AUTO": {"comment":
-                       "Flux within a Kron-like elliptical aperture",
-                       "infunc": float,
-                       "format": "%12g",
-                       "unit": "count"},
-
-         "FLUXERR_AUTO": {"comment": "RMS error for AUTO flux",
-                          "infunc": float,
-                          "format": "%12g",
-                          "unit": "count"},
-
-         "MAG_AUTO": {"comment":
-                      "Kron-like elliptical aperture magnitude",
-                      "infunc": float,
-                      "format": "%8.4f",
-                      "unit": "mag"},
-
-         "MAGERR_AUTO": {"comment": "RMS error for AUTO magnitude",
-                         "infunc": float,
-                         "format": "%8.4f",
-                         "unit": "mag"},
-
-         "FLUX_BEST": {"comment":
-                       "Best of FLUX_AUTO and FLUX_ISOCOR",
-                       "infunc": float,
-                       "format": "%12g",
-                       "unit": "count"},
-
-         "FLUXERR_BEST": {"comment": "RMS error for BEST flux",
-                          "infunc": float,
-                          "format": "%12g",
-                          "unit": "count"},
-
-         "MAG_BEST": {"comment": "Best of MAG_AUTO and MAG_ISOCOR",
-                      "infunc": float,
-                      "format": "%8.4f",
-                      "unit": "mag"},
-
-         "MAGERR_BEST": {"comment": "RMS error for MAG_BEST",
-                         "infunc": float,
-                         "format": "%8.4f",
-                         "unit": "mag"},
-
-         "KRON_RADIUS": {"comment":
-                         "Kron apertures in units of A or B",
-                         "infunc": float,
-                         "format": "%5.2f",
-                         "unit": ""},
-         "BACKGROUND": {"comment": "Background at centroid position",
-                        "infunc": float,
-                        "format": "%12g",
-                        "unit": "count"},
-
-         "THRESHOLD": {"comment":
-                       "Detection threshold above background",
-                       "infunc": float,
-                       "format": "%12g",
-                       "unit": "count"},
-
-         "MU_THRESHOLD": {"comment":
-                          "Detection threshold above background",
-                          "infunc": float,
-                          "format": "%8.4f",
-                          "unit": "mag * arcsec**(-2)"},
-
-         "FLUX_MAX": {"comment": "Peak flux above background",
-                      "infunc": float,
-                      "format": "%12g",
-                      "unit": "count"},
-
-         "MU_MAX": {"comment":
-                    "Peak surface brightness above background",
-                    "infunc": float,
-                    "format": "%8.4f",
-                    "unit": "mag * arcsec**(-2)"},
-
-         "ISOAREA_WORLD": {"comment":
-                           "Isophotal area above Analysis threshold",
-                           "infunc": float,
-                           "format": "%12g",
-                           "unit": "deg**2"},
-
-         "XMIN_IMAGE": {"comment":
-                        "Minimum x-coordinate among detected pixels",
-                        "infunc": int,
-                        "format": "%10d",
-                        "unit": "pixel"},
-
-         "YMIN_IMAGE": {"comment":
-                        "Minimum y-coordinate among detected pixels",
-                        "infunc": int,
-                        "format": "%10d",
-                        "unit": "pixel"},
-
-         "XMAX_IMAGE": {"comment":
-                        "Maximum x-coordinate among detected pixels",
-                        "infunc": int,
-                        "format": "%10d",
-                        "unit": "pixel"},
-
-         "YMAX_IMAGE": {"comment":
-                        "Maximum y-coordinate among detected pixels",
-                        "infunc": int,
-                        "format": "%10d",
-                        "unit": "pixel"},
-
-         "X_IMAGE": {"comment": "Object position along x",
-                     "infunc": float,
-                     "format": "%10.3f",
-                     "unit": "pixel"},
-
-         "Y_IMAGE": {"comment": "Object position along y",
-                     "infunc": float,
-                     "format": "%10.3f",
-                     "unit": "pixel"},
-
-         "XWIN_IMAGE": {"comment": "Windowed position estimate along x",
-                        "infunc": float,
-                        "format": "%10.3f",
-                        "unit": "pixel"},
-
-         "YWIN_IMAGE": {"comment": "Windowed position estimate along y",
-                        "infunc": float,
-                        "format": "%10.3f",
-                        "unit": "pixel"},
-         "X_WORLD": {"comment":
-                     "Barycenter position along world x axis",
-                     "infunc": float,
-                     "format": "%15e",
-                     "unit": "deg"},
-
-         "Y_WORLD": {"comment":
-                     "Barycenter position along world y axis",
-                     "infunc": float,
-                     "format": "%15e",
-                     "unit": "deg"},
-
-         "ALPHA_SKY": {"comment":
-                       "Right ascension of barycenter (native)",
-                       "infunc": float,
-                       "format": "%11.7f",
-                       "unit": "deg"},
-
-         "DELTA_SKY": {"comment":
-                       "Declination of barycenter (native)",
-                       "infunc": float,
-                       "format": "%+11.7f",
-                       "unit": "deg"},
-
-         "ALPHA_J2000": {"comment":
-                         "Right ascension of barycenter (J2000)",
-                         "infunc": float,
-                         "format": "%11.7f",
-                         "unit": "deg"},
-
-         "DELTA_J2000": {"comment":
-                         "Declination of barycenter (J2000)",
-                         "infunc": float,
-                         "format": "%+11.7f",
-                         "unit": "deg"},
-
-         "ALPHA_B1950": {"comment":
-                         "Right ascension of barycenter (B1950)",
-                         "infunc": float,
-                         "format": "%11.7f",
-                         "unit": "deg"},
-
-         "DELTA_B1950": {"comment":
-                         "Declination of barycenter (B1950)",
-                         "infunc": float,
-                         "format": "%+11.7f",
-                         "unit": "deg"},
-
-         "X2_IMAGE": {"comment": "Variance along x",
-                      "infunc": float,
-                      "format": "%15e",
-                      "unit": "pixel**2"},
-
-         "Y2_IMAGE": {"comment": "Variance along y",
-                      "infunc": float,
-                      "format": "%15e",
-                      "unit": "pixel**2"},
-
-         "XY_IMAGE": {"comment": "Covariance between x and y",
-                      "infunc": float,
-                      "format": "%15e",
-                      "unit": "pixel**2"},
-
-         "CXX_IMAGE": {"comment": "Cxx object ellipse parameter",
-                       "infunc": float,
-                       "format": "%12e",
-                       "unit": "pixel**(-2)"},
-
-         "CYY_IMAGE": {"comment": "Cyy object ellipse parameter",
-                       "infunc": float,
-                       "format": "%12e",
-                       "unit": "pixel**(-2)"},
-
-         "CXY_IMAGE": {"comment": "Cxy object ellipse parameter",
-                       "infunc": float,
-                       "format": "%12e",
-                       "unit": "pixel**(-2)"},
-
-         "A_IMAGE": {"comment": "Profile RMS along major axis",
-                     "infunc": float,
-                     "format": "%9.3f",
-                     "unit": "pixel"},
-
-         "B_IMAGE": {"comment": "Profile RMS along minor axis",
-                     "infunc": float,
-                     "format": "%9.3f",
-                     "unit": "pixel"},
-
-         "THETA_IMAGE": {"comment": "Position angle (CCW/x)",
-                         "infunc": float,
-                         "format": "%5.1f",
-                         "unit": "deg"},
-
-         "ELONGATION": {"comment": "A_IMAGE/B_IMAGE",
-                        "infunc": float,
-                        "format": "%8.3f",
-                        "unit": ""},
-
-         "ELLIPTICITY": {"comment": "1 - B_IMAGE/A_IMAGE",
-                         "infunc": float,
-                         "format": "%8.3f",
-                         "unit": ""},
-
-         "ERRX2_IMAGE": {"comment": "Variance of position along x",
-                         "infunc": float,
-                         "format": "%15e",
-                         "unit": "pixel**2"},
-
-         "ERRY2_IMAGE": {"comment": "Variance of position along y",
-                         "infunc": float,
-                         "format": "%15e",
-                         "unit": "pixel**2"},
-
-         "ERRXY_IMAGE": {"comment":
-                         "Covariance of position between x and y",
-                         "infunc": float,
-                         "format": "%15e",
-                         "unit": "pixel**2"},
-
-         "ERRCXX_IMAGE": {"comment": "Cxx error ellipse parameter",
-                          "infunc": float,
-                          "format": "%12g",
-                          "unit": "pixel**(-2)"},
-
-         "ERRCYY_IMAGE": {"comment": "Cyy error ellipse parameter",
-                          "infunc": float,
-                          "format": "%12g",
-                          "unit": "pixel**(-2)"},
-
-         "ERRCXY_IMAGE": {"comment": "Cxy error ellipse parameter",
-                          "infunc": float,
-                          "format": "%12g",
-                          "unit": "pixel**(-2)"},
-
-         "ERRA_IMAGE": {"comment":
-                        "RMS position error along major axis",
-                        "infunc": float,
-                        "format": "%8.4f",
-                        "unit": "pixel"},
-
-         "ERRB_IMAGE": {"comment":
-                        "RMS position error along minor axis",
-                        "infunc": float,
-                        "format": "%8.4f",
-                        "unit": "pixel"},
-
-         "ERRTHETA_IMAGE": {"comment":
-                            "Error ellipse position angle (CCW/x)",
-                            "infunc": float,
-                            "format": "%5.1f",
-                            "unit": "deg"},
-
-         "FWHM_IMAGE": {"comment": "FWHM assuming a gaussian core",
-                        "infunc": float,
-                        "format": "%8.2f",
-                        "unit": "pixel"},
-
-         "X2_WORLD": {"comment": "Variance along X-WORLD (alpha)",
-                      "infunc": float,
-                      "format": "%15e",
-                      "unit": "deg**2"},
-
-         "Y2_WORLD": {"comment": "Variance along Y-WORLD (delta)",
-                      "infunc": float,
-                      "format": "%15e",
-                      "unit": "deg**2"},
-
-         "XY_WORLD": {"comment":
-                      "Covariance between X-WORLD and Y-WORLD",
-                      "infunc": float,
-                      "format": "%15e",
-                      "unit": "deg**2"},
-
-         "CXX_WORLD": {"comment":
-                       "Cxx object ellipse parameter (WORLD units)",
-                       "infunc": float,
-                       "format": "%12e",
-                       "unit": "deg**(-2)"},
-
-         "CYY_WORLD": {"comment":
-                       "Cyy object ellipse parameter (WORLD units)",
-                       "infunc": float,
-                       "format": "%12e",
-                       "unit": "deg**(-2)"},
-
-         "CXY_WORLD": {"comment":
-                       "Cxy object ellipse parameter (WORLD units)",
-                       "infunc": float,
-                       "format": "%12e",
-                       "unit": "deg**(-2)"},
-
-         "A_WORLD": {"comment":
-                     "Profile RMS along major axis (world units)",
-                     "infunc": float,
-                     "format": "%12g",
-                     "unit": "deg"},
-
-         "B_WORLD": {"comment":
-                     "Profile RMS along minor axis (world units)",
-                     "infunc": float,
-                     "format": "%12g",
-                     "unit": "deg"},
-
-         "THETA_WORLD": {"comment": "Position angle (CCW/world-x)",
-                         "infunc": float,
-                         "format": "%5.1f",
-                         "unit": "deg"},
-
-         "THETA_SKY": {"comment":
-                       "Position angle (east of north) (native)",
-                       "infunc": float,
-                       "format": "%+6.2f",
-                       "unit": "deg"},
-
-         "THETA_J2000": {"comment":
-                         "Position angle (east of north) (J2000)",
-                         "infunc": float,
-                         "format": "%+6.2f",
-                         "unit": "deg"},
-
-         "THETA_B1950": {"comment":
-                         "Position angle (east of north) (B1950)",
-                         "infunc": float,
-                         "format": "%+6.2f",
-                         "unit": "deg"},
-
-         "ERRX2_WORLD": {"comment":
-                         "Variance of position along X-WORLD (alpha)",
-                         "infunc": float,
-                         "format": "%15e",
-                         "unit": "deg**2"},
-
-         "ERRY2_WORLD": {"comment":
-                         "Variance of position along Y-WORLD (delta)",
-                         "infunc": float,
-                         "format": "%15e",
-                         "unit": "deg**2"},
-
-         "ERRXY_WORLD": {"comment":
-                         "Covariance of position X-WORLD/Y-WORLD",
-                         "infunc": float,
-                         "format": "%15e",
-                         "unit": "deg**2"},
-
-         "ERRCXX_WORLD": {"comment":
-                          "Cxx error ellipse parameter (WORLD units)",
-                          "infunc": float,
-                          "format": "%12g",
-                          "unit": "deg**(-2)"},
-
-         "ERRCYY_WORLD": {"comment":
-                          "Cyy error ellipse parameter (WORLD units)",
-                          "infunc": float,
-                          "format": "%12g",
-                          "unit": "deg**(-2)"},
-
-         "ERRCXY_WORLD": {"comment":
-                          "Cxy error ellipse parameter (WORLD units)",
-                          "infunc": float,
-                          "format": "%12g",
-                          "unit": "deg**(-2)"},
-
-         "ERRA_WORLD": {"comment":
-                        "World RMS position error along major axis",
-                        "infunc": float,
-                        "format": "%12g",
-                        "unit": "pixel"},
-
-         "ERRB_WORLD": {"comment":
-                        "World RMS position error along minor axis",
-                        "infunc": float,
-                        "format": "%12g",
-                        "unit": "pixel"},
-
-         "ERRTHETA_WORLD": {"comment":
-                            "Error ellipse pos. angle (CCW/world-x)",
-                            "infunc": float,
-                            "format": "%5.1f",
-                            "unit": "deg"},
-
-         "ERRTHETA_SKY": {"comment":
-                          "Native error ellipse pos." +
-                          "angle (east of north)",
-                          "infunc": float,
-                          "format": "%5.1f",
-                          "unit": "deg"},
-
-         "ERRTHETA_J2000": {"comment":
-                            "J2000 error ellipse pos." +
-                            "angle (east of north)",
-                            "infunc": float,
-                            "format": "%5.1f",
-                            "unit": "deg"},
-
-         "ERRTHETA_B1950": {"comment":
-                            "B1950 error ellipse pos." +
-                            "angle (east of north)",
-                            "infunc": float,
-                            "format": "%5.1f",
-                            "unit": "deg"},
-
-         "FWHM_WORLD": {"comment": "FWHM assuming a gaussian core",
-                        "infunc": float,
-                        "format": "%12g",
-                        "unit": "deg"},
-
-         "CLASS_STAR": {"comment": "S/G classifier output",
-                        "infunc": float,
-                        "format": "%5.2f",
-                        "unit": ""}
-         }
-
-    def __init__(self, name, mode='r'):
+    _SE_keys = {
+        "NUMBER": {
+            "comment": "Running object number",
+            "infunc": int,
+            "format": "%10d",
+            "unit": "",
+        },
+        "FLAGS": {
+            "comment": "Extraction flags",
+            "infunc": int,
+            "format": "%3d",
+            "unit": "",
+        },
+        "FLUX_ISO": {
+            "comment": "Isophotal flux",
+            "infunc": float,
+            "format": "%12g",
+            "unit": "count",
+        },
+        "FLUXERR_ISO": {
+            "comment": "RMS error for isophotal flux",
+            "infunc": float,
+            "format": "%12g",
+            "unit": "count",
+        },
+        "MAG_ISO": {
+            "comment": "Isophotal magnitude",
+            "infunc": float,
+            "format": "%8.4f",
+            "unit": "mag",
+        },
+        "MAGERR_ISO": {
+            "comment": "RMS error for isophotal magnitude",
+            "infunc": float,
+            "format": "%8.4f",
+            "unit": "mag",
+        },
+        "FLUX_ISOCOR": {
+            "comment": "Corrected isophotal flux",
+            "infunc": float,
+            "format": "%12g",
+            "unit": "count",
+        },
+        "FLUXERR_ISOCOR": {
+            "comment": "RMS error for corrected isophotal flux",
+            "infunc": float,
+            "format": "%12g",
+            "unit": "count",
+        },
+        "MAG_ISOCOR": {
+            "comment": "Corrected isophotal magnitude",
+            "infunc": float,
+            "format": "%8.4f",
+            "unit": "mag",
+        },
+        "MAGERR_ISOCOR": {
+            "comment": "RMS error for corrected isophotal magnitude",
+            "infunc": float,
+            "format": "%8.4f",
+            "unit": "mag",
+        },
+        "FLUX_AUTO": {
+            "comment": "Flux within a Kron-like elliptical aperture",
+            "infunc": float,
+            "format": "%12g",
+            "unit": "count",
+        },
+        "FLUXERR_AUTO": {
+            "comment": "RMS error for AUTO flux",
+            "infunc": float,
+            "format": "%12g",
+            "unit": "count",
+        },
+        "MAG_AUTO": {
+            "comment": "Kron-like elliptical aperture magnitude",
+            "infunc": float,
+            "format": "%8.4f",
+            "unit": "mag",
+        },
+        "MAGERR_AUTO": {
+            "comment": "RMS error for AUTO magnitude",
+            "infunc": float,
+            "format": "%8.4f",
+            "unit": "mag",
+        },
+        "FLUX_BEST": {
+            "comment": "Best of FLUX_AUTO and FLUX_ISOCOR",
+            "infunc": float,
+            "format": "%12g",
+            "unit": "count",
+        },
+        "FLUXERR_BEST": {
+            "comment": "RMS error for BEST flux",
+            "infunc": float,
+            "format": "%12g",
+            "unit": "count",
+        },
+        "MAG_BEST": {
+            "comment": "Best of MAG_AUTO and MAG_ISOCOR",
+            "infunc": float,
+            "format": "%8.4f",
+            "unit": "mag",
+        },
+        "MAGERR_BEST": {
+            "comment": "RMS error for MAG_BEST",
+            "infunc": float,
+            "format": "%8.4f",
+            "unit": "mag",
+        },
+        "KRON_RADIUS": {
+            "comment": "Kron apertures in units of A or B",
+            "infunc": float,
+            "format": "%5.2f",
+            "unit": "",
+        },
+        "BACKGROUND": {
+            "comment": "Background at centroid position",
+            "infunc": float,
+            "format": "%12g",
+            "unit": "count",
+        },
+        "THRESHOLD": {
+            "comment": "Detection threshold above background",
+            "infunc": float,
+            "format": "%12g",
+            "unit": "count",
+        },
+        "MU_THRESHOLD": {
+            "comment": "Detection threshold above background",
+            "infunc": float,
+            "format": "%8.4f",
+            "unit": "mag * arcsec**(-2)",
+        },
+        "FLUX_MAX": {
+            "comment": "Peak flux above background",
+            "infunc": float,
+            "format": "%12g",
+            "unit": "count",
+        },
+        "MU_MAX": {
+            "comment": "Peak surface brightness above background",
+            "infunc": float,
+            "format": "%8.4f",
+            "unit": "mag * arcsec**(-2)",
+        },
+        "ISOAREA_WORLD": {
+            "comment": "Isophotal area above Analysis threshold",
+            "infunc": float,
+            "format": "%12g",
+            "unit": "deg**2",
+        },
+        "XMIN_IMAGE": {
+            "comment": "Minimum x-coordinate among detected pixels",
+            "infunc": int,
+            "format": "%10d",
+            "unit": "pixel",
+        },
+        "YMIN_IMAGE": {
+            "comment": "Minimum y-coordinate among detected pixels",
+            "infunc": int,
+            "format": "%10d",
+            "unit": "pixel",
+        },
+        "XMAX_IMAGE": {
+            "comment": "Maximum x-coordinate among detected pixels",
+            "infunc": int,
+            "format": "%10d",
+            "unit": "pixel",
+        },
+        "YMAX_IMAGE": {
+            "comment": "Maximum y-coordinate among detected pixels",
+            "infunc": int,
+            "format": "%10d",
+            "unit": "pixel",
+        },
+        "X_IMAGE": {
+            "comment": "Object position along x",
+            "infunc": float,
+            "format": "%10.3f",
+            "unit": "pixel",
+        },
+        "Y_IMAGE": {
+            "comment": "Object position along y",
+            "infunc": float,
+            "format": "%10.3f",
+            "unit": "pixel",
+        },
+        "XWIN_IMAGE": {
+            "comment": "Windowed position estimate along x",
+            "infunc": float,
+            "format": "%10.3f",
+            "unit": "pixel",
+        },
+        "YWIN_IMAGE": {
+            "comment": "Windowed position estimate along y",
+            "infunc": float,
+            "format": "%10.3f",
+            "unit": "pixel",
+        },
+        "X_WORLD": {
+            "comment": "Barycenter position along world x axis",
+            "infunc": float,
+            "format": "%15e",
+            "unit": "deg",
+        },
+        "Y_WORLD": {
+            "comment": "Barycenter position along world y axis",
+            "infunc": float,
+            "format": "%15e",
+            "unit": "deg",
+        },
+        "ALPHA_SKY": {
+            "comment": "Right ascension of barycenter (native)",
+            "infunc": float,
+            "format": "%11.7f",
+            "unit": "deg",
+        },
+        "DELTA_SKY": {
+            "comment": "Declination of barycenter (native)",
+            "infunc": float,
+            "format": "%+11.7f",
+            "unit": "deg",
+        },
+        "ALPHA_J2000": {
+            "comment": "Right ascension of barycenter (J2000)",
+            "infunc": float,
+            "format": "%11.7f",
+            "unit": "deg",
+        },
+        "DELTA_J2000": {
+            "comment": "Declination of barycenter (J2000)",
+            "infunc": float,
+            "format": "%+11.7f",
+            "unit": "deg",
+        },
+        "ALPHA_B1950": {
+            "comment": "Right ascension of barycenter (B1950)",
+            "infunc": float,
+            "format": "%11.7f",
+            "unit": "deg",
+        },
+        "DELTA_B1950": {
+            "comment": "Declination of barycenter (B1950)",
+            "infunc": float,
+            "format": "%+11.7f",
+            "unit": "deg",
+        },
+        "X2_IMAGE": {
+            "comment": "Variance along x",
+            "infunc": float,
+            "format": "%15e",
+            "unit": "pixel**2",
+        },
+        "Y2_IMAGE": {
+            "comment": "Variance along y",
+            "infunc": float,
+            "format": "%15e",
+            "unit": "pixel**2",
+        },
+        "XY_IMAGE": {
+            "comment": "Covariance between x and y",
+            "infunc": float,
+            "format": "%15e",
+            "unit": "pixel**2",
+        },
+        "CXX_IMAGE": {
+            "comment": "Cxx object ellipse parameter",
+            "infunc": float,
+            "format": "%12e",
+            "unit": "pixel**(-2)",
+        },
+        "CYY_IMAGE": {
+            "comment": "Cyy object ellipse parameter",
+            "infunc": float,
+            "format": "%12e",
+            "unit": "pixel**(-2)",
+        },
+        "CXY_IMAGE": {
+            "comment": "Cxy object ellipse parameter",
+            "infunc": float,
+            "format": "%12e",
+            "unit": "pixel**(-2)",
+        },
+        "A_IMAGE": {
+            "comment": "Profile RMS along major axis",
+            "infunc": float,
+            "format": "%9.3f",
+            "unit": "pixel",
+        },
+        "B_IMAGE": {
+            "comment": "Profile RMS along minor axis",
+            "infunc": float,
+            "format": "%9.3f",
+            "unit": "pixel",
+        },
+        "THETA_IMAGE": {
+            "comment": "Position angle (CCW/x)",
+            "infunc": float,
+            "format": "%5.1f",
+            "unit": "deg",
+        },
+        "ELONGATION": {
+            "comment": "A_IMAGE/B_IMAGE",
+            "infunc": float,
+            "format": "%8.3f",
+            "unit": "",
+        },
+        "ELLIPTICITY": {
+            "comment": "1 - B_IMAGE/A_IMAGE",
+            "infunc": float,
+            "format": "%8.3f",
+            "unit": "",
+        },
+        "ERRX2_IMAGE": {
+            "comment": "Variance of position along x",
+            "infunc": float,
+            "format": "%15e",
+            "unit": "pixel**2",
+        },
+        "ERRY2_IMAGE": {
+            "comment": "Variance of position along y",
+            "infunc": float,
+            "format": "%15e",
+            "unit": "pixel**2",
+        },
+        "ERRXY_IMAGE": {
+            "comment": "Covariance of position between x and y",
+            "infunc": float,
+            "format": "%15e",
+            "unit": "pixel**2",
+        },
+        "ERRCXX_IMAGE": {
+            "comment": "Cxx error ellipse parameter",
+            "infunc": float,
+            "format": "%12g",
+            "unit": "pixel**(-2)",
+        },
+        "ERRCYY_IMAGE": {
+            "comment": "Cyy error ellipse parameter",
+            "infunc": float,
+            "format": "%12g",
+            "unit": "pixel**(-2)",
+        },
+        "ERRCXY_IMAGE": {
+            "comment": "Cxy error ellipse parameter",
+            "infunc": float,
+            "format": "%12g",
+            "unit": "pixel**(-2)",
+        },
+        "ERRA_IMAGE": {
+            "comment": "RMS position error along major axis",
+            "infunc": float,
+            "format": "%8.4f",
+            "unit": "pixel",
+        },
+        "ERRB_IMAGE": {
+            "comment": "RMS position error along minor axis",
+            "infunc": float,
+            "format": "%8.4f",
+            "unit": "pixel",
+        },
+        "ERRTHETA_IMAGE": {
+            "comment": "Error ellipse position angle (CCW/x)",
+            "infunc": float,
+            "format": "%5.1f",
+            "unit": "deg",
+        },
+        "FWHM_IMAGE": {
+            "comment": "FWHM assuming a gaussian core",
+            "infunc": float,
+            "format": "%8.2f",
+            "unit": "pixel",
+        },
+        "X2_WORLD": {
+            "comment": "Variance along X-WORLD (alpha)",
+            "infunc": float,
+            "format": "%15e",
+            "unit": "deg**2",
+        },
+        "Y2_WORLD": {
+            "comment": "Variance along Y-WORLD (delta)",
+            "infunc": float,
+            "format": "%15e",
+            "unit": "deg**2",
+        },
+        "XY_WORLD": {
+            "comment": "Covariance between X-WORLD and Y-WORLD",
+            "infunc": float,
+            "format": "%15e",
+            "unit": "deg**2",
+        },
+        "CXX_WORLD": {
+            "comment": "Cxx object ellipse parameter (WORLD units)",
+            "infunc": float,
+            "format": "%12e",
+            "unit": "deg**(-2)",
+        },
+        "CYY_WORLD": {
+            "comment": "Cyy object ellipse parameter (WORLD units)",
+            "infunc": float,
+            "format": "%12e",
+            "unit": "deg**(-2)",
+        },
+        "CXY_WORLD": {
+            "comment": "Cxy object ellipse parameter (WORLD units)",
+            "infunc": float,
+            "format": "%12e",
+            "unit": "deg**(-2)",
+        },
+        "A_WORLD": {
+            "comment": "Profile RMS along major axis (world units)",
+            "infunc": float,
+            "format": "%12g",
+            "unit": "deg",
+        },
+        "B_WORLD": {
+            "comment": "Profile RMS along minor axis (world units)",
+            "infunc": float,
+            "format": "%12g",
+            "unit": "deg",
+        },
+        "THETA_WORLD": {
+            "comment": "Position angle (CCW/world-x)",
+            "infunc": float,
+            "format": "%5.1f",
+            "unit": "deg",
+        },
+        "THETA_SKY": {
+            "comment": "Position angle (east of north) (native)",
+            "infunc": float,
+            "format": "%+6.2f",
+            "unit": "deg",
+        },
+        "THETA_J2000": {
+            "comment": "Position angle (east of north) (J2000)",
+            "infunc": float,
+            "format": "%+6.2f",
+            "unit": "deg",
+        },
+        "THETA_B1950": {
+            "comment": "Position angle (east of north) (B1950)",
+            "infunc": float,
+            "format": "%+6.2f",
+            "unit": "deg",
+        },
+        "ERRX2_WORLD": {
+            "comment": "Variance of position along X-WORLD (alpha)",
+            "infunc": float,
+            "format": "%15e",
+            "unit": "deg**2",
+        },
+        "ERRY2_WORLD": {
+            "comment": "Variance of position along Y-WORLD (delta)",
+            "infunc": float,
+            "format": "%15e",
+            "unit": "deg**2",
+        },
+        "ERRXY_WORLD": {
+            "comment": "Covariance of position X-WORLD/Y-WORLD",
+            "infunc": float,
+            "format": "%15e",
+            "unit": "deg**2",
+        },
+        "ERRCXX_WORLD": {
+            "comment": "Cxx error ellipse parameter (WORLD units)",
+            "infunc": float,
+            "format": "%12g",
+            "unit": "deg**(-2)",
+        },
+        "ERRCYY_WORLD": {
+            "comment": "Cyy error ellipse parameter (WORLD units)",
+            "infunc": float,
+            "format": "%12g",
+            "unit": "deg**(-2)",
+        },
+        "ERRCXY_WORLD": {
+            "comment": "Cxy error ellipse parameter (WORLD units)",
+            "infunc": float,
+            "format": "%12g",
+            "unit": "deg**(-2)",
+        },
+        "ERRA_WORLD": {
+            "comment": "World RMS position error along major axis",
+            "infunc": float,
+            "format": "%12g",
+            "unit": "pixel",
+        },
+        "ERRB_WORLD": {
+            "comment": "World RMS position error along minor axis",
+            "infunc": float,
+            "format": "%12g",
+            "unit": "pixel",
+        },
+        "ERRTHETA_WORLD": {
+            "comment": "Error ellipse pos. angle (CCW/world-x)",
+            "infunc": float,
+            "format": "%5.1f",
+            "unit": "deg",
+        },
+        "ERRTHETA_SKY": {
+            "comment": "Native error ellipse pos." + "angle (east of north)",
+            "infunc": float,
+            "format": "%5.1f",
+            "unit": "deg",
+        },
+        "ERRTHETA_J2000": {
+            "comment": "J2000 error ellipse pos." + "angle (east of north)",
+            "infunc": float,
+            "format": "%5.1f",
+            "unit": "deg",
+        },
+        "ERRTHETA_B1950": {
+            "comment": "B1950 error ellipse pos." + "angle (east of north)",
+            "infunc": float,
+            "format": "%5.1f",
+            "unit": "deg",
+        },
+        "FWHM_WORLD": {
+            "comment": "FWHM assuming a gaussian core",
+            "infunc": float,
+            "format": "%12g",
+            "unit": "deg",
+        },
+        "CLASS_STAR": {
+            "comment": "S/G classifier output",
+            "infunc": float,
+            "format": "%5.2f",
+            "unit": "",
+        },
+    }
+
+    def __init__(self, name, mode="r"):
         self.name = name
         self.mode = mode
         self.closed = True
@@ -672,8 +711,8 @@ class SExtractorfile:
         self._output = None
         self._firstline = True
 
-        if self.mode != 'r':
-            raise ValueError('only read-only access is now implemented.')
+        if self.mode != "r":
+            raise ValueError("only read-only access is now implemented.")
 
         self._file = builtins.open(self.name, self.mode)
         self.closed = False
@@ -681,27 +720,34 @@ class SExtractorfile:
         # Reading header
 
         self._line = self._file.readline()
-        if not(self._line):
-            raise WrongSExtractorfileException('not a SExtractor text catalog (empty file)')
+        if not (self._line):
+            raise WrongSExtractorfileException(
+                "not a SExtractor text catalog (empty file)"
+            )
 
-        while (self._line):
-            __ll = (self._line).replace('\n', '')
-            if __ll[0] == '#':   # Still in header
+        while self._line:
+            __ll = (self._line).replace("\n", "")
+            if __ll[0] == "#":  # Still in header
                 columns = __ll.split()
                 if len(columns) < 3:
-                    raise WrongSExtractorfileException('not a SExtractor text catalog (invalid header)')
+                    raise WrongSExtractorfileException(
+                        "not a SExtractor text catalog (invalid header)"
+                    )
                 name = columns[2]
-                if not(name in list(SExtractorfile._SE_keys.keys())):
-                    raise WrongSExtractorfileException('not a SExtractor text catalog (unknown keyword %s)'\
-                        % name)
+                if not (name in list(SExtractorfile._SE_keys.keys())):
+                    raise WrongSExtractorfileException(
+                        "not a SExtractor text catalog (unknown keyword %s)" % name
+                    )
                 self._keys_positions[name] = int(columns[1]) - 1
                 self._keys.append(name)
             else:
                 break
             self._line = self._file.readline()
 
-        if not(self._keys):
-            raise WrongSExtractorfileException('not a SExtractor text catalog (empty header)')
+        if not (self._keys):
+            raise WrongSExtractorfileException(
+                "not a SExtractor text catalog (empty header)"
+            )
 
         self._outdict = dict([(k, None) for k in self._keys])
         self._firstline = True
@@ -714,7 +760,7 @@ class SExtractorfile:
 
     def __next__(self):
         rr = self.readline()
-        if not(rr):
+        if not (rr):
             raise StopIteration
         return rr
 
@@ -734,19 +780,18 @@ class SExtractorfile:
         Read and analyse the next line of the SExtractor catalog
         and return a dictionary {'param1': value, 'param2': value, ...}.
         """
-        if not(self._firstline):
+        if not (self._firstline):
             self._line = self._file.readline()
 
         self._firstline = False
 
-        if not(self._line):
+        if not (self._line):
             return None
-        __ll = (self._line).replace('\n', '')
+        __ll = (self._line).replace("\n", "")
         __values = __ll.split()
         self._outdict.update(dict(list(zip(self._keys, __values))))
         for i in self._keys:
-            self._outdict[i] = (
-                SExtractorfile._SE_keys[i]["infunc"](self._outdict[i]))
+            self._outdict[i] = SExtractorfile._SE_keys[i]["infunc"](self._outdict[i])
 
         return self._outdict.copy()
 
@@ -771,18 +816,20 @@ class SExtractorfile:
         Close the SExtractor file.
         """
         if self._file:
-            if not(self._file.closed):
+            if not (self._file.closed):
                 self._file.close()
         self.closed = True
 
 
 # ======================================================================
 
-def open(name, mode='r'):
+
+def open(name, mode="r"):
     """
     Factory function.
     Open a SExtractor file and return a SExtractor file object.
     """
     return SExtractorfile(name, mode)
+
 
 # ======================================================================

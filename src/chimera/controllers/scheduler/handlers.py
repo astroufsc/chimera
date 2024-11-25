@@ -13,8 +13,9 @@ def requires(instrument):
         else:
             func.__requires__ = [instrument]
         return func
-    
+
     return requires_deco
+
 
 class ActionHandler(object):
 
@@ -29,6 +30,7 @@ class ActionHandler(object):
     @staticmethod
     def log(action):
         return str(action)
+
 
 class PointHandler(ActionHandler):
 
@@ -50,13 +52,13 @@ class PointHandler(ActionHandler):
 
             # After slewing apply any given offset
             if action.offsetNS is not None:
-                if action.offsetNS.AS > 0.:
+                if action.offsetNS.AS > 0.0:
                     telescope.moveNorth(action.offsetNS.AS)
                 else:
                     telescope.moveSouth(-action.offsetNS.AS)
 
             if action.offsetEW is not None:
-                if action.offsetEW.AS > 0.:
+                if action.offsetEW.AS > 0.0:
                     telescope.moveWest(action.offsetEW.AS)
                 else:
                     telescope.moveEast(-action.offsetEW.AS)
@@ -81,17 +83,34 @@ class PointHandler(ActionHandler):
 
         telescope.abortSlew()
         dome.abortSlew()
-        
+
     @staticmethod
     def log(action):
 
-        offsetNS_str = '' if action.offsetNS is None else ' north %s' % action.offsetNS \
-            if action.offsetNS > 0 else ' south %s' % abs(action.offsetNS)
-        offsetEW_str = '' if action.offsetEW is None else ' west %s' % abs(action.offsetEW) \
-            if action.offsetEW > 0 else ' east %s' % abs(action.offsetEW)
+        offsetNS_str = (
+            ""
+            if action.offsetNS is None
+            else (
+                " north %s" % action.offsetNS
+                if action.offsetNS > 0
+                else " south %s" % abs(action.offsetNS)
+            )
+        )
+        offsetEW_str = (
+            ""
+            if action.offsetEW is None
+            else (
+                " west %s" % abs(action.offsetEW)
+                if action.offsetEW > 0
+                else " east %s" % abs(action.offsetEW)
+            )
+        )
 
-        offset = '' if action.offsetNS is None and action.offsetEW is None else ' offset:%s%s' % (offsetNS_str,
-                                                                                                  offsetEW_str)
+        offset = (
+            ""
+            if action.offsetNS is None and action.offsetEW is None
+            else " offset:%s%s" % (offsetNS_str, offsetEW_str)
+        )
 
         if action.targetRaDec is not None:
             return "slewing telescope to (ra dec) %s%s" % (action.targetRaDec, offset)
@@ -99,7 +118,7 @@ class PointHandler(ActionHandler):
             return "slewing telescope to (alt az) %s%s" % (action.targetAltAz, offset)
         elif action.targetName is not None:
             return "slewing telescope to (object) %s%s" % (action.targetName, offset)
-        elif offset != '':
+        elif offset != "":
             return "applying telescope%s" % offset
         else:
             if action.domeTracking is None:
@@ -109,6 +128,7 @@ class PointHandler(ActionHandler):
             else:
                 tracking = "STOPPED"
             return "dome tracking %s" % tracking
+
 
 class ExposeHandler(ActionHandler):
 
@@ -124,19 +144,23 @@ class ExposeHandler(ActionHandler):
         if action.filter is not None:
             filterwheel.setFilter(str(action.filter))
 
-        ir = ImageRequest(frames=int(action.frames),
-                          exptime=float(action.exptime),
-                          shutter=str(action.shutter),
-                          type=str(action.imageType),
-                          filename=str(action.filename),
-                          object_name=str(action.objectName),
-                          window=action.window,
-                          binning=action.binning,
-                          wait_dome=action.wait_dome,
-                          compress_format=action.compress_format)
+        ir = ImageRequest(
+            frames=int(action.frames),
+            exptime=float(action.exptime),
+            shutter=str(action.shutter),
+            type=str(action.imageType),
+            filename=str(action.filename),
+            object_name=str(action.objectName),
+            window=action.window,
+            binning=action.binning,
+            wait_dome=action.wait_dome,
+            compress_format=action.compress_format,
+        )
 
-        ir.headers += [("PROGRAM", str(action.program.name), "Program Name"),
-                       ("PROG_PI", str(action.program.pi), "Principal Investigator")]
+        ir.headers += [
+            ("PROGRAM", str(action.program.name), "Program Name"),
+            ("PROG_PI", str(action.program.pi), "Principal Investigator"),
+        ]
 
         try:
             images = camera.expose(ir)
@@ -151,10 +175,13 @@ class ExposeHandler(ActionHandler):
 
     @staticmethod
     def log(action):
-        return "exposing: filter=%s exptime=%s frames=%s type=%s" % (str(action.filter),
-                                                                     str(action.exptime),
-                                                                     str(action.frames),
-                                                                     str(action.imageType))
+        return "exposing: filter=%s exptime=%s frames=%s type=%s" % (
+            str(action.filter),
+            str(action.exptime),
+            str(action.frames),
+            str(action.imageType),
+        )
+
 
 class AutoFocusHandler(ActionHandler):
 
@@ -164,13 +191,15 @@ class AutoFocusHandler(ActionHandler):
         autofocus = AutoFocusHandler.autofocus
 
         try:
-            autofocus.focus(exptime=action.exptime,
-                            binning=action.binning,
-                            window=action.window,
-                            start=action.start,
-                            end=action.end,
-                            step=action.step,
-                            filter=action.filter)
+            autofocus.focus(
+                exptime=action.exptime,
+                binning=action.binning,
+                window=action.window,
+                start=action.start,
+                end=action.end,
+                step=action.step,
+                filter=action.filter,
+            )
         except Exception as e:
             printException(e)
             raise ProgramExecutionException("Error while autofocusing")
@@ -179,6 +208,7 @@ class AutoFocusHandler(ActionHandler):
     def abort(action):
         autofocus = copy.copy(AutoFocusHandler.autofocus)
         autofocus.abort()
+
 
 class AutoFlatHandler(ActionHandler):
 
@@ -203,6 +233,7 @@ class AutoFlatHandler(ActionHandler):
         skyflat = copy.copy(AutoFlatHandler.autoflat)
         skyflat.abort()
 
+
 class PointVerifyHandler(ActionHandler):
 
     @staticmethod
@@ -223,5 +254,3 @@ class PointVerifyHandler(ActionHandler):
     @staticmethod
     def abort(action):
         pass
-        
-

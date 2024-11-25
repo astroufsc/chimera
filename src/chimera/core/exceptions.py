@@ -2,13 +2,14 @@ import traceback
 import sys
 from chimera.core.constants import TRACEBACK_ATTRIBUTE
 
+
 def printException(e, stream=sys.stdout):
 
-    print(''.join(_strException(e)), file=stream)
+    print("".join(_strException(e)), file=stream)
 
-    if hasattr(e, 'cause') and getattr(e, 'cause') is not None:
-        print("Caused by:", end=' ', file=stream)
-        print(''.join(e.cause), file=stream)
+    if hasattr(e, "cause") and getattr(e, "cause") is not None:
+        print("Caused by:", end=" ", file=stream)
+        print("".join(e.cause), file=stream)
 
 
 def _strException(e):
@@ -46,7 +47,8 @@ def _strException(e):
 
 # exceptions hierarchy
 
-class ChimeraException (Exception):
+
+class ChimeraException(Exception):
 
     def __init__(self, msg="", *args):
         Exception.__init__(self, msg, *args)
@@ -75,20 +77,19 @@ class ChimeraObjectException(ChimeraException):
     pass
 
 
-class ClassLoaderException (ChimeraException):
+class ClassLoaderException(ChimeraException):
     pass
 
 
-class OptionConversionException (ChimeraException):
+class OptionConversionException(ChimeraException):
     pass
 
 
-class ChimeraValueError (ChimeraException):
+class ChimeraValueError(ChimeraException):
     pass
 
 
 class CantPointScopeException(ChimeraException):
-
     """
     This exception is raised when we cannot center the scope on a field
     It may happen if there is something funny with our fields like:
@@ -106,7 +107,6 @@ class CanSetScopeButNotThisField(ChimeraException):
 
 
 class CantSetScopeException(ChimeraException):
-
     """
     This exception is raised to indicate we could not set the telescope
     coordinates when trying to do it on a chosen field.
@@ -116,6 +116,7 @@ class CantSetScopeException(ChimeraException):
     Never raise this exception for a science field. It may be that pointverify
     fails there because of bright objects or other more astronomical reasons
     """
+
 
 class ProgramExecutionException(ChimeraException):
     pass
