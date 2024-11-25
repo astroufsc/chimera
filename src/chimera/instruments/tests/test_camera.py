@@ -126,7 +126,7 @@ class CameraTest(object):
             frames = cam.expose(
                 exptime=2, frames=2, interval=0.5, filename="autogen-expose.fits"
             )
-        except Exception as e:
+        except Exception:
             log.exception("problems")
 
         assert len(frames) == 2

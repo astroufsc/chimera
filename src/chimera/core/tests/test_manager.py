@@ -6,7 +6,6 @@ from chimera.core.proxy import Proxy
 
 from chimera.core.exceptions import (
     InvalidLocationException,
-    ObjectNotFoundException,
     NotValidChimeraObjectException,
     ChimeraObjectException,
     ClassLoaderException,

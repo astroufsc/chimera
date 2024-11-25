@@ -409,7 +409,7 @@ class ChimeraCLI(object):
         self.addParameters(params)
 
         if self._needInstrumentsPath:
-            if not "PATHS" in self._helpGroups:
+            if "PATHS" not in self._helpGroups:
                 self.addHelpGroup("PATHS", "Object Paths")
 
             self.addParameters(
@@ -433,7 +433,7 @@ class ChimeraCLI(object):
         self.addParameters(params)
 
         if self._needControllersPath:
-            if not "PATHS" in self._helpGroups:
+            if "PATHS" not in self._helpGroups:
                 self.addHelpGroup("PATHS", "Object Paths")
 
             self.addParameters(

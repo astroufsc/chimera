@@ -103,7 +103,7 @@ class Position(object):
 
             Position._checkRange(float(ra), 0, 360)
 
-        except ValueError as e:
+        except ValueError:
             raise ValueError("Invalid RA coordinate %s" % str(ra))
         except PositionOutsideLimitsError:
             raise ValueError(
@@ -128,7 +128,7 @@ class Position(object):
 
             Position._checkRange(float(dec), -90, 360)
 
-        except ValueError as e:
+        except ValueError:
             raise ValueError("Invalid DEC coordinate %s" % str(dec))
         except PositionOutsideLimitsError:
             raise ValueError(
@@ -148,7 +148,7 @@ class Position(object):
 
             Position._checkRange(float(az), -180, 360)
 
-        except ValueError as e:
+        except ValueError:
             raise ValueError("Invalid AZ coordinate %s" % str(az))
         except PositionOutsideLimitsError:
             raise ValueError(
@@ -164,7 +164,7 @@ class Position(object):
 
             Position._checkRange(float(alt), -90, 180)
 
-        except ValueError as e:
+        except ValueError:
             raise ValueError("Invalid ALT coordinate %s" % str(alt))
         except PositionOutsideLimitsError:
             raise ValueError(
@@ -196,7 +196,7 @@ class Position(object):
 
             Position._checkRange(float(int), -180, 360)
 
-        except ValueError as e:
+        except ValueError:
             raise ValueError("Invalid LONGITUDE coordinate %s" % str(int))
         except PositionOutsideLimitsError:
             raise ValueError(

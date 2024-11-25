@@ -166,7 +166,7 @@ class Enum(object):
             values[i] = value
             try:
                 super(Enum, self).__setattr__(key, value)
-            except TypeError as e:
+            except TypeError:
                 raise EnumBadKeyError(key)
 
         super(Enum, self).__setattr__("_keys", keys)
@@ -205,7 +205,7 @@ class Enum(object):
                 is_member = value in self._values
             # EnumValueError isn't defined!
             # except EnumValueCompareError, e:
-            except Exception as e:
+            except Exception:
                 is_member = False
         return is_member
 

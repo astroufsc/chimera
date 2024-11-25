@@ -172,7 +172,7 @@ class TestConfig(object):
         with pytest.raises(KeyError):
             c.__iadd__(dd)
 
-        assert not "new" in c
+        assert "new" not in c
 
         c += {"device": "foo"}
         assert c["device"] == "foo"

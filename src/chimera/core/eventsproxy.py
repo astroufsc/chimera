@@ -55,7 +55,7 @@ class EventsProxy:
 
         topic = handler["topic"]
 
-        if not topic in self.handlers:
+        if topic not in self.handlers:
             return True
 
         if handler["handler"] not in self.handlers[topic]:
@@ -99,7 +99,7 @@ class EventsProxy:
 
                 excluded.append(handler)
                 continue
-            except Pyro.errors.ProtocolError as e:
+            except Pyro.errors.ProtocolError:
                 log.debug(
                     "Unreachable handler (%s). Removing from subscribers list." % proxy
                 )

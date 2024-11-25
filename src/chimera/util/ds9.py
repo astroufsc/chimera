@@ -1,5 +1,4 @@
 import warnings
-import time
 import os
 import subprocess
 

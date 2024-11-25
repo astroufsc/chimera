@@ -250,7 +250,7 @@ class SiteController(object):
 
             try:
                 self.manager = Manager(**self.config.chimera)
-            except ChimeraException as e:
+            except ChimeraException:
                 log.error(
                     "Chimera is already running on this machine. Use chimera-admin to manage it."
                 )

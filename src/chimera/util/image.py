@@ -6,7 +6,9 @@ import os
 import shutil
 import string
 import sys
-import urllib.request, urllib.error, urllib.parse
+import urllib.request
+import urllib.error
+import urllib.parse
 import uuid
 import zipfile
 from collections import UserDict
@@ -155,7 +157,7 @@ class ImageUtil(object):
                 f.write(content)
                 f.close()
                 return True
-            except urllib.error.URLError as e:
+            except urllib.error.URLError:
                 attempts += 1
         return False
 
@@ -468,7 +470,7 @@ class Image(UserDict):
 
     def __setitem__(self, key, value):
 
-        if not key in self:
+        if key not in self:
             self += (key, value)
             return True
 

@@ -77,7 +77,7 @@ class Simbad(object):
                     if jpos is None:
                         continue
                     return Position.fromRaDec(*jpos.text.split())
-        except ExpatError as e:
+        except ExpatError:
             return False
 
         return False

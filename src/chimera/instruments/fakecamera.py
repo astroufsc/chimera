@@ -22,7 +22,9 @@
 import time
 import datetime as dt
 import random
-import urllib.request, urllib.parse, urllib.error
+import urllib.request
+import urllib.parse
+import urllib.error
 import os
 import shutil
 

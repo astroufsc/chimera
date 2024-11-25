@@ -29,7 +29,6 @@ from chimera.interfaces.weatherstation import (
     WeatherTransparency,
 )
 from astropy import units
-from astropy.units import cds
 import numpy as np
 import datetime
 

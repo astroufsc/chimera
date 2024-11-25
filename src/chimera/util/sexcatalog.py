@@ -61,7 +61,6 @@
 #
 # ======================================================================
 
-import os
 
 """
 A simple interface to manipulate SExtractor ASCII catalogs
@@ -734,7 +733,7 @@ class SExtractorfile:
                         "not a SExtractor text catalog (invalid header)"
                     )
                 name = columns[2]
-                if not (name in list(SExtractorfile._SE_keys.keys())):
+                if name not in list(SExtractorfile._SE_keys.keys()):
                     raise WrongSExtractorfileException(
                         "not a SExtractor text catalog (unknown keyword %s)" % name
                     )

@@ -20,7 +20,6 @@
 
 
 import time
-import sys
 import random
 import threading
 import logging

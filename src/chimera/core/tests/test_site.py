@@ -21,16 +21,11 @@ import pytest
 
 from chimera.core.manager import Manager
 from chimera.core.site import Site
-from chimera.core.exceptions import printException
 
-from chimera.util.coord import Coord
-from chimera.util.position import Position
 
 from dateutil.relativedelta import relativedelta
 
 import time
-import sys
-import logging
 
 
 class TestSite(object):

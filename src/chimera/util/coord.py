@@ -22,7 +22,6 @@
 
 import math
 import re
-import sys
 
 TWO_PI = 2.0 * math.pi
 PI_OVER_TWO = math.pi / 2.0

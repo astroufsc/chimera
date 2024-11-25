@@ -24,7 +24,7 @@ try:
 except (ImportError, RuntimeError, ClassLoaderException):
     plot = False
 
-from math import sqrt, ceil
+from math import sqrt
 import time
 import os
 import logging
@@ -397,7 +397,7 @@ class Autofocus(ChimeraObject, IAutofocus):
             fit = FocusFit.fit(
                 N.array(valid_positions), N.array(fwhm), temperature=temp, minmax=minmax
             )
-        except Exception as e:
+        except Exception:
             focuser.moveTo(initial_position)
 
             raise FocusNotFoundException(

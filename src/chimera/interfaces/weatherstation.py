@@ -22,7 +22,6 @@
 
 from chimera.core.interface import Interface
 from astropy import units
-from astropy.units import cds
 from collections import namedtuple
 
 

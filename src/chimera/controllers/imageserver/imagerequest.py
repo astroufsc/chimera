@@ -103,7 +103,7 @@ class ImageRequest(dict):
 
     def __setitem__(self, key, value):
 
-        if not key in ImageRequest.valid_keys:
+        if key not in ImageRequest.valid_keys:
             raise KeyError("%s is not a valid key for ImageRequest" % key)
 
         self.update({key: value})
@@ -166,7 +166,7 @@ class ImageRequest(dict):
 
         for location in locations:
 
-            if not location in self._proxies:
+            if location not in self._proxies:
                 try:
                     self._proxies[location] = manager.getProxy(location)
                 except Exception:

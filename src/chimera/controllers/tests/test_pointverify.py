@@ -18,15 +18,11 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-import time
-import sys
 import logging
 
 from chimera.core.manager import Manager
-from chimera.core.callback import callback
 from chimera.core.site import Site
 
-from chimera.controllers.autofocus import Autofocus
 
 # from chimera.instruments.camera import Camera
 # from chimera.drivers.fakecamera import FakeCamera

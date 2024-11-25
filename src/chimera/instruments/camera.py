@@ -23,7 +23,6 @@ from math import pi, cos, sin
 import threading
 import time
 import os
-import datetime as dt
 
 from chimera.core.chimeraobject import ChimeraObject
 from chimera.interfaces.camera import (

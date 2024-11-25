@@ -12,7 +12,6 @@
 # serve to show the default value.
 
 import os
-import sys
 import time
 
 # If your extensions are in another directory, add it here. If the directory

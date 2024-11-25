@@ -244,7 +244,7 @@ class SystemConfig(object):
         return True
 
     def _getDefaultName(self, type):
-        if not type in self._useCount:
+        if type not in self._useCount:
             self._useCount[type] = 0
 
         name = "%s_%d" % (str(type), self._useCount[type])

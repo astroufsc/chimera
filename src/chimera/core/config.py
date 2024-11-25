@@ -503,7 +503,7 @@ class Config(object):
             other = Config(other)
 
         for name, value in list(other._options.items()):
-            if not name in self._options:
+            if name not in self._options:
                 raise KeyError("invalid option: %s" % name)
 
             self._options[name] = value

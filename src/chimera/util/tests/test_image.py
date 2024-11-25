@@ -1,8 +1,7 @@
-from chimera.util.image import Image, ImageUtil, WCSNotFoundException
+from chimera.util.image import Image, ImageUtil
 
 import numpy as N
 import os
-import time
 
 
 class TestImage(object):

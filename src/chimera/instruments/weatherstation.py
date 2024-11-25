@@ -26,7 +26,6 @@ from chimera.interfaces.weatherstation import (
     WeatherRain,
     WeatherTransparency,
 )
-import astropy.units as units
 
 
 class WeatherBase(ChimeraObject, WeatherStation):

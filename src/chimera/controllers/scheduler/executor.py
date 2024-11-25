@@ -80,7 +80,7 @@ class ProgramExecutor(object):
                 else:
                     self.controller.actionComplete(action, SchedulerStatus.OK)
 
-            except ProgramExecutionException as e:
+            except ProgramExecutionException:
                 self.controller.actionComplete(action, SchedulerStatus.ERROR)
                 raise
             except KeyError:
@@ -107,5 +107,5 @@ class ProgramExecutor(object):
                     instrument,
                     self.controller.getManager().getProxy(self.controller[instrument]),
                 )
-            except ObjectNotFoundException as e:
+            except ObjectNotFoundException:
                 log.error("No instrument to inject on %s handler" % handler)

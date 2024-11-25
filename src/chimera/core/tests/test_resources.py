@@ -28,7 +28,7 @@ class TestResources:
         assert "/Location/l1" in self.res
         assert "/Location/l2" in self.res
         assert "/Location/0" in self.res
-        assert not "/LocationNotExistent/l2" in self.res
+        assert "/LocationNotExistent/l2" not in self.res
 
         assert len(self.res) == 2
 
