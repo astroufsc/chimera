@@ -35,17 +35,17 @@ from chimera.core.constants import RWLOCK_ATTRIBUTE_NAME
 
 from chimera.interfaces.lifecycle import ILifeCycle
 
-#import chimera.core.log
+# import chimera.core.log
 
 import logging
 import time
 import threading
 
 
-__all__ = ['ChimeraObject']
+__all__ = ["ChimeraObject"]
 
 
-class ChimeraObject (ILifeCycle, metaclass=MetaObject):
+class ChimeraObject(ILifeCycle, metaclass=MetaObject):
 
     def __init__(self):
         ILifeCycle.__init__(self)
@@ -204,7 +204,9 @@ class ChimeraObject (ILifeCycle, metaclass=MetaObject):
         return True
 
     def getManager(self):
-        return Proxy(f"{self.__location__.host}:{self.__location__.port}/Manager/manager")
+        return Proxy(
+            f"{self.__location__.host}:{self.__location__.port}/Manager/manager"
+        )
 
     def getMetadata(self, request):
         # Check first if there is metadata from a metadata override method.
@@ -221,7 +223,11 @@ class ChimeraObject (ILifeCycle, metaclass=MetaObject):
     def getMetadataOverride(self, request):
         # Returns metadata from the override class or None if there is no override getMetadata() class.
         if self.__metadataOverrideMethod__ is not None:
-            return self.getManager().getProxy(self.__metadataOverrideMethod__, lazy=True).getMetadata(request)
+            return (
+                self.getManager()
+                .getProxy(self.__metadataOverrideMethod__, lazy=True)
+                .getMetadata(request)
+            )
         return None
 
     def features(self, interface):

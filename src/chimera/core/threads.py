@@ -20,7 +20,7 @@
 # 02110-1301, USA.
 
 
-#import chimera.core.log
+# import chimera.core.log
 
 import threading
 import logging
@@ -33,7 +33,6 @@ log = logging.getLogger(__name__)
 
 
 class ThreadPool:
-
     """Flexible thread pool class.  Creates a pool of threads, then
     accepts tasks that will be dispatched to the next available
     thread."""
@@ -92,7 +91,7 @@ class ThreadPool:
         finally:
             self.__resizeLock.release()
 
-    def queueTask(self, task, args=(), kwargs = {}, taskCallback=None):
+    def queueTask(self, task, args=(), kwargs={}, taskCallback=None):
         """
         Insert a task into the queue.  task must be callable;
         args and taskCallback can be None.
@@ -137,7 +136,7 @@ class ThreadPool:
         # Wait for tasks to finish
         if waitForTasks:
             while self.__tasks != []:
-                sleep(.1)
+                sleep(0.1)
 
         # Tell all the threads to quit
         self.__resizeLock.acquire()
@@ -158,7 +157,6 @@ class ThreadPool:
 
 
 class ThreadPoolThread(threading.Thread):
-
     """
     Pooled thread class.
     """
@@ -168,7 +166,7 @@ class ThreadPoolThread(threading.Thread):
     def __init__(self, pool):
         """
         Initialize the thread and remember the pool.
-    """
+        """
 
         threading.Thread.__init__(self)
         self.__pool = pool
@@ -198,7 +196,7 @@ class ThreadPoolThread(threading.Thread):
                     callback(cmd(*args, **kwargs))
 
     def goAway(self):
-        """ 
+        """
         Exit the run loop next time through.
         """
 

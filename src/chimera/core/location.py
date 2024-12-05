@@ -4,15 +4,15 @@
 import re
 import sys
 
-#import chimera.core.log
+# import chimera.core.log
 import logging
+
 log = logging.getLogger(__name__)
 
 from chimera.core.exceptions import InvalidLocationException
 
 
 class Location(object):
-
     """
     Location represents a specific resource available on the system.
     This location is the resource address on the system.
@@ -23,10 +23,12 @@ class Location(object):
 
     if sys.version_info[0:2] >= (2, 5):
         _re = re.compile(
-            r'^(?P<host>[\w.]+)?(?(host)(?P<sep>:))?(?(sep)(?P<port>[\d]+))/+(?P<class>[\w]*)/+(?P<name>[\w]*)(?P<sep2>\??)?(?(sep2)(?P<config>[\w\S\s=,]*))')
+            r"^(?P<host>[\w.]+)?(?(host)(?P<sep>:))?(?(sep)(?P<port>[\d]+))/+(?P<class>[\w]*)/+(?P<name>[\w]*)(?P<sep2>\??)?(?(sep2)(?P<config>[\w\S\s=,]*))"
+        )
     else:
         _re = re.compile(
-            r'^(?P<host>[\w.]+)?(?P<port>:[\d]+)?/+(?P<class>[\w]*)/+(?P<name>[\w]*)(?P<config>\?[\w\S\s=,]+)?')
+            r"^(?P<host>[\w.]+)?(?P<port>:[\d]+)?/+(?P<class>[\w]*)/+(?P<name>[\w]*)(?P<config>\?[\w\S\s=,]+)?"
+        )
 
     def __init__(self, location=None, **options):
 
@@ -38,8 +40,9 @@ class Location(object):
 
         # simple string
         if isinstance(location, str):
-            (self._host, self._port, self._class,
-             self._name, self._config) = self.parse(location)
+            (self._host, self._port, self._class, self._name, self._config) = (
+                self.parse(location)
+            )
             if not self._host and "host" in options:
                 if options["host"]:
                     self._host = options["host"]
@@ -58,13 +61,13 @@ class Location(object):
         # from dict
         else:
             # get from options dict (cls, name, config)
-            l = "/%s/%s" % (options.get('cls', ''), options.get('name', ''))
+            l = "/%s/%s" % (options.get("cls", ""), options.get("name", ""))
 
             _, __, self._class, self._name, ___ = self.parse(l)
 
-            self._config = options.get('config', {})
-            self._host = options.get('host', None)
-            self._port = options.get('port', None)
+            self._config = options.get("config", {})
+            self._host = options.get("host", None)
+            self._port = options.get("port", None)
 
             if self._port:
                 try:
@@ -72,8 +75,8 @@ class Location(object):
                 except ValueError:
                     raise InvalidLocationException(
                         "Invalid location, port should be an "
-                        "integer not a %s (%s)." %
-                        (type(self._port), self._port))
+                        "integer not a %s (%s)." % (type(self._port), self._port)
+                    )
 
     host = property(lambda self: self._host)
     port = property(lambda self: self._port)
@@ -87,7 +90,8 @@ class Location(object):
 
         if not m:
             raise InvalidLocationException(
-                "Cannot parse '%s' as a valid location." % location)
+                "Cannot parse '%s' as a valid location." % location
+            )
 
         matches = m.groupdict()
 
@@ -99,7 +103,7 @@ class Location(object):
             if matches["config"][0] == "?":
                 matches["config"] = matches["config"][1:]
 
-            for opt in matches['config'].split(","):
+            for opt in matches["config"].split(","):
                 try:
                     k, v = opt.split("=")
                     conf[k.strip()] = v.strip()
@@ -107,31 +111,30 @@ class Location(object):
                     # split returned less/more than 2 strings
                     raise InvalidLocationException(
                         "Cannot parse '%s' as a valid location. "
-                        "Invalid config dict: '%s'" %
-                        (location, matches['config']))
+                        "Invalid config dict: '%s'" % (location, matches["config"])
+                    )
 
-        port = matches['port']
+        port = matches["port"]
         if port:
             # don't expect ValueError because RE already check this
             port = int(port)
 
-        if not matches['name']:
-            raise InvalidLocationException(
-                "Invalid location name (must be non-blank).")
+        if not matches["name"]:
+            raise InvalidLocationException("Invalid location name (must be non-blank).")
 
-        if not matches['class']:
+        if not matches["class"]:
             raise InvalidLocationException(
-                "Invalid location class name (must be non-blank).")
+                "Invalid location class name (must be non-blank)."
+            )
 
-        return matches['host'], port, matches['class'], matches['name'], conf
+        return matches["host"], port, matches["class"], matches["name"], conf
 
     def __eq__(self, loc):
 
         if not isinstance(loc, Location):
             loc = Location(loc)
 
-        return (loc.cls.lower() == self.cls.lower()) and \
-               (loc.name == self.name)
+        return (loc.cls.lower() == self.cls.lower()) and (loc.name == self.name)
 
     def __ne__(self, loc):
         return not self.__eq__(loc)
@@ -144,9 +147,9 @@ class Location(object):
         _str = "/%s/%s" % (self._class, self._name)
 
         if self.host and self.port:
-            _str = '%s:%d%s' % (self.host, self.port, _str)
+            _str = "%s:%d%s" % (self.host, self.port, _str)
 
         if self.host and not self.port:
-            _str = '%s%s' % (self.host, _str)
+            _str = "%s%s" % (self.host, _str)
 
         return _str

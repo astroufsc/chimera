@@ -4,15 +4,17 @@ import logging.handlers
 import sys
 import os.path
 
-from chimera.core.constants import (SYSTEM_CONFIG_LOG_NAME,
-                                    SYSTEM_CONFIG_DIRECTORY,
-                                    MANAGER_DEFAULT_HOST,
-                                    MANAGER_DEFAULT_PORT)
+from chimera.core.constants import (
+    SYSTEM_CONFIG_LOG_NAME,
+    SYSTEM_CONFIG_DIRECTORY,
+    MANAGER_DEFAULT_HOST,
+    MANAGER_DEFAULT_PORT,
+)
 
 from chimera.core.exceptions import printException
 
 
-__all__ = ['setConsoleLevel']
+__all__ = ["setConsoleLevel"]
 
 
 class ChimeraFormatter(logging.Formatter):
@@ -33,13 +35,16 @@ class ChimeraFormatter(logging.Formatter):
 class ChimeraFilter(logging.Filter):
 
     def __init__(self):
-    # Explicitely set this filter for all loggers.
-        logging.Filter.__init__(self, name='')
+        # Explicitely set this filter for all loggers.
+        logging.Filter.__init__(self, name="")
 
     def filter(self, record):
         # Get the manager:port info
-        record.origin = '[' + MANAGER_DEFAULT_HOST + ':' + str(MANAGER_DEFAULT_PORT) + ']'
+        record.origin = (
+            "[" + MANAGER_DEFAULT_HOST + ":" + str(MANAGER_DEFAULT_PORT) + "]"
+        )
         return True
+
 
 try:
     if not os.path.exists(SYSTEM_CONFIG_DIRECTORY):
@@ -52,8 +57,9 @@ root.setLevel(logging.DEBUG)
 root.propagate = False
 
 fmt = ChimeraFormatter(
-    fmt='%(asctime)s.%(msecs)d %(origin)s %(levelname)s %(name)s %(filename)s:%(lineno)d %(message)s',
-    datefmt='%d-%m-%Y %H:%M:%S')
+    fmt="%(asctime)s.%(msecs)d %(origin)s %(levelname)s %(name)s %(filename)s:%(lineno)d %(message)s",
+    datefmt="%d-%m-%Y %H:%M:%S",
+)
 
 flt = ChimeraFilter()
 
@@ -63,14 +69,15 @@ consoleHandler.setLevel(logging.WARNING)
 consoleHandler.addFilter(flt)
 root.addHandler(consoleHandler)
 
+
 def setConsoleLevel(level):
     consoleHandler.setLevel(level)
 
+
 try:
-    fileHandler = logging.handlers.RotatingFileHandler(SYSTEM_CONFIG_LOG_NAME,
-                                                       maxBytes=5 *
-                                                       1024 * 1024,
-                                                       backupCount=10)
+    fileHandler = logging.handlers.RotatingFileHandler(
+        SYSTEM_CONFIG_LOG_NAME, maxBytes=5 * 1024 * 1024, backupCount=10
+    )
     fileHandler.setFormatter(fmt)
     fileHandler.setLevel(logging.DEBUG)
     fileHandler.addFilter(flt)

@@ -24,33 +24,38 @@ from chimera.core.interface import Interface
 from chimera.core.exceptions import ChimeraException
 from chimera.util.enum import Enum
 
-FocuserFeature = Enum("TEMPERATURE_COMPENSATION",
-                      "ENCODER",
-                      "POSITION_FEEDBACK",
-                      "CONTROLLABLE_X",
-                      "CONTROLLABLE_Y",
-                      "CONTROLLABLE_Z",
-                      "CONTROLLABLE_U",
-                      "CONTROLLABLE_V",
-                      "CONTROLLABLE_W")
+FocuserFeature = Enum(
+    "TEMPERATURE_COMPENSATION",
+    "ENCODER",
+    "POSITION_FEEDBACK",
+    "CONTROLLABLE_X",
+    "CONTROLLABLE_Y",
+    "CONTROLLABLE_Z",
+    "CONTROLLABLE_U",
+    "CONTROLLABLE_V",
+    "CONTROLLABLE_W",
+)
 
 FocuserAxis = Enum("X", "Y", "Z", "U", "V", "W")
 
-ControllableAxis = {FocuserFeature.CONTROLLABLE_X: FocuserAxis.X,
-                    FocuserFeature.CONTROLLABLE_Y: FocuserAxis.Y,
-                    FocuserFeature.CONTROLLABLE_Z: FocuserAxis.Z,
-                    FocuserFeature.CONTROLLABLE_U: FocuserAxis.U,
-                    FocuserFeature.CONTROLLABLE_V: FocuserAxis.V,
-                    FocuserFeature.CONTROLLABLE_W: FocuserAxis.W,
-                    }
+ControllableAxis = {
+    FocuserFeature.CONTROLLABLE_X: FocuserAxis.X,
+    FocuserFeature.CONTROLLABLE_Y: FocuserAxis.Y,
+    FocuserFeature.CONTROLLABLE_Z: FocuserAxis.Z,
+    FocuserFeature.CONTROLLABLE_U: FocuserAxis.U,
+    FocuserFeature.CONTROLLABLE_V: FocuserAxis.V,
+    FocuserFeature.CONTROLLABLE_W: FocuserAxis.W,
+}
 
-AxisControllable = {FocuserAxis.X: FocuserFeature.CONTROLLABLE_X,
-                    FocuserAxis.Y: FocuserFeature.CONTROLLABLE_Y,
-                    FocuserAxis.Z: FocuserFeature.CONTROLLABLE_Z,
-                    FocuserAxis.U: FocuserFeature.CONTROLLABLE_U,
-                    FocuserAxis.V: FocuserFeature.CONTROLLABLE_V,
-                    FocuserAxis.W: FocuserFeature.CONTROLLABLE_W,
-                    }
+AxisControllable = {
+    FocuserAxis.X: FocuserFeature.CONTROLLABLE_X,
+    FocuserAxis.Y: FocuserFeature.CONTROLLABLE_Y,
+    FocuserAxis.Z: FocuserFeature.CONTROLLABLE_Z,
+    FocuserAxis.U: FocuserFeature.CONTROLLABLE_U,
+    FocuserAxis.V: FocuserFeature.CONTROLLABLE_V,
+    FocuserAxis.W: FocuserFeature.CONTROLLABLE_W,
+}
+
 
 class InvalidFocusPositionException(ChimeraException):
     """
@@ -71,11 +76,13 @@ class Focuser(Interface):
          to selected directions only (no position information).
     """
 
-    __config__ = {"focuser_model": "Fake Focus Inc.",
-                  "device": "/dev/ttyS1",
-                  "model": "Fake Focuser Inc.",
-                  "open_timeout": 10,
-                  "move_timeout": 60}
+    __config__ = {
+        "focuser_model": "Fake Focus Inc.",
+        "device": "/dev/ttyS1",
+        "model": "Fake Focuser Inc.",
+        "open_timeout": 10,
+        "move_timeout": 60,
+    }
 
     def moveIn(self, n, axis=FocuserAxis.Z):
         """

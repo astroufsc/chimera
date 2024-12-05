@@ -26,7 +26,7 @@ from astropy.units import cds
 from collections import namedtuple
 
 
-class WSValue(namedtuple('WSValue', 'time value unit')):
+class WSValue(namedtuple("WSValue", "time value unit")):
     """
     Named tuple that represents a measurement
     """
@@ -37,18 +37,18 @@ class WeatherStation(Interface):
     Instrument interface for weather stations
     """
 
-    __config__ = {"device": None,  # weather station device
-                  "model": "unknown",  # weather station model
-                  }
+    __config__ = {
+        "device": None,  # weather station device
+        "model": "unknown",  # weather station model
+    }
 
 
 class WeatherHumidity(WeatherStation):
     """
     Humidity units accepted by the interface.
     """
-    __accepted_humidity_units__ = [
-        units.pct
-    ]
+
+    __accepted_humidity_units__ = [units.pct]
 
     def humidity(self, unit_out=units.pct):
         """
@@ -64,11 +64,7 @@ class WeatherTemperature(WeatherStation):
     """
 
     # Temperature units accepted by the interface.
-    __accepted_temperature_units__ = [
-        units.Celsius,
-        units.Kelvin,
-        units.imperial.deg_F
-    ]
+    __accepted_temperature_units__ = [units.Celsius, units.Kelvin, units.imperial.deg_F]
 
     def temperature(self, unit_out=units.Celsius):
         """
@@ -99,10 +95,7 @@ class WeatherWind(WeatherStation):
     ]
 
     # Wind Direction units accepted by the interface.
-    __accepted_direction_unit__ = [
-        units.degree,
-        units.radian
-    ]
+    __accepted_direction_unit__ = [units.degree, units.radian]
 
     def wind_speed(self, unit_out=units.meter / units.second):
         """
@@ -125,11 +118,7 @@ class WeatherPressure(WeatherStation):
     """
 
     # Pressure units accepted by the interface.
-    __accepted_pressures_unit__ = [
-        units.cds.mmHg,
-        units.bar,
-        units.cds.atm,
-        units.Pa]
+    __accepted_pressures_unit__ = [units.cds.mmHg, units.bar, units.cds.atm, units.Pa]
 
     def pressure(self, unit_out=units.Pa):
         """
@@ -177,6 +166,7 @@ class WeatherTransparency(WeatherStation):
         For a system with only two/three stages, the suggestion is to use:
         0% for overcast, 50% to cloudy and 100% to clear
         """
+
 
 class WeatherSafety(WeatherStation):
     """

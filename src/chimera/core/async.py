@@ -22,11 +22,10 @@
 
 from chimera.core.methodwrapper import MethodWrapperDispatcher
 
-__all__ = ['BeginDispatcher',
-           'EndDispatcher']
+__all__ = ["BeginDispatcher", "EndDispatcher"]
 
 
-class BeginDispatcher (MethodWrapperDispatcher):
+class BeginDispatcher(MethodWrapperDispatcher):
 
     def __init__(self, cls, instance, func):
         MethodWrapperDispatcher.__init__(self, cls, instance, func)
@@ -35,7 +34,7 @@ class BeginDispatcher (MethodWrapperDispatcher):
         return self.func(*args, **kwargs)
 
 
-class EndDispatcher (MethodWrapperDispatcher):
+class EndDispatcher(MethodWrapperDispatcher):
 
     def __init__(self, cls, instance, func):
         MethodWrapperDispatcher.__init__(self, cls, instance, func)

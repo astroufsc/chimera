@@ -1,6 +1,3 @@
-
-
-
 import threading
 import time
 import copy
@@ -9,45 +6,44 @@ import sys
 from math import sqrt
 
 from chimera.core.chimeraobject import ChimeraObject
-from chimera.core.lock          import lock
+from chimera.core.lock import lock
 
 from chimera.core.manager import Manager
-from chimera.core.proxy   import Proxy
+from chimera.core.proxy import Proxy
 
 
-class TestLock (object):
+class TestLock(object):
 
-    def test_autolock (self):
+    def test_autolock(self):
 
-        class Minimo (ChimeraObject):
+        class Minimo(ChimeraObject):
 
             def __init__(self):
-                ChimeraObject.__init__ (self)
+                ChimeraObject.__init__(self)
 
                 self.t0 = time.time()
 
-            def doUnlocked (self):
+            def doUnlocked(self):
                 time.sleep(1)
-                t = time.time()-self.t0
+                t = time.time() - self.t0
                 print("[unlocked] - %s - %.3f" % (threading.current_thread().name, t))
                 return t
 
             @lock
-            def doLocked (self):
+            def doLocked(self):
                 time.sleep(1)
-                t = time.time()-self.t0
+                t = time.time() - self.t0
                 print("[ locked ] - %s - %.3f" % (threading.current_thread().name, t))
                 return t
 
-#            def doLockedWith (self):
-#                with self:
-#                    time.sleep(1)
-#                    t = time.time()-self.t0
-#                    print "[ locked ] - %s - %.3f" % (threading.current_thread().name, t)
-#                    return t
-                    
-        def doTest (obj):
+        #            def doLockedWith (self):
+        #                with self:
+        #                    time.sleep(1)
+        #                    t = time.time()-self.t0
+        #                    print "[ locked ] - %s - %.3f" % (threading.current_thread().name, t)
+        #                    return t
 
+        def doTest(obj):
             """Rationale: We use 5 threads for each method (locked and
             unlocked). As unlocked methods isn't serialized, they runs
             'at the same instant', while locked methods will be
@@ -65,7 +61,7 @@ class TestLock (object):
             performance and timmings.
             """
             unlocked = []
-            locked   = []
+            locked = []
 
             def getObj(o):
                 """
@@ -81,8 +77,8 @@ class TestLock (object):
             def runLocked():
                 locked.append(getObj(obj).doLocked())
 
-#            def runLockedWith():
-#                locked.append(getObj(obj).doLockedWith())
+            #            def runLockedWith():
+            #                locked.append(getObj(obj).doLockedWith())
 
             threads = []
 
@@ -91,32 +87,35 @@ class TestLock (object):
             for i in range(10):
                 t1 = threading.Thread(target=runUnlocked, name="unlocked-%d" % i)
                 t2 = threading.Thread(target=runLocked, name="  lock-%d" % i)
-                #t3 = threading.Thread(target=runLockedWith, name="  with-%d" % i)
-                    
+                # t3 = threading.Thread(target=runLockedWith, name="  with-%d" % i)
+
                 t1.start()
                 t2.start()
-                #t3.start()
-                
+                # t3.start()
+
                 threads += [t1, t2]
 
             for t in threads:
                 t.join()
 
-            unlocked_mean = sum(unlocked)/len(unlocked)
-            locked_mean   = sum(locked)/len(locked)
+            unlocked_mean = sum(unlocked) / len(unlocked)
+            locked_mean = sum(locked) / len(locked)
 
-            unlocked_sigma = sqrt(sum([ (unlocked_mean-u)**2 for u in unlocked])/len(unlocked))
-            locked_sigma   = sqrt(sum([ (locked_mean-l)**2 for l in locked])/len(locked))
+            unlocked_sigma = sqrt(
+                sum([(unlocked_mean - u) ** 2 for u in unlocked]) / len(unlocked)
+            )
+            locked_sigma = sqrt(
+                sum([(locked_mean - l) ** 2 for l in locked]) / len(locked)
+            )
 
-            def equals_eps (a, b, eps=1e-3):
-                return abs(a-b) <= eps
+            def equals_eps(a, b, eps=1e-3):
+                return abs(a - b) <= eps
 
             print("unlocked: mean: %.6f sigma: %.6f" % (unlocked_mean, unlocked_sigma))
             print("locked  : mean: %.6f sigma: %.6f" % (locked_mean, locked_sigma))
 
             assert equals_eps(unlocked_sigma, 0.0, 0.5) is True
             assert equals_eps(locked_sigma, 2.875, 1.0) is True
-
 
         # direct metaobject
         m = Minimo()
@@ -131,32 +130,31 @@ class TestLock (object):
 
         manager.shutdown()
 
-    def test_lock_config (self):
+    def test_lock_config(self):
 
-        class Minimo (ChimeraObject):
+        class Minimo(ChimeraObject):
 
             __config__ = {"config": 0}
 
             def __init__(self):
-                ChimeraObject.__init__ (self)
+                ChimeraObject.__init__(self)
 
-            def doWrite (self):
+            def doWrite(self):
 
                 for i in range(10):
                     self["config"] = i
                     print("[ write ] - config=%d" % i)
                     sys.stdout.flush()
                     time.sleep(0.1)
-                    
-            def doRead (self):
+
+            def doRead(self):
 
                 for i in range(1000):
                     t0 = time.time()
                     value = self["config"]
-                    t = time.time()-t0               
+                    t = time.time() - t0
                     print("[  read ] - config=%s took %.6f" % (value, t))
                     sys.stdout.flush()
-
 
         m = Minimo()
 

@@ -1,4 +1,2 @@
-
 class ClassLoaderHelperWorking:
     pass
-

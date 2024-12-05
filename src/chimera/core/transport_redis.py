@@ -18,7 +18,9 @@ class RedisTransport(Transport):
     DEFAULT_TIMEOUT: int = 5 * 60  # 5 minutes
     LOOP_TICK: int = 1
 
-    def __init__(self, host: str, port: int, serializer: Type[Serializer] = PickleSerializer):
+    def __init__(
+        self, host: str, port: int, serializer: Type[Serializer] = PickleSerializer
+    ):
         super().__init__(host, port, serializer)
         self.r = None
 
@@ -50,7 +52,11 @@ class RedisTransport(Transport):
 
     def recv_request(self) -> Request | None:
         try:
-            data = self.r.blpop([self.REQUESTS_KEY,])
+            data = self.r.blpop(
+                [
+                    self.REQUESTS_KEY,
+                ]
+            )
             _, request_bytes = data
             return self.serializer.loads(request_bytes)
         except redis.exceptions.ConnectionError:
@@ -62,7 +68,11 @@ class RedisTransport(Transport):
 
     def recv_response(self, request: Request) -> Response | None:
         try:
-            data = self.r.blpop([f"chimera_response_{request.id}",])
+            data = self.r.blpop(
+                [
+                    f"chimera_response_{request.id}",
+                ]
+            )
             _, request_bytes = data
             return self.serializer.loads(request_bytes)
         except redis.exceptions.ConnectionError:

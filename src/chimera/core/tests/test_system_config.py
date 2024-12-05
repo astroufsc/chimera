@@ -1,21 +1,26 @@
 import pytest
 
-from chimera.core.systemconfig import SystemConfig, TypeNotFoundException, SystemConfigSyntaxException
-from chimera.core.location     import InvalidLocationException
+from chimera.core.systemconfig import (
+    SystemConfig,
+    TypeNotFoundException,
+    SystemConfigSyntaxException,
+)
+from chimera.core.location import InvalidLocationException
 from chimera.core.constants import MANAGER_DEFAULT_HOST, MANAGER_DEFAULT_PORT
 
 from chimera.core.log import setConsoleLevel
 import logging
+
 setConsoleLevel(logging.DEBUG)
 
 
-class TestSystemConfig (object):
+class TestSystemConfig(object):
 
     #
     # test specials
     #
 
-    def test_specials (self):
+    def test_specials(self):
 
         s = """
         site:
@@ -65,45 +70,51 @@ class TestSystemConfig (object):
         system = SystemConfig.fromString(s)
 
         assert system.sites[0].name == "site1"
-        assert system.sites[0].cls  == "SiteType"
+        assert system.sites[0].cls == "SiteType"
         assert system.sites[0].host == "200.131.64.200"
         assert system.sites[0].port == 10000
-        assert system.sites[0].config['config0'] == 'value0'
+        assert system.sites[0].config["config0"] == "value0"
 
         assert system.instruments[0].name == "tel1"
-        assert system.instruments[0].cls  == "TelescopeType"
+        assert system.instruments[0].cls == "TelescopeType"
         assert system.instruments[0].host == "200.131.64.201"
         assert system.instruments[0].port == 10001
-        assert system.instruments[0].config['config1'] == 'value1'
+        assert system.instruments[0].config["config1"] == "value1"
 
         assert system.instruments[1].name == "cam1"
-        assert system.instruments[1].cls  == "CameraType"
+        assert system.instruments[1].cls == "CameraType"
         assert system.instruments[1].host == "200.131.64.202"
         assert system.instruments[1].port == 10002
-        assert system.instruments[1].config['config2'] == 'value2'
+        assert system.instruments[1].config["config2"] == "value2"
 
         assert system.instruments[2].name == "focuser1"
-        assert system.instruments[2].cls  == "FocuserType"
+        assert system.instruments[2].cls == "FocuserType"
         assert system.instruments[2].host == "200.131.64.203"
         assert system.instruments[2].port == 10003
-        assert system.instruments[2].config['config3'] == 'value3'
+        assert system.instruments[2].config["config3"] == "value3"
 
         assert system.instruments[3].name == "dome1"
-        assert system.instruments[3].cls  == "DomeType"
+        assert system.instruments[3].cls == "DomeType"
         assert system.instruments[3].host == "200.131.64.204"
         assert system.instruments[3].port == 10004
-        assert system.instruments[3].config['config4'] == 'value4'
+        assert system.instruments[3].config["config4"] == "value4"
 
         assert system.instruments[4].name == "wheel1"
-        assert system.instruments[4].cls  == "FilterWheelType"
+        assert system.instruments[4].cls == "FilterWheelType"
         assert system.instruments[4].host == "200.131.64.205"
         assert system.instruments[4].port == 10005
-        assert system.instruments[4].config['config5'] == 'value5'
-        assert system.instruments[4].config['filters'] == ["R", "G", "B", "RGB", "CLEAR"]
-        
-        assert len(system.instruments) == 5        
+        assert system.instruments[4].config["config5"] == "value5"
+        assert system.instruments[4].config["filters"] == [
+            "R",
+            "G",
+            "B",
+            "RGB",
+            "CLEAR",
+        ]
 
-    def test_auto_type_name (self):
+        assert len(system.instruments) == 5
+
+    def test_auto_type_name(self):
 
         s = """
         site:
@@ -116,12 +127,12 @@ class TestSystemConfig (object):
 
         system = SystemConfig.fromString(s)
         assert system.sites[0].name == "site1"
-        assert system.sites[0].cls  == "Site"
+        assert system.sites[0].cls == "Site"
         assert system.sites[0].host == "200.131.64.200"
         assert system.sites[0].port == 10000
-        assert system.sites[0].config['config0'] == 'value0'
+        assert system.sites[0].config["config0"] == "value0"
 
-    def test_auto_host_port (self):
+    def test_auto_host_port(self):
 
         s = """
         site:
@@ -134,8 +145,8 @@ class TestSystemConfig (object):
         assert system.sites[0].host == MANAGER_DEFAULT_HOST
         assert system.sites[0].port == MANAGER_DEFAULT_PORT
 
-    def test_errors (self):
-        
+    def test_errors(self):
+
         s = """
         telescope:
            type: $lahlah
@@ -143,7 +154,7 @@ class TestSystemConfig (object):
         """
         # class cannot have $
         with pytest.raises(InvalidLocationException):
-                SystemConfig.fromString(s)
+            SystemConfig.fromString(s)
 
         s = """
         telescope
@@ -156,7 +167,7 @@ class TestSystemConfig (object):
     #
     # instrument primitive
     #
-    def test_instrument (self):
+    def test_instrument(self):
 
         s = """
         instrument:
@@ -166,10 +177,10 @@ class TestSystemConfig (object):
 
         system = SystemConfig.fromString(s)
 
-        assert system.instruments[0].name == 'simple'
-        assert system.instruments[0].cls   == 'InstrumentType'
+        assert system.instruments[0].name == "simple"
+        assert system.instruments[0].cls == "InstrumentType"
 
-    def test_multiple_instruments (self):
+    def test_multiple_instruments(self):
         s = """
         instrument:
          - name: simple
@@ -182,7 +193,7 @@ class TestSystemConfig (object):
         system = SystemConfig.fromString(s)
         assert len(system.instruments) == 2
 
-    def test_instrument_error (self):
+    def test_instrument_error(self):
         s = """
         instrument:
          name: simple
@@ -194,7 +205,7 @@ class TestSystemConfig (object):
     #
     # controller primitive
     #
-    def test_controller (self):
+    def test_controller(self):
 
         s = """
         controller:
@@ -204,10 +215,10 @@ class TestSystemConfig (object):
 
         system = SystemConfig.fromString(s)
 
-        assert system.controllers[0].name == 'simple'
-        assert system.controllers[0].cls   == 'ControllerType'
+        assert system.controllers[0].name == "simple"
+        assert system.controllers[0].cls == "ControllerType"
 
-    def test_multiple_controllers (self):
+    def test_multiple_controllers(self):
         s = """
         controller:
          - name: simple
@@ -220,7 +231,7 @@ class TestSystemConfig (object):
         system = SystemConfig.fromString(s)
         assert len(system.controllers) == 2
 
-    def test_controller_error (self):
+    def test_controller_error(self):
         s = """
         controller:
          name: simple
@@ -228,6 +239,3 @@ class TestSystemConfig (object):
         """
         with pytest.raises(TypeNotFoundException):
             SystemConfig.fromString(s)
-
-
-        

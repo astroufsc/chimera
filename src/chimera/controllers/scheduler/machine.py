@@ -13,6 +13,7 @@ import time
 
 log = logging.getLogger(__name__)
 
+
 class Machine(threading.Thread):
 
     __state = None
@@ -33,8 +34,10 @@ class Machine(threading.Thread):
     def state(self, state=None):
         self.__stateLock.acquire()
         try:
-            if not state: return self.__state
-            if state == self.__state: return
+            if not state:
+                return self.__state
+            if state == self.__state:
+                return
             self.controller.stateChanged(state, self.__state)
             log.debug("Changing state, from %s to %s." % (self.__state, state))
             self.__state = state
@@ -69,7 +72,7 @@ class Machine(threading.Thread):
 
                 if program:
                     log.debug("[idle] there is something to do, processing...")
-                    log.debug("[idle] program slew start %s",program.startAt)
+                    log.debug("[idle] program slew start %s", program.startAt)
                     self.state(State.BUSY)
                     self.currentProgram = program
                     self._process(program)
@@ -95,7 +98,7 @@ class Machine(threading.Thread):
                 log.debug("[shutdown] should die soon.")
                 break
 
-        log.debug('[shutdown] thread ending...')
+        log.debug("[shutdown] thread ending...")
 
     def sleep(self):
         self.__wakeUpCall.acquire()
@@ -120,7 +123,7 @@ class Machine(threading.Thread):
 
     def _process(self, program):
 
-        def process ():
+        def process():
 
             # session to be used by executor and handlers
             session = Session()
@@ -129,26 +132,41 @@ class Machine(threading.Thread):
 
             log.debug("[start] %s" % str(task))
 
-            site=Site()
-            nowmjd=site.MJD()
-            log.debug("[start] Current MJD is %f",nowmjd)
+            site = Site()
+            nowmjd = site.MJD()
+            log.debug("[start] Current MJD is %f", nowmjd)
             if program.startAt:
-                waittime=(program.startAt-nowmjd)*86.4e3
-                if waittime>0.0:
-                    log.debug("[start] Waiting until MJD %f to start slewing",program.startAt)
-                    log.debug("[start] Will wait for %f seconds",waittime)
+                waittime = (program.startAt - nowmjd) * 86.4e3
+                if waittime > 0.0:
+                    log.debug(
+                        "[start] Waiting until MJD %f to start slewing", program.startAt
+                    )
+                    log.debug("[start] Will wait for %f seconds", waittime)
                     time.sleep(waittime)
                 else:
                     if program.validFor >= 0.0:
                         if -waittime > program.validFor:
-                            log.debug("[start] Program is not valid anymore", program.startAt, program.validFor)
-                            self.controller.programComplete(program, SchedulerStatus.OK, "Program not valid anymore.")
+                            log.debug(
+                                "[start] Program is not valid anymore",
+                                program.startAt,
+                                program.validFor,
+                            )
+                            self.controller.programComplete(
+                                program,
+                                SchedulerStatus.OK,
+                                "Program not valid anymore.",
+                            )
                     else:
-                        log.debug("[start] Specified slew start MJD %s has already passed; proceeding without waiting",program.startAt)
+                        log.debug(
+                            "[start] Specified slew start MJD %s has already passed; proceeding without waiting",
+                            program.startAt,
+                        )
             else:
-               log.debug("[start] No slew time specified, so no waiting")
-            log.debug("[start] Current MJD is %f",site.MJD())
-            log.debug("[start] Proceeding since MJD %f should have passed",program.startAt)
+                log.debug("[start] No slew time specified, so no waiting")
+            log.debug("[start] Current MJD is %f", site.MJD())
+            log.debug(
+                "[start] Proceeding since MJD %f should have passed", program.startAt
+            )
             self.controller.programBegin(program)
 
             try:
@@ -164,7 +182,9 @@ class Machine(threading.Thread):
                 log.debug("[error] %s (%s)" % (str(task), str(e)))
             except ProgramExecutionAborted as e:
                 self.scheduler.done(task, error=e)
-                self.controller.programComplete(program, SchedulerStatus.ABORTED, "Aborted by user.")
+                self.controller.programComplete(
+                    program, SchedulerStatus.ABORTED, "Aborted by user."
+                )
                 self.state(State.OFF)
                 log.debug("[aborted by user] %s" % str(task))
 

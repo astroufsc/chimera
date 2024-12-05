@@ -22,7 +22,13 @@
 
 from chimera.core.chimeraobject import ChimeraObject
 
-from chimera.interfaces.telescope import (TelescopeSlew, TelescopeSync, TelescopePark, TelescopeTracking, SlewRate)
+from chimera.interfaces.telescope import (
+    TelescopeSlew,
+    TelescopeSync,
+    TelescopePark,
+    TelescopeTracking,
+    SlewRate,
+)
 
 from chimera.core.lock import lock
 from chimera.core.exceptions import ObjectTooLowException
@@ -34,7 +40,9 @@ from chimera.util.position import Epoch, Position
 __all__ = ["TelescopeBase"]
 
 
-class TelescopeBase(ChimeraObject, TelescopeSlew, TelescopeSync, TelescopePark, TelescopeTracking):
+class TelescopeBase(
+    ChimeraObject, TelescopeSlew, TelescopeSync, TelescopePark, TelescopeTracking
+):
 
     def __init__(self):
         ChimeraObject.__init__(self)
@@ -56,9 +64,7 @@ class TelescopeBase(ChimeraObject, TelescopeSlew, TelescopeSync, TelescopePark, 
         lst = site.LST()
         latitude = site["latitude"]
 
-        altAz = Position.raDecToAltAz(position,
-                                      latitude,
-                                      lst)
+        altAz = Position.raDecToAltAz(position, latitude, lst)
 
         return self._validateAltAz(altAz)
 
@@ -66,9 +72,9 @@ class TelescopeBase(ChimeraObject, TelescopeSlew, TelescopeSync, TelescopePark, 
 
         if position.alt <= self["min_altitude"]:
             raise ObjectTooLowException(
-                "Object too close to horizon (alt=%d limit=%d)" %
-                (position.alt, self["min_altitude"])
-                )
+                "Object too close to horizon (alt=%d limit=%d)"
+                % (position.alt, self["min_altitude"])
+            )
 
         return True
 
@@ -76,12 +82,14 @@ class TelescopeBase(ChimeraObject, TelescopeSlew, TelescopeSync, TelescopePark, 
 
         if str(position.epoch).lower() != str(Epoch.NOW).lower():
             self.log.info(
-                "Precessing position (%s) from %s to current epoch." %
-                (str(position), position.epoch))
+                "Precessing position (%s) from %s to current epoch."
+                % (str(position), position.epoch)
+            )
             position_now = position.precess(Epoch.NOW)
         else:
             self.log.info(
-                "Current position (%s), no precession needed." % str(position))
+                "Current position (%s), no precession needed." % str(position)
+            )
             position_now = position
 
         self.log.info("Final precessed position %s" % str(position_now))
@@ -199,29 +207,35 @@ class TelescopeBase(ChimeraObject, TelescopeSlew, TelescopeSync, TelescopePark, 
         # If not, just go on with the instrument's default metadata.
         position = self.getPositionRaDec()
         alt = self.getAlt()
-        return [('TELESCOP', self['model'], 'Telescope Model'),
-                ('OPTICS',   self['optics'], 'Telescope Optics Type'),
-                ('MOUNT', self['mount'], 'Telescope Mount Type'),
-                ('APERTURE', self['aperture'], 'Telescope aperture size [mm]'),
-                ('F_LENGTH', self['focal_length'],
-                 'Telescope focal length [mm]'),
-                ('F_REDUCT', self['focal_reduction'],
-                 'Telescope focal reduction'),
-                # TODO: Convert coordinates to proper equinox
-                # TODO: How to get ra,dec at start of exposure (not end)
-                ('RA', position.ra.toHMS().__str__(), 'Right ascension of the observed object'),
-                ('DEC', position.dec.toDMS().__str__(), 'Declination of the observed object'),
-                ("EQUINOX", position.epochString()[1:], "coordinate epoch"),
-                ('ALT', alt.toDMS().__str__(), 'Altitude of the observed object'),
-                ('AZ', self.getAz().toDMS().__str__(), 'Azimuth of the observed object'),
-                ('AIRMASS', alt.R, 'Airmass of the observed object'),
-                ("WCSAXES", 2, "wcs dimensionality"),
-                ("RADESYS", "ICRS", "frame of reference"),
-                ("CRVAL1", position.ra.D,
-                 "coordinate system value at reference pixel"),
-                ("CRVAL2", position.dec.D,
-                 "coordinate system value at reference pixel"),
-                ("CTYPE1", 'RA---TAN', "name of the coordinate axis"),
-                ("CTYPE2", 'DEC--TAN', "name of the coordinate axis"),
-                ("CUNIT1", 'deg', "units of coordinate value"),
-                ("CUNIT2", 'deg', "units of coordinate value")]
+        return [
+            ("TELESCOP", self["model"], "Telescope Model"),
+            ("OPTICS", self["optics"], "Telescope Optics Type"),
+            ("MOUNT", self["mount"], "Telescope Mount Type"),
+            ("APERTURE", self["aperture"], "Telescope aperture size [mm]"),
+            ("F_LENGTH", self["focal_length"], "Telescope focal length [mm]"),
+            ("F_REDUCT", self["focal_reduction"], "Telescope focal reduction"),
+            # TODO: Convert coordinates to proper equinox
+            # TODO: How to get ra,dec at start of exposure (not end)
+            (
+                "RA",
+                position.ra.toHMS().__str__(),
+                "Right ascension of the observed object",
+            ),
+            (
+                "DEC",
+                position.dec.toDMS().__str__(),
+                "Declination of the observed object",
+            ),
+            ("EQUINOX", position.epochString()[1:], "coordinate epoch"),
+            ("ALT", alt.toDMS().__str__(), "Altitude of the observed object"),
+            ("AZ", self.getAz().toDMS().__str__(), "Azimuth of the observed object"),
+            ("AIRMASS", alt.R, "Airmass of the observed object"),
+            ("WCSAXES", 2, "wcs dimensionality"),
+            ("RADESYS", "ICRS", "frame of reference"),
+            ("CRVAL1", position.ra.D, "coordinate system value at reference pixel"),
+            ("CRVAL2", position.dec.D, "coordinate system value at reference pixel"),
+            ("CTYPE1", "RA---TAN", "name of the coordinate axis"),
+            ("CTYPE2", "DEC--TAN", "name of the coordinate axis"),
+            ("CUNIT1", "deg", "units of coordinate value"),
+            ("CUNIT2", "deg", "units of coordinate value"),
+        ]

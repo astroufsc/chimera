@@ -25,7 +25,7 @@ from chimera.instruments.filterwheel import FilterWheelBase
 from chimera.core.lock import lock
 
 
-class FakeFilterWheel (FilterWheelBase):
+class FakeFilterWheel(FilterWheelBase):
 
     def __init__(self):
         FilterWheelBase.__init__(self)

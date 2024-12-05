@@ -21,29 +21,33 @@
 
 from chimera.core.lock import lock
 
-from chimera.interfaces.focuser import (FocuserFeature,
-                                        InvalidFocusPositionException, FocuserAxis)
+from chimera.interfaces.focuser import (
+    FocuserFeature,
+    InvalidFocusPositionException,
+    FocuserAxis,
+)
 
 from chimera.instruments.focuser import FocuserBase
 
 
-class FakeFocuser (FocuserBase):
+class FakeFocuser(FocuserBase):
 
     def __init__(self):
         FocuserBase.__init__(self)
 
         self._position = 0
 
-        self._supports = {FocuserFeature.TEMPERATURE_COMPENSATION: False,
-                          FocuserFeature.POSITION_FEEDBACK: True,
-                          FocuserFeature.ENCODER: True,
-                          FocuserFeature.CONTROLLABLE_X: False,
-                          FocuserFeature.CONTROLLABLE_Y: False,
-                          FocuserFeature.CONTROLLABLE_Z: True,
-                          FocuserFeature.CONTROLLABLE_U: False,
-                          FocuserFeature.CONTROLLABLE_V: False,
-                          FocuserFeature.CONTROLLABLE_W: False,
-                          }
+        self._supports = {
+            FocuserFeature.TEMPERATURE_COMPENSATION: False,
+            FocuserFeature.POSITION_FEEDBACK: True,
+            FocuserFeature.ENCODER: True,
+            FocuserFeature.CONTROLLABLE_X: False,
+            FocuserFeature.CONTROLLABLE_Y: False,
+            FocuserFeature.CONTROLLABLE_Z: True,
+            FocuserFeature.CONTROLLABLE_U: False,
+            FocuserFeature.CONTROLLABLE_V: False,
+            FocuserFeature.CONTROLLABLE_W: False,
+        }
 
     def __start__(self):
         self._position = int(self.getRange()[1] / 2.0)
@@ -57,8 +61,9 @@ class FakeFocuser (FocuserBase):
         if self._inRange(target):
             self._setPosition(target)
         else:
-            raise InvalidFocusPositionException("%d is outside focuser "
-                                                "boundaries." % target)
+            raise InvalidFocusPositionException(
+                "%d is outside focuser " "boundaries." % target
+            )
 
     @lock
     def moveOut(self, n, axis=FocuserAxis.Z):
@@ -68,8 +73,9 @@ class FakeFocuser (FocuserBase):
         if self._inRange(target):
             self._setPosition(target)
         else:
-            raise InvalidFocusPositionException("%d is outside focuser "
-                                                "boundaries." % target)
+            raise InvalidFocusPositionException(
+                "%d is outside focuser " "boundaries." % target
+            )
 
     @lock
     def moveTo(self, position, axis=FocuserAxis.Z):
@@ -77,8 +83,9 @@ class FakeFocuser (FocuserBase):
         if self._inRange(position):
             self._setPosition(position)
         else:
-            raise InvalidFocusPositionException("%d is outside focuser "
-                                                "boundaries." % int(position))
+            raise InvalidFocusPositionException(
+                "%d is outside focuser " "boundaries." % int(position)
+            )
 
     @lock
     def getPosition(self, axis=FocuserAxis.Z):
@@ -95,4 +102,4 @@ class FakeFocuser (FocuserBase):
 
     def _inRange(self, n):
         min_pos, max_pos = self.getRange()
-        return (min_pos <= n <= max_pos)
+        return min_pos <= n <= max_pos

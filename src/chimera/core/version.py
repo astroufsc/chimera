@@ -33,14 +33,16 @@ _chimera_license_ = "GPLv2"
 _chimera_url_ = "http://chimera.sf.net"
 _chimera_download_url_ = "http://chimera.googlecode.com/svn/trunk#egg=chimera-dev"
 _chimera_platform_ = "GNU/Linux"
-_chimera_classifiers_ = ['Development Status :: 3 - Alpha',
-                         'Environment :: Console',
-                         'Intended Audience :: Science/Research',
-                         'Intended Audience :: End Users/Desktop',
-                         'Intended Audience :: Developers',
-                         'License :: OSI Approved :: GNU General Public License (GPL)',
-                         'Natural Language :: English',
-                         'Natural Language :: Portuguese (Brazilian)',
-                         'Operating System :: POSIX :: Linux',
-                         'Programming Language :: Python',
-                         'Topic :: Scientific/Engineering :: Astronomy']
+_chimera_classifiers_ = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: End Users/Desktop",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: GNU General Public License (GPL)",
+    "Natural Language :: English",
+    "Natural Language :: Portuguese (Brazilian)",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python",
+    "Topic :: Scientific/Engineering :: Astronomy",
+]

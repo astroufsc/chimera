@@ -17,8 +17,15 @@
 # 02110-1301, USA.
 
 from chimera.core.chimeraobject import ChimeraObject
-from chimera.interfaces.weatherstation import WeatherStation, WeatherTemperature, WeatherHumidity, WeatherWind, \
-    WeatherPressure, WeatherRain, WeatherTransparency
+from chimera.interfaces.weatherstation import (
+    WeatherStation,
+    WeatherTemperature,
+    WeatherHumidity,
+    WeatherWind,
+    WeatherPressure,
+    WeatherRain,
+    WeatherTransparency,
+)
 import astropy.units as units
 
 
@@ -40,37 +47,81 @@ class WeatherBase(ChimeraObject, WeatherStation):
         if md is not None:
             return md
         # If not, just go on with the instrument's default metadata.
-        md = [('METMODEL', str(self['model']), 'Weather station Model')]
+        md = [("METMODEL", str(self["model"]), "Weather station Model")]
 
         # Temperature
         if self.features(WeatherTemperature):
             temp, dew = self.temperature(), self.dew_point()
-            md += ([('METTEMP', str(temp.value), ('[%s] Weather station temperature' % temp.unit)),
-                    ('METDEW', str(dew.value), ('[%s] Weather station dew point' % dew.unit))])
+            md += [
+                (
+                    "METTEMP",
+                    str(temp.value),
+                    ("[%s] Weather station temperature" % temp.unit),
+                ),
+                (
+                    "METDEW",
+                    str(dew.value),
+                    ("[%s] Weather station dew point" % dew.unit),
+                ),
+            ]
 
         # Humidity
         if self.features(WeatherHumidity):
             hum = self.humidity()
-            md += [('METRH', str(hum.value), ('[%s] Weather station relative humidity' % hum.unit))]
+            md += [
+                (
+                    "METRH",
+                    str(hum.value),
+                    ("[%s] Weather station relative humidity" % hum.unit),
+                )
+            ]
         # Wind
         if self.features(WeatherWind):
             speed, direc = self.wind_speed(), self.wind_direction()
-            md += [('METWINDS', str(speed.value), ('[%s] Weather station wind speed' % speed.unit)),
-                   ('WINDDIR', str(direc.value), ('[%s] Weather station wind direction' % direc.unit))]
+            md += [
+                (
+                    "METWINDS",
+                    str(speed.value),
+                    ("[%s] Weather station wind speed" % speed.unit),
+                ),
+                (
+                    "WINDDIR",
+                    str(direc.value),
+                    ("[%s] Weather station wind direction" % direc.unit),
+                ),
+            ]
 
         # Pressure
         if self.features(WeatherPressure):
             press = self.pressure()
-            md += [('METPRES', str(press.value), ('[%s] Weather station air pressure' % press.unit))]
+            md += [
+                (
+                    "METPRES",
+                    str(press.value),
+                    ("[%s] Weather station air pressure" % press.unit),
+                )
+            ]
 
         # Rain
         if self.features(WeatherRain):
             rate = self.rain_rate()
-            md += [('METRAIN', str(rate.value), ('[%s] Weather station rain rate' % rate.unit))]
+            md += [
+                (
+                    "METRAIN",
+                    str(rate.value),
+                    ("[%s] Weather station rain rate" % rate.unit),
+                )
+            ]
 
         # Sky Transparency
         if self.features(WeatherTransparency):
             transp = self.sky_transparency()
-            md += [('METSKTR', str(transp.value), ('[%s] Weather station Sky Transparency' % transp.unit))]
+            md += [
+                (
+                    "METSKTR",
+                    str(transp.value),
+                    ("[%s] Weather station Sky Transparency" % transp.unit),
+                )
+            ]
 
         return md

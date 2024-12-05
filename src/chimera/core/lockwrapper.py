@@ -30,17 +30,16 @@ from chimera.core.constants import INSTANCE_MONITOR_ATTRIBUTE_NAME
 log = logging.getLogger(__name__)
 
 
-__all__ = ['LockWrapper',
-           'LockWrapperDispatcher']
+__all__ = ["LockWrapper", "LockWrapperDispatcher"]
 
 
-class LockWrapper (MethodWrapper):
+class LockWrapper(MethodWrapper):
 
     def __init__(self, func, specials=None, dispatcher=None):
         MethodWrapper.__init__(self, func, specials, dispatcher)
 
 
-class LockWrapperDispatcher (MethodWrapperDispatcher):
+class LockWrapperDispatcher(MethodWrapperDispatcher):
 
     def __init__(self, wrapper, instance, cls):
         MethodWrapperDispatcher.__init__(self, wrapper, instance, cls)
@@ -55,17 +54,17 @@ class LockWrapperDispatcher (MethodWrapperDispatcher):
 
         lock = getattr(self.instance, INSTANCE_MONITOR_ATTRIBUTE_NAME)
 
-        #t0 = time.time()
-        #log.debug("[trying to acquire monitor] %s %s" % (self.instance, self.func.__name__))
+        # t0 = time.time()
+        # log.debug("[trying to acquire monitor] %s %s" % (self.instance, self.func.__name__))
         lock.acquire()
-        #log.debug("[acquired monitor] %s %s after %f" % (self.instance, self.func.__name__, time.time()-t0))
+        # log.debug("[acquired monitor] %s %s after %f" % (self.instance, self.func.__name__, time.time()-t0))
 
         ret = None
 
         try:
             ret = self.func(*args, **kwargs)
         finally:
-            #log.debug("[release monitor] %s %s" % (self.instance, self.func.__name__))
+            # log.debug("[release monitor] %s %s" % (self.instance, self.func.__name__))
             lock.release()
 
         return ret

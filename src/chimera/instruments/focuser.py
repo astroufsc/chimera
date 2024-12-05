@@ -22,9 +22,12 @@
 from chimera.core.chimeraobject import ChimeraObject
 from chimera.core.lock import lock
 
-from chimera.interfaces.focuser import (Focuser, FocuserAxis,
-                                        AxisControllable,
-                                        InvalidFocusPositionException)
+from chimera.interfaces.focuser import (
+    Focuser,
+    FocuserAxis,
+    AxisControllable,
+    InvalidFocusPositionException,
+)
 
 
 class FocuserBase(ChimeraObject, Focuser):
@@ -64,7 +67,7 @@ class FocuserBase(ChimeraObject, Focuser):
 
     def _checkAxis(self, axis):
         if not self.supports(AxisControllable[axis]):
-            raise InvalidFocusPositionException("Cannot move %s axis."%axis)
+            raise InvalidFocusPositionException("Cannot move %s axis." % axis)
 
     def getMetadata(self, request):
         # Check first if there is metadata from an metadata override method.
@@ -72,10 +75,18 @@ class FocuserBase(ChimeraObject, Focuser):
         if md is not None:
             return md
         # If not, just go on with the instrument's default metadata.
-        md = [('FOCUSER', str(self['model']), 'Focuser Model'),
-              ('FOCUS', self.getPosition(), 'Focuser position used for this observation')]
+        md = [
+            ("FOCUSER", str(self["model"]), "Focuser Model"),
+            ("FOCUS", self.getPosition(), "Focuser position used for this observation"),
+        ]
         try:
-            md += [('FOCUSTEM', self.getTemperature(), 'Focuser Temperature at Exposure End [deg. C]')]
+            md += [
+                (
+                    "FOCUSTEM",
+                    self.getTemperature(),
+                    "Focuser Temperature at Exposure End [deg. C]",
+                )
+            ]
         except NotImplementedError:
             pass
 

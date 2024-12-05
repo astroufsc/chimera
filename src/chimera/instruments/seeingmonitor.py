@@ -54,5 +54,6 @@ class SeeingBase(ChimeraObject, SeeingMonitor):
 
     def getMetadata(self, request):
         # TODO: Check if metadata parameter is implemented or not.
-        return [('SEEMOD', str(self['model']), 'Seeing monitor Model'),
-                ]
+        return [
+            ("SEEMOD", str(self["model"]), "Seeing monitor Model"),
+        ]

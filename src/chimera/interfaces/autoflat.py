@@ -1,7 +1,7 @@
 from chimera.core import SYSTEM_CONFIG_DIRECTORY
 from chimera.interfaces.telescope import TelescopePierSide
 
-__author__ = 'kanaan'
+__author__ = "kanaan"
 
 #! /usr/bin/env python
 # -*- coding: iso-8859-1 -*-
@@ -43,17 +43,19 @@ class CanSetScopeButNotThisField(ChimeraException):
 class CantSetScopeException(ChimeraException):
     pass
 
+
 Target = Enum("CURRENT", "AUTO")
 
 
 class IAutoFlat(Interface):
 
-    __config__ = {"telescope": "/Telescope/0",
-                  "dome": "/Dome/0",
-                  "camera": "/Camera/0",
-                  "filterwheel": "/FilterWheel/0",
-                  "site": "/Site/0",
-                  }
+    __config__ = {
+        "telescope": "/Telescope/0",
+        "dome": "/Dome/0",
+        "camera": "/Camera/0",
+        "filterwheel": "/FilterWheel/0",
+        "site": "/Site/0",
+    }
 
     def getFlats(self, filter_id, n_flats):
         """
@@ -70,6 +72,6 @@ class IAutoFlat(Interface):
 
     @event
     def exposeComplete(self, filter_id, i_flat, expTime, level):
-        '''
+        """
         Called on exposuse completion
-        '''
+        """

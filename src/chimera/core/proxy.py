@@ -5,8 +5,7 @@ from chimera.core.location import Location
 import logging
 
 
-__all__ = ['Proxy',
-           'ProxyMethod']
+__all__ = ["Proxy", "ProxyMethod"]
 
 
 log = logging.getLogger(__name__)
@@ -40,7 +39,7 @@ class Proxy:
         return ProxyMethod(self, "__getitem__")(item)
 
     def __setitem__(self, item, value):
-        return ProxyMethod(self, "__setitem__")(item,value)
+        return ProxyMethod(self, "__setitem__")(item, value)
 
     def __iadd__(self, configDict):
         ProxyMethod(self, "__iadd__")(configDict)
@@ -53,7 +52,7 @@ class Proxy:
         return "[proxy for %s]" % self.location
 
 
-class ProxyMethod (object):
+class ProxyMethod(object):
 
     def __init__(self, proxy, method):
 
@@ -63,13 +62,14 @@ class ProxyMethod (object):
         self.__name__ = method
 
     def __repr__(self):
-        return "<%s.%s method proxy at %s>" % (self.proxy.location,
-                                               self.method,
-                                               hex(hash(self)))
+        return "<%s.%s method proxy at %s>" % (
+            self.proxy.location,
+            self.method,
+            hex(hash(self)),
+        )
 
     def __str__(self):
-        return "[method proxy for %s %s method]" % (self.proxy.location,
-                                                    self.method)
+        return "[method proxy for %s %s method]" % (self.proxy.location, self.method)
 
     # synchronous call
     def __call__(self, *args, **kwargs):
@@ -87,10 +87,7 @@ class ProxyMethod (object):
 
     def __do(self, other, action):
 
-        handler = {"topic": self.method,
-                   "handler": {"proxy": "",
-                               "method": ""}
-                   }
+        handler = {"topic": self.method, "handler": {"proxy": "", "method": ""}}
 
         # REMEMBER: Return a copy of this wrapper as we are using +=
 
@@ -109,8 +106,10 @@ class ProxyMethod (object):
         try:
             self.proxy.client.request(f"{EVENTS_PROXY_NAME}.{action}", (handler,), {})
         except Exception:
-            log.exception("Cannot %s to topic '%s' using proxy '%s'." %
-                         (action, self.method, self.proxy))
+            log.exception(
+                "Cannot %s to topic '%s' using proxy '%s'."
+                % (action, self.method, self.proxy)
+            )
 
         return self
 

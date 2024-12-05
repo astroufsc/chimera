@@ -22,8 +22,8 @@
 
 from chimera.core.metaobject import MetaObject
 
-__all__ = ['Interface']
+__all__ = ["Interface"]
 
 
-class Interface (object, metaclass=MetaObject):
+class Interface(object, metaclass=MetaObject):
     pass

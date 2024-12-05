@@ -1,5 +1,4 @@
-
-if __name__ == '__main__':
+if __name__ == "__main__":
 
     from chimera.controllers.scheduler.model import Program, Expose, Point, Session
 
@@ -15,18 +14,18 @@ if __name__ == '__main__':
     flat.exptime = 10
     flat.imageType = "flat"
     flat.objectName = "flat"
-    
+
     calibration = Program(name="Calibration")
     calibration.actions = [dark, flat]
 
     science = Program(name="Science")
     science.actions.append(Point(targetName="M7"))
-    
+
     for i in range(10):
         science.actions.append(Expose(filter="U", exptime=i, shutter="OPEN"))
 
     session = Session()
 
     session.add(calibration)
-    session.add(science)    
-    session.commit()    
+    session.add(science)
+    session.commit()

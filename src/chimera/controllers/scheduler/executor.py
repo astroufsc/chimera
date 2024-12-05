@@ -1,11 +1,25 @@
-
-from chimera.controllers.scheduler.handlers import (ExposeHandler, PointHandler,
-                                                    AutoFocusHandler, AutoFlatHandler, PointVerifyHandler)
-from chimera.controllers.scheduler.model import Expose, Point, AutoFocus, AutoFlat, PointVerify
+from chimera.controllers.scheduler.handlers import (
+    ExposeHandler,
+    PointHandler,
+    AutoFocusHandler,
+    AutoFlatHandler,
+    PointVerifyHandler,
+)
+from chimera.controllers.scheduler.model import (
+    Expose,
+    Point,
+    AutoFocus,
+    AutoFlat,
+    PointVerify,
+)
 from chimera.controllers.scheduler.handlers import ActionHandler
 from chimera.controllers.scheduler.status import SchedulerStatus
 
-from chimera.core.exceptions import ObjectNotFoundException, ProgramExecutionAborted, ProgramExecutionException
+from chimera.core.exceptions import (
+    ObjectNotFoundException,
+    ProgramExecutionAborted,
+    ProgramExecutionException,
+)
 
 import logging
 import threading
@@ -16,22 +30,23 @@ log = logging.getLogger(__name__)
 
 class ProgramExecutor(object):
 
-    def __init__ (self, controller):
+    def __init__(self, controller):
 
         self.currentHandler = None
-        self.currentAction  = None
+        self.currentAction = None
 
         self.mustStop = threading.Event()
 
         self.controller = controller
-        self.actionHandlers = {Expose     : ExposeHandler,
-                               Point      : PointHandler,
-                               AutoFocus  : AutoFocusHandler,
-                               AutoFlat   : AutoFlatHandler,
-                               PointVerify: PointVerifyHandler,
-                               }
+        self.actionHandlers = {
+            Expose: ExposeHandler,
+            Point: PointHandler,
+            AutoFocus: AutoFocusHandler,
+            AutoFlat: AutoFlatHandler,
+            PointVerify: PointVerifyHandler,
+        }
 
-    def __start__ (self):
+    def __start__(self):
         for handler in list(self.actionHandlers.values()):
             self._injectInstrument(handler)
 
@@ -87,7 +102,10 @@ class ProgramExecutor(object):
 
         for instrument in handler.process.__requires__:
             try:
-                setattr(handler, instrument,
-                        self.controller.getManager().getProxy(self.controller[instrument]))
+                setattr(
+                    handler,
+                    instrument,
+                    self.controller.getManager().getProxy(self.controller[instrument]),
+                )
             except ObjectNotFoundException as e:
                 log.error("No instrument to inject on %s handler" % handler)
