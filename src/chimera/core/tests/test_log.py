@@ -30,7 +30,7 @@ class TestLog(object):
         try:
             simple.answer()
         except ChimeraException as e:
-            assert e.cause != None
+            assert e.cause is not None
             log.exception("wow, something wrong")
 
         manager.shutdown()

@@ -69,8 +69,8 @@ class TestEvents:
 
     def test_publish(self, manager):
 
-        assert manager.addClass(Publisher, "p") != False
-        assert manager.addClass(Subscriber, "s") != False
+        assert manager.addClass(Publisher, "p") is not False
+        assert manager.addClass(Subscriber, "s") is not False
 
         p = manager.getProxy("/Publisher/p")
         assert isinstance(p, Proxy)
@@ -101,8 +101,8 @@ class TestEvents:
 
     def test_performance(self, manager):
 
-        assert manager.addClass(Publisher, "p") != False
-        assert manager.addClass(Subscriber, "s") != False
+        assert manager.addClass(Publisher, "p") is not False
+        assert manager.addClass(Subscriber, "s") is not False
 
         p = manager.getProxy("/Publisher/p")
         assert isinstance(p, Proxy)

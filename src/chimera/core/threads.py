@@ -180,7 +180,7 @@ class ThreadPoolThread(threading.Thread):
         it, calling the callback if any.
         """
 
-        while self.__isDying == False:
+        while not self.__isDying:
             cmd, args, kwargs, callback = self.__pool.getNextTask()
 
             # If there's nothing to do, just sleep a bit

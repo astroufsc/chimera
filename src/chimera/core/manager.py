@@ -279,7 +279,7 @@ class Manager:
         @rtype: Proxy or bool
         """
 
-        if type(location) != Location:
+        if not isinstance(location, Location):
             location = Location(location)
 
         # get the class
@@ -382,7 +382,7 @@ class Manager:
 
         self.stop(location)
 
-        resource = self.resources.get(location)
+        self.resources.get(location)
         # self.adapter.disconnect(resource.instance)
         self.resources.remove(location)
 

@@ -179,13 +179,12 @@ class CLICheckers:
     def check_includepath(option, opt_str, value, parser):
         if not value or not os.path.isdir(os.path.abspath(value)):
             raise optparse.OptionValueError("Couldn't find %s include path." % value)
-        l = getattr(parser.values, "%s" % option.dest)
-        l.append(value)
+        getattr(parser.values, "%s" % option.dest).append(value)
 
     @staticmethod
     def check_location(option, opt_str, value, parser):
         try:
-            l = Location(value)
+            Location(value)
         except InvalidLocationException:
             raise optparse.OptionValueError("%s isnt't a valid location." % value)
 
@@ -595,7 +594,7 @@ class ChimeraCLI(object):
             try:
                 inst_proxy = Proxy(inst.location)
             except ObjectNotFoundException:
-                if inst.required == True:
+                if inst.required:
                     self.exit(
                         "Couldn't find %s. (see --help for more information)"
                         % inst.name.capitalize()
@@ -629,9 +628,9 @@ class ChimeraCLI(object):
                     # pure attribute
                     payload = attr
 
-                if type(payload) == Action:
+                if isinstance(payload, Action):
                     self._actions[payload.name] = payload
-                elif type(payload) == Parameter:
+                elif isinstance(payload, Parameter):
                     self._parameters[payload.name] = payload
 
         for action in list(self._actions.values()):
@@ -754,11 +753,7 @@ class ChimeraCLI(object):
         # add default actions
         # FIXME: there is no way to disable a default action?
         actions.extend(
-            [
-                action
-                for action in list(self._actions.values())
-                if action.default == True
-            ]
+            [action for action in list(self._actions.values()) if action.default]
         )
 
         if not actions:

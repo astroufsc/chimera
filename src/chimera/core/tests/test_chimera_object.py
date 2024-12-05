@@ -37,7 +37,7 @@ class TestChimeraObject(object):
 
         assert not isinstance(BaseClass.__dict__["_basePrivateMethod"], MethodWrapper)
 
-        assert BaseClass.__dict__[CONFIG_ATTRIBUTE_NAME]["baseConfig"] == True
+        assert BaseClass.__dict__[CONFIG_ATTRIBUTE_NAME]["baseConfig"] is True
 
         # 2. single inheritance
         class SingleClass(BaseClass):
@@ -61,8 +61,8 @@ class TestChimeraObject(object):
             SingleClass.__bases__[0].__dict__["_basePrivateMethod"], MethodWrapper
         )
 
-        assert SingleClass.__dict__[CONFIG_ATTRIBUTE_NAME]["baseConfig"] == True
-        assert SingleClass.__dict__[CONFIG_ATTRIBUTE_NAME]["singleConfig"] == True
+        assert SingleClass.__dict__[CONFIG_ATTRIBUTE_NAME]["baseConfig"] is True
+        assert SingleClass.__dict__[CONFIG_ATTRIBUTE_NAME]["singleConfig"] is True
 
         # 3. multiple inheritance
         class AnotherBase(ChimeraObject):
@@ -98,23 +98,23 @@ class TestChimeraObject(object):
         assert (
             MultipleClass.__dict__[CONFIG_ATTRIBUTE_NAME]["baseConfig"] == "overriden"
         )
-        assert MultipleClass.__dict__[CONFIG_ATTRIBUTE_NAME]["singleConfig"] == True
+        assert MultipleClass.__dict__[CONFIG_ATTRIBUTE_NAME]["singleConfig"] is True
         assert (
-            MultipleClass.__dict__[CONFIG_ATTRIBUTE_NAME]["anotherBaseConfig"] == True
+            MultipleClass.__dict__[CONFIG_ATTRIBUTE_NAME]["anotherBaseConfig"] is True
         )
-        assert MultipleClass.__dict__[CONFIG_ATTRIBUTE_NAME]["multipleConfig"] == True
+        assert MultipleClass.__dict__[CONFIG_ATTRIBUTE_NAME]["multipleConfig"] is True
 
     def test_method_wrapper(self):
 
         class Test(ChimeraObject):
             def doFoo(self, a, b, c=None):
-                assert type(self) == Test
+                assert isinstance(self, Test)
 
                 return True
 
         t = Test()
 
-        assert t.doFoo(1, 2, 3) == True
+        assert t.doFoo(1, 2, 3) is True
 
     def test_config(self):
 
@@ -125,19 +125,19 @@ class TestChimeraObject(object):
         c = ConfigTest()
 
         # get
-        assert c["key1"] == True
-        assert c["key2"] == False
+        assert c["key1"] is True
+        assert c["key2"] is False
 
-        assert c.__getitem__("key1") == True
-        assert c.__getitem__("key2") == False
+        assert c.__getitem__("key1") is True
+        assert c.__getitem__("key2") is False
 
         # set
 
         # setitem returns the old item
-        assert c.__setitem__("key1", False) == True
+        assert c.__setitem__("key1", False) is True
 
         c["key1"] = False
-        assert c["key1"] == False
+        assert c["key1"] is False
 
         # oops, only bools
         c["key1"] = True
@@ -145,7 +145,7 @@ class TestChimeraObject(object):
         with pytest.raises(OptionConversionException):
             c.__setitem__("key1", "Am I a bool?")
 
-        assert c["key1"] == True
+        assert c["key1"] is True
 
         # oops, what?
         with pytest.raises(KeyError):
@@ -174,7 +174,7 @@ class TestChimeraObject(object):
         m = MainTest()
         m.setHz(10)
 
-        assert m.__main__() == True
+        assert m.__main__() is True
         assert m.counter == m.getHz()
 
     def test_location(self):
@@ -184,7 +184,7 @@ class TestChimeraObject(object):
 
         f = Foo()
 
-        assert f.__setlocation__("/Foo/bar") == True
+        assert f.__setlocation__("/Foo/bar") is True
         with pytest.raises(InvalidLocationException):
             f.__setlocation__("Siberian Lakes")
         assert f.getLocation() == "/Foo/bar"
