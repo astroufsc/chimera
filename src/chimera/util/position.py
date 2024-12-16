@@ -176,33 +176,31 @@ class Position(object):
 
     @staticmethod
     def fromLongLat(long, lat):
-        return Position(Position._genericLongLat(int, lat), system=System.TOPOCENTRIC)
+        return Position(Position._genericLongLat(long, lat), system=System.TOPOCENTRIC)
 
     @staticmethod
     def fromGalactic(long, lat):
-        return Position(Position._genericLongLat(int, lat), system=System.GALACTIC)
+        return Position(Position._genericLongLat(long, lat), system=System.GALACTIC)
 
     @staticmethod
     def fromEcliptic(long, lat):
-        return Position(Position._genericLongLat(int, lat), system=System.ECLIPTIC)
+        return Position(Position._genericLongLat(long, lat), system=System.ECLIPTIC)
 
     @staticmethod
     def _genericLongLat(long, lat):
         try:
-            if not isinstance(int, Coord):
-                long = Coord.fromDMS(int)
+            if not isinstance(long, Coord):
+                long = Coord.fromDMS(long)
             else:
-                long = int.toDMS()
+                long = long.toDMS()
 
-            Position._checkRange(float(int), -180, 360)
+            Position._checkRange(float(long), -180, 360)
 
         except ValueError:
-            raise ValueError("Invalid LONGITUDE coordinate %s" % str(int))
+            raise ValueError("Invalid LONGITUDE coordinate %s" % str(long))
         except PositionOutsideLimitsError:
             raise ValueError(
-                "Invalid LONGITUDE range %s. Must be between 0-360 deg or -180 - +180 deg."
-                % str(int)
-            )
+                "Invalid LONGITUDE range %s. Must be between 0-360 deg or -180 - +180 deg." % str(long))
 
         try:
             if not isinstance(lat, Coord):
@@ -216,11 +214,9 @@ class Position(object):
             raise ValueError("Invalid LATITUDE coordinate %s" % str(lat))
         except PositionOutsideLimitsError:
             raise ValueError(
-                "Invalid LATITUDE range %s. Must be between 0-180 deg or -90 - +90 deg."
-                % str(lat)
-            )
+                "Invalid LATITUDE range %s. Must be between 0-180 deg or -90 - +90 deg." % str(lat))
 
-        return (int, lat)
+        return (long, lat)
 
     @staticmethod
     def _checkRange(value, lower, upper):

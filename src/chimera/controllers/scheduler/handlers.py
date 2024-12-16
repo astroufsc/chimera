@@ -163,7 +163,7 @@ class ExposeHandler(ActionHandler):
         ]
 
         try:
-            images = camera.expose(ir)
+            camera.expose(ir)
         except Exception as e:
             printException(e)
             raise ProgramExecutionException("Error while exposing")

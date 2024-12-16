@@ -119,18 +119,15 @@ def xtermTitle(mystr):
 
 def xtermTitleReset():
     if havecolor and dotitles and "TERM" in os.environ:
-        myt = os.environ["TERM"]
         xtermTitle(os.environ["TERM"])
 
 
 def notitles():
     "turn off title setting"
-    dotitles = 0
 
 
 def nocolor():
     "turn off colorization"
-    havecolor = 0
     for x in list(codes.keys()):
         codes[x] = ""
 

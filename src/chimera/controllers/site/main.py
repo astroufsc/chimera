@@ -79,7 +79,7 @@ class SiteController(object):
 
         def check_location(option, opt_str, value, parser):
             try:
-                l = Location(value)
+                Location(value)
             except InvalidLocationException:
                 raise optparse.OptionValueError("%s isnt't a valid location." % value)
 

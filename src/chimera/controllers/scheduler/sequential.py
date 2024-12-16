@@ -3,11 +3,11 @@ from chimera.controllers.scheduler.model import Session, Program
 
 from sqlalchemy import desc
 
+from queue import Queue
+
 import logging
 
 log = logging.getLogger(__name__)
-
-from queue import Queue
 
 
 class SequentialScheduler(IScheduler):
@@ -22,12 +22,7 @@ class SequentialScheduler(IScheduler):
         self.rq = Queue(-1)
 
         session = Session()
-        programs = (
-            session.query(Program)
-            .order_by(desc(Program.priority))
-            .filter(Program.finished == False)
-            .all()
-        )
+        programs = session.query(Program).order_by(desc(Program.priority)).filter(Program.finished is False).all()
 
         if not programs:
             return

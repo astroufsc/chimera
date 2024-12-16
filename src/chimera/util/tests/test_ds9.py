@@ -13,13 +13,13 @@ class TestDS9(object):
 
     def test_basics(self):
         ds9 = DS9()
-        assert ds9 != None
+        assert ds9 is not None
 
         ds9.open()
-        assert ds9.isOpen() == True
+        assert ds9.isOpen() is True
 
         ds9.quit()
-        assert ds9.isOpen() == False
+        assert ds9.isOpen() is False
 
     def test_use_global_ds9(self):
         filename = os.path.realpath(
@@ -30,7 +30,7 @@ class TestDS9(object):
         time.sleep(2)
 
         ds9 = DS9()
-        assert ds9.isOpen() == True
+        assert ds9.isOpen() is True
         assert ds9.get("file").strip() == filename
 
         os.kill(p.pid, signal.SIGTERM)

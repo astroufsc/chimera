@@ -105,7 +105,6 @@ class ImageUtil(object):
         basename = string.Template(basename).safe_substitute(subs_dict)
         ext = string.Template(ext).safe_substitute(subs_dict)
 
-        fullpath = os.path.join(dirname, basename)
         finalname = os.path.join(dirname, "%s%s%s" % (basename, os.path.extsep, ext))
 
         if not os.path.exists(dirname):

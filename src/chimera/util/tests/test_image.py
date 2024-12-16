@@ -27,8 +27,8 @@ class TestImage(object):
             "world value at center pix %s:" % str(img.center()),
             img.worldAt(img.center()),
         )
-        assert world.ra.D != None
-        assert world.dec.D != None
+        assert world.ra.D is not None
+        assert world.dec.D is not None
 
     def test_extractor(self):
 
