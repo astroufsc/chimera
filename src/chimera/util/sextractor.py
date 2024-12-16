@@ -152,8 +152,7 @@ import subprocess
 import re
 import copy
 
-from .sexcatalog import *
-
+from chimera.util.sexcatalog import SExtractorfile
 
 # ======================================================================
 

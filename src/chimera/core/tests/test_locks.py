@@ -102,10 +102,10 @@ class TestLock(object):
             locked_mean = sum(locked) / len(locked)
 
             unlocked_sigma = sqrt(
-                sum([(unlocked_mean - u) ** 2 for u in unlocked]) / len(unlocked)
+                sum([(unlocked_mean - lock) ** 2 for lock in unlocked]) / len(unlocked)
             )
             locked_sigma = sqrt(
-                sum([(locked_mean - l) ** 2 for l in locked]) / len(locked)
+                sum([(locked_mean - lock) ** 2 for lock in locked]) / len(locked)
             )
 
             def equals_eps(a, b, eps=1e-3):

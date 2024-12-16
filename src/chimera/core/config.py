@@ -22,15 +22,15 @@
 
 from types import NoneType
 
-import logging
-
-log = logging.getLogger(__name__)
-
 from chimera.util.enum import EnumValue
 from chimera.core.exceptions import OptionConversionException
 
 from chimera.util.coord import Coord
 from chimera.util.position import Position
+
+import logging
+
+log = logging.getLogger(__name__)
 
 
 class Option(object):
@@ -86,10 +86,10 @@ class IntChecker(Checker):
         # if we can't get one from "value"
 
         # simple case
-        if type(value) in (int, float, bool):
+        if isinstance(value, (int, float, bool)):
             return int(value)
 
-        if type(value) == str:
+        if isinstance(value, str):
             # try to convert to int (use float first and then cast (loosely)
             try:
                 tmp = float(value)
@@ -116,10 +116,10 @@ class FloatChecker(Checker):
         # if we can't get one from "value"
 
         # simple case
-        if type(value) in (float, int, bool):
+        if isinstance(value, (float, int, bool)):
             return float(value)
 
-        if type(value) == str:
+        if isinstance(value, str):
 
             # try to convert to int
             try:
@@ -173,13 +173,13 @@ class BoolChecker(Checker):
         # we MUST return an bool or raise OptionConversionException
         # if we can't get one from "value"
 
-        if type(value) == bool:
+        if isinstance(value, bool):
             return value
 
         # only accept 0 and 1 as valid booleans...
         # cause a lot of problems in OptionChecker accept the same as python
         # truth tables assume
-        if type(value) in (int, float):
+        if isinstance(value, (int, float)):
 
             if value == 1:
                 return True
@@ -187,7 +187,7 @@ class BoolChecker(Checker):
             if value == 0:
                 return False
 
-        if type(value) == str:
+        if isinstance(value, str):
 
             value = value.strip().lower()
 
@@ -216,19 +216,19 @@ class OptionsChecker(Checker):
 
         for value in opt:
 
-            if type(value) == int:
+            if isinstance(value, int):
                 options.append({"value": value, "checker": IntChecker()})
                 continue
 
-            if type(value) == float:
+            if isinstance(value, float):
                 options.append({"value": value, "checker": FloatChecker()})
                 continue
 
-            if type(value) == str:
+            if isinstance(value, str):
                 options.append({"value": value, "checker": StringChecker()})
                 continue
 
-            if type(value) == bool:
+            if isinstance(value, bool):
                 options.append({"value": value, "checker": BoolChecker()})
                 continue
 
@@ -260,7 +260,7 @@ class RangeChecker(Checker):
         self._min = value[0]
         self._max = value[1]
 
-        if type(value[0]) == float:
+        if isinstance(value[0], float):
             self._checker = FloatChecker()
 
         else:
@@ -296,11 +296,11 @@ class EnumChecker(Checker):
 
     def check(self, value):
 
-        if type(value) == EnumValue:
+        if isinstance(value, EnumValue):
             if value in self.enumtype:
                 return value
 
-        if type(value) == str:
+        if isinstance(value, str):
             ret = [v for v in self.enumtype if str(v).upper() == value.upper()]
             if ret:
                 return ret[0]
@@ -378,7 +378,7 @@ class Config(object):
 
     def __init__(self, obj):
 
-        if type(obj) == dict:
+        if isinstance(obj, dict):
             self._options = self._readOptions(obj)
         else:
             self._options = self._readOptions(obj.__config__)
@@ -389,19 +389,19 @@ class Config(object):
 
         for name, value in list(opt.items()):
 
-            if type(value) == int:
+            if isinstance(value, int):
                 options[name] = Option(name, value, IntChecker())
                 continue
 
-            if type(value) == float:
+            if isinstance(value, float):
                 options[name] = Option(name, value, FloatChecker())
                 continue
 
-            if type(value) == str:
+            if isinstance(value, str):
                 options[name] = Option(name, value, StringChecker())
                 continue
 
-            if type(value) == bool:
+            if isinstance(value, bool):
                 options[name] = Option(name, value, BoolChecker())
                 continue
 
@@ -411,21 +411,21 @@ class Config(object):
 
             # For list and tuple we use the first element as default option.
             # If the list/tuple is empty, its value will be assigned None.
-            if type(value) == list:
+            if isinstance(value, list):
                 if len(value) > 0:
                     options[name] = Option(name, value[0], OptionsChecker(value))
                 else:
                     options[name] = Option(name, None, NoneChecker())
                 continue
 
-            if type(value) == tuple:
+            if isinstance(value, tuple):
                 if len(value) > 0:
                     options[name] = Option(name, value[0], RangeChecker(value))
                 else:
                     options[name] = Option(name, None, NoneChecker())
                 continue
 
-            if type(value) == EnumValue:
+            if isinstance(value, EnumValue):
                 options[name] = Option(name, value, EnumChecker(value))
                 continue
 
@@ -452,7 +452,7 @@ class Config(object):
 
     def __getitem__(self, name):
 
-        if type(name) != str:
+        if not isinstance(name, str):
             raise TypeError
 
         if name in self:
@@ -496,10 +496,10 @@ class Config(object):
 
     def __iadd__(self, other):
 
-        if type(other) not in (Config, dict):
+        if isinstance(other, (Config, dict)):
             return self
 
-        if type(other) == dict:
+        if isinstance(other, dict):
             other = Config(other)
 
         for name, value in list(other._options.items()):

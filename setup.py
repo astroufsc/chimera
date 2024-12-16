@@ -50,13 +50,13 @@ platform_deps = []
 # go!
 setup(
     name="chimera-python",
-    version=_chimera_version_,
-    description=_chimera_description_,
+    version=_chimera_version_,  # noqa: F821 (name defined in exec)
+    description=_chimera_description_,  # noqa: F821 (name defined in exec)
     long_description=open("docs/site/index.rst").read(),
-    url=_chimera_url_,
-    author=_chimera_author_,
-    author_email=_chimera_author_email_,
-    license=_chimera_license_,
+    url=_chimera_url_,  # noqa: F821 (name defined in exec)
+    author=_chimera_author_,  # noqa: F821 (name defined in exec)
+    author_email=_chimera_author_email_,  # noqa: F821 (name defined in exec)
+    license=_chimera_license_,  # noqa: F821 (name defined in exec)
     package_dir={"": "src"},
     packages=find_packages("src", exclude=["*.tests"]),
     include_package_data=True,

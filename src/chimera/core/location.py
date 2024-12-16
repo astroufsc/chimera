@@ -4,12 +4,11 @@
 import re
 import sys
 
-# import chimera.core.log
+from chimera.core.exceptions import InvalidLocationException
+
 import logging
 
 log = logging.getLogger(__name__)
-
-from chimera.core.exceptions import InvalidLocationException
 
 
 class Location(object):
@@ -61,9 +60,9 @@ class Location(object):
         # from dict
         else:
             # get from options dict (cls, name, config)
-            l = "/%s/%s" % (options.get("cls", ""), options.get("name", ""))
+            loc = "/%s/%s" % (options.get("cls", ""), options.get("name", ""))
 
-            _, __, self._class, self._name, ___ = self.parse(l)
+            _, __, self._class, self._name, ___ = self.parse(loc)
 
             self._config = options.get("config", {})
             self._host = options.get("host", None)

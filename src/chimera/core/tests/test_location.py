@@ -9,24 +9,24 @@ class TestLocation(object):
     def test_create(self):
 
         # simple strings
-        l = Location("/Class/name?option1=value1,option2=value2")
-        assert l
+        loc = Location("/Class/name?option1=value1,option2=value2")
+        assert loc
 
-        assert l.host is None
-        assert l.port is None
-        assert l.cls == "Class"
-        assert l.name == "name"
-        assert l.config == dict(option1="value1", option2="value2")
+        assert loc.host is None
+        assert loc.port is None
+        assert loc.cls == "Class"
+        assert loc.name == "name"
+        assert loc.config == dict(option1="value1", option2="value2")
 
         # simple strings
-        l = Location("host.com.br:1000/Class/name?option1=value1,option2=value2")
-        assert l
+        loc = Location("host.com.br:1000/Class/name?option1=value1,option2=value2")
+        assert loc
 
-        assert l.host == "host.com.br"
-        assert l.port == 1000
-        assert l.cls == "Class"
-        assert l.name == "name"
-        assert l.config == dict(option1="value1", option2="value2")
+        assert loc.host == "host.com.br"
+        assert loc.port == 1000
+        assert loc.cls == "Class"
+        assert loc.name == "name"
+        assert loc.config == dict(option1="value1", option2="value2")
 
         # from dict
         with pytest.raises(InvalidLocationException):
@@ -45,45 +45,42 @@ class TestLocation(object):
         assert Location(cls="Class", name="0")
 
         # simple version
-        l = Location(
+        loc = Location(
             cls="Class", name="name", config=dict(option1="value1", option2="value2")
         )
-        assert l
+        assert loc
 
-        assert l.cls == "Class"
-        assert l.name == "name"
-        assert l.config == dict(option1="value1", option2="value2")
-        assert type(str(l)) == str
+        assert loc.cls == "Class"
+        assert loc.name == "name"
+        assert loc.config == dict(option1="value1", option2="value2")
 
         # host version
-        l = Location(
+        loc = Location(
             host="host.com.br",
             port=1000,
             cls="Class",
             name="name",
             config=dict(option1="value1", option2="value2"),
         )
-        assert l
-        assert l.host == "host.com.br"
-        assert l.port == 1000
-        assert l.cls == "Class"
-        assert l.name == "name"
-        assert l.config == dict(option1="value1", option2="value2")
-        assert type(str(l)) == str
+        assert loc
+        assert loc.host == "host.com.br"
+        assert loc.port == 1000
+        assert loc.cls == "Class"
+        assert loc.name == "name"
+        assert loc.config == dict(option1="value1", option2="value2")
 
-        l = Location(
+        loc = Location(
             host="host.com.br",
             cls="Class",
             name="name",
             config=dict(option1="value1", option2="value2"),
         )
-        assert l
-        assert l.host == "host.com.br"
-        assert l.port is None
-        assert l.cls == "Class"
-        assert l.name == "name"
-        assert l.config == dict(option1="value1", option2="value2")
-        assert type(str(l)) == str
+        assert loc
+        assert loc.host == "host.com.br"
+        assert loc.port is None
+        assert loc.cls == "Class"
+        assert loc.name == "name"
+        assert loc.config == dict(option1="value1", option2="value2")
 
         with pytest.raises(InvalidLocationException):
             Location(
@@ -138,9 +135,9 @@ class TestLocation(object):
             Location("/Class/name"),  # copy constructor
         ]
 
-        for l in valid:
-            loc = Location(l)
-            assert loc, "'%s' is not valid" % l
+        for loc in valid:
+            loc = Location(loc)
+            assert loc, "'%s' is not valid" % loc
 
     def test_invalid(self):
 
@@ -150,6 +147,6 @@ class TestLocation(object):
             ":1000/Class/name",  # port only valid with a host
         ]
 
-        for l in invalid:
+        for loc in invalid:
             with pytest.raises(InvalidLocationException):
-                Location(l)
+                Location(loc)

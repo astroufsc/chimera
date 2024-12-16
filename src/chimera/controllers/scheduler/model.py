@@ -1,3 +1,4 @@
+import datetime as dt
 from chimera.core.constants import DEFAULT_PROGRAM_DATABASE
 
 from sqlalchemy import (
@@ -21,8 +22,6 @@ metaData.bind = engine
 
 Session = sessionmaker(bind=engine)
 Base = declarative_base(metadata=metaData)
-
-import datetime as dt
 
 
 class Targets(Base):

@@ -1,5 +1,14 @@
 # -*- coding: utf-8 -*-
 
+
+# Added for compatibility with Python 2.4
+def cmp(a, b):
+    """
+    Compare two objects. Available in Python 2.4, but not in 3.x.
+    """
+    return (a > b) - (a < b)
+
+
 # enum.py
 # Part of enum, a package providing enumerated types for Python.
 #
@@ -218,5 +227,5 @@ class Enum(object):
         values (keys).
         """
 
-        assert type(other) == type(self)
+        assert isinstance(other, self.__class__)
         return cmp(getattr(self, "_keys"), getattr(other, "_keys"))

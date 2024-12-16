@@ -79,7 +79,8 @@ class ClassLoader(object):
                     "Module %s found but couldn't be loaded." % clsname
                 )
 
-        except:
+        except Exception:
+            # Catch any other exception during import
             raise ClassLoaderException(
                 "Module %s found but couldn't be loaded." % clsname
             )

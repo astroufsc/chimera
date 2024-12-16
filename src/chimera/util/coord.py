@@ -107,10 +107,10 @@ class CoordUtil(object):
     def dms2d(dms):
 
         # float/int case
-        if type(dms) in [float, int]:
+        if isinstance(dms, (int, float)):
             return float(dms)
 
-        if type(dms) == str:
+        if isinstance(dms, str):
 
             # try to match the regular expression
             matches = CoordUtil.COORD_RE.match(dms.strip())
@@ -581,7 +581,7 @@ class Coord(object):
     @staticmethod
     def _from_float_to(c, state):
 
-        if type(c) == str:
+        if isinstance(c, str):
             try:
                 c = float(c)
             except ValueError:

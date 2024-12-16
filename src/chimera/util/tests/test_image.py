@@ -62,7 +62,7 @@ class TestImage(object):
                 subs={"OBJECT": "M5"},
             )
             names.append(name)
-            file(name, "w").close()
+            open(name, "w").close()
 
         for name in names:
             assert os.path.exists(name)

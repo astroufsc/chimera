@@ -99,12 +99,6 @@ class EventsProxy:
 
                 excluded.append(handler)
                 continue
-            except Pyro.errors.ProtocolError:
-                log.debug(
-                    "Unreachable handler (%s). Removing from subscribers list." % proxy
-                )
-                excluded.append(handler)
-                continue
             except Exception as e:
                 log.debug(
                     "Handler (%s) raised an exception. Removing from subscribers list."

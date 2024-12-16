@@ -29,11 +29,11 @@ import logging
 
 logging.getLogger("suds").setLevel(1000000000)
 
-from suds.xsd.sxbasic import Import
+from suds.xsd.sxbasic import Import  # noqa: E402
 
 Import.bind("http://schemas.xmlsoap.org/soap/encoding/")
 
-from suds.client import Client
+from suds.client import Client  # noqa: E402
 
 
 class Simbad(object):

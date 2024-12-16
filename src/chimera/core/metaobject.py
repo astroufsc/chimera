@@ -50,9 +50,8 @@ class MetaObject(type):
         config = {}
 
         for base in bases:
-            if (
-                CONFIG_ATTRIBUTE_NAME in base.__dict__
-                and type(base.__dict__[CONFIG_ATTRIBUTE_NAME]) == dict
+            if CONFIG_ATTRIBUTE_NAME in base.__dict__ and isinstance(
+                base.__dict__[CONFIG_ATTRIBUTE_NAME], dict
             ):
                 config = dict(config, **base.__dict__[CONFIG_ATTRIBUTE_NAME])
 

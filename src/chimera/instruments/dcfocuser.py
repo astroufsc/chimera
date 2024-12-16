@@ -156,7 +156,8 @@ class DCFocuser(FocuserBase):
                 self._move(Direction.OUT, abs(delta))
             elif delta < 0:
                 self._move(Direction.IN, abs(delta))
-        except:
+        except (InvalidFocusPositionException, ValueError):
+            self.log.error("Invalid position %d." % position)
             return
 
         self._savePosition(position)

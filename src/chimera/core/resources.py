@@ -143,11 +143,23 @@ class ResourcesManager:
                 # nor a valid object
                 return False
 
-    __iter__ = lambda self: self._res.__iter__()
-    __len__ = lambda self: self._res.__len__()
+    def __iter__(self):
+        return iter(self._res)
 
-    keys = lambda self: list(self._res.keys())
-    values = lambda self: list(self._res.values())
-    items = lambda self: list(self._res.items())
-    iterkeys = lambda self: iter(self._res.keys())
-    iteritems = lambda self: iter(self._res.items())
+    def __len__(self):
+        return len(self._res)
+
+    def keys(self):
+        return list(self._res.keys())
+
+    def values(self):
+        return list(self._res.values())
+
+    def items(self):
+        return list(self._res.items())
+
+    def iterkeys(self):
+        return iter(self._res.keys())
+
+    def iteritems(self):
+        return iter(self._res.items())

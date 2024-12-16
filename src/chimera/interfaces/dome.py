@@ -28,7 +28,7 @@ from chimera.util.enum import Enum
 from chimera.util.coord import Coord
 
 
-__all__ = ["Mode", "Type", "Dome", "InvalidDomePositionException"]
+__all__ = ["Mode", "Style", "Dome", "InvalidDomePositionException"]
 
 Mode = Enum("Stand", "Track")
 Style = Enum("Rolloff", "Classic", "Other")

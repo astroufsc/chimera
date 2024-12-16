@@ -87,7 +87,7 @@ class Position(object):
     def fromRaDec(ra, dec, epoch=Epoch.J2000):
 
         try:
-            if type(ra) == str:
+            if isinstance(ra, str):
                 ra = Coord.fromHMS(ra)
             elif isinstance(ra, Coord):
                 ra = ra.toHMS()
@@ -112,7 +112,7 @@ class Position(object):
             )
 
         try:
-            if type(dec) == str:
+            if isinstance(dec, str):
                 dec = Coord.fromDMS(dec)
             elif isinstance(dec, Coord):
                 dec = dec.toDMS()
@@ -200,7 +200,9 @@ class Position(object):
             raise ValueError("Invalid LONGITUDE coordinate %s" % str(long))
         except PositionOutsideLimitsError:
             raise ValueError(
-                "Invalid LONGITUDE range %s. Must be between 0-360 deg or -180 - +180 deg." % str(long))
+                "Invalid LONGITUDE range %s. Must be between 0-360 deg or -180 - +180 deg."
+                % str(long)
+            )
 
         try:
             if not isinstance(lat, Coord):
@@ -214,7 +216,9 @@ class Position(object):
             raise ValueError("Invalid LATITUDE coordinate %s" % str(lat))
         except PositionOutsideLimitsError:
             raise ValueError(
-                "Invalid LATITUDE range %s. Must be between 0-180 deg or -90 - +90 deg." % str(lat))
+                "Invalid LATITUDE range %s. Must be between 0-180 deg or -90 - +90 deg."
+                % str(lat)
+            )
 
         return (long, lat)
 

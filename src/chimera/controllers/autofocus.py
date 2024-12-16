@@ -248,22 +248,31 @@ class Autofocus(ChimeraObject, IAutofocus):
             debug_data = dict(id=self.currentRun, start=start, end=end, step=step)
             try:
                 debug_file = open(
-                    os.path.join(SYSTEM_CONFIG_DIRECTORY, self.currentRun, "autofocus.debug"),
+                    os.path.join(
+                        SYSTEM_CONFIG_DIRECTORY, self.currentRun, "autofocus.debug"
+                    ),
                     "w",
                 )
                 debug_file.write(yaml.dump(debug_data))
                 debug_file.close()
             except IOError:
-                self.log.warning("Cannot save debug information. Debug will be a little harder later.")
+                self.log.warning(
+                    "Cannot save debug information. Debug will be a little harder later."
+                )
 
         self.log.debug("=" * 40)
         self.log.debug("[%s] Starting autofocus run." % time.strftime("%c"))
         self.log.debug("=" * 40)
-        self.log.debug("Focus range: start=%d end=%d step=%d points=%d" % (start, end, step, len(positions)))
+        self.log.debug(
+            "Focus range: start=%d end=%d step=%d points=%d"
+            % (start, end, step, len(positions))
+        )
 
         # images for debug mode
         if debug:
-            self._debug_images = ["%s/focus-%04d.fits" % (debug, i) for i in range(1, len(positions) + 2)]
+            self._debug_images = [
+                "%s/focus-%04d.fits" % (debug, i) for i in range(1, len(positions) + 2)
+            ]
 
         self.imageRequest = ImageRequest()
         self.imageRequest["exptime"] = exptime or 10
@@ -297,7 +306,8 @@ class Autofocus(ChimeraObject, IAutofocus):
 
             if not star_found:
                 raise StarNotFoundException(
-                    "Couldn't find a suitable star to focus on." "Giving up after %d tries." % tries
+                    "Couldn't find a suitable star to focus on."
+                    "Giving up after %d tries." % tries
                 )
 
         try:
@@ -386,16 +396,23 @@ class Autofocus(ChimeraObject, IAutofocus):
                 temp = focuser.getTemperature()
             except NotImplementedError:
                 temp = None
-            fit = FocusFit.fit(N.array(valid_positions), N.array(fwhm), temperature=temp, minmax=minmax)
+            fit = FocusFit.fit(
+                N.array(valid_positions), N.array(fwhm), temperature=temp, minmax=minmax
+            )
         except Exception:
             focuser.moveTo(initial_position)
 
             raise FocusNotFoundException(
-                "Error trying to fit a focus curve. " "Leaving focuser at %04d" % initial_position
+                "Error trying to fit a focus curve. "
+                "Leaving focuser at %04d" % initial_position
             )
 
-        fit.plot(os.path.join(SYSTEM_CONFIG_DIRECTORY, self.currentRun, "autofocus.plot.png"))
-        fit.log(os.path.join(SYSTEM_CONFIG_DIRECTORY, self.currentRun, "autofocus.plot.dat"))
+        fit.plot(
+            os.path.join(SYSTEM_CONFIG_DIRECTORY, self.currentRun, "autofocus.plot.png")
+        )
+        fit.log(
+            os.path.join(SYSTEM_CONFIG_DIRECTORY, self.currentRun, "autofocus.plot.dat")
+        )
 
         # leave focuser at best position
         try:
@@ -436,7 +453,9 @@ class Autofocus(ChimeraObject, IAutofocus):
             except IndexError:
                 raise ChimeraException("Cannot find debug images")
 
-        self.imageRequest["filename"] = os.path.basename(ImageUtil.makeFilename("focus-$DATE"))
+        self.imageRequest["filename"] = os.path.basename(
+            ImageUtil.makeFilename("focus-$DATE")
+        )
 
         cam = self.getCam()
 
@@ -449,7 +468,9 @@ class Autofocus(ChimeraObject, IAutofocus):
         if frames:
             image = frames[0]
             image_path = image.filename()
-            if not os.path.exists(image_path):  # If image is on a remote server, donwload it.
+            if not os.path.exists(
+                image_path
+            ):  # If image is on a remote server, donwload it.
 
                 #  If remote is windows, image_path will be c:\...\image.fits, so use ntpath instead of os.path.
                 if ":\\" in image_path:
@@ -465,8 +486,13 @@ class Autofocus(ChimeraObject, IAutofocus):
                 t0 = time.time()
                 self.log.debug("Downloading image from server to %s" % image_path)
                 if not ImageUtil.download(image, image_path):
-                    raise ChimeraException("Error downloading image %s from %s" % (image_path, image.http()))
-                self.log.debug("Finished download. Took %3.2f seconds" % (time.time() - t0))
+                    raise ChimeraException(
+                        "Error downloading image %s from %s"
+                        % (image_path, image.http())
+                    )
+                self.log.debug(
+                    "Finished download. Took %3.2f seconds" % (time.time() - t0)
+                )
             return image_path, image
         else:
             raise Exception("Could not take an image")
@@ -481,7 +507,9 @@ class Autofocus(ChimeraObject, IAutofocus):
 
         # CCD saturation level in ADUs.
         s = self.getCam()["ccd_saturation_level"]
-        if s is not None:  # If there is no ccd_saturation_level on the config, use the default.
+        if (
+            s is not None
+        ):  # If there is no ccd_saturation_level on the config, use the default.
             config["SATUR_LEVEL"] = s
 
         # improve speed with higher threshold

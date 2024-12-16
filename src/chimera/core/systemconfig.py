@@ -200,9 +200,9 @@ class SystemConfig(object):
                 # to avoid this hack
                 if "host" in values or "port" in values:
                     # host/port changed
-                    for l in self.instruments + self.controllers:
-                        l._host = values["host"]
-                        l._port = values["port"]
+                    for loc in self.instruments + self.controllers:
+                        loc._host = values["host"]
+                        loc._port = values["port"]
 
                 del config[type]
                 break

@@ -33,7 +33,7 @@ class WCSNotFoundException(ChimeraException):
 class ImageUtil(object):
     @staticmethod
     def formatDate(datetime):
-        if type(datetime) == float:
+        if isinstance(datetime, float):
             datetime = dt.datetime.fromtimestamp(datetime)
 
         return datetime.strftime("%Y-%m-%dT%H:%M:%S.%f")
@@ -293,12 +293,17 @@ class Image(UserDict):
     # geometry
     #
 
-    width = lambda self: self["NAXIS1"]
-    height = lambda self: self["NAXIS2"]
+    def width(self):
+        return self["NAXIS1"]
 
-    size = lambda self: (self.width(), self.height())
+    def height(self):
+        return self["NAXIS2"]
 
-    center = lambda self: (self.width() / 2.0, self.height() / 2.0)
+    def size(self):
+        return (self.width(), self.height())
+
+    def center(self):
+        return (self.width() / 2.0, self.height() / 2.0)
 
     #
     # WCS
