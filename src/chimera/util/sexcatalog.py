@@ -735,9 +735,7 @@ class SExtractorfile:
                 name = columns[2]
                 if name not in list(SExtractorfile._SE_keys.keys()):
                     raise WrongSExtractorfileException(
-                        "not a SExtractor text catalog (unknown keyword {})".format(
-                            name
-                        )
+                        f"not a SExtractor text catalog (unknown keyword {name})"
                     )
                 self._keys_positions[name] = int(columns[1]) - 1
                 self._keys.append(name)

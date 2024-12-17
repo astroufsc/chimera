@@ -504,9 +504,7 @@ class SExtractor:
         rcode = os.system(commandline)
 
         if rcode:
-            raise SExtractorException(
-                "SExtractor command [{}] failed.".format(commandline)
-            )
+            raise SExtractorException(f"SExtractor command [{commandline}] failed.")
 
         if clean:
             self.clean()

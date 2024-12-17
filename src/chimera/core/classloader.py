@@ -69,20 +69,18 @@ class ClassLoader(object):
 
             # ImportError above
             if tb_size == 1:
-                raise ClassLoaderException(
-                    "Couldn't find module {} ({}).".format(clsname, path)
-                )
+                raise ClassLoaderException(f"Couldn't find module {clsname} ({path}).")
 
             # ImportError on loaded module
             else:
                 raise ClassLoaderException(
-                    "Module {} found but couldn't be loaded.".format(clsname)
+                    f"Module {clsname} found but couldn't be loaded."
                 )
 
         except Exception:
             # Catch any other exception during import
             raise ClassLoaderException(
-                "Module {} found but couldn't be loaded.".format(clsname)
+                f"Module {clsname} found but couldn't be loaded."
             )
 
         # turns sys.path back
@@ -97,9 +95,7 @@ class ClassLoader(object):
 
         if not cls:
             raise ClassLoaderException(
-                "Module found but couldn't fount class on module '{}' ({}).".format(
-                    clsname.lower(), module.__file__
-                )
+                f"Module found but couldn't fount class on module '{clsname.lower()}' ({module.__file__})."
             )
 
         self._cache[clsname.lower()] = cls

@@ -81,20 +81,16 @@ class SiteController(object):
             try:
                 Location(value)
             except InvalidLocationException:
-                raise optparse.OptionValueError(
-                    "{} isnt't a valid location.".format(value)
-                )
+                raise optparse.OptionValueError(f"{value} isnt't a valid location.")
 
-            eval('parser.values.{}.append ("{}")'.format(option.dest, value))
+            eval(f'parser.values.{option.dest}.append ("{value}")')
 
         def check_includepath(option, opt_str, value, parser):
 
             if not value or not os.path.isdir(os.path.abspath(value)):
-                raise optparse.OptionValueError(
-                    "Couldn't found {} include path.".format(value)
-                )
+                raise optparse.OptionValueError(f"Couldn't found {value} include path.")
 
-            eval('parser.values.{}.append ("{}")'.format(option.dest, value))
+            eval(f'parser.values.{option.dest}.append ("{value}")')
 
         parser = optparse.OptionParser(
             prog="chimera",
@@ -239,17 +235,15 @@ class SiteController(object):
             self.config = SystemConfig.fromFile(self.options.config_file)
         except (InvalidLocationException, IOError) as e:
             log.exception(e)
-            log.error(
-                "There was a problem reading your configuration file. ({})".format(e)
-            )
+            log.error(f"There was a problem reading your configuration file. ({e})")
             sys.exit(1)
 
         # manager
         if not self.options.dry:
             log.info("Starting system.")
-            log.info("Chimera: {}".format(_chimera_version_))
-            log.info("Chimera prefix: {}".format(ChimeraPath().root()))
-            log.info("Python: {}".format(platform.python_version()))
+            log.info(f"Chimera: {_chimera_version_}")
+            log.info(f"Chimera prefix: {ChimeraPath().root()}")
+            log.info(f"Python: {platform.python_version()}")
             log.info("System: {}".format(" ".join(platform.uname())))
 
             try:
@@ -267,9 +261,7 @@ class SiteController(object):
                 + str(self.manager.getPort())
             )
             log.info(
-                "Chimera: reading configuration from {}".format(
-                    os.path.realpath(self.options.config_file)
-                )
+                f"Chimera: reading configuration from {os.path.realpath(self.options.config_file)}"
             )
 
         # add site object

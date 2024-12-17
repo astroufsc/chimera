@@ -22,9 +22,9 @@ class TestImage(object):
         img = Image.fromFile(os.path.join(self.base, "teste-com-wcs.fits"), fix=False)
         world = img.worldAt(0, 0)
         print("world value at pixel 0,0:", world)
-        print("pixel value at world {}:".format(world), img.pixelAt(world))
+        print(f"pixel value at world {world}:", img.pixelAt(world))
         print(
-            "world value at center pix {}:".format(str(img.center())),
+            f"world value at center pix {str(img.center())}:",
             img.worldAt(img.center()),
         )
         assert world.ra.D is not None

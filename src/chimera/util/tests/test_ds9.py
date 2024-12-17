@@ -26,7 +26,7 @@ class TestDS9(object):
             os.path.join(os.path.dirname(__file__), "teste-sem-wcs.fits")
         )
 
-        p = subprocess.Popen("ds9 {}".format(filename), shell=True)
+        p = subprocess.Popen(f"ds9 {filename}", shell=True)
         time.sleep(2)
 
         ds9 = DS9()

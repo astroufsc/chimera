@@ -47,11 +47,9 @@ FiredEvents = {}
 
 
 def assertDomeAz(domeAz, otherAz, eps):
-    assert abs(domeAz - otherAz) <= eps, "dome az={} other az={} (eps={})".format(
-        domeAz,
-        otherAz,
-        eps,
-    )
+    assert (
+        abs(domeAz - otherAz) <= eps
+    ), f"dome az={domeAz} other az={otherAz} (eps={eps})"
 
 
 class DomeTest(object):

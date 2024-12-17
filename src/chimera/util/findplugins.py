@@ -14,9 +14,9 @@ def find_chimera_plugins(prefix="chimera_"):
     for i in iter_modules():
         if i[1].startswith(prefix):
             fname = i[0].find_module(i[1]).filename
-            if os.path.isdir("{}/controllers".format(fname)):
-                controllers_path.append("{}/controllers".format(fname))
-            if os.path.isdir("{}/instruments".format(fname)):
-                instruments_path.append("{}/instruments".format(fname))
+            if os.path.isdir(f"{fname}/controllers"):
+                controllers_path.append(f"{fname}/controllers")
+            if os.path.isdir(f"{fname}/instruments"):
+                instruments_path.append(f"{fname}/instruments")
 
     return controllers_path, instruments_path

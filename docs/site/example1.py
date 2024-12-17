@@ -13,5 +13,5 @@ class Example1(ChimeraObject):
 
     def doSomething(self, arg):
         self.log.warning("Hi, I'm doing something.")
-        self.log.warning("My arg={}".format(arg))
+        self.log.warning(f"My arg={arg}")
         self.log.warning("My param1={}".format(self["param1"]))

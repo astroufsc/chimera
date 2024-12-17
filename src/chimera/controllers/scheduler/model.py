@@ -16,7 +16,7 @@ from sqlalchemy import (
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relation, backref
 
-engine = create_engine("sqlite:///{}".format(DEFAULT_PROGRAM_DATABASE), echo=False)
+engine = create_engine(f"sqlite:///{DEFAULT_PROGRAM_DATABASE}", echo=False)
 metaData = MetaData()
 metaData.bind = engine
 
@@ -148,33 +148,33 @@ class Point(Action):
             ""
             if self.offsetNS is None
             else (
-                " north {}".format(self.offsetNS)
+                f" north {self.offsetNS}"
                 if self.offsetNS > 0
-                else " south {}".format(self.offsetNS)
+                else f" south {self.offsetNS}"
             )
         )
         offsetEW_str = (
             ""
             if self.offsetEW is None
             else (
-                " west {}".format(self.offsetEW)
+                f" west {self.offsetEW}"
                 if self.offsetEW > 0
-                else " east {}".format(self.offsetNS)
+                else f" east {self.offsetNS}"
             )
         )
 
         offset = (
             ""
             if self.offsetNS is None and self.offsetEW is None
-            else "offset: {}{}".format(offsetNS_str, offsetEW_str)
+            else f"offset: {offsetNS_str}{offsetEW_str}"
         )
 
         if self.targetRaDec is not None:
-            return "point: (ra,dec) {}{}".format(self.targetRaDec, offset)
+            return f"point: (ra,dec) {self.targetRaDec}{offset}"
         elif self.targetAltAz is not None:
-            return "point: (alt,az) {}{}".format(self.targetAltAz, offset)
+            return f"point: (alt,az) {self.targetAltAz}{offset}"
         elif self.targetName is not None:
-            return "point: (object) {}{}".format(self.targetName, offset)
+            return f"point: (object) {self.targetName}{offset}"
         elif self.offsetNS is not None or self.offsetEW is not None:
             return offset
         else:

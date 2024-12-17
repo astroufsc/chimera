@@ -175,13 +175,13 @@ class Manager:
     def getInstance(self, location):
         if not location:
             raise ObjectNotFoundException(
-                "Couldn't find an object at the" " given location {}".format(location)
+                "Couldn't find an object at the" f" given location {location}"
             )
         ret = self.resources.get(location)
 
         if not ret:
             raise ObjectNotFoundException(
-                "Couldn't found an object at the" " given location {}".format(location)
+                "Couldn't found an object at the" f" given location {location}"
             )
 
         return ret
@@ -318,22 +318,18 @@ class Manager:
         # names must not start with a digit
         if location.name[0] in "0123456789":
             raise InvalidLocationException(
-                "Invalid instance name: {} (must start with a letter)".format(location)
+                f"Invalid instance name: {location} (must start with a letter)"
             )
 
         if location in self.resources:
             raise InvalidLocationException(
-                "Location {} is already in the system. Only one allowed (Tip: change the name!).".format(
-                    location
-                )
+                f"Location {location} is already in the system. Only one allowed (Tip: change the name!)."
             )
 
         # check if it's a valid ChimeraObject
         if not issubclass(cls, ChimeraObject):
             raise NotValidChimeraObjectException(
-                "Cannot add the class {}. It doesn't descend from ChimeraObject.".format(
-                    cls.__name__
-                )
+                f"Cannot add the class {cls.__name__}. It doesn't descend from ChimeraObject."
             )
 
         # run object __init__ and configure using location configuration
@@ -342,17 +338,15 @@ class Manager:
         try:
             obj = cls()
         except Exception:
-            log.exception("Error in {} __init__.".format(location))
-            raise ChimeraObjectException("Error in {} __init__.".format(location))
+            log.exception(f"Error in {location} __init__.")
+            raise ChimeraObjectException(f"Error in {location} __init__.")
 
         try:
             for k, v in list(location.config.items()):
                 obj[k] = v
         except (OptionConversionException, KeyError) as e:
-            log.exception("Error configuring {}.".format(location))
-            raise ChimeraObjectException(
-                "Error configuring {}. ({})".format(location, e)
-            )
+            log.exception(f"Error configuring {location}.")
+            raise ChimeraObjectException(f"Error configuring {location}. ({e})")
 
         # connect
         obj.__setlocation__(location)
@@ -378,7 +372,7 @@ class Manager:
         """
 
         if location not in self.resources:
-            raise ObjectNotFoundException("Location {} was not found.".format(location))
+            raise ObjectNotFoundException(f"Location {location} was not found.")
 
         self.stop(location)
 
@@ -403,9 +397,9 @@ class Manager:
         """
 
         if location not in self.resources:
-            raise ObjectNotFoundException("Location {} was not found.".format(location))
+            raise ObjectNotFoundException(f"Location {location} was not found.")
 
-        log.info("Starting {}.".format(location))
+        log.info(f"Starting {location}.")
 
         resource = self.resources.get(location)
 
@@ -415,15 +409,13 @@ class Manager:
         try:
             resource.instance.__start__()
         except Exception:
-            log.exception("Error running {} __start__ method.".format(location))
-            raise ChimeraObjectException(
-                "Error running {} __start__ method.".format(location)
-            )
+            log.exception(f"Error running {location} __start__ method.")
+            raise ChimeraObjectException(f"Error running {location} __start__ method.")
 
         try:
             # FIXME: thread exception handling
             # ok, now schedule object main in a new thread
-            log.info("Running {}. __main___.".format(location))
+            log.info(f"Running {location}. __main___.")
 
             loop = threading.Thread(target=resource.instance.__main__, daemon=True)
             loop.name = str(resource.location) + ".__main__"
@@ -436,11 +428,9 @@ class Manager:
             return True
 
         except Exception:
-            log.exception("Error running {} __main__ method.".format(location))
+            log.exception(f"Error running {location} __main__ method.")
             resource.instance.__setstate__(State.STOPPED)
-            raise ChimeraObjectException(
-                "Error running {} __main__ method.".format(location)
-            )
+            raise ChimeraObjectException(f"Error running {location} __main__ method.")
 
     def stop(self, location):
         """
@@ -457,9 +447,9 @@ class Manager:
         """
 
         if location not in self.resources:
-            raise ObjectNotFoundException("Location {} was not found.".format(location))
+            raise ObjectNotFoundException(f"Location {location} was not found.")
 
-        log.info("Stopping {}.".format(location))
+        log.info(f"Stopping {location}.")
 
         resource = self.resources.get(location)
 
@@ -482,10 +472,6 @@ class Manager:
 
         except Exception:
             log.exception(
-                "Error running {} __stop__ method. Exception follows...".format(
-                    location
-                )
+                f"Error running {location} __stop__ method. Exception follows..."
             )
-            raise ChimeraObjectException(
-                "Error running {} __stop__ method.".format(location)
-            )
+            raise ChimeraObjectException(f"Error running {location} __stop__ method.")

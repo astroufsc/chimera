@@ -17,9 +17,7 @@ class ImageServerHTTPHandler(SimpleHTTPRequestHandler):
 
     def log_message(self, format, *args):
         self.server.ctrl.log.info(
-            "{} - - [{}] {}".format(
-                self.address_string(), self.log_date_time_string(), format % args
-            )
+            f"{self.address_string()} - - [{self.log_date_time_string()}] {format % args}"
         )
 
     def send_head(self, response=200, ctype=None, length=None, modified=None):
@@ -65,9 +63,7 @@ class ImageServerHTTPHandler(SimpleHTTPRequestHandler):
             image = self.server.ctrl.imagesByPath[key]
             id = image.GUID()
             path = image.filename()
-            toReturn += '<tr><td><a href="/image/{}">{}</a></td><td><a href="/image/{}">{}</a></td></tr>'.format(
-                id, id, id, path
-            )
+            toReturn += f'<tr><td><a href="/image/{id}">{id}</a></td><td><a href="/image/{id}">{path}</a></td></tr>'
 
         self.response(200, toReturn, "text/html")
 

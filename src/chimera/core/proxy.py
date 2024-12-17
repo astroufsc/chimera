@@ -49,10 +49,10 @@ class Proxy:
         return self
 
     def __repr__(self):
-        return "<{} proxy at {}>".format(self.location, hex(id(self)))
+        return f"<{self.location} proxy at {hex(id(self))}>"
 
     def __str__(self):
-        return "[proxy for {}]".format(self.location)
+        return f"[proxy for {self.location}]"
 
 
 class ProxyMethod(object):
@@ -65,16 +65,12 @@ class ProxyMethod(object):
         self.__name__ = method
 
     def __repr__(self):
-        return "<{}.{} method proxy at {}>".format(
-            self.proxy.location,
-            self.method,
-            hex(hash(self)),
+        return (
+            f"<{self.proxy.location}.{self.method} method proxy at {hex(hash(self))}>"
         )
 
     def __str__(self):
-        return "[method proxy for {} {} method]".format(
-            self.proxy.location, self.method
-        )
+        return f"[method proxy for {self.proxy.location} {self.method} method]"
 
     # synchronous call
     def __call__(self, *args, **kwargs):
@@ -102,8 +98,8 @@ class ProxyMethod(object):
 
         # passing a proxy method?
         if not isinstance(other, ProxyMethod):
-            log.debug("Invalid parameter: {}".format(other))
-            raise TypeError("Invalid parameter: {}".format(other))
+            log.debug(f"Invalid parameter: {other}")
+            raise TypeError(f"Invalid parameter: {other}")
 
         handler["handler"]["proxy"] = other.proxy.location
         handler["handler"]["method"] = str(other.__name__)
@@ -112,9 +108,7 @@ class ProxyMethod(object):
             self.proxy.client.request(f"{EVENTS_PROXY_NAME}.{action}", (handler,), {})
         except Exception:
             log.exception(
-                "Cannot {} to topic '{}' using proxy '{}'.".format(
-                    action, self.method, self.proxy
-                )
+                f"Cannot {action} to topic '{self.method}' using proxy '{self.proxy}'."
             )
 
         return self

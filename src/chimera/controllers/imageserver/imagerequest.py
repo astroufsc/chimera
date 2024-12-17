@@ -66,11 +66,11 @@ class ImageRequest(dict):
             if len(not_valid) > 1:
                 msg = "Invalid keywords: "
                 for k in not_valid:
-                    msg += "'{}', ".format(str(k))
+                    msg += f"'{str(k)}', "
                 msg = msg[:-2]
 
             else:
-                msg = "Invalid keyword '{}'".format(str(not_valid[0]))
+                msg = f"Invalid keyword '{str(not_valid[0])}'"
 
             raise TypeError(msg)
 
@@ -104,7 +104,7 @@ class ImageRequest(dict):
     def __setitem__(self, key, value):
 
         if key not in ImageRequest.valid_keys:
-            raise KeyError("{} is not a valid key for ImageRequest".format(key))
+            raise KeyError(f"{key} is not a valid key for ImageRequest")
 
         self.update({key: value})
 
@@ -144,14 +144,10 @@ class ImageRequest(dict):
                 if len(locations) == 1:
                     auto.append(str(locations[0]))
                 elif len(locations) == 0:
-                    log.warning(
-                        "No {} available, header would be incomplete.".format(cls)
-                    )
+                    log.warning(f"No {cls} available, header would be incomplete.")
                 else:
                     log.warning(
-                        "More than one {} available, header may be incorrect. Using the first {}.".format(
-                            cls, cls
-                        )
+                        f"More than one {cls} available, header may be incorrect. Using the first {cls}."
                     )
                     auto.append(str(locations[0]))
 
@@ -168,6 +164,6 @@ class ImageRequest(dict):
                 try:
                     self._proxies[location] = manager.getProxy(location)
                 except Exception:
-                    log.exception("Unable to get metadata from {}".format(location))
+                    log.exception(f"Unable to get metadata from {location}")
 
             self.headers += self._proxies[location].getMetadata(self)

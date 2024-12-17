@@ -28,9 +28,7 @@ class FakeFan(FanBase, FanState, FanControllabeSpeed, FanControllabeDirection):
             self._currentSpeed = float(freq)
         else:
             raise IOError(
-                "Fan speed must be between {:.2f} and {:.2f}. Got {:.2f}.".format(
-                    min_speed, max_speed, freq
-                )
+                f"Fan speed must be between {min_speed:.2f} and {max_speed:.2f}. Got {freq:.2f}."
             )
 
     def getRange(self):
@@ -46,7 +44,7 @@ class FakeFan(FanBase, FanState, FanControllabeSpeed, FanControllabeDirection):
         else:
             self.log.warning(
                 "Value {} not a valid fan direction. Should be one of {}. Leaving unchanged.".format(
-                    direction, ["{}".format(d) for d in FanDirection]
+                    direction, [f"{d}" for d in FanDirection]
                 )
             )
 

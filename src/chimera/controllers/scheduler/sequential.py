@@ -48,7 +48,7 @@ class SequentialScheduler(IScheduler):
     def done(self, task, error=None):
 
         if error:
-            log.debug("Error processing program {}.".format(str(task)))
+            log.debug(f"Error processing program {str(task)}.")
             log.exception(error)
         else:
             task.finished = True

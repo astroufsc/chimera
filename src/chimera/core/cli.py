@@ -66,7 +66,7 @@ class Option(object):
             if hasattr(self, key):
                 setattr(self, key, value)
             else:
-                raise TypeError("Invalid option '{}'.".format(key))
+                raise TypeError(f"Invalid option '{key}'.")
 
         self.validate()
 
@@ -101,11 +101,11 @@ class Option(object):
 
     def __str__(self):
         s = ""
-        s += "<{} ".format(self.__class__.__name__)
+        s += f"<{self.__class__.__name__} "
         for name in dir(self):
             attr = getattr(self, name)
             if not name.startswith("_") and not hasattr(attr, "__call__"):
-                s += "{}={} ".format(name, attr)
+                s += f"{name}={attr} "
         s = s[:-1]
         s += ">"
         return s
@@ -178,19 +178,17 @@ class CLICheckers:
     @staticmethod
     def check_includepath(option, opt_str, value, parser):
         if not value or not os.path.isdir(os.path.abspath(value)):
-            raise optparse.OptionValueError(
-                "Couldn't find {} include path.".format(value)
-            )
-        getattr(parser.values, "{}".format(option.dest)).append(value)
+            raise optparse.OptionValueError(f"Couldn't find {value} include path.")
+        getattr(parser.values, f"{option.dest}").append(value)
 
     @staticmethod
     def check_location(option, opt_str, value, parser):
         try:
             Location(value)
         except InvalidLocationException:
-            raise optparse.OptionValueError("{} isnt't a valid location.".format(value))
+            raise optparse.OptionValueError(f"{value} isnt't a valid location.")
 
-        setattr(parser.values, "{}".format(option.dest), value)
+        setattr(parser.values, f"{option.dest}", value)
 
 
 class CLIValues(object):
@@ -304,7 +302,7 @@ class ChimeraCLI(object):
         self.parser = optparse.OptionParser(
             prog=prog,
             description=_chimera_description_ + " - " + description,
-            version="Chimera: {}\n{}: {}".format(_chimera_version_, prog, version),
+            version=f"Chimera: {_chimera_version_}\n{prog}: {version}",
         )
 
         # hack to inject our exit funciton into the parser
@@ -571,9 +569,7 @@ class ChimeraCLI(object):
                     inst.location = Location(getattr(options, inst.name))
                 except InvalidLocationException:
                     self.exit(
-                        "Invalid location: {}. See --help for more information".format(
-                            getattr(options, inst.name)
-                        )
+                        f"Invalid location: {getattr(options, inst.name)}. See --help for more information"
                     )
 
             else:
@@ -587,10 +583,8 @@ class ChimeraCLI(object):
 
             if not inst.location and inst.required:
                 self.exit(
-                    "Couldn't find {} configuration. "
-                    "Edit {} or see --help for more information".format(
-                        inst.name.capitalize(), os.path.abspath(options.config)
-                    )
+                    f"Couldn't find {inst.name.capitalize()} configuration. "
+                    f"Edit {os.path.abspath(options.config)} or see --help for more information"
                 )
 
         for inst in list(instruments.values()) + list(controllers.values()):
@@ -602,9 +596,7 @@ class ChimeraCLI(object):
             except ObjectNotFoundException:
                 if inst.required:
                     self.exit(
-                        "Couldn't find {}. (see --help for more information)".format(
-                            inst.name.capitalize()
-                        )
+                        f"Couldn't find {inst.name.capitalize()}. (see --help for more information)"
                     )
 
             # save values in CLI object (which users are supposed to inherits
@@ -770,9 +762,7 @@ class ChimeraCLI(object):
             for other in actions:
                 if action != other and action.actionGroup == other.actionGroup:
                     self.exit(
-                        "Cannot use {} and {} at the same time.".format(
-                            action.long, other.long
-                        )
+                        f"Cannot use {action.long} and {other.long} at the same time."
                     )
 
         # remove duplicates
@@ -801,7 +791,7 @@ class ChimeraCLI(object):
                     newValue = getattr(self, param.target.__name__)(value)
                     setattr(options, name, newValue or value)
             except ValueError as e:
-                self.exit("Invalid value for {}: {}".format(name, e))
+                self.exit(f"Invalid value for {name}: {e}")
 
     def _runAction(self, action, options):
 
@@ -810,7 +800,7 @@ class ChimeraCLI(object):
                 method = getattr(self, action.target.__name__)
                 method(options)
         except Exception as e:
-            self.err("Something wrong with '{}' action.".format(action.name))
+            self.err(f"Something wrong with '{action.name}' action.")
             printException(e)
             return False
 

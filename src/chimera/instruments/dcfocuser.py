@@ -171,7 +171,7 @@ class DCFocuser(FocuserBase):
             raise InvalidFocusPositionException(f"{steps} is outside focuser limits.")
 
         if direction not in Direction:
-            raise ValueError("Invalid direction '{}'.".format(direction))
+            raise ValueError(f"Invalid direction '{direction}'.")
 
         self._moveTo(direction, steps)
 

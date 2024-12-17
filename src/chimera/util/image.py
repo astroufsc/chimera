@@ -105,18 +105,14 @@ class ImageUtil(object):
         basename = string.Template(basename).safe_substitute(subs_dict)
         ext = string.Template(ext).safe_substitute(subs_dict)
 
-        finalname = os.path.join(
-            dirname, "{}{}{}".format(basename, os.path.extsep, ext)
-        )
+        finalname = os.path.join(dirname, f"{basename}{os.path.extsep}{ext}")
 
         if not os.path.exists(dirname):
             os.makedirs(dirname)
 
         if not os.path.isdir(dirname):
             raise OSError(
-                "A file with the same name as the desired directory already exists. ('{}')".format(
-                    dirname
-                )
+                f"A file with the same name as the desired directory already exists. ('{dirname}')"
             )
 
         # If filename exists, append -NNN to the end of the file name.
@@ -128,9 +124,7 @@ class ImageUtil(object):
                 i += 1
                 if i == 1000:
                     raise OSError(
-                        "Reached the maximum of 999 files with the same name ({}).".format(
-                            finalname
-                        )
+                        f"Reached the maximum of 999 files with the same name ({finalname})."
                     )
 
             finalname = f"{base}-{i:03d}{ext}"
@@ -227,7 +221,7 @@ class Image(UserDict):
                 try:
                     hdu.header.set(*h)
                 except Exception as e:
-                    log.warning("Couldn't add {}: {}".format(str(h), str(e)))
+                    log.warning(f"Couldn't add {str(h)}: {str(e)}")
 
             if imageRequest["compress_format"] == "fits_rice":
                 filename = os.path.splitext(filename)[0] + ".fz"
@@ -277,7 +271,7 @@ class Image(UserDict):
         return self._http
 
     def __str__(self):
-        return "<Image {}>".format(self.filename())
+        return f"<Image {self.filename()}>"
 
     #
     # serialization support
@@ -348,9 +342,7 @@ class Image(UserDict):
                 self._wcs = wcs.WCS(self._fd["PRIMARY"].header)
             except (KeyError, ValueError) as e:
                 raise WCSNotFoundException(
-                    "Couldn't find WCS information on {} ('{}')".format(
-                        self._filename, e
-                    )
+                    f"Couldn't find WCS information on {self._filename} ('{e}')"
                 )
 
         return True

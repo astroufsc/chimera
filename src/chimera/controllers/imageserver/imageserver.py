@@ -67,7 +67,7 @@ class ImageServer(ChimeraObject):
                 ]
 
             for file in filesToLoad:
-                self.log.debug("Loading {}".format(file))
+                self.log.debug(f"Loading {file}")
                 self.register(Image.fromFile(file))
 
     def register(self, image):
@@ -75,7 +75,7 @@ class ImageServer(ChimeraObject):
             remove_items = list(self.imagesByID.keys())[: -self["max_images"]]
 
             for item in remove_items:
-                self.log.debug("Unregistering image {}".format(item))
+                self.log.debug(f"Unregistering image {item}")
                 self.unregister(self.imagesByID[item])
 
         self.imagesByID[image.id] = image

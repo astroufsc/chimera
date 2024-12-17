@@ -46,19 +46,11 @@ class TestCoord(object):
             # test conversion from HMS DMS to decimal
             assert TestCoord.equal(
                 ra[i].D, expected_ra[i], e=1e-4
-            ), "ra: {:.6f} != coord ra: {:.6f} ({:.6f})".format(
-                expected_ra[i],
-                ra[i].D,
-                expected_ra[i] - ra[i].D,
-            )
+            ), f"ra: {expected_ra[i]:.6f} != coord ra: {ra[i].D:.6f} ({expected_ra[i] - ra[i].D:.6f})"
 
             assert TestCoord.equal(
                 dec[i].D, expected_dec[i], e=1e-4
-            ), "dec: {:.6f} != coord dec: {:.64f} ({:.6f})".format(
-                expected_dec[i],
-                dec[i].D,
-                expected_dec[i] - dec[i].D,
-            )
+            ), f"dec: {expected_dec[i]:.6f} != coord dec: {dec[i].D:.64f} ({expected_dec[i] - dec[i].D:.6f})"
 
             # test strfcoord implementation
             assert expected_ra_str[i] == ra[i].strfcoord(
@@ -128,36 +120,20 @@ class TestCoord(object):
             # test conversion from D to D
             assert TestCoord.equal(
                 ra[i].D, expected_ra[i], e=1e-8
-            ), "ra: {:.6f} != coord ra: {:.6f} ({:.6f})".format(
-                expected_ra[i],
-                ra[i].D,
-                expected_ra[i] - ra[i].D,
-            )
+            ), f"ra: {expected_ra[i]:.6f} != coord ra: {ra[i].D:.6f} ({expected_ra[i] - ra[i].D:.6f})"
 
             assert TestCoord.equal(
                 dec[i].D, expected_dec[i], e=1e-8
-            ), "dec: {:.6f} != coord dec: {:.64f} ({:.6f})".format(
-                expected_dec[i],
-                dec[i].D,
-                expected_dec[i] - dec[i].D,
-            )
+            ), f"dec: {expected_dec[i]:.6f} != coord dec: {dec[i].D:.64f} ({expected_dec[i] - dec[i].D:.6f})"
 
             # test conversion from DMS HMS to D
             assert TestCoord.equal(
                 ra_hms[i].D, expected_ra[i], e=1e-4
-            ), "ra: {:.6f} != coord ra: {:.6f} ({:.6f})".format(
-                expected_ra[i],
-                ra_hms[i].D,
-                expected_ra[i] - ra_hms[i].D,
-            )
+            ), f"ra: {expected_ra[i]:.6f} != coord ra: {ra_hms[i].D:.6f} ({expected_ra[i] - ra_hms[i].D:.6f})"
 
             assert TestCoord.equal(
                 dec_dms[i].D, expected_dec[i], e=1e-4
-            ), "dec: {:.6f} != coord dec: {:.64f} ({:.6f})".format(
-                expected_dec[i],
-                dec_dms[i].D,
-                expected_dec[i] - dec_dms[i].D,
-            )
+            ), f"dec: {expected_dec[i]:.6f} != coord dec: {dec_dms[i].D:.64f} ({expected_dec[i] - dec_dms[i].D:.6f})"
 
     def test_parse_dms(self):
 

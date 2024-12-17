@@ -41,7 +41,7 @@ class FakeFilterWheel(FilterWheelBase):
         filterName = str(filter).upper()
 
         if filterName not in self.getFilters():
-            raise InvalidFilterPositionException("Invalid filter {}.".format(filter))
+            raise InvalidFilterPositionException(f"Invalid filter {filter}.")
 
         self.filterChange(filter, self._getFilterName(self._lastFilter))
 

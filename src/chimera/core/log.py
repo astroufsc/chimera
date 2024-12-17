@@ -83,4 +83,4 @@ try:
     fileHandler.addFilter(flt)
     root.addHandler(fileHandler)
 except Exception as e:
-    root.warning("Couldn't start Log System FileHandler ({})".format(e))
+    root.warning(f"Couldn't start Log System FileHandler ({e})")

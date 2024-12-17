@@ -60,9 +60,7 @@ class FakeLamp(LampBase, LampDimmer):
             return True
         else:
             raise IntensityOutOfRangeException(
-                "Intensity {:.2f} out of range. Must be between ({:.2f}:{:.2f}].".format(
-                    intensity, int_i, int_f
-                )
+                f"Intensity {intensity:.2f} out of range. Must be between ({int_i:.2f}:{int_f:.2f}]."
             )
 
     @lock

@@ -39,7 +39,7 @@ class Machine(threading.Thread):
             if state == self.__state:
                 return
             self.controller.stateChanged(state, self.__state)
-            log.debug("Changing state, from {} to {}.".format(self.__state, state))
+            log.debug(f"Changing state, from {self.__state} to {state}.")
             self.__state = state
             self.wakeup()
         finally:
@@ -130,7 +130,7 @@ class Machine(threading.Thread):
 
             task = session.merge(program)
 
-            log.debug("[start] {}".format(str(task)))
+            log.debug(f"[start] {str(task)}")
 
             site = Site()
             nowmjd = site.MJD()
@@ -171,7 +171,7 @@ class Machine(threading.Thread):
 
             try:
                 self.executor.execute(task)
-                log.debug("[finish] {}".format(str(task)))
+                log.debug(f"[finish] {str(task)}")
                 self.scheduler.done(task)
                 self.controller.programComplete(program, SchedulerStatus.OK)
                 self.state(State.IDLE)
@@ -179,14 +179,14 @@ class Machine(threading.Thread):
                 self.scheduler.done(task, error=e)
                 self.controller.programComplete(program, SchedulerStatus.ERROR, str(e))
                 self.state(State.IDLE)
-                log.debug("[error] {} ({})".format(str(task), str(e)))
+                log.debug(f"[error] {str(task)} ({str(e)})")
             except ProgramExecutionAborted as e:
                 self.scheduler.done(task, error=e)
                 self.controller.programComplete(
                     program, SchedulerStatus.ABORTED, "Aborted by user."
                 )
                 self.state(State.OFF)
-                log.debug("[aborted by user] {}".format(str(task)))
+                log.debug(f"[aborted by user] {str(task)}")
 
             session.commit()
 

@@ -93,9 +93,7 @@ class EventsProxy:
                     )
                 else:
                     log.debug(
-                        "Handler ({}) raised an exception. Removing from subscribers list.".format(
-                            proxy
-                        )
+                        f"Handler ({proxy}) raised an exception. Removing from subscribers list."
                     )
                     log.exception(e)
 
@@ -103,9 +101,7 @@ class EventsProxy:
                 continue
             except Exception as e:
                 log.debug(
-                    "Handler ({}) raised an exception. Removing from subscribers list.".format(
-                        proxy
-                    )
+                    f"Handler ({proxy}) raised an exception. Removing from subscribers list."
                 )
                 log.exception(e)
                 excluded.append(handler)

@@ -26,22 +26,14 @@ class TestLock(object):
             def doUnlocked(self):
                 time.sleep(1)
                 t = time.time() - self.t0
-                print(
-                    "[unlocked] - {} - {:.3f}".format(
-                        threading.current_thread().name, t
-                    )
-                )
+                print(f"[unlocked] - {threading.current_thread().name} - {t:.3f}")
                 return t
 
             @lock
             def doLocked(self):
                 time.sleep(1)
                 t = time.time() - self.t0
-                print(
-                    "[ locked ] - {} - {:.3f}".format(
-                        threading.current_thread().name, t
-                    )
-                )
+                print(f"[ locked ] - {threading.current_thread().name} - {t:.3f}")
                 return t
 
         #            def doLockedWith (self):
@@ -119,14 +111,8 @@ class TestLock(object):
             def equals_eps(a, b, eps=1e-3):
                 return abs(a - b) <= eps
 
-            print(
-                "unlocked: mean: {:.6f} sigma: {:.6f}".format(
-                    unlocked_mean, unlocked_sigma
-                )
-            )
-            print(
-                "locked  : mean: {:.6f} sigma: {:.6f}".format(locked_mean, locked_sigma)
-            )
+            print(f"unlocked: mean: {unlocked_mean:.6f} sigma: {unlocked_sigma:.6f}")
+            print(f"locked  : mean: {locked_mean:.6f} sigma: {locked_sigma:.6f}")
 
             assert equals_eps(unlocked_sigma, 0.0, 0.5) is True
             assert equals_eps(locked_sigma, 2.875, 1.0) is True
@@ -167,7 +153,7 @@ class TestLock(object):
                     t0 = time.time()
                     value = self["config"]
                     t = time.time() - t0
-                    print("[  read ] - config={} took {:.6f}".format(value, t))
+                    print(f"[  read ] - config={value} took {t:.6f}")
                     sys.stdout.flush()
 
         m = Minimo()

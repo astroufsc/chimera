@@ -39,23 +39,17 @@ def init_sysconfig():
     if not os.path.exists(SYSTEM_CONFIG_DIRECTORY):
         try:
             logging.info(
-                "Default configuration directory not found ({}). Creating a new one.".format(
-                    SYSTEM_CONFIG_DIRECTORY
-                )
+                f"Default configuration directory not found ({SYSTEM_CONFIG_DIRECTORY}). Creating a new one."
             )
             os.mkdir(SYSTEM_CONFIG_DIRECTORY)
         except IOError as e:
             logging.error(
-                "Couldn't create default configuration directory at {} ({})".format(
-                    SYSTEM_CONFIG_DIRECTORY, e
-                )
+                f"Couldn't create default configuration directory at {SYSTEM_CONFIG_DIRECTORY} ({e})"
             )
 
     if not os.path.exists(SYSTEM_CONFIG_DEFAULT_FILENAME):
         logging.info(
-            "Default chimera.config not found. Creating a sample at {}.".format(
-                SYSTEM_CONFIG_DEFAULT_FILENAME
-            )
+            f"Default chimera.config not found. Creating a sample at {SYSTEM_CONFIG_DEFAULT_FILENAME}."
         )
 
         try:
@@ -64,9 +58,7 @@ def init_sysconfig():
             )
         except IOError as e:
             logging.error(
-                "Couldn't create default chimera.config at {} ({})".format(
-                    SYSTEM_CONFIG_DEFAULT_FILENAME, e
-                )
+                f"Couldn't create default chimera.config at {SYSTEM_CONFIG_DEFAULT_FILENAME} ({e})"
             )
 
     if not os.path.exists(SYSTEM_CONFIG_LOG_NAME):
@@ -74,9 +66,7 @@ def init_sysconfig():
             open(SYSTEM_CONFIG_LOG_NAME, "w").close()
         except IOError as e:
             logging.error(
-                "Couldn't create initial log file {} ({})".format(
-                    SYSTEM_CONFIG_LOG_NAME, e
-                )
+                f"Couldn't create initial log file {SYSTEM_CONFIG_LOG_NAME} ({e})"
             )
 
 

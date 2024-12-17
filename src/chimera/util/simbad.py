@@ -58,7 +58,7 @@ class Simbad(object):
         target = Simbad._parseSesame(res)
 
         if not target:
-            raise ObjectNotFoundException("Couldn't find {} on SIMBAD".format(name))
+            raise ObjectNotFoundException(f"Couldn't find {name} on SIMBAD")
 
         Simbad.__cache[name] = target
 

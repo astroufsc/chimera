@@ -91,10 +91,10 @@ class FocusFit(object):
             file=log,
         )
         if self.minmax:
-            print("# minmax filtering: {}".format(str(self.minmax)), file=log)
+            print(f"# minmax filtering: {str(self.minmax)}", file=log)
 
         if self.temperature:
-            print("# focuser temperature: {:.3f}".format(self.temperature), file=log)
+            print(f"# focuser temperature: {self.temperature:.3f}", file=log)
 
         for position, fwhm in zip(self.position, self.fwhm):
             print(position, fwhm, file=log)
@@ -283,7 +283,7 @@ class Autofocus(ChimeraObject, IAutofocus):
 
         if filter:
             self.filter = filter
-            self.log.debug("Using filter {}.".format(self.filter))
+            self.log.debug(f"Using filter {self.filter}.")
         else:
             self.filter = False
             self.log.debug("Using current filter.")
@@ -403,14 +403,14 @@ class Autofocus(ChimeraObject, IAutofocus):
                     "Focus fitting error: fitting do not converges (NaN result). See logs for more info."
                 )
 
-            self.log.debug("Best focus position: {:.3f}".format(fit.best_focus[0]))
+            self.log.debug(f"Best focus position: {fit.best_focus[0]:.3f}")
             focuser.moveTo(int(fit.best_focus[0]))
         except InvalidFocusPositionException as e:
             focuser.moveTo(initial_position)
             raise FocusNotFoundException(
-                "Best guess was {}, but could not move the focuser.\n"
-                "{}\n"
-                "Returning to initial position.".format(str(fit.best_focus[0]), str(e))
+                f"Best guess was {str(fit.best_focus[0])}, but could not move the focuser.\n"
+                f"{str(e)}\n"
+                "Returning to initial position."
             )
 
         return fit
@@ -466,12 +466,10 @@ class Autofocus(ChimeraObject, IAutofocus):
                     )
                 )
                 t0 = time.time()
-                self.log.debug("Downloading image from server to {}".format(image_path))
+                self.log.debug(f"Downloading image from server to {image_path}")
                 if not ImageUtil.download(image, image_path):
                     raise ChimeraException(
-                        "Error downloading image {} from {}".format(
-                            image_path, image.http()
-                        )
+                        f"Error downloading image {image_path} from {image.http()}"
                     )
                 self.log.debug(
                     "Finished download. Took %3.2f seconds" % (time.time() - t0)

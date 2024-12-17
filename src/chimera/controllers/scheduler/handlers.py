@@ -91,41 +91,35 @@ class PointHandler(ActionHandler):
             ""
             if action.offsetNS is None
             else (
-                " north {}".format(action.offsetNS)
+                f" north {action.offsetNS}"
                 if action.offsetNS > 0
-                else " south {}".format(abs(action.offsetNS))
+                else f" south {abs(action.offsetNS)}"
             )
         )
         offsetEW_str = (
             ""
             if action.offsetEW is None
             else (
-                " west {}".format(abs(action.offsetEW))
+                f" west {abs(action.offsetEW)}"
                 if action.offsetEW > 0
-                else " east {}".format(abs(action.offsetEW))
+                else f" east {abs(action.offsetEW)}"
             )
         )
 
         offset = (
             ""
             if action.offsetNS is None and action.offsetEW is None
-            else " offset:{}{}".format(offsetNS_str, offsetEW_str)
+            else f" offset:{offsetNS_str}{offsetEW_str}"
         )
 
         if action.targetRaDec is not None:
-            return "slewing telescope to (ra dec) {}{}".format(
-                action.targetRaDec, offset
-            )
+            return f"slewing telescope to (ra dec) {action.targetRaDec}{offset}"
         elif action.targetAltAz is not None:
-            return "slewing telescope to (alt az) {}{}".format(
-                action.targetAltAz, offset
-            )
+            return f"slewing telescope to (alt az) {action.targetAltAz}{offset}"
         elif action.targetName is not None:
-            return "slewing telescope to (object) {}{}".format(
-                action.targetName, offset
-            )
+            return f"slewing telescope to (object) {action.targetName}{offset}"
         elif offset != "":
-            return "applying telescope{}".format(offset)
+            return f"applying telescope{offset}"
         else:
             if action.domeTracking is None:
                 tracking = "left AS IS"
@@ -133,7 +127,7 @@ class PointHandler(ActionHandler):
                 tracking = "STARTED"
             else:
                 tracking = "STOPPED"
-            return "dome tracking {}".format(tracking)
+            return f"dome tracking {tracking}"
 
 
 class ExposeHandler(ActionHandler):
@@ -181,12 +175,7 @@ class ExposeHandler(ActionHandler):
 
     @staticmethod
     def log(action):
-        return "exposing: filter={} exptime={} frames={} type={}".format(
-            str(action.filter),
-            str(action.exptime),
-            str(action.frames),
-            str(action.imageType),
-        )
+        return f"exposing: filter={str(action.filter)} exptime={str(action.exptime)} frames={str(action.frames)} type={str(action.imageType)}"
 
 
 class AutoFocusHandler(ActionHandler):

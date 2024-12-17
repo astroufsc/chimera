@@ -74,7 +74,7 @@ class Location(object):
                 except ValueError:
                     raise InvalidLocationException(
                         "Invalid location, port should be an "
-                        "integer not a {} ({}).".format(type(self._port), self._port)
+                        f"integer not a {type(self._port)} ({self._port})."
                     )
 
     host = property(lambda self: self._host)
@@ -89,7 +89,7 @@ class Location(object):
 
         if not m:
             raise InvalidLocationException(
-                "Cannot parse '{}' as a valid location.".format(location)
+                f"Cannot parse '{location}' as a valid location."
             )
 
         matches = m.groupdict()

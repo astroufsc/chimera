@@ -97,7 +97,7 @@ class FakeFocuser(FocuserBase):
         return (0, 7000)
 
     def _setPosition(self, n):
-        self.log.info("Changing focuser to {}".format(n))
+        self.log.info(f"Changing focuser to {n}")
         self._position = n
 
     def _inRange(self, n):

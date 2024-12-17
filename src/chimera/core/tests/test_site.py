@@ -73,7 +73,7 @@ class TestSite(object):
         for i in range(100):
             t0 = time.clock()
             t0_r = time.time()
-            print("\r{}".format(site.LST()), end=" ")
+            print(f"\r{site.LST()}", end=" ")
             times.append(time.clock() - t0)
             real_times.append(time.time() - t0_r)
 

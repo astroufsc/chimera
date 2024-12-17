@@ -188,7 +188,7 @@ class ThreadPoolThread(threading.Thread):
                 sleep(ThreadPoolThread.threadSleepTime)
             else:
 
-                log.debug("Running {} on thread {}".format(cmd, self.getName()))
+                log.debug(f"Running {cmd} on thread {self.getName()}")
 
                 if callback is None:
                     cmd(*args, **kwargs)

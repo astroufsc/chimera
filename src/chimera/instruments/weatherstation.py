@@ -55,12 +55,12 @@ class WeatherBase(ChimeraObject, WeatherStation):
                 (
                     "METTEMP",
                     str(temp.value),
-                    ("[{}] Weather station temperature".format(temp.unit)),
+                    (f"[{temp.unit}] Weather station temperature"),
                 ),
                 (
                     "METDEW",
                     str(dew.value),
-                    ("[{}] Weather station dew point".format(dew.unit)),
+                    (f"[{dew.unit}] Weather station dew point"),
                 ),
             ]
 
@@ -71,7 +71,7 @@ class WeatherBase(ChimeraObject, WeatherStation):
                 (
                     "METRH",
                     str(hum.value),
-                    ("[{}] Weather station relative humidity".format(hum.unit)),
+                    (f"[{hum.unit}] Weather station relative humidity"),
                 )
             ]
         # Wind
@@ -81,12 +81,12 @@ class WeatherBase(ChimeraObject, WeatherStation):
                 (
                     "METWINDS",
                     str(speed.value),
-                    ("[{}] Weather station wind speed".format(speed.unit)),
+                    (f"[{speed.unit}] Weather station wind speed"),
                 ),
                 (
                     "WINDDIR",
                     str(direc.value),
-                    ("[{}] Weather station wind direction".format(direc.unit)),
+                    (f"[{direc.unit}] Weather station wind direction"),
                 ),
             ]
 
@@ -97,7 +97,7 @@ class WeatherBase(ChimeraObject, WeatherStation):
                 (
                     "METPRES",
                     str(press.value),
-                    ("[{}] Weather station air pressure".format(press.unit)),
+                    (f"[{press.unit}] Weather station air pressure"),
                 )
             ]
 
@@ -108,7 +108,7 @@ class WeatherBase(ChimeraObject, WeatherStation):
                 (
                     "METRAIN",
                     str(rate.value),
-                    ("[{}] Weather station rain rate".format(rate.unit)),
+                    (f"[{rate.unit}] Weather station rain rate"),
                 )
             ]
 
@@ -119,7 +119,7 @@ class WeatherBase(ChimeraObject, WeatherStation):
                 (
                     "METSKTR",
                     str(transp.value),
-                    ("[{}] Weather station Sky Transparency".format(transp.unit)),
+                    (f"[{transp.unit}] Weather station Sky Transparency"),
                 )
             ]
 

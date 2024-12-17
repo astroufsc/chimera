@@ -81,18 +81,14 @@ class TelescopeBase(
 
         if str(position.epoch).lower() != str(Epoch.NOW).lower():
             self.log.info(
-                "Precessing position ({}) from {} to current epoch.".format(
-                    str(position), position.epoch
-                )
+                f"Precessing position ({str(position)}) from {position.epoch} to current epoch."
             )
             position_now = position.precess(Epoch.NOW)
         else:
-            self.log.info(
-                "Current position ({}), no precession needed.".format(str(position))
-            )
+            self.log.info(f"Current position ({str(position)}), no precession needed.")
             position_now = position
 
-        self.log.info("Final precessed position {}".format(str(position_now)))
+        self.log.info(f"Final precessed position {str(position_now)}")
 
         return position_now
 
