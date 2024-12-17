@@ -72,8 +72,7 @@ class TelescopeBase(
 
         if position.alt <= self["min_altitude"]:
             raise ObjectTooLowException(
-                "Object too close to horizon (alt=%d limit=%d)"
-                % (position.alt, self["min_altitude"])
+                f"Object too close to horizon (alt={position.alt} limit={self['min_altitude']})"
             )
 
         return True
@@ -82,17 +81,14 @@ class TelescopeBase(
 
         if str(position.epoch).lower() != str(Epoch.NOW).lower():
             self.log.info(
-                "Precessing position (%s) from %s to current epoch."
-                % (str(position), position.epoch)
+                f"Precessing position ({str(position)}) from {position.epoch} to current epoch."
             )
             position_now = position.precess(Epoch.NOW)
         else:
-            self.log.info(
-                "Current position (%s), no precession needed." % str(position)
-            )
+            self.log.info(f"Current position ({str(position)}), no precession needed.")
             position_now = position
 
-        self.log.info("Final precessed position %s" % str(position_now))
+        self.log.info(f"Final precessed position {str(position_now)}")
 
         return position_now
 

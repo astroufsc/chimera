@@ -94,7 +94,7 @@ class ResourcesManager:
             ret = [x for x in list(self.keys()) if x == location]
             return self._res[ret[0]]
         else:
-            raise ObjectNotFoundException("Couldn't find %s." % location)
+            raise ObjectNotFoundException(f"Couldn't find {location}.")
 
     def _getByIndex(self, item, index):
         location = self._validLocation(item)
@@ -104,10 +104,10 @@ class ResourcesManager:
                 return self._res[instances[index].location]
             except IndexError:
                 raise ObjectNotFoundException(
-                    "Couldn't find %s instance #%d." % (location, index)
+                    f"Couldn't find {location} instance #{index}."
                 )
         else:
-            raise ObjectNotFoundException("Couldn't find %s." % location)
+            raise ObjectNotFoundException(f"Couldn't find {location}.")
 
     def _validLocation(self, item):
         ret = item
@@ -121,7 +121,7 @@ class ResourcesManager:
         try:
             return self.get(item)
         except ChimeraException:
-            raise KeyError("Couldn't find %s" % item).with_traceback(sys.exc_info()[2])
+            raise KeyError(f"Couldn't find {item}").with_traceback(sys.exc_info()[2])
 
     def __contains__(self, item):
         # note that our 'in'/'not in' tests are for keys (locations) and
@@ -143,11 +143,23 @@ class ResourcesManager:
                 # nor a valid object
                 return False
 
-    __iter__ = lambda self: self._res.__iter__()
-    __len__ = lambda self: self._res.__len__()
+    def __iter__(self):
+        return iter(self._res)
 
-    keys = lambda self: list(self._res.keys())
-    values = lambda self: list(self._res.values())
-    items = lambda self: list(self._res.items())
-    iterkeys = lambda self: iter(self._res.keys())
-    iteritems = lambda self: iter(self._res.items())
+    def __len__(self):
+        return len(self._res)
+
+    def keys(self):
+        return list(self._res.keys())
+
+    def values(self):
+        return list(self._res.values())
+
+    def items(self):
+        return list(self._res.items())
+
+    def iterkeys(self):
+        return iter(self._res.keys())
+
+    def iteritems(self):
+        return iter(self._res.items())

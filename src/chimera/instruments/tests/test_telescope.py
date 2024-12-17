@@ -36,6 +36,10 @@ from chimera.util.position import Position
 
 from chimera.interfaces.telescope import SlewRate, TelescopeStatus
 
+from chimera.instruments.tests.base import FakeHardwareTest, RealHardwareTest
+
+import chimera.core.log
+
 
 def assertEpsEqual(a, b, e=60):
     """Assert wether a equals b withing eps precision, in
@@ -43,8 +47,6 @@ def assertEpsEqual(a, b, e=60):
     """
     assert abs(a.AS - b.AS) <= e
 
-
-import chimera.core.log
 
 chimera.core.log.setConsoleLevel(int(1e10))
 log = logging.getLogger("chimera.tests")
@@ -122,7 +124,6 @@ class TelescopeTest(object):
         last = self.tel.getPositionRaDec()
 
         # clear event checkings
-        FiredEvents = {}
 
         # drift it
         dest = Position.fromRaDec(last.ra + Coord.fromH(1), last.dec + Coord.fromD(10))
@@ -230,10 +231,9 @@ class TelescopeTest(object):
             printPosition()
             time.sleep(0.5)
 
-    def test_jog(self):
+    pytest.mark.skip("FIXME: make a real test.")
 
-        # FIXME: make a real test.
-        raise SkipTest()
+    def test_jog(self):
 
         print()
 
@@ -311,10 +311,6 @@ class TelescopeTest(object):
 #
 # setup real and fake tests
 #
-
-from chimera.instruments.tests.base import FakeHardwareTest, RealHardwareTest
-
-
 class TestFakeTelescope(FakeHardwareTest, TelescopeTest):
 
     def setup(self):
@@ -339,7 +335,6 @@ class TestFakeTelescope(FakeHardwareTest, TelescopeTest):
 
         self.tel = self.manager.getProxy(self.TELESCOPE)
 
-        FiredEvents = {}
         self.setupEvents()
 
     def teardown(self):
@@ -370,7 +365,6 @@ class TestRealTelescope(RealHardwareTest, TelescopeTest):
         # self.TELESCOPE = "150.162.110.3:7666/TheSkyTelescope/0"
         self.tel = self.manager.getProxy(self.TELESCOPE)
 
-        FiredEvents = {}
         self.setupEvents()
 
     def teardown(self):

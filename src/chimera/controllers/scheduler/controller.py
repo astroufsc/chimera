@@ -47,7 +47,7 @@ class Scheduler(ChimeraObject):
         self.scheduler = SchedulingAlgorithms[self["algorithm"]]
         self.machine = Machine(self.scheduler, self.executor, self)
 
-        self.log.debug("Using %s algorithm" % self["algorithm"])
+        self.log.debug("Using {} algorithm".format(self["algorithm"]))
 
     def control(self):
         if not self.machine.isAlive():

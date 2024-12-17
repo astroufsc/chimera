@@ -14,9 +14,11 @@ class TestConfig(object):
         # valid
         for i in ("valid", 1, True, 1.0, object):
             assert (
-                c.__setitem__("key_str", i) != False
-            ), "%s (%s) is a valid str configuration" % (i, type(i))
-            assert type(c.__getitem__("key_str")) == str, "should return str object"
+                c.__setitem__("key_str", i) is not False
+            ), f"{i} ({type(i)}) is a valid str configuration"
+            assert isinstance(
+                c.__getitem__("key_str"), str
+            )  # "should return str object"
 
         # invalid
         # any?
@@ -28,14 +30,18 @@ class TestConfig(object):
         # valid
         for i in (1, 1.0, "1", "1.0", "-1", "-1.0", "   10  ", True):
             assert (
-                c.__setitem__("key_int", i) != False
-            ), "%s (%s) is a valid int configuration" % (i, type(i))
-            assert type(c.__getitem__("key_int")) == int, "should return int object"
+                c.__setitem__("key_int", i) is not False
+            ), f"{i} ({type(i)}) is a valid int configuration"
+            assert isinstance(
+                c.__getitem__("key_int"), int
+            )  # "should return int object"
 
             assert (
-                c.__setitem__("key_float", i) != False
-            ), "%s (%s) is a valid float configuration" % (i, type(i))
-            assert type(c.__getitem__("key_float")) == float, "should return str object"
+                c.__setitem__("key_float", i) is not False
+            ), f"{i} ({type(i)}) is a valid float configuration"
+            assert isinstance(
+                c.__getitem__("key_float"), float
+            )  # "should return str object"
 
         # invalid
         for i in (object, "a10", "1.a"):
@@ -77,7 +83,9 @@ class TestConfig(object):
             # no assert because setitem returns the old and this can be False
             # we get errors if any set raises OptionConversionException
             c.__setitem__("key_bool", i)
-            assert type(c.__getitem__("key_bool")) == bool, "should return bool object"
+            assert isinstance(
+                c.__getitem__("key_bool"), bool
+            )  # "should return bool object"
 
         # invalid
         for i in (object, "ok", 10):
@@ -99,15 +107,19 @@ class TestConfig(object):
         # valid
         for i in (1, 2, 3, True):  # True == 1
             assert (
-                c.__setitem__("key_opt_int", i) != False
-            ), "%s (%s) is a valid configuration" % (i, type(i))
-            assert type(c.__getitem__("key_opt_int")) == int, "should return int object"
+                c.__setitem__("key_opt_int", i) is not False
+            ), f"{i} ({type(i)}) is a valid configuration"
+            assert isinstance(
+                c.__getitem__("key_opt_int"), int
+            )  # "should return int object"
 
         for i in ("one", "two", "three"):
             assert (
-                c.__setitem__("key_opt_str", i) != False
-            ), "%s (%s) is a valid configuration" % (i, type(i))
-            assert type(c.__getitem__("key_opt_str")) == str, "should return str object"
+                c.__setitem__("key_opt_str", i) is not False
+            ), f"{i} ({type(i)}) is a valid configuration"
+            assert isinstance(
+                c.__getitem__("key_opt_str"), str
+            )  # "should return str object"
 
         # invalid
         for i in (4, 5, 6, "str", False):
@@ -125,9 +137,11 @@ class TestConfig(object):
         # valid
         for i in range(1, 11):
             assert (
-                c.__setitem__("key_range", i) != False
-            ), "%s (%s) is a valid configuration" % (i, type(i))
-            assert type(c.__getitem__("key_range")) == int, "should return int object"
+                c.__setitem__("key_range", i) is not False
+            ), f"{i} ({type(i)}) is a valid configuration"
+            assert isinstance(
+                c.__getitem__("key_range"), int
+            )  # "should return int object"
 
         # invalid
         for i in (0, 11, "str"):
@@ -172,7 +186,7 @@ class TestConfig(object):
         with pytest.raises(KeyError):
             c.__iadd__(dd)
 
-        assert not "new" in c
+        assert "new" not in c
 
         c += {"device": "foo"}
         assert c["device"] == "foo"
@@ -192,11 +206,11 @@ class TestConfig(object):
         # valid
         for i in Values:
             assert (
-                c.__setitem__("key_enum", i) != False
-            ), "%s (%s) is a valid enum configuration" % (i, type(i))
-            assert (
-                type(c.__getitem__("key_enum")) == EnumValue
-            ), "should return EnumValue object"
+                c.__setitem__("key_enum", i) is not False
+            ), f"{i} ({type(i)}) is a valid enum configuration"
+            assert isinstance(
+                c.__getitem__("key_enum"), EnumValue
+            )  # "should return EnumValue object"
 
         for i in [
             "A_VALUE",
@@ -207,11 +221,11 @@ class TestConfig(object):
             "oThEr_VaLuE",
         ]:
             assert (
-                c.__setitem__("key_enum", i) != False
-            ), "%s (%s) is a valid enum configuration" % (i, type(i))
-            assert (
-                type(c.__getitem__("key_enum")) == EnumValue
-            ), "should return EnumValue object"
+                c.__setitem__("key_enum", i) is not False
+            ), f"{i} ({type(i)}) is a valid enum configuration"
+            assert isinstance(
+                c.__getitem__("key_enum"), EnumValue
+            )  # "should return EnumValue object"
 
         # invalid
         with pytest.raises(KeyError):

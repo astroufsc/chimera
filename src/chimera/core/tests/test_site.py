@@ -21,16 +21,11 @@ import pytest
 
 from chimera.core.manager import Manager
 from chimera.core.site import Site
-from chimera.core.exceptions import printException
 
-from chimera.util.coord import Coord
-from chimera.util.position import Position
 
 from dateutil.relativedelta import relativedelta
 
 import time
-import sys
-import logging
 
 
 class TestSite(object):
@@ -78,7 +73,7 @@ class TestSite(object):
         for i in range(100):
             t0 = time.clock()
             t0_r = time.time()
-            print("\r%s" % site.LST(), end=" ")
+            print(f"\r{site.LST()}", end=" ")
             times.append(time.clock() - t0)
             real_times.append(time.time() - t0_r)
 

@@ -46,31 +46,23 @@ class TestCoord(object):
             # test conversion from HMS DMS to decimal
             assert TestCoord.equal(
                 ra[i].D, expected_ra[i], e=1e-4
-            ), "ra: %.6f != coord ra: %.6f (%.6f)" % (
-                expected_ra[i],
-                ra[i].D,
-                expected_ra[i] - ra[i].D,
-            )
+            ), f"ra: {expected_ra[i]:.6f} != coord ra: {ra[i].D:.6f} ({expected_ra[i] - ra[i].D:.6f})"
 
             assert TestCoord.equal(
                 dec[i].D, expected_dec[i], e=1e-4
-            ), "dec: %.6f != coord dec: %.64f (%.6f)" % (
-                expected_dec[i],
-                dec[i].D,
-                expected_dec[i] - dec[i].D,
-            )
+            ), f"dec: {expected_dec[i]:.6f} != coord dec: {dec[i].D:.64f} ({expected_dec[i] - dec[i].D:.6f})"
 
             # test strfcoord implementation
             assert expected_ra_str[i] == ra[i].strfcoord(
                 "%(h)02d %(m)02d %(s)04.1f"
-            ), "ra: %s != coord ra: %s" % (
+            ), "ra: {} != coord ra: {}".format(
                 expected_ra_str[i],
                 ra[i].strfcoord("%(h)02d %(m)02d %(s)04.1f"),
             )
 
             assert expected_dec_str[i] == dec[i].strfcoord(
                 "%(d)02d %(m)02d %(s)02.0f"
-            ), "dec: %s != coord dec: %s" % (
+            ), "dec: {} != coord dec: {}".format(
                 expected_dec_str[i],
                 dec[i].strfcoord("%(d)02d %(m)02d %(s)02.0f"),
             )
@@ -113,14 +105,14 @@ class TestCoord(object):
         for i in range(len(hipp)):
             assert expected_ra_str[i] == ra_hms[i].strfcoord(
                 "%(h)02d %(m)02d %(s)05.2f"
-            ), "ra: %s != coord ra: %s" % (
+            ), "ra: {} != coord ra: {}".format(
                 expected_ra_str[i],
                 ra_hms[i].strfcoord("%(h)02d %(m)02d %(s)05.2f"),
             )
 
             assert expected_dec_str[i] == dec_dms[i].strfcoord(
                 "%(d)02d %(m)02d %(s)04.1f"
-            ), "dec: %s != coord dec: %s" % (
+            ), "dec: {} != coord dec: {}".format(
                 expected_dec_str[i],
                 dec_dms[i].strfcoord("%(d)02d %(m)02d %(s)04.1f"),
             )
@@ -128,36 +120,20 @@ class TestCoord(object):
             # test conversion from D to D
             assert TestCoord.equal(
                 ra[i].D, expected_ra[i], e=1e-8
-            ), "ra: %.6f != coord ra: %.6f (%.6f)" % (
-                expected_ra[i],
-                ra[i].D,
-                expected_ra[i] - ra[i].D,
-            )
+            ), f"ra: {expected_ra[i]:.6f} != coord ra: {ra[i].D:.6f} ({expected_ra[i] - ra[i].D:.6f})"
 
             assert TestCoord.equal(
                 dec[i].D, expected_dec[i], e=1e-8
-            ), "dec: %.6f != coord dec: %.64f (%.6f)" % (
-                expected_dec[i],
-                dec[i].D,
-                expected_dec[i] - dec[i].D,
-            )
+            ), f"dec: {expected_dec[i]:.6f} != coord dec: {dec[i].D:.64f} ({expected_dec[i] - dec[i].D:.6f})"
 
             # test conversion from DMS HMS to D
             assert TestCoord.equal(
                 ra_hms[i].D, expected_ra[i], e=1e-4
-            ), "ra: %.6f != coord ra: %.6f (%.6f)" % (
-                expected_ra[i],
-                ra_hms[i].D,
-                expected_ra[i] - ra_hms[i].D,
-            )
+            ), f"ra: {expected_ra[i]:.6f} != coord ra: {ra_hms[i].D:.6f} ({expected_ra[i] - ra_hms[i].D:.6f})"
 
             assert TestCoord.equal(
                 dec_dms[i].D, expected_dec[i], e=1e-4
-            ), "dec: %.6f != coord dec: %.64f (%.6f)" % (
-                expected_dec[i],
-                dec_dms[i].D,
-                expected_dec[i] - dec_dms[i].D,
-            )
+            ), f"dec: {expected_dec[i]:.6f} != coord dec: {dec_dms[i].D:.64f} ({expected_dec[i] - dec_dms[i].D:.6f})"
 
     def test_parse_dms(self):
 
@@ -169,7 +145,7 @@ class TestCoord(object):
         for dd in range(-23, 24):
             for mm in range(0, 60):
                 for ss in range(0, 60):
-                    s = "%+03d:%02d:%06.3f" % (dd, mm, ss)
+                    s = f"{dd:+03d}:{mm:02d}:{ss:06.3f}"
 
                     t = time.clock()
                     c = Coord.fromDMS(s)
@@ -183,12 +159,5 @@ class TestCoord(object):
             t_check += time.clock() - t
 
         print(
-            "#%d coords parsed in %.3fs (%.3f/s) and checked in %.3fs (%.3f/s) ..."
-            % (
-                len(coords),
-                t_parse,
-                len(coords) / t_parse,
-                t_check,
-                len(coords) / t_check,
-            )
+            f"#{len(coords)} coords parsed in {t_parse:.3f}s ({len(coords) / t_parse:.3f}/s) and checked in {t_check:.3f}s ({len(coords) / t_check:.3f}/s) ..."
         )

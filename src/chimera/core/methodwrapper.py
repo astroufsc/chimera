@@ -76,16 +76,9 @@ class MethodWrapperDispatcher(object):
         self.cls = cls
 
         # go duck, go!
-        self.bound_name = "<bound method %s.%s.begin of %s>" % (
-            self.cls.__name__,
-            self.func.__name__,
-            repr(self.instance),
-        )
+        self.bound_name = f"<bound method {self.cls.__name__}.{self.func.__name__}.begin of {repr(self.instance)}>"
 
-        self.unbound_name = "<unbound method %s.%s>" % (
-            self.cls.__name__,
-            self.func.__name__,
-        )
+        self.unbound_name = f"<unbound method {self.cls.__name__}.{self.func.__name__}>"
 
     def __repr__(self):
         if self.instance:
@@ -103,13 +96,8 @@ class MethodWrapperDispatcher(object):
 
             if not isinstance(args[0], self.cls):
                 raise TypeError(
-                    "unbound method %s object must be called with %s instance "
-                    "as first argument (got %s instance instead)"
-                    % (
-                        self.func.__name__,
-                        self.cls.__name__,
-                        args[0].__class__.__name__,
-                    )
+                    f"unbound method {self.func.__name__} object must be called with {self.cls.__name__} instance "
+                    f"as first argument (got {args[0].__class__.__name__} instance instead)"
                 )
             else:
                 return self.call(args[0], *args[1:], **kwargs)

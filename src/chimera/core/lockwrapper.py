@@ -21,7 +21,6 @@
 
 
 import logging
-import time
 
 from chimera.core.methodwrapper import MethodWrapper, MethodWrapperDispatcher
 

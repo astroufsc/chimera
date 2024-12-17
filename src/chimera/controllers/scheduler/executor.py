@@ -67,7 +67,7 @@ class ProgramExecutor(object):
                 self.currentHandler = self.actionHandlers[type(action)]
 
                 logMsg = str(self.currentHandler.log(action))
-                log.debug("[start] %s " % logMsg)
+                log.debug(f"[start] {logMsg} ")
                 self.controller.actionBegin(action, logMsg)
 
                 self.currentHandler.process(action)
@@ -80,11 +80,11 @@ class ProgramExecutor(object):
                 else:
                     self.controller.actionComplete(action, SchedulerStatus.OK)
 
-            except ProgramExecutionException as e:
+            except ProgramExecutionException:
                 self.controller.actionComplete(action, SchedulerStatus.ERROR)
                 raise
             except KeyError:
-                log.debug("No handler to %s action. Skipping it" % action)
+                log.debug(f"No handler to {action} action. Skipping it")
             finally:
                 log.debug("[finish] took: %f s" % (time.time() - t0))
 
@@ -107,5 +107,5 @@ class ProgramExecutor(object):
                     instrument,
                     self.controller.getManager().getProxy(self.controller[instrument]),
                 )
-            except ObjectNotFoundException as e:
-                log.error("No instrument to inject on %s handler" % handler)
+            except ObjectNotFoundException:
+                log.error(f"No instrument to inject on {handler} handler")

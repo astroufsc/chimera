@@ -66,7 +66,7 @@ class Option(object):
             if hasattr(self, key):
                 setattr(self, key, value)
             else:
-                raise TypeError("Invalid option '%s'." % key)
+                raise TypeError(f"Invalid option '{key}'.")
 
         self.validate()
 
@@ -101,11 +101,11 @@ class Option(object):
 
     def __str__(self):
         s = ""
-        s += "<%s " % self.__class__.__name__
+        s += f"<{self.__class__.__name__} "
         for name in dir(self):
             attr = getattr(self, name)
             if not name.startswith("_") and not hasattr(attr, "__call__"):
-                s += "%s=%s " % (name, attr)
+                s += f"{name}={attr} "
         s = s[:-1]
         s += ">"
         return s
@@ -178,18 +178,17 @@ class CLICheckers:
     @staticmethod
     def check_includepath(option, opt_str, value, parser):
         if not value or not os.path.isdir(os.path.abspath(value)):
-            raise optparse.OptionValueError("Couldn't find %s include path." % value)
-        l = getattr(parser.values, "%s" % option.dest)
-        l.append(value)
+            raise optparse.OptionValueError(f"Couldn't find {value} include path.")
+        getattr(parser.values, f"{option.dest}").append(value)
 
     @staticmethod
     def check_location(option, opt_str, value, parser):
         try:
-            l = Location(value)
+            Location(value)
         except InvalidLocationException:
-            raise optparse.OptionValueError("%s isnt't a valid location." % value)
+            raise optparse.OptionValueError(f"{value} isnt't a valid location.")
 
-        setattr(parser.values, "%s" % option.dest, value)
+        setattr(parser.values, f"{option.dest}", value)
 
 
 class CLIValues(object):
@@ -303,7 +302,7 @@ class ChimeraCLI(object):
         self.parser = optparse.OptionParser(
             prog=prog,
             description=_chimera_description_ + " - " + description,
-            version="Chimera: %s\n%s: %s" % (_chimera_version_, prog, version),
+            version=f"Chimera: {_chimera_version_}\n{prog}: {version}",
         )
 
         # hack to inject our exit funciton into the parser
@@ -409,7 +408,7 @@ class ChimeraCLI(object):
         self.addParameters(params)
 
         if self._needInstrumentsPath:
-            if not "PATHS" in self._helpGroups:
+            if "PATHS" not in self._helpGroups:
                 self.addHelpGroup("PATHS", "Object Paths")
 
             self.addParameters(
@@ -420,9 +419,11 @@ class ChimeraCLI(object):
                     helpGroup="PATHS",
                     type=ParameterType.INCLUDE_PATH,
                     default=ChimeraPath().instruments,
-                    help="Append PATH to %s load path. "
+                    help="Append PATH to {} load path. "
                     "This option could be setted multiple "
-                    "times to add multiple directories." % params["name"].capitalize(),
+                    "times to add multiple directories.".format(
+                        params["name"].capitalize()
+                    ),
                     metavar="PATH",
                 )
             )
@@ -433,7 +434,7 @@ class ChimeraCLI(object):
         self.addParameters(params)
 
         if self._needControllersPath:
-            if not "PATHS" in self._helpGroups:
+            if "PATHS" not in self._helpGroups:
                 self.addHelpGroup("PATHS", "Object Paths")
 
             self.addParameters(
@@ -568,8 +569,7 @@ class ChimeraCLI(object):
                     inst.location = Location(getattr(options, inst.name))
                 except InvalidLocationException:
                     self.exit(
-                        "Invalid location: %s. See --help for more information"
-                        % getattr(options, inst.name)
+                        f"Invalid location: {getattr(options, inst.name)}. See --help for more information"
                     )
 
             else:
@@ -583,9 +583,8 @@ class ChimeraCLI(object):
 
             if not inst.location and inst.required:
                 self.exit(
-                    "Couldn't find %s configuration. "
-                    "Edit %s or see --help for more information"
-                    % (inst.name.capitalize(), os.path.abspath(options.config))
+                    f"Couldn't find {inst.name.capitalize()} configuration. "
+                    f"Edit {os.path.abspath(options.config)} or see --help for more information"
                 )
 
         for inst in list(instruments.values()) + list(controllers.values()):
@@ -595,10 +594,9 @@ class ChimeraCLI(object):
             try:
                 inst_proxy = Proxy(inst.location)
             except ObjectNotFoundException:
-                if inst.required == True:
+                if inst.required:
                     self.exit(
-                        "Couldn't find %s. (see --help for more information)"
-                        % inst.name.capitalize()
+                        f"Couldn't find {inst.name.capitalize()}. (see --help for more information)"
                     )
 
             # save values in CLI object (which users are supposed to inherits
@@ -629,9 +627,9 @@ class ChimeraCLI(object):
                     # pure attribute
                     payload = attr
 
-                if type(payload) == Action:
+                if isinstance(payload, Action):
                     self._actions[payload.name] = payload
-                elif type(payload) == Parameter:
+                elif isinstance(payload, Parameter):
                     self._parameters[payload.name] = payload
 
         for action in list(self._actions.values()):
@@ -754,11 +752,7 @@ class ChimeraCLI(object):
         # add default actions
         # FIXME: there is no way to disable a default action?
         actions.extend(
-            [
-                action
-                for action in list(self._actions.values())
-                if action.default == True
-            ]
+            [action for action in list(self._actions.values()) if action.default]
         )
 
         if not actions:
@@ -768,8 +762,7 @@ class ChimeraCLI(object):
             for other in actions:
                 if action != other and action.actionGroup == other.actionGroup:
                     self.exit(
-                        "Cannot use %s and %s at the same time."
-                        % (action.long, other.long)
+                        f"Cannot use {action.long} and {other.long} at the same time."
                     )
 
         # remove duplicates
@@ -798,7 +791,7 @@ class ChimeraCLI(object):
                     newValue = getattr(self, param.target.__name__)(value)
                     setattr(options, name, newValue or value)
             except ValueError as e:
-                self.exit("Invalid value for %s: %s" % (name, e))
+                self.exit(f"Invalid value for {name}: {e}")
 
     def _runAction(self, action, options):
 
@@ -807,7 +800,7 @@ class ChimeraCLI(object):
                 method = getattr(self, action.target.__name__)
                 method(options)
         except Exception as e:
-            self.err("Something wrong with '%s' action." % (action.name))
+            self.err(f"Something wrong with '{action.name}' action.")
             printException(e)
             return False
 

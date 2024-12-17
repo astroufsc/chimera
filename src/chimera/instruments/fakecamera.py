@@ -22,7 +22,9 @@
 import time
 import datetime as dt
 import random
-import urllib.request, urllib.parse, urllib.error
+import urllib.request
+import urllib.parse
+import urllib.error
 import os
 import shutil
 
@@ -368,7 +370,7 @@ class FakeCamera(CameraBase, FilterWheelBase):
     @lock
     def setFilter(self, filter):
         if filter not in self.getFilters():
-            raise InvalidFilterPositionException("%s is not a valid filter" % filter)
+            raise InvalidFilterPositionException(f"{filter} is not a valid filter")
 
         self.filterChange(filter, self.__lastFilter)
         self.__lastFilter = filter

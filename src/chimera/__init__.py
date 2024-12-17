@@ -43,4 +43,6 @@ G{packagetree chimera}
 
 """
 
-from chimera.core.version import _chimera_version_ as __version__
+from chimera.core.version import _chimera_version_ as _chimera_version_
+
+__version__ = _chimera_version_

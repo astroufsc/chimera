@@ -23,7 +23,6 @@ from math import pi, cos, sin
 import threading
 import time
 import os
-import datetime as dt
 
 from chimera.core.chimeraobject import ChimeraObject
 from chimera.interfaces.camera import (
@@ -209,26 +208,22 @@ class CameraBase(ChimeraObject, CameraExpose, CameraTemperature, CameraInformati
 
                 if left < 0 or left >= mode.width:
                     raise InvalidReadoutMode(
-                        "Invalid subframe: left=%d, ccd width (in this binning)=%d"
-                        % (left, mode.width)
+                        f"Invalid subframe: left={left}, ccd width (in this binning)={mode.width}"
                     )
 
                 if top < 0 or top >= mode.height:
                     raise InvalidReadoutMode(
-                        "Invalid subframe: top=%d, ccd height (in this binning)=%d"
-                        % (top, mode.height)
+                        f"Invalid subframe: top={top}, ccd height (in this binning)={mode.height}"
                     )
 
                 if width > mode.width:
                     raise InvalidReadoutMode(
-                        "Invalid subframe: width=%d, ccd width (int this binning)=%d"
-                        % (width, mode.width)
+                        f"Invalid subframe: width={width}, ccd width (in this binning)={mode.width}"
                     )
 
                 if height > mode.height:
                     raise InvalidReadoutMode(
-                        "Invalid subframe: height=%d, ccd height (int this binning)=%d"
-                        % (height, mode.height)
+                        f"Invalid subframe: height={height}, ccd height (in this binning)={mode.height}"
                     )
 
             except ValueError:

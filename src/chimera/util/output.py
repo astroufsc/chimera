@@ -58,10 +58,10 @@ g_attr["bg_default"] = 49
 
 # make_seq("blue", "black", "normal")
 def color(fg, bg="default", attr=["normal"]):
-    mystr = esc_seq[:] + "%02d" % g_attr[fg]
+    mystr = f"{esc_seq}{g_attr[fg]:02d}"
     for x in [bg] + attr:
-        mystr += ";%02d" % g_attr[x]
-    return mystr + "m"
+        mystr += f";{g_attr[x]:02d}"
+    return f"{mystr}m"
 
 
 codes = {}
@@ -119,18 +119,15 @@ def xtermTitle(mystr):
 
 def xtermTitleReset():
     if havecolor and dotitles and "TERM" in os.environ:
-        myt = os.environ["TERM"]
         xtermTitle(os.environ["TERM"])
 
 
 def notitles():
     "turn off title setting"
-    dotitles = 0
 
 
 def nocolor():
     "turn off colorization"
-    havecolor = 0
     for x in list(codes.keys()):
         codes[x] = ""
 

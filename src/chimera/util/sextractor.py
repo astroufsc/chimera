@@ -152,8 +152,7 @@ import subprocess
 import re
 import copy
 
-from .sexcatalog import *
-
+from chimera.util.sexcatalog import SExtractorfile
 
 # ======================================================================
 
@@ -439,7 +438,7 @@ class SExtractor:
 
         filter_f = builtins.open(self.config["FILTER_NAME"], "w")
         filter_f.write("CONV NORM\n")
-        filter_f.write("# %dx%d Generated from sextractor.py module.\n" % (rows, cols))
+        filter_f.write(f"# {rows}x{cols} Generated from sextractor.py module.\n")
         for row in filter:
             filter_f.write(" ".join(map(repr, row)))
             filter_f.write("\n")
@@ -473,10 +472,7 @@ class SExtractor:
                 value = str(self.config[key])
 
             print(
-                (
-                    "%-16s       %-16s # %s"
-                    % (key, value, SExtractor._SE_config[key]["comment"])
-                ),
+                f"{key:<16}       {value:<16} # {SExtractor._SE_config[key]['comment']}",
                 file=main_f,
             )
 
@@ -508,7 +504,7 @@ class SExtractor:
         rcode = os.system(commandline)
 
         if rcode:
-            raise SExtractorException("SExtractor command [%s] failed." % commandline)
+            raise SExtractorException(f"SExtractor command [{commandline}] failed.")
 
         if clean:
             self.clean()

@@ -15,8 +15,7 @@ def getImageServer(manager):
             toReturn = manager.addLocation(
                 "/ImageServer/imageserver", ChimeraPath().controllers
             )
-        except Exception as e:
-            print("".join(Pyro.util.getPyroTraceback(e)))
+        except Exception:
             raise ClassLoaderException("Unable to create imageserver")
 
     if not toReturn:

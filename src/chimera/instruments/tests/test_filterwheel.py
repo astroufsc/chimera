@@ -18,6 +18,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+from chimera.instruments.tests.base import FakeHardwareTest, RealHardwareTest
 
 import time
 
@@ -69,10 +70,6 @@ class FilterWheelTest(object):
 #
 # setup real and fake tests
 #
-
-from chimera.instruments.tests.base import FakeHardwareTest, RealHardwareTest
-
-
 class TestFakeFilterWheel(FakeHardwareTest, FilterWheelTest):
 
     def setup(self):
@@ -86,7 +83,6 @@ class TestFakeFilterWheel(FakeHardwareTest, FilterWheelTest):
         )
         self.FILTER_WHEEL = "/FakeFilterWheel/0"
 
-        FiredEvents = {}
         self.setupEvents()
 
     def teardown(self):
@@ -104,7 +100,6 @@ class TestRealFilterWheel(RealHardwareTest, FilterWheelTest):
         self.manager.addClass(SBIG, "sbig", {"filters": "R G B LUNAR CLEAR"})
         self.FILTER_WHEEL = "/SBIG/0"
 
-        FiredEvents = {}
         self.setupEvents()
 
     def teardown(self):

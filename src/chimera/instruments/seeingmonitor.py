@@ -37,7 +37,7 @@ class SeeingBase(ChimeraObject, SeeingMonitor):
         if feature in self._supports:
             return self._supports[feature]
         else:
-            self.log.info("Invalid feature: %s" % str(feature))
+            self.log.info(f"Invalid feature: {str(feature)}")
             return False
 
     def seeing(self, unit_out=units.arcsec):

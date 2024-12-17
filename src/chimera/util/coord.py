@@ -22,7 +22,6 @@
 
 import math
 import re
-import sys
 
 TWO_PI = 2.0 * math.pi
 PI_OVER_TWO = math.pi / 2.0
@@ -108,10 +107,10 @@ class CoordUtil(object):
     def dms2d(dms):
 
         # float/int case
-        if type(dms) in [float, int]:
+        if isinstance(dms, (int, float)):
             return float(dms)
 
-        if type(dms) == str:
+        if isinstance(dms, str):
 
             # try to match the regular expression
             matches = CoordUtil.COORD_RE.match(dms.strip())
@@ -133,7 +132,7 @@ class CoordUtil(object):
                     ss = int(ss)
                     msec = float(msec)
                 except ValueError as e:
-                    raise ValueError("Invalid coordinate: '%s' (%s)." % (dms, e))
+                    raise ValueError(f"Invalid coordinate: '{dms}' ({e}).")
 
                 d = (
                     abs(dd)
@@ -151,11 +150,10 @@ class CoordUtil(object):
                 try:
                     return float(dms)
                 except ValueError as e:
-                    raise ValueError("Invalid coordinate: '%s' (%s)." % (dms, e))
+                    raise ValueError(f"Invalid coordinate: '{dms}' ({e}).")
 
         raise ValueError(
-            "Invalid coordinate type: '%s'. Expecting string or numbers."
-            % str(type(dms))
+            f"Invalid coordinate type: '{str(type(dms))}'. Expecting string or numbers."
         )
 
     @staticmethod
@@ -573,20 +571,20 @@ class Coord(object):
 
     @staticmethod
     def fromState(c, state):
-        ctr = getattr(Coord, "from%s" % state)
+        ctr = getattr(Coord, f"from{state}")
         if hasattr(ctr, "__call__"):
             return ctr(c)
         else:
-            raise ValueError("Trying to create Coord " "from unknown state %s" % state)
+            raise ValueError("Trying to create Coord " f"from unknown state {state}")
 
     @staticmethod
     def _from_float_to(c, state):
 
-        if type(c) == str:
+        if isinstance(c, str):
             try:
                 c = float(c)
             except ValueError:
-                raise ValueError("Invalid coordinate: '%s'" % str(c))
+                raise ValueError(f"Invalid coordinate: '{str(c)}'")
 
         c = Coord.from_state[state](c)
         return Coord(c, state)
@@ -641,12 +639,7 @@ class Coord(object):
     #
 
     def __repr__(self):
-        return "<%s object %s (%s) at %s>" % (
-            Coord.__name__,
-            str(self),
-            self.state,
-            hex(id(self))[:-1],
-        )
+        return f"<{Coord.__name__} object {str(self)} ({self.state}) at {hex(id(self))[:-1]}>"
 
     def __str__(self):
         if self.state == State.DMS:
@@ -654,7 +647,7 @@ class Coord(object):
         elif self.state == State.HMS:
             return CoordUtil.hms2str(self)
         else:
-            return "%.2f" % self.get()
+            return f"{self.get():.2f}"
 
     def strfcoord(self, *args, **kwargs):
         return CoordUtil.strfcoord(self, *args, **kwargs)

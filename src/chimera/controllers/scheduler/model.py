@@ -1,3 +1,4 @@
+import datetime as dt
 from chimera.core.constants import DEFAULT_PROGRAM_DATABASE
 
 from sqlalchemy import (
@@ -15,14 +16,12 @@ from sqlalchemy import (
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relation, backref
 
-engine = create_engine("sqlite:///%s" % DEFAULT_PROGRAM_DATABASE, echo=False)
+engine = create_engine(f"sqlite:///{DEFAULT_PROGRAM_DATABASE}", echo=False)
 metaData = MetaData()
 metaData.bind = engine
 
 Session = sessionmaker(bind=engine)
 Base = declarative_base(metadata=metaData)
-
-import datetime as dt
 
 
 class Targets(Base):
@@ -42,14 +41,9 @@ class Targets(Base):
 
     def __str__(self):
         if self.observed:
-            return "#%d %s [type: %s] #LastObverved@: %s" % (
-                self.id,
-                self.name,
-                self.type,
-                self.lastObservation,
-            )
+            return f"#{self.id} {self.name} [type: {self.type}] #LastObserved@: {self.lastObservation}"
         else:
-            return "#%d %s [type: %s] #NeverObserved" % (self.id, self.name, self.type)
+            return f"#{self.id} {self.name} [type: {self.type}] #NeverObserved"
 
 
 class Program(Base):
@@ -74,12 +68,7 @@ class Program(Base):
     )
 
     def __str__(self):
-        return "#%d %s pi:%s #actions: %d" % (
-            self.id,
-            self.name,
-            self.pi,
-            len(self.actions),
-        )
+        return f"#{self.id} {self.name} pi:{self.pi} #actions: {len(self.actions)}"
 
 
 class Action(Base):
@@ -106,12 +95,7 @@ class AutoFocus(Action):
     window = Column(String, default=None)
 
     def __str__(self):
-        return "autofocus: start=%d end=%d step=%d exptime=%d" % (
-            self.start,
-            self.end,
-            self.step,
-            self.exptime,
-        )
+        return f"autofocus: start={self.start} end={self.end} step={self.step} exptime={self.exptime}"
 
 
 class AutoFlat(Action):
@@ -124,7 +108,7 @@ class AutoFlat(Action):
     binning = Column(String, default=None)
 
     def __str__(self):
-        return "Flat fields: filter=%s frames=%d" % (self.filter, self.frames)
+        return f"Flat fields: filter={self.filter} frames={self.frames}"
 
 
 class PointVerify(Action):
@@ -164,33 +148,33 @@ class Point(Action):
             ""
             if self.offsetNS is None
             else (
-                " north %s" % self.offsetNS
+                f" north {self.offsetNS}"
                 if self.offsetNS > 0
-                else " south %s" % self.offsetNS
+                else f" south {self.offsetNS}"
             )
         )
         offsetEW_str = (
             ""
             if self.offsetEW is None
             else (
-                " west %s" % self.offsetEW
+                f" west {self.offsetEW}"
                 if self.offsetEW > 0
-                else " east %s" % self.offsetNS
+                else f" east {self.offsetNS}"
             )
         )
 
         offset = (
             ""
             if self.offsetNS is None and self.offsetEW is None
-            else "offset: %s%s" % (offsetNS_str, offsetEW_str)
+            else f"offset: {offsetNS_str}{offsetEW_str}"
         )
 
         if self.targetRaDec is not None:
-            return "point: (ra,dec) %s%s" % (self.targetRaDec, offset)
+            return f"point: (ra,dec) {self.targetRaDec}{offset}"
         elif self.targetAltAz is not None:
-            return "point: (alt,az) %s%s" % (self.targetAltAz, offset)
+            return f"point: (alt,az) {self.targetAltAz}{offset}"
         elif self.targetName is not None:
-            return "point: (object) %s%s" % (self.targetName, offset)
+            return f"point: (object) {self.targetName}{offset}"
         elif self.offsetNS is not None or self.offsetEW is not None:
             return offset
         else:
@@ -221,10 +205,8 @@ class Expose(Action):
     compress_format = Column(String, default="NO")
 
     def __str__(self):
-        return "expose: exptime=%d frames=%d type=%s" % (
-            self.exptime,
-            self.frames,
-            self.imageType,
+        return (
+            f"expose: exptime={self.exptime} frames={self.frames} type={self.imageType}"
         )
 
 
