@@ -97,18 +97,20 @@ class Position(object):
                     ra = ra.toHMS()
                 except ValueError:
                     raise ValueError(
-                        "Invalid RA coordinate type %s. Expected numbers, strings or Coords."
-                        % str(type(ra))
+                        "Invalid RA coordinate type {}. Expected numbers, strings or Coords.".format(
+                            str(type(ra))
+                        )
                     )
 
             Position._checkRange(float(ra), 0, 360)
 
         except ValueError:
-            raise ValueError("Invalid RA coordinate %s" % str(ra))
+            raise ValueError("Invalid RA coordinate {}".format(str(ra)))
         except PositionOutsideLimitsError:
             raise ValueError(
-                "Invalid RA range %s. Must be between 0-24 hours or 0-360 deg."
-                % str(ra)
+                "Invalid RA range {}. Must be between 0-24 hours or 0-360 deg.".format(
+                    str(ra)
+                )
             )
 
         try:
@@ -122,18 +124,20 @@ class Position(object):
                     dec = dec.toDMS()
                 except ValueError:
                     raise ValueError(
-                        "Invalid DEC coordinate type %s. Expected numbers, strings or Coords."
-                        % str(type(dec))
+                        "Invalid DEC coordinate type {}. Expected numbers, strings or Coords.".format(
+                            str(type(dec))
+                        )
                     )
 
             Position._checkRange(float(dec), -90, 360)
 
         except ValueError:
-            raise ValueError("Invalid DEC coordinate %s" % str(dec))
+            raise ValueError("Invalid DEC coordinate {}".format(str(dec)))
         except PositionOutsideLimitsError:
             raise ValueError(
-                "Invalid DEC range %s. Must be between 0-360 deg or -90 - +90 deg."
-                % str(dec)
+                "Invalid DEC range {}. Must be between 0-360 deg or -90 - +90 deg.".format(
+                    str(dec)
+                )
             )
 
         return Position((ra, dec), system=System.CELESTIAL, epoch=epoch)
@@ -149,11 +153,12 @@ class Position(object):
             Position._checkRange(float(az), -180, 360)
 
         except ValueError:
-            raise ValueError("Invalid AZ coordinate %s" % str(az))
+            raise ValueError("Invalid AZ coordinate {}".format(str(az)))
         except PositionOutsideLimitsError:
             raise ValueError(
-                "Invalid AZ range %s. Must be between 0-360 deg or -180 - +180 deg."
-                % str(az)
+                "Invalid AZ range {}. Must be between 0-360 deg or -180 - +180 deg.".format(
+                    str(az)
+                )
             )
 
         try:
@@ -165,11 +170,12 @@ class Position(object):
             Position._checkRange(float(alt), -90, 180)
 
         except ValueError:
-            raise ValueError("Invalid ALT coordinate %s" % str(alt))
+            raise ValueError("Invalid ALT coordinate {}".format(str(alt)))
         except PositionOutsideLimitsError:
             raise ValueError(
-                "Invalid ALT range %s. Must be between 0-180 deg or -90 - +90 deg."
-                % str(alt)
+                "Invalid ALT range {}. Must be between 0-180 deg or -90 - +90 deg.".format(
+                    str(alt)
+                )
             )
 
         return Position((alt, az), system=System.TOPOCENTRIC)
@@ -197,11 +203,12 @@ class Position(object):
             Position._checkRange(float(long), -180, 360)
 
         except ValueError:
-            raise ValueError("Invalid LONGITUDE coordinate %s" % str(long))
+            raise ValueError("Invalid LONGITUDE coordinate {}".format(str(long)))
         except PositionOutsideLimitsError:
             raise ValueError(
-                "Invalid LONGITUDE range %s. Must be between 0-360 deg or -180 - +180 deg."
-                % str(long)
+                "Invalid LONGITUDE range {}. Must be between 0-360 deg or -180 - +180 deg.".format(
+                    str(long)
+                )
             )
 
         try:
@@ -213,11 +220,12 @@ class Position(object):
             Position._checkRange(float(lat), -90, 180)
 
         except ValueError:
-            raise ValueError("Invalid LATITUDE coordinate %s" % str(lat))
+            raise ValueError("Invalid LATITUDE coordinate {}".format(str(lat)))
         except PositionOutsideLimitsError:
             raise ValueError(
-                "Invalid LATITUDE range %s. Must be between 0-180 deg or -90 - +90 deg."
-                % str(lat)
+                "Invalid LATITUDE range {}. Must be between 0-180 deg or -90 - +90 deg.".format(
+                    str(lat)
+                )
             )
 
         return (long, lat)
@@ -230,7 +238,7 @@ class Position(object):
 
         if not (lower <= value <= upper):
             raise PositionOutsideLimitsError(
-                "Value must between %s and %s." % (lower, upper)
+                "Value must between {} and {}.".format(lower, upper)
             )
         return True
 
@@ -259,7 +267,7 @@ class Position(object):
         """
         @rtype: string
         """
-        return "%s %s" % tuple(str(c) for c in self.coords)
+        return "{} {}".format(*tuple(str(c) for c in self.coords))
 
     # def __repr__(self):
     #     """

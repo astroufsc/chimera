@@ -94,7 +94,7 @@ class ResourcesManager:
             ret = [x for x in list(self.keys()) if x == location]
             return self._res[ret[0]]
         else:
-            raise ObjectNotFoundException("Couldn't find %s." % location)
+            raise ObjectNotFoundException("Couldn't find {}.".format(location))
 
     def _getByIndex(self, item, index):
         location = self._validLocation(item)
@@ -104,10 +104,10 @@ class ResourcesManager:
                 return self._res[instances[index].location]
             except IndexError:
                 raise ObjectNotFoundException(
-                    "Couldn't find %s instance #%d." % (location, index)
+                    f"Couldn't find {location} instance #{index}."
                 )
         else:
-            raise ObjectNotFoundException("Couldn't find %s." % location)
+            raise ObjectNotFoundException("Couldn't find {}.".format(location))
 
     def _validLocation(self, item):
         ret = item
@@ -121,7 +121,9 @@ class ResourcesManager:
         try:
             return self.get(item)
         except ChimeraException:
-            raise KeyError("Couldn't find %s" % item).with_traceback(sys.exc_info()[2])
+            raise KeyError("Couldn't find {}".format(item)).with_traceback(
+                sys.exc_info()[2]
+            )
 
     def __contains__(self, item):
         # note that our 'in'/'not in' tests are for keys (locations) and

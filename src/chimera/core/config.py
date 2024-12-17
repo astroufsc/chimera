@@ -54,7 +54,7 @@ class Option(object):
 
             return oldvalue
         except OptionConversionException as e:
-            log.debug("Error setting %s: %s." % (self._name, str(e)))
+            log.debug("Error setting {}: {}.".format(self._name, str(e)))
             raise e
 
     def get(self):
@@ -98,11 +98,11 @@ class IntChecker(Checker):
             except ValueError:
                 # couldn't convert, nothing to do
                 raise OptionConversionException(
-                    "couldn't convert '%s' to int value." % value
+                    "couldn't convert '{}' to int value.".format(value)
                 )
 
         raise OptionConversionException(
-            "couldn't convert '%s' to int." % str(type(value))
+            "couldn't convert '{}' to int.".format(str(type(value)))
         )
 
 
@@ -128,11 +128,11 @@ class FloatChecker(Checker):
             except ValueError:
                 # couldn't convert, nothing to do
                 raise OptionConversionException(
-                    "couldn't convert '%s' to float value." % value
+                    "couldn't convert '{}' to float value.".format(value)
                 )
 
         raise OptionConversionException(
-            "couldn't convert %s to float." % str(type(value))
+            "couldn't convert {} to float.".format(str(type(value)))
         )
 
 
@@ -194,11 +194,13 @@ class BoolChecker(Checker):
             if value in self._truthTable:
                 return value in self._trueValues
 
-            raise OptionConversionException("couldn't convert '%s' to bool." % value)
+            raise OptionConversionException(
+                "couldn't convert '{}' to bool.".format(value)
+            )
 
         # any other type, raise exception
         raise OptionConversionException(
-            "couldn't convert %s to bool." % str(type(value))
+            "couldn't convert {} to bool.".format(str(type(value)))
         )
 
 
@@ -249,7 +251,7 @@ class OptionsChecker(Checker):
             except OptionConversionException:
                 continue
 
-        raise OptionConversionException("'%s' isn't a valid option." % str(value))
+        raise OptionConversionException("'{}' isn't a valid option.".format(str(value)))
 
 
 class RangeChecker(Checker):
@@ -273,7 +275,9 @@ class RangeChecker(Checker):
 
         except OptionConversionException:
 
-            raise OptionConversionException("'%s' isn't a valid option." % str(value))
+            raise OptionConversionException(
+                "'{}' isn't a valid option.".format(str(value))
+            )
 
         else:
 
@@ -282,8 +286,9 @@ class RangeChecker(Checker):
                 return tmp
             else:
                 raise OptionConversionException(
-                    "'%s' it's outside valid limits (%f <= x <= %f."
-                    % (str(value), self._min, self._max)
+                    "'{}' it's outside valid limits ({:f} <= x <= {:f}.".format(
+                        str(value), self._min, self._max
+                    )
                 )
 
 
@@ -306,7 +311,7 @@ class EnumChecker(Checker):
                 return ret[0]
 
         raise OptionConversionException(
-            "invalid enum value %s. not a %s enum." % (value, str(self.enumtype))
+            "invalid enum value {}. not a {} enum.".format(value, str(self.enumtype))
         )
 
 
@@ -323,7 +328,7 @@ class CoordOption(Option):
             self._value = self._checker.check(value, self._state)
             return oldvalue
         except OptionConversionException as e:
-            log.debug("Error setting %s: %s." % (self._name, str(e)))
+            log.debug("Error setting {}: {}.".format(self._name, str(e)))
             raise e
 
 
@@ -341,7 +346,7 @@ class CoordChecker(Checker):
                 pass
 
         # any other type is ignored
-        raise OptionConversionException("invalid coord value %s." % value)
+        raise OptionConversionException("invalid coord value {}.".format(value))
 
 
 class PositionOption(Option):
@@ -358,7 +363,7 @@ class PositionOption(Option):
             self._value = self._checker.check(value, self._system, self._epoch)
             return oldvalue
         except OptionConversionException as e:
-            log.debug("Error setting %s: %s." % (self._name, str(e)))
+            log.debug("Error setting {}: {}.".format(self._name, str(e)))
             raise e
 
 
@@ -440,7 +445,7 @@ class Config(object):
                 options[name] = PositionOption(name, value, PositionChecker(value))
                 continue
 
-            raise ValueError("Invalid option type: %s." % type(value))
+            raise ValueError("Invalid option type: {}.".format(type(value)))
 
         return options
 
@@ -459,7 +464,7 @@ class Config(object):
             return self._options[name].get()
 
         else:
-            raise KeyError("invalid option: %s." % name)
+            raise KeyError("invalid option: {}.".format(name))
 
     def __setitem__(self, name, value):
 
@@ -469,7 +474,7 @@ class Config(object):
 
         # rant about invalid option
         else:
-            raise KeyError("invalid option: %s." % name)
+            raise KeyError("invalid option: {}.".format(name))
 
     def __iter__(self):
         return iter(self.keys())
@@ -504,7 +509,7 @@ class Config(object):
 
         for name, value in list(other._options.items()):
             if name not in self._options:
-                raise KeyError("invalid option: %s" % name)
+                raise KeyError("invalid option: {}".format(name))
 
             self._options[name] = value
 

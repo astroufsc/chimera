@@ -27,7 +27,10 @@ class Proxy:
         setattr(self, "client", Client(location))
 
     def ping(self):
-        return self.__dict__["client"].ping()
+        return self.client.ping()
+
+    def publish(self, topic: str, data):
+        return self.client.publish(topic, data)
 
     def __getnewargs__(self):
         return tuple()
@@ -46,10 +49,10 @@ class Proxy:
         return self
 
     def __repr__(self):
-        return "<%s proxy at %s>" % (self.location, hex(id(self)))
+        return "<{} proxy at {}>".format(self.location, hex(id(self)))
 
     def __str__(self):
-        return "[proxy for %s]" % self.location
+        return "[proxy for {}]".format(self.location)
 
 
 class ProxyMethod(object):
@@ -62,14 +65,16 @@ class ProxyMethod(object):
         self.__name__ = method
 
     def __repr__(self):
-        return "<%s.%s method proxy at %s>" % (
+        return "<{}.{} method proxy at {}>".format(
             self.proxy.location,
             self.method,
             hex(hash(self)),
         )
 
     def __str__(self):
-        return "[method proxy for %s %s method]" % (self.proxy.location, self.method)
+        return "[method proxy for {} {} method]".format(
+            self.proxy.location, self.method
+        )
 
     # synchronous call
     def __call__(self, *args, **kwargs):
@@ -97,8 +102,8 @@ class ProxyMethod(object):
 
         # passing a proxy method?
         if not isinstance(other, ProxyMethod):
-            log.debug("Invalid parameter: %s" % other)
-            raise TypeError("Invalid parameter: %s" % other)
+            log.debug("Invalid parameter: {}".format(other))
+            raise TypeError("Invalid parameter: {}".format(other))
 
         handler["handler"]["proxy"] = other.proxy.location
         handler["handler"]["method"] = str(other.__name__)
@@ -107,8 +112,9 @@ class ProxyMethod(object):
             self.proxy.client.request(f"{EVENTS_PROXY_NAME}.{action}", (handler,), {})
         except Exception:
             log.exception(
-                "Cannot %s to topic '%s' using proxy '%s'."
-                % (action, self.method, self.proxy)
+                "Cannot {} to topic '{}' using proxy '{}'.".format(
+                    action, self.method, self.proxy
+                )
             )
 
         return self

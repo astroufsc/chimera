@@ -76,13 +76,13 @@ class MethodWrapperDispatcher(object):
         self.cls = cls
 
         # go duck, go!
-        self.bound_name = "<bound method %s.%s.begin of %s>" % (
+        self.bound_name = "<bound method {}.{}.begin of {}>".format(
             self.cls.__name__,
             self.func.__name__,
             repr(self.instance),
         )
 
-        self.unbound_name = "<unbound method %s.%s>" % (
+        self.unbound_name = "<unbound method {}.{}>".format(
             self.cls.__name__,
             self.func.__name__,
         )
@@ -103,9 +103,8 @@ class MethodWrapperDispatcher(object):
 
             if not isinstance(args[0], self.cls):
                 raise TypeError(
-                    "unbound method %s object must be called with %s instance "
-                    "as first argument (got %s instance instead)"
-                    % (
+                    "unbound method {} object must be called with {} instance "
+                    "as first argument (got {} instance instead)".format(
                         self.func.__name__,
                         self.cls.__name__,
                         args[0].__class__.__name__,

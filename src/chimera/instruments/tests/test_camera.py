@@ -290,7 +290,7 @@ class CameraTest(object):
 
         print()
         while not eps_equal(cam.getTemperature(), cool, 0.25):
-            print("\rwaiting to cool to %d oC:" % cool, cam.getTemperature(), end=" ")
+            print(f"\rwaiting to cool to {cool} oC: {cam.getTemperature()}", end=" ")
             sys.stdout.flush()
             time.sleep(1)
 

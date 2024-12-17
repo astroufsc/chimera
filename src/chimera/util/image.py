@@ -105,15 +105,18 @@ class ImageUtil(object):
         basename = string.Template(basename).safe_substitute(subs_dict)
         ext = string.Template(ext).safe_substitute(subs_dict)
 
-        finalname = os.path.join(dirname, "%s%s%s" % (basename, os.path.extsep, ext))
+        finalname = os.path.join(
+            dirname, "{}{}{}".format(basename, os.path.extsep, ext)
+        )
 
         if not os.path.exists(dirname):
             os.makedirs(dirname)
 
         if not os.path.isdir(dirname):
             raise OSError(
-                "A file with the same name as the desired directory already exists. ('%s')"
-                % dirname
+                "A file with the same name as the desired directory already exists. ('{}')".format(
+                    dirname
+                )
             )
 
         # If filename exists, append -NNN to the end of the file name.
@@ -121,15 +124,16 @@ class ImageUtil(object):
         if os.path.exists(finalname):
             base, ext = os.path.splitext(finalname)
             i = 1
-            while os.path.exists("%s-%03i%s" % (base, i, ext)):
+            while os.path.exists(f"{base}-{i:03d}{ext}"):
                 i += 1
                 if i == 1000:
                     raise OSError(
-                        "Reached the maximum of 999 files with the same name (%s)."
-                        % finalname
+                        "Reached the maximum of 999 files with the same name ({}).".format(
+                            finalname
+                        )
                     )
 
-            finalname = "%s-%03i%s" % (base, i, ext)
+            finalname = f"{base}-{i:03d}{ext}"
 
         return finalname
 
@@ -223,7 +227,7 @@ class Image(UserDict):
                 try:
                     hdu.header.set(*h)
                 except Exception as e:
-                    log.warning("Couldn't add %s: %s" % (str(h), str(e)))
+                    log.warning("Couldn't add {}: {}".format(str(h), str(e)))
 
             if imageRequest["compress_format"] == "fits_rice":
                 filename = os.path.splitext(filename)[0] + ".fz"
@@ -273,7 +277,7 @@ class Image(UserDict):
         return self._http
 
     def __str__(self):
-        return "<Image %s>" % self.filename()
+        return "<Image {}>".format(self.filename())
 
     #
     # serialization support
@@ -344,7 +348,9 @@ class Image(UserDict):
                 self._wcs = wcs.WCS(self._fd["PRIMARY"].header)
             except (KeyError, ValueError) as e:
                 raise WCSNotFoundException(
-                    "Couldn't find WCS information on %s ('%s')" % (self._filename, e)
+                    "Couldn't find WCS information on {} ('{}')".format(
+                        self._filename, e
+                    )
                 )
 
         return True

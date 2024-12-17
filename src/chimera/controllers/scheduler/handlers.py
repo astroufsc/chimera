@@ -91,35 +91,41 @@ class PointHandler(ActionHandler):
             ""
             if action.offsetNS is None
             else (
-                " north %s" % action.offsetNS
+                " north {}".format(action.offsetNS)
                 if action.offsetNS > 0
-                else " south %s" % abs(action.offsetNS)
+                else " south {}".format(abs(action.offsetNS))
             )
         )
         offsetEW_str = (
             ""
             if action.offsetEW is None
             else (
-                " west %s" % abs(action.offsetEW)
+                " west {}".format(abs(action.offsetEW))
                 if action.offsetEW > 0
-                else " east %s" % abs(action.offsetEW)
+                else " east {}".format(abs(action.offsetEW))
             )
         )
 
         offset = (
             ""
             if action.offsetNS is None and action.offsetEW is None
-            else " offset:%s%s" % (offsetNS_str, offsetEW_str)
+            else " offset:{}{}".format(offsetNS_str, offsetEW_str)
         )
 
         if action.targetRaDec is not None:
-            return "slewing telescope to (ra dec) %s%s" % (action.targetRaDec, offset)
+            return "slewing telescope to (ra dec) {}{}".format(
+                action.targetRaDec, offset
+            )
         elif action.targetAltAz is not None:
-            return "slewing telescope to (alt az) %s%s" % (action.targetAltAz, offset)
+            return "slewing telescope to (alt az) {}{}".format(
+                action.targetAltAz, offset
+            )
         elif action.targetName is not None:
-            return "slewing telescope to (object) %s%s" % (action.targetName, offset)
+            return "slewing telescope to (object) {}{}".format(
+                action.targetName, offset
+            )
         elif offset != "":
-            return "applying telescope%s" % offset
+            return "applying telescope{}".format(offset)
         else:
             if action.domeTracking is None:
                 tracking = "left AS IS"
@@ -127,7 +133,7 @@ class PointHandler(ActionHandler):
                 tracking = "STARTED"
             else:
                 tracking = "STOPPED"
-            return "dome tracking %s" % tracking
+            return "dome tracking {}".format(tracking)
 
 
 class ExposeHandler(ActionHandler):
@@ -175,7 +181,7 @@ class ExposeHandler(ActionHandler):
 
     @staticmethod
     def log(action):
-        return "exposing: filter=%s exptime=%s frames=%s type=%s" % (
+        return "exposing: filter={} exptime={} frames={} type={}".format(
             str(action.filter),
             str(action.exptime),
             str(action.frames),

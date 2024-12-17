@@ -47,7 +47,7 @@ FiredEvents = {}
 
 
 def assertDomeAz(domeAz, otherAz, eps):
-    assert abs(domeAz - otherAz) <= eps, "dome az=%s other az=%s (eps=%s)" % (
+    assert abs(domeAz - otherAz) <= eps, "dome az={} other az={} (eps={})".format(
         domeAz,
         otherAz,
         eps,
@@ -118,8 +118,8 @@ class DomeTest(object):
 
             self.setupEvents()
 
-            ra = "%d %d 00" % (random.randint(7, 15), random.randint(0, 59))
-            dec = "%d %d 00" % (random.randint(-90, 0), random.randint(0, 59))
+            ra = f"{random.randint(7, 15)} {random.randint(0, 59)} 00"
+            dec = f"{random.randint(-90, 0)} {random.randint(0, 59)} 00"
             tel.slewToRaDec(Position.fromRaDec(ra, dec))
 
             dome.syncWithTel()

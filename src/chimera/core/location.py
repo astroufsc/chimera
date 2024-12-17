@@ -60,7 +60,7 @@ class Location(object):
         # from dict
         else:
             # get from options dict (cls, name, config)
-            loc = "/%s/%s" % (options.get("cls", ""), options.get("name", ""))
+            loc = "/{}/{}".format(options.get("cls", ""), options.get("name", ""))
 
             _, __, self._class, self._name, ___ = self.parse(loc)
 
@@ -74,7 +74,7 @@ class Location(object):
                 except ValueError:
                     raise InvalidLocationException(
                         "Invalid location, port should be an "
-                        "integer not a %s (%s)." % (type(self._port), self._port)
+                        "integer not a {} ({}).".format(type(self._port), self._port)
                     )
 
     host = property(lambda self: self._host)
@@ -89,7 +89,7 @@ class Location(object):
 
         if not m:
             raise InvalidLocationException(
-                "Cannot parse '%s' as a valid location." % location
+                "Cannot parse '{}' as a valid location.".format(location)
             )
 
         matches = m.groupdict()
@@ -109,8 +109,8 @@ class Location(object):
                 except ValueError:
                     # split returned less/more than 2 strings
                     raise InvalidLocationException(
-                        "Cannot parse '%s' as a valid location. "
-                        "Invalid config dict: '%s'" % (location, matches["config"])
+                        "Cannot parse '{}' as a valid location. "
+                        "Invalid config dict: '{}'".format(location, matches["config"])
                     )
 
         port = matches["port"]
@@ -143,12 +143,12 @@ class Location(object):
 
     def __repr__(self):
 
-        _str = "/%s/%s" % (self._class, self._name)
+        _str = f"/{self._class}/{self._name}"
 
         if self.host and self.port:
-            _str = "%s:%d%s" % (self.host, self.port, _str)
+            _str = f"{self.host}:{self.port}{_str}"
 
         if self.host and not self.port:
-            _str = "%s%s" % (self.host, _str)
+            _str = f"{self.host}{_str}"
 
         return _str

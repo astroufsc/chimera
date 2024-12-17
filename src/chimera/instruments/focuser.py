@@ -62,12 +62,12 @@ class FocuserBase(ChimeraObject, Focuser):
         if feature in self._supports:
             return self._supports[feature]
         else:
-            self.log.info("Invalid feature: %s" % str(feature))
+            self.log.info("Invalid feature: {}".format(str(feature)))
             return False
 
     def _checkAxis(self, axis):
         if not self.supports(AxisControllable[axis]):
-            raise InvalidFocusPositionException("Cannot move %s axis." % axis)
+            raise InvalidFocusPositionException("Cannot move {} axis.".format(axis))
 
     def getMetadata(self, request):
         # Check first if there is metadata from an metadata override method.

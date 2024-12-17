@@ -132,7 +132,7 @@ class CoordUtil(object):
                     ss = int(ss)
                     msec = float(msec)
                 except ValueError as e:
-                    raise ValueError("Invalid coordinate: '%s' (%s)." % (dms, e))
+                    raise ValueError("Invalid coordinate: '{}' ({}).".format(dms, e))
 
                 d = (
                     abs(dd)
@@ -150,11 +150,12 @@ class CoordUtil(object):
                 try:
                     return float(dms)
                 except ValueError as e:
-                    raise ValueError("Invalid coordinate: '%s' (%s)." % (dms, e))
+                    raise ValueError("Invalid coordinate: '{}' ({}).".format(dms, e))
 
         raise ValueError(
-            "Invalid coordinate type: '%s'. Expecting string or numbers."
-            % str(type(dms))
+            "Invalid coordinate type: '{}'. Expecting string or numbers.".format(
+                str(type(dms))
+            )
         )
 
     @staticmethod
@@ -572,11 +573,13 @@ class Coord(object):
 
     @staticmethod
     def fromState(c, state):
-        ctr = getattr(Coord, "from%s" % state)
+        ctr = getattr(Coord, "from{}".format(state))
         if hasattr(ctr, "__call__"):
             return ctr(c)
         else:
-            raise ValueError("Trying to create Coord " "from unknown state %s" % state)
+            raise ValueError(
+                "Trying to create Coord " "from unknown state {}".format(state)
+            )
 
     @staticmethod
     def _from_float_to(c, state):
@@ -585,7 +588,7 @@ class Coord(object):
             try:
                 c = float(c)
             except ValueError:
-                raise ValueError("Invalid coordinate: '%s'" % str(c))
+                raise ValueError("Invalid coordinate: '{}'".format(str(c)))
 
         c = Coord.from_state[state](c)
         return Coord(c, state)
@@ -640,7 +643,7 @@ class Coord(object):
     #
 
     def __repr__(self):
-        return "<%s object %s (%s) at %s>" % (
+        return "<{} object {} ({}) at {}>".format(
             Coord.__name__,
             str(self),
             self.state,
@@ -653,7 +656,7 @@ class Coord(object):
         elif self.state == State.HMS:
             return CoordUtil.hms2str(self)
         else:
-            return "%.2f" % self.get()
+            return "{:.2f}".format(self.get())
 
     def strfcoord(self, *args, **kwargs):
         return CoordUtil.strfcoord(self, *args, **kwargs)

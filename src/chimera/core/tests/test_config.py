@@ -15,7 +15,7 @@ class TestConfig(object):
         for i in ("valid", 1, True, 1.0, object):
             assert (
                 c.__setitem__("key_str", i) is not False
-            ), "%s (%s) is a valid str configuration" % (i, type(i))
+            ), "{} ({}) is a valid str configuration".format(i, type(i))
             assert isinstance(
                 c.__getitem__("key_str"), str
             )  # "should return str object"
@@ -31,14 +31,14 @@ class TestConfig(object):
         for i in (1, 1.0, "1", "1.0", "-1", "-1.0", "   10  ", True):
             assert (
                 c.__setitem__("key_int", i) is not False
-            ), "%s (%s) is a valid int configuration" % (i, type(i))
+            ), "{} ({}) is a valid int configuration".format(i, type(i))
             assert isinstance(
                 c.__getitem__("key_int"), int
             )  # "should return int object"
 
             assert (
                 c.__setitem__("key_float", i) is not False
-            ), "%s (%s) is a valid float configuration" % (i, type(i))
+            ), "{} ({}) is a valid float configuration".format(i, type(i))
             assert isinstance(
                 c.__getitem__("key_float"), float
             )  # "should return str object"
@@ -108,7 +108,7 @@ class TestConfig(object):
         for i in (1, 2, 3, True):  # True == 1
             assert (
                 c.__setitem__("key_opt_int", i) is not False
-            ), "%s (%s) is a valid configuration" % (i, type(i))
+            ), "{} ({}) is a valid configuration".format(i, type(i))
             assert isinstance(
                 c.__getitem__("key_opt_int"), int
             )  # "should return int object"
@@ -116,7 +116,7 @@ class TestConfig(object):
         for i in ("one", "two", "three"):
             assert (
                 c.__setitem__("key_opt_str", i) is not False
-            ), "%s (%s) is a valid configuration" % (i, type(i))
+            ), "{} ({}) is a valid configuration".format(i, type(i))
             assert isinstance(
                 c.__getitem__("key_opt_str"), str
             )  # "should return str object"
@@ -138,7 +138,7 @@ class TestConfig(object):
         for i in range(1, 11):
             assert (
                 c.__setitem__("key_range", i) is not False
-            ), "%s (%s) is a valid configuration" % (i, type(i))
+            ), "{} ({}) is a valid configuration".format(i, type(i))
             assert isinstance(
                 c.__getitem__("key_range"), int
             )  # "should return int object"
@@ -207,7 +207,7 @@ class TestConfig(object):
         for i in Values:
             assert (
                 c.__setitem__("key_enum", i) is not False
-            ), "%s (%s) is a valid enum configuration" % (i, type(i))
+            ), "{} ({}) is a valid enum configuration".format(i, type(i))
             assert isinstance(
                 c.__getitem__("key_enum"), EnumValue
             )  # "should return EnumValue object"
@@ -222,7 +222,7 @@ class TestConfig(object):
         ]:
             assert (
                 c.__setitem__("key_enum", i) is not False
-            ), "%s (%s) is a valid enum configuration" % (i, type(i))
+            ), "{} ({}) is a valid enum configuration".format(i, type(i))
             assert isinstance(
                 c.__getitem__("key_enum"), EnumValue
             )  # "should return EnumValue object"

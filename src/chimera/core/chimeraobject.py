@@ -65,7 +65,7 @@ class ChimeraObject(ILifeCycle, metaclass=MetaObject):
         # we can easily setup levels on all our parts
         logName = self.__module__
         if not logName.startswith("chimera."):
-            logName = "chimera." + logName + " (%s)" % logName
+            logName = "chimera." + logName + " ({})".format(logName)
 
         self.log = logging.getLogger(logName)
 

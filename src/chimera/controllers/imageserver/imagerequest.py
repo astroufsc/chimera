@@ -66,11 +66,11 @@ class ImageRequest(dict):
             if len(not_valid) > 1:
                 msg = "Invalid keywords: "
                 for k in not_valid:
-                    msg += "'%s', " % str(k)
+                    msg += "'{}', ".format(str(k))
                 msg = msg[:-2]
 
             else:
-                msg = "Invalid keyword '%s'" % str(not_valid[0])
+                msg = "Invalid keyword '{}'".format(str(not_valid[0]))
 
             raise TypeError(msg)
 
@@ -104,17 +104,12 @@ class ImageRequest(dict):
     def __setitem__(self, key, value):
 
         if key not in ImageRequest.valid_keys:
-            raise KeyError("%s is not a valid key for ImageRequest" % key)
+            raise KeyError("{} is not a valid key for ImageRequest".format(key))
 
         self.update({key: value})
 
     def __str__(self):
-        return "exptime: %f, frames: %i, shutter: %s, type: %s" % (
-            self["exptime"],
-            self["frames"],
-            self["shutter"],
-            self["type"],
-        )
+        return f"exptime: {self['exptime']:.6f}, frames: {self['frames']}, shutter: {self['shutter']}, type: {self['type']}"
 
     def beginExposure(self, manager):
 
@@ -149,11 +144,14 @@ class ImageRequest(dict):
                 if len(locations) == 1:
                     auto.append(str(locations[0]))
                 elif len(locations) == 0:
-                    log.warning("No %s available, header would be incomplete." % cls)
+                    log.warning(
+                        "No {} available, header would be incomplete.".format(cls)
+                    )
                 else:
                     log.warning(
-                        "More than one %s available, header may be incorrect. Using the first %s."
-                        % (cls, cls)
+                        "More than one {} available, header may be incorrect. Using the first {}.".format(
+                            cls, cls
+                        )
                     )
                     auto.append(str(locations[0]))
 
@@ -170,6 +168,6 @@ class ImageRequest(dict):
                 try:
                     self._proxies[location] = manager.getProxy(location)
                 except Exception:
-                    log.exception("Unable to get metadata from %s" % (location))
+                    log.exception("Unable to get metadata from {}".format(location))
 
             self.headers += self._proxies[location].getMetadata(self)

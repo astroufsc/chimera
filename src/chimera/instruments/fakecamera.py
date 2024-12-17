@@ -370,7 +370,9 @@ class FakeCamera(CameraBase, FilterWheelBase):
     @lock
     def setFilter(self, filter):
         if filter not in self.getFilters():
-            raise InvalidFilterPositionException("%s is not a valid filter" % filter)
+            raise InvalidFilterPositionException(
+                "{} is not a valid filter".format(filter)
+            )
 
         self.filterChange(filter, self.__lastFilter)
         self.__lastFilter = filter

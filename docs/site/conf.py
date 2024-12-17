@@ -38,7 +38,7 @@ master_doc = "index"
 
 # General substitutions.
 project = "chimera"
-copyright = "2008-%s, GAS - UFSC" % time.strftime("%Y")
+copyright = "2008-{}, GAS - UFSC".format(time.strftime("%Y"))
 
 # The default replacements for |version| and |release|, also used in various
 # other places throughout the built documents.

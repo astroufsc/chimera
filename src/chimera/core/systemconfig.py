@@ -171,7 +171,7 @@ class SystemConfig(object):
             s = None
             if hasattr(e, "problem_mark"):
                 mark = e.problem_mark
-                s = "error at line %s column %s" % (mark.line + 1, mark.column + 1)
+                s = "error at line {} column {}".format(mark.line + 1, mark.column + 1)
             else:
                 s = str(e)
 
@@ -247,7 +247,7 @@ class SystemConfig(object):
         if type not in self._useCount:
             self._useCount[type] = 0
 
-        name = "%s_%d" % (str(type), self._useCount[type])
+        name = f"{str(type)}_{self._useCount[type]}"
         self._useCount[type] += 1
         return name
 
@@ -269,7 +269,9 @@ class SystemConfig(object):
             if type in self._specials or type == "site":
                 cls = type.capitalize()
             else:
-                raise TypeNotFoundException("%s %s must have a type." % (type, name))
+                raise TypeNotFoundException(
+                    "{} {} must have a type.".format(type, name)
+                )
 
         host = dic.pop("host", self.chimera["host"])
         port = dic.pop("port", self.chimera["port"])

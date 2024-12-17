@@ -65,7 +65,7 @@ class Manager:
         p = Proxy(Location(getManagerURI(host, port)))
         if not p.ping():
             raise ManagerNotFoundException(
-                "Couldn't find manager running on %s:%d" % (host, port)
+                f"Couldn't find manager running on {host}:{port}"
             )
         return p
 
@@ -89,11 +89,7 @@ class Manager:
 
     # private
     def __repr__(self):
-        return "<Manager for %s:%d at %s>" % (
-            self.server.transport.host,
-            self.server.transport.port,
-            hex(id(self)),
-        )
+        return f"<Manager for {self.server.transport.host}:{self.server.transport.port} at {hex(id(self))}>"
 
     # host/port
     def getHostname(self):
@@ -179,13 +175,13 @@ class Manager:
     def getInstance(self, location):
         if not location:
             raise ObjectNotFoundException(
-                "Couldn't find an object at the" " given location %s" % location
+                "Couldn't find an object at the" " given location {}".format(location)
             )
         ret = self.resources.get(location)
 
         if not ret:
             raise ObjectNotFoundException(
-                "Couldn't found an object at the" " given location %s" % location
+                "Couldn't found an object at the" " given location {}".format(location)
             )
 
         return ret
@@ -322,20 +318,22 @@ class Manager:
         # names must not start with a digit
         if location.name[0] in "0123456789":
             raise InvalidLocationException(
-                "Invalid instance name: %s (must start with a letter)" % location
+                "Invalid instance name: {} (must start with a letter)".format(location)
             )
 
         if location in self.resources:
             raise InvalidLocationException(
-                "Location %s is already in the system. Only one allowed (Tip: change the name!)."
-                % location
+                "Location {} is already in the system. Only one allowed (Tip: change the name!).".format(
+                    location
+                )
             )
 
         # check if it's a valid ChimeraObject
         if not issubclass(cls, ChimeraObject):
             raise NotValidChimeraObjectException(
-                "Cannot add the class %s. It doesn't descend from ChimeraObject."
-                % cls.__name__
+                "Cannot add the class {}. It doesn't descend from ChimeraObject.".format(
+                    cls.__name__
+                )
             )
 
         # run object __init__ and configure using location configuration
@@ -344,15 +342,17 @@ class Manager:
         try:
             obj = cls()
         except Exception:
-            log.exception("Error in %s __init__." % location)
-            raise ChimeraObjectException("Error in %s __init__." % location)
+            log.exception("Error in {} __init__.".format(location))
+            raise ChimeraObjectException("Error in {} __init__.".format(location))
 
         try:
             for k, v in list(location.config.items()):
                 obj[k] = v
         except (OptionConversionException, KeyError) as e:
-            log.exception("Error configuring %s." % location)
-            raise ChimeraObjectException("Error configuring %s. (%s)" % (location, e))
+            log.exception("Error configuring {}.".format(location))
+            raise ChimeraObjectException(
+                "Error configuring {}. ({})".format(location, e)
+            )
 
         # connect
         obj.__setlocation__(location)
@@ -378,7 +378,7 @@ class Manager:
         """
 
         if location not in self.resources:
-            raise ObjectNotFoundException("Location %s was not found." % location)
+            raise ObjectNotFoundException("Location {} was not found.".format(location))
 
         self.stop(location)
 
@@ -403,9 +403,9 @@ class Manager:
         """
 
         if location not in self.resources:
-            raise ObjectNotFoundException("Location %s was not found." % location)
+            raise ObjectNotFoundException("Location {} was not found.".format(location))
 
-        log.info("Starting %s." % location)
+        log.info("Starting {}.".format(location))
 
         resource = self.resources.get(location)
 
@@ -415,15 +415,15 @@ class Manager:
         try:
             resource.instance.__start__()
         except Exception:
-            log.exception("Error running %s __start__ method." % location)
+            log.exception("Error running {} __start__ method.".format(location))
             raise ChimeraObjectException(
-                "Error running %s __start__ method." % location
+                "Error running {} __start__ method.".format(location)
             )
 
         try:
             # FIXME: thread exception handling
             # ok, now schedule object main in a new thread
-            log.info("Running %s. __main___." % location)
+            log.info("Running {}. __main___.".format(location))
 
             loop = threading.Thread(target=resource.instance.__main__, daemon=True)
             loop.name = str(resource.location) + ".__main__"
@@ -436,9 +436,11 @@ class Manager:
             return True
 
         except Exception:
-            log.exception("Error running %s __main__ method." % location)
+            log.exception("Error running {} __main__ method.".format(location))
             resource.instance.__setstate__(State.STOPPED)
-            raise ChimeraObjectException("Error running %s __main__ method." % location)
+            raise ChimeraObjectException(
+                "Error running {} __main__ method.".format(location)
+            )
 
     def stop(self, location):
         """
@@ -455,9 +457,9 @@ class Manager:
         """
 
         if location not in self.resources:
-            raise ObjectNotFoundException("Location %s was not found." % location)
+            raise ObjectNotFoundException("Location {} was not found.".format(location))
 
-        log.info("Stopping %s." % location)
+        log.info("Stopping {}.".format(location))
 
         resource = self.resources.get(location)
 
@@ -480,6 +482,10 @@ class Manager:
 
         except Exception:
             log.exception(
-                "Error running %s __stop__ method. Exception follows..." % location
+                "Error running {} __stop__ method. Exception follows...".format(
+                    location
+                )
             )
-            raise ChimeraObjectException("Error running %s __stop__ method." % location)
+            raise ChimeraObjectException(
+                "Error running {} __stop__ method.".format(location)
+            )

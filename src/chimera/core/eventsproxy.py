@@ -87,13 +87,15 @@ class EventsProxy:
                 tb_size = len(traceback.extract_tb(sys.exc_info()[2]))
                 if tb_size == 1:
                     log.debug(
-                        "Invalid proxy method ('%s %s') for '%s' handler."
-                        % (handler["proxy"], handler["method"], topic)
+                        "Invalid proxy method ('{} {}') for '{}' handler.".format(
+                            handler["proxy"], handler["method"], topic
+                        )
                     )
                 else:
                     log.debug(
-                        "Handler (%s) raised an exception. Removing from subscribers list."
-                        % proxy
+                        "Handler ({}) raised an exception. Removing from subscribers list.".format(
+                            proxy
+                        )
                     )
                     log.exception(e)
 
@@ -101,8 +103,9 @@ class EventsProxy:
                 continue
             except Exception as e:
                 log.debug(
-                    "Handler (%s) raised an exception. Removing from subscribers list."
-                    % proxy
+                    "Handler ({}) raised an exception. Removing from subscribers list.".format(
+                        proxy
+                    )
                 )
                 log.exception(e)
                 excluded.append(handler)

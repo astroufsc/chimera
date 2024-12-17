@@ -1,4 +1,5 @@
 import logging
+import time
 from typing import Type
 
 import redis
@@ -23,15 +24,32 @@ class RedisTransport(Transport):
     ):
         super().__init__(host, port, serializer)
         self.r = None
+        self.pubsub = None
+        self.pubsub_threads = []
 
     def bind(self):
         self.r = redislite.Redis(serverconfig={"bind": self.host, "port": self.port})
         self.r.delete(RedisTransport.REQUESTS_KEY)
+        self._init_pubsub()
+
+    def _init_pubsub(self):
+        self.pubsub = self.r.pubsub()
 
     def connect(self):
         self.r = redislite.Redis(host=self.host, port=self.port)
 
+    def _close_pubsub(self):
+        # close pubsub threads bofore closing the connection
+        if len(self.pubsub_threads) > 0:
+            for thread in self.pubsub_threads:
+                thread.stop()
+            time.sleep(0.1)
+            self.pubsub.close()
+
     def close(self):
+        # close pubsub thread
+        self._close_pubsub()
+        # shutdown the server
         self.r.shutdown()
 
     def ping(self) -> bool:
@@ -77,3 +95,15 @@ class RedisTransport(Transport):
             return self.serializer.loads(request_bytes)
         except redis.exceptions.ConnectionError:
             return None
+
+    def publish(self, channel: str, message: str) -> int:
+        """Publish a message to a channel. Return the number of subscribers."""
+        return self.r.publish(channel, self.serializer.dumps(message))
+
+    def subscribe(self, channel: str, callback) -> None:
+        def clbk(message):
+            callback(self.serializer.loads(message["data"]))
+            callback(self.serializer.loads(message["data"]))
+
+        self.pubsub.subscribe(**{channel: clbk})
+        self.pubsub_threads.append(self.pubsub.run_in_thread(daemon=True))

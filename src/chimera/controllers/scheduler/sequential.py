@@ -32,7 +32,7 @@ class SequentialScheduler(IScheduler):
         if not programs:
             return
 
-        log.debug("rescheduling, found %d runnable programs" % len(list(programs)))
+        log.debug(f"rescheduling, found {len(list(programs))} runnable programs")
 
         for program in programs:
             self.rq.put(program)
@@ -48,7 +48,7 @@ class SequentialScheduler(IScheduler):
     def done(self, task, error=None):
 
         if error:
-            log.debug("Error processing program %s." % str(task))
+            log.debug("Error processing program {}.".format(str(task)))
             log.exception(error)
         else:
             task.finished = True

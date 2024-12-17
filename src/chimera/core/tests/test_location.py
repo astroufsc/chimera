@@ -137,7 +137,7 @@ class TestLocation(object):
 
         for loc in valid:
             loc = Location(loc)
-            assert loc, "'%s' is not valid" % loc
+            assert loc, "'{}' is not valid".format(loc)
 
     def test_invalid(self):
 

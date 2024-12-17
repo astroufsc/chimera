@@ -16,7 +16,7 @@ def xpaaccess(template="ds9"):
 
     try:
         p = subprocess.Popen(
-            "xpaaccess -v %s" % template, stdout=subprocess.PIPE, shell=True
+            "xpaaccess -v {}".format(template), stdout=subprocess.PIPE, shell=True
         )
         p.wait()
 
@@ -97,16 +97,16 @@ class DS9(object):
         if not filename and not url:
             raise TypeError("You must pass either a filename or a url.")
 
-        self.set("frame %d" % frame)
+        self.set(f"frame {frame}")
 
         if filename:
             if not os.path.exists(filename):
-                raise IOError("%s doesn't exists" % filename)
+                raise IOError("{} doesn't exists".format(filename))
 
-            self.set("file '%s'" % filename)
+            self.set("file '{}'".format(filename))
 
         if url:
-            self.set("file url '%s'" % url)
+            self.set("file url '{}'".format(url))
 
     def displayArray(self, array, frame=1):
         pass

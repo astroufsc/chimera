@@ -67,7 +67,7 @@ class ImageServer(ChimeraObject):
                 ]
 
             for file in filesToLoad:
-                self.log.debug("Loading %s" % file)
+                self.log.debug("Loading {}".format(file))
                 self.register(Image.fromFile(file))
 
     def register(self, image):
@@ -75,7 +75,7 @@ class ImageServer(ChimeraObject):
             remove_items = list(self.imagesByID.keys())[: -self["max_images"]]
 
             for item in remove_items:
-                self.log.debug("Unregistering image %s" % item)
+                self.log.debug("Unregistering image {}".format(item))
                 self.unregister(self.imagesByID[item])
 
         self.imagesByID[image.id] = image
@@ -104,11 +104,7 @@ class ImageServer(ChimeraObject):
             return img.getProxy()
 
     def getHTTPByID(self, id):
-        return "http://%s:%d/image/%s" % (
-            self["http_host"],
-            int(self["http_port"]),
-            str(id),
-        )
+        return f"http://{self['http_host']}:{int(self['http_port'])}/image/{id}"
 
     def defaultNightDir(self):
         return os.path.join(self["images_dir"], self["night_dir"])

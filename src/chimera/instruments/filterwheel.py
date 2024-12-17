@@ -44,7 +44,9 @@ class FilterWheelBase(ChimeraObject, FilterWheel):
         try:
             return self.getFilters()[index]
         except (ValueError, TypeError):
-            raise InvalidFilterPositionException("Unknown filter (%s)." % str(index))
+            raise InvalidFilterPositionException(
+                "Unknown filter ({}).".format(str(index))
+            )
 
     def _getFilterPosition(self, name):
         return self.getFilters().index(name)

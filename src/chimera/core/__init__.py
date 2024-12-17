@@ -39,20 +39,23 @@ def init_sysconfig():
     if not os.path.exists(SYSTEM_CONFIG_DIRECTORY):
         try:
             logging.info(
-                "Default configuration directory not found (%s). Creating a new one."
-                % SYSTEM_CONFIG_DIRECTORY
+                "Default configuration directory not found ({}). Creating a new one.".format(
+                    SYSTEM_CONFIG_DIRECTORY
+                )
             )
             os.mkdir(SYSTEM_CONFIG_DIRECTORY)
         except IOError as e:
             logging.error(
-                "Couldn't create default configuration directory at %s (%s)"
-                % (SYSTEM_CONFIG_DIRECTORY, e)
+                "Couldn't create default configuration directory at {} ({})".format(
+                    SYSTEM_CONFIG_DIRECTORY, e
+                )
             )
 
     if not os.path.exists(SYSTEM_CONFIG_DEFAULT_FILENAME):
         logging.info(
-            "Default chimera.config not found. Creating a sample at %s."
-            % SYSTEM_CONFIG_DEFAULT_FILENAME
+            "Default chimera.config not found. Creating a sample at {}.".format(
+                SYSTEM_CONFIG_DEFAULT_FILENAME
+            )
         )
 
         try:
@@ -61,8 +64,9 @@ def init_sysconfig():
             )
         except IOError as e:
             logging.error(
-                "Couldn't create default chimera.config at %s (%s)"
-                % (SYSTEM_CONFIG_DEFAULT_FILENAME, e)
+                "Couldn't create default chimera.config at {} ({})".format(
+                    SYSTEM_CONFIG_DEFAULT_FILENAME, e
+                )
             )
 
     if not os.path.exists(SYSTEM_CONFIG_LOG_NAME):
@@ -70,7 +74,9 @@ def init_sysconfig():
             open(SYSTEM_CONFIG_LOG_NAME, "w").close()
         except IOError as e:
             logging.error(
-                "Couldn't create initial log file %s (%s)" % (SYSTEM_CONFIG_LOG_NAME, e)
+                "Couldn't create initial log file {} ({})".format(
+                    SYSTEM_CONFIG_LOG_NAME, e
+                )
             )
 
 

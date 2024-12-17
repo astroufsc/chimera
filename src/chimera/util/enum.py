@@ -59,9 +59,9 @@ original arguments used to create the enumeration::
 
 __author_name__ = "Ben Finney"
 __author_email__ = "ben+python@benfinney.id.au"
-__author__ = "%s <%s>" % (__author_name__, __author_email__)
+__author__ = "{} <{}>".format(__author_name__, __author_email__)
 __date__ = "2007-01-24"
-__copyright__ = "Copyright © %s %s" % (__date__.split("-")[0], __author_name__)
+__copyright__ = "Copyright © {} {}".format(__date__.split("-")[0], __author_name__)
 __license__ = "Choice of GPL or Python license"
 __url__ = "http://cheeseshop.python.org/pypi/enum/"
 __version__ = "0.4.3"
@@ -73,7 +73,7 @@ class EnumException(Exception):
     def __init__(self):
         if self.__class__ is EnumException:
             raise NotImplementedError(
-                "%s is an abstract class for subclassing" % self.__class__
+                "{} is an abstract class for subclassing".format(self.__class__)
             )
 
 
@@ -91,7 +91,7 @@ class EnumBadKeyError(TypeError, EnumException):
         self.key = key
 
     def __str__(self):
-        return "Enumeration keys must be strings: %s" % (self.key,)
+        return "Enumeration keys must be strings: {}".format(self.key)
 
 
 class EnumImmutableError(TypeError, EnumException):
@@ -124,7 +124,7 @@ class EnumValue(object):
     key = property(__get_key)
 
     def __str__(self):
-        return "%s" % (self.key)
+        return "{}".format(self.key)
 
     def __int__(self):
         return self.index
@@ -135,7 +135,7 @@ class EnumValue(object):
     index = property(__get_index)
 
     def __repr__(self):
-        return "EnumValue(%s, %s, %s)" % (
+        return "EnumValue({}, {}, {})".format(
             repr(self.__enumtype),
             repr(self.__index),
             repr(self.__key),

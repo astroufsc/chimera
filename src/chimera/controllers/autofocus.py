@@ -85,13 +85,16 @@ class FocusFit(object):
         log = open(filename, "w")
 
         print("#", time.strftime("%c"), file=log)
-        print("# A=%f B=%f C=%f" % tuple(self), file=log)
-        print("# best focus position: %.3f(FWHM %.3f)" % self.best_focus, file=log)
+        print("# A={:f} B={:f} C={:f}".format(*tuple(self)), file=log)
+        print(
+            "# best focus position: {:.3f}(FWHM {:.3f})".format(*self.best_focus),
+            file=log,
+        )
         if self.minmax:
-            print("# minmax filtering: %s" % str(self.minmax), file=log)
+            print("# minmax filtering: {}".format(str(self.minmax)), file=log)
 
         if self.temperature:
-            print("# focuser temperature: %.3f" % self.temperature, file=log)
+            print("# focuser temperature: {:.3f}".format(self.temperature), file=log)
 
         for position, fwhm in zip(self.position, self.fwhm):
             print(position, fwhm, file=log)
@@ -189,7 +192,7 @@ class Autofocus(ChimeraObject, IAutofocus):
         return self.getManager().getProxy(self["focuser"])
 
     def _getID(self):
-        return "autofocus-%s" % time.strftime("%Y%m%d-%H%M%S")
+        return "autofocus-{}".format(time.strftime("%Y%m%d-%H%M%S"))
 
     def _openLogger(self):
 
@@ -261,17 +264,16 @@ class Autofocus(ChimeraObject, IAutofocus):
                 )
 
         self.log.debug("=" * 40)
-        self.log.debug("[%s] Starting autofocus run." % time.strftime("%c"))
+        self.log.debug("[{}] Starting autofocus run.".format(time.strftime("%c")))
         self.log.debug("=" * 40)
         self.log.debug(
-            "Focus range: start=%d end=%d step=%d points=%d"
-            % (start, end, step, len(positions))
+            f"Focus range: start={start} end={end} step={step} points={len(positions)}"
         )
 
         # images for debug mode
         if debug:
             self._debug_images = [
-                "%s/focus-%04d.fits" % (debug, i) for i in range(1, len(positions) + 2)
+                f"{debug}/focus-{i:04d}.fits" for i in range(1, len(positions) + 2)
             ]
 
         self.imageRequest = ImageRequest()
@@ -281,7 +283,7 @@ class Autofocus(ChimeraObject, IAutofocus):
 
         if filter:
             self.filter = filter
-            self.log.debug("Using filter %s." % self.filter)
+            self.log.debug("Using filter {}.".format(self.filter))
         else:
             self.filter = False
             self.log.debug("Using current filter.")
@@ -306,8 +308,7 @@ class Autofocus(ChimeraObject, IAutofocus):
 
             if not star_found:
                 raise StarNotFoundException(
-                    "Couldn't find a suitable star to focus on."
-                    "Giving up after %d tries." % tries
+                    f"Couldn't find a suitable star to focus on. Giving up after {tries} tries."
                 )
 
         try:
@@ -333,14 +334,14 @@ class Autofocus(ChimeraObject, IAutofocus):
         focuser = self.getFocuser()
         initial_position = focuser.getPosition()
 
-        self.log.debug("Initial focus position: %04d" % initial_position)
+        self.log.debug(f"Initial focus position: {initial_position:04d}")
 
         fwhm = []
         valid_positions = []
 
         for i, position in enumerate(positions):
 
-            self.log.debug("Moving focuser to %d" % int(position))
+            self.log.debug(f"Moving focuser to {int(position)}")
 
             focuser.moveTo(position)
 
@@ -352,35 +353,17 @@ class Autofocus(ChimeraObject, IAutofocus):
 
             if abs(star["FWHM_IMAGE"] - 4.18) <= 0.02:
                 self.log.debug(
-                    "Ignoring star at (X,Y)=(%d,%d) FWHM magic number=%.3f, FLUX=%.3f"
-                    % (
-                        star["XWIN_IMAGE"],
-                        star["YWIN_IMAGE"],
-                        star["FWHM_IMAGE"],
-                        star["FLUX_BEST"],
-                    )
+                    f"Ignoring star at (X,Y)=({star['XWIN_IMAGE']},{star['YWIN_IMAGE']}) FWHM magic number={star['FWHM_IMAGE']:.3f}, FLUX={star['FLUX_BEST']:.3f}"
                 )
                 star["CHIMERA_FLAGS"] = red("Ignoring, SExtractor FWHM magic number.")
             elif star["FWHM_IMAGE"] <= minmax[0] or star["FWHM_IMAGE"] >= minmax[1]:
                 self.log.debug(
-                    "Ignoring star at (X,Y)=(%d,%d) FWHM magic number=%.3f, FLUX=%.3f"
-                    % (
-                        star["XWIN_IMAGE"],
-                        star["YWIN_IMAGE"],
-                        star["FWHM_IMAGE"],
-                        star["FLUX_BEST"],
-                    )
+                    f"Ignoring star at (X,Y)=({star['XWIN_IMAGE']},{star['YWIN_IMAGE']}) FWHM magic number={star['FWHM_IMAGE']:.3f}, FLUX={star['FLUX_BEST']:.3f}"
                 )
                 star["CHIMERA_FLAGS"] = red("Ignoring, FWHM above/below minmax limits.")
             else:
                 self.log.debug(
-                    "Adding star to curve. (X,Y)=(%d,%d) FWHM=%.3f FLUX=%.3f"
-                    % (
-                        star["XWIN_IMAGE"],
-                        star["YWIN_IMAGE"],
-                        star["FWHM_IMAGE"],
-                        star["FLUX_BEST"],
-                    )
+                    f"Adding star to curve. (X,Y)=({star['XWIN_IMAGE']},{star['YWIN_IMAGE']}) FWHM={star['FWHM_IMAGE']:.3f} FLUX={star['FLUX_BEST']:.3f}"
                 )
                 fwhm.append(star["FWHM_IMAGE"])
                 valid_positions.append(position)
@@ -390,7 +373,7 @@ class Autofocus(ChimeraObject, IAutofocus):
         # fit a parabola to the points and save parameters
         try:
             if minmax:
-                self.log.debug("Minmax filtering FWHM (%.3f,%.3f)" % minmax)
+                self.log.debug("Minmax filtering FWHM ({:.3f},{:.3f})".format(*minmax))
 
             try:
                 temp = focuser.getTemperature()
@@ -403,8 +386,7 @@ class Autofocus(ChimeraObject, IAutofocus):
             focuser.moveTo(initial_position)
 
             raise FocusNotFoundException(
-                "Error trying to fit a focus curve. "
-                "Leaving focuser at %04d" % initial_position
+                f"Error trying to fit a focus curve. Leaving focuser at {initial_position:04d}"
             )
 
         fit.plot(
@@ -421,14 +403,14 @@ class Autofocus(ChimeraObject, IAutofocus):
                     "Focus fitting error: fitting do not converges (NaN result). See logs for more info."
                 )
 
-            self.log.debug("Best focus position: %.3f" % fit.best_focus[0])
+            self.log.debug("Best focus position: {:.3f}".format(fit.best_focus[0]))
             focuser.moveTo(int(fit.best_focus[0]))
         except InvalidFocusPositionException as e:
             focuser.moveTo(initial_position)
             raise FocusNotFoundException(
-                "Best guess was %s, but could not move the focuser.\n"
-                "%s\n"
-                "Returning to initial position." % (str(fit.best_focus[0]), str(e))
+                "Best guess was {}, but could not move the focuser.\n"
+                "{}\n"
+                "Returning to initial position.".format(str(fit.best_focus[0]), str(e))
             )
 
         return fit
@@ -484,11 +466,12 @@ class Autofocus(ChimeraObject, IAutofocus):
                     )
                 )
                 t0 = time.time()
-                self.log.debug("Downloading image from server to %s" % image_path)
+                self.log.debug("Downloading image from server to {}".format(image_path))
                 if not ImageUtil.download(image, image_path):
                     raise ChimeraException(
-                        "Error downloading image %s from %s"
-                        % (image_path, image.http())
+                        "Error downloading image {} from {}".format(
+                            image_path, image.http()
+                        )
                     )
                 self.log.debug(
                     "Finished download. Took %3.2f seconds" % (time.time() - t0)
