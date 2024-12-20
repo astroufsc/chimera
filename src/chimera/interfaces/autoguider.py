@@ -26,7 +26,13 @@ from chimera.core.event import event
 from chimera.util.enum import Enum
 from chimera.core.exceptions import ChimeraException
 
-GuiderStatus = Enum("OK", "GUIDING", "OFF", "ERROR", "ABORTED")
+
+class GuiderStatus(Enum):
+    OK = "OK"
+    GUIDING = "GUIDING"
+    OFF = "OFF"
+    ERROR = "ERROR"
+    ABORTED = "ABORTED"
 
 
 class StarNotFoundException(ChimeraException):

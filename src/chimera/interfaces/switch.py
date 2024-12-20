@@ -22,7 +22,12 @@ from chimera.core.event import event
 from chimera.core.interface import Interface
 from chimera.util.enum import Enum
 
-SwitchStatus = Enum("ON", "OFF", "UNKNOWN", "ERROR")
+
+class SwitchStatus(Enum):
+    ON = "ON"
+    OFF = "OFF"
+    UNKNOWN = "UNKNOWN"
+    ERROR = "ERROR"
 
 
 class Switch(Interface):

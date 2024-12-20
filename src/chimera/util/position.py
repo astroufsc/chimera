@@ -15,8 +15,17 @@ import ephem
 __all__ = ["Position"]
 
 
-Epoch = Enum("J2000", "B1950", "NOW")
-System = Enum("CELESTIAL", "GALACTIC", "ECLIPTIC", "TOPOCENTRIC")
+class Epoch(Enum):
+    J2000 = "J2000"
+    B1950 = "B1950"
+    NOW = "NOW"
+
+
+class System(Enum):
+    CELESTIAL = "CELESTIAL"
+    GALACTIC = "GALACTIC"
+    ECLIPTIC = "ECLIPTIC"
+    TOPOCENTRIC = "TOPOCENTRIC"
 
 
 class PositionOutsideLimitsError(Exception):
@@ -227,8 +236,8 @@ class Position(object):
     def __init__(self, coords, epoch=Epoch.J2000, system=System.CELESTIAL):
 
         self._coords = coords
-        self.system = System.fromStr(str(system).upper())
-        self.epoch = Epoch.fromStr(str(epoch).upper())
+        self.system = System[str(system)]
+        self.epoch = Epoch[str(epoch)]
 
     #
     # serialization
@@ -242,8 +251,8 @@ class Position(object):
 
     def __setstate__(self, state):
         self._coords = state["_coords"]
-        self.system = System.fromStr(state["system"])
-        self.epoch = Epoch.fromStr(state["epoch"])
+        self.system = System[state["system"]]
+        self.epoch = Epoch[state["epoch"]]
 
     def __str__(self):
         """

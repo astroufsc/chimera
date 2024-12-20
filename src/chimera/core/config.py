@@ -22,10 +22,11 @@
 
 from types import NoneType
 
-from chimera.util.enum import EnumValue
+# from chimera.util.enum import EnumValue
 from chimera.core.exceptions import OptionConversionException
 
 from chimera.util.coord import Coord
+from chimera.util.enum import Enum
 from chimera.util.position import Position
 
 import logging
@@ -293,7 +294,7 @@ class EnumChecker(Checker):
 
     def check(self, value):
 
-        if isinstance(value, EnumValue):
+        if isinstance(value, Enum):
             if value in self.enumtype:
                 return value
 
@@ -422,7 +423,7 @@ class Config(object):
                     options[name] = Option(name, None, NoneChecker())
                 continue
 
-            if isinstance(value, EnumValue):
+            if isinstance(value, Enum):
                 options[name] = Option(name, value, EnumChecker(value))
                 continue
 

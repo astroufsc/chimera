@@ -23,15 +23,35 @@
 from chimera.core.interface import Interface
 from chimera.core.event import event
 from chimera.core.exceptions import ChimeraException
-from chimera.util.position import Position
 from chimera.util.enum import Enum
+from chimera.util.position import Position
 
-AlignMode = Enum("ALT_AZ", "POLAR", "LAND")
-SlewRate = Enum("GUIDE", "CENTER", "FIND", "MAX")
 
-TelescopeStatus = Enum("OK", "ERROR", "ABORTED", "OBJECT_TOO_LOW", "OBJECT_TOO_HIGH")
+class AlignMode(Enum):
+    ALT_AZ = "ALT_AZ"
+    POLAR = "POLAR"
+    LAND = "LAND"
 
-TelescopePierSide = Enum("EAST", "WEST", "UNKNOWN")
+
+class SlewRate(Enum):
+    GUIDE = "GUIDE"
+    CENTER = "CENTER"
+    FIND = "FIND"
+    MAX = "MAX"
+
+
+class TelescopeStatus(Enum):
+    OK = "OK"
+    ERROR = "ERROR"
+    ABORTED = "ABORTED"
+    OBJECT_TOO_LOW = "OBJECT_TOO_LOW"
+    OBJECT_TOO_HIGH = "OBJECT_TOO_HIGH"
+
+
+class TelescopePierSide(Enum):
+    EAST = "EAST"
+    WEST = "WEST"
+    UNKNOWN = "UNKNOWN"
 
 
 class PositionOutsideLimitsException(ChimeraException):

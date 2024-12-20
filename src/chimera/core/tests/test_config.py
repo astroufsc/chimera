@@ -196,7 +196,9 @@ class TestConfig(object):
 
     def test_enum(self):
 
-        Values = Enum("A_VALUE", "OTHER_VALUE")
+        class Values(Enum):
+            A_VALUE = "A_VALUE"
+            OTHER_VALUE = "OTHER_VALUE"
 
         c = Config({"key_enum": Values.A_VALUE})
 
