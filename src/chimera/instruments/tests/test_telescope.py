@@ -31,7 +31,6 @@ from chimera.core.site import Site
 from chimera.core.threads import ThreadPool
 
 from chimera.util.coord import Coord
-from chimera.util.enum import EnumValue
 from chimera.util.position import Position
 
 from chimera.interfaces.telescope import SlewRate, TelescopeStatus

@@ -1,3 +1,8 @@
 from chimera.util.enum import Enum
 
-SchedulerStatus = Enum("OK", "ABORTED", "ERROR", "SKIPPED")
+
+class SchedulerStatus(Enum):
+    OK = "OK"
+    ABORTED = "ABORTED"
+    ERROR = "ERROR"
+    SKIPPED = "SKIPPED"

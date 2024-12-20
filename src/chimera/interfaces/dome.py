@@ -30,9 +30,21 @@ from chimera.util.coord import Coord
 
 __all__ = ["Mode", "Style", "Dome", "InvalidDomePositionException"]
 
-Mode = Enum("Stand", "Track")
-Style = Enum("Rolloff", "Classic", "Other")
-DomeStatus = Enum("OK", "ABORTED")
+
+class Mode(Enum):
+    Stand = "Stand"
+    Track = "Track"
+
+
+class Style(Enum):
+    Rolloff = "Rolloff"
+    Classic = "Classic"
+    Other = "Other"
+
+
+class DomeStatus(Enum):
+    OK = "OK"
+    ABORTED = "ABORTED"
 
 
 class InvalidDomePositionException(ChimeraException):
