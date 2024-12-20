@@ -418,7 +418,7 @@ class ChimeraCam (ChimeraCLI):
             self.out("Filters: %s" % ' '.join(filterList))
 
         expTimes = []
-        if type(options.exptime) == str and "," in options.exptime:
+        if isinstance(options.exptime, str) and "," in options.exptime:
             for exp in options.exptime.split(","):
                 expTimes.append(float(exp))
         else:
@@ -474,7 +474,7 @@ class ChimeraCam (ChimeraCLI):
                 self.out("OK (took %.3f s)" %
                          (time.time() - currentFrameExposeStart))
 
-                self.out(" (%s) " % get_compressed_name(image.filename(), compress_format), end="")
+                self.out(" (%s) " % get_compressed_name(image.filename, compress_format), end="")
                 self.out("OK (took %.3f s)" %
                          (time.time() - currentFrameReadoutStart))
                 self.out("[%03d/%03d] took %.3fs" % (currentFrame, options.frames,
