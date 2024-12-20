@@ -1,6 +1,3 @@
-from chimera.core import SYSTEM_CONFIG_DIRECTORY
-from chimera.interfaces.telescope import TelescopePierSide
-
 __author__ = "kanaan"
 
 #! /usr/bin/env python

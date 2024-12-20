@@ -82,15 +82,10 @@ class ReadoutMode(object):
         return [0, self.width]
 
     def __str__(self):
-        s = "mode: %d: \n\tgain: %.2f\n\tWxH: [%d,%d]" "\n\tpix WxH: [%.2f, %.2f]" % (
-            self.mode,
-            self.gain,
-            self.width,
-            self.height,
-            self.pixelWidth,
-            self.pixelHeight,
+        return (
+            f"mode: {self.mode}: \n\tgain: {self.gain:.2f}\n\tWxH: [{self.width},{self.height}]"
+            f"\n\tpix WxH: [{self.pixelWidth:.2f}, {self.pixelHeight:.2f}]"
         )
-        return s
 
     def __repr__(self):
         return self.__str__()

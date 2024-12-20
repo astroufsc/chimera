@@ -6,7 +6,9 @@ import os
 import shutil
 import string
 import sys
-import urllib.request, urllib.error, urllib.parse
+import urllib.request
+import urllib.error
+import urllib.parse
 import uuid
 import zipfile
 from collections import UserDict
@@ -31,7 +33,7 @@ class WCSNotFoundException(ChimeraException):
 class ImageUtil(object):
     @staticmethod
     def formatDate(datetime):
-        if type(datetime) == float:
+        if isinstance(datetime, float):
             datetime = dt.datetime.fromtimestamp(datetime)
 
         return datetime.strftime("%Y-%m-%dT%H:%M:%S.%f")
@@ -103,16 +105,14 @@ class ImageUtil(object):
         basename = string.Template(basename).safe_substitute(subs_dict)
         ext = string.Template(ext).safe_substitute(subs_dict)
 
-        fullpath = os.path.join(dirname, basename)
-        finalname = os.path.join(dirname, "%s%s%s" % (basename, os.path.extsep, ext))
+        finalname = os.path.join(dirname, f"{basename}{os.path.extsep}{ext}")
 
         if not os.path.exists(dirname):
             os.makedirs(dirname)
 
         if not os.path.isdir(dirname):
             raise OSError(
-                "A file with the same name as the desired directory already exists. ('%s')"
-                % dirname
+                f"A file with the same name as the desired directory already exists. ('{dirname}')"
             )
 
         # If filename exists, append -NNN to the end of the file name.
@@ -120,15 +120,14 @@ class ImageUtil(object):
         if os.path.exists(finalname):
             base, ext = os.path.splitext(finalname)
             i = 1
-            while os.path.exists("%s-%03i%s" % (base, i, ext)):
+            while os.path.exists(f"{base}-{i:03d}{ext}"):
                 i += 1
                 if i == 1000:
                     raise OSError(
-                        "Reached the maximum of 999 files with the same name (%s)."
-                        % finalname
+                        f"Reached the maximum of 999 files with the same name ({finalname})."
                     )
 
-            finalname = "%s-%03i%s" % (base, i, ext)
+            finalname = f"{base}-{i:03d}{ext}"
 
         return finalname
 
@@ -155,7 +154,7 @@ class ImageUtil(object):
                 f.write(content)
                 f.close()
                 return True
-            except urllib.error.URLError as e:
+            except urllib.error.URLError:
                 attempts += 1
         return False
 
@@ -222,7 +221,7 @@ class Image(UserDict):
                 try:
                     hdu.header.set(*h)
                 except Exception as e:
-                    log.warning("Couldn't add %s: %s" % (str(h), str(e)))
+                    log.warning(f"Couldn't add {str(h)}: {str(e)}")
 
             if imageRequest["compress_format"] == "fits_rice":
                 filename = os.path.splitext(filename)[0] + ".fz"
@@ -272,7 +271,7 @@ class Image(UserDict):
         return self._http
 
     def __str__(self):
-        return "<Image %s>" % self.filename()
+        return f"<Image {self.filename()}>"
 
     #
     # serialization support
@@ -292,12 +291,17 @@ class Image(UserDict):
     # geometry
     #
 
-    width = lambda self: self["NAXIS1"]
-    height = lambda self: self["NAXIS2"]
+    def width(self):
+        return self["NAXIS1"]
 
-    size = lambda self: (self.width(), self.height())
+    def height(self):
+        return self["NAXIS2"]
 
-    center = lambda self: (self.width() / 2.0, self.height() / 2.0)
+    def size(self):
+        return (self.width(), self.height())
+
+    def center(self):
+        return (self.width() / 2.0, self.height() / 2.0)
 
     #
     # WCS
@@ -338,7 +342,7 @@ class Image(UserDict):
                 self._wcs = wcs.WCS(self._fd["PRIMARY"].header)
             except (KeyError, ValueError) as e:
                 raise WCSNotFoundException(
-                    "Couldn't find WCS information on %s ('%s')" % (self._filename, e)
+                    f"Couldn't find WCS information on {self._filename} ('{e}')"
                 )
 
         return True
@@ -468,7 +472,7 @@ class Image(UserDict):
 
     def __setitem__(self, key, value):
 
-        if not key in self:
+        if key not in self:
             self += (key, value)
             return True
 

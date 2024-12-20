@@ -87,7 +87,7 @@ class Position(object):
     def fromRaDec(ra, dec, epoch=Epoch.J2000):
 
         try:
-            if type(ra) == str:
+            if isinstance(ra, str):
                 ra = Coord.fromHMS(ra)
             elif isinstance(ra, Coord):
                 ra = ra.toHMS()
@@ -97,22 +97,20 @@ class Position(object):
                     ra = ra.toHMS()
                 except ValueError:
                     raise ValueError(
-                        "Invalid RA coordinate type %s. Expected numbers, strings or Coords."
-                        % str(type(ra))
+                        f"Invalid RA coordinate type {str(type(ra))}. Expected numbers, strings or Coords."
                     )
 
             Position._checkRange(float(ra), 0, 360)
 
-        except ValueError as e:
-            raise ValueError("Invalid RA coordinate %s" % str(ra))
+        except ValueError:
+            raise ValueError(f"Invalid RA coordinate {str(ra)}")
         except PositionOutsideLimitsError:
             raise ValueError(
-                "Invalid RA range %s. Must be between 0-24 hours or 0-360 deg."
-                % str(ra)
+                f"Invalid RA range {str(ra)}. Must be between 0-24 hours or 0-360 deg."
             )
 
         try:
-            if type(dec) == str:
+            if isinstance(dec, str):
                 dec = Coord.fromDMS(dec)
             elif isinstance(dec, Coord):
                 dec = dec.toDMS()
@@ -122,18 +120,16 @@ class Position(object):
                     dec = dec.toDMS()
                 except ValueError:
                     raise ValueError(
-                        "Invalid DEC coordinate type %s. Expected numbers, strings or Coords."
-                        % str(type(dec))
+                        f"Invalid DEC coordinate type {str(type(dec))}. Expected numbers, strings or Coords."
                     )
 
             Position._checkRange(float(dec), -90, 360)
 
-        except ValueError as e:
-            raise ValueError("Invalid DEC coordinate %s" % str(dec))
+        except ValueError:
+            raise ValueError(f"Invalid DEC coordinate {str(dec)}")
         except PositionOutsideLimitsError:
             raise ValueError(
-                "Invalid DEC range %s. Must be between 0-360 deg or -90 - +90 deg."
-                % str(dec)
+                f"Invalid DEC range {str(dec)}. Must be between 0-360 deg or -90 - +90 deg."
             )
 
         return Position((ra, dec), system=System.CELESTIAL, epoch=epoch)
@@ -148,12 +144,11 @@ class Position(object):
 
             Position._checkRange(float(az), -180, 360)
 
-        except ValueError as e:
-            raise ValueError("Invalid AZ coordinate %s" % str(az))
+        except ValueError:
+            raise ValueError(f"Invalid AZ coordinate {str(az)}")
         except PositionOutsideLimitsError:
             raise ValueError(
-                "Invalid AZ range %s. Must be between 0-360 deg or -180 - +180 deg."
-                % str(az)
+                f"Invalid AZ range {str(az)}. Must be between 0-360 deg or -180 - +180 deg."
             )
 
         try:
@@ -164,44 +159,42 @@ class Position(object):
 
             Position._checkRange(float(alt), -90, 180)
 
-        except ValueError as e:
-            raise ValueError("Invalid ALT coordinate %s" % str(alt))
+        except ValueError:
+            raise ValueError(f"Invalid ALT coordinate {str(alt)}")
         except PositionOutsideLimitsError:
             raise ValueError(
-                "Invalid ALT range %s. Must be between 0-180 deg or -90 - +90 deg."
-                % str(alt)
+                f"Invalid ALT range {str(alt)}. Must be between 0-180 deg or -90 - +90 deg."
             )
 
         return Position((alt, az), system=System.TOPOCENTRIC)
 
     @staticmethod
     def fromLongLat(long, lat):
-        return Position(Position._genericLongLat(int, lat), system=System.TOPOCENTRIC)
+        return Position(Position._genericLongLat(long, lat), system=System.TOPOCENTRIC)
 
     @staticmethod
     def fromGalactic(long, lat):
-        return Position(Position._genericLongLat(int, lat), system=System.GALACTIC)
+        return Position(Position._genericLongLat(long, lat), system=System.GALACTIC)
 
     @staticmethod
     def fromEcliptic(long, lat):
-        return Position(Position._genericLongLat(int, lat), system=System.ECLIPTIC)
+        return Position(Position._genericLongLat(long, lat), system=System.ECLIPTIC)
 
     @staticmethod
     def _genericLongLat(long, lat):
         try:
-            if not isinstance(int, Coord):
-                long = Coord.fromDMS(int)
+            if not isinstance(long, Coord):
+                long = Coord.fromDMS(long)
             else:
-                long = int.toDMS()
+                long = long.toDMS()
 
-            Position._checkRange(float(int), -180, 360)
+            Position._checkRange(float(long), -180, 360)
 
-        except ValueError as e:
-            raise ValueError("Invalid LONGITUDE coordinate %s" % str(int))
+        except ValueError:
+            raise ValueError(f"Invalid LONGITUDE coordinate {str(long)}")
         except PositionOutsideLimitsError:
             raise ValueError(
-                "Invalid LONGITUDE range %s. Must be between 0-360 deg or -180 - +180 deg."
-                % str(int)
+                f"Invalid LONGITUDE range {str(long)}. Must be between 0-360 deg or -180 - +180 deg."
             )
 
         try:
@@ -213,14 +206,13 @@ class Position(object):
             Position._checkRange(float(lat), -90, 180)
 
         except ValueError:
-            raise ValueError("Invalid LATITUDE coordinate %s" % str(lat))
+            raise ValueError(f"Invalid LATITUDE coordinate {str(lat)}")
         except PositionOutsideLimitsError:
             raise ValueError(
-                "Invalid LATITUDE range %s. Must be between 0-180 deg or -90 - +90 deg."
-                % str(lat)
+                f"Invalid LATITUDE range {str(lat)}. Must be between 0-180 deg or -90 - +90 deg."
             )
 
-        return (int, lat)
+        return (long, lat)
 
     @staticmethod
     def _checkRange(value, lower, upper):
@@ -229,9 +221,7 @@ class Position(object):
             value = abs(value)
 
         if not (lower <= value <= upper):
-            raise PositionOutsideLimitsError(
-                "Value must between %s and %s." % (lower, upper)
-            )
+            raise PositionOutsideLimitsError(f"Value must between {lower} and {upper}.")
         return True
 
     def __init__(self, coords, epoch=Epoch.J2000, system=System.CELESTIAL):
@@ -259,7 +249,7 @@ class Position(object):
         """
         @rtype: string
         """
-        return "%s %s" % tuple(str(c) for c in self.coords)
+        return "{} {}".format(*tuple(str(c) for c in self.coords))
 
     # def __repr__(self):
     #     """

@@ -36,7 +36,10 @@ from chimera.interfaces.camera import CameraStatus
 
 from chimera.util.enum import EnumValue
 
+from chimera.instruments.tests.base import FakeHardwareTest, RealHardwareTest
+
 import chimera.core.log
+import pytest
 
 chimera.core.log.setConsoleLevel(int(1e10))
 log = logging.getLogger("chimera.tests")
@@ -114,7 +117,7 @@ class CameraTest(object):
     def test_simple(self):
 
         cam = self.manager.getProxy(self.CAMERA)
-        assert cam.isExposing() == False
+        assert cam.isExposing() is False
 
     def test_expose(self):
 
@@ -126,7 +129,7 @@ class CameraTest(object):
             frames = cam.expose(
                 exptime=2, frames=2, interval=0.5, filename="autogen-expose.fits"
             )
-        except Exception as e:
+        except Exception:
             log.exception("problems")
 
         assert len(frames) == 2
@@ -140,15 +143,20 @@ class CameraTest(object):
         cam = self.manager.getProxy(self.CAMERA)
 
         # exp_time ranges
-        assert_raises(ChimeraValueError, cam.expose, exptime=-1)
-        assert_raises(ChimeraValueError, cam.expose, exptime=1e100)
+        with pytest.raises(ChimeraValueError):
+            cam.expose(exptime=-1)
+        with pytest.raises(ChimeraValueError):
+            cam.expose(exptime=1e100)
 
         # frame ranges
-        assert_raises(ChimeraValueError, cam.expose, exptime=1, frames=0)
-        assert_raises(ChimeraValueError, cam.expose, exptime=1, frames=-1)
+        with pytest.raises(ChimeraValueError):
+            cam.expose(exptime=1, frames=0)
+        with pytest.raises(ChimeraValueError):
+            cam.expose(exptime=1, frames=-1)
 
         # interval ranges
-        assert_raises(ChimeraValueError, cam.expose, exptime=0, interval=-1)
+        with pytest.raises(ChimeraValueError):
+            cam.expose(exptime=0, interval=-1)
 
         # compression
         cam.expose(exptime=0, compress_format="fits_rice")
@@ -217,9 +225,9 @@ class CameraTest(object):
         # thread scheduling
         time.sleep(2)
 
-        assert cam.isExposing() == True
+        assert cam.isExposing() is True
         cam.abortExposure()
-        assert cam.isExposing() == False
+        assert cam.isExposing() is False
 
         pool.joinAll()
 
@@ -253,14 +261,14 @@ class CameraTest(object):
         # thread scheduling
         time.sleep(2)
 
-        assert cam.isExposing() == True
+        assert cam.isExposing() is True
 
         while not exposeComplete.isSet():
             time.sleep(0.1)
 
-        assert cam.isExposing() == True
+        assert cam.isExposing() is True
         cam.abortExposure()
-        assert cam.isExposing() == False
+        assert cam.isExposing() is False
 
         pool.joinAll()
 
@@ -274,29 +282,25 @@ class CameraTest(object):
             return abs(a - b) <= eps
 
         cam.stopCooling()
-        assert cam.isCooling() == False
+        assert cam.isCooling() is False
 
         cool = 10
         cam.startCooling(cool)
-        assert cam.isCooling() == True
+        assert cam.isCooling() is True
 
         print()
         while not eps_equal(cam.getTemperature(), cool, 0.25):
-            print("\rwaiting to cool to %d oC:" % cool, cam.getTemperature(), end=" ")
+            print(f"\rwaiting to cool to {cool} oC: {cam.getTemperature()}", end=" ")
             sys.stdout.flush()
             time.sleep(1)
 
         cam.stopCooling()
-        assert cam.isCooling() == False
+        assert cam.isCooling() is False
 
 
 #
 # setup real and fake tests
 #
-
-from chimera.instruments.tests.base import FakeHardwareTest, RealHardwareTest
-
-
 class TestFakeCamera(FakeHardwareTest, CameraTest):
 
     def setup(self):
@@ -306,7 +310,6 @@ class TestFakeCamera(FakeHardwareTest, CameraTest):
         self.manager.addClass(FakeCamera, "fake")
         self.CAMERA = "/FakeCamera/0"
 
-        FiredEvents = {}
         self.setupEvents()
 
     def teardown(self):
@@ -324,7 +327,6 @@ class TestRealCamera(RealHardwareTest, CameraTest):
         self.manager.addClass(SBIG, "sbig")
         self.CAMERA = "/SBIG/0"
 
-        FiredEvents = {}
         self.setupEvents()
 
     def teardown(self):

@@ -66,11 +66,11 @@ class ImageRequest(dict):
             if len(not_valid) > 1:
                 msg = "Invalid keywords: "
                 for k in not_valid:
-                    msg += "'%s', " % str(k)
+                    msg += f"'{str(k)}', "
                 msg = msg[:-2]
 
             else:
-                msg = "Invalid keyword '%s'" % str(not_valid[0])
+                msg = f"Invalid keyword '{str(not_valid[0])}'"
 
             raise TypeError(msg)
 
@@ -103,18 +103,13 @@ class ImageRequest(dict):
 
     def __setitem__(self, key, value):
 
-        if not key in ImageRequest.valid_keys:
-            raise KeyError("%s is not a valid key for ImageRequest" % key)
+        if key not in ImageRequest.valid_keys:
+            raise KeyError(f"{key} is not a valid key for ImageRequest")
 
         self.update({key: value})
 
     def __str__(self):
-        return "exptime: %f, frames: %i, shutter: %s, type: %s" % (
-            self["exptime"],
-            self["frames"],
-            self["shutter"],
-            self["type"],
-        )
+        return f"exptime: {self['exptime']:.6f}, frames: {self['frames']}, shutter: {self['shutter']}, type: {self['type']}"
 
     def beginExposure(self, manager):
 
@@ -149,11 +144,10 @@ class ImageRequest(dict):
                 if len(locations) == 1:
                     auto.append(str(locations[0]))
                 elif len(locations) == 0:
-                    log.warning("No %s available, header would be incomplete." % cls)
+                    log.warning(f"No {cls} available, header would be incomplete.")
                 else:
                     log.warning(
-                        "More than one %s available, header may be incorrect. Using the first %s."
-                        % (cls, cls)
+                        f"More than one {cls} available, header may be incorrect. Using the first {cls}."
                     )
                     auto.append(str(locations[0]))
 
@@ -166,10 +160,10 @@ class ImageRequest(dict):
 
         for location in locations:
 
-            if not location in self._proxies:
+            if location not in self._proxies:
                 try:
                     self._proxies[location] = manager.getProxy(location)
                 except Exception:
-                    log.exception("Unable to get metadata from %s" % (location))
+                    log.exception(f"Unable to get metadata from {location}")
 
             self.headers += self._proxies[location].getMetadata(self)

@@ -27,7 +27,10 @@ class Proxy:
         setattr(self, "client", Client(location))
 
     def ping(self):
-        return self.__dict__["client"].ping()
+        return self.client.ping()
+
+    def publish(self, topic: str, data):
+        return self.client.publish(topic, data)
 
     def __getnewargs__(self):
         return tuple()
@@ -46,10 +49,10 @@ class Proxy:
         return self
 
     def __repr__(self):
-        return "<%s proxy at %s>" % (self.location, hex(id(self)))
+        return f"<{self.location} proxy at {hex(id(self))}>"
 
     def __str__(self):
-        return "[proxy for %s]" % self.location
+        return f"[proxy for {self.location}]"
 
 
 class ProxyMethod(object):
@@ -62,14 +65,12 @@ class ProxyMethod(object):
         self.__name__ = method
 
     def __repr__(self):
-        return "<%s.%s method proxy at %s>" % (
-            self.proxy.location,
-            self.method,
-            hex(hash(self)),
+        return (
+            f"<{self.proxy.location}.{self.method} method proxy at {hex(hash(self))}>"
         )
 
     def __str__(self):
-        return "[method proxy for %s %s method]" % (self.proxy.location, self.method)
+        return f"[method proxy for {self.proxy.location} {self.method} method]"
 
     # synchronous call
     def __call__(self, *args, **kwargs):
@@ -97,8 +98,8 @@ class ProxyMethod(object):
 
         # passing a proxy method?
         if not isinstance(other, ProxyMethod):
-            log.debug("Invalid parameter: %s" % other)
-            raise TypeError("Invalid parameter: %s" % other)
+            log.debug(f"Invalid parameter: {other}")
+            raise TypeError(f"Invalid parameter: {other}")
 
         handler["handler"]["proxy"] = other.proxy.location
         handler["handler"]["method"] = str(other.__name__)
@@ -107,8 +108,7 @@ class ProxyMethod(object):
             self.proxy.client.request(f"{EVENTS_PROXY_NAME}.{action}", (handler,), {})
         except Exception:
             log.exception(
-                "Cannot %s to topic '%s' using proxy '%s'."
-                % (action, self.method, self.proxy)
+                f"Cannot {action} to topic '{self.method}' using proxy '{self.proxy}'."
             )
 
         return self

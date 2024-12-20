@@ -29,11 +29,11 @@ import logging
 
 logging.getLogger("suds").setLevel(1000000000)
 
-from suds.xsd.sxbasic import Import
+from suds.xsd.sxbasic import Import  # noqa: E402
 
 Import.bind("http://schemas.xmlsoap.org/soap/encoding/")
 
-from suds.client import Client
+from suds.client import Client  # noqa: E402
 
 
 class Simbad(object):
@@ -58,7 +58,7 @@ class Simbad(object):
         target = Simbad._parseSesame(res)
 
         if not target:
-            raise ObjectNotFoundException("Couldn't find %s on SIMBAD" % name)
+            raise ObjectNotFoundException(f"Couldn't find {name} on SIMBAD")
 
         Simbad.__cache[name] = target
 
@@ -77,7 +77,7 @@ class Simbad(object):
                     if jpos is None:
                         continue
                     return Position.fromRaDec(*jpos.text.split())
-        except ExpatError as e:
+        except ExpatError:
             return False
 
         return False

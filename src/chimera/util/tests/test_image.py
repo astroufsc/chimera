@@ -1,8 +1,7 @@
-from chimera.util.image import Image, ImageUtil, WCSNotFoundException
+from chimera.util.image import Image, ImageUtil
 
 import numpy as N
 import os
-import time
 
 
 class TestImage(object):
@@ -23,13 +22,13 @@ class TestImage(object):
         img = Image.fromFile(os.path.join(self.base, "teste-com-wcs.fits"), fix=False)
         world = img.worldAt(0, 0)
         print("world value at pixel 0,0:", world)
-        print("pixel value at world %s:" % world, img.pixelAt(world))
+        print(f"pixel value at world {world}:", img.pixelAt(world))
         print(
-            "world value at center pix %s:" % str(img.center()),
+            f"world value at center pix {str(img.center())}:",
             img.worldAt(img.center()),
         )
-        assert world.ra.D != None
-        assert world.dec.D != None
+        assert world.ra.D is not None
+        assert world.dec.D is not None
 
     def test_extractor(self):
 
@@ -41,8 +40,7 @@ class TestImage(object):
 
             print()
             print(
-                "Found %d star(s) on image %s, showing first 10:"
-                % (len(stars), img.filename)
+                f"Found {len(stars)} star(s) on image {img.filename}, showing first 10:"
             )
 
             for star in stars[:10]:
@@ -63,7 +61,7 @@ class TestImage(object):
                 subs={"OBJECT": "M5"},
             )
             names.append(name)
-            file(name, "w").close()
+            open(name, "w").close()
 
         for name in names:
             assert os.path.exists(name)

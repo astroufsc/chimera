@@ -6,7 +6,6 @@ from chimera.core.proxy import Proxy
 
 from chimera.core.exceptions import (
     InvalidLocationException,
-    ObjectNotFoundException,
     NotValidChimeraObjectException,
     ChimeraObjectException,
     ClassLoaderException,
@@ -101,7 +100,7 @@ class TestManager(object):
             self.manager.stop("foo")
 
         # ok
-        assert self.manager.remove("/Simple/simple") == True
+        assert self.manager.remove("/Simple/simple") is True
 
         # __stop__ error
         assert self.manager.addLocation(
@@ -116,7 +115,7 @@ class TestManager(object):
 
         # by index
         assert self.manager.addClass(Simple, "simple")
-        assert self.manager.remove("/Simple/0") == True
+        assert self.manager.remove("/Simple/0") is True
 
     def test_proxy(self):
 

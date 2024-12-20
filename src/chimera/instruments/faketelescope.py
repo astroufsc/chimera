@@ -32,7 +32,6 @@ from chimera.interfaces.telescope import (
 from chimera.instruments.telescope import TelescopeBase, ObjectTooLowException
 
 from chimera.core.lock import lock
-from chimera.core.site import Site
 
 from chimera.util.coord import Coord
 from chimera.util.position import Position, Epoch

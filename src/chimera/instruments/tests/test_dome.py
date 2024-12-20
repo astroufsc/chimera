@@ -20,7 +20,6 @@
 
 
 import time
-import sys
 import random
 import threading
 import logging
@@ -35,7 +34,10 @@ from chimera.util.enum import EnumValue
 
 from chimera.interfaces.dome import InvalidDomePositionException, DomeStatus
 
+from chimera.instruments.tests.base import FakeHardwareTest, RealHardwareTest
+
 import chimera.core.log
+import pytest
 
 chimera.core.log.setConsoleLevel(int(1e10))
 log = logging.getLogger("chimera.tests")
@@ -45,11 +47,9 @@ FiredEvents = {}
 
 
 def assertDomeAz(domeAz, otherAz, eps):
-    assert abs(domeAz - otherAz) <= eps, "dome az=%s other az=%s (eps=%s)" % (
-        domeAz,
-        otherAz,
-        eps,
-    )
+    assert (
+        abs(domeAz - otherAz) <= eps
+    ), f"dome az={domeAz} other az={otherAz} (eps={eps})"
 
 
 class DomeTest(object):
@@ -114,11 +114,10 @@ class DomeTest(object):
 
         for i in range(10):
 
-            FiredEvents = {}
             self.setupEvents()
 
-            ra = "%d %d 00" % (random.randint(7, 15), random.randint(0, 59))
-            dec = "%d %d 00" % (random.randint(-90, 0), random.randint(0, 59))
+            ra = f"{random.randint(7, 15)} {random.randint(0, 59)} 00"
+            dec = f"{random.randint(-90, 0)} {random.randint(0, 59)} 00"
             tel.slewToRaDec(Position.fromRaDec(ra, dec))
 
             dome.syncWithTel()
@@ -127,11 +126,9 @@ class DomeTest(object):
 
             time.sleep(random.randint(0, 10))
 
+    pytest.mark.skip(reason="just for visual testing")
+
     def test_stress_dome_slew(self):
-
-        # just for visual testing
-        raise SkipTest()
-
         dome = self.manager.getProxy(self.DOME)
 
         quit = threading.Event()
@@ -167,7 +164,8 @@ class DomeTest(object):
 
         assertDomeAz(dome.getAz(), (start + delta), dome["az_resolution"])
 
-        assert_raises(InvalidDomePositionException, dome.slewToAz, 9999)
+        with pytest.raises(InvalidDomePositionException):
+            dome.slewToAz(9999)
 
         # event check
         self.assertEvents(DomeStatus.OK)
@@ -177,19 +175,15 @@ class DomeTest(object):
         dome = self.manager.getProxy(self.DOME)
 
         dome.openSlit()
-        assert dome.isSlitOpen() == True
+        assert dome.isSlitOpen() is True
 
         dome.closeSlit()
-        assert dome.isSlitOpen() == False
+        assert dome.isSlitOpen() is False
 
 
 #
 # setup real and fake tests
 #
-
-from chimera.instruments.tests.base import FakeHardwareTest, RealHardwareTest
-
-
 class TestFakeDome(FakeHardwareTest, DomeTest):
 
     def setup(self):
@@ -217,7 +211,6 @@ class TestFakeDome(FakeHardwareTest, DomeTest):
         self.TELESCOPE = "/FakeTelescope/0"
         self.DOME = "/FakeDome/0"
 
-        FiredEvents = {}
         self.setupEvents()
 
     def teardown(self):
@@ -254,12 +247,7 @@ class TestRealDome(RealHardwareTest, DomeTest):
         self.TELESCOPE = "/Meade/meade"
         self.DOME = "/DomeLNA40cm/0"
 
-        FiredEvents = {}
         self.setupEvents()
 
     def teardown(self):
         self.manager.shutdown()
-
-    def test_stress_dome_track(self):
-        # just for manual and visual testing
-        raise SkipTest()

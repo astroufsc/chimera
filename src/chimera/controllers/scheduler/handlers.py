@@ -91,35 +91,35 @@ class PointHandler(ActionHandler):
             ""
             if action.offsetNS is None
             else (
-                " north %s" % action.offsetNS
+                f" north {action.offsetNS}"
                 if action.offsetNS > 0
-                else " south %s" % abs(action.offsetNS)
+                else f" south {abs(action.offsetNS)}"
             )
         )
         offsetEW_str = (
             ""
             if action.offsetEW is None
             else (
-                " west %s" % abs(action.offsetEW)
+                f" west {abs(action.offsetEW)}"
                 if action.offsetEW > 0
-                else " east %s" % abs(action.offsetEW)
+                else f" east {abs(action.offsetEW)}"
             )
         )
 
         offset = (
             ""
             if action.offsetNS is None and action.offsetEW is None
-            else " offset:%s%s" % (offsetNS_str, offsetEW_str)
+            else f" offset:{offsetNS_str}{offsetEW_str}"
         )
 
         if action.targetRaDec is not None:
-            return "slewing telescope to (ra dec) %s%s" % (action.targetRaDec, offset)
+            return f"slewing telescope to (ra dec) {action.targetRaDec}{offset}"
         elif action.targetAltAz is not None:
-            return "slewing telescope to (alt az) %s%s" % (action.targetAltAz, offset)
+            return f"slewing telescope to (alt az) {action.targetAltAz}{offset}"
         elif action.targetName is not None:
-            return "slewing telescope to (object) %s%s" % (action.targetName, offset)
+            return f"slewing telescope to (object) {action.targetName}{offset}"
         elif offset != "":
-            return "applying telescope%s" % offset
+            return f"applying telescope{offset}"
         else:
             if action.domeTracking is None:
                 tracking = "left AS IS"
@@ -127,7 +127,7 @@ class PointHandler(ActionHandler):
                 tracking = "STARTED"
             else:
                 tracking = "STOPPED"
-            return "dome tracking %s" % tracking
+            return f"dome tracking {tracking}"
 
 
 class ExposeHandler(ActionHandler):
@@ -163,7 +163,7 @@ class ExposeHandler(ActionHandler):
         ]
 
         try:
-            images = camera.expose(ir)
+            camera.expose(ir)
         except Exception as e:
             printException(e)
             raise ProgramExecutionException("Error while exposing")
@@ -175,12 +175,7 @@ class ExposeHandler(ActionHandler):
 
     @staticmethod
     def log(action):
-        return "exposing: filter=%s exptime=%s frames=%s type=%s" % (
-            str(action.filter),
-            str(action.exptime),
-            str(action.frames),
-            str(action.imageType),
-        )
+        return f"exposing: filter={str(action.filter)} exptime={str(action.exptime)} frames={str(action.frames)} type={str(action.imageType)}"
 
 
 class AutoFocusHandler(ActionHandler):

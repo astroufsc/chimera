@@ -73,7 +73,7 @@ class DomeBase(ChimeraObject, DomeSlew, DomeSlit, DomeFlap, DomeSync):
             self.log.warning("Invalid dome mode: %s. " "Will use Stand mode instead.")
             self.stand()
 
-        self.log.debug("Dome started in %s mode." % self.getMode())
+        self.log.debug(f"Dome started in {self.getMode()} mode.")
 
         return True
 
@@ -128,11 +128,11 @@ class DomeBase(ChimeraObject, DomeSlew, DomeSlit, DomeFlap, DomeSync):
 
     # telescope callbacks
     def _telSlewBeginClbk(self, target):
-        self.log.debug("[event] telescope slewing to %s." % target)
+        self.log.debug(f"[event] telescope slewing to {target}.")
 
     def _telSlewCompleteClbk(self, target, status):
         self.log.debug(
-            "[event] telescope slew complete, position=%s status=%s." % (target, status)
+            f"[event] telescope slew complete, position={target} status={status}."
         )
 
     # utilitaries
@@ -186,15 +186,13 @@ class DomeBase(ChimeraObject, DomeSlew, DomeSlit, DomeFlap, DomeSync):
 
         if self._needToMove(az):
             self.log.debug(
-                "[control] adding %s to the queue (delta=%.2f)"
-                % (az, abs(self.getAz() - az))
+                f"[control] adding {az} to the queue (delta={abs(self.getAz() - az):.2f})"
             )
             self.queue.put(az)
         else:
             self.log.debug(
                 "[control] standing"
-                " (dome az=%.2f, tel az=%.2f, delta=%.2f.)"
-                % (self.getAz(), az, abs(self.getAz() - az))
+                f" (dome az={self.getAz():.2f}, tel az={az:.2f}, delta={abs(self.getAz() - az):.2f}.)"
             )
 
     def _needToMove(self, az):
@@ -208,16 +206,16 @@ class DomeBase(ChimeraObject, DomeSlew, DomeSlit, DomeFlap, DomeSync):
         if self.queue.empty():
             return
 
-        self.log.debug("[control] processing queue... %d item(s)." % self.queue.qsize())
+        self.log.debug(f"[control] processing queue... {self.queue.qsize()} item(s).")
 
         while not self.queue.empty():
 
             target = self.queue.get()
             try:
-                self.log.debug("[queue] slewing to %s" % target)
+                self.log.debug(f"[queue] slewing to {target}")
                 self.slewToAz(target)
             finally:
-                self.log.debug("[queue] slew to %s complete" % target)
+                self.log.debug(f"[queue] slew to {target} complete")
                 self.queue.task_done()
 
     @lock

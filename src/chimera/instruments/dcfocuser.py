@@ -156,7 +156,8 @@ class DCFocuser(FocuserBase):
                 self._move(Direction.OUT, abs(delta))
             elif delta < 0:
                 self._move(Direction.IN, abs(delta))
-        except:
+        except (InvalidFocusPositionException, ValueError):
+            self.log.error(f"Invalid position {position}.")
             return
 
         self._savePosition(position)
@@ -167,10 +168,10 @@ class DCFocuser(FocuserBase):
     def _move(self, direction, steps):
 
         if not self._inRange(direction, steps):
-            raise InvalidFocusPositionException("%d is outside focuser limits." % steps)
+            raise InvalidFocusPositionException(f"{steps} is outside focuser limits.")
 
         if direction not in Direction:
-            raise ValueError("Invalid direction '%s'." % direction)
+            raise ValueError(f"Invalid direction '{direction}'.")
 
         self._moveTo(direction, steps)
 

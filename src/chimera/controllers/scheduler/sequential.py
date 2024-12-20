@@ -3,11 +3,11 @@ from chimera.controllers.scheduler.model import Session, Program
 
 from sqlalchemy import desc
 
+from queue import Queue
+
 import logging
 
 log = logging.getLogger(__name__)
-
-from queue import Queue
 
 
 class SequentialScheduler(IScheduler):
@@ -25,14 +25,14 @@ class SequentialScheduler(IScheduler):
         programs = (
             session.query(Program)
             .order_by(desc(Program.priority))
-            .filter(Program.finished == False)
+            .filter(Program.finished is False)
             .all()
         )
 
         if not programs:
             return
 
-        log.debug("rescheduling, found %d runnable programs" % len(list(programs)))
+        log.debug(f"rescheduling, found {len(list(programs))} runnable programs")
 
         for program in programs:
             self.rq.put(program)
@@ -48,7 +48,7 @@ class SequentialScheduler(IScheduler):
     def done(self, task, error=None):
 
         if error:
-            log.debug("Error processing program %s." % str(task))
+            log.debug(f"Error processing program {str(task)}.")
             log.exception(error)
         else:
             task.finished = True

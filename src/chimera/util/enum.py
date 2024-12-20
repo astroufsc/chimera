@@ -1,5 +1,14 @@
 # -*- coding: utf-8 -*-
 
+
+# Added for compatibility with Python 2.4
+def cmp(a, b):
+    """
+    Compare two objects. Available in Python 2.4, but not in 3.x.
+    """
+    return (a > b) - (a < b)
+
+
 # enum.py
 # Part of enum, a package providing enumerated types for Python.
 #
@@ -50,9 +59,9 @@ original arguments used to create the enumeration::
 
 __author_name__ = "Ben Finney"
 __author_email__ = "ben+python@benfinney.id.au"
-__author__ = "%s <%s>" % (__author_name__, __author_email__)
+__author__ = f"{__author_name__} <{__author_email__}>"
 __date__ = "2007-01-24"
-__copyright__ = "Copyright © %s %s" % (__date__.split("-")[0], __author_name__)
+__copyright__ = "Copyright © {} {}".format(__date__.split("-")[0], __author_name__)
 __license__ = "Choice of GPL or Python license"
 __url__ = "http://cheeseshop.python.org/pypi/enum/"
 __version__ = "0.4.3"
@@ -64,7 +73,7 @@ class EnumException(Exception):
     def __init__(self):
         if self.__class__ is EnumException:
             raise NotImplementedError(
-                "%s is an abstract class for subclassing" % self.__class__
+                f"{self.__class__} is an abstract class for subclassing"
             )
 
 
@@ -82,7 +91,7 @@ class EnumBadKeyError(TypeError, EnumException):
         self.key = key
 
     def __str__(self):
-        return "Enumeration keys must be strings: %s" % (self.key,)
+        return f"Enumeration keys must be strings: {self.key}"
 
 
 class EnumImmutableError(TypeError, EnumException):
@@ -115,7 +124,7 @@ class EnumValue(object):
     key = property(__get_key)
 
     def __str__(self):
-        return "%s" % (self.key)
+        return f"{self.key}"
 
     def __int__(self):
         return self.index
@@ -126,11 +135,7 @@ class EnumValue(object):
     index = property(__get_index)
 
     def __repr__(self):
-        return "EnumValue(%s, %s, %s)" % (
-            repr(self.__enumtype),
-            repr(self.__index),
-            repr(self.__key),
-        )
+        return f"EnumValue({repr(self.__enumtype)}, {repr(self.__index)}, {repr(self.__key)})"
 
     def __hash__(self):
         return hash(self.__index)
@@ -166,7 +171,7 @@ class Enum(object):
             values[i] = value
             try:
                 super(Enum, self).__setattr__(key, value)
-            except TypeError as e:
+            except TypeError:
                 raise EnumBadKeyError(key)
 
         super(Enum, self).__setattr__("_keys", keys)
@@ -205,7 +210,7 @@ class Enum(object):
                 is_member = value in self._values
             # EnumValueError isn't defined!
             # except EnumValueCompareError, e:
-            except Exception as e:
+            except Exception:
                 is_member = False
         return is_member
 
@@ -218,5 +223,5 @@ class Enum(object):
         values (keys).
         """
 
-        assert type(other) == type(self)
+        assert isinstance(other, self.__class__)
         return cmp(getattr(self, "_keys"), getattr(other, "_keys"))

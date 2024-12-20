@@ -22,15 +22,15 @@
 
 from types import NoneType
 
-import logging
-
-log = logging.getLogger(__name__)
-
 from chimera.util.enum import EnumValue
 from chimera.core.exceptions import OptionConversionException
 
 from chimera.util.coord import Coord
 from chimera.util.position import Position
+
+import logging
+
+log = logging.getLogger(__name__)
 
 
 class Option(object):
@@ -54,7 +54,7 @@ class Option(object):
 
             return oldvalue
         except OptionConversionException as e:
-            log.debug("Error setting %s: %s." % (self._name, str(e)))
+            log.debug(f"Error setting {self._name}: {str(e)}.")
             raise e
 
     def get(self):
@@ -86,10 +86,10 @@ class IntChecker(Checker):
         # if we can't get one from "value"
 
         # simple case
-        if type(value) in (int, float, bool):
+        if isinstance(value, (int, float, bool)):
             return int(value)
 
-        if type(value) == str:
+        if isinstance(value, str):
             # try to convert to int (use float first and then cast (loosely)
             try:
                 tmp = float(value)
@@ -98,11 +98,11 @@ class IntChecker(Checker):
             except ValueError:
                 # couldn't convert, nothing to do
                 raise OptionConversionException(
-                    "couldn't convert '%s' to int value." % value
+                    f"couldn't convert '{value}' to int value."
                 )
 
         raise OptionConversionException(
-            "couldn't convert '%s' to int." % str(type(value))
+            f"couldn't convert '{str(type(value))}' to int."
         )
 
 
@@ -116,10 +116,10 @@ class FloatChecker(Checker):
         # if we can't get one from "value"
 
         # simple case
-        if type(value) in (float, int, bool):
+        if isinstance(value, (float, int, bool)):
             return float(value)
 
-        if type(value) == str:
+        if isinstance(value, str):
 
             # try to convert to int
             try:
@@ -128,11 +128,11 @@ class FloatChecker(Checker):
             except ValueError:
                 # couldn't convert, nothing to do
                 raise OptionConversionException(
-                    "couldn't convert '%s' to float value." % value
+                    f"couldn't convert '{value}' to float value."
                 )
 
         raise OptionConversionException(
-            "couldn't convert %s to float." % str(type(value))
+            f"couldn't convert {str(type(value))} to float."
         )
 
 
@@ -173,13 +173,13 @@ class BoolChecker(Checker):
         # we MUST return an bool or raise OptionConversionException
         # if we can't get one from "value"
 
-        if type(value) == bool:
+        if isinstance(value, bool):
             return value
 
         # only accept 0 and 1 as valid booleans...
         # cause a lot of problems in OptionChecker accept the same as python
         # truth tables assume
-        if type(value) in (int, float):
+        if isinstance(value, (int, float)):
 
             if value == 1:
                 return True
@@ -187,19 +187,17 @@ class BoolChecker(Checker):
             if value == 0:
                 return False
 
-        if type(value) == str:
+        if isinstance(value, str):
 
             value = value.strip().lower()
 
             if value in self._truthTable:
                 return value in self._trueValues
 
-            raise OptionConversionException("couldn't convert '%s' to bool." % value)
+            raise OptionConversionException(f"couldn't convert '{value}' to bool.")
 
         # any other type, raise exception
-        raise OptionConversionException(
-            "couldn't convert %s to bool." % str(type(value))
-        )
+        raise OptionConversionException(f"couldn't convert {str(type(value))} to bool.")
 
 
 class OptionsChecker(Checker):
@@ -216,19 +214,19 @@ class OptionsChecker(Checker):
 
         for value in opt:
 
-            if type(value) == int:
+            if isinstance(value, int):
                 options.append({"value": value, "checker": IntChecker()})
                 continue
 
-            if type(value) == float:
+            if isinstance(value, float):
                 options.append({"value": value, "checker": FloatChecker()})
                 continue
 
-            if type(value) == str:
+            if isinstance(value, str):
                 options.append({"value": value, "checker": StringChecker()})
                 continue
 
-            if type(value) == bool:
+            if isinstance(value, bool):
                 options.append({"value": value, "checker": BoolChecker()})
                 continue
 
@@ -249,7 +247,7 @@ class OptionsChecker(Checker):
             except OptionConversionException:
                 continue
 
-        raise OptionConversionException("'%s' isn't a valid option." % str(value))
+        raise OptionConversionException(f"'{str(value)}' isn't a valid option.")
 
 
 class RangeChecker(Checker):
@@ -260,7 +258,7 @@ class RangeChecker(Checker):
         self._min = value[0]
         self._max = value[1]
 
-        if type(value[0]) == float:
+        if isinstance(value[0], float):
             self._checker = FloatChecker()
 
         else:
@@ -273,7 +271,7 @@ class RangeChecker(Checker):
 
         except OptionConversionException:
 
-            raise OptionConversionException("'%s' isn't a valid option." % str(value))
+            raise OptionConversionException(f"'{str(value)}' isn't a valid option.")
 
         else:
 
@@ -282,8 +280,7 @@ class RangeChecker(Checker):
                 return tmp
             else:
                 raise OptionConversionException(
-                    "'%s' it's outside valid limits (%f <= x <= %f."
-                    % (str(value), self._min, self._max)
+                    f"'{str(value)}' it's outside valid limits ({self._min:f} <= x <= {self._max:f}."
                 )
 
 
@@ -296,17 +293,17 @@ class EnumChecker(Checker):
 
     def check(self, value):
 
-        if type(value) == EnumValue:
+        if isinstance(value, EnumValue):
             if value in self.enumtype:
                 return value
 
-        if type(value) == str:
+        if isinstance(value, str):
             ret = [v for v in self.enumtype if str(v).upper() == value.upper()]
             if ret:
                 return ret[0]
 
         raise OptionConversionException(
-            "invalid enum value %s. not a %s enum." % (value, str(self.enumtype))
+            f"invalid enum value {value}. not a {str(self.enumtype)} enum."
         )
 
 
@@ -323,7 +320,7 @@ class CoordOption(Option):
             self._value = self._checker.check(value, self._state)
             return oldvalue
         except OptionConversionException as e:
-            log.debug("Error setting %s: %s." % (self._name, str(e)))
+            log.debug(f"Error setting {self._name}: {str(e)}.")
             raise e
 
 
@@ -341,7 +338,7 @@ class CoordChecker(Checker):
                 pass
 
         # any other type is ignored
-        raise OptionConversionException("invalid coord value %s." % value)
+        raise OptionConversionException(f"invalid coord value {value}.")
 
 
 class PositionOption(Option):
@@ -358,7 +355,7 @@ class PositionOption(Option):
             self._value = self._checker.check(value, self._system, self._epoch)
             return oldvalue
         except OptionConversionException as e:
-            log.debug("Error setting %s: %s." % (self._name, str(e)))
+            log.debug(f"Error setting {self._name}: {str(e)}.")
             raise e
 
 
@@ -378,7 +375,7 @@ class Config(object):
 
     def __init__(self, obj):
 
-        if type(obj) == dict:
+        if isinstance(obj, dict):
             self._options = self._readOptions(obj)
         else:
             self._options = self._readOptions(obj.__config__)
@@ -389,19 +386,19 @@ class Config(object):
 
         for name, value in list(opt.items()):
 
-            if type(value) == int:
+            if isinstance(value, int):
                 options[name] = Option(name, value, IntChecker())
                 continue
 
-            if type(value) == float:
+            if isinstance(value, float):
                 options[name] = Option(name, value, FloatChecker())
                 continue
 
-            if type(value) == str:
+            if isinstance(value, str):
                 options[name] = Option(name, value, StringChecker())
                 continue
 
-            if type(value) == bool:
+            if isinstance(value, bool):
                 options[name] = Option(name, value, BoolChecker())
                 continue
 
@@ -411,21 +408,21 @@ class Config(object):
 
             # For list and tuple we use the first element as default option.
             # If the list/tuple is empty, its value will be assigned None.
-            if type(value) == list:
+            if isinstance(value, list):
                 if len(value) > 0:
                     options[name] = Option(name, value[0], OptionsChecker(value))
                 else:
                     options[name] = Option(name, None, NoneChecker())
                 continue
 
-            if type(value) == tuple:
+            if isinstance(value, tuple):
                 if len(value) > 0:
                     options[name] = Option(name, value[0], RangeChecker(value))
                 else:
                     options[name] = Option(name, None, NoneChecker())
                 continue
 
-            if type(value) == EnumValue:
+            if isinstance(value, EnumValue):
                 options[name] = Option(name, value, EnumChecker(value))
                 continue
 
@@ -440,7 +437,7 @@ class Config(object):
                 options[name] = PositionOption(name, value, PositionChecker(value))
                 continue
 
-            raise ValueError("Invalid option type: %s." % type(value))
+            raise ValueError(f"Invalid option type: {type(value)}.")
 
         return options
 
@@ -452,14 +449,14 @@ class Config(object):
 
     def __getitem__(self, name):
 
-        if type(name) != str:
+        if not isinstance(name, str):
             raise TypeError
 
         if name in self:
             return self._options[name].get()
 
         else:
-            raise KeyError("invalid option: %s." % name)
+            raise KeyError(f"invalid option: {name}.")
 
     def __setitem__(self, name, value):
 
@@ -469,7 +466,7 @@ class Config(object):
 
         # rant about invalid option
         else:
-            raise KeyError("invalid option: %s." % name)
+            raise KeyError(f"invalid option: {name}.")
 
     def __iter__(self):
         return iter(self.keys())
@@ -496,15 +493,15 @@ class Config(object):
 
     def __iadd__(self, other):
 
-        if type(other) not in (Config, dict):
+        if isinstance(other, (Config, dict)):
             return self
 
-        if type(other) == dict:
+        if isinstance(other, dict):
             other = Config(other)
 
         for name, value in list(other._options.items()):
-            if not name in self._options:
-                raise KeyError("invalid option: %s" % name)
+            if name not in self._options:
+                raise KeyError(f"invalid option: {name}")
 
             self._options[name] = value
 
