@@ -52,7 +52,7 @@ class ImageServerHTTPHandler(SimpleHTTPRequestHandler):
             if not img:
                 self.response(200, "Couldn't find the image.")
             else:
-                self.response_file(img.filename(), "image/fits")
+                self.response_file(img.filename, "image/fits")
 
     def list(self):
 
@@ -62,7 +62,7 @@ class ImageServerHTTPHandler(SimpleHTTPRequestHandler):
         for key in keys:
             image = self.server.ctrl.imagesByPath[key]
             id = image.GUID()
-            path = image.filename()
+            path = image.filename
             toReturn += f'<tr><td><a href="/image/{id}">{id}</a></td><td><a href="/image/{id}">{path}</a></td></tr>'
 
         self.response(200, toReturn, "text/html")

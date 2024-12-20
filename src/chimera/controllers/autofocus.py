@@ -449,7 +449,7 @@ class Autofocus(ChimeraObject, IAutofocus):
 
         if frames:
             image = frames[0]
-            image_path = image.filename()
+            image_path = image.filename
             if not os.path.exists(
                 image_path
             ):  # If image is on a remote server, donwload it.

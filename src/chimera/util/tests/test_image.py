@@ -70,8 +70,8 @@ class TestImage(object):
     def test_create(self):
 
         img = Image.create(N.zeros((100, 100)), filename="autogen-teste.fits")
-        assert os.path.exists(img.filename())
+        assert os.path.exists(img.filename)
         assert img.width() == 100
         assert img.height() == 100
 
-        os.unlink(img.filename())
+        os.unlink(img.filename)
