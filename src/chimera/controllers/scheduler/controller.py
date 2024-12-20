@@ -11,7 +11,9 @@ from chimera.controllers.scheduler.model import Session
 from chimera.util.enum import Enum
 
 
-SchedulingAlgorithm = Enum("SEQUENTIAL", "CIRCULAR")
+class SchedulingAlgorithm(Enum):
+    SEQUENTIAL = "SEQUENTIAL"
+    CIRCULAR = "CIRCULAR"
 
 
 SchedulingAlgorithms = {

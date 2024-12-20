@@ -22,28 +22,50 @@
 
 from chimera.core.interface import Interface
 from chimera.core.event import event
-from chimera.util.enum import Enum
 from chimera.core.exceptions import ChimeraException
+from chimera.util.enum import Enum
 
-Shutter = Enum("OPEN", "CLOSE", "LEAVE_AS_IS")
-Bitpix = Enum("char8", "uint16", "int16", "int32", "int64", "float32", "float64")
-CCD = Enum("IMAGING", "TRACKING")
+
+class Shutter(Enum):
+    OPEN = "OPEN"
+    CLOSE = "CLOSE"
+    LEAVE_AS_IS = "LEAVE_AS_IS"
+
+
+class Bitpix(Enum):
+    char8 = "char8"
+    uint16 = "uint16"
+    int16 = "int16"
+    int32 = "int32"
+    int64 = "int64"
+    float32 = "float32"
+    float64 = "float64"
+
+
+class CCD(Enum):
+    IMAGING = "IMAGING"
+    TRACKING = "TRACKING"
+
 
 # Special features parameters can be passed as ImageRequest
 # parameters. The Camera.supports(feature) method can be used
 # to ask if the current camera support a given feature (useful for
 # interfaces, to decide when to display options to the user).
 
-CameraFeature = Enum(
-    "TEMPERATURE_CONTROL",
-    "PROGRAMMABLE_GAIN",
-    "PROGRAMMABLE_OVERSCAN",
-    "PROGRAMMABLE_FAN",
-    "PROGRAMMABLE_LEDS",
-    "PROGRAMMABLE_BIAS_LEVEL",
-)
 
-CameraStatus = Enum("OK", "ERROR", "ABORTED")
+class CameraFeature(Enum):
+    TEMPERATURE_CONTROL = "TEMPERATURE_CONTROL"
+    PROGRAMMABLE_GAIN = "PROGRAMMABLE_GAIN"
+    PROGRAMMABLE_OVERSCAN = "PROGRAMMABLE_OVERSCAN"
+    PROGRAMMABLE_FAN = "PROGRAMMABLE_FAN"
+    PROGRAMMABLE_LEDS = "PROGRAMMABLE_LEDS"
+    PROGRAMMABLE_BIAS_LEVEL = "PROGRAMMABLE_BIAS_LEVEL"
+
+
+class CameraStatus(Enum):
+    OK = "OK"
+    ERROR = "ERROR"
+    ABORTED = "ABORTED"
 
 
 class ReadoutMode(object):

@@ -39,7 +39,9 @@ class CantSetScopeException(ChimeraException):
     pass
 
 
-Target = Enum("CURRENT", "AUTO")
+class Target(Enum):
+    CURRENT = "CURRENT"
+    AUTO = "AUTO"
 
 
 class PointVerify(Interface):

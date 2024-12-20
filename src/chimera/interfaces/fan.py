@@ -24,7 +24,12 @@ from chimera.core.interface import Interface
 from chimera.interfaces.switch import Switch, SwitchStatus, SwitchState
 from chimera.util.enum import Enum
 
-FanDirection = Enum("FORWARD", "REVERSE")
+
+class FanDirection(Enum):
+    FORWARD = "FORWARD"
+    REVERSE = "REVERSE"
+
+
 FanStatus = SwitchStatus
 
 

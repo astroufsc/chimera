@@ -186,13 +186,13 @@ class DomeBase(ChimeraObject, DomeSlew, DomeSlit, DomeFlap, DomeSync):
 
         if self._needToMove(az):
             self.log.debug(
-                f"[control] adding {az} to the queue (delta={abs(self.getAz() - az):.2f})"
+                f"[control] adding {az} to the queue (delta={abs(self.getAz() - az)})"
             )
             self.queue.put(az)
         else:
             self.log.debug(
                 "[control] standing"
-                f" (dome az={self.getAz():.2f}, tel az={az:.2f}, delta={abs(self.getAz() - az):.2f}.)"
+                f" (dome az={self.getAz()}, tel az={az}, delta={abs(self.getAz() - az)}.)"
             )
 
     def _needToMove(self, az):

@@ -37,7 +37,13 @@ except ImportError:
 __all__ = ["Coord", "CoordUtil"]
 
 
-State = Enum("HMS", "DMS", "D", "H", "R", "AS")
+class State(Enum):
+    HMS = "HMS"
+    DMS = "DMS"
+    D = "D"
+    H = "H"
+    R = "R"
+    AS = "AS"
 
 
 class CoordUtil(object):
@@ -536,7 +542,7 @@ class Coord(object):
 
     def __setstate__(self, state):
         self.v = state["v"]
-        self.state = State.fromStr(state["state"])
+        self.state = State[state["state"]]
         self.cache = {}
 
     #

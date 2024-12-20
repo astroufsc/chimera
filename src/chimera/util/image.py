@@ -271,7 +271,7 @@ class Image(UserDict):
         return self._http
 
     def __str__(self):
-        return f"<Image {self.filename()}>"
+        return f"<Image {self.filename}>"
 
     #
     # serialization support
@@ -461,10 +461,10 @@ class Image(UserDict):
         if multiprocess and sys.version_info[0:2] >= (2, 6):
             from multiprocessing import Process
 
-            p = Process(target=self._doCompress, args=(self.filename(), format))
+            p = Process(target=self._doCompress, args=(self.filename, format))
             p.start()
         else:
-            self._doCompress(self.filename(), format)
+            self._doCompress(self.filename, format)
 
     # dict mixin implementation for headers
     def __getitem__(self, key):

@@ -94,7 +94,7 @@ class ImageRequest(dict):
         if str(self["shutter"]) not in Shutter:
             raise ChimeraValueError("Invalid shutter value: " + str(self["shutter"]))
         else:
-            self["shutter"] = Shutter.fromStr(str(self["shutter"]))
+            self["shutter"] = Shutter[self["shutter"]]
 
         if self["object_name"]:
             self.headers.append(
@@ -120,8 +120,7 @@ class ImageRequest(dict):
                 dome = manager.getProxy(manager.getResourcesByClass("Dome")[0])
                 dome.syncWithTel()
                 log.debug("Dome slit position synchronized with telescope position.")
-
-            except ObjectNotFoundException:
+            except (ObjectNotFoundException, IndexError):
                 log.info("No dome present, taking exposure without dome sync.")
 
     def endExposure(self, manager):

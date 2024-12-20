@@ -24,19 +24,27 @@ from chimera.core.interface import Interface
 from chimera.core.exceptions import ChimeraException
 from chimera.util.enum import Enum
 
-FocuserFeature = Enum(
-    "TEMPERATURE_COMPENSATION",
-    "ENCODER",
-    "POSITION_FEEDBACK",
-    "CONTROLLABLE_X",
-    "CONTROLLABLE_Y",
-    "CONTROLLABLE_Z",
-    "CONTROLLABLE_U",
-    "CONTROLLABLE_V",
-    "CONTROLLABLE_W",
-)
 
-FocuserAxis = Enum("X", "Y", "Z", "U", "V", "W")
+class FocuserFeature(Enum):
+    TEMPERATURE_COMPENSATION = "TEMPERATURE_COMPENSATION"
+    ENCODER = "ENCODER"
+    POSITION_FEEDBACK = "POSITION_FEEDBACK"
+    CONTROLLABLE_X = "CONTROLLABLE_X"
+    CONTROLLABLE_Y = "CONTROLLABLE_Y"
+    CONTROLLABLE_Z = "CONTROLLABLE_Z"
+    CONTROLLABLE_U = "CONTROLLABLE_U"
+    CONTROLLABLE_V = "CONTROLLABLE_V"
+    CONTROLLABLE_W = "CONTROLLABLE_W"
+
+
+class FocuserAxis(Enum):
+    X = "X"
+    Y = "Y"
+    Z = "Z"
+    U = "U"
+    V = "V"
+    W = "W"
+
 
 ControllableAxis = {
     FocuserFeature.CONTROLLABLE_X: FocuserAxis.X,

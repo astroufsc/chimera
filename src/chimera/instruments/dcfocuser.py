@@ -32,7 +32,10 @@ from chimera.util.enum import Enum
 
 import os
 
-Direction = Enum("IN", "OUT")
+
+class Direction(Enum):
+    IN = "IN"
+    OUT = "OUT"
 
 
 __all__ = ["Direction", "DCFocuser"]

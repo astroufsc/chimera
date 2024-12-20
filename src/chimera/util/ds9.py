@@ -76,8 +76,8 @@ class DS9(object):
 
     def displayImage(self, image, frame=1):
 
-        if os.path.exists(image.filename()):
-            self.displayFile(filename=image.filename(), frame=frame)
+        if os.path.exists(image.filename):
+            self.displayFile(filename=image.filename, frame=frame)
         else:
             self.displayFile(url=image.http(), frame=frame)
 
