@@ -117,7 +117,7 @@ class WeatherPressure(WeatherStation):
     """
 
     # Pressure units accepted by the interface.
-    __accepted_pressures_unit__ = [units.cds.mmHg, units.bar, units.cds.atm, units.Pa]
+    __accepted_pressures_unit__ = [units.bar, units.Pa]
 
     def pressure(self, unit_out=units.Pa):
         """
