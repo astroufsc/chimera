@@ -154,12 +154,12 @@ class FakeWeatherStation(
         :return:
         """
 
-        pressure_reference = 1140.0  # MM_HG
+        pressure_reference = 151987.5 # Pa
 
         if unit_out not in self.__accepted_pressures_unit__:
             raise OptionConversionException(f"Invalid pressure unit {unit_out}.")
 
-        pressure = self._convert_units(pressure_reference, units.cds.mmHg, unit_out)
+        pressure = self._convert_units(pressure_reference, units.Pa, unit_out)
 
         return WSValue(datetime.datetime.utcnow(), pressure, unit_out)
 
