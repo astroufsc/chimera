@@ -21,7 +21,6 @@
 
 
 from chimera.core.cli import ChimeraCLI, action, parameter, ParameterType
-from chimera.core.callback import callback
 
 from chimera.interfaces.autofocus import StarNotFoundException, FocusNotFoundException
 from chimera.interfaces.focuser import InvalidFocusPositionException, FocuserFeature, FocuserAxis, ControllableAxis
@@ -40,7 +39,7 @@ class ChimeraFocus (ChimeraCLI):
 
     def __init__(self):
         ChimeraCLI.__init__(
-            self, "chimera-focus", "Focuser controller", 0.1, port=9003)
+            self, "chimera-focus", "Focuser controller", 0.1)
 
         self.addHelpGroup("FOCUS", "Focus")
         self.addInstrument(name="focuser",
@@ -216,7 +215,6 @@ class ChimeraFocus (ChimeraCLI):
             except IOError:
                 pass
 
-        @callback(self.localManager)
         def stepComplete(position, star, filename):
 
             self.out("#%04d (%4d, %4d) FWHM: %8.3f FLUX: %-9.3f (%s)" % (position,

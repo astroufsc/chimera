@@ -35,7 +35,7 @@ import copy
 class ChimeraDome(ChimeraCLI):
     def __init__(self):
         ChimeraCLI.__init__(
-            self, "chimera-dome", "Dome controller", 0.1, port=9001)
+            self, "chimera-dome", "Dome controller", 0.1)
 
         self.addHelpGroup("DOME", "Dome")
         self.addInstrument(name="dome", cls="Dome", required=True,

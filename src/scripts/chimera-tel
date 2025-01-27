@@ -28,7 +28,6 @@ from chimera.util.output import red
 from chimera.util.position import Position
 from chimera.util.simbad import Simbad
 
-from chimera.core.callback import callback
 from chimera.core.exceptions import ObjectTooLowException, ObjectNotFoundException, printException
 from chimera.interfaces.telescope import SlewRate, TelescopeStatus, TelescopePierSide, TelescopePier, TelescopeCover
 import sys
@@ -41,7 +40,7 @@ class ChimeraTel (ChimeraCLI):
 
     def __init__(self):
         ChimeraCLI.__init__(
-            self, "chimera-tel", "Telescope controller", 0.1, port=9004)
+            self, "chimera-tel", "Telescope controller", 0.1)
 
         self.localSlew = False
 
@@ -120,7 +119,6 @@ class ChimeraTel (ChimeraCLI):
         else:
             target = self._validateCoords(options)
 
-        @callback(self.localManager)
         def slewBegin(target):
             self.out(40 * "=")
             if options.objectName:
@@ -130,7 +128,6 @@ class ChimeraTel (ChimeraCLI):
             else:
                 self.out("slewing to %s (%s)... " % (target, target.epochString()), end="")
 
-        @callback(self.localManager)
         def slewComplete(position, status):
             if status == TelescopeStatus.OK:
                 self.out("OK.")
