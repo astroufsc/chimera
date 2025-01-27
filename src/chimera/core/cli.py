@@ -293,7 +293,6 @@ class ChimeraCLI(object):
         prog,
         description,
         version,
-        port=None,
         verbosity=True,
         instrument_path=True,
         controllers_path=True,
@@ -347,24 +346,16 @@ class ChimeraCLI(object):
                 ),
             )
 
-        self.addHelpGroup("LOCALMANAGER", "Client Configuration")
+        self.addHelpGroup("CONFIG", "Client Configuration")
         self.addParameters(
-            dict(
-                name="port",
-                short="P",
-                helpGroup="LOCALMANAGER",
-                default=port or 9000,
-                help="Port to which the local Chimera instance will listen to.",
-            ),
             dict(
                 name="config",
                 default=SYSTEM_CONFIG_DEFAULT_FILENAME,
                 help="Chimera configuration file to use. default=%default",
-                helpGroup="LOCALMANAGER",
+                helpGroup="CONFIG",
             ),
         )
 
-        self.localManager = None
         self._remoteManager = None
         self.sysconfig = None
 
@@ -512,9 +503,6 @@ class ChimeraCLI(object):
 
         try:
             self.sysconfig = SystemConfig.fromFile(options.config)
-            self.localManager = Manager(
-                self.sysconfig.chimera["host"], getattr(options, "port", 9000)
-            )
             self._remoteManager = Manager.locate(
                 self.sysconfig.chimera["host"], self.sysconfig.chimera["port"]
             )
@@ -607,9 +595,6 @@ class ChimeraCLI(object):
         pass
 
     def __stop__(self, options):
-        if self.localManager:
-            self.localManager.shutdown()
-
         if self._remoteManager and not self._keepRemoteManager:
             self._remoteManager.shutdown()
 

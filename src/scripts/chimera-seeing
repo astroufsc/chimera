@@ -10,7 +10,7 @@ from chimera.util.output import red, green
 class ChimeraSeeing(ChimeraCLI):
     def __init__(self):
         ChimeraCLI.__init__(
-            self, "chimera-seeing", "Seeing Monitor script", 0.1, port=9003)
+            self, "chimera-seeing", "Seeing Monitor script", 0.1)
 
         self.addHelpGroup("SM", "Seeing Monitor")
         self.addHelpGroup("COMMANDS", "Commands")

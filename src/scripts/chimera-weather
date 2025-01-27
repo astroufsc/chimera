@@ -10,7 +10,7 @@ from chimera.util.output import red, green
 class ChimeraWeather(ChimeraCLI):
     def __init__(self):
         ChimeraCLI.__init__(
-            self, "chimera-weather", "Weather station script", 0.1, port=9003)
+            self, "chimera-weather", "Weather station script", 0.1)
 
         self.addHelpGroup("WS", "Weather Station")
         self.addHelpGroup("COMMANDS", "Commands")

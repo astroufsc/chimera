@@ -21,8 +21,6 @@
 
 
 from chimera.core.cli import ChimeraCLI, action
-#from chimera.core.callback import callback
-#from chimera.core.exceptions import printException
 
 from chimera.interfaces.filterwheel import InvalidFilterPositionException
 
@@ -36,7 +34,7 @@ class ChimeraFilter(ChimeraCLI):
 
     def __init__(self):
         ChimeraCLI.__init__(
-            self, "chimera-filter", "Filter Wheel Controller", 0.1, port=9002)
+            self, "chimera-filter", "Filter Wheel Controller", 0.1)
 
         self.addHelpGroup("INFO", "Filter Wheel Information")
         self.addHelpGroup("FILTER_CHANGE", "Filter Position")

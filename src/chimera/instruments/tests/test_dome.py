@@ -25,7 +25,6 @@ import threading
 import logging
 
 from chimera.core.manager import Manager
-from chimera.core.callback import callback
 from chimera.core.site import Site
 
 from chimera.util.coord import Coord
@@ -83,19 +82,15 @@ class DomeTest(object):
 
     def setupEvents(self):
 
-        @callback(self.manager)
         def slewBeginClbk(position):
             FiredEvents["slewBegin"] = (time.time(), position)
 
-        @callback(self.manager)
         def slewCompleteClbk(position, status):
             FiredEvents["slewComplete"] = (time.time(), position, status)
 
-        @callback(self.manager)
         def syncBeginClbk():
             FiredEvents["syncBegin"] = (time.time(),)
 
-        @callback(self.manager)
         def syncCompleteClbk():
             FiredEvents["syncComplete"] = (time.time(),)
 

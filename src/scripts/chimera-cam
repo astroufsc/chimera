@@ -21,7 +21,6 @@
 import os
 
 from chimera.core.cli import ChimeraCLI, action, ParameterType
-from chimera.core.callback import callback
 from chimera.core.exceptions import printException, ObjectNotFoundException
 
 from chimera.interfaces.filterwheel import InvalidFilterPositionException
@@ -31,7 +30,6 @@ from chimera.util.ds9 import DS9
 
 import sys
 import time
-#import threading
 import copy
 
 currentFrame = 0
@@ -55,7 +53,7 @@ class ChimeraCam (ChimeraCLI):
 
     def __init__(self):
         ChimeraCLI.__init__(
-            self, "chimera-cam", "Camera controller", 0.1, port=9010)
+            self, "chimera-cam", "Camera controller", 0.1)
 
         self.addHelpGroup("CAM", "Camera and Filter Wheel configuration")
         self.addInstrument(name="camera",
@@ -443,7 +441,6 @@ class ChimeraCam (ChimeraCLI):
             except IOError:
                 self.err("Problems starting DS9. DIsplay disabled.")
 
-        @callback(self.localManager)
         def exposeBegin(request):
             global currentFrame, currentFrameExposeStart
             currentFrameExposeStart = time.time()
@@ -453,20 +450,17 @@ class ChimeraCam (ChimeraCLI):
                      (currentFrame, options.frames, time.strftime("%c")))
             self.out("exposing (%.3fs) ..." % request["exptime"], end="")
 
-        @callback(self.localManager)
         def exposeComplete(request, status):
             global currentFrameExposeStart
             if status == CameraStatus.OK:
                 self.out("OK (took %.3f s)" %
                          (time.time() - currentFrameExposeStart))
 
-        @callback(self.localManager)
         def readoutBegin(request):
             global currentFrameReadoutStart
             currentFrameReadoutStart = time.time()
             self.out("reading out and saving ...", end="")
 
-        @callback(self.localManager)
         def readoutComplete(image, status):
             global currentFrame, currentFrameExposeStart, currentFrameReadoutStart
 
@@ -498,12 +492,10 @@ class ChimeraCam (ChimeraCLI):
             pass
 
         if dome:
-            @callback(self.localManager)
             def syncBegin():
                 self.out("=" * 40)
                 self.out("synchronizing dome slit ...", end="")
 
-            @callback(self.localManager)
             def syncComplete():
                 self.out("OK")
 

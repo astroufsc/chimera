@@ -33,7 +33,6 @@ from chimera.controllers.scheduler.model import (Session, Program, AutoFocus,
                                                  Expose)
 from chimera.controllers.scheduler.states import State
 from chimera.controllers.scheduler.status import SchedulerStatus
-from chimera.core.callback import callback
 from chimera.core.cli import ChimeraCLI, action
 from chimera.core.constants import DEFAULT_PROGRAM_DATABASE
 from chimera.util.coord import Coord
@@ -51,7 +50,7 @@ actionDict = {'autofocus': AutoFocus,
 class ChimeraSched(ChimeraCLI):
     def __init__(self):
         ChimeraCLI.__init__(
-            self, "chimera-sched", "Scheduler controller", 0.1, port=9010)
+            self, "chimera-sched", "Scheduler controller", 0.1)
 
         self.addHelpGroup("SCHEDULER", "Scheduler")
         self.addController(name="scheduler",
@@ -540,14 +539,12 @@ class ChimeraSched(ChimeraCLI):
     @action(help="Monitor scheduler actions", helpGroup="RUN")
     def monitor(self, options):
 
-        @callback(self.localManager)
         def programBeginClbk(program):
             session = Session()
             program = session.merge(program)
             self.out("=" * 40)
             self.out("%s %s" % (blue("[program]"), program.name))
 
-        @callback(self.localManager)
         def programCompleteClbk(program, status, message=None):
             session = Session()
             program = session.merge(program)
@@ -558,13 +555,11 @@ class ChimeraSched(ChimeraCLI):
                 self.out("%s %s %s (%s)" % (
                     blue("[program]"), program.name, red(str(status)), red(str(message))))
 
-        @callback(self.localManager)
         def actionBeginClbk(action, message):
             session = Session()
             action = session.merge(action)
             self.out("%s %s ..." % (blue("[action] "), message), end="")
 
-        @callback(self.localManager)
         def actionCompleteClbk(action, status, message=None):
             session = Session()
             action = session.merge(action)
@@ -574,7 +569,6 @@ class ChimeraSched(ChimeraCLI):
             else:
                 self.out("%s (%s)" % (red(str(status)), red(str(message))))
 
-        @callback(self.localManager)
         def stateChangedClbk(newState, oldState):
             if newState == State.OFF:
                 self.out("=" * 40)
