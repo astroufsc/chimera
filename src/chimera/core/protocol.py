@@ -13,6 +13,14 @@ class Request:
     args: list[Any]
     kwargs: dict[str, Any]
 
+@dataclass
+class Event:
+    id: str
+    version: int
+    location: str
+    args: list[Any]
+    kwargs: dict[str, Any]
+
 
 @dataclass
 class Response:
@@ -33,6 +41,15 @@ class Protocol:
             version=1,
             location=str(location),
             method=method,
+            args=args,
+            kwargs=kwargs,
+        )
+
+    def event(self, location, args, kwargs) -> Request:
+        return Event(
+            id=self.new_id(),
+            version=1,
+            location=str(location),
             args=args,
             kwargs=kwargs,
         )

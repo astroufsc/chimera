@@ -29,7 +29,6 @@ MANAGER_DEFAULT_PORT = 7666
 MANAGER_LOCATION = "/Manager/manager"
 
 # annotations
-EVENT_ATTRIBUTE_NAME = "__event__"
 LOCK_ATTRIBUTE_NAME = "__lock__"
 
 # special propxies
