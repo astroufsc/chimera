@@ -72,3 +72,6 @@ class Server:
             self.transport.send_response(request, self.protocol.ok(result))
         except Exception as e:
             self.transport.send_response(request, self.protocol.error(e))
+
+    def publish(self, topic, *args, **kwargs):
+        self.transport.publish(topic, self.protocol.event(*args, **kwargs))

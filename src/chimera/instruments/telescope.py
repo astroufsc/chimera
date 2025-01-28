@@ -48,6 +48,7 @@ class TelescopeBase(
         ChimeraObject.__init__(self)
 
         self._park_position = None
+        self.site = None
 
     @lock
     def slewToObject(self, name):
@@ -60,9 +61,10 @@ class TelescopeBase(
 
     def _validateRaDec(self, position):
 
-        site = self.getManager().getProxy("/Site/0")
-        lst = site.LST()
-        latitude = site["latitude"]
+        if self.site is None:
+            self.site = self.getManager().getProxy("/Site/0")
+        lst = self.site.LST()
+        latitude = self.site["latitude"]
 
         altAz = Position.raDecToAltAz(position, latitude, lst)
 

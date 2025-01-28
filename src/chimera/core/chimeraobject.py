@@ -21,7 +21,6 @@
 
 from chimera.core.metaobject import MetaObject
 from chimera.core.config import Config
-from chimera.core.eventsproxy import EventsProxy
 from chimera.core.proxy import Proxy
 
 from chimera.core.state import State
@@ -49,9 +48,6 @@ class ChimeraObject(ILifeCycle, metaclass=MetaObject):
 
     def __init__(self):
         ILifeCycle.__init__(self)
-
-        # event handling
-        self.__events_proxy__ = EventsProxy()
 
         # configuration handling
         self.__config_proxy__ = Config(self)

@@ -29,8 +29,8 @@ class Proxy:
     def ping(self):
         return self.client.ping()
 
-    def publish(self, topic: str, data):
-        return self.client.publish(topic, data)
+    def publish_event(self, topic: str, args, kwargs):
+        return self.client.publish_event(topic, args, kwargs)
 
     def __getnewargs__(self):
         return tuple()
