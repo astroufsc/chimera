@@ -5,11 +5,10 @@ from chimera.core.constants import SYSTEM_CONFIG_DEFAULT_FILENAME
 from chimera.core.location import Location, InvalidLocationException
 
 from chimera.core.systemconfig import SystemConfig
-from chimera.core.manager import Manager, ManagerNotFoundException
+from chimera.core.manager import Manager
 from chimera.core.proxy import Proxy
 from chimera.core.path import ChimeraPath
 
-from chimera.controllers.site.main import SiteController
 from chimera.core.exceptions import ObjectNotFoundException, printException
 
 import sys
@@ -491,6 +490,8 @@ class ChimeraCLI(object):
 
         self.died.set()
 
+        self.exit()
+
     def wait(self, abort=True):
         try:
             while not self.died.is_set():
@@ -500,21 +501,10 @@ class ChimeraCLI(object):
                 self.abort()
 
     def _startSystem(self, options):
-
-        try:
-            self.sysconfig = SystemConfig.fromFile(options.config)
-            self._remoteManager = Manager.locate(
-                self.sysconfig.chimera["host"], self.sysconfig.chimera["port"]
-            )
-        except ManagerNotFoundException:
-            # FIXME: better way to start Chimera
-            site = SiteController(wait=False)
-            site.startup()
-
-            self._keepRemoteManager = False
-            self._remoteManager = Manager.locate(
-                self.sysconfig.chimera["host"], self.sysconfig.chimera["port"]
-            )
+        self.sysconfig = SystemConfig.fromFile(options.config)
+        self._remoteManager = Manager.locate(
+            self.sysconfig.chimera["host"], self.sysconfig.chimera["port"]
+        )
 
     def _belongsTo(self, meHost, mePort, location):
 

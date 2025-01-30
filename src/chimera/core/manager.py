@@ -61,7 +61,7 @@ class Manager:
     """
 
     @staticmethod
-    def locate(host, port=MANAGER_DEFAULT_PORT):
+    def locate(host, port=MANAGER_DEFAULT_PORT) -> Proxy:
         p = Proxy(Location(getManagerURI(host, port)))
         if not p.ping():
             raise ManagerNotFoundException(
@@ -110,7 +110,7 @@ class Manager:
         return [x.location for x in ret]
 
     # helpers
-    def getProxy(self, location, lazy=False):
+    def getProxy(self, location):
         """
         Get a proxy for the object pointed by location. The given location
         can contain index instead of names, e.g. '/Object/0' to get objects
@@ -126,14 +126,6 @@ class Manager:
         class, otherwise, host and port are determined by location
         itself.
 
-        lazy parameter determines if Manager will try to locate the
-        selected Manager at host/port and ask them for a valid
-        object/instance. If False, Manager just return an proxy for
-        the selected parameters but can't guarantee that the returned
-        Proxy have an active object bounded.
-
-        For objects managed by this own Manager, lazy is always False.
-
         @param location: Object location or class.
         @type location: Location or class
 
@@ -145,10 +137,6 @@ class Manager:
 
         @param port: Manager's port.
         @type port: int
-
-        @param lazy: Manager's laziness (check for already bound
-                     objects on host/port Manager)
-        @type lazy: bool
 
         @raises NotValidChimeraObjectException: When a object which doesn't
                                                 inherit from ChimeraObject

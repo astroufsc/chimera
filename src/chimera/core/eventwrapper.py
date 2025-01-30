@@ -20,15 +20,24 @@
 # 02110-1301, USA.
 
 
-from chimera.core.constants import EVENT_ATTRIBUTE_NAME
+from chimera.core.methodwrapper import MethodWrapperDispatcher
 
-__all__ = ["event"]
+__all__ = ["EventWrapperDispatcher"]
 
 
-def event(method):
-    """
-    Event annotation.
-    """
+class EventWrapperDispatcher(MethodWrapperDispatcher):
 
-    setattr(method, EVENT_ATTRIBUTE_NAME, True)
-    return method
+    def __init__(self, wrapper, instance, cls):
+        MethodWrapperDispatcher.__init__(self, wrapper, instance, cls)
+
+    def call(self, *args, **kwargs):
+        """Publish event."""
+        self.instance.getProxy().publish_event(
+            f"{self.instance.getLocation()}/{self.func.__name__}", args[1:], kwargs
+        )
+
+    def __iadd__(self, other):
+        raise NotImplementedError("eventwrapper.py IADD")
+
+    def __isub__(self, other):
+        raise NotImplementedError("eventwrapper.py ISUB")

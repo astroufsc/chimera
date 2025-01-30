@@ -22,11 +22,13 @@
 import threading
 
 from chimera.core.methodwrapper import MethodWrapper, MethodWrapperDispatcher
+from chimera.core.eventwrapper import EventWrapperDispatcher
 from chimera.core.lockwrapper import LockWrapper, LockWrapperDispatcher
 
 from chimera.core.rwlock import ReadWriteLock
 
 from chimera.core.constants import (
+    EVENT_ATTRIBUTE_NAME,
     CONFIG_ATTRIBUTE_NAME,
     LOCK_ATTRIBUTE_NAME,
     EVENTS_ATTRIBUTE_NAME,
@@ -66,8 +68,14 @@ class MetaObject(type):
         for name, obj in _dict.items():
 
             if hasattr(obj, "__call__") and not name.startswith("_"):
+
+                # events
+                if hasattr(obj, EVENT_ATTRIBUTE_NAME):
+                    _dict[name] = MethodWrapper(obj, dispatcher=EventWrapperDispatcher)
+                    events.append(name)
+
                 # auto-locked methods
-                if hasattr(obj, LOCK_ATTRIBUTE_NAME):
+                elif hasattr(obj, LOCK_ATTRIBUTE_NAME):
                     _dict[name] = LockWrapper(obj, dispatcher=LockWrapperDispatcher)
                     methods.append(name)
 

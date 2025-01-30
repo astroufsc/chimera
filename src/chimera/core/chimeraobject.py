@@ -34,8 +34,6 @@ from chimera.core.constants import RWLOCK_ATTRIBUTE_NAME
 
 from chimera.interfaces.lifecycle import ILifeCycle
 
-# import chimera.core.log
-
 import logging
 import time
 import threading
@@ -152,7 +150,7 @@ class ChimeraObject(ILifeCycle, metaclass=MetaObject):
     def __main__(self):
 
         self._loop_abort.clear()
-        timeslice = 0.5
+        timeslice = 0.01
 
         runCondition = True
 
@@ -221,7 +219,7 @@ class ChimeraObject(ILifeCycle, metaclass=MetaObject):
         if self.__metadataOverrideMethod__ is not None:
             return (
                 self.getManager()
-                .getProxy(self.__metadataOverrideMethod__, lazy=True)
+                .getProxy(self.__metadataOverrideMethod__)
                 .getMetadata(request)
             )
         return None
@@ -235,5 +233,5 @@ class ChimeraObject(ILifeCycle, metaclass=MetaObject):
         """
         return isinstance(self, interface)
 
-    def getProxy(self):
+    def getProxy(self) -> Proxy:
         return self.getManager().getProxy(self.__location__)
