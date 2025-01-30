@@ -138,7 +138,7 @@ class DomeBase(ChimeraObject, DomeSlew, DomeSlit, DomeFlap, DomeSync):
     # utilitaries
     def getTelescope(self):
         try:
-            p = self.getManager().getProxy(self["telescope"], lazy=True)
+            p = self.getManager().getProxy(self["telescope"])
             if not p.ping():
                 return False
             else:

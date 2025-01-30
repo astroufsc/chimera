@@ -1,5 +1,4 @@
 from chimera.core.client import Client
-from chimera.core.constants import EVENTS_PROXY_NAME
 from chimera.core.location import Location
 
 import logging
@@ -14,8 +13,8 @@ log = logging.getLogger(__name__)
 class Proxy:
 
     def __init__(self, location):
-        self.location = Location(location)
-        self.client = Client(self.location)
+        self.location: Location = Location(location)
+        self.client: Client = Client(self.location)
 
     def __getstate__(self):
         return {"location": self.__dict__["location"]}
@@ -57,7 +56,7 @@ class Proxy:
 
 class ProxyMethod(object):
 
-    def __init__(self, proxy, method):
+    def __init__(self, proxy: Proxy, method: str):
 
         self.proxy = proxy
         self.method = method
@@ -85,36 +84,10 @@ class ProxyMethod(object):
         return self.proxy.client.request(f"{self.method}.end", args, kwargs)
 
     # event handling
-
-    def __do(self, other, action):
-
-        handler = {"topic": self.method, "handler": {"proxy": "", "method": ""}}
-
-        # REMEMBER: Return a copy of this wrapper as we are using +=
-
-        # Can't add itself as a subscriber
-        if other == self:
-            return self
-
-        # passing a proxy method?
-        if not isinstance(other, ProxyMethod):
-            log.debug(f"Invalid parameter: {other}")
-            raise TypeError(f"Invalid parameter: {other}")
-
-        handler["handler"]["proxy"] = other.proxy.location
-        handler["handler"]["method"] = str(other.__name__)
-
-        try:
-            self.proxy.client.request(f"{EVENTS_PROXY_NAME}.{action}", (handler,), {})
-        except Exception:
-            log.exception(
-                f"Cannot {action} to topic '{self.method}' using proxy '{self.proxy}'."
-            )
-
-        return self
-
     def __iadd__(self, other):
-        return self.__do(other, "subscribe")
+        topic = f"{self.proxy.location}/{self.method}"
+        self.proxy.client.subscribe_event(topic, other)
 
     def __isub__(self, other):
-        return self.__do(other, "unsubscribe")
+        topic = f"{self.proxy.location}/{self.method}"
+        self.proxy.client.unsubscribe_event(topic, other)

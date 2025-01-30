@@ -1,6 +1,7 @@
 from chimera.core.location import Location
 from chimera.core.protocol import Protocol
 from chimera.core.serializer_pickle import PickleSerializer
+from chimera.core.transport import create_transport
 from chimera.core.transport_redis import RedisTransport
 
 
@@ -14,7 +15,9 @@ class Client:
     ):
         self.location = location
         self.protocol = protocol()
-        self.transport = transport(location.host, location.port, serializer)
+        self.transport = create_transport(
+            location.host, location.port, transport, serializer
+        )
         self.transport.connect()
 
     def ping(self):
@@ -40,3 +43,13 @@ class Client:
             raise Exception(response.error)
 
         return response.result
+
+    def publish_event(self, topic, args, kwargs):
+        data = self.protocol.event(topic, args, kwargs)
+        return self.transport.publish(topic, data)
+
+    def subscribe_event(self, topic, handler):
+        return self.transport.subscribe(topic, handler)
+
+    def unsubscribe_event(self, topic, handler):
+        return self.transport.unsubscribe(topic, handler)

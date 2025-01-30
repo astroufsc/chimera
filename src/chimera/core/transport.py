@@ -1,3 +1,4 @@
+import functools
 from typing import Type
 
 from chimera.core.protocol import Request, Response
@@ -25,3 +26,13 @@ class Transport:
     def send_response(self, request: Request, response: Response) -> None: ...
 
     def recv_response(self, request: Request) -> Response: ...
+
+
+@functools.cache
+def create_transport(
+    host: str, port: int, transport_cls: Type[Transport], serializer: Type[Serializer]
+) -> Transport:
+    """
+    Create a transport instance. Using functools.cache to avoid creating multiple instances.
+    """
+    return transport_cls(host, port, serializer)

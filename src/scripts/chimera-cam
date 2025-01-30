@@ -590,16 +590,6 @@ class ChimeraCam (ChimeraCLI):
             self.out("%s" % time.strftime("%c"))
             self.out(40 * "=")
 
-        # remove callbacks
-        camera.exposeBegin -= exposeBegin
-        camera.exposeComplete -= exposeComplete
-        camera.readoutBegin -= readoutBegin
-        camera.readoutComplete -= readoutComplete
-        if dome:
-            dome.syncBegin -= syncBegin
-            dome.syncComplete -= syncComplete
-
-
 
 def main():
     cli = ChimeraCam()

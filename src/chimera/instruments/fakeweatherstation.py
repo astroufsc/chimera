@@ -154,7 +154,7 @@ class FakeWeatherStation(
         :return:
         """
 
-        pressure_reference = 151987.5 # Pa
+        pressure_reference = 151987.5  # Pa
 
         if unit_out not in self.__accepted_pressures_unit__:
             raise OptionConversionException(f"Invalid pressure unit {unit_out}.")

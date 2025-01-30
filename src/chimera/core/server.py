@@ -5,6 +5,7 @@ from concurrent.futures import ThreadPoolExecutor
 from chimera.core.resources import ResourcesManager
 from chimera.core.serializer_pickle import PickleSerializer
 from chimera.core.protocol import Protocol
+from chimera.core.transport import create_transport
 from chimera.core.transport_redis import RedisTransport
 
 
@@ -23,7 +24,7 @@ class Server:
         pool=ThreadPoolExecutor,
     ):
         self.resources = resources
-        self.transport = transport(host, port, serializer)
+        self.transport = create_transport(host, port, transport, serializer)
         self.pool = pool()
         self.protocol = protocol()
 
