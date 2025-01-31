@@ -68,6 +68,7 @@ class FakeTelescope(TelescopeBase, TelescopeCover, TelescopePier):
         self._az = altAz.az
 
     def _getSite(self):
+        # FIXME: create the proxy directly and cache it
         return self.getManager().getProxy("/Site/0")
 
     def _setRaDecFromAltAz(self):
