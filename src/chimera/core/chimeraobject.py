@@ -234,4 +234,4 @@ class ChimeraObject(ILifeCycle, metaclass=MetaObject):
         return isinstance(self, interface)
 
     def getProxy(self) -> Proxy:
-        return self.getManager().getProxy(self.__location__)
+        return Proxy(self.__location__)
