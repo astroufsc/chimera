@@ -22,7 +22,6 @@
 
 from types import NoneType
 
-# from chimera.util.enum import EnumValue
 from chimera.core.exceptions import OptionConversionException
 
 from chimera.util.coord import Coord
