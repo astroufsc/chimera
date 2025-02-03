@@ -31,13 +31,16 @@ class EventWrapperDispatcher(MethodWrapperDispatcher):
         MethodWrapperDispatcher.__init__(self, wrapper, instance, cls)
 
     def call(self, *args, **kwargs):
-        """Publish event."""
         self.instance.getProxy().publish_event(
             f"{self.instance.getLocation()}/{self.func.__name__}", args[1:], kwargs
         )
 
     def __iadd__(self, other):
-        raise NotImplementedError("eventwrapper.py IADD")
+        self.instance.getProxy().subscribe_event(
+            f"{self.instance.getLocation()}/{self.func.__name__}", other
+        )
 
     def __isub__(self, other):
-        raise NotImplementedError("eventwrapper.py ISUB")
+        self.instance.getProxy().unsubscribe_event(
+            f"{self.instance.getLocation()}/{self.func.__name__}", other
+        )

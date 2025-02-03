@@ -31,6 +31,12 @@ class Proxy:
     def publish_event(self, topic: str, args, kwargs):
         return self.client.publish_event(topic, args, kwargs)
 
+    def subscribe_event(self, topic, handler):
+        self.client.subscribe_event(topic, handler)
+
+    def unsubscribe_event(self, topic, handler):
+        self.client.unsubscribe_event(topic, handler)
+
     def __getnewargs__(self):
         return tuple()
 
