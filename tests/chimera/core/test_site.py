@@ -19,7 +19,6 @@ import pytest
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-from chimera.core.manager import Manager
 from chimera.core.site import Site
 
 
@@ -29,12 +28,8 @@ import time
 
 
 class TestSite(object):
-
-    def setup_method(self):
-
-        self.manager = Manager(port=8000)
-
-        self.manager.addClass(
+    def test_times(self, manager):
+        manager.addClass(
             Site,
             "lna",
             {
@@ -45,12 +40,7 @@ class TestSite(object):
             },
         )
 
-    def teardown_method(self):
-        self.manager.shutdown()
-
-    def test_times(self):
-
-        site = self.manager.getProxy("/Site/0")
+        site = manager.getProxy("/Site/0")
 
         try:
             print()
@@ -64,8 +54,19 @@ class TestSite(object):
             print(e)
 
     @pytest.mark.skip
-    def test_sidereal_clock(self):
-        site = self.manager.getProxy("/Site/0")
+    def test_sidereal_clock(self, manager):
+        manager.addClass(
+            Site,
+            "lna",
+            {
+                "name": "UFSC",
+                "latitude": "-27 36 13 ",
+                "longitude": "-48 31 20",
+                "altitude": "20",
+            },
+        )
+
+        site = manager.getProxy("/Site/0")
 
         times = []
         real_times = []
@@ -81,9 +82,19 @@ class TestSite(object):
         print(sum(times) / len(times))
         print(sum(real_times) / len(real_times))
 
-    def test_astros(self):
+    def test_astros(self, manager):
+        manager.addClass(
+            Site,
+            "lna",
+            {
+                "name": "UFSC",
+                "latitude": "-27 36 13 ",
+                "longitude": "-48 31 20",
+                "altitude": "20",
+            },
+        )
 
-        site = self.manager.getProxy(Site)
+        site = manager.getProxy(Site)
 
         try:
             print()

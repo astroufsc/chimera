@@ -8,13 +8,12 @@ from math import sqrt
 from chimera.core.chimeraobject import ChimeraObject
 from chimera.core.lock import lock
 
-from chimera.core.manager import Manager
 from chimera.core.proxy import Proxy
 
 
 class TestLock(object):
 
-    def test_autolock(self):
+    def test_autolock(self, manager):
 
         class Minimo(ChimeraObject):
 
@@ -45,7 +44,7 @@ class TestLock(object):
 
         def doTest(obj):
             """Rationale: We use 5 threads for each method (locked and
-            unlocked). As unlocked methods isn't serialized, they runs
+            unlocked). As unlocked methods isn't serialized, they run
             'at the same instant', while locked methods will be
             serialized and will run only when the previous one
             finishes.  Each method simulate a load (sleep of 1s) and
@@ -122,13 +121,10 @@ class TestLock(object):
         doTest(m)
 
         # proxy
-        manager = Manager()
         manager.addClass(Minimo, "m", start=True)
 
         p = manager.getProxy("/Minimo/m")
         doTest(p)
-
-        manager.shutdown()
 
     def test_lock_config(self):
 

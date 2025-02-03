@@ -1,6 +1,5 @@
 import pytest
 
-from chimera.core.manager import Manager
 from chimera.core.chimeraobject import ChimeraObject
 from chimera.core.proxy import Proxy
 
@@ -29,110 +28,101 @@ class NotValid(object):
 
 class TestManager(object):
 
-    def setup_method(self):
-        self.manager = Manager()
-
-    def teardown_method(self):
-        self.manager.shutdown()
-        del self.manager
-
-    def test_add_start(self):
+    def test_add_start(self, manager):
 
         # add by class
-        assert self.manager.addClass(Simple, "simple", start=True)
+        assert manager.addClass(Simple, "simple", start=True)
 
         # already started
         with pytest.raises(InvalidLocationException):
-            self.manager.addClass(Simple, "simple")
+            manager.addClass(Simple, "simple")
 
         with pytest.raises(NotValidChimeraObjectException):
-            self.manager.addClass(NotValid, "nonono")
+            manager.addClass(NotValid, "nonono")
         with pytest.raises(InvalidLocationException):
-            self.manager.addClass(Simple, "")
+            manager.addClass(Simple, "")
 
         # by location
-        assert self.manager.addLocation(
-            "/ManagerHelper/h", path=[os.path.dirname(__file__)]
-        )
+        assert manager.addLocation("/ManagerHelper/h", path=[os.path.dirname(__file__)])
         with pytest.raises(ClassLoaderException):
-            self.manager.addLocation("/What/h")
+            manager.addLocation("/What/h")
         with pytest.raises(InvalidLocationException):
-            self.manager.addLocation("foo")
+            manager.addLocation("foo")
 
         # start with error
-        # assert self.manager.addLocation('/ManagerHelperWithError/h', start=False)
+        # assert manager.addLocation('/ManagerHelperWithError/h', start=False)
         # with pytest.raises(ChimeraObjectException):
-        # self.manager.start, '/ManagerHelperWithError/h')
+        # manager.start, '/ManagerHelperWithError/h')
 
         # start who?
         with pytest.raises(InvalidLocationException):
-            self.manager.start("/Who/am/I")
+            manager.start("/Who/am/I")
 
         # exceptional cases
         # __init__
         with pytest.raises(ChimeraObjectException):
-            self.manager.addLocation(
+            manager.addLocation(
                 "/ManagerHelperWithInitException/h", [os.path.dirname(__file__)]
             )
 
         # __start__
         with pytest.raises(ChimeraObjectException):
-            self.manager.addLocation(
+            manager.addLocation(
                 "/ManagerHelperWithStartException/h", [os.path.dirname(__file__)]
             )
 
         # __main__
         # with pytest.raises(ChimeraObjectException):
-        # self.manager.addLocation("/ManagerHelperWithMainException/h")
+        # manager.addLocation("/ManagerHelperWithMainException/h")
 
-    def test_remove_stop(self):
+    def test_remove_stop(self, manager):
 
-        assert self.manager.addClass(Simple, "simple")
+        assert manager.addClass(Simple, "simple")
 
         # who?
         with pytest.raises(InvalidLocationException):
-            self.manager.remove("Simple/what")
+            manager.remove("Simple/what")
         with pytest.raises(InvalidLocationException):
-            self.manager.remove("foo")
+            manager.remove("foo")
 
         # stop who?
         with pytest.raises(InvalidLocationException):
-            self.manager.stop("foo")
+            manager.stop("foo")
 
         # ok
-        assert self.manager.remove("/Simple/simple") is True
+        assert manager.remove("/Simple/simple") is True
 
         # __stop__ error
-        assert self.manager.addLocation(
+        assert manager.addLocation(
             "/ManagerHelperWithStopException/h", path=[os.path.dirname(__file__)]
         )
         with pytest.raises(ChimeraObjectException):
-            self.manager.stop("/ManagerHelperWithStopException/h")
+            manager.stop("/ManagerHelperWithStopException/h")
 
         # another path to stop
         with pytest.raises(ChimeraObjectException):
-            self.manager.remove("/ManagerHelperWithStopException/h")
+            manager.remove("/ManagerHelperWithStopException/h")
 
         # by index
-        assert self.manager.addClass(Simple, "simple")
-        assert self.manager.remove("/Simple/0") is True
+        assert manager.addClass(Simple, "simple")
+        assert manager.remove("/Simple/0") is True
 
-    def test_proxy(self):
+    def test_proxy(self, manager):
 
-        assert self.manager.addClass(Simple, "simple")
+        assert manager.addClass(Simple, "simple")
 
         # who?
         with pytest.raises(InvalidLocationException):
-            self.manager.getProxy("wrong")
+            manager.getProxy("wrong")
         with pytest.raises(InvalidLocationException):
-            self.manager.getProxy("Simple/simple")
+            manager.getProxy("Simple/simple")
 
         # ok
-        assert self.manager.getProxy("/Simple/simple")
-        assert self.manager.getProxy("/Simple/0")
+        assert manager.getProxy("/Simple/simple")
+        assert manager.getProxy("/Simple/0")
 
         # calling
-        p = self.manager.getProxy("/Simple/0")
+        p = manager.getProxy("/Simple/0")
         assert isinstance(p, Proxy)
 
         # # assert p.answer() == 42
@@ -141,12 +131,12 @@ class TestManager(object):
         # with pytest.raises(AttributeError):
         #     p.wrong()
 
-    def test_manager(self):
+    def test_manager(self, manager):
 
-        assert self.manager.addClass(Simple, "simple")
+        assert manager.addClass(Simple, "simple")
 
-        p = self.manager.getProxy("/Simple/simple")
+        p = manager.getProxy("/Simple/simple")
         assert p
 
         # m = p.getManager()
-        # assert m.GUID() == self.manager.GUID()
+        # assert m.GUID() == manager.GUID()

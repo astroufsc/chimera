@@ -1,5 +1,4 @@
 from chimera.core.chimeraobject import ChimeraObject
-from chimera.core.manager import Manager
 from chimera.core.exceptions import ChimeraException
 
 import logging
@@ -9,7 +8,7 @@ log = logging.getLogger("chimera.test_log")
 
 class TestLog(object):
 
-    def test_log(self):
+    def test_log(self, manager):
 
         class Simple(ChimeraObject):
             def __init__(self):
@@ -22,7 +21,6 @@ class TestLog(object):
                     self.log.exception("from except: wow, exception caught.")
                     raise ChimeraException("I'm a new Exception, sorry again")
 
-        manager = Manager()
         manager.addClass(Simple, "simple")
 
         simple = manager.getProxy("/Simple/simple")
@@ -32,5 +30,3 @@ class TestLog(object):
         except ChimeraException as e:
             assert e.cause is not None
             log.exception("wow, something wrong")
-
-        manager.shutdown()
