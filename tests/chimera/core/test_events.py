@@ -57,13 +57,6 @@ class Subscriber(ChimeraObject):
         return self.results
 
 
-@pytest.fixture
-def manager():
-    manager = Manager()
-    yield manager
-    manager.shutdown()
-
-
 class TestEvents:
 
     def test_publish(self, manager):

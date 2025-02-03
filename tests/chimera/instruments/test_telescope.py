@@ -26,9 +26,7 @@ import logging
 import pytest
 
 from chimera.core.manager import Manager
-from chimera.core.callback import callback
 from chimera.core.site import Site
-from chimera.core.threads import ThreadPool
 
 from chimera.util.coord import Coord
 from chimera.util.position import Position

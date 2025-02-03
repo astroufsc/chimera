@@ -5,20 +5,10 @@ import sys
 
 from math import sqrt
 
-import pytest
-
 from chimera.core.chimeraobject import ChimeraObject
 from chimera.core.lock import lock
 
-from chimera.core.manager import Manager
 from chimera.core.proxy import Proxy
-
-
-@pytest.fixture
-def manager():
-    manager = Manager()
-    yield manager
-    manager.shutdown()
 
 
 class TestLock(object):

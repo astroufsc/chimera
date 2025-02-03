@@ -19,14 +19,13 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 
+from concurrent.futures import ThreadPoolExecutor
 import time
 import logging
 import sys
 import threading
 
 from chimera.core.manager import Manager
-from chimera.core.callback import callback
-from chimera.core.threads import ThreadPool
 from chimera.core.exceptions import ChimeraValueError
 from chimera.core.proxy import Proxy
 
@@ -92,19 +91,15 @@ class CameraTest(object):
 
     def setupEvents(self):
 
-        @callback(self.manager)
         def exposeBeginClbk(request):
             FiredEvents["exposeBegin"] = (time.time(), request)
 
-        @callback(self.manager)
         def exposeCompleteClbk(request, status):
             FiredEvents["exposeComplete"] = (time.time(), request, status)
 
-        @callback(self.manager)
         def readoutBeginClbk(request):
             FiredEvents["readoutBegin"] = (time.time(), request)
 
-        @callback(self.manager)
         def readoutCompleteClbk(proxy, status):
             FiredEvents["readoutComplete"] = (time.time(), proxy, status)
 
@@ -168,11 +163,9 @@ class CameraTest(object):
         begin_times = []
         end_times = []
 
-        @callback(self.manager)
         def exposeBeginClbk(request):
             begin_times.append(time.time())
 
-        @callback(self.manager)
         def readoutCompleteClbk(request, status):
             end_times.append(time.time())
 
@@ -184,9 +177,9 @@ class CameraTest(object):
             cam = self.manager.getProxy(self.CAMERA)
             cam.expose(exptime=2, filename="autogen-expose-lock.fits")
 
-        pool = ThreadPool()
-        pool.queueTask(doExpose)
-        pool.queueTask(doExpose)
+        pool = ThreadPoolExecutor()
+        pool.submit(doExpose)
+        pool.submit(doExpose)
 
         # wait doExpose to be scheduled
         time.sleep(1)
@@ -200,7 +193,7 @@ class CameraTest(object):
         assert len(end_times) == 2
         assert end_times[1] > begin_times[0]
 
-        pool.joinAll()
+        pool.
 
         self.assertEvents(CameraStatus.OK, CameraStatus.OK)
 
@@ -219,7 +212,7 @@ class CameraTest(object):
         # abort exposure while exposing
         #
 
-        pool = ThreadPool()
+        pool = ThreadPoolExecutor()
         pool.queueTask(doExpose)
 
         # thread scheduling
@@ -245,7 +238,6 @@ class CameraTest(object):
             cam = self.manager.getProxy(self.CAMERA)
             cam.expose(exptime=5, filename="autogen-readout-abort.fits")
 
-        @callback(self.manager)
         def exposeCompleteCallback(request, status):
             exposeComplete.set()
 
@@ -255,7 +247,7 @@ class CameraTest(object):
         # abort exposure while reading out
         #
 
-        pool = ThreadPool()
+        pool = ThreadPoolExecutor()
         pool.queueTask(doExpose)
 
         # thread scheduling
