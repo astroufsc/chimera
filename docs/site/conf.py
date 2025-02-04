@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Chimera documentation build configuration file, created by
 # sphinx-quickstart on Sat May 10 03:18:12 2008.
@@ -155,7 +154,7 @@ htmlhelp_basename = "Chimeradoc"
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, document class [howto/manual]).
 # latex_documents = [
-#  ('index', 'Chimera.tex', 'Chimera Documentation', 'P. Henrique Silva', 'manual'),
+#  ('index', 'Chimera.tex', 'Chimera Documentation', 'Paulo Henrique Silva', 'manual'),
 # ]
 
 # The name of an image file (relative to this directory) to place at the top of
