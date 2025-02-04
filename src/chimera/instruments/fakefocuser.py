@@ -19,6 +19,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 # 02110-1301, USA.
 
+import random
 from chimera.core.lock import lock
 
 from chimera.interfaces.focuser import (
@@ -38,7 +39,7 @@ class FakeFocuser(FocuserBase):
         self._position = 0
 
         self._supports = {
-            FocuserFeature.TEMPERATURE_COMPENSATION: False,
+            FocuserFeature.TEMPERATURE_COMPENSATION: True,
             FocuserFeature.POSITION_FEEDBACK: True,
             FocuserFeature.ENCODER: True,
             FocuserFeature.CONTROLLABLE_X: False,
@@ -95,6 +96,9 @@ class FakeFocuser(FocuserBase):
     def getRange(self, axis=FocuserAxis.Z):
         self._checkAxis(axis)
         return (0, 7000)
+
+    def getTemperature(self):
+        return random.randrange(10, 30)
 
     def _setPosition(self, n):
         self.log.info(f"Changing focuser to {n}")

@@ -234,7 +234,7 @@ class ChimeraFocus (ChimeraCLI):
 
         start, end = options.autofocus_range
 
-        if options.autofocus_debug is "":
+        if options.autofocus_debug == "":
             debug = False
         else:
             debug = os.path.realpath(options.autofocus_debug)
