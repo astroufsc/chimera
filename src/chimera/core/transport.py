@@ -1,7 +1,7 @@
 import functools
 from typing import Type
 
-from chimera.core.protocol import Request, Response
+from chimera.core.protocol import Event, Request, Response
 from chimera.core.serializer import Serializer
 
 
@@ -26,6 +26,12 @@ class Transport:
     def send_response(self, request: Request, response: Response) -> None: ...
 
     def recv_response(self, request: Request) -> Response: ...
+
+    def publish(self, topic: str, data: Event) -> int: ...
+
+    def subscribe(self, topic: str, callback) -> None: ...
+
+    def unsubscribe(self, channel: str, callback) -> None: ...
 
 
 @functools.cache

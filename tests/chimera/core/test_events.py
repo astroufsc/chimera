@@ -17,11 +17,11 @@ class Publisher(ChimeraObject):
 
     def __start__(self):
         # ATTENTION: getProxy works only after __init__
-        self.fooDone += self.getProxy().fooDoneClbk
+        self.fooDone += self.fooDoneClbk
         return True
 
     def __stop__(self):
-        self.fooDone -= self.getProxy().fooDoneClbk
+        self.fooDone -= self.fooDoneClbk
 
     def foo(self):
         self.fooDone(time.time())
@@ -55,14 +55,6 @@ class Subscriber(ChimeraObject):
 
     def getResults(self):
         return self.results
-
-
-@pytest.fixture
-def manager():
-    manager = Manager()
-    yield manager
-    manager.shutdown()
-    del manager
 
 
 class TestEvents:
