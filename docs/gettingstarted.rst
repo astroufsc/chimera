@@ -73,6 +73,7 @@ These steps were tested with `Anaconda`_ version 2.3.0.
 On the first run, chimera creates a sample configuration file with fake instruments on ``%HOMEPATH%\chimera\chimera.config``
 
 * **Optional:** For a convenient access create a VBS script named ``chimera.vbs`` on Desktop containing:
+
 ::
 
     CreateObject("Wscript.Shell").Run("C:\Anaconda\python.exe C:\Anaconda\Scripts\chimera -vvvvv")
