@@ -29,11 +29,15 @@ build-backend = "hatchling.build"
 [tool.uv]
 dev-dependencies = [
     "black>=25.1.0",
-    "furo>=2024.8.6",
     "pre-commit>=4.1.0",
     "pytest>=8.3.3",
     "pytest-cov>=6.0.0",
     "ruff>=0.9.4",
+]
+
+[dependency-groups]
+docs = [
+    "furo>=2024.8.6",
     "sphinx>=8.1.3",
 ]
 
