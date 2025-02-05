@@ -1,8 +1,3 @@
-.. Chimera documentation master file, created by
-   sphinx-quickstart on Fri Sep  5 13:54:04 2014.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
-
 ***********************************
 Welcome to Chimera's documentation!
 ***********************************
@@ -21,8 +16,8 @@ Chimera: Observatory Automation System
 ======================================
 
 **Chimera** is a package for control of astronomical observatories, aiming at the
-creation of remote and even autonomous ("robotic") observatories in a simple manner. 
-Using **Chimera** you can easily control telescopes, CCD cameras, focusers and domes 
+creation of remote and even autonomous ("robotic") observatories in a simple manner.
+Using **Chimera** you can easily control telescopes, CCD cameras, focusers and domes
 in a very integrated way.
 
 Chimera is:

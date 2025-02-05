@@ -17,7 +17,7 @@ All these components are configured in one file, located under a directory *.chi
 
 The file syntax is very simple: it uses YAML_, a very common format. Here is the default one:
 
-.. literalinclude:: ../../src/chimera/core/chimera.sample.config
+.. literalinclude:: ../src/chimera/core/chimera.sample.config
 
 .. _YAML: https://yaml.org/
 
