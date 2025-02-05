@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
-# SPDX-FileCopyrightText: Copyright 2006-2024 Paulo Henrique Silva <ph.silva@gmail.com>
+# SPDX-FileCopyrightText: 2006-present Paulo Henrique Silva <ph.silva@gmail.com>
 
 import re
 import sys
