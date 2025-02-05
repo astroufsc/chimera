@@ -186,7 +186,11 @@ class ChimeraFocus (ChimeraCLI):
                  " This option is exclusive, you cannot move manually at the same time.")
     def auto(self, options):
 
-        if not self.autofocus:
+        try:
+            if not self.autofocus:
+                self.exit(
+                    "No Autofocus controller available. Try --autofocus=..., or --help.")
+        except AttributeError:
             self.exit(
                 "No Autofocus controller available. Try --autofocus=..., or --help.")
 
