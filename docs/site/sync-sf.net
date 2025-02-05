@@ -1,6 +1,0 @@
-#! /bin/bash
-
-SITE_DIR=`dirname $0`
-
-make -C $SITE_DIR html
-rsync -av $SITE_DIR/build/html/ wschoenell,chimera@web.sourceforge.net:/home/groups/c/ch/chimera/htdocs

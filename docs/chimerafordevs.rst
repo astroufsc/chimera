@@ -15,12 +15,12 @@ must have to be started and stopped. :class:`ChimeraObject` provides a
 basic implementation of a control loop, a common structure in control
 programs.
 
-By itself, a Chimera object is just a static bunch of code that 
+By itself, a Chimera object is just a static bunch of code that
 inherits from a specific class. To be useful, every
 :class:`ChimeraObject` must have a :class:`Manager` to manage its life
 cycle.
 
-.. note:: 
+.. note::
  We call it instrument, controller or driver purely from a semantic
  point of view, as they are equal from a code point of view, there is
  no different base class for different kinds of objects. Every
@@ -36,7 +36,7 @@ think of :class:`Manager` as a pool of objects available to be used.
 As we need RPC support for every object and want to make the system easy
 to use and write, we use a Proxy class that handles all the networking
 for us. This way, you don't have to write networking code on your
-objects, just the real action, Proxy and friends add networking for 
+objects, just the real action, Proxy and friends add networking for
 you.
 
 Before describing :class:`Manager`'s responsibilities in more detail,
@@ -51,11 +51,18 @@ A Chimera object, as already said, is a normal Python class which extends from
 a specific base class, :class:`ChimeraObject`, the simplest
 :class:`ChimeraObject` is the following.
 
-.. literalinclude:: simplest.py
-   :language: python
+.. code:: python
+
+   from chimera.core.manager import Manager
+
+   manager = Manager()
+
+   example = manager.getProxy("localhost:8000/Example1/example")
+   example.doSomething("client argument")
+
 
 this object has no methods, configuration or events, so it's the simplest
-and dumbest possible object.  
+and dumbest possible object.
 
 As Python doesn't call base constructors per se, you need to call the
 base constructor from Simplest constructor (:meth:`__init__` method).
@@ -79,8 +86,26 @@ param=value pairs.
 Let's write down a class that uses this and see how to actually use
 this from Chimera.
 
-.. literalinclude:: example1.py
-   :language: python
+.. code:: python
+
+   from chimera.core.chimeraobject import ChimeraObject
+
+
+   class Example1(ChimeraObject):
+
+      __config__ = {"param1": "a string parameter"}
+
+      def __init__(self):
+         ChimeraObject.__init__(self)
+
+      def __start__(self):
+         self.doSomething("test argument")
+
+      def doSomething(self, arg):
+         self.log.warning("Hi, I'm doing something.")
+         self.log.warning(f"My arg={arg}")
+         self.log.warning("My param1={}".format(self["param1"]))
+
 
 This example requires some explanations, but before, let's run it
 using :command:`chimera` script. :command:`chimera` script is a script
@@ -153,8 +178,14 @@ When you use :command:`chimera` script, a :class:`Manager` is created
 for you, but you can do it by yourself to learn how things work in
 Chimera. The following example is based on :file:`server.py`.
 
-.. literalinclude:: server.py
-   :language: python
+.. code:: python
+
+   from chimera.core.manager import Manager
+
+   manager = Manager(host="localhost", port=8000)
+   manager.addLocation("/Example1/example", start=True)
+
+   manager.wait()
 
 Suppose you save it to :file:`server.py` in the same directory where
 you put :file:`example1.py` (this is a not a restriction, just to make
@@ -171,8 +202,14 @@ But, as said in the first paragraph of this document Chimera is
 client/server, :file:`server.py` shows how to create a server, let's
 see how to use it in a client.
 
-.. literalinclude:: client.py
-   :language: python
+.. code:: python
+
+   from chimera.core.manager import Manager
+
+   manager = Manager()
+
+   example = manager.getProxy("localhost:8000/Example1/example")
+   example.doSomething("client argument")
 
 Save it to :file:`client.py`. First run, :file:`server.py` as
 explained above and then run :file:`client.py`.
