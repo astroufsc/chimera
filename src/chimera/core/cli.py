@@ -569,17 +569,18 @@ class ChimeraCLI(object):
 
             inst_proxy = None
 
-            try:
-                inst_proxy = Proxy(inst.location)
-            except ObjectNotFoundException:
-                if inst.required:
-                    self.exit(
-                        f"Couldn't find {inst.name.capitalize()}. (see --help for more information)"
-                    )
+            if inst.location:
+                try:
+                    inst_proxy = Proxy(inst.location)
+                except ObjectNotFoundException:
+                    if inst.required:
+                        self.exit(
+                            f"Couldn't find {inst.name.capitalize()}. (see --help for more information)"
+                        )
 
-            # save values in CLI object (which users are supposed to inherits
-            # from).
-            setattr(self, inst.name, inst_proxy)
+                # save values in CLI object (which users are supposed to inherits
+                # from).
+                setattr(self, inst.name, inst_proxy)
 
     def __start__(self, options, args):
         pass
