@@ -88,7 +88,7 @@ class ChimeraFocus (ChimeraCLI):
                "Use start-end, as in 1000-6000 to run from 1000 to 6000.",
                metavar="START-END")
     def autofocus_range(self, value):
-        r = re.compile("(?P<start>\d+)-(?P<end>\d+)")
+        r = re.compile(r"(?P<start>\d+)-(?P<end>\d+)")
         m = r.match(value)
         if not m:
             raise ValueError("Invalid start-end range")
