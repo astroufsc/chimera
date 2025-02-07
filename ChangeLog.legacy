@@ -1,0 +1,1664 @@
+2008-08-01  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* setup.py: Add suds (required by Simbad resolver)
+	* src/chimera/util/simbad.py: Use Simbad to get coordinates of
+	object names.
+
+	* src/scripts/chimera-focus:
+	* src/scripts/chimera-cam:
+	* src/scripts/chimera-dome:
+	* src/scripts/chimera-tel: Finish port to new CLI infrascructure.
+
+	* src/chimera/instruments/camera.py:
+	* src/chimera/drivers/sbig/sbig.py:
+	* src/chimera/interfaces/camera.py: fix convention of getSetPoint
+	method.
+
+	* src/chimera/core/cli.py: Lot of small fixes, nothing big.
+
+	* src/chimera/core/location.py: Classloader now treat classes in
+	case insensitive way, so does Location now.
+
+	* src/chimera/core/tests/chimera-dome.py:
+	* src/chimera/core/tests/chimera-focus.py: Moved to final location
+	on scripts.
+
+	* src/chimera/core/eventsproxy.py: Fix handling of exceptions on
+	event handlers.
+
+	* src/chimera/instruments/telescope.py: implements slewToObject.
+
+	* src/chimera/util/position.py: better error messages.
+
+	* src/chimera/drivers/faketelescope.py:
+	* src/chimera/drivers/fakecamera.py: Small fixes... those fakes
+	need to be more realistic to enable more automated tests.
+
+2008-07-28  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* src/chimera/core/cli.py: Fix multiple actions execution order:
+	Respect command line order, always! There are no static
+	priorities, just user will.
+
+2008-07-28  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* src/chimera/core/cli.py:
+	Add support for multiple actions groups. For each action group,
+	only one action can be specified. This enables multiple actions
+	handlind as specified in issue 9. But, this is not final yet as
+	the order in which the actions run is not the same as user
+	specified. Working on this now, commit just to create a runnable
+	snapshot.
+
+	Fix bug on _validateParameter: now validating only specified
+	options (was trying to validate all independent of what user
+	specified).
+
+	* src/chimera/core/tests/chimera-dome.py:
+	* src/chimera/core/tests/chimera-focus.py: Update to new helpGroup
+	option.
+
+2008-07-27  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	*** chimera-new-scripts branch ***
+
+	* src/chimera/core/cli.py:
+	Add Local Mnager host/port configuration.
+	Add include path options.
+
+	* src/chimera/core/tests/chimera-dome.py: Updated groups for
+	better help message.
+
+2008-07-27  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	*** chimera-new-scripts branch ***
+
+	* src/chimera/core/cli.py: Much better implementation of
+	_getObjects method. Working with most configurations of
+	local/remote instrument/driver. Needs test cases for promotion to
+	stable branch.
+
+	* .project:
+	* .pydevproject: updated to branch project.
+
+	* src/chimera/core/chimera.config.sample
+	* src/chimera/core/chimera.sample.config: Rename.
+	* src/chimera/core/constants.py: Updated for above rename.
+
+	* src/chimera/core/classloader.py: Accepts string paths.
+	* src/chimera/core/manager.py: Add exception handling on daemon
+	start.
+	* src/chimera/core/systemconfig.py: Hack! need better
+	implementation of multiple yaml files handling (location creation
+	versus host/port config)
+	* src/chimera/instruments/dome.py: less verbose dome.
+
+
+2008-07-17  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* src/chimera/controllers/autofocus.py: Fix bug returning a scalar
+	 when list was required.
+
+	* src/chimera/controllers/test/test_autofocus.py: Ad plot and log by default.
+
+	* src/chimera/drivers/meade.py: Fix bug on strfcoord usage.
+
+	* src/scripts/chimera-tel.py: Fix another ImportError (ChimeraException).
+
+2008-07-10  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* src/chimera/core/path.py: New way to get Chimera paths. Use
+	pkg_resources to get correct installation place or just guess.
+
+	* src/scripts/chimera-focus:
+	* src/scripts/chimera-cam:
+	* src/scripts/chimera-dome:
+	* src/scripts/chimera-tel:
+	* src/chimera/controllers/site/main.py: All modified to use ChimeraPath.
+
+	* setup.cfg:
+	* setup.py: No more zip_safe. Eggs crash classloader. Not
+	installing as egg anymore.
+
+2008-06-10  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* src/chimera/interfaces/cameradriver.py: Fix typos.
+
+	* src/chimera/controllers/site/main.py: Broad exception handling.
+
+	* src/chimera/core/manager.py: More exception handling.
+
+	* src/chimera/instruments/camera.py: There was a BIG bug here. In
+	the finally statement, we were returning a tuple, and according to
+	Python's manual, in a finally, if we break or return, we loose the
+	exception!!! The result was that any exception occuring in
+	drv.expose was silently ingored!!!
+
+
+2008-06-07  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* src/chimera/drivers/fakecamera.py: Fixes on random number
+	geeration on flat creation routine. We were using N.fromfunction
+	without actually using the indices, returning a scalar value and
+	to an array.
+
+	Fix issue #7.
+
+	Patch from Isaac Richter.
+
+2008-06-06  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* src/scripts/chimera-cam:
+	Add "--force-display" option to force display even if texp<5.
+
+	Fix issue where driver is never set to camera.getDriver() when
+	using a remote camera instrument.
+
+	Fix issue where chimera-cam --info gives incorrect (or no) camera
+	driver.
+
+	* src/scripts/chimera-tel:
+	Fix issue where driver is never set to telescope.getDriver() when
+	using a remote telescope instrument.
+
+	Fix issue where chimera-tel --info gives incorrect (or no)
+	telescope driver
+
+	* src/scripts/chimera-dome:
+
+	Add "-t"/"--telescope" option to tell the dome what telescope to
+	track.
+
+	Add "--track/--stand" commands to tell the dome to start/stop
+	tracking the telescope.
+
+	Fix issue where chimera-dome --info gives incorrect (or no) dome
+	driver.
+
+	* src/chimera/controller/site/main.py:
+
+	Add support for "-H"/"--host" and "-P"/"--port" options from
+	command line of scripts/chimera
+
+	* src/chimera/controllers/site/config.py: Add support for pyro
+	host and port passed in the constructor
+
+	* chimera/core/manager.py: Fix minor spelling errors in comments
+
+	* chimera/drivers/faketelescope.py: Fix slew code to set
+	self._slewing=False when done slewing; otherwise, the dome will
+	refuse to track
+
+	* src/chimera/drivers/fakecamera.py:
+	Add support for making simulated darks, flats, and grabbing DSS
+	images and applying simulated dark and flat to them.
+
+	Use driver paramaters ccd_width and ccd_height to control size of
+	simulated darks and flats.
+
+	Use driver paramater use_dss=True to have images grabbed from
+	DSS (when telescope is aligned with dome and dome is open
+
+	Patch from Isaac Richter, modified slightly to make flat fast with
+	Numpy.
+
+
+2008-06-05  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* setup.py: Add RO dependency. (DS9 display)
+	* scripts/chimera-cam:
+	* chimera/drivers/sbig/sbig.py: Fix issue #3.
+
+2008-06-05  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* src/scripts/chimera-tel:
+	* src/chimera/interfaces/telescopedriver.py:
+	* src/chimera/interfaces/telescope.py:
+	* src/chimera/core/site.py:
+	* src/chimera/instruments/tests/test_telescope.py:
+	* src/chimera/instruments/telescope.py:
+	* src/chimera/instruments/dome.py:
+	* src/chimera/util/position.py:
+	* src/chimera/util/tests/test_position.py:
+	* src/chimera/drivers/faketelescope.py:
+	* src/chimera/drivers/tests/test_meade.py:
+	* src/chimera/drivers/meade.py:
+	* src/chimera/drivers/theskytelescope.py:
+	* src/chimera/drivers/fakedome.py:
+	* docs/examples/meade/meadetest.py:
+
+	Fix issue #4.
+
+	Patch from Isaac Richter.
+
+
+2008-05-30  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* src/scripts/chimera-cam: Expand exception handling.
+
+	* src/chimera/interfaces/dome.py:
+	* src/chimera/instruments/dome.py: Add sync.
+
+	* src/chimera/interfaces/focuser.py: Comment typos.
+
+	* src/chimera/instruments/camera.py
+	* src/chimera/instruments/tests/test_camera.py
+	* src/chimera/drivers/sbig/sbig.py
+	* src/chimera/drivers/fakecamera.py: Upgrade to new ImageSave class.
+
+	* setup.py: Update to new set of dependencies.
+
+	* src/chimera/util/sexcatalog.py: Add catalog params values form
+	sex 2.5.
+
+	* src/chimera/util/imagesave.py: Add support for basic FITS headers.
+
+	* src/chimera/util/position.py: New (betetr) range checking on
+	constructors.
+
+	* src/chimera/util/image.py:
+	* src/chimera/util/tests/test_image.py:
+	* src/chimera/util/tests/teste-sem-wcs.fits:
+	* src/chimera/util/tests/teste-com-wcs.fits: New image
+	class. FITS, WCS and SExtractor support.
+
+	* src/chimera/controllers/autofocus.py:
+	* src/chimera/controllers/tests/test_auto_focus.py: New AutoFocus
+	version.
+
+	* src/chimera/core/site.py:
+	* src/chimera/core/tests/test_site.py: New site functions for
+	date/time with test suite.
+
+2008-05-21  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* src/chimera/util/coord.py: Fix bug on code that find desired
+	precision on strfcoord. This was causing ValueError when trying to
+	format seconds as a integer number.
+
+2008-05-13  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* setup-chimera.bat:
+	* setup-chimera.sh:
+	* TODO:
+	* MANIFEST.in: Not needed anymore, setuptools handles this for us.
+
+	* README: New text.
+	* setup.py:
+	* setup.cfg:
+	* ez_setup.py: New setuptools script. Much more smart, with
+	automatic dependency handling and PyPI support. See ups at
+	http://pypi.python.org/pypi/chimera-python! Now you can use
+	easy_install with chimera!
+
+2008-05-13  P. Henrique Silva  <henrique@astro.ufsc.br>
+	* src/chimera/util/imagesave.py: Fix BSCALE/BZERO.
+
+	* src/chimera/drivers/sbig/sbig.py:
+	* src/chimera/drivers/optectcfs.py:
+	* src/chimera/drivers/domelna40cm.py
+	* src/chimera/drivers/meade.py:
+	* src/chimera/instruments/focuser.py:
+	* src/chimera/instruments/telescope.py:
+	* src/chimera/instruments/camera.py:
+	Fix abort where available.
+	Port to new lock scheme.
+
+	* src/chimera/instruments/tests/test_telescope.py:
+	* src/chimera/instruments/tests/test_camera.py: Improved test with
+	abort testing.
+
+	* src/chimera/instruments/dome.py: New dome implementation, with
+	fixed tracking telescope support.
+
+	* src/chimera/instruments/tests/test_dome.py: Test new dome
+	implementation.
+
+2008-05-13  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* src/chimera/core/rwlock.py:
+	* src/chimera/core/lockwrapper.py
+	* src/chimera/core/constants.py:
+	* src/chimera/core/monitor.py: New locking infrastructure.
+
+	* src/chimera/core/tests/test_locks.py: Update test to new lock
+	infrastructure.
+
+	* src/chimera/core/metaobject.py: Add locking to default base object.
+
+	* src/chimera/core/chimeraobject.py:
+	Add new lock infrastructure wrapper methods.
+	Add support for thread-safe config set/get.
+	New look __control__ algorithm.
+
+	* src/chimera/core/manager.py:
+	Better stop algorithm.
+	Use new loop field in the resources manager.
+	Use new loop aborting scheme.
+
+	Remove thread pool support. Thread pool should be handled by the
+	user.
+
+	* src/chimera/core/resources.py: Add loop thread field.
+	* src/chimera/core/methodwrapper.py: Add logging.
+	* src/chimera/core/tests/test_config.py: Add enum checker test.
+
+2008-05-13  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* src/chimera/drivers/fakecamera.py:
+	* src/chimera/drivers/fakedome.py:
+	* src/chimera/drivers/faketelescope.py: More realistic simulation.
+
+2008-05-13  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* src/scripts/chimera-focus:
+	* src/scripts/chimera-cam:
+	* src/scripts/chimera:
+	* src/scripts/chimera-tel: Add Ctrl+C support.
+
+	* src/scripts/chimera-dome: Ctrl+C support.
+	Remove slit position from output (it's buggy on LNA).
+
+2008-05-13  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* src/chimera/util/coord.py: Lot of changes.
+	Allow use of Coord outise Chimera.
+	Much better d2dms conversion with configurable precision.
+	Improved strfcoord using configurable precision of d2dms.
+	Fix bug when priting 01-09 seconds with only onde digit.
+	New math behavviour: Use other state onçy with strings.
+
+	* src/chimera/util/position.py: Allow position to be used outside
+	Chimera.
+
+	* src/chimera/util/tests/test_coord.py: Improved test suite.
+	* src/chimera/util/tests/hipparcos-tycho.dat: New test suite
+	database.
+
+2008-05-13  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* src/chimera/controllers/scheduler:
+	* src/chimera/controllers/scheduler/programs.py:
+	* src/chimera/controllers/scheduler/clock.py:
+	* src/chimera/controllers/scheduler/dummy.py:
+	* src/chimera/controllers/scheduler/sensors.py:
+	* src/chimera/controllers/scheduler/exposures.py:
+	* src/chimera/controllers/scheduler/__init__.py:
+	* src/chimera/controllers/scheduler/model.py:
+	* src/chimera/controllers/scheduler/schedulers.py:
+	* src/chimera/controllers/scheduler/machine.py:
+	* src/chimera/controllers/scheduler/program.db:
+	* src/chimera/controllers/scheduler/database.py:
+	* src/chimera/controllers/scheduler/constraints.py:
+	* src/chimera/controllers/scheduler/program.py:
+	* src/chimera/controllers/scheduler/sequential.py:
+	* src/chimera/controllers/scheduler/tests:
+	* src/chimera/controllers/scheduler/tests/test_model.py:
+	* src/chimera/controllers/scheduler/tests/__init__.py:
+	* src/chimera/controllers/scheduler/create-tables.py:
+	* src/chimera/controllers/scheduler/scheduler.py:
+	* src/chimera/controllers/scheduler/program.xml:
+	* src/chimera/controllers/scheduler/seq.log:
+	* src/chimera/controllers/scheduler/ischeduler.py: New prototype
+	scheduler. This scheduler will be the main automation controller
+	in the system. It handles a generic program database and will
+	dispatch tasks using pluggable scheduler algorithms. A simple
+	sequential scheduler is implement right now and there are no real
+	instrument handling yet. Anyway, it very impressive how the simple
+	Machine class work and interacts with the scheduler database.
+
+2008-05-13  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* tests/chimera.pychecker:
+	* tests/run-tests.sh:
+	* tests/run-pylint.sh: Marked as executables.
+
+	* tests/run-pychecker.sh: New file.
+
+2008-05-13  P. Henrique Silva  <henrique@boss>
+
+	* docs/site:
+	* docs/site/sync-sf.net:
+	* docs/site/static:
+	* docs/site/conf.py:
+	* docs/site/Makefile:
+	* docs/site/templates:
+	* docs/site/templates/layout.html:
+	* docs/site/index.rst: New website ReST files and a script to
+	update sf.net.
+
+	* docs/examples/site.xml: Move from scripts directory
+
+2008-04-28  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* src/chimera/drivers/fakecamera.py (FakeCamera.expose): Use
+	ImageSave to get fake name.
+	Implements IFilterWheelDriver.
+
+	* src/chimera/drivers/sbig/sbig.py (SBIG.setFilter): Make it
+	synchronous (wait until filter finishes movement).
+
+	* src/chimera/drivers/meade.py (Meade.open): Support skip_init
+	option.
+	Implements ITelescopeDriverTracking.
+
+	* src/chimera/drivers/faketelescope.py: Implement more fake methods.
+
+	* src/chimera/instruments/telescope.py Implements ITelescopeTracking.
+
+	* src/chimera/instruments/tests/test_telescope.py
+	(TestTelescope.setup): Test use Fake by default.
+
+	* src/chimera/interfaces/telescope.py: Fix SlewRate enum
+	duplication.
+	(ITelescopeTracking): New interface.
+
+	* src/chimera/interfaces/domedriver.py (IDomeDriver.__config__):
+	Add init timeout.
+
+	* src/chimera/drivers/domelna40cm.py (DomeLNA40cm.open): Use init_timeout.
+
+	* src/chimera/interfaces/telescopedriver.py
+	(ITelescopeDriverSlew.__config__): Add skip_init option to don't
+	reinitialize Meade when using chimera-tel standalone
+	mode. Specially when using park/unpark.
+	(ITelescopeDriverTracking): New interface.
+
+	* src/scripts/chimera-cam:
+	Add support to change filter.
+	Add --info option.
+	Fix problem with --shutter options case sensitivity.
+	Change --filename to --output (camfits compatible).
+
+	* src/scripts/chimera-tel:
+	Add park/unpark, start/stop tracking, handle to move NSWE.
+
+	* src/scripts/chimera-dome:
+	* src/scripts/chimera-focus:
+	Add groups to --help.
+	Better exception handling when looking for driver.
+
+2008-04-24  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* src/chimera/drivers/meade.py (Meade.park): Default park position
+	generalized.
+
+	* src/chimera/drivers/sbig/sbig.py (SBIG.__start__): 
+	* src/chimera/drivers/sbig/sbigdrv.py (SBIGDrv.readoutLine): 
+	* src/chimera/util/imagesave.py (ImageSave.save): Add support for
+	16 bit unsigned FITS using BSCALE/BZERO.
+
+	* src/chimera/instruments/dome.py (Dome.control): Disable control loop.
+
+	* src/chimera/core/tests/test_manager.py
+	(TestManager.test_add_start): Comment test case with know error
+	would be fixed in the future.
+
+	* src/chimera/interfaces/cameradriver.py: Add more bitpixes.
+
+2008-03-12  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* setup.py: Updated.
+	* setup-chimera.sh: Compatible with older bash's and which's.
+	* .pydevproject: Updated.
+
+	* src/config/site.xml: Expanded example with host/port and
+	separeted site tag.
+
+	* docs/examples/client.py: Bulk configuration example added.
+	* docs/chimera.epydoc: Expand documentation to every chimera
+	package.
+
+	* docs/run-epydoc.sh: More verbose:
+
+	* tests/run-pychecker.sh: First working version.
+	* tests/run-tests.sh: Log support added.
+
+2008-03-12  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* src/chimera/__init__.py: Documentation added (epydoc).
+
+2008-03-12  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* src/chimera/controllers/test/test_auto_focus.py: New. Tentative
+	autofocus support testing.
+
+2008-03-12  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* src/chimera/controllers/site/config.py:
+	Added Manager host/port configuration.
+
+	Added Site support (moved from attributes of chimera to indidual
+	tag with normal subtags).
+
+	* src/chimera/controllers/site/main.py:
+	Fix prefix bug.
+	Added dry-run mode.
+	Added support for Site object creation based on config.py parsing.
+
+2008-03-12  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* src/chimera/util/coord.py:
+	Much more documentation.
+
+	Add support for rich operators (<, <=, >, >=, ==, != and mod).
+
+	Add the much needed strfcoord function on CoordUtil and method on
+	Coord. hms2str and dms2str are now based on this function.
+
+	Fix "excess of generality" on Coord RE. Our RE are too general
+	that some strange string was being accepted as valid Coord (see
+	test_coord.py for examples)
+
+	* src/chimera/util/position.py: New class. A simple Position (a
+	tuple of Coords) class. It used astrolib Position as base to
+	inherites angsep and some other usefull things and the amazing TPM
+	library support. Hope to expand this class and make more use of
+	TPM in the future.
+
+	* src/chimera/util/tests/test_position.py: Test Position basic
+	functionality.
+
+2008-03-12  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* src/chimera/util/filenamesequence.py: New. Very useful class to
+	implement automatic sequence number generation. Mostly used to
+	generate new index to image filenames (used in ImageSave).
+
+	* src/chimera/util/imagesave.py: New. All image saving blocks from
+	sbig.py was moved to a self contained class to allow reuse. Use
+	it!
+
+	* src/chimera/util/imagesave.py: New. Mostly a stub for future
+	telescope software limits support.
+
+	* src/chimera/util/enum.py: Add support for equality tests on
+	different Enum objects (copied for whatever reasons).
+
+2008-03-12  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* src/chimera/drivers/sbigdrv.py: Converted to use Exceptions.
+
+	* src/chimera/drivers/sbig.py:
+	Converted to new MetaObject framework.
+	Converted to use exceptions.
+	Converted to use full event-driven system.
+	Converted to use Coord and Position.
+	Converted to use Enum.
+	Converted to use ImageSave.
+
+	A few other fixes.
+
+2008-03-12  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* src/chimera/drivers/meade.py:
+	Converted to new MetaObject framework.
+	Converted to use exceptions.
+	Converted to use full event-driven system.
+	Converted to use Coord and Position.
+	Converted to use Enum.
+
+	Fix bug on serial port parameters settings (I was leaving
+	parameters blank to use default, but defaults are not valid
+	anymore for some strange reasons).
+
+	Added NSWE movement support with self-calibration. Meade use time
+	based movements, but Telescope API receives arcseconds, so we
+	calibrate time->arcseconds to follow the API (which make a lot of
+	sense in every reasonable application, who cares about time?!).
+
+	Lot of small bug fixes.
+
+	* src/chimera/drivers/test/test_meade.py: New. Includes
+	calibration test.
+
+2008-03-12  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* src/chimera/drivers/theskytelescope.py:
+	Converted to new MetaObject framework.
+	Converted to use exceptions.
+	Converted to use full event-driven system.
+
+	Add support for process kill with TheSky 5 which doesn't do it by
+	itself when asked to Disconnect.
+
+	Current support required changes on instrument implementation
+	'cause of Position serialization issues on Windows. Current API's
+	are imposed anyway, but these "hacks" must go someway soon.
+
+2008-03-12  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* src/chimera/drivers/optectcfspy:
+	Converted to new MetaObject framework.
+	Converted to use exceptions.
+	Converted to use full event-driven system.
+
+2008-03-12  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* src/chimera/drivers/domelna40cm.py:
+	Converted to new MetaObject framework.
+	Converted to use exceptions.
+	Converted to use full event-driven system.
+
+	Remove old documentation.
+	Remove unneeded debug of protocol.
+
+	IMPORTANT: Add phase difference between dome and scope (180
+	deg). So, dome receive a coord and convert to its own reference
+	frame and do vice-versa when returning on getAz. Azimuth is ALWAYS
+	in telescope reference frame.
+
+2008-03-12  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* src/chimera/drivers/fakecamera.py:
+	* src/chimera/drivers/fakedome.py:
+	* src/chimera/drivers/fakefilterwheel.py:
+	* src/chimera/drivers/fakefocuser.py:
+	* src/chimera/drivers/faketelescope.py: New babies! Fake drivers
+	allow test units to be developed without real hardware
+	access. Must be more complete (in API and behaviour) in the
+	future.
+
+2008-03-12  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* src/chimera/instruments/camera.py:
+	* src/chimera/instruments/filterwheel.py:
+	* src/chimera/instruments/telescope.py:
+	* src/chimera/instruments/dome.py:
+	* src/chimera/instruments/focuser.py: Every iinstrument
+	implementation have been improved, with full exception handling
+	support and new interfaces implemented. Test it, please!
+
+	* src/chimera/instruments/tests/test_telescope.py: More tests
+	added.
+
+	* src/chimera/instruments/tests/test_filterwheel.py:
+	* src/chimera/instruments/tests/test_dome.py:
+	* src/chimera/instruments/tests/test_focuser.py:
+	* src/chimera/instruments/tests/test_camera.py: New unit tests for
+	instruments.
+
+2008-03-12  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* src/chimera/interfaces/camera.py:
+	* src/chimera/interfaces/filterwheel.py:
+	* src/chimera/interfaces/telescopedriver.py:
+	* src/chimera/interfaces/domedriver.py:
+	* src/chimera/interfaces/weatherstation.py:
+	* src/chimera/interfaces/focuserdriver.py:
+	* src/chimera/interfaces/telescope.py:
+	* src/chimera/interfaces/dome.py:
+	* src/chimera/interfaces/cameradriver.py:
+	* src/chimera/interfaces/focuser.py:
+	* src/chimera/interfaces/filterwheeldriver.py:
+
+	All Chimera interfaces (with some exceptions on driver interfaces)
+	have been improved a LOT. These interfaces should be much more
+	complete right now. An better validation scheme must be added
+	(zope.interface maybe).
+
+	Documentation was improved with exceptions on camera and telescope
+	drivers (mostly because these interfaces grew up together with the
+	respective implementations).
+
+2008-03-12  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* src/chimera/core/exceptions.py:
+	Add exception cause system allowing new ChimeraExceptions raised
+	in the context of another exception to carry information about the
+	original exception.
+
+	Add new exceptions.
+
+	ChimeraException now support BaseException parameters and are
+	properly de/serialized.
+
+2008-03-12  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* src/chimera/core/methodwrapper.py: Fix bug on emulating static
+	calls without arguments.
+	Remove self.special call (old behaviour). Subclasses should
+	override call and not special anymore.
+
+2008-03-12  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* src/chimera/core/manager.py:
+	Change exception raising to new log framework (no more
+	sys.exc_info).
+	Reflection support (resources).
+	Small bug fix on Window platform when shuting down.
+	Manager's identity (host/port) fixes (still with some bugs, but
+	improving).
+
+	* src/chimera/core/proxy.py: Identity fixes for URI only Proxies.
+	Better error messages when Proxy fails.
+	Configuration support using += (OMG, how this was not implemented
+	yet!?).
+	Better method type checking when subscribing to events.
+
+2008-03-12  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* src/chimera/core/config.py:
+	Add Enum checker.
+	Add Coord option and checker (option added to save Coord state
+	when creating the option.
+	Small fixes on Config.
+
+	* src/chimera/core/test/test_config.py: Test those new features.
+
+2008-03-12  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* src/chimera/core/site.py: New object. Used as a data container
+	with site specific information. Date/time functions will be
+	implemented in the future.
+
+2008-03-12  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* src/chimera/core/tests/test_chimera_object.py: Improved tests
+	with exception testing.
+
+	* src/chimera/core/chimeraobject.py:
+	Add bulk configuration support.
+	Add Very simple reflection.
+
+	Small fix on identity of objects (new locations with hosts/port).
+
+2008-03-12  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* src/chimera/core/compat.py: Add few functions to make Chimera
+	2.4 compatible (any, all are only defined on Py2.5)
+
+	* src/chimera/core/threads.py: Remove auto-locking support as this
+	is handled in MetaObject level now (see below).
+
+	* src/chimera/core/classloader.py: Improved and cleaned expection
+	raising (no need to hack with sys.exc_info, thanks to log.py
+	work).
+
+	* src/chimera/core/callback.py: Fix documentation and PEP-8 80
+	column limit where reasonable.
+
+	* src/chimera/core/eventsproxy.py: Remove unreachable handlers
+	when publishing.
+
+	* src/chimera/core/eventwrapper.py: NameError fix.
+
+	* src/chimera/core/constants.py: Lock and reflection constants
+	added.
+
+2008-03-12  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* src/chimera/core/lock.py:
+	* src/chimera/core/lockwrapper.py:
+	* src/chimera/core/test/test_locks: New files to add support for
+	coarse-grained automatic locks (much like synchronized methods in
+	Java).
+
+	* src/chimera/core/metaobject.py: Add lock support and use
+	constants to hide hard-coded values.
+
+2008-03-10  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* scripts/chimera: Fix changes on Site controller.
+	* scripts/chimera-cam: Ported to new infrastructure and improved.
+	* scripts/chimera-console: Ported but not working yet.
+
+	* scripts/chimera-focus:
+	* scripts/chimera-tel:
+	* scripts/chimera-dome: New scripts.
+
+2008-02-06  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* src/chimera/core/log.py: Better log formatting with separate
+	logger for console and file.
+
+	New function to set Console log level.
+
+	Logging of exceptions using printException facility using custom
+	formatter.
+
+	* src/chimera/core/tests/test_log.py: Simple test to confirm log
+	capabilities.
+
+2008-01-07  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* tests/run-pychecker.sh
+	* tests/run-pylint.sh
+	* tests/run-tests.sh: Updated runners.
+
+	* TODO
+	* TODO.SPRINTS
+	* TODO.DONE: Updated TODO's.
+
+	* docs/chimera.epydoc
+	* docs/examples/minimo.py
+	* docs/examples/client.py
+	* docs/examples/proxy.py
+	* docs/examples/example.xml
+	* docs/examples/server.py: More examples.
+
+	* src/scripts/chimera: Main chimera script updated to new Manager
+	model.
+
+	* setup-chimera.sh: Improved to allow source use.
+
+	* src/config/site.xml: Added new host/port example.
+
+2008-01-07  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* src/chimera/util/coord.py: New coord class.
+	* src/chimera/util/tests
+	* src/chimera/util/tests/test_coord.py
+	* src/chimera/util/tests/bsc.dat: Coord class tests with a copy of
+	BSC catalog.
+
+	* src/chimera/util/position.py: Future Position class (a pair of Coords).
+
+2008-01-07  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* src/chimera/controllers/siteconfig.py Moved.
+	* src/chimera/controllers/chimeramain.py: Moved.
+
+	* src/chimera/controllers/site
+	* src/chimera/controllers/site/__init__.py
+	* src/chimera/controllers/site/main.py
+	* src/chimera/controllers/site/config.py: Updated to new Manager
+	model and moved to better place. Config now is Controller specific
+	(moved from core).
+
+2008-01-07  P. Henrique Silva  <henrique@astro.ufsc.br>
+	* src/chimera/interfaces/camera.py
+	* src/chimera/interfaces/filterwheel.py
+	* src/chimera/interfaces/__init__.py
+	* src/chimera/interfaces/lifecycle.py
+	* src/chimera/interfaces/telescopedriver.py
+	* src/chimera/interfaces/domedriver.py
+	* src/chimera/interfaces/weatherstation.py
+	* src/chimera/interfaces/focuserdriver.py
+	* src/chimera/interfaces/telescope.py
+	* src/chimera/interfaces/dome.py
+	* src/chimera/interfaces/cameradriver.py
+	* src/chimera/interfaces/focuser.py: Improved interfaces with full
+	documentation (need to be implemented yet).
+
+2008-01-07  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* src/chimera/core/log.config: Not needed anymore, all log
+	configuration done at log.py.
+
+	* src/chimera/core/site.py: New.
+	* src/chimera/core/callback.py: New.
+	* src/chimera/core/exceptions.py: New.
+
+	* src/chimera/core/classloader.py: ClassLoaderException moved to
+	exceptions.py.
+
+	* src/chimera/core/chimeraobject.py: Fixes.
+	Added log to non-chimera packages.
+	Changed signatures of loop control methods (new getHz/setHz).
+	Fixed getManager method to return a Proxy.
+
+	* src/chimera/core/eventsproxy.py: Better exception handling on
+	publish.  Unreachable proxy removal added.
+
+	* src/chimera/core/location.py: Host/port support.
+	Added host/port to Location.
+	Location doesn't use isValid anymore, exception is raised when
+	Location isn't valid.
+
+	* src/chimera/core/manager.py: Lot of fixes and new features.
+	Added support for remote objects on getProxy.
+	Fixed indexed instances connections.
+	Exception support added to all methods. No more "return False"
+	means error.
+
+	* src/chimera/core/resources.py: Exception support added.
+
+	* src/chimera/core/proxy.py: Fix getProxy when port/host is used.
+
+	* src/chimera/core/log.py: Add milliseconds to log format.
+
+	* src/chimera/core/tests/test_main.py: Removed.
+	* src/chimera/core/tests/managerhelperwithmainexception.py
+	* src/chimera/core/tests/managerhelperwithstopexception.py
+	* src/chimera/core/tests/test_chimera_object.py
+	* src/chimera/core/tests/managerhelperwithstartexception.py
+	* src/chimera/core/tests/test_events.py
+	* src/chimera/core/tests/test_config.py
+	* src/chimera/core/tests/test_location.py
+	* src/chimera/core/tests/test_resources.py
+	* src/chimera/core/tests/test_manager.py
+	* src/chimera/core/tests/managerhelperwithinitexception.py:
+	Fixed tests to support all the above modifications.
+
+2007-12-10  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* src/chimera/core/threads.py
+	* src/chimera/core/classloader.py
+	* src/chimera/core/chimeraobject.py
+	* src/chimera/core/config.py
+	* src/chimera/core/eventsproxy.py
+	* src/chimera/core/location.py
+	* src/chimera/core/manager.py
+	* src/chimera/core/async.py
+	* src/chimera/core/proxy.py
+	* src/chimera/core/log.py
+	* src/chimera/core/main.py: Updated to the new log idiom.
+
+2007-11-14  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* src/chimera/interfaces/lifecycle.py: New state methods
+	names. new methods to get Location, Manager and Proxy.
+
+	* src/chimera/controllers/siteconfig.py:
+	* src/chimera/controllers/chimeramain.py:
+
+	Moved from core. It's not core, it's a normal controller.
+
+	* src/chimera/instruments/tests
+	* src/chimera/instruments/tests/test_telescope.py: New test suite
+	(not complete yet).
+
+	* src/chimera/util/enum.py: New enum class. (PyPI enum)
+
+	* src/chimera/drivers/sbig/__init__.py: Fix relative import use.
+
+	* docs/examples/client.py:
+	* docs/examples/proxy.py:
+	* docs/examples/server.py: New examples.
+
+	* TODO: Added todo's from chimera-ng branch.
+
+2007-11-14  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* src/chimera/core/classloader.py: New classloader. Contains code
+	moved from manager.py and improved exception handling.
+
+	* src/chimera/core/chimeraobject.py: New base class of the
+	system. Implements the ILifecycle interface and inherites from
+	RemoteObject to provide support for RPC and state management.
+
+	* src/chimera/core/remoteobject.py: New class to wrap Pyro's base
+	class.
+
+	* src/chimera/core/resources.py: Replace register.py with a more
+	simple resources management.
+
+	* src/chimera/core/constants.py: Runtime constants needed by the
+	new system.
+
+	* src/chimera/core/util.py: Simple core utilities (used only
+	internally)
+
+	* src/chimera/core/state.py: State management enumeration.
+
+	* src/chimera/core/eventsproxy.py: New event proxy used by
+	ChimeraObject to dispatch events.
+
+	* src/chimera/core/metaobject.py:
+	* src/chimera/core/methodwrapper.py:
+	* src/chimera/core/eventwrapper.py: New metaclass based object
+	system. The Methodwrapper implements a funcionality to add
+	"pseudo" methods as attributes of a given class, this allow use of
+	things like obj.method.begin(), with begin being and method
+	wrapper which will act just like a normal method of
+	obj. EventWrapper use this base to implement operators needed by
+	the event handling.
+
+	* src/chimera/core/register.py: Replaced by resources.py
+	* src/chimera/core/siteconfig.py: Moved to controllers.
+	* src/chimera/core/lifecycle.py: Replaced by ChimeraObject.
+
+	* src/chimera/core/__init__.py:
+	* src/chimera/core/threads.py:
+	* src/chimera/core/log.py
+	* src/chimera/core/version.py
+	Headers fixed.
+
+	* src/chimera/core/interface.py: New MetaObject based interface
+	class.
+
+	* src/chimera/core/config.py: Allow boolean to be converted to
+	integer and float configs.  Returns old configuration when setting
+	a new one.  Correct default handling on Range options.  Accept
+	dict in Config constructor (only objects allowed before)
+	Implemented __iadd__ (dict).  Tests moved to the test suite.
+
+	* src/chimera/core/location.py: New constructor, accepting
+	keywords instead of a dict. Lot of small fixes from the test suite
+	alerts.
+
+	* src/chimera/core/manager.py: New implementation using Resources.
+	Manager acts as daemon (wrapping Pyro's Daemon).  Complete state
+	management support.  No more distictions between objects types.
+	Classloader was moved to a proper class.  Full documentation of
+	public methods.
+
+	* src/chimera/core/async.py: New async based on MethodWrapper (not
+	used yet)
+
+
+	* src/chimera/core/proxy.py: New proxy based on Pyro's Dynamic
+	Proxy. Much less magic used.
+
+	* src/chimera/core/event.py: Moved event handling to
+	eventsproxy.py, only the decorator still lives here.
+
+	* src/chimera/core/main.py: New chimera main class used to get
+	proxies. It's basically a helper class to get proxies for objects
+	not manager by our own manager.
+
+
+
+2007-11-14  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* tests
+	* tests/managerhelperwithmainexception.py
+	* tests/test_classloader.py
+	* tests/managerhelperwithstopexception.py
+	* tests/classloaderhelperfoundnotworking1.py
+	* tests/classloaderhelperfoundnotworking2.py
+	* tests/classloaderhelperworking.py
+	* tests/test_chimera_object.py
+	* tests/classloaderhelperfoundwithoutclass.py
+	* tests/test_events.py
+	* tests/managerhelperwithstartexception.py
+	* tests/test_config.py
+	* tests/test_location.py
+	* tests/test_manager.py
+	* tests/test_resources.py
+	* tests/managerhelperwithinitexception.py
+	* tests/managerhelper.py
+	* tests/managerhelperwitherror.py
+	* tests/test_main.py
+	* tests/test_version.py
+
+	New core test suite using nosetests.
+
+2007-10-26  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* setup-chimera.sh:
+	* setup-chimera.bat:
+
+	Development scripts to add chiemra to Python PATH (windows and
+	linux versions)
+
+	* docs/examples: Bunch of new examples (most hardware tests).
+
+	* src/scripts/chimera-console:
+	* src/scripts/chimera-cam:
+
+	Brand new scripts. Patterns emerging!
+
+	* src/chimera/controllers/chimeracam.py: New. Future cmdline
+	package.
+
+	* src/chimera/controllers/blocks.py: Very wast of time. Move all
+	this to respective instruments.
+
+	* src/chimera/core/threads.py: add daemon threads to keep threads
+	in peace. FIXME ASAP.
+
+	* src/chimera/core/site.py: Removed. Moved to chimera.py
+	* src/chimera/core/chimera.py: New. From site.py
+
+	* src/chimera/core/runner.py: Remove ctrl+c handling.
+
+	* src/chimera/core/manager.py: Fix bugs when passing string as
+	locations (convert to Lacation first).
+
+	* src/chimera/core/siteconfig.py: Brand new. Moved from site.py.
+
+	* src/chimera/instruments/filterwheel.py: Add class variables from
+	interface (duh, interfaces should be just.. interfaces!)
+
+	* src/chimera/interfaces/camera.py:
+	* src/chimera/interfaces/filterwheel.py:
+	* src/chimera/interfaces/telescope.py:
+	* src/chimera/interfaces/dome.py:
+	* src/chimera/interfaces/focuser.py:
+
+	New data options added. Sites should use this to provide
+	information to controller's scripts.
+
+
+2007-10-25  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* src/chimera/interfaces/camera.py: New default filename
+	format. No more seq_num.
+
+2007-10-16  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* src/chimera/drivers/meade.py: Fix typo.
+
+	* src/chimera/drivers/theskytelescope.py: sys.exit is not our
+	friend, raise RuntimeException instead.
+
+	* src/chimera/drivers/sbig/sbig.py: Fix already exposing bugs.
+
+	Add support for automatic/autoincremented exposure number in
+	filenames
+
+	* src/chimera/util/output.py: New faint (works?) function.
+
+
+2007-10-16  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* src/chimera/controllers/console/commands:
+	* src/chimera/controllers/console/commands/alias.py:
+	* src/chimera/controllers/console/commands/__init__.py:
+	* src/chimera/controllers/console/commands/quit.py:
+	* src/chimera/controllers/console/commands/site.py:
+	* src/chimera/controllers/console/commands/object.py:
+	* src/chimera/controllers/console/chimeraconsole.py:
+	* src/chimera/controllers/console/namespace.py:
+	* src/chimera/controllers/console/command.py:
+	* src/chimera/controllers/console/doc:
+	* src/chimera/controllers/console/doc/use-cases.txt:
+	* src/chimera/controllers/console/__init__.py:
+	* src/chimera/controllers/console/console.py:
+	* src/chimera/controllers/console/controller.py:
+	* src/chimera/controllers/console/message.py:
+	* src/chimera/controllers/console/commander.py:
+
+	New directory structure for console. Commands have their own
+	directory.
+
+	Objects are now automaticaly binded. Use alias command to have a
+	nice alias.
+
+2007-09-26  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* src/chimera/controllers/autofocus.py: Fix the way that we get
+	the FWHM (buggy name).
+
+	* src/chimera/instruments/dome.py: Check if telescope is available
+	when in "track" mode.
+
+2007-09-26  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* src/chimera/drivers/domelna40cm.py:
+	* src/chimera/drivers/optectcfs.py:
+
+	Move spurious print to logging system.
+
+2007-09-26  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* src/chimera/controllers/console: New (wonderful) debug console.
+
+	Initial version. Very first try implemenation, so, more to come
+	later.
+
+2007-09-25  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* controllers/autofocus.py:
+	First implementation of autofocus routine. Partially testd with
+	fake data.
+
+	* util/sexcatalog.py:
+	* util/sextractor.py:
+
+	SExtractor wrapper used by autofocus routine.
+
+2007-07-13  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* src/chimera/drivers/meade.py: Fix on open and correct log level
+	on the exception handlers.
+
+2007-07-13  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* src/chimera/interfaces/telescope.py: More Object
+	orientation design (this interfaces is till unfrozen).
+
+	* src/chimera/util/coord.py: Fixes and add SkyPoint class.
+
+	* src/chimera/drivers/meade.py: Add support for park/unpark,
+	date/time/latitude/longitude settings and synchronization.
+
+2007-07-13  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* src/chimera/interfaces/dome.py:
+	* src/chimera/instruments/dome.py:
+	* src/chimera/drivers/domelna40cm.py: New dome implementation with
+	support to LNA's 40cm dome.
+
+2007-07-13  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* src/chimera/instruments/focuser.py: New interface.
+	* src/chimera/drivers/optectcfs.py: OPTEC TCF-S support.
+	* src/chimera/interfaces/focuser.py: New focuser implementation.
+
+2007-07-11  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* src/chimera/controllers/observer.py: New proposed keywords (fixed).
+
+	* src/chimera/instruments/filterwheel.py:
+	* src/chimera/instruments/telescope.py:	Minor typo fixed.
+
+2007-07-04  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* src/chimera/drivers/paramount.py: Added support for TheSky
+	version 5 (only 6 was supported).
+
+	Driver renamed to TheSkyTelescope as we use this driver for more
+	than Paramount by now (Meade on LNA).
+
+2007-07-04  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* src/chimera/controllers/observer.py: New keywords added (plate
+	scale and equinox).
+
+	* src/chimera/core/config.py: Fix behaviour of range options when
+	default value is greater than min value.
+
+	* src/chimera/core/manager.py: Indentation fix.
+
+2007-07-04  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* src/chimera/drivers/optectcfs.py:
+	* src/chimera/interfaces/focuser.py:
+
+	New Focuser modules (driver still being implemented). Interface
+	well defined.
+
+2007-07-04  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* docs/chimera.epydoc: New Epydoc (epydoc.sf.net) configuration file.
+
+2007-07-04  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* tests/chimera/*: New unit tests starting right now (currently
+	only some modules).
+
+2007-04-24  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* src/scripts/chimera: Use /usr/bin/env to call python (ensure use
+	of default python on the system).
+
+	* src/chimera/core/site.py:  shutdown fixed (missed sys import)
+
+	* setup.py:
+	* src/chimera/core/location.py: Python 2.3.x stuff (not full
+	ported yet).
+
+	* src/chimera/core/manager.py: Typos.
+	Fix bug on the order of sys.path (our classes first by now)
+
+
+2007-03-16  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* src/chimera/drivers/paramount.py: Fixed init return value.
+
+	* src/chimera/drivers/sbig/sbig.py:
+
+	Fixed init return value.
+	Fixed expose return value (image filename).
+	Fixed some typos.
+
+	* src/chimera/drivers/sbig/sbigdrv.py:
+
+	Added getFilterPoistion implementarion.
+	Added support for multi-ccd use on openDriver and openDevice.
+
+	* src/chimera/drivers/remoteclient.py: Fixed init return value.
+
+	* src/config/observer.xml: New.
+	* src/chimera/controllers/observer.py: New.
+
+	* src/chimera/instruments/telescope.py:
+	Added isSlewing.
+	Removed default driver loading (no Fakes).
+	Events disabled (RemoteClient doesn't handle events yet).
+
+	* src/chimera/instruments/filterwheel.py:
+	Removed default driver loading (no Fakes).
+	Fixed init return value.
+
+	* src/chimera/instruments/filterwheel.py:
+	Fixed init return value.
+	Removed default driver loading (no Fakes).
+
+	* src/chimera/core/proxy.py:
+	Fixed handle of object's __getattr__ and __getattribute__.
+	Fixed __repr__.
+
+	* src/chimera/core/manager.py:
+	Added support for init method return value checking. If init
+	returns True add the object otherwise remove them.
+
+	Fixed exception handling on _getClass.
+
+	* src/chimera/util/observation.py: Refactored to new Observer.
+
+	* src/chimera/interfaces/camera.py:
+	Added isExposing to ICameraExpose.
+	Fixed date_format option.
+	Renamed ICameraDriver exposing to isExposing.
+
+	* src/chimera/interfaces/telescope.py Added isSlewing.
+
+	* src/chimera/controllers/sample.py:
+	* src/chimera/controllers/samplet.py:
+	* src/chimera/controllers/samplef.py:
+	* src/chimera/drivers/sample.py:
+	* src/chimera/instruments/sample.py:
+
+	Removed. Better samples to come on chimera documentation.
+
+2007-03-12  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* src/chimera/drivers/sbig/lib/*: Removed. Moved to their own package.
+
+2007-03-09  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* src/chimera/interfaces/camera.py:
+
+	Added new root interface ICamera. ICameraExpose and
+	ICameraTemperature now inheritis from them.
+
+	* src/chimera/interfaces/lifecycle.py:
+
+	New __options__ (base from an auto-config feature).
+	Removed unneeded events.
+
+	* src/chimera/interfaces/telescope.py:
+
+	Added new root interface ITelescope. Make all other interfaced to
+	inheritis from them.
+
+	New ITelescopeDriver interface.
+
+	ITelescopeSlew refactored (no field definitions on interfaces).
+
+	* src/chimera/core/threads.py:
+	* src/chimera/core/async.py:
+
+	More information on logging (current thread).
+
+	lock decorator moved to async.py.
+
+	* src/chimera/core/lifecycle.py: Removed finished TODO mark.
+
+	* src/chimera/core/site.py: Imports reorganized.
+
+	* src/chimera/core/runner.py:
+
+	Added Runner version for win32. Use sys.platform to define the
+	actual Runner class to use.
+
+	* src/chimera/core/manager.py:
+
+	Fix some bugs on getLocation and _get.
+
+	* src/chimera/core/proxy.py:
+
+	Improved Proxy. Check __getattr__ and __getattribute__ when
+	looking for members.
+
+	* src/chimera/core/register.py: Fix getByIndex.
+
+	* src/chimera/instruments/camera.py: Fix expose return value.
+
+	* src/chimera/instruments/telescope.py:
+
+	Finished implementation of ITelescopeSlew. Now working.
+
+	* src/chimera/util/coord.py: New Az and Alt classes.
+
+	* src/chimera/drivers/remoteclient.py:
+
+	Added custom method wrapper to call a XML-RPC method on remote
+	server.
+
+	* src/chimera/drivers/remoteserver.py:
+
+	Added a new multi-thread version of SimpleXMLRPCServer.
+	Fixed __options__ list.
+	New _dispatch method to handle XML-RPC calls on every object.
+
+	* src/chimera/drivers/meade.py:
+
+	Converted Meade to BasicLifeCycle pattern.
+	New _autoAlign and _checkMeade methods.
+	Fixed slewToRaDec.
+
+	* src/chimera/drivers/paramount.py:
+
+	New Paramount driver using TheSky6.
+	Lot of COM things added.
+
+	* src/chimera/drivers/sample.py:
+
+	Added more boilerplate code to Sample.
+
+	* setup.py: Windows support added.
+
+	* MANIFEST.in: Removed docs from sdist.
+
+	* setup.cfg: Added default sdist formats.
+
+2007-03-01  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* TODO:
+	* src/config/site.xml:
+	* src/chimera/interfaces/camera.py:
+	* src/chimera/drivers/sbig/lib/sbigudrv/make:
+
+	Camera fixes.
+
+2007-02-28  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* src/chimera/drivers/meade.py:
+
+	Implement slew (not test yet)
+
+2007-02-28  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* src/chimera/drivers/paramount.py:
+
+	New.
+
+2007-02-27  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* src/chimera/interfaces/camera.py:
+
+	Fix a typo on file_format option.
+
+2007-02-27  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* src/chimera/controllers/admin/:
+	* src/chimera/controllers/admin/__init__.py:
+	* src/chimera/controllers/admin/admin.py:
+
+	New.
+
+2007-02-27  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* src/chimera/drivers/paramount.py: New.
+
+2007-02-09  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* chimera/uts: End of UTS :)
+	* chimera/util/coord.py: New.
+
+
+2007-02-09  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* src/chimera/core/version.py: Added more metadata.
+	* setup.py: Added data_files options.
+	* setup.cfg: New (to handle bdist_rpm options)
+
+
+2007-02-08  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* src/chimera/core/site.py:
+	* src/chimera/core/version.py:
+
+	Added metadata based on PEP 0314 and PEP 0301.
+
+	* setup.py: Updated to reflect new layout. Almsot working (except
+	for /etc installation of site.xml
+
+	* MANIFEST.in: New.
+
+
+2007-02-08  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* rc/scripts/chimera:
+	* rc/scripts/uts:
+
+	End of UTS (final). Rename uts script to chimera.
+
+	* rc/chimera/core/site.py:
+
+	Fix a typo.
+
+2007-02-08  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* src/scripts/uts:
+	* src/chimera/interfaces/camera.py:
+	* src/chimera/interfaces/filterwheel.py:
+	* src/chimera/interfaces/lifecycle.py:
+	* src/chimera/interfaces/weatherstation.py:
+	* src/chimera/interfaces/telescope.py:
+	* src/chimera/interfaces/dome.py:
+	* src/chimera/interfaces/focuser.py:
+	* src/chimera/controllers/sample.py:
+	* src/chimera/controllers/samplet.py:
+	* src/chimera/controllers/samplef.py:
+	* src/chimera/core/lifecycle.py:
+	* src/chimera/core/interface.py:
+	* src/chimera/core/site.py:
+	* src/chimera/core/manager.py:
+	* src/chimera/core/async.py:
+	* src/chimera/core/event.py:
+	* src/chimera/core/proxy.py:
+	* src/chimera/core/register.py:
+	* src/chimera/core/version.py:
+	* src/chimera/instruments/camera.py:
+	* src/chimera/instruments/filterwheel.py:
+	* src/chimera/instruments/sample.py:
+	* src/chimera/instruments/telescope.py:
+	* src/chimera/drivers/remoteclient.py:
+	* src/chimera/drivers/meade.py:
+	* src/chimera/drivers/sbig/sbig.py:
+	* src/chimera/drivers/sample.py:
+	* src/chimera/drivers/remoteserver.py:
+
+	End of UTS. Rename import package name to chimera.
+
+	Old UTS package still on uts-pre-chimera branch
+
+
+2007-02-08  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* src/python:
+	* src/chimera:
+
+	End of UTS. File layout change. (part 2)
+
+	Old UTS package still on uts-pre-chimera branch
+
+2007-02-08  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* tests:
+	* tests/lint:
+	* tests/lint/lint.html:
+	* tests/lint/uts.pylint:
+	* tests/lint.html:
+	* tests/uts.pylint:
+	* setup.py:
+	* src/python/test:
+	* src/python/doc:
+	* src/python/setup.py:
+	* src/python/bin:
+	* src/python/uts/core/register.py:
+	* src/python/uts/drivers/sbig/lib/sbigudrv:
+	* src/python/uts/drivers/sbig/lib/sbigudrv/numpy.i:
+	* src/python/uts/drivers/sbig/lib/sbigudrv/sbigudrv.h:
+	* src/python/uts/drivers/sbig/lib/sbigudrv/sbigudrv.i:
+	* src/python/uts/drivers/sbig/lib/sbigudrv/sbigudrv.py:
+	* src/python/uts/drivers/sbig/lib/sbigudrv/libsbigudrv.so:
+	* src/python/uts/drivers/sbig/lib/sbigudrv/make:
+	* src/scripts:
+	* ChangeLog:
+	* docs:
+
+	End of UTS. File layout change. (part 1)
+
+	Old UTS package still on uts-pre-chimera branch
+
+
+2007-02-08  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* src/www/:
+
+	End of UTS. Files removed from Chimera.
+
+	Old UTS package still on uts-pre-chimera branch
+
+2007-02-08  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* acinclude.m4:
+	* autogen.sh:
+	* configure.ac:
+	* Makefile.am:
+	* rules.make:
+	* SConstruct:
+	* contrib/:
+	* doc/:
+	* src/Makefile.am:
+	* src/tools/*:
+	* src/drivers/:
+	* src/config/Makefile.am:
+	* src/config/initscripts/:
+
+	End of UTS. Files removed from Chimera.
+
+	Old UTS package still on uts-pre-chimera branch
+
+
+2007-02-07  P. Henrique Silva  <henrique@astro.ufsc.br>
+
+	* src/python/uts/drivers/sbig/sbigdrv.py: Add Filter and
+	Temperature support.
+
+	* src/python/uts/drivers/sbig/sbig.py: Add Filter and Temperature
+	support.
+
+	Fix a lot of indentation bugs that was preventing images to be
+	correctly saved.
+
+	* src/python/uts/instruments/camera.py: Add temperature support.
+
+	* src/python/uts/instruments/filterwheel.py: New.
+
+	* src/python/uts/controllers/sample.py: Better testing.
+
+	* src/python/uts/controllers/samplet.py:
+	* src/python/uts/controllers/samplef.py:
+
+	New
+
+	* src/python/uts/interfaces/filterwheel.py:
+
+	Cleanup IFilterWheel interface.
+
+	Add IFilterWheelDriver interface.
+
+	* src/python/uts/interfaces/camera.py:
+
+	Cleanup ICameraTemperature. Fix somes typos.
+
+	Add temperature support to ICameraDriver.
+
+	* src/python/uts/core/register.py (Register.getByIndex): Fix behavior.
+
+	* src/python/uts/core/config.py (Option.set): Remove default value
+	setting when 'check' fails and re-raise OptionConversionException
+	when this happens.
+
+	* src/python/uts/core/manager.py (Manager._add): Fix automatic
+	'init' behavior to accept numbered Locations ('/Class/0').
+
+	(Manager._init): Add return value when everything goes OK.

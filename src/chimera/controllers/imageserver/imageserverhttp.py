@@ -94,7 +94,7 @@ class ImageServerHTTP(threading.Thread):
         srv.ctrl = self.ctrl
         srv.timeout = 1
 
-        while not self.die.isSet():
+        while not self.die.is_set():
             srv.handle_request()
 
     def stop(self):

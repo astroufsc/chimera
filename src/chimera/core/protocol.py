@@ -46,7 +46,7 @@ class Protocol:
             kwargs=kwargs,
         )
 
-    def event(self, location, args, kwargs) -> Request:
+    def event(self, location, args, kwargs) -> Event:
         return Event(
             id=self.new_id(),
             version=1,

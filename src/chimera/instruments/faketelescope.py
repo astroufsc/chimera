@@ -108,7 +108,7 @@ class FakeTelescope(TelescopeBase, TelescopeCover, TelescopePier):
         t = 0
         while t < 5:
 
-            if self._abort.isSet():
+            if self._abort.is_set():
                 self._slewing = False
                 status = TelescopeStatus.ABORTED
                 break
@@ -149,7 +149,7 @@ class FakeTelescope(TelescopeBase, TelescopeCover, TelescopePier):
         t = 0
         while t < 5:
 
-            if self._abort.isSet():
+            if self._abort.is_set():
                 self._slewing = False
                 status = TelescopeStatus.ABORTED
                 break

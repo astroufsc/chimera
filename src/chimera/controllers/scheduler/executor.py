@@ -57,7 +57,7 @@ class ProgramExecutor(object):
         for action in program.actions:
 
             # aborted?
-            if self.mustStop.isSet():
+            if self.mustStop.is_set():
                 raise ProgramExecutionAborted()
 
             t0 = time.time()
@@ -74,7 +74,7 @@ class ProgramExecutor(object):
 
                 # instruments just returns in case of abort, so we need to check handler
                 # returned 'cause of abort or not
-                if self.mustStop.isSet():
+                if self.mustStop.is_set():
                     self.controller.actionComplete(action, SchedulerStatus.ABORTED)
                     raise ProgramExecutionAborted()
                 else:

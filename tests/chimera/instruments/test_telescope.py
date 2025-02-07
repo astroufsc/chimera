@@ -2,6 +2,7 @@
 # SPDX-FileCopyrightText: 2006-present Paulo Henrique Silva <ph.silva@gmail.com>
 
 
+from concurrent.futures import ThreadPoolExecutor, wait
 import time
 import sys
 import logging
@@ -16,7 +17,7 @@ from chimera.util.position import Position
 
 from chimera.interfaces.telescope import SlewRate, TelescopeStatus
 
-from chimera.instruments.tests.base import FakeHardwareTest, RealHardwareTest
+from .base import FakeHardwareTest, RealHardwareTest
 
 import chimera.core.log
 
@@ -50,19 +51,14 @@ class TelescopeTest(object):
         assert "slewComplete" in FiredEvents
         assert FiredEvents["slewComplete"][0] > FiredEvents["slewBegin"][0]
         assert isinstance(FiredEvents["slewComplete"][1], Position)
-        assert (
-            isinstance(FiredEvents["slewComplete"][2], EnumValue)
-            and FiredEvents["slewComplete"][2] in TelescopeStatus
-        )
+        assert FiredEvents["slewComplete"][2] in TelescopeStatus
         assert FiredEvents["slewComplete"][2] == slewStatus
 
     def setupEvents(self):
 
-        @callback(self.manager)
         def slewBeginClbk(position):
             FiredEvents["slewBegin"] = (time.time(), position)
 
-        @callback(self.manager)
         def slewCompleteClbk(position, status):
             FiredEvents["slewComplete"] = (time.time(), position, status)
 
@@ -77,12 +73,10 @@ class TelescopeTest(object):
         dest = Position.fromRaDec(site.LST(), site["latitude"])
         real_dest = None
 
-        @callback(self.manager)
         def slewBeginClbk(target):
             global real_dest
             real_dest = target
 
-        @callback(self.manager)
         def slewCompleteClbk(position, status):
             assertEpsEqual(position.ra, real_dest.ra, 60)
             assertEpsEqual(position.dec, real_dest.dec, 60)
@@ -109,12 +103,10 @@ class TelescopeTest(object):
         dest = Position.fromRaDec(last.ra + Coord.fromH(1), last.dec + Coord.fromD(10))
         real_dest = None
 
-        @callback(self.manager)
         def slewBeginClbk(target):
             global real_dest
             real_dest = target
 
-        @callback(self.manager)
         def slewCompleteClbk(position, status):
             assert last.ra < position.ra < real_dest.ra
             assert last.dec < position.dec < real_dest.dec
@@ -127,8 +119,8 @@ class TelescopeTest(object):
             tel = self.manager.getProxy(self.TELESCOPE)
             tel.slewToRaDec(dest)
 
-        pool = ThreadPool()
-        pool.queueTask(slew)
+        pool = ThreadPoolExecutor()
+        slew_future = pool.submit(slew)
 
         # wait thread to be scheduled
         time.sleep(2)
@@ -136,7 +128,7 @@ class TelescopeTest(object):
         # abort and test
         self.tel.abortSlew()
 
-        pool.joinAll()
+        wait([slew_future])
 
         # event checkings
         self.assertEvents(TelescopeStatus.ABORTED)
@@ -148,7 +140,6 @@ class TelescopeTest(object):
 
         real = self.tel.getPositionRaDec()
 
-        @callback(self.manager)
         def syncCompleteClbk(position):
             assert position.ra == real.ra
             assert position.dec == real.dec

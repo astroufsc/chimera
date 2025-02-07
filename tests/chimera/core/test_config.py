@@ -1,7 +1,7 @@
 import pytest
 
 from chimera.core.config import Config, OptionConversionException
-from chimera.util.enum import Enum, EnumValue
+from chimera.util.enum import Enum
 from chimera.util.coord import Coord, State
 
 
@@ -210,10 +210,6 @@ class TestConfig(object):
             assert (
                 c.__setitem__("key_enum", i) is not False
             ), f"{i} ({type(i)}) is a valid enum configuration"
-            assert isinstance(
-                c.__getitem__("key_enum"), EnumValue
-            )  # "should return EnumValue object"
-
         for i in [
             "A_VALUE",
             "OTHER_VALUE",
@@ -225,9 +221,6 @@ class TestConfig(object):
             assert (
                 c.__setitem__("key_enum", i) is not False
             ), f"{i} ({type(i)}) is a valid enum configuration"
-            assert isinstance(
-                c.__getitem__("key_enum"), EnumValue
-            )  # "should return EnumValue object"
 
         # invalid
         with pytest.raises(KeyError):

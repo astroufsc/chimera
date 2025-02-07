@@ -45,7 +45,7 @@ def getManagerURI(host=None, port=None):
     host = host or MANAGER_DEFAULT_HOST
     port = port or MANAGER_DEFAULT_PORT
 
-    return f"{host}:{port}/{MANAGER_LOCATION}"
+    return f"{host}:{port}{MANAGER_LOCATION}"
 
 
 class Manager:
@@ -85,6 +85,8 @@ class Manager:
         self.server = Server(self.resources, host, port)
         self.server.start()
         self.serverThread = threading.Thread(target=self.server.loop, daemon=True)
+        self.serverThread.name = getManagerURI(host, port)
+
         self.serverThread.start()
 
     # private
@@ -211,6 +213,8 @@ class Manager:
             finally:
                 # kill our server
                 self.server.stop()
+
+                self.serverThread.join()
 
                 # die!
                 self.died.set()
@@ -406,7 +410,7 @@ class Manager:
             log.info(f"Running {location}. __main___.")
 
             loop = threading.Thread(target=resource.instance.__main__, daemon=True)
-            loop.name = str(resource.location) + ".__main__"
+            loop.name = str(resource.location)
             loop.start()
 
             resource.instance.__setstate__(State.RUNNING)

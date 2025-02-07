@@ -182,7 +182,7 @@ class DomeBase(ChimeraObject, DomeSlew, DomeSlit, DomeFlap, DomeSync):
 
     def _processQueue(self):
 
-        if self._waitAfterSlew.isSet():
+        if self._waitAfterSlew.is_set():
             self._telescopeChanged(self._tel.getAz())
 
         if self.queue.empty():

@@ -12,11 +12,10 @@ from chimera.core.site import Site
 
 from chimera.util.coord import Coord
 from chimera.util.position import Position
-from chimera.util.enum import EnumValue
 
 from chimera.interfaces.dome import InvalidDomePositionException, DomeStatus
 
-from chimera.instruments.tests.base import FakeHardwareTest, RealHardwareTest
+from .base import FakeHardwareTest, RealHardwareTest
 
 import chimera.core.log
 import pytest
@@ -52,10 +51,7 @@ class DomeTest(object):
             assert "slewComplete" in FiredEvents
             assert FiredEvents["slewComplete"][0] > FiredEvents["slewBegin"][0]
             assert isinstance(FiredEvents["slewComplete"][1], Coord)
-            assert (
-                isinstance(FiredEvents["slewComplete"][2], EnumValue)
-                and FiredEvents["slewComplete"][2] in DomeStatus
-            )
+            assert FiredEvents["slewComplete"][2] in DomeStatus
             assert FiredEvents["slewComplete"][2] == slewStatus
 
         if sync:
@@ -112,7 +108,7 @@ class DomeTest(object):
         quit = threading.Event()
 
         def get_az_stress():
-            while not quit.isSet():
+            while not quit.is_set():
                 dome.getAz()
                 time.sleep(0.5)
 

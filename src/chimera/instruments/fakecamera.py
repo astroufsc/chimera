@@ -95,7 +95,7 @@ class FakeCamera(CameraBase, FilterWheelBase):
         self.__lastFrameStart = dt.datetime.utcnow()
         while t < imageRequest["exptime"]:
             # [ABORT POINT]
-            if self.abort.isSet():
+            if self.abort.is_set():
                 status = CameraStatus.ABORTED
                 break
 
@@ -277,7 +277,7 @@ class FakeCamera(CameraBase, FilterWheelBase):
         )
 
         # [ABORT POINT]
-        if self.abort.isSet():
+        if self.abort.is_set():
             self.readoutComplete(None, CameraStatus.ABORTED)
             return None
 
