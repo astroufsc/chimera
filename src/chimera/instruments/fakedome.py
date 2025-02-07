@@ -59,7 +59,7 @@ class FakeDome(DomeBase):
         t = 0
         while t < slew_time:
 
-            if self._abort.isSet():
+            if self._abort.is_set():
                 self._slewing = False
                 status = DomeStatus.ABORTED
                 break

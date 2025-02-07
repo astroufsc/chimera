@@ -3,20 +3,17 @@ from typing import Type
 
 import redis
 import redislite
+
 from chimera.core.protocol import Event, Request, Response
 from chimera.core.serializer import Serializer
 from chimera.core.serializer_pickle import PickleSerializer
 from chimera.core.transport import Transport
-
 
 log = logging.getLogger(__name__)
 
 
 class RedisTransport(Transport):
     REQUESTS_KEY: str = "chimera_requests"
-
-    DEFAULT_TIMEOUT: int = 5 * 60  # 5 minutes
-    LOOP_TICK: int = 1
 
     def __init__(
         self, host: str, port: int, serializer: Type[Serializer] = PickleSerializer
@@ -32,11 +29,19 @@ class RedisTransport(Transport):
         self._init_pubsub()
 
     def _init_pubsub(self):
-        if self._pubsub is None:  # avoid creating multiple pubsub instances
+
+        def exception_handler(e, pubsub, thread):
+            if isinstance(e, redis.ConnectionError):
+                # connection died, just ignore as this is probably due to server shutdown
+                return
+            raise e
+
+        if self._pubsub is None:
             self._pubsub = self._r.pubsub()
             self._pubsub_thread = self._pubsub.run_in_thread(
-                daemon=True, sleep_time=0.001
+                daemon=True, sleep_time=0.001, exception_handler=exception_handler
             )
+            self._pubsub_thread.name = f"{self.host}:{self.port}/RedisTransport/0"
 
     def connect(self):
         if self._r is None:

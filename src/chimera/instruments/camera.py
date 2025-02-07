@@ -221,7 +221,7 @@ class CameraBase(ChimeraObject, CameraExpose, CameraTemperature, CameraInformati
         return mode, binning, top, left, width, height
 
     def isExposing(self):
-        return self.__isExposing.isSet()
+        return self.__isExposing.is_set()
 
     @lock
     def startCooling(self, tempC):

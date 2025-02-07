@@ -1,18 +1,19 @@
-import threading
-import time
 import copy
 import sys
-
+import threading
+import time
 from math import sqrt
+
+import pytest
 
 from chimera.core.chimeraobject import ChimeraObject
 from chimera.core.lock import lock
-
 from chimera.core.proxy import Proxy
 
 
 class TestLock(object):
 
+    @pytest.mark.slow
     def test_autolock(self, manager):
 
         class Minimo(ChimeraObject):

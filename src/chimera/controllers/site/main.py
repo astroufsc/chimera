@@ -10,7 +10,7 @@ import platform
 from chimera.core.location import Location
 from chimera.core.manager import Manager
 from chimera.core.systemconfig import SystemConfig
-from chimera.core.version import _chimera_version_, _chimera_description_
+from chimera.core.version import _chimera_version_
 from chimera.core.exceptions import (
     printException,
     InvalidLocationException,
@@ -76,7 +76,6 @@ class SiteController(object):
         parser = optparse.OptionParser(
             prog="chimera",
             version=_chimera_version_,
-            description=_chimera_description_,
             usage="chimera --help for more information",
         )
 

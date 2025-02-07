@@ -7,7 +7,7 @@ from chimera.core.manager import Manager
 from chimera.core.site import Site
 
 from chimera.interfaces.focuser import InvalidFocusPositionException
-from chimera.instruments.tests.base import FakeHardwareTest, RealHardwareTest
+from .base import FakeHardwareTest, RealHardwareTest
 import pytest
 
 

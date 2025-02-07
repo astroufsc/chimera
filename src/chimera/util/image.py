@@ -18,7 +18,6 @@ from astropy import wcs
 from astropy.io import fits
 
 from chimera.core.exceptions import ChimeraException
-from chimera.core.version import _chimera_name_
 from chimera.util.coord import Coord
 from chimera.util.position import Position
 from chimera.util.sextractor import SExtractor
@@ -206,7 +205,7 @@ class Image(UserDict):
                 ImageUtil.formatDate(dt.datetime.utcnow()),
                 "date of file creation",
             ),
-            ("AUTHOR", _chimera_name_, "author of the data"),
+            ("AUTHOR", "Chimera", "author of the data"),
             ("FILENAME", os.path.basename(filename), "name of the file"),
         ]
 

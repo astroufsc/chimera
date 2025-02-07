@@ -1,12 +1,11 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 # SPDX-FileCopyrightText: 2006-present Paulo Henrique Silva <ph.silva@gmail.com>
 
-from chimera.instruments.tests.base import FakeHardwareTest, RealHardwareTest
+from .base import FakeHardwareTest, RealHardwareTest
 
 import time
 
 from chimera.core.manager import Manager
-from chimera.core.callback import callback
 
 # hack for event  triggering asserts
 FiredEvents = {}
@@ -24,7 +23,6 @@ class FilterWheelTest(object):
 
     def setupEvents(self):
 
-        @callback(self.manager)
         def filterChangeClbk(newFilter, oldFilter):
             FiredEvents["filterChange"] = (time.time(), newFilter, oldFilter)
 

@@ -1,6 +1,6 @@
 import enum
 
-from chimera.core.version import _chimera_version_, _chimera_description_
+from chimera.core.version import _chimera_version_
 from chimera.core.constants import SYSTEM_CONFIG_DEFAULT_FILENAME
 from chimera.core.location import Location, InvalidLocationException
 
@@ -299,7 +299,7 @@ class ChimeraCLI(object):
 
         self.parser = optparse.OptionParser(
             prog=prog,
-            description=_chimera_description_ + " - " + description,
+            description=description,
             version=f"Chimera: {_chimera_version_}\n{prog}: {version}",
         )
 

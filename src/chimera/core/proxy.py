@@ -93,7 +93,9 @@ class ProxyMethod(object):
     def __iadd__(self, other):
         topic = f"{self.proxy.location}/{self.method}"
         self.proxy.client.subscribe_event(topic, other)
+        return self
 
     def __isub__(self, other):
         topic = f"{self.proxy.location}/{self.method}"
         self.proxy.client.unsubscribe_event(topic, other)
+        return self
