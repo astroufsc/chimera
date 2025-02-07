@@ -24,4 +24,4 @@ def test_proxy_bench():
     total = time.time() - t0
     us_per_call = (total * 1e6) / N
 
-    print(f"{N=} {total:.3f} s total, {us_per_call:.3f} us per call")
+    print(f"{N=} {total:.3f} s total, {us_per_call:.3f} us per, call rps={N/total:.3f}")

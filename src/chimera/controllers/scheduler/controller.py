@@ -52,7 +52,7 @@ class Scheduler(ChimeraObject):
         self.log.debug("Using {} algorithm".format(self["algorithm"]))
 
     def control(self):
-        if not self.machine.isAlive():
+        if not self.machine.is_alive():
             self.machine.start()
             return False
 
