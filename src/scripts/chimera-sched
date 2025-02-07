@@ -13,9 +13,15 @@ import time
 import yaml
 from astropy.time import Time
 
-from chimera.controllers.scheduler.model import (Session, Program, AutoFocus,
-                                                 AutoFlat, PointVerify, Point,
-                                                 Expose)
+from chimera.controllers.scheduler.model import (
+    Session,
+    Program,
+    AutoFocus,
+    AutoFlat,
+    PointVerify,
+    Point,
+    Expose,
+)
 from chimera.controllers.scheduler.states import State
 from chimera.controllers.scheduler.status import SchedulerStatus
 from chimera.core.cli import ChimeraCLI, action
@@ -24,25 +30,27 @@ from chimera.util.coord import Coord
 from chimera.util.output import blue, green, red
 from chimera.util.position import Position
 
-actionDict = {'autofocus': AutoFocus,
-              'autoflat': AutoFlat,
-              'pointverify': PointVerify,
-              'point': Point,
-              'expose': Expose,
-              }
+actionDict = {
+    "autofocus": AutoFocus,
+    "autoflat": AutoFlat,
+    "pointverify": PointVerify,
+    "point": Point,
+    "expose": Expose,
+}
 
 
 class ChimeraSched(ChimeraCLI):
     def __init__(self):
-        ChimeraCLI.__init__(
-            self, "chimera-sched", "Scheduler controller", 0.1)
+        ChimeraCLI.__init__(self, "chimera-sched", "Scheduler controller", 0.1)
 
         self.addHelpGroup("SCHEDULER", "Scheduler")
-        self.addController(name="scheduler",
-                           cls="Scheduler",
-                           required=True,
-                           help="Scheduler controller to be used",
-                           helpGroup="SCHEDULER")
+        self.addController(
+            name="scheduler",
+            cls="Scheduler",
+            required=True,
+            help="Scheduler controller to be used",
+            helpGroup="SCHEDULER",
+        )
 
         databaseHelp = """Database options.
 
@@ -223,31 +231,40 @@ class ChimeraSched(ChimeraCLI):
         self.addHelpGroup("DB", databaseHelp)
         self.addHelpGroup("RUN", "Start/Stop/Info")
 
-        self.addParameters(dict(name="filename",
-                                long="file",
-                                short="f",
-                                helpGroup="DB",
-                                default="",
-                                help="Filename of the input database.",
-                                metavar="FILENAME"),
-                           dict(name="output",
-                                short="o",
-                                type="string",
-                                helpGroup="DB",
-                                help="Images base filename including full path if needed.",
-                                default="$NAME-$DATE-$TIME"),
-                           )
+        self.addParameters(
+            dict(
+                name="filename",
+                long="file",
+                short="f",
+                helpGroup="DB",
+                default="",
+                help="Filename of the input database.",
+                metavar="FILENAME",
+            ),
+            dict(
+                name="output",
+                short="o",
+                type="string",
+                helpGroup="DB",
+                help="Images base filename including full path if needed.",
+                default="$NAME-$DATE-$TIME",
+            ),
+        )
 
-    @action(long="new",
-            help="Generate a new database from a text file (excluding all programs already in database)",
-            helpGroup="DB",
-            actionGroup="DB")
+    @action(
+        long="new",
+        help="Generate a new database from a text file (excluding all programs already in database)",
+        helpGroup="DB",
+        actionGroup="DB",
+    )
     def newDatabase(self, options):
 
         # save a copy
         if os.path.exists(DEFAULT_PROGRAM_DATABASE):
-            shutil.copy(DEFAULT_PROGRAM_DATABASE, "%s.%s.bak" %
-                        (DEFAULT_PROGRAM_DATABASE, time.strftime("%Y%m%d%H%M%S")))
+            shutil.copy(
+                DEFAULT_PROGRAM_DATABASE,
+                "%s.%s.bak" % (DEFAULT_PROGRAM_DATABASE, time.strftime("%Y%m%d%H%M%S")),
+            )
 
         # delete all programs
         session = Session()
@@ -258,21 +275,25 @@ class ChimeraSched(ChimeraCLI):
 
         self.generateDatabase(options)
 
-    @action(long="append", help="Append programs to database from a text file",
-            helpGroup="DB", actionGroup="DB")
+    @action(
+        long="append",
+        help="Append programs to database from a text file",
+        helpGroup="DB",
+        actionGroup="DB",
+    )
     def appendDatabase(self, options):
         self.generateDatabase(options)
 
     def generateDatabase(self, options):
 
-        if os.path.splitext(options.filename)[-1] == '.yaml':
+        if os.path.splitext(options.filename)[-1] == ".yaml":
             self._generateDatabase_yaml(options)
         else:
             self._generateDatabase_basic(options)
 
     def _generateDatabase_yaml(self, options):
 
-        with open(options.filename, 'r') as stream:
+        with open(options.filename, "r") as stream:
             try:
                 prgconfig = yaml.load(stream)
             except yaml.YAMLError as exc:
@@ -290,89 +311,110 @@ class ChimeraSched(ChimeraCLI):
 
             return offset
 
-        for prg in prgconfig['programs']:
+        for prg in prgconfig["programs"]:
 
             # process program
 
             program = Program()
             for key in list(prg.keys()):
-                if hasattr(program, key) and key != 'actions':
-                    if key == 'startAt' and 'T' in prg[key]:
-                        prg[key] = Time(prg[key], format='isot').mjd
+                if hasattr(program, key) and key != "actions":
+                    if key == "startAt" and "T" in prg[key]:
+                        prg[key] = Time(prg[key], format="isot").mjd
                     try:
                         setattr(program, key, prg[key])
-                    except:
-                        self.err('Could not set attribute %s = %s on Program' % (key, prg[key]))
+                    # FIXME: remove noqa
+                    except:  # noqa
+                        self.err(
+                            "Could not set attribute %s = %s on Program"
+                            % (key, prg[key])
+                        )
 
             self.out("# program: %s" % program.name)
 
             # process actions
-            for actconfig in prg['actions']:
-                act = actionDict[actconfig['action']]()
-                self.out('Action: %s' % actconfig['action'])
+            for actconfig in prg["actions"]:
+                act = actionDict[actconfig["action"]]()
+                self.out("Action: %s" % actconfig["action"])
 
-                if actconfig['action'] == 'point':
-                    if 'ra' in list(actconfig.keys()) and 'dec' in list(actconfig.keys()):
-                        epoch = 'J2000' if 'epoch' not in list(actconfig.keys()) else actconfig['epoch']
-                        position = Position.fromRaDec(actconfig['ra'], actconfig['dec'], epoch)
-                        self.out('\tCoords: %s' % position)
+                if actconfig["action"] == "point":
+                    if "ra" in list(actconfig.keys()) and "dec" in list(
+                        actconfig.keys()
+                    ):
+                        epoch = (
+                            "J2000"
+                            if "epoch" not in list(actconfig.keys())
+                            else actconfig["epoch"]
+                        )
+                        position = Position.fromRaDec(
+                            actconfig["ra"], actconfig["dec"], epoch
+                        )
+                        self.out("\tCoords: %s" % position)
                         act.targetRaDec = position
                         # act = Point(targetRaDec=position)
-                    elif 'alt' in list(actconfig.keys()) and 'az' in list(actconfig.keys()):
-                        position = Position.fromAltAz(actconfig['alt'], actconfig['az'])
-                        self.out('\tCoords: %s' % position)
+                    elif "alt" in list(actconfig.keys()) and "az" in list(
+                        actconfig.keys()
+                    ):
+                        position = Position.fromAltAz(actconfig["alt"], actconfig["az"])
+                        self.out("\tCoords: %s" % position)
                         act.targetAltAz = position
-                    elif 'name' in actconfig:
-                        self.out('\tTarget name: %s' % actconfig['name'])
-                        act.targetName = actconfig['name']
+                    elif "name" in actconfig:
+                        self.out("\tTarget name: %s" % actconfig["name"])
+                        act.targetName = actconfig["name"]
 
-                    if 'offset' not in actconfig and 'domeAz' not in actconfig and 'domeTracking' not in actconfig and 'name' not in actconfig:
-                        self.exit('[%s] Nothing to point at!' % red('ERROR'))
+                    if (
+                        "offset" not in actconfig
+                        and "domeAz" not in actconfig
+                        and "domeTracking" not in actconfig
+                        and "name" not in actconfig
+                    ):
+                        self.exit("[%s] Nothing to point at!" % red("ERROR"))
 
-                    if 'offset' in actconfig:
-                        if 'north' in actconfig['offset']:
-                            offset = _validateOffset(actconfig['offset']['north'])
-                            self.out('\tOffset north: %s' % offset)
+                    if "offset" in actconfig:
+                        if "north" in actconfig["offset"]:
+                            offset = _validateOffset(actconfig["offset"]["north"])
+                            self.out("\tOffset north: %s" % offset)
                             act.offsetNS = offset
-                        elif 'south' in actconfig['offset']:
-                            offset = _validateOffset(actconfig['offset']['south'])
-                            self.out('\tOffset south: %s' % offset)
+                        elif "south" in actconfig["offset"]:
+                            offset = _validateOffset(actconfig["offset"]["south"])
+                            self.out("\tOffset south: %s" % offset)
                             act.offsetNS = Coord.fromAS(-offset.AS)
 
-                        if 'west' in actconfig['offset']:
-                            offset = _validateOffset(actconfig['offset']['west'])
-                            self.out('\tOffset west: %s' % offset)
+                        if "west" in actconfig["offset"]:
+                            offset = _validateOffset(actconfig["offset"]["west"])
+                            self.out("\tOffset west: %s" % offset)
                             act.offsetEW = offset
-                        elif 'east' in actconfig['offset']:
-                            offset = _validateOffset(actconfig['offset']['east'])
-                            self.out('\tOffset east: %s' % offset)
+                        elif "east" in actconfig["offset"]:
+                            offset = _validateOffset(actconfig["offset"]["east"])
+                            self.out("\tOffset east: %s" % offset)
                             act.offsetEW = Coord.fromAS(-offset.AS)
 
                     # Special dome requirements... Needed mainly when doing dome FLATS.
-                    if 'domeAz' in actconfig:
-                        actconfig["domeAz"] = Coord.fromDMS(actconfig['domeAz'])
-                        self.out('\tdomeAz: %s' % actconfig["domeAz"])
-                        act.domeAz = (actconfig["domeAz"])
-                    if 'domeTracking' in actconfig:
-                        if actconfig['domeTracking'] == "None":
-                            actconfig['domeTracking'] = None
-                            self.out('\tDome tracking left AS IS')
-                        elif actconfig['domeTracking']:
-                            self.out('\tDome tracking ENABLED')
+                    if "domeAz" in actconfig:
+                        actconfig["domeAz"] = Coord.fromDMS(actconfig["domeAz"])
+                        self.out("\tdomeAz: %s" % actconfig["domeAz"])
+                        act.domeAz = actconfig["domeAz"]
+                    if "domeTracking" in actconfig:
+                        if actconfig["domeTracking"] == "None":
+                            actconfig["domeTracking"] = None
+                            self.out("\tDome tracking left AS IS")
+                        elif actconfig["domeTracking"]:
+                            self.out("\tDome tracking ENABLED")
                         else:
-                            self.out('\tDome tracking DISABLED')
+                            self.out("\tDome tracking DISABLED")
                         act.domeTracking = actconfig["domeTracking"]
 
                 else:
                     for key in list(actconfig.keys()):
-                        if hasattr(act, key) and key != 'action':
-                            self.out('\t%s: %s' % (key, actconfig[key]))
+                        if hasattr(act, key) and key != "action":
+                            self.out("\t%s: %s" % (key, actconfig[key]))
                             try:
                                 setattr(act, key, actconfig[key])
-                            except:
-                                self.err('Could not set attribute %s = %s on action %s' % (key,
-                                                                                           actconfig[key],
-                                                                                           actconfig['action']))
+                            # FIXME: remove noqa
+                            except:  # noqa
+                                self.err(
+                                    "Could not set attribute %s = %s on action %s"
+                                    % (key, actconfig[key], actconfig["action"])
+                                )
                 program.actions.append(act)
 
             self.out("")
@@ -388,14 +430,16 @@ class ChimeraSched(ChimeraCLI):
         f = None
         try:
             f = open(options.filename, "r")
-        except:
+        # FIXME: remove noqa
+        except:  # noqa
             self.exit("Could not find '%s'." % options.filename)
 
         session = Session()
 
         lineRe = re.compile(
-            '(?P<coord>(?P<ra>[\d:-]+)\s+(?P<dec>\+?[\d:-]+)\s+(?P<epoch>[\dnowNOWJjBb\.]+)\s+)?(?P<imagetype>[\w]+)'
-            '\s+(?P<objname>\'([^\\n\'\\\\]|\\\\.)*\'|"([^\\n"\\\\]|\\\\.)*"|([^ \\n"\\\\]|\\\\.)*)\s+(?P<exposures>[\w\d\s:\*\(\),]*)')
+            r"(?P<coord>(?P<ra>[\d:-]+)\s+(?P<dec>\+?[\d:-]+)\s+(?P<epoch>[\dnowNOWJjBb\.]+)\s+)?(?P<imagetype>[\w]+)"
+            r'\s+(?P<objname>\'([^\\n\'\\\\]|\\\\.)*\'|"([^\\n"\\\\]|\\\\.)*"|([^ \\n"\\\\]|\\\\.)*)\s+(?P<exposures>[\w\d\s:\*\(\),]*)'
+        )
         programs = []
 
         for i, line in enumerate(f):
@@ -417,12 +461,14 @@ class ChimeraSched(ChimeraCLI):
             objname = None
 
             if params.get("coord", None):
-                position = Position.fromRaDec(params['ra'], params['dec'], params['epoch'])
+                position = Position.fromRaDec(
+                    params["ra"], params["dec"], params["epoch"]
+                )
 
-            imagetype = params['imagetype'].upper()
-            objname = params['objname'].replace("\"", "")
+            imagetype = params["imagetype"].upper()
+            objname = params["objname"].replace('"', "")
 
-            multiplier, exps = params['exposures'].split("*")
+            multiplier, exps = params["exposures"].split("*")
             try:
                 multiplier = int(multiplier)
             except ValueError:
@@ -432,8 +478,7 @@ class ChimeraSched(ChimeraCLI):
 
             for i in range(multiplier):
 
-                program = Program(
-                    name="%s-%03d" % (objname.replace(" ", ""), i))
+                program = Program(name="%s-%03d" % (objname.replace(" ", ""), i))
 
                 self.out("# program: %s" % program.name)
 
@@ -467,14 +512,24 @@ class ChimeraSched(ChimeraCLI):
                     if imagetype in ("BIAS", "DARK"):
                         filter = None
 
-                    self.out("%s %s %s filter=%s exptime=%s frames=%s" % (
-                        imagetype, objname, str(position), filter, exptime, frames))
+                    self.out(
+                        "%s %s %s filter=%s exptime=%s frames=%s"
+                        % (imagetype, objname, str(position), filter, exptime, frames)
+                    )
 
-                    program.actions.append(Expose(shutter=shutter,
-                                                  filename=string.Template(options.output).safe_substitute(
-                                                      {'NAME': objname.replace(" ", "")}),
-                                                  filter=filter, frames=frames, exptime=exptime, imageType=imagetype,
-                                                  objectName=objname))
+                    program.actions.append(
+                        Expose(
+                            shutter=shutter,
+                            filename=string.Template(options.output).safe_substitute(
+                                {"NAME": objname.replace(" ", "")}
+                            ),
+                            filter=filter,
+                            frames=frames,
+                            exptime=exptime,
+                            imageType=imagetype,
+                            objectName=objname,
+                        )
+                    )
                 self.out("")
                 programs.append(program)
 
@@ -515,8 +570,9 @@ class ChimeraSched(ChimeraCLI):
         if self.scheduler.state() == State.BUSY and self.scheduler.currentAction():
             session = Session()
             action = session.merge(self.scheduler.currentAction())
-            program = session.query(Program).filter(
-                Program.id == action.program_id).one()
+            program = (
+                session.query(Program).filter(Program.id == action.program_id).one()
+            )
             self.out("Working on: %s (%s)" % (program.name, str(action)))
 
         self.out("=" * 40)
@@ -534,11 +590,19 @@ class ChimeraSched(ChimeraCLI):
             session = Session()
             program = session.merge(program)
             if status == SchedulerStatus.OK:
-                self.out("%s %s %s" %
-                         (blue("[program]"), program.name, green(str(status))))
+                self.out(
+                    "%s %s %s" % (blue("[program]"), program.name, green(str(status)))
+                )
             else:
-                self.out("%s %s %s (%s)" % (
-                    blue("[program]"), program.name, red(str(status)), red(str(message))))
+                self.out(
+                    "%s %s %s (%s)"
+                    % (
+                        blue("[program]"),
+                        program.name,
+                        red(str(status)),
+                        red(str(message)),
+                    )
+                )
 
         def actionBeginClbk(action, message):
             session = Session()
@@ -579,5 +643,5 @@ def main():
     cli.wait()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
