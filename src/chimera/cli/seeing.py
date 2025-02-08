@@ -11,33 +11,62 @@ from chimera.util.output import red, green
 
 class ChimeraSeeing(ChimeraCLI):
     def __init__(self):
-        ChimeraCLI.__init__(
-            self, "chimera-seeing", "Seeing Monitor script", 0.1)
+        ChimeraCLI.__init__(self, "chimera-seeing", "Seeing Monitor script", 0.1)
 
         self.addHelpGroup("SM", "Seeing Monitor")
         self.addHelpGroup("COMMANDS", "Commands")
 
-        self.addInstrument(name="seeingmonitor", cls="SeeingMonitor", required=True, helpGroup="WS",
-                           help="Seeing Monitor to be used")
+        self.addInstrument(
+            name="seeingmonitor",
+            cls="SeeingMonitor",
+            required=True,
+            helpGroup="WS",
+            help="Seeing Monitor to be used",
+        )
 
-        self.addParameters(dict(name="max_mins", short="t", type="float", default=10, helpGroup="COMMANDS",
-                                help="Mark in red date/time values if older than this time in minutes"))
+        self.addParameters(
+            dict(
+                name="max_mins",
+                short="t",
+                type="float",
+                default=10,
+                helpGroup="COMMANDS",
+                help="Mark in red date/time values if older than this time in minutes",
+            )
+        )
 
-    @action(short="i", help="Print seeing monitor current information", helpGroup="COMMANDS")
+    @action(
+        short="i", help="Print seeing monitor current information", helpGroup="COMMANDS"
+    )
     def info(self, options):
         self.out("=" * 80)
-        self.out("Seeing Monitor: %s %s (%s)" % (self.seeingmonitor.getLocation(), self.seeingmonitor["model"],
-                                                 self.seeingmonitor["device"]))
+        self.out(
+            "Seeing Monitor: %s %s (%s)"
+            % (
+                self.seeingmonitor.getLocation(),
+                self.seeingmonitor["model"],
+                self.seeingmonitor["device"],
+            )
+        )
         self.out("=" * 80)
 
-        for attr in ('seeing', 'seeing_at_zenith', 'airmass', 'flux'):
+        for attr in ("seeing", "seeing_at_zenith", "airmass", "flux"):
             try:
                 v = self.seeingmonitor.__getattr__(attr)()
                 if isinstance(v, NotImplementedError) or not v:
                     continue
-                t = red(v.time.__str__()) if datetime.datetime.utcnow() - v.time > datetime.timedelta(
-                    minutes=self.options.max_mins) else green(v.time.__str__())
-                self.out(t + "  " + attr.replace('_', ' ') + ": {0.value:.2f} {0.unit:s} ".format(v))
+                t = (
+                    red(v.time.__str__())
+                    if datetime.datetime.utcnow() - v.time
+                    > datetime.timedelta(minutes=self.options.max_mins)
+                    else green(v.time.__str__())
+                )
+                self.out(
+                    t
+                    + "  "
+                    + attr.replace("_", " ")
+                    + ": {0.value:.2f} {0.unit:s} ".format(v)
+                )
             except NotImplementedError:
                 pass
 
@@ -52,5 +81,5 @@ def main():
     cli.wait()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
