@@ -162,7 +162,7 @@ class ChimeraFocus(ChimeraCLI):
 
         try:
             self.focuser.moveOut(options.move_out, FocuserAxis.fromStr(options.axis))
-        except InvalidFocusPositionException as e:
+        except InvalidFocusPositionException:
             self.exit(
                 "Invalid position. Current position %d,"
                 " target position %d, valid range %d-%d."

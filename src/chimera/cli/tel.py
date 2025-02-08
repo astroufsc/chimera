@@ -304,7 +304,7 @@ class ChimeraTel(ChimeraCLI):
     def setFanSpeed(self, options):
         try:
             fan = self.telescope.getManager().getProxy(options.fan)
-        except ObjectNotFoundException as e:
+        except ObjectNotFoundException:
             self.exit("%s: Could not find requested fan." % red("ERROR"))
 
         self.out("=" * 40)
@@ -324,7 +324,7 @@ class ChimeraTel(ChimeraCLI):
 
         try:
             fan = self.telescope.getManager().getProxy(options.fan)
-        except ObjectNotFoundException as e:
+        except ObjectNotFoundException:
             self.exit("%s: Could not find requested fan." % red("ERROR"))
 
         if fan.isSwitchedOn():
@@ -349,7 +349,7 @@ class ChimeraTel(ChimeraCLI):
 
         try:
             fan = self.telescope.getManager().getProxy(options.fan)
-        except ObjectNotFoundException as e:
+        except ObjectNotFoundException:
             self.exit("%s: Could not find requested fan." % red("ERROR"))
 
         if not fan.isSwitchedOn():

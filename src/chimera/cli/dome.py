@@ -13,7 +13,7 @@ from chimera.interfaces.fan import (
 )
 from chimera.util.coord import Coord
 from chimera.core.exceptions import printException
-from chimera.util.output import blue, green, red, yellow
+from chimera.util.output import green, red, yellow
 from chimera.interfaces.dome import Mode
 from chimera.interfaces.lamp import IntensityOutOfRangeException, LampDimmer
 import sys
@@ -114,7 +114,7 @@ class ChimeraDome(ChimeraCLI):
 
         try:
             lamp = self.dome.getManager().getProxy(options.lamp)
-        except ObjectNotFoundException as e:
+        except ObjectNotFoundException:
             self.exit("%s: Could not find requested calibration lamp." % red("ERROR"))
         lamp.switchOff()
         self.out(green("OK"))
@@ -126,7 +126,7 @@ class ChimeraDome(ChimeraCLI):
         self.out("Turning light on ... ", end="")
         try:
             lamp = self.dome.getManager().getProxy(options.lamp)
-        except ObjectNotFoundException as e:
+        except ObjectNotFoundException:
             self.exit("%s: Could not find requested calibration lamp." % red("ERROR"))
 
         lamp.switchOn()
@@ -147,7 +147,7 @@ class ChimeraDome(ChimeraCLI):
         # try:
         try:
             lamp = self.dome.getManager().getProxy(options.lamp)
-        except ObjectNotFoundException as e:
+        except ObjectNotFoundException:
             self.exit("%s: Could not find requested calibration lamp." % red("ERROR"))
         try:
             if not lamp.isSwitchedOn():
@@ -158,7 +158,7 @@ class ChimeraDome(ChimeraCLI):
                 self.exit("Lamp does not support light intensity setting.")
         # except ObjectNotFoundException, e:
         #     self.exit('%s: Could not find requested calibration lamp.' % red('ERROR'))
-        except IntensityOutOfRangeException as e:
+        except IntensityOutOfRangeException:
             self.exit(
                 "\n%s: Intensity out of range: %s" % (red("ERROR"), lamp.getRange())
             )
@@ -216,7 +216,7 @@ class ChimeraDome(ChimeraCLI):
     def setFanSpeed(self, options):
         try:
             domefan = self.dome.getManager().getProxy(options.fan)
-        except ObjectNotFoundException as e:
+        except ObjectNotFoundException:
             self.exit("%s: Could not find requested fan." % red("ERROR"))
 
         self.out("=" * 40)
@@ -239,7 +239,7 @@ class ChimeraDome(ChimeraCLI):
 
         try:
             domefan = self.dome.getManager().getProxy(options.fan)
-        except ObjectNotFoundException as e:
+        except ObjectNotFoundException:
             self.exit("%s: Could not find requested fan." % red("ERROR"))
 
         if domefan.isSwitchedOn():
@@ -267,7 +267,7 @@ class ChimeraDome(ChimeraCLI):
 
         try:
             domefan = self.dome.getManager().getProxy(options.fan)
-        except ObjectNotFoundException as e:
+        except ObjectNotFoundException:
             self.exit("%s: Could not find requested fan." % red("ERROR"))
 
         if not domefan.isSwitchedOn():

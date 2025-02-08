@@ -136,7 +136,7 @@ class doStuff:
                 ro = self.locManager.getProxy(key.__str__())
                 try:
                     state = " [" + ro.getState().__str__() + "]"
-                except Exception as e:
+                except Exception:
                     state = ""
                 print(" - " + key.__str__() + state)
                 if options.listdetail:
@@ -167,7 +167,7 @@ if __name__ == "__main__":
 
     def check_location(option, opt_str, value, parser):
         try:
-            l = Location(value)
+            Location(value)
         except InvalidLocationException:
             raise optparse.OptionValueError("%s isnt't a valid location." % value)
 
