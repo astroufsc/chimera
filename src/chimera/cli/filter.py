@@ -10,8 +10,6 @@ from chimera.interfaces.filterwheel import InvalidFilterPositionException
 # import os
 import sys
 
-# import time
-# import warnings
 
 
 class ChimeraFilter(ChimeraCLI):
