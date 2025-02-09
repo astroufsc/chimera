@@ -7,7 +7,6 @@ from chimera.core.cli import ChimeraCLI, action
 
 from chimera.interfaces.filterwheel import InvalidFilterPositionException
 
-# import os
 import sys
 
 
