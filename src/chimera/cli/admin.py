@@ -9,7 +9,6 @@ import os
 
 from optparse import OptionParser, OptionGroup
 
-# from chimera.core.manager import Manager
 from chimera.core.location import Location
 from chimera.core.version import _chimera_version_, _chimera_description_
 from chimera.core.constants import MANAGER_DEFAULT_HOST, MANAGER_DEFAULT_PORT
