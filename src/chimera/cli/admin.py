@@ -15,7 +15,6 @@ from chimera.core.constants import MANAGER_DEFAULT_HOST, MANAGER_DEFAULT_PORT
 from chimera.core.exceptions import InvalidLocationException
 from chimera.core.path import ChimeraPath
 
-# from chimera.core.state import State
 from chimera.core.managerlocator import ManagerLocator, ManagerNotFoundException
 from chimera.core.systemconfig import SystemConfig
 
