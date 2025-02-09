@@ -3,39 +3,40 @@
 # SPDX-FileCopyrightText: 2006-present Paulo Henrique Silva <ph.silva@gmail.com>
 
 
-from chimera.core.cli import ChimeraCLI, action
+import sys
 
+from chimera.core.version import _chimera_version_
 from chimera.interfaces.filterwheel import InvalidFilterPositionException
 
-#import os
-import sys
-#import time
-#import warnings
+from .cli import ChimeraCLI, action
 
 
 class ChimeraFilter(ChimeraCLI):
-
     def __init__(self):
         ChimeraCLI.__init__(
-            self, "chimera-filter", "Filter Wheel Controller", 0.1)
+            self, "chimera-filter", "Filter Wheel Controller", _chimera_version_
+        )
 
         self.addHelpGroup("INFO", "Filter Wheel Information")
         self.addHelpGroup("FILTER_CHANGE", "Filter Position")
 
         self.addHelpGroup("FILTER", "Filter Wheel configuration")
-        self.addInstrument(name="wheel",
-                           cls="FilterWheel",
-                           required=True,
-                           help="Filter Wheel instrument to be used."
-                           "If blank, try to guess from chimera.config",
-                           helpGroup="FILTER")
+        self.addInstrument(
+            name="wheel",
+            cls="FilterWheel",
+            required=True,
+            help="Filter Wheel instrument to be used."
+            "If blank, try to guess from chimera.config",
+            helpGroup="FILTER",
+        )
 
-    @action(short="F",
-            long="--list-filters",
-            helpGroup="INFO",
-            help="Print available filter names.")
+    @action(
+        short="F",
+        long="--list-filters",
+        helpGroup="INFO",
+        help="Print available filter names.",
+    )
     def filters(self, options):
-
         self.out("Available filters:", end="")
 
         for i, f in enumerate(self.wheel.getFilters()):
@@ -44,13 +45,12 @@ class ChimeraFilter(ChimeraCLI):
         self.out()
         self.exit()
 
-    @action(help="Print Filter Wheel information and exit",
-            helpGroup="INFO")
+    @action(help="Print Filter Wheel information and exit", helpGroup="INFO")
     def info(self, options):
-
         self.out("=" * 40)
-        self.out("Filter Wheel: %s (%s)" %
-                 (self.wheel.getLocation(), self.wheel["device"]))
+        self.out(
+            "Filter Wheel: %s (%s)" % (self.wheel.getLocation(), self.wheel["device"])
+        )
         self.out("Current Filter:", self.wheel.getFilter())
 
         self.out("Available filters:", end="")
@@ -59,27 +59,31 @@ class ChimeraFilter(ChimeraCLI):
         self.out()
         self.out("=" * 40)
 
-    @action(long="--get-filter", help="Get the current filter name",
-            helpGroup="FILTER_CHANGE", actionGroup="FILTER_CHANGE")
+    @action(
+        long="--get-filter",
+        help="Get the current filter name",
+        helpGroup="FILTER_CHANGE",
+        actionGroup="FILTER_CHANGE",
+    )
     def getFilter(self, options):
         self.out("Current Filter:", self.wheel.getFilter())
         self.exit()
 
-    @action(name="filtername",
-            short="f",
-            long="--set-filter",
-            type="str",
-            help="Set current filter.",
-            actionGroup="FILTER_CHANGE",
-            helpGroup="FILTER_CHANGE")
+    @action(
+        name="filtername",
+        short="f",
+        long="--set-filter",
+        type="str",
+        help="Set current filter.",
+        actionGroup="FILTER_CHANGE",
+        helpGroup="FILTER_CHANGE",
+    )
     def changeFilter(self, options):
-
         if self.options.filtername not in self.wheel.getFilters():
             self.err("Invalid filter '%s'" % self.options.filtername)
             self.exit()
 
-        self.out("Changing current filter to %s ..." %
-                 self.options.filtername, end="")
+        self.out("Changing current filter to %s ..." % self.options.filtername, end="")
         try:
             self.wheel.setFilter(self.options.filtername)
             self.out("OK")
@@ -92,6 +96,6 @@ def main():
     cli.run(sys.argv)
     cli.wait()
 
-if __name__ == '__main__':
 
+if __name__ == "__main__":
     main()

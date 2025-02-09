@@ -14,21 +14,23 @@ import yaml
 from astropy.time import Time
 
 from chimera.controllers.scheduler.model import (
-    Session,
-    Program,
-    AutoFocus,
     AutoFlat,
-    PointVerify,
-    Point,
+    AutoFocus,
     Expose,
+    Point,
+    PointVerify,
+    Program,
+    Session,
 )
 from chimera.controllers.scheduler.states import State
 from chimera.controllers.scheduler.status import SchedulerStatus
-from chimera.core.cli import ChimeraCLI, action
 from chimera.core.constants import DEFAULT_PROGRAM_DATABASE
+from chimera.core.version import _chimera_version_
 from chimera.util.coord import Coord
 from chimera.util.output import blue, green, red
 from chimera.util.position import Position
+
+from .cli import ChimeraCLI, action
 
 actionDict = {
     "autofocus": AutoFocus,
@@ -41,7 +43,9 @@ actionDict = {
 
 class ChimeraSched(ChimeraCLI):
     def __init__(self):
-        ChimeraCLI.__init__(self, "chimera-sched", "Scheduler controller", 0.1)
+        ChimeraCLI.__init__(
+            self, "chimera-sched", "Scheduler controller", _chimera_version_
+        )
 
         self.addHelpGroup("SCHEDULER", "Scheduler")
         self.addController(
@@ -258,7 +262,6 @@ class ChimeraSched(ChimeraCLI):
         actionGroup="DB",
     )
     def newDatabase(self, options):
-
         # save a copy
         if os.path.exists(DEFAULT_PROGRAM_DATABASE):
             shutil.copy(
@@ -285,14 +288,12 @@ class ChimeraSched(ChimeraCLI):
         self.generateDatabase(options)
 
     def generateDatabase(self, options):
-
         if os.path.splitext(options.filename)[-1] == ".yaml":
             self._generateDatabase_yaml(options)
         else:
             self._generateDatabase_basic(options)
 
     def _generateDatabase_yaml(self, options):
-
         with open(options.filename, "r") as stream:
             try:
                 prgconfig = yaml.load(stream)
@@ -312,7 +313,6 @@ class ChimeraSched(ChimeraCLI):
             return offset
 
         for prg in prgconfig["programs"]:
-
             # process program
 
             program = Program()
@@ -443,7 +443,6 @@ class ChimeraSched(ChimeraCLI):
         programs = []
 
         for i, line in enumerate(f):
-
             if line.startswith("#"):
                 continue
             if len(line) == 1:
@@ -477,7 +476,6 @@ class ChimeraSched(ChimeraCLI):
             exps = exps.replace("(", "").replace(")", "").strip().split(",")
 
             for i in range(multiplier):
-
                 program = Program(name="%s-%03d" % (objname.replace(" ", ""), i))
 
                 self.out("# program: %s" % program.name)
@@ -579,7 +577,6 @@ class ChimeraSched(ChimeraCLI):
 
     @action(help="Monitor scheduler actions", helpGroup="RUN")
     def monitor(self, options):
-
         def programBeginClbk(program):
             session = Session()
             program = session.merge(program)

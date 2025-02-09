@@ -11,5 +11,6 @@ def main():
 
     SiteController(sys.argv).startup()
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()
