@@ -3,30 +3,31 @@
 # SPDX-FileCopyrightText: 2006-present Paulo Henrique Silva <ph.silva@gmail.com>
 
 
-from chimera.core.cli import ChimeraCLI, action, parameter, ParameterType
-
-from chimera.interfaces.autofocus import StarNotFoundException, FocusNotFoundException
-from chimera.interfaces.focuser import (
-    InvalidFocusPositionException,
-    FocuserFeature,
-    FocuserAxis,
-    ControllableAxis,
-)
-from chimera.interfaces.filterwheel import InvalidFilterPositionException
-from chimera.util.sextractor import SExtractorException
-
-from chimera.util.ds9 import DS9
-
-import sys
-import time
 import os
 import re
+import sys
+import time
+
+from chimera.core.version import _chimera_version_
+from chimera.interfaces.autofocus import FocusNotFoundException, StarNotFoundException
+from chimera.interfaces.filterwheel import InvalidFilterPositionException
+from chimera.interfaces.focuser import (
+    ControllableAxis,
+    FocuserAxis,
+    FocuserFeature,
+    InvalidFocusPositionException,
+)
+from chimera.util.ds9 import DS9
+from chimera.util.sextractor import SExtractorException
+
+from .cli import ChimeraCLI, ParameterType, action, parameter
 
 
 class ChimeraFocus(ChimeraCLI):
-
     def __init__(self):
-        ChimeraCLI.__init__(self, "chimera-focus", "Focuser controller", 0.1)
+        ChimeraCLI.__init__(
+            self, "chimera-focus", "Focuser controller", _chimera_version_
+        )
 
         self.addHelpGroup("FOCUS", "Focus")
         self.addInstrument(
@@ -199,7 +200,6 @@ class ChimeraFocus(ChimeraCLI):
 
     @action(short="i", help="Print focuser current information", helpGroup="COMMANDS")
     def info(self, options):
-
         self.out("=" * 40)
         self.out(
             "Focuser: %s (%s)" % (self.focuser.getLocation(), self.focuser["device"])
@@ -226,7 +226,6 @@ class ChimeraFocus(ChimeraCLI):
         " This option is exclusive, you cannot move manually at the same time.",
     )
     def auto(self, options):
-
         try:
             if not self.autofocus:
                 self.exit(
@@ -246,7 +245,6 @@ class ChimeraFocus(ChimeraCLI):
                 pass
 
         def stepComplete(position, star, filename):
-
             self.out(
                 "#%04d (%4d, %4d) FWHM: %8.3f FLUX: %-9.3f (%s)"
                 % (
@@ -321,7 +319,6 @@ class ChimeraFocus(ChimeraCLI):
         time.sleep(1)
 
     def _currentPosition(self, options):
-
         self.out("Current focuser position: %s" % self.focuser.getPosition())
 
         for ax in ControllableAxis:
@@ -337,7 +334,6 @@ class ChimeraFocus(ChimeraCLI):
         return
 
     def _validRange(self, options):
-
         self.out("Valid range: %s-%s" % self.focuser.getRange())
 
         for ax in ControllableAxis:

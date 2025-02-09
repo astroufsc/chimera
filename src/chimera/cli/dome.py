@@ -3,26 +3,28 @@
 # SPDX-FileCopyrightText: 2006-present Paulo Henrique Silva <ph.silva@gmail.com>
 
 
-from chimera.core.cli import ChimeraCLI, action
-from chimera.core.exceptions import ObjectNotFoundException
-from chimera.interfaces.fan import (
-    FanControllabeSpeed,
-    FanControllabeDirection,
-    FanStatus,
-    FanState,
-)
-from chimera.util.coord import Coord
-from chimera.core.exceptions import printException
-from chimera.util.output import green, red, yellow
-from chimera.interfaces.dome import Mode
-from chimera.interfaces.lamp import IntensityOutOfRangeException, LampDimmer
-import sys
 import copy
+import sys
+
+from chimera.core.exceptions import ObjectNotFoundException, printException
+from chimera.core.version import _chimera_version_
+from chimera.interfaces.dome import Mode
+from chimera.interfaces.fan import (
+    FanControllabeDirection,
+    FanControllabeSpeed,
+    FanState,
+    FanStatus,
+)
+from chimera.interfaces.lamp import IntensityOutOfRangeException, LampDimmer
+from chimera.util.coord import Coord
+from chimera.util.output import green, red, yellow
+
+from .cli import ChimeraCLI, action
 
 
 class ChimeraDome(ChimeraCLI):
     def __init__(self):
-        ChimeraCLI.__init__(self, "chimera-dome", "Dome controller", 0.1)
+        ChimeraCLI.__init__(self, "chimera-dome", "Dome controller", _chimera_version_)
 
         self.addHelpGroup("DOME", "Dome")
         self.addInstrument(
@@ -169,7 +171,6 @@ class ChimeraDome(ChimeraCLI):
 
     @action(help="Track the telescope", helpGroup="TELESCOPE", actionGroup="TRACKING")
     def track(self, options):
-
         if options.telescope:
             self.dome["telescope"] = options.telescope
 
@@ -195,7 +196,6 @@ class ChimeraDome(ChimeraCLI):
         helpGroup="COMMANDS",
     )
     def moveTo(self, options):
-
         try:
             target = Coord.fromDMS(options.moveTo)
         except ValueError as e:
@@ -236,7 +236,6 @@ class ChimeraDome(ChimeraCLI):
         actionGroup="DOMEFANS",
     )
     def startFan(self, options):
-
         try:
             domefan = self.dome.getManager().getProxy(options.fan)
         except ObjectNotFoundException:
@@ -264,7 +263,6 @@ class ChimeraDome(ChimeraCLI):
         actionGroup="DOMEFANS",
     )
     def stopFan(self, options):
-
         try:
             domefan = self.dome.getManager().getProxy(options.fan)
         except ObjectNotFoundException:
@@ -287,7 +285,6 @@ class ChimeraDome(ChimeraCLI):
 
     @action(help="Print dome information", helpGroup="COMMANDS")
     def info(self, options):
-
         self.out("=" * 40)
         self.out("Dome: %s (%s)." % (self.dome.getLocation(), self.dome["device"]))
 

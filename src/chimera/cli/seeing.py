@@ -5,13 +5,17 @@
 import datetime
 import sys
 
-from chimera.core.cli import ChimeraCLI, action
-from chimera.util.output import red, green
+from chimera.core.version import _chimera_version_
+from chimera.util.output import green, red
+
+from .cli import ChimeraCLI, action
 
 
 class ChimeraSeeing(ChimeraCLI):
     def __init__(self):
-        ChimeraCLI.__init__(self, "chimera-seeing", "Seeing Monitor script", 0.1)
+        ChimeraCLI.__init__(
+            self, "chimera-seeing", "Seeing Monitor script", _chimera_version_
+        )
 
         self.addHelpGroup("SM", "Seeing Monitor")
         self.addHelpGroup("COMMANDS", "Commands")

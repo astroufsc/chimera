@@ -3,18 +3,19 @@
 # SPDX-FileCopyrightText: 2006-present Paulo Henrique Silva <ph.silva@gmail.com>
 
 
-from chimera.core.cli import ChimeraCLI, action
-
-from chimera.interfaces.filterwheel import InvalidFilterPositionException
-
 import sys
 
+from chimera.core.version import _chimera_version_
+from chimera.interfaces.filterwheel import InvalidFilterPositionException
+
+from .cli import ChimeraCLI, action
 
 
 class ChimeraFilter(ChimeraCLI):
-
     def __init__(self):
-        ChimeraCLI.__init__(self, "chimera-filter", "Filter Wheel Controller", 0.1)
+        ChimeraCLI.__init__(
+            self, "chimera-filter", "Filter Wheel Controller", _chimera_version_
+        )
 
         self.addHelpGroup("INFO", "Filter Wheel Information")
         self.addHelpGroup("FILTER_CHANGE", "Filter Position")
@@ -36,7 +37,6 @@ class ChimeraFilter(ChimeraCLI):
         help="Print available filter names.",
     )
     def filters(self, options):
-
         self.out("Available filters:", end="")
 
         for i, f in enumerate(self.wheel.getFilters()):
@@ -47,7 +47,6 @@ class ChimeraFilter(ChimeraCLI):
 
     @action(help="Print Filter Wheel information and exit", helpGroup="INFO")
     def info(self, options):
-
         self.out("=" * 40)
         self.out(
             "Filter Wheel: %s (%s)" % (self.wheel.getLocation(), self.wheel["device"])
@@ -80,7 +79,6 @@ class ChimeraFilter(ChimeraCLI):
         helpGroup="FILTER_CHANGE",
     )
     def changeFilter(self, options):
-
         if self.options.filtername not in self.wheel.getFilters():
             self.err("Invalid filter '%s'" % self.options.filtername)
             self.exit()
@@ -100,5 +98,4 @@ def main():
 
 
 if __name__ == "__main__":
-
     main()

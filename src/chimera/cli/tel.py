@@ -3,41 +3,43 @@
 # SPDX-FileCopyrightText: 2006-present Paulo Henrique Silva <ph.silva@gmail.com>
 
 
-from chimera.core.cli import ChimeraCLI, action, ParameterType
-from chimera.interfaces.fan import (
-    FanStatus,
-    FanControllabeSpeed,
-    FanControllabeDirection,
-    FanState,
-)
-from chimera.util.coord import Coord
-from chimera.util.output import green, yellow
-from chimera.util.output import red
-from chimera.util.position import Position
-from chimera.util.simbad import Simbad
+import copy
+import sys
 
 from chimera.core.exceptions import (
-    ObjectTooLowException,
     ObjectNotFoundException,
+    ObjectTooLowException,
     printException,
+)
+from chimera.core.version import _chimera_version_
+from chimera.interfaces.fan import (
+    FanControllabeDirection,
+    FanControllabeSpeed,
+    FanState,
+    FanStatus,
 )
 from chimera.interfaces.telescope import (
     SlewRate,
-    TelescopeStatus,
-    TelescopePierSide,
-    TelescopePier,
     TelescopeCover,
+    TelescopePier,
+    TelescopePierSide,
+    TelescopeStatus,
 )
-import sys
-import copy
+from chimera.util.coord import Coord
+from chimera.util.output import green, red, yellow
+from chimera.util.position import Position
+from chimera.util.simbad import Simbad
+
+from .cli import ChimeraCLI, ParameterType, action
 
 # TODO: Abort, skip_init/init
 
 
 class ChimeraTel(ChimeraCLI):
-
     def __init__(self):
-        ChimeraCLI.__init__(self, "chimera-tel", "Telescope controller", 0.1)
+        ChimeraCLI.__init__(
+            self, "chimera-tel", "Telescope controller", _chimera_version_
+        )
 
         self.localSlew = False
 
@@ -122,7 +124,6 @@ class ChimeraTel(ChimeraCLI):
 
     @action(help="Slew to given --ra --dec or --az --alt or --object", helpGroup="SLEW")
     def slew(self, options):
-
         telescope = self.telescope
 
         if options.objectName is not None:
@@ -321,7 +322,6 @@ class ChimeraTel(ChimeraCLI):
         long="fan-on", help="Start telescope fan", helpGroup="FANS", actionGroup="FANS"
     )
     def startFan(self, options):
-
         try:
             fan = self.telescope.getManager().getProxy(options.fan)
         except ObjectNotFoundException:
@@ -346,7 +346,6 @@ class ChimeraTel(ChimeraCLI):
         long="fan-off", help="Stop telescope fan", helpGroup="FANS", actionGroup="FANS"
     )
     def stopFan(self, options):
-
         try:
             fan = self.telescope.getManager().getProxy(options.fan)
         except ObjectNotFoundException:
@@ -418,7 +417,6 @@ class ChimeraTel(ChimeraCLI):
         self.out(40 * "=")
 
     def _move(self, direction, cmd, offset):
-
         offset = self._validateOffset(offset)
 
         telescope = self.telescope
@@ -530,7 +528,6 @@ class ChimeraTel(ChimeraCLI):
         self.out(40 * "=")
 
     def _validateCoords(self, options):
-
         target = None
 
         if (options.ra is not None or options.dec is not None) and (
@@ -584,5 +581,4 @@ def main():
 
 
 if __name__ == "__main__":
-
     main()

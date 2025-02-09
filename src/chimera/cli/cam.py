@@ -2,19 +2,18 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 # SPDX-FileCopyrightText: 2006-present Paulo Henrique Silva <ph.silva@gmail.com>
 
+import copy
 import os
-
-from chimera.core.cli import ChimeraCLI, action, ParameterType
-from chimera.core.exceptions import printException, ObjectNotFoundException
-
-from chimera.interfaces.filterwheel import InvalidFilterPositionException
-from chimera.interfaces.camera import CameraFeature, CameraStatus
-
-from chimera.util.ds9 import DS9
-
 import sys
 import time
-import copy
+
+from chimera.core.exceptions import ObjectNotFoundException, printException
+from chimera.core.version import _chimera_version_
+from chimera.interfaces.camera import CameraFeature, CameraStatus
+from chimera.interfaces.filterwheel import InvalidFilterPositionException
+from chimera.util.ds9 import DS9
+
+from .cli import ChimeraCLI, ParameterType, action
 
 currentFrame = 0
 currentFrameExposeStart = 0
@@ -35,9 +34,8 @@ def get_compressed_name(filename, compression):
 
 
 class ChimeraCam(ChimeraCLI):
-
     def __init__(self):
-        ChimeraCLI.__init__(self, "chimera-cam", "Camera controller", 0.1)
+        ChimeraCLI.__init__(self, "chimera-cam", "Camera controller", _chimera_version_)
 
         self.addHelpGroup("CAM", "Camera and Filter Wheel configuration")
         self.addInstrument(
@@ -265,7 +263,6 @@ class ChimeraCam(ChimeraCLI):
         metavar="TEMP",
     )
     def startCooling(self, options):
-
         def eps_equal(a, b, eps=0.01):
             return abs(a - b) <= eps
 
@@ -432,7 +429,6 @@ class ChimeraCam(ChimeraCLI):
         help="Take an exposure with selected parameters",
     )
     def expose(self, options):
-
         camera = self.camera
 
         # first check binning
@@ -628,7 +624,6 @@ class ChimeraCam(ChimeraCLI):
 
         try:
             try:
-
                 if filterList:
                     for f in range(len(filterList)):
                         changeFilter(filterList[f])
@@ -674,7 +669,6 @@ class ChimeraCam(ChimeraCLI):
             except Exception as e:
                 self.err("Error trying to take exposures. (%s)" % printException(e))
         finally:
-
             self.out(40 * "=")
             self.out("Total time: %.3fs" % (time.time() - start))
             self.out(40 * "=")

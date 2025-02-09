@@ -4,14 +4,19 @@
 
 import datetime
 import sys
-from chimera.core.cli import ChimeraCLI, action
+
+from chimera.core.version import _chimera_version_
 from chimera.interfaces.weatherstation import WeatherSafety
-from chimera.util.output import red, green
+from chimera.util.output import green, red
+
+from .cli import ChimeraCLI, action
 
 
 class ChimeraWeather(ChimeraCLI):
     def __init__(self):
-        ChimeraCLI.__init__(self, "chimera-weather", "Weather station script", 0.1)
+        ChimeraCLI.__init__(
+            self, "chimera-weather", "Weather station script", _chimera_version_
+        )
 
         self.addHelpGroup("WS", "Weather Station")
         self.addHelpGroup("COMMANDS", "Commands")
