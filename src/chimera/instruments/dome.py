@@ -2,14 +2,18 @@
 # SPDX-FileCopyrightText: 2006-present Paulo Henrique Silva <ph.silva@gmail.com>
 # SPDX-FileCopyrightText: 2006-present Antonio Kanaan <kanaan@astro.ufsc.br>
 
+import functools
 import queue
 import threading
+from typing import cast
 
 from chimera.core.chimeraobject import ChimeraObject
+from chimera.core.proxy import Proxy
 from chimera.interfaces.dome import Mode, DomeSlew, DomeSlit, DomeFlap, DomeSync
 from chimera.core.lock import lock
 from chimera.core.exceptions import ObjectNotFoundException
 from chimera.core.exceptions import ChimeraException
+from chimera.interfaces.telescope import Telescope
 from chimera.util.coord import Coord
 
 
@@ -37,15 +41,7 @@ class DomeBase(ChimeraObject, DomeSlew, DomeSlit, DomeFlap, DomeSync):
 
         self.setHz(1 / 4.0)
 
-        tel = self.getTelescope()
-        if tel:
-            self._connectTelEvents()
-        else:
-            self.log.warning(
-                "Couldn't find telescope. Telescope events would"
-                " not be monitored. Dome will stay in Stand mode."
-            )
-            self["mode"] = Mode.Stand
+        self._connectTelEvents()
 
         if self["mode"] == Mode.Track:
             self.track()
@@ -81,28 +77,14 @@ class DomeBase(ChimeraObject, DomeSlew, DomeSlit, DomeFlap, DomeSync):
         return True
 
     def _connectTelEvents(self):
-
-        tel = self.getTelescope()
-        if not tel:
-            self.log.warning(
-                "Couldn't find telescope. Telescope events would"
-                " not be monitored. Dome will stay in Stand mode."
-            )
-            self["mode"] == Mode.Stand
-            return False
-
-        tel.slewBegin += self.getProxy()._telSlewBeginClbk
-        tel.slewComplete += self.getProxy()._telSlewCompleteClbk
+        self.telescope.slewBegin += self.getProxy()._telSlewBeginClbk
+        self.telescope.slewComplete += self.getProxy()._telSlewCompleteClbk
         return True
 
     def _disconnectTelEvents(self):
-
-        tel = self.getTelescope()
-        if tel:
-            tel.slewBegin -= self.getProxy()._telSlewBeginClbk
-            tel.slewComplete -= self.getProxy()._telSlewCompleteClbk
-            return True
-        return False
+        self.telescope.slewBegin -= self.getProxy()._telSlewBeginClbk
+        self.telescope.slewComplete -= self.getProxy()._telSlewCompleteClbk
+        return True
 
     def _reconnectTelEvents(self):
         self._disconnectTelEvents()
@@ -118,15 +100,23 @@ class DomeBase(ChimeraObject, DomeSlew, DomeSlit, DomeFlap, DomeSync):
         )
 
     # utilitaries
-    def getTelescope(self):
-        try:
-            p = self.getManager().getProxy(self["telescope"])
-            if not p.ping():
-                return False
-            else:
-                return p
-        except ObjectNotFoundException:
-            return False
+    @property
+    @functools.cache
+    def telescope(self) -> Telescope:
+        manager = self.getManager()
+        host = manager.getHostname()
+        port = manager.getPort()
+        return cast(Telescope, Proxy(f"{host}:{port}{self["telescope"]}"))
+
+    # def getTelescope(self):
+    #     try:
+    #         p = self.getManager().getProxy(self["telescope"])
+    #         if not p.ping():
+    #             return False
+    #         else:
+    #             return p
+    #     except ObjectNotFoundException:
+    #         return False
 
     def control(self):
 
@@ -139,17 +129,14 @@ class DomeBase(ChimeraObject, DomeSlew, DomeSlit, DomeFlap, DomeSync):
 
         try:
             if not self._tel or self._telChanged:
-                self._tel = self.getTelescope()
                 self._telChanged = False
-                if not self._tel:
-                    return True
 
-            if self._tel.isSlewing():
+            if self.telescope.isSlewing():
                 self.log.debug("[control] telescope slewing... not checking az.")
                 self._waitAfterSlew.set()
                 return True
 
-            self._telescopeChanged(self._tel.getAz())
+            self._telescopeChanged(self.telescope.getAz())
             # flag all waiting threads that the control loop already checked the new telescope position
             # probably adding new azimuth to the queue
             self._waitAfterSlew.clear()
@@ -183,7 +170,7 @@ class DomeBase(ChimeraObject, DomeSlew, DomeSlit, DomeFlap, DomeSync):
     def _processQueue(self):
 
         if self._waitAfterSlew.is_set():
-            self._telescopeChanged(self._tel.getAz())
+            self._telescopeChanged(self.telescope.getAz())
 
         if self.queue.empty():
             return
@@ -205,7 +192,7 @@ class DomeBase(ChimeraObject, DomeSlew, DomeSlit, DomeFlap, DomeSync):
         if self.getMode() == Mode.Track:
             return
 
-        tel = self.getTelescope()
+        tel = self.telescope
 
         if tel:
             self._reconnectTelEvents()
@@ -229,14 +216,14 @@ class DomeBase(ChimeraObject, DomeSlew, DomeSlit, DomeFlap, DomeSync):
         self.syncBegin()
 
         if self.getMode() != Mode.Stand:
-            self._telescopeChanged(self._tel.getAz())
+            self._telescopeChanged(self.telescope.getAz())
             self._processQueue()
 
         self.syncComplete()
 
     @lock
     def isSyncWithTel(self):
-        return self._needToMove(self._tel.getAz())
+        return self._needToMove(self.telescope.getAz())
 
     def getMode(self):
         return self._mode

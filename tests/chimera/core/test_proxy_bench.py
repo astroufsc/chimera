@@ -10,11 +10,7 @@ def test_proxy_bench():
         Location(host="127.0.0.1", port=8088, cls="FakeTelescope", name="0")
     )
 
-    # telescope.__getitem__("device")
-    # p = telescope.getPositionRaDec()
-    # # inspect(p)
-
-    N = 10000
+    N = 10
 
     t0 = time.time()
 

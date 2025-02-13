@@ -2,7 +2,7 @@ from chimera.core.location import Location
 from chimera.core.protocol import Protocol
 from chimera.core.serializer_pickle import PickleSerializer
 from chimera.core.transport import create_transport
-from chimera.core.transport_redis import RedisTransport
+from chimera.core.transport_nng import TransportNNG
 
 
 class Client:
@@ -10,14 +10,13 @@ class Client:
         self,
         location: Location,
         protocol=Protocol,
-        transport=RedisTransport,
+        transport=TransportNNG,
         serializer=PickleSerializer,
     ):
         self.location = location
         self.protocol = protocol()
-        self.transport = create_transport(
-            location.host, location.port, transport, serializer
-        )
+        self.serializer = serializer()
+        self.transport = create_transport(location.host, location.port, transport)
         self.transport.connect()
 
     def ping(self):
@@ -32,12 +31,15 @@ class Client:
             kwargs=kwargs,
         )
 
-        self.transport.send_request(request)
+        self.transport.send(self.serializer.dumps(request))
 
-        # FIXME: timeout should be configurable, calls can take a long time.
-        response = self.transport.recv_response(request)
+        response = self.transport.recv()
         if response is None:
             raise Exception("Server is down")
+
+        response = self.serializer.loads(response)
+        if response is None:
+            raise Exception("Invalid response")
 
         if response.error:
             raise Exception(response.error)
@@ -46,7 +48,7 @@ class Client:
 
     def publish_event(self, topic, args, kwargs):
         data = self.protocol.event(topic, args, kwargs)
-        return self.transport.publish(topic, data)
+        return self.transport.publish(topic, self.serializer.dumps(data))
 
     def subscribe_event(self, topic, handler):
         return self.transport.subscribe(topic, handler)

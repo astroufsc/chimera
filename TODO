@@ -1,13 +1,162 @@
+# TODO
+
+- step loop fails: retry? how long?
+- step metrics
+- per call metrics?
+  - understand system delays
+
+- easy way to monitor traffic
+- easy way to see all the current activity
+- save statistics about call, latency, method names, etc, maybe stack
+- Cache request handler lookup: resource/method are mostly static
+
+- Review how we use the Site classes
+  - in principle, we can use the remote side to get info, but all calls should be local as there is nothing the server knows more than the client
+
+- Proxies should be cheap
+- Are Proxies thread safe?
+
+- can Proxy publish events?
+
+- event graph:
+  - não sei se é papel do scheduler, mas uma coisa parece começar a ficar clara... quando mandarmos expor, tem uma série de coisas que queremos que aconteça após isso... exemplo, rodar o qc, sextractor, talvez reduzir, pverify, etc, etc...
+    do jeito que é hoje, se você adiciona esses controladores, eles sempre vão rodar, pois eles dependem de callback.. se gerar imagem eles fazem, mas não conseguimos controlar a ordem, saber se tudo rodou, etc...
+    parece trabalho pra um event graph... algo com nós que defina o pipeline que quer executar, por exemplo, ao expor...
+    o eventscript aquele é nesse caminho, mas algo que persista o estado da execução... e permita conectar vários controllers...
+    mesmo que o controller não esteja ouvindo aquele evento por padrão...  da camera, por exemplo..
+    algo mais controlado...
+    acho que você falou de algo parecido pra rotina de início da noite, fim de noite, etc...
+    parece um scheduling, mas é mais um sequencer...
+    pensar mais...
+
+- atualizar sqlalchemy
+- camera continuous/video mode
+- chimera install <plugin>
+- usa entry points e simplificar os plugins
+- usar a abstração do transporte e fazer um transporte que funcione no windows
+- abstrair um pouco mais o pub sub... do jeito que está o pub/sub está vinculado ao redis
+  sem redis == sem pubsub...
+
+- remove README.rst link as it fails on Windows
+- uv python install
+- uv sync
+  - sync install dev group, how to avoid it?
+
+- better lifecycle control:
+  - restart, start, stop, pause? resume?, reload?
+  - cli and API
+
+- slew: wait dome sync
+
+- better telescope simulator:
+  - simulate trajectory on slew
+  - simulate tracking
+
+- mover scheduler para plugin, manter interface?
+- mover autofocus
+- chimera-autoalign -> chimera-t80-autoalign
+- interfaces must live in core
+
+- chimera-pverify -> chimera-plate-solve/solving/chimera-astrometry
+  - astrometry.net
+  - astap
+  - `--check` to show which backends and index files are available
+
+- pointing model
+- criacao pointing model
+- polar alignment
+
+- commissioning vs operation
+
+- sky and image viewers
+  Aladin?
+  JS9
+  Stellarium-Web
+  ???
+
+- Chimera for:
+  Windows: x86-64, arm64
+  Linux: x86-64, arm64
+  MacOS: arm64
+  python: 3.12 3.13
+
+- CI for docs? should only build the docs when needed, right now it builds everytime
+- chimera-template: improve and use cookiecutter
+
+- CI: linter, build
+- ASCOM: make it work, camera, telescope,
+- Simbad: local catalog, ngc/messie/bsc/named
+
+- fix exception handling
+  - new Chimera doesn't return the original exceptions.
+  - define the format and how to match the original exception
+  - should we pickle the original exceptions and return?
+
+- method.begin? does anyone use it?
+  - to async or not async?
+
+- field rotators
+- GPS/Time servers
+
+- tqdm: chimera-clis
+
+- chimera as NINA?
+  - configurable drivers
+  - scheduling
+
+- usb hotplug
+  - detect existing hardware and suggest chimera drivers
+
+- ASCOM
+- Alpaca
+- INDI and Indigo
+  - drivers
+  - device classes
+  - one driver can export more than one device
+
+- does Chimera have drivers?
+
+- generate docs again and decide if we continue with the comments intended for autodoc
+  - which version of sphinx?
+- remove: chimera-admin, chimera-console
+- less magical cli?
+- interactive script cli based on chimera-clis?
+
+  - ```sh
+    chimera-cli
+    > tel slew ra dec
+    ```
+
+- what is chimera doing?
+- what has chimera done?
+- timeline
+- events
+- data
 
 - convert files to UTF-8 and adjust header
-    #! /usr/bin/env python
-    # -*- coding: iso-8859-1 -*-
-
 - remove shebang from non-executable files
 - move to SPDX license description
-- remove enum and migrate to py3 enum
-
-
+- DONE remove enum and migrate to py3 enum
+  - remove last enum bits
 
 See issues list on http://code.google.com/p/chimera/issues.
 
+- migrar setup.py -> pyproject.toml
+- garantir que a lista de dependencias está certa
+
+- colocar CI com o pre-commit e teste
+
+- fazer pytest rodar, mesmo que falhe
+- separar testes
+- atualizar pro Python 3.13, garantir que pelo menos funcione... podemos deixar a base no 3.12 ainda como está.
+
+- separate each ChimeraObject into its own process to make the step thread jitter less of an issue
+
+- Proxy __iadd__ doesn't fail if you subscribe to an invalid event
+- review loop: if it doesn't return it means exit! jitter and how we sleep
+- revisit threading model
+- replace chimera.util.output
+- replace/check RWLock
+- driver model?
+  - reduce *Base classes, one implementation, multiple drivers?
+- get good at Changelogs and more frequent releases

@@ -26,15 +26,14 @@ classifiers = [
 
 requires-python = ">=3.12"
 dependencies = [
-    "redis[hiredis]>=5.0.8",
     "pyyaml>=6.0.2",
     "python-dateutil>=2.9.0.post0",
     "pyephem>=9.99",
     "numpy>=2.1.1",
     "astropy>=6.1.3",
-    "redislite>=6.2.912183",
     "rich>=13.9.4",
     "sqlalchemy==1.4",
+    "pynng>=0.8.1",
 ]
 
 [project.urls]
@@ -53,6 +52,9 @@ chimera-console = "chimera.cli.console:main"
 chimera-sched = "chimera.cli.sched:main"
 chimera-weather = "chimera.cli.weather:main"
 chimera-seeing = "chimera.cli.seeing:main"
+
+[project.entry-points]
+instrumenents = {}
 
 [build-system]
 requires = ["hatchling"]

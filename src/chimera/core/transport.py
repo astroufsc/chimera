@@ -1,13 +1,8 @@
-import functools
 from typing import Type
-
-from chimera.core.protocol import Event, Request, Response
-from chimera.core.serializer import Serializer
 
 
 class Transport:
-    def __init__(self, host: str, port: int, serializer: Type[Serializer]):
-        self.serializer = serializer()
+    def __init__(self, host: str, port: int):
         self.host = host
         self.port = port
 
@@ -19,26 +14,17 @@ class Transport:
 
     def ping(self) -> bool: ...
 
-    def send_request(self, request: Request) -> None: ...
+    # TODO: return int?
+    def send(self, data: bytes) -> None: ...
 
-    def recv_request(self) -> Request: ...
+    def recv(self) -> bytes | None: ...
 
-    def send_response(self, request: Request, response: Response) -> None: ...
-
-    def recv_response(self, request: Request) -> Response: ...
-
-    def publish(self, topic: str, data: Event) -> int: ...
+    def publish(self, topic: str, data: bytes) -> int: ...
 
     def subscribe(self, topic: str, callback) -> None: ...
 
-    def unsubscribe(self, channel: str, callback) -> None: ...
+    def unsubscribe(self, topic: str, callback) -> None: ...
 
 
-@functools.cache
-def create_transport(
-    host: str, port: int, transport_cls: Type[Transport], serializer: Type[Serializer]
-) -> Transport:
-    """
-    Create a transport instance. Using functools.cache to avoid creating multiple instances.
-    """
-    return transport_cls(host, port, serializer)
+def create_transport(host: str, port: int, transport_cls: Type[Transport]) -> Transport:
+    return transport_cls(host, port)

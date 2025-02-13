@@ -407,7 +407,7 @@ class Manager:
         try:
             # FIXME: thread exception handling
             # ok, now schedule object main in a new thread
-            log.info(f"Running {location}. __main___.")
+            log.info(f"Running {location}.__main___.")
 
             loop = threading.Thread(target=resource.instance.__main__, daemon=True)
             loop.name = str(resource.location)

@@ -132,29 +132,28 @@ class ChimeraObject(ILifeCycle, metaclass=MetaObject):
     def __main__(self):
 
         self._loop_abort.clear()
-        timeslice = 0.01
 
         runCondition = True
 
         while runCondition:
-
-            runCondition = self.control()
+            t0 = time.time()
+            with self:
+                runCondition = self.control()
 
             if self._loop_abort.is_set():
                 return True
 
-            # FIXME: better idle loop
-            # we can't sleep for the whole time because
-            # if object set a long sleep time and Manager decides to
-            # shutdown, we must be asleep to receive his message and
-            # return.
-            timeToWakeUp = 1.0 / self.getHz()
-            slept = 0
-            while slept < timeToWakeUp:
-                time.sleep(timeslice)
-                if self._loop_abort.is_set():
-                    return True
-                slept += timeslice
+            spentTime = time.time() - t0
+            timeToWakeUp = (1.0 / self.getHz()) - spentTime
+            self.log.info(
+                f"{self.__location__}: Hz: {self._Hz:.6f} spentTime: {spentTime:.6f} timeToWakeUp: {timeToWakeUp:.6f}"
+            )
+            if timeToWakeUp > 0:
+                time.sleep(timeToWakeUp)
+            else:
+                self.log.warning(
+                    f"Loop is taking more than {1.0 / self.getHz()} seconds to run."
+                )
 
         return True
 

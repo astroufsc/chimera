@@ -3,7 +3,10 @@
 
 import time
 import threading
+from typing import cast
 
+from chimera.core.proxy import Proxy
+from chimera.core.site import Site
 from chimera.interfaces.telescope import (
     SlewRate,
     TelescopeStatus,
@@ -45,30 +48,25 @@ class FakeTelescope(TelescopeBase, TelescopeCover, TelescopePier):
         self._az = Position.fromAltAz(0, 0).az
 
     def _setAltAzFromRaDec(self):
-        altAz = self._getSite().raDecToAltAz(Position.fromRaDec(self._ra, self._dec))
+        altAz = self.site.raDecToAltAz(Position.fromRaDec(self._ra, self._dec))
         self._alt = altAz.alt
         self._az = altAz.az
 
-    def _getSite(self):
-        # FIXME: create the proxy directly and cache it
-        return self.getManager().getProxy("/Site/0")
-
     def _setRaDecFromAltAz(self):
-        raDec = self._getSite().altAzToRaDec(Position.fromAltAz(self._alt, self._az))
+        raDec = self.site.altAzToRaDec(Position.fromAltAz(self._alt, self._az))
         self._ra = raDec.ra
         self._dec = raDec.dec
 
     def _setAltAzFromRaDec(self):
-        altAz = self._getSite().raDecToAltAz(Position.fromRaDec(self._ra, self._dec))
+        altAz = self.site.raDecToAltAz(Position.fromRaDec(self._ra, self._dec))
         self._alt = altAz.alt
         self._az = altAz.az
 
     def __start__(self):
-        self.setHz(1)
+        self.setHz(10)
 
     @lock
     def control(self):
-        self._getSite()
         if not self._slewing:
             if self._tracking:
                 self._setAltAzFromRaDec()
@@ -134,7 +132,7 @@ class FakeTelescope(TelescopeBase, TelescopeCover, TelescopePier):
 
         self._validateAltAz(position)
 
-        self.slewBegin(self._getSite().altAzToRaDec(position))
+        self.slewBegin(self.site.altAzToRaDec(position))
 
         alt_steps = position.alt - self.getAlt()
         alt_steps = float(alt_steps / 10.0)
@@ -284,7 +282,9 @@ class FakeTelescope(TelescopeBase, TelescopeCover, TelescopePier):
         self._parked = False
         self.unparkComplete()
 
+    @lock
     def isParked(self):
+        time.sleep(0.5)
         return self._parked
 
     @lock

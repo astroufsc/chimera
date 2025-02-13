@@ -2,8 +2,12 @@
 # SPDX-FileCopyrightText: 2006-present Paulo Henrique Silva <ph.silva@gmail.com>
 
 
+import functools
+from typing import cast
 from chimera.core.chimeraobject import ChimeraObject
 
+from chimera.core.proxy import Proxy
+from chimera.core.site import Site
 from chimera.interfaces.telescope import (
     TelescopeSlew,
     TelescopeSync,
@@ -30,7 +34,14 @@ class TelescopeBase(
         ChimeraObject.__init__(self)
 
         self._park_position = None
-        self.site = None
+
+    @property
+    @functools.cache
+    def site(self) -> Site:
+        manager = self.getManager()
+        host = manager.getHostname()
+        port = manager.getPort()
+        return cast(Site, Proxy(f"{host}:{port}/Site/0"))
 
     @lock
     def slewToObject(self, name):

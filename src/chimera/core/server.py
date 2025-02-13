@@ -1,3 +1,4 @@
+import functools
 import operator
 import logging
 from concurrent.futures import ThreadPoolExecutor
@@ -7,8 +8,7 @@ from chimera.core.resources import ResourcesManager
 from chimera.core.serializer_pickle import PickleSerializer
 from chimera.core.protocol import Protocol
 from chimera.core.transport import create_transport
-from chimera.core.transport_redis import RedisTransport
-
+from chimera.core.transport_nng import TransportNNG
 
 log = logging.getLogger(__name__)
 
@@ -20,14 +20,15 @@ class Server:
         host,
         port,
         protocol=Protocol,
-        transport=RedisTransport,
+        transport=TransportNNG,
         serializer=PickleSerializer,
         pool=ThreadPoolExecutor,
     ):
         self.resources = resources
-        self.transport = create_transport(host, port, transport, serializer)
+        self.transport = create_transport(host, port, transport)
         self.pool = pool(thread_name_prefix=f"{host}:{port}/Server")
         self.protocol = protocol()
+        self.serializer = serializer()
         self._running = threading.Event()
 
     def start(self):
@@ -49,15 +50,22 @@ class Server:
         self._running.set()
 
         while self._running.is_set():
-            request = self.transport.recv_request()
-            if request is None:
+            data = self.transport.recv()
+            if data is None:
                 # server is down, return to avoid infinite loop
                 return
 
-            self.pool.submit(self._handle_request, request)
+            self.pool.submit(self._handle_request, data)
 
-    def _handle_request(self, request):
+    def _handle_request(self, data: bytes):
+        request = self.serializer.loads(data)
+        if request is None:
+            self.transport.send(
+                self.serializer.dumps(self.protocol.error("Invalid request"))
+            )
+            return
 
+        @functools.cache
         def get_resource_and_method(location, method):
             resource = self.resources.get(location)
             if not resource:
@@ -74,23 +82,28 @@ class Server:
 
         resource, method = get_resource_and_method(request.location, request.method)
         if not resource:
-            self.transport.send_response(
-                request,
-                self.protocol.not_found(f"Resource {request.location} not found"),
+            self.transport.send(
+                self.serializer.dumps(
+                    self.protocol.not_found(f"Resource {request.location} not found")
+                )
             )
             return None
 
         if not method:
-            self.transport.send_response(
-                request, self.protocol.not_found(f"Method {request.method} not found")
+            self.transport.send(
+                self.serializer.dumps(
+                    self.protocol.not_found(f"Method {request.method} not found")
+                )
             )
             return None
 
         try:
             result = method(*request.args, **request.kwargs)
-            self.transport.send_response(request, self.protocol.ok(result))
+            self.transport.send(self.serializer.dumps(self.protocol.ok(result)))
         except Exception as e:
-            self.transport.send_response(request, self.protocol.error(e))
+            self.transport.send(self.serializer.dumps(self.protocol.error(e)))
 
     def publish(self, topic, *args, **kwargs):
-        self.transport.publish(topic, self.protocol.event(*args, **kwargs))
+        self.transport.publish(
+            topic, self.serializer.dumps(self.protocol.event(*args, **kwargs))
+        )
