@@ -119,6 +119,7 @@ class DomeBase(ChimeraObject, DomeSlew, DomeSlit, DomeFlap, DomeSync):
     #         return False
 
     def control(self):
+        return True
 
         if self.getMode() == Mode.Stand:
             return True

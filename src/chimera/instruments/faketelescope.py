@@ -67,6 +67,7 @@ class FakeTelescope(TelescopeBase, TelescopeCover, TelescopePier):
 
     @lock
     def control(self):
+        # return False
         if not self._slewing:
             if self._tracking:
                 self._setAltAzFromRaDec()

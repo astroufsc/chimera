@@ -502,9 +502,11 @@ class ChimeraCLI(object):
 
     def _startSystem(self, options):
         self.sysconfig = SystemConfig.fromFile(options.config)
-        self._remoteManager = Manager.locate(
+        self._remoteManager: Proxy = Manager.locate(
             self.sysconfig.chimera["host"], self.sysconfig.chimera["port"]
         )
+
+        # p.wait()
 
     def _belongsTo(self, meHost, mePort, location):
 

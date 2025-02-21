@@ -1,5 +1,52 @@
 # TODO
 
+- Pyro5: ~50 us/call
+
+  ```text
+  ❯ uv run python ../Pyro5/examples/benchmark/client.py
+  Uri of benchmark server? PYRO:example.benchmark@[::1]:55969
+  -------- BENCHMARK REMOTE OBJECT ---------
+  warmup...
+  call #1, 1000 times... 0.050
+  call #2, 1000 times... 0.051
+  call #3, 1000 times... 0.052
+  call #4, 1000 times... 0.055
+  call #5, 1000 times... 0.053
+  call #6, 1000 times... 0.051
+  call #7, 1000 times... 0.053
+  call #8, 1000 times... 0.051
+  call #9, 1000 times... 0.055
+  call #10, 1000 times... 0.054
+  call #11, 1000 times... 0.052
+  call #12, 1000 times... 0.006
+  total time 0.651 seconds
+  total method calls: 12000
+  avg. time per method call: 0.054 msec (18441/sec) (serializer: marshal)
+  ```
+
+- zeroc ice: ~44 us/call
+
+  ```text
+  ❯ uv run python client.py
+  pinging server 100000 times (this may take a while)
+  time for 100000 pings: 4411.521ms
+  time per ping: 0.044ms
+
+  ❯ uv run python client.py
+  pinging server 100000 times (this may take a while)
+  time for 100000 pings: 4422.637ms
+  time per ping: 0.044ms
+
+  ❯ uv run python client.py
+  pinging server 100000 times (this may take a while)
+  time for 100000 pings: 4593.337ms
+  time per ping: 0.046ms
+  ```
+
+- Can Python switch threads during a single bytecode op?
+
+- simplificar Manager: não precisar adicionar objetos remotos, basta citá-los.
+
 - step loop fails: retry? how long?
 - step metrics
 - per call metrics?

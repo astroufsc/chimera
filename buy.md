@@ -1,5 +1,7 @@
 # BUY
 
+- levar ethercat bus
+- jetson?
 - comparar preço do PC no Brasil!
 - laptop?
 - celulares?
@@ -10,7 +12,6 @@
 - osciloscopio
 - pico2
 - steppers e drivers
-- levar ethercat bus
 
 - ONLY applies to external guiders:
 

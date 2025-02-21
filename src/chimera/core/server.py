@@ -2,7 +2,10 @@ import functools
 import operator
 import logging
 from concurrent.futures import ThreadPoolExecutor
+import queue
 import threading
+
+import pynng
 
 from chimera.core.resources import ResourcesManager
 from chimera.core.serializer_pickle import PickleSerializer
@@ -49,40 +52,51 @@ class Server:
     def loop(self):
         self._running.set()
 
-        while self._running.is_set():
-            data = self.transport.recv()
-            if data is None:
-                # server is down, return to avoid infinite loop
-                return
+        self.transport._thread_id = threading.current_thread().native_id
 
-            self.pool.submit(self._handle_request, data)
+        self.q = queue.SimpleQueue()
+
+        while self._running.is_set():
+            try:
+                # non-blocking recv or selector?
+                data = self.transport.recv(block=False)
+                self.pool.submit(self._handle_request, data)
+            except pynng.exceptions.TryAgain:
+                pass
+
+            # if data is None:
+            #     # server is down, return to avoid infinite loop
+            #     return
+
+            while not self.q.empty():
+                print("sending data")
+                self.transport.send(self.q.get())
+
+    def get_resource_and_method(self, location, method):
+        resource = self.resources.get(location)
+        if not resource:
+            return None, None
+
+        instance = resource.instance
+        method_getter = operator.attrgetter(method)
+
+        try:
+            method = method_getter(instance)
+            return resource, method
+        except AttributeError:
+            return resource, None
 
     def _handle_request(self, data: bytes):
         request = self.serializer.loads(data)
         if request is None:
-            self.transport.send(
-                self.serializer.dumps(self.protocol.error("Invalid request"))
-            )
+            self.q.put(self.serializer.dumps(self.protocol.error("Invalid request")))
             return
 
-        @functools.cache
-        def get_resource_and_method(location, method):
-            resource = self.resources.get(location)
-            if not resource:
-                return None, None
-
-            instance = resource.instance
-            method_getter = operator.attrgetter(method)
-
-            try:
-                method = method_getter(instance)
-                return resource, method
-            except AttributeError:
-                return resource, None
-
-        resource, method = get_resource_and_method(request.location, request.method)
+        resource, method = self.get_resource_and_method(
+            request.location, request.method
+        )
         if not resource:
-            self.transport.send(
+            self.q.put(
                 self.serializer.dumps(
                     self.protocol.not_found(f"Resource {request.location} not found")
                 )
@@ -90,7 +104,7 @@ class Server:
             return None
 
         if not method:
-            self.transport.send(
+            self.q.put(
                 self.serializer.dumps(
                     self.protocol.not_found(f"Method {request.method} not found")
                 )
@@ -99,9 +113,9 @@ class Server:
 
         try:
             result = method(*request.args, **request.kwargs)
-            self.transport.send(self.serializer.dumps(self.protocol.ok(result)))
+            self.q.put(self.serializer.dumps(self.protocol.ok(result)))
         except Exception as e:
-            self.transport.send(self.serializer.dumps(self.protocol.error(e)))
+            self.q.put(self.serializer.dumps(self.protocol.error(e)))
 
     def publish(self, topic, *args, **kwargs):
         self.transport.publish(
