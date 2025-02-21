@@ -1,5 +1,9 @@
 # BUY
 
+- peltier
+- camera chip
+- some more FPGA?
+
 - levar ethercat bus
 - jetson?
 - comparar preço do PC no Brasil!
