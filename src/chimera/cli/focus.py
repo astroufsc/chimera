@@ -132,7 +132,7 @@ class ChimeraFocus(ChimeraCLI):
         self.out("Moving %s %d steps IN ... " % (options.axis, options.move_in), end="")
 
         try:
-            self.focuser.moveIn(options.move_in, FocuserAxis.fromStr(options.axis))
+            self.focuser.moveIn(options.move_in, FocuserAxis(options.axis))
         except InvalidFocusPositionException:
             self.exit(
                 "Invalid position. Current position %d,"
@@ -162,7 +162,7 @@ class ChimeraFocus(ChimeraCLI):
         )
 
         try:
-            self.focuser.moveOut(options.move_out, FocuserAxis.fromStr(options.axis))
+            self.focuser.moveOut(options.move_out, FocuserAxis(options.axis))
         except InvalidFocusPositionException:
             self.exit(
                 "Invalid position. Current position %d,"
@@ -190,7 +190,7 @@ class ChimeraFocus(ChimeraCLI):
         self.out("Moving %s to %d ... " % (options.axis, options.move_to), end="")
 
         try:
-            self.focuser.moveTo(options.move_to, FocuserAxis.fromStr(options.axis))
+            self.focuser.moveTo(options.move_to, FocuserAxis(options.axis))
         except InvalidFocusPositionException:
             self.exit(
                 "Invalid position, must be between %d and %d," % self.focuser.getRange()
