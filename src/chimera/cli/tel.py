@@ -432,7 +432,7 @@ class ChimeraTel(ChimeraCLI):
             end="",
         )
         try:
-            cmd(offset.AS, SlewRate.fromStr(self.options.rate))
+            cmd(offset.AS, SlewRate(self.options.rate))
             self.out("OK")
             self.out(40 * "=")
             self.out("new position ra/dec: %s" % telescope.getPositionRaDec())
