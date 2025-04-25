@@ -35,6 +35,7 @@ dependencies = [
     "redislite>=6.2.912183",
     "rich>=13.9.4",
     "sqlalchemy==1.4",
+    "suds>=1.2.0",
 ]
 
 [project.urls]
@@ -44,12 +45,10 @@ source = "https://github.com/astroufsc/chimera"
 [project.scripts]
 chimera = "chimera.cli.chimera:main"
 chimera-cam = "chimera.cli.cam:main"
-chimera-admin = "chimera.cli.admin:main"
 chimera-filter = "chimera.cli.filter:main"
 chimera-tel = "chimera.cli.tel:main"
 chimera-dome = "chimera.cli.dome:main"
 chimera-focus = "chimera.cli.focus:main"
-chimera-console = "chimera.cli.console:main"
 chimera-sched = "chimera.cli.sched:main"
 chimera-weather = "chimera.cli.weather:main"
 chimera-seeing = "chimera.cli.seeing:main"
@@ -61,6 +60,7 @@ build-backend = "hatchling.build"
 [dependency-groups]
 dev = [
     "black>=25.1.0",
+    "chimera",
     "pre-commit>=4.1.0",
     "pytest>=8.3.3",
     "pytest-cov>=6.0.0",
@@ -71,3 +71,6 @@ docs = ["furo>=2024.8.6", "sphinx>=8.1.3"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "--import-mode=importlib"
+
+[tool.uv.sources]
+chimera = { workspace = true }

@@ -17,33 +17,33 @@ class FocuserTest(object):
 
     def test_get_position(self):
 
-        focus = self.manager.getProxy(self.FOCUSER)
+        focus = self.manager.get_proxy(self.FOCUSER)
 
-        assert focus.getPosition() >= 0
+        assert focus.get_position() >= 0
 
     def test_move(self):
 
-        focus = self.manager.getProxy(self.FOCUSER)
+        focus = self.manager.get_proxy(self.FOCUSER)
 
-        start = focus.getPosition()
+        start = focus.get_position()
         delta = int(random.Random().random() * 1000)
 
         # assumes IN moving to lower values
-        focus.moveIn(delta)
-        assert focus.getPosition() == start - delta
+        focus.move_in(delta)
+        assert focus.get_position() == start - delta
 
         # assumes OUT moving to larger values
-        start = focus.getPosition()
-        focus.moveOut(delta)
-        assert focus.getPosition() == start + delta
+        start = focus.get_position()
+        focus.move_out(delta)
+        assert focus.get_position() == start + delta
 
         # TO
-        focus.moveTo(1000)
-        assert focus.getPosition() == 1000
+        focus.move_to(1000)
+        assert focus.get_position() == 1000
 
         # TO where?
         with pytest.raises(InvalidFocusPositionException):
-            focus.moveTo(1e9)
+            focus.move_to(1e9)
 
 
 #
@@ -54,7 +54,7 @@ class TestFakeFocuser(FakeHardwareTest, FocuserTest):
     def setup(self):
 
         self.manager = Manager(port=8000)
-        self.manager.addClass(
+        self.manager.add_class(
             Site,
             "lna",
             {
@@ -67,7 +67,7 @@ class TestFakeFocuser(FakeHardwareTest, FocuserTest):
 
         from chimera.instruments.fakefocuser import FakeFocuser
 
-        self.manager.addClass(FakeFocuser, "fake", {"device": "/dev/ttyS0"})
+        self.manager.add_class(FakeFocuser, "fake", {"device": "/dev/ttyS0"})
         self.FOCUSER = "/FakeFocuser/0"
 
     def teardown(self):
@@ -78,7 +78,7 @@ class TestRealFocuser(RealHardwareTest, FocuserTest):
 
     def setup(self):
         self.manager = Manager(port=8000)
-        self.manager.addClass(
+        self.manager.add_class(
             Site,
             "lna",
             {
@@ -91,7 +91,7 @@ class TestRealFocuser(RealHardwareTest, FocuserTest):
 
         from chimera.instruments.optectcfs import OptecTCFS
 
-        self.manager.addClass(OptecTCFS, "optec", {"device": "/dev/ttyS4"})
+        self.manager.add_class(OptecTCFS, "optec", {"device": "/dev/ttyS4"})
         self.FOCUSER = "/OptecTCFS/0"
 
     def teardown(self):

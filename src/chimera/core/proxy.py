@@ -49,8 +49,8 @@ class Proxy:
     def __setitem__(self, item, value):
         return ProxyMethod(self, "__setitem__")(item, value)
 
-    def __iadd__(self, configDict):
-        ProxyMethod(self, "__iadd__")(configDict)
+    def __iadd__(self, config_dict):
+        ProxyMethod(self, "__iadd__")(config_dict)
         return self
 
     def __repr__(self):

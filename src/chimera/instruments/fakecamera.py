@@ -35,22 +35,22 @@ class FakeCamera(CameraBase, FilterWheelBase):
 
         self.__cooling = False
 
-        self.__lastFilter = self._getFilterName(0)
+        self.__last_filter = self._get_filter_name(0)
         self.__temperature = 20.0
         self.__setpoint = 0
-        self.__lastFrameStart = 0
-        self.__isFanning = False
+        self.__last_frame_start = 0
+        self.__is_fanning = False
 
         # my internal CCD code
-        self._MY_CCD = 1 << 1
-        self._MY_ADC = 1 << 2
-        self._MY_READOUT_MODE = 1 << 3
+        self._my_ccd = 1 << 1
+        self._my_adc = 1 << 2
+        self._my_readout_mode = 1 << 3
 
-        self._ccds = {self._MY_CCD: CCD.IMAGING}
+        self._ccds = {self._my_ccd: CCD.IMAGING}
 
-        self._adcs = {"12 bits": self._MY_ADC}
+        self._adcs = {"12 bits": self._my_adc}
 
-        self._binnings = {"1x1": self._MY_READOUT_MODE}
+        self._binnings = {"1x1": self._my_readout_mode}
 
         self._binning_factors = {"1x1": 1}
 
@@ -63,37 +63,37 @@ class FakeCamera(CameraBase, FilterWheelBase):
             CameraFeature.PROGRAMMABLE_BIAS_LEVEL: False,
         }
 
-        readoutMode = ReadoutMode()
-        readoutMode.mode = 0
-        readoutMode.gain = 1.0
-        readoutMode.width = 1024
-        readoutMode.height = 1024
-        readoutMode.pixelWidth = 9.0
-        readoutMode.pixelHeight = 9.0
+        readout_mode = ReadoutMode()
+        readout_mode.mode = 0
+        readout_mode.gain = 1.0
+        readout_mode.width = 1024
+        readout_mode.height = 1024
+        readout_mode.pixel_width = 9.0
+        readout_mode.pixel_height = 9.0
 
-        self._readoutModes = {self._MY_CCD: {self._MY_READOUT_MODE: readoutMode}}
+        self._readout_modes = {self._my_ccd: {self._my_readout_mode: readout_mode}}
 
     def __start__(self):
         self["camera_model"] = "Fake Cameras Inc."
         self["ccd_model"] = "Fake CCDs Inc."
 
-        self.setHz(2)
+        self.set_hz(2)
 
     def control(self):
-        if self.isCooling():
+        if self.is_cooling():
             if self.__temperature > self.__setpoint:
                 self.__temperature -= 0.5
 
         return True
 
-    def _expose(self, imageRequest):
-        self.exposeBegin(imageRequest)
+    def _expose(self, image_request):
+        self.expose_begin(image_request)
 
         status = CameraStatus.OK
 
         t = 0
-        self.__lastFrameStart = dt.datetime.utcnow()
-        while t < imageRequest["exptime"]:
+        self.__last_frame_start = dt.datetime.utcnow()
+        while t < image_request["exptime"]:
             # [ABORT POINT]
             if self.abort.is_set():
                 status = CameraStatus.ABORTED
@@ -102,7 +102,7 @@ class FakeCamera(CameraBase, FilterWheelBase):
             time.sleep(0.1)
             t += 0.1
 
-        self.exposeComplete(imageRequest, status)
+        self.expose_complete(image_request, status)
 
     def make_dark(self, shape, dtype, exptime):
         ret = np.zeros(shape, dtype=dtype)
@@ -139,25 +139,25 @@ class FakeCamera(CameraBase, FilterWheelBase):
 
         return ret
 
-    def _readout(self, imageRequest):
+    def _readout(self, image_request):
         pix = None
         telescope = None
         dome = None
 
-        (mode, binning, top, left, width, height) = self._getReadoutModeInfo(
-            imageRequest["binning"], imageRequest["window"]
+        (mode, binning, top, left, width, height) = self._get_readout_mode_info(
+            image_request["binning"], image_request["window"]
         )
-        self.readoutBegin(imageRequest)
+        self.readout_begin(image_request)
 
-        telescopes = self.getManager().getResourcesByClass("Telescope")
+        telescopes = self.get_manager().get_resources_by_class("Telescope")
         if telescopes:
-            telescope = self.getManager().getProxy(telescopes[0])
+            telescope = self.get_manager().get_proxy(telescopes[0])
         else:
             telescope = None
 
-        domes = self.getManager().getResourcesByClass("Dome")
+        domes = self.get_manager().get_resources_by_class("Dome")
         if domes:
-            dome = self.getManager().getProxy(domes[0])
+            dome = self.get_manager().get_proxy(domes[0])
         else:
             dome = None
 
@@ -166,34 +166,34 @@ class FakeCamera(CameraBase, FilterWheelBase):
         if not dome:
             self.log.debug("FakeCamera couldn't find dome.")
 
-        ccd_width, ccd_height = self.getPhysicalSize()
+        ccd_width, ccd_height = self.get_physical_size()
 
-        if imageRequest["type"].upper() == "DARK":
+        if image_request["type"].upper() == "DARK":
             self.log.info("making dark")
             pix = self.make_dark(
-                (ccd_height, ccd_width), np.float32, imageRequest["exptime"]
+                (ccd_height, ccd_width), np.float32, image_request["exptime"]
             )
-        elif imageRequest["type"].upper() == "FLAT":
+        elif image_request["type"].upper() == "FLAT":
             self.log.info("making flat")
             pix = self.make_flat((ccd_height, ccd_width), np.float32) / 1000
-        elif imageRequest["type"].upper() == "BIAS":
+        elif image_request["type"].upper() == "BIAS":
             self.log.info("making bias")
             pix = self.make_dark((ccd_height, ccd_width), np.float32, 0)
         else:
             if telescope and dome:
-                self.log.debug("Dome open? " + str(dome.isSlitOpen()))
+                self.log.debug("Dome open? " + str(dome.is_slit_open()))
 
-                if dome.isSlitOpen() and self["use_dss"]:
-                    domeAZ = dome.getAz().toD()
-                    telAZ = telescope.getAz().toD()
+                if dome.is_slit_open() and self["use_dss"]:
+                    dome_az = dome.get_az().to_d()
+                    tel_az = telescope.get_az().to_d()
 
-                    tel_position = telescope.getPositionRaDec()
-                    tel_position = tel_position.toEpoch(Epoch.J2000)
+                    tel_position = telescope.get_position_ra_dec()
+                    tel_position = tel_position.to_epoch(Epoch.J2000)
 
                     self.log.debug(
-                        "Dome AZ: " + str(domeAZ) + "  Tel AZ: " + str(telAZ)
+                        "Dome AZ: " + str(dome_az) + "  Tel AZ: " + str(tel_az)
                     )
-                    if abs(domeAZ - telAZ) <= 3:
+                    if abs(dome_az - tel_az) <= 3:
                         self.log.debug("Dome & Slit aligned -- getting DSS")
                         url = "http://stdatu.stsci.edu/cgi-bin/dss_search?"
                         query_args = {
@@ -266,79 +266,79 @@ class FakeCamera(CameraBase, FilterWheelBase):
         if pix is None:
             pix = np.zeros((ccd_height, ccd_width), dtype=np.int32)
 
-        proxy = self._saveImage(
-            imageRequest,
+        proxy = self._save_image(
+            image_request,
             pix,
             {
-                "frame_start_time": self.__lastFrameStart,
-                "frame_temperature": self.getTemperature(),
+                "frame_start_time": self.__last_frame_start,
+                "frame_temperature": self.get_temperature(),
                 "binning_factor": self._binning_factors[binning],
             },
         )
 
         # [ABORT POINT]
         if self.abort.is_set():
-            self.readoutComplete(None, CameraStatus.ABORTED)
+            self.readout_complete(None, CameraStatus.ABORTED)
             return None
 
-        self.readoutComplete(proxy, CameraStatus.OK)
+        self.readout_complete(proxy, CameraStatus.OK)
         return proxy
 
     @lock
-    def startCooling(self, setpoint):
+    def start_cooling(self, setpoint):
         self.__cooling = True
         self.__setpoint = setpoint
         return True
 
     @lock
-    def stopCooling(self):
+    def stop_cooling(self):
         self.__cooling = False
         return True
 
-    def isCooling(self):
+    def is_cooling(self):
         return self.__cooling
 
     @lock
-    def getTemperature(self):
+    def get_temperature(self):
         return self.__temperature + random.random()
 
-    def getSetPoint(self):
+    def get_set_point(self):
         return self.__setpoint
 
     @lock
-    def startFan(self, rate=None):
-        self.__isFanning = True
+    def start_fan(self, rate=None):
+        self.__is_fanning = True
 
     @lock
-    def stopFan(self):
-        self.__isFanning = False
+    def stop_fan(self):
+        self.__is_fanning = False
 
-    def isFanning(self):
-        return self.__isFanning
+    def is_fanning(self):
+        return self.__is_fanning
 
-    def getCCDs(self):
+    def get_ccds(self):
         return self._ccds
 
-    def getCurrentCCD(self):
-        return self._MY_CCD
+    def get_current_ccd(self):
+        return self._my_ccd
 
-    def getBinnings(self):
+    def get_binnings(self):
         return self._binnings
 
-    def getADCs(self):
+    def get_adcs(self):
         return self._adcs
 
-    def getPhysicalSize(self):
+    def get_physical_size(self):
         return (self["ccd_width"], self["ccd_height"])
 
-    def getPixelSize(self):
+    def get_pixel_size(self):
         return (9, 9)
 
-    def getOverscanSize(self, ccd=None):
+    def get_overscan_size(self, ccd=None):
         return (0, 0)
 
-    def getReadoutModes(self):
-        return self._readoutModes
+    def get_readout_modes(self):
+        return self._readout_modes
 
     def supports(self, feature=None):
         return self._supports.get(feature, False)
@@ -346,13 +346,13 @@ class FakeCamera(CameraBase, FilterWheelBase):
     #
     # filter wheel
     #
-    def getFilter(self):
-        return self.__lastFilter
+    def get_filter(self):
+        return self.__last_filter
 
     @lock
-    def setFilter(self, filter):
-        if filter not in self.getFilters():
+    def set_filter(self, filter):
+        if filter not in self.get_filters():
             raise InvalidFilterPositionException(f"{filter} is not a valid filter")
 
-        self.filterChange(filter, self.__lastFilter)
-        self.__lastFilter = filter
+        self.filter_change(filter, self.__last_filter)
+        self.__last_filter = filter

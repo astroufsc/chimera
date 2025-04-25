@@ -29,19 +29,19 @@ class ChimeraFocus(ChimeraCLI):
             self, "chimera-focus", "Focuser controller", _chimera_version_
         )
 
-        self.addHelpGroup("FOCUS", "Focus")
-        self.addInstrument(
+        self.add_help_group("FOCUS", "Focus")
+        self.add_instrument(
             name="focuser",
             cls="Focuser",
             required=True,
-            helpGroup="FOCUS",
+            help_group="FOCUS",
             help="Focuser instrument to be used",
         )
-        self.addParameters(
+        self.add_parameters(
             dict(
                 name="axis",
                 long="axis",
-                helpGroup="FOCUS",
+                help_group="FOCUS",
                 help="In case of multi-dimensional focuser, choose axis: X, Y, Z, U, V or W.",
                 type=ParameterType.CHOICE,
                 choices=["X", "Y", "Z", "U", "V", "W"],
@@ -50,21 +50,21 @@ class ChimeraFocus(ChimeraCLI):
             )
         )
 
-        self.addController(
+        self.add_controller(
             name="autofocus",
             cls="Autofocus",
             required=False,
-            helpGroup="FOCUS",
+            help_group="FOCUS",
             help="Autofocus controller to be used",
         )
 
-        self.addHelpGroup("AUTOFOCUS", "Autofocus")
-        self.addParameters(
+        self.add_help_group("AUTOFOCUS", "Autofocus")
+        self.add_parameters(
             dict(
                 name="autofocus_step",
                 long="step",
                 type="int",
-                helpGroup="AUTOFOCUS",
+                help_group="AUTOFOCUS",
                 help="Defines autofocus step.",
                 metavar="STEP",
                 default=500,
@@ -74,7 +74,7 @@ class ChimeraFocus(ChimeraCLI):
                 short="-t",
                 long="exptime",
                 type="float",
-                helpGroup="AUTOFOCUS",
+                help_group="AUTOFOCUS",
                 help="Defines autofocus frame exposure time.",
                 metavar="EXPTIME",
                 default=10.0,
@@ -82,7 +82,7 @@ class ChimeraFocus(ChimeraCLI):
             dict(
                 name="autofocus_debug",
                 long="debug",
-                helpGroup="AUTOFOCUS",
+                help_group="AUTOFOCUS",
                 help="Run an autofocus debug session using data from PREVIOUS_RUN_DIR.",
                 metavar="PREVIOUS_RUN_DIR",
                 default="",
@@ -91,24 +91,24 @@ class ChimeraFocus(ChimeraCLI):
                 name="autofocus_nodisplay",
                 long="disable-display",
                 type=ParameterType.BOOLEAN,
-                helpGroup="AUTOFOCUS",
+                help_group="AUTOFOCUS",
                 help="Disable interactive display during autofocus",
                 default=False,
             ),
             dict(
                 name="autofocus_filter",
                 long="filter",
-                helpGroup="AUTOFOCUS",
+                help_group="AUTOFOCUS",
                 help="Which filter to use in the autofocus run.",
                 default="use-current-filter",
             ),
         )
 
-        self.addHelpGroup("COMMANDS", "Commands")
+        self.add_help_group("COMMANDS", "Commands")
 
     @parameter(
         long="range",
-        helpGroup="AUTOFOCUS",
+        help_group="AUTOFOCUS",
         default="1000-6000",
         help="Defines autofocus focuser range to be covered."
         "Use start-end, as in 1000-6000 to run from 1000 to 6000.",
@@ -126,35 +126,39 @@ class ChimeraFocus(ChimeraCLI):
         return (start, end)
 
     @action(
-        long="in", type="int", help="Move N steps IN", metavar="N", helpGroup="COMMANDS"
+        long="in",
+        type="int",
+        help="Move N steps IN",
+        metavar="N",
+        help_group="COMMANDS",
     )
     def move_in(self, options):
         self.out("Moving %s %d steps IN ... " % (options.axis, options.move_in), end="")
 
         try:
-            self.focuser.moveIn(options.move_in, FocuserAxis(options.axis))
+            self.focuser.move_in(options.move_in, FocuserAxis(options.axis))
         except InvalidFocusPositionException:
             self.exit(
                 "Invalid position. Current position %d,"
                 " target position %d, valid range %d-%d."
                 % (
-                    self.focuser.getPosition(),
-                    self.focuser.getPosition() - int(options.move_in),
-                    self.focuser.getRange()[0],
-                    self.focuser.getRange()[1],
+                    self.focuser.get_position(),
+                    self.focuser.get_position() - int(options.move_in),
+                    self.focuser.get_range()[0],
+                    self.focuser.get_range()[1],
                 )
             )
 
         self.out("OK")
 
-        self._currentPosition(options)
+        self._current_position(options)
 
     @action(
         long="out",
         type="int",
         help="Move N steps OUT",
         metavar="N",
-        helpGroup="COMMANDS",
+        help_group="COMMANDS",
     )
     def move_out(self, options):
         self.out(
@@ -162,53 +166,54 @@ class ChimeraFocus(ChimeraCLI):
         )
 
         try:
-            self.focuser.moveOut(options.move_out, FocuserAxis(options.axis))
+            self.focuser.move_out(options.move_out, FocuserAxis(options.axis))
         except InvalidFocusPositionException:
             self.exit(
                 "Invalid position. Current position %d,"
                 " target position %d, valid range %d-%d."
                 % (
-                    self.focuser.getPosition(),
-                    self.focuser.getPosition() + int(options.move_out),
-                    self.focuser.getRange()[0],
-                    self.focuser.getRange()[1],
+                    self.focuser.get_position(),
+                    self.focuser.get_position() + int(options.move_out),
+                    self.focuser.get_range()[0],
+                    self.focuser.get_range()[1],
                 )
             )
 
         self.out("OK")
 
-        self._currentPosition(options)
+        self._current_position(options)
 
     @action(
         long="to",
         type="int",
         help="Move to POSITION",
         metavar="POSITION",
-        helpGroup="COMMANDS",
+        help_group="COMMANDS",
     )
     def move_to(self, options):
         self.out("Moving %s to %d ... " % (options.axis, options.move_to), end="")
 
         try:
-            self.focuser.moveTo(options.move_to, FocuserAxis(options.axis))
+            self.focuser.move_to(options.move_to, FocuserAxis(options.axis))
         except InvalidFocusPositionException:
             self.exit(
-                "Invalid position, must be between %d and %d," % self.focuser.getRange()
+                "Invalid position, must be between %d and %d,"
+                % self.focuser.get_range()
             )
 
         self.out("OK")
 
-    @action(short="i", help="Print focuser current information", helpGroup="COMMANDS")
+    @action(short="i", help="Print focuser current information", help_group="COMMANDS")
     def info(self, options):
         self.out("=" * 40)
         self.out(
-            "Focuser: %s (%s)" % (self.focuser.getLocation(), self.focuser["device"])
+            "Focuser: %s (%s)" % (self.focuser.get_location(), self.focuser["device"])
         )
-        self._currentPosition(options)
-        self._validRange(options)
+        self._current_position(options)
+        self._valid_range(options)
 
         if self.focuser.supports(FocuserFeature.TEMPERATURE_COMPENSATION):
-            self.out("Temperature: %.2f oC" % self.focuser.getTemperature())
+            self.out("Temperature: %.2f oC" % self.focuser.get_temperature())
 
         if self.options.verbose:
             self.out("=" * 40)
@@ -220,7 +225,7 @@ class ChimeraFocus(ChimeraCLI):
         self.out("=" * 40)
 
     @action(
-        helpGroup="AUTOFOCUS",
+        help_group="AUTOFOCUS",
         help="Start an autofocus session using the selected parameters."
         " You can select a focuser range and the size of the step for the sequence."
         " This option is exclusive, you cannot move manually at the same time.",
@@ -244,7 +249,7 @@ class ChimeraFocus(ChimeraCLI):
             except IOError:
                 pass
 
-        def stepComplete(position, star, filename):
+        def step_complete(position, star, filename):
             self.out(
                 "#%04d (%4d, %4d) FWHM: %8.3f FLUX: %-9.3f (%s)"
                 % (
@@ -257,7 +262,7 @@ class ChimeraFocus(ChimeraCLI):
                 )
             )
             if ds9:
-                ds9.displayFile(filename)
+                ds9.display_file(filename)
                 ds9.set(
                     "regions command { circle %d %d %d}"
                     % (
@@ -269,7 +274,7 @@ class ChimeraFocus(ChimeraCLI):
                 ds9.set("zoom to fit")
                 ds9.set("scale mode zscale")
 
-        self.autofocus.stepComplete += stepComplete
+        self.autofocus.step_complete += step_complete
 
         start, end = options.autofocus_range
 
@@ -318,8 +323,8 @@ class ChimeraFocus(ChimeraCLI):
 
         time.sleep(1)
 
-    def _currentPosition(self, options):
-        self.out("Current focuser position: %s" % self.focuser.getPosition())
+    def _current_position(self, options):
+        self.out("Current focuser position: %s" % self.focuser.get_position())
 
         for ax in ControllableAxis:
             if self.focuser.supports(ax) and ax != FocuserFeature.CONTROLLABLE_Z:
@@ -327,14 +332,14 @@ class ChimeraFocus(ChimeraCLI):
                     "\tAxis %s: %s"
                     % (
                         ControllableAxis[ax],
-                        self.focuser.getPosition(ControllableAxis[ax]),
+                        self.focuser.get_position(ControllableAxis[ax]),
                     )
                 )
 
         return
 
-    def _validRange(self, options):
-        self.out("Valid range: %s-%s" % self.focuser.getRange())
+    def _valid_range(self, options):
+        self.out("Valid range: %s-%s" % self.focuser.get_range())
 
         for ax in ControllableAxis:
             if self.focuser.supports(ax) and ax != FocuserFeature.CONTROLLABLE_Z:
@@ -342,7 +347,7 @@ class ChimeraFocus(ChimeraCLI):
                     "\tRange %s: %s"
                     % (
                         ControllableAxis[ax],
-                        self.focuser.getRange(ControllableAxis[ax]),
+                        self.focuser.get_range(ControllableAxis[ax]),
                     )
                 )
 

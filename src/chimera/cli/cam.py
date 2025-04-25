@@ -7,7 +7,7 @@ import os
 import sys
 import time
 
-from chimera.core.exceptions import ObjectNotFoundException, printException
+from chimera.core.exceptions import ObjectNotFoundException, print_exception
 from chimera.core.version import _chimera_version_
 from chimera.interfaces.camera import CameraFeature, CameraStatus
 from chimera.interfaces.filterwheel import InvalidFilterPositionException
@@ -15,9 +15,9 @@ from chimera.util.ds9 import DS9
 
 from .cli import ChimeraCLI, ParameterType, action
 
-currentFrame = 0
-currentFrameExposeStart = 0
-currentFrameReadoutStart = 0
+current_frame = 0
+current_frame_expose_start = 0
+current_frame_readout_start = 0
 
 
 def get_compressed_name(filename, compression):
@@ -37,30 +37,30 @@ class ChimeraCam(ChimeraCLI):
     def __init__(self):
         ChimeraCLI.__init__(self, "chimera-cam", "Camera controller", _chimera_version_)
 
-        self.addHelpGroup("CAM", "Camera and Filter Wheel configuration")
-        self.addInstrument(
+        self.add_help_group("CAM", "Camera and Filter Wheel configuration")
+        self.add_instrument(
             name="camera",
             cls="Camera",
             help="Camera instrument to be used. If blank, try to guess from chimera.config",
-            helpGroup="CAM",
+            help_group="CAM",
             required=True,
         )
 
-        self.addInstrument(
+        self.add_instrument(
             name="wheel",
             cls="FilterWheel",
             help="Filter Wheel instrument to be used. If blank, try to guess from chimera.config",
-            helpGroup="CAM",
+            help_group="CAM",
         )
 
-        self.addHelpGroup("EXPOSE", "Exposure control")
-        self.addParameters(
+        self.add_help_group("EXPOSE", "Exposure control")
+        self.add_parameters(
             dict(
                 name="frames",
                 short="n",
                 type="int",
                 default=1,
-                helpGroup="EXPOSE",
+                help_group="EXPOSE",
                 help="Number of frames",
             ),
             dict(
@@ -68,7 +68,7 @@ class ChimeraCam(ChimeraCLI):
                 short="t",
                 type="string",
                 default=1,
-                helpGroup="EXPOSE",
+                help_group="EXPOSE",
                 help="Integration time in seconds for each frame",
             ),
             dict(
@@ -76,14 +76,14 @@ class ChimeraCam(ChimeraCLI):
                 short="i",
                 type="float",
                 default=0.0,
-                helpGroup="EXPOSE",
+                help_group="EXPOSE",
                 help="Number of seconds to wait between each frame",
             ),
             dict(
                 name="output",
                 short="o",
                 type="string",
-                helpGroup="EXPOSE",
+                help_group="EXPOSE",
                 help="Base filename including full path if needed.",
                 default="$DATE-$TIME.fits",
             ),
@@ -92,7 +92,7 @@ class ChimeraCam(ChimeraCLI):
                 long="filters",
                 short="f",
                 type="string",
-                helpGroup="EXPOSE",
+                help_group="EXPOSE",
                 help="Filter(s) to be used. "
                 "Use --list-filters to get a list of available filters. "
                 "You can pass a comma-separated list of filter to get multiple exposure (in the same order as the filter list).",
@@ -100,7 +100,7 @@ class ChimeraCam(ChimeraCLI):
             dict(
                 name="shutter",
                 type=ParameterType.CHOICE,
-                helpGroup="EXPOSE",
+                help_group="EXPOSE",
                 choices=[
                     "open",
                     "OPEN",
@@ -118,18 +118,18 @@ class ChimeraCam(ChimeraCLI):
             dict(
                 name="binning",
                 help="Apply the selected binning to all frames",
-                helpGroup="EXPOSE",
+                help_group="EXPOSE",
             ),
             dict(
                 name="subframe",
                 help="Readout only the selected subframe portion. The notation follows IRAF conventions."
                 " x1:x2,y1:y2 to specify the corners of the desired subframe",
-                helpGroup="EXPOSE",
+                help_group="EXPOSE",
             ),
             dict(
                 name="compress",
                 help="Compress the output file using FORMAT. Use --compress=no to disable it.",
-                helpGroup="EXPOSE",
+                help_group="EXPOSE",
                 type=ParameterType.CHOICE,
                 choices=[
                     "FITS_RICE",
@@ -150,84 +150,84 @@ class ChimeraCam(ChimeraCLI):
                 long="ignore-dome",
                 type=ParameterType.BOOLEAN,
                 default=False,
-                helpGroup="EXPOSE",
+                help_group="EXPOSE",
                 help="Ignore if the dome is slewing, take an image anyway.",
             ),
         )
 
-        self.addHelpGroup("DISPLAY", "Display configuration")
-        self.addParameters(
+        self.add_help_group("DISPLAY", "Display configuration")
+        self.add_parameters(
             dict(
                 name="disable_display",
                 long="disable-display",
                 type=ParameterType.BOOLEAN,
-                helpGroup="DISPLAY",
+                help_group="DISPLAY",
                 help="Don't try to display image on DS9. default is display for exptime >= 5",
             ),
             dict(
                 name="force_display",
                 long="force-display",
                 type=ParameterType.BOOLEAN,
-                helpGroup="DISPLAY",
+                help_group="DISPLAY",
                 help="Always display image on DS9 regardless of exptime.",
             ),
         )
 
-        self.addHelpGroup("TEMP", "Temperature control")
-        self.addParameters(
+        self.add_help_group("TEMP", "Temperature control")
+        self.add_parameters(
             dict(
                 name="wait",
                 short="w",
                 type=ParameterType.BOOLEAN,
                 default=False,
-                helpGroup="TEMP",
+                help_group="TEMP",
                 help="Wait until the selected CCD setpoint is achived.",
             )
         )
 
-        self.addHelpGroup("INFO", "Information")
+        self.add_help_group("INFO", "Information")
 
-        self.addHelpGroup("IMAGETYPE", "Image types")
-        self.addParameters(
+        self.add_help_group("IMAGETYPE", "Image types")
+        self.add_parameters(
             dict(
-                name="isBias",
+                name="is_bias",
                 long="bias",
                 type=ParameterType.CONSTANT,
                 const="zero",
                 help="Mark this frame as a BIAS frame.",
-                helpGroup="IMAGETYPE",
+                help_group="IMAGETYPE",
             ),
             dict(
-                name="isDomeFlat",
+                name="is_dome_flat",
                 long="flat",
                 type=ParameterType.CONSTANT,
                 const="flat",
                 help="Mark this frame as a DOME FLAT frame.",
-                helpGroup="IMAGETYPE",
+                help_group="IMAGETYPE",
             ),
             dict(
-                name="isSkyFlat",
+                name="is_sky_flat",
                 long="sky-flat",
                 type=ParameterType.CONSTANT,
                 const="skyflat",
                 help="Mark this frame as a SKY FLAT frame.",
-                helpGroup="IMAGETYPE",
+                help_group="IMAGETYPE",
             ),
             dict(
-                name="isDark",
+                name="is_dark",
                 long="dark",
                 type=ParameterType.CONSTANT,
                 const="dark",
                 help="Mark this frame as a DARK frame.",
-                helpGroup="IMAGETYPE",
+                help_group="IMAGETYPE",
             ),
             dict(
-                name="isObject",
+                name="is_object",
                 long="object",
                 type="string",
                 default="object",
                 help="Mark this frame as a OBJECT frame and add OBJECT keyword to the FITS file using OBJECTNAME.",
-                helpGroup="IMAGETYPE",
+                help_group="IMAGETYPE",
                 metavar="OBJECTNAME",
             ),
         )
@@ -235,7 +235,7 @@ class ChimeraCam(ChimeraCLI):
     @action(
         short="F",
         long="--list-filters",
-        helpGroup="INFO",
+        help_group="INFO",
         help="Print available filter names.",
     )
     def filters(self, options):
@@ -246,7 +246,7 @@ class ChimeraCam(ChimeraCLI):
 
         self.out("Available filters:", end="")
 
-        for i, f in enumerate(self.wheel.getFilters()):
+        for i, f in enumerate(self.wheel.get_filters()):
             self.out(str(f), end="")
 
         self.out()
@@ -256,13 +256,13 @@ class ChimeraCam(ChimeraCLI):
         name="setpoint",
         short="T",
         long="start-cooling",
-        actionGroup="TEMP",
+        action_group="TEMP",
         type="float",
-        helpGroup="TEMP",
+        help_group="TEMP",
         help="Start camera cooling, using the defined TEMP",
         metavar="TEMP",
     )
-    def startCooling(self, options):
+    def start_cooling(self, options):
         def eps_equal(a, b, eps=0.01):
             return abs(a - b) <= eps
 
@@ -275,14 +275,14 @@ class ChimeraCam(ChimeraCLI):
 
         self.out(40 * "=")
 
-        camera.startCooling(options.setpoint)
+        camera.start_cooling(options.setpoint)
         self.out("setting camera setpoint to %.3f." % options.setpoint)
 
         if options.wait:
-            while not eps_equal(camera.getTemperature(), camera.getSetPoint(), 0.2):
+            while not eps_equal(camera.get_temperature(), camera.get_set_point(), 0.2):
                 self.out(
                     "\rwaiting setpoint temperature %.3f oC, current: %.3f oC"
-                    % (camera.getSetPoint(), camera.getTemperature()),
+                    % (camera.get_set_point(), camera.get_temperature()),
                     end="",
                 )
                 time.sleep(1)
@@ -298,66 +298,66 @@ class ChimeraCam(ChimeraCLI):
 
     @action(
         long="stop-cooling",
-        actionGroup="TEMP",
-        helpGroup="TEMP",
+        action_group="TEMP",
+        help_group="TEMP",
         help="Stop camera cooling",
     )
-    def stopCooling(self, options):
+    def stop_cooling(self, options):
         camera = self.camera
 
         self.out(40 * "=")
         self.out("stopping camera cooling...", end="")
-        camera.stopCooling()
+        camera.stop_cooling()
         self.out("OK")
         self.out(40 * "=")
         self.exit()
 
     @action(
         long="stop-fan",
-        actionGroup="TEMP_FAN",
-        helpGroup="TEMP",
+        action_group="TEMP_FAN",
+        help_group="TEMP",
         help="Stop the cooler fan.",
     )
-    def stopFan(self, options):
+    def stop_fan(self, options):
         camera = self.camera
 
         self.out(40 * "=")
         self.out("stopping cooler fan...", end="")
-        camera.stopFan()
+        camera.stop_fan()
         self.out("OK")
         self.out(40 * "=")
         self.exit()
 
     @action(
         long="start-fan",
-        actionGroup="TEMP_FAN",
-        helpGroup="TEMP",
+        action_group="TEMP_FAN",
+        help_group="TEMP",
         help="Start the cooler fan.",
     )
-    def startFan(self, options):
+    def start_fan(self, options):
         camera = self.camera
 
         self.out(40 * "=")
         self.out("starting cooler fan...", end="")
-        camera.startFan()
+        camera.start_fan()
         self.out("OK")
         self.out(40 * "=")
         self.exit()
 
-    @action(help="Print camera information and exit", helpGroup="INFO")
+    @action(help="Print camera information and exit", help_group="INFO")
     def info(self, options):
         camera = self.camera
 
         self.out("=" * 40)
-        self.out("Camera: %s (%s)." % (camera.getLocation(), camera["device"]))
+        self.out("Camera: %s (%s)." % (camera.get_location(), camera["device"]))
 
-        if camera.isCooling() is True:
-            self.out("Cooling enabled, Setpoint: %.1f oC" % camera.getSetPoint())
+        if camera.is_cooling() is True:
+            self.out("Cooling enabled, Setpoint: %.1f oC" % camera.get_set_point())
         else:
             self.out("Cooling disabled.")
 
-        self.out("Current CCD temperature:", "%.1f" % camera.getTemperature(), "oC")
-        if camera.isFanning():
+        self.out("Current CCD temperature:", "%.1f" % camera.get_temperature(), "oC")
+        if camera.is_fanning():
             self.out("Cooler fan active.")
         else:
             self.out("Cooler fan inactive.")
@@ -367,11 +367,11 @@ class ChimeraCam(ChimeraCLI):
             self.out(str(feature), str(bool(camera.supports(feature))))
 
         self.out("=" * 40)
-        ccds = camera.getCCDs()
-        currentCCD = camera.getCurrentCCD()
+        ccds = camera.get_ccds()
+        current_ccd = camera.get_current_ccd()
         self.out("Available CCDs: ", end="")
         for ccd in list(ccds.keys()):
-            if ccd == currentCCD:
+            if ccd == current_ccd:
                 self.out("*%s* " % str(ccds[ccd]), end="")
             else:
                 self.out("%s " % str(ccds[ccd]), end="")
@@ -379,22 +379,22 @@ class ChimeraCam(ChimeraCLI):
 
         self.out("=" * 40)
         self.out("ADCs: ", end="")
-        adcs = camera.getADCs()
+        adcs = camera.get_adcs()
         for adc in list(adcs.keys()):
             self.out("%s " % adc, end="")
         self.out()
 
         self.out("=" * 40)
-        self.out("CCD size (pixel)       : %d x %d" % camera.getPhysicalSize())
-        self.out("Pixel size (micrometer): %.2f x %.2f" % camera.getPixelSize())
-        self.out("Overscan size (pixel)  : %d x %d" % camera.getOverscanSize())
+        self.out("CCD size (pixel)       : %d x %d" % camera.get_physical_size())
+        self.out("Pixel size (micrometer): %.2f x %.2f" % camera.get_pixel_size())
+        self.out("Overscan size (pixel)  : %d x %d" % camera.get_overscan_size())
 
         self.out("=" * 40)
         self.out("Available binnings: ", end="")
-        sortedBins = list(camera.getBinnings().keys())
-        sortedBins.sort()
+        sorted_bins = list(camera.get_binnings().keys())
+        sorted_bins.sort()
 
-        for bin in sortedBins:
+        for bin in sorted_bins:
             self.out("%s " % bin, end="")
         self.out()
 
@@ -402,12 +402,12 @@ class ChimeraCam(ChimeraCLI):
 
         self.exit()
 
-    def _getImageType(self, options):
+    def _get_image_type(self, options):
         special_types = (
-            options.isBias,
-            options.isDomeFlat,
-            options.isSkyFlat,
-            options.isDark,
+            options.is_bias,
+            options.is_dome_flat,
+            options.is_sky_flat,
+            options.is_dark,
         )
         for t in special_types:
             if t:
@@ -421,18 +421,18 @@ class ChimeraCam(ChimeraCLI):
         # thread
         if hasattr(self, "camera"):
             cam = copy.copy(self.camera)
-            cam.abortExposure()
+            cam.abort_exposure()
 
     @action(
         default=True,
-        helpGroup="EXPOSE",
+        help_group="EXPOSE",
         help="Take an exposure with selected parameters",
     )
     def expose(self, options):
         camera = self.camera
 
         # first check binning
-        binnings = camera.getBinnings()
+        binnings = camera.get_binnings()
 
         if options.binning:
             if options.binning not in list(binnings.keys()):
@@ -440,9 +440,9 @@ class ChimeraCam(ChimeraCLI):
                     "Invalid binning mode. See --info for available binning modes"
                 )
 
-        imagetype = self._getImageType(options)
+        imagetype = self._get_image_type(options)
         if imagetype == "object":
-            object_name = options.isObject
+            object_name = options.is_object
         else:
             object_name = None
 
@@ -474,129 +474,138 @@ class ChimeraCam(ChimeraCLI):
             options.shutter = options.shutter.upper()
 
         # filter/exptime list support
-        filterList = []
+        filter_list = []
 
         if options.filter is not None:
             if "," in options.filter:
                 for f in options.filter.split(","):
-                    filterList.append(f.strip())
+                    filter_list.append(f.strip())
             else:
-                filterList.append(options.filter)
+                filter_list.append(options.filter)
 
             # validate filters
-            for filter in filterList:
-                if self.wheel and filter not in self.wheel.getFilters():
-                    self.err("Invalid filter '%s'" % filter)
+            for filter_name in filter_list:
+                if self.wheel and filter_name not in self.wheel.get_filters():
+                    self.err("Invalid filter '%s'" % filter_name)
                     self.exit()
 
-            self.out("Filters: %s" % " ".join(filterList))
+            self.out("Filters: %s" % " ".join(filter_list))
 
-        expTimes = []
+        exp_times = []
         if isinstance(options.exptime, str) and "," in options.exptime:
             for exp in options.exptime.split(","):
-                expTimes.append(float(exp))
+                exp_times.append(float(exp))
         else:
-            expTimes.append(float(options.exptime))
+            exp_times.append(float(options.exptime))
 
-        # match expTimes and filterFist (if last given)
-        if filterList:
+        # match exp_times and filter_list (if last given)
+        if filter_list:
             # use last given exptime if there are more filter than exptimes (if
             # less, we just ignore).
-            if len(expTimes) < len(filterList):
-                exps = [expTimes[-1] for x in range(len(filterList) - len(expTimes))]
-                expTimes.extend(exps)
+            if len(exp_times) < len(filter_list):
+                exps = [exp_times[-1] for x in range(len(filter_list) - len(exp_times))]
+                exp_times.extend(exps)
 
         compress_format = options.compress
 
         # DS9
         ds9 = None
         if (
-            not self.options.disable_display and expTimes[0] >= 5
+            not self.options.disable_display and exp_times[0] >= 5
         ) or options.force_display:
             try:
                 ds9 = DS9(open=True)
             except IOError:
                 self.err("Problems starting DS9. DIsplay disabled.")
 
-        def exposeBegin(request):
-            global currentFrame, currentFrameExposeStart
-            currentFrameExposeStart = time.time()
-            currentFrame += 1
+        def expose_begin(request):
+            global current_frame, current_frame_expose_start
+            current_frame_expose_start = time.time()
+            current_frame += 1
             self.out(40 * "=")
             self.out(
-                "[%03d/%03d] [%s]" % (currentFrame, options.frames, time.strftime("%c"))
+                "[%03d/%03d] [%s]"
+                % (current_frame, options.frames, time.strftime("%c"))
             )
             self.out("exposing (%.3fs) ..." % request["exptime"], end="")
 
-        def exposeComplete(request, status):
-            global currentFrameExposeStart
+        def expose_complete(request, status):
+            global current_frame_expose_start
             if status == CameraStatus.OK:
-                self.out("OK (took %.3f s)" % (time.time() - currentFrameExposeStart))
+                self.out(
+                    "OK (took %.3f s)" % (time.time() - current_frame_expose_start)
+                )
 
-        def readoutBegin(request):
-            global currentFrameReadoutStart
-            currentFrameReadoutStart = time.time()
+        def readout_begin(request):
+            global current_frame_readout_start
+            current_frame_readout_start = time.time()
             self.out("reading out and saving ...", end="")
 
-        def readoutComplete(image, status):
-            global currentFrame, currentFrameExposeStart, currentFrameReadoutStart
+        def readout_complete(image, status):
+            global current_frame, current_frame_expose_start, current_frame_readout_start
 
             if status == CameraStatus.OK:
-                self.out("OK (took %.3f s)" % (time.time() - currentFrameExposeStart))
+                self.out(
+                    "OK (took %.3f s)" % (time.time() - current_frame_expose_start)
+                )
 
                 self.out(
                     " (%s) " % get_compressed_name(image.filename, compress_format),
                     end="",
                 )
-                self.out("OK (took %.3f s)" % (time.time() - currentFrameReadoutStart))
+                self.out(
+                    "OK (took %.3f s)" % (time.time() - current_frame_readout_start)
+                )
                 self.out(
                     "[%03d/%03d] took %.3fs"
                     % (
-                        currentFrame,
+                        current_frame,
                         options.frames,
-                        time.time() - currentFrameExposeStart,
+                        time.time() - current_frame_expose_start,
                     )
                 )
 
                 if ds9:
                     ds9.set("scale mode 99.5")
-                    ds9.displayImage(image)
+                    ds9.display_image(image)
 
-        camera.exposeBegin += exposeBegin
-        camera.exposeComplete += exposeComplete
-        camera.readoutBegin += readoutBegin
-        camera.readoutComplete += readoutComplete
+        camera.expose_begin += expose_begin
+        camera.expose_complete += expose_complete
+        camera.readout_begin += readout_begin
+        camera.readout_complete += readout_complete
 
         # do we have a Dome?
         dome = None
-        remoteManager = camera.getManager()
+        remote_manager = camera.get_manager()
         try:
-            dome = remoteManager.getProxy(remoteManager.getResourcesByClass("Dome")[0])
+            dome = remote_manager.get_proxy(
+                remote_manager.get_resources_by_class("Dome")[0]
+            )
         except ObjectNotFoundException:
             pass
 
         if dome:
 
-            def syncBegin():
+            def sync_begin():
                 self.out("=" * 40)
                 self.out("synchronizing dome slit ...", end="")
 
-            def syncComplete():
+            def sync_complete():
                 self.out("OK")
 
-            dome.syncBegin += syncBegin
-            dome.syncComplete += syncComplete
+            dome.sync_begin += sync_begin
+            dome.sync_complete += sync_complete
 
         self.out(40 * "=")
         self.out("Taking %d %s frame[s]" % (options.frames, imagetype.upper()))
         self.out("Shutter: %s" % options.shutter)
         self.out("Interval between frames: %.3fs" % options.interval)
-        if camera.isCooling():
-            self.out("Cooling enabled, setpoint: %.3f oC" % camera.getSetPoint())
+        if camera.is_cooling():
+            self.out("Cooling enabled, setpoint: %.3f oC" % camera.get_set_point())
         else:
             self.out("Cooling disabled.")
 
-        self.out("Current CCD temperature: %.3f oC" % camera.getTemperature())
+        self.out("Current CCD temperature: %.3f oC" % camera.get_temperature())
 
         if options.binning:
             self.out("Binning: %s" % options.binning)
@@ -608,12 +617,12 @@ class ChimeraCam(ChimeraCLI):
         else:
             self.out("Full Frame")
 
-        def changeFilter(f):
+        def change_filter(f):
             if options.filter is not None and self.wheel:
                 self.out(40 * "=")
                 try:
                     self.out("Changing to filter %s... " % f, end="")
-                    self.wheel.setFilter(f)
+                    self.wheel.set_filter(f)
                     self.out("OK")
                 except InvalidFilterPositionException as e:
                     self.err("ERROR. Couldn't move filter wheel to %s. (%s)" % (f, e))
@@ -624,11 +633,11 @@ class ChimeraCam(ChimeraCLI):
 
         try:
             try:
-                if filterList:
-                    for f in range(len(filterList)):
-                        changeFilter(filterList[f])
+                if filter_list:
+                    for f in range(len(filter_list)):
+                        change_filter(filter_list[f])
 
-                        if (options.interval > 0) and (1 <= f < (len(filterList))):
+                        if (options.interval > 0) and (1 <= f < (len(filter_list))):
                             self.out("=" * 40)
                             self.out(
                                 "waiting %.2f s before next frame..." % options.interval
@@ -636,7 +645,7 @@ class ChimeraCam(ChimeraCLI):
                             time.sleep(options.interval)
 
                         camera.expose(
-                            exptime=expTimes[f],
+                            exptime=exp_times[f],
                             frames=options.frames,
                             interval=options.interval,
                             filename=options.output,
@@ -651,7 +660,7 @@ class ChimeraCam(ChimeraCLI):
 
                 else:
                     camera.expose(
-                        exptime=expTimes[0],
+                        exptime=exp_times[0],
                         frames=options.frames,
                         interval=options.interval,
                         filename=options.output,
@@ -667,7 +676,7 @@ class ChimeraCam(ChimeraCLI):
             except IOError as e:
                 self.err("Error trying to take exposures (%s)" % str(e))
             except Exception as e:
-                self.err("Error trying to take exposures. (%s)" % printException(e))
+                self.err("Error trying to take exposures. (%s)" % print_exception(e))
         finally:
             self.out(40 * "=")
             self.out("Total time: %.3fs" % (time.time() - start))

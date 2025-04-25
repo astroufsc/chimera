@@ -56,7 +56,7 @@ class ILifeCycle(Interface):
         @note: This method runs on their own thread.
         """
 
-    def getState(self):
+    def get_state(self):
         """
         Get the current state of the object as a L{State} enum.
 
@@ -70,7 +70,7 @@ class ILifeCycle(Interface):
         @see: L{State} for possible values.
         """
 
-    def getLocation(self):
+    def get_location(self):
         """
         Get the current L{Location} where the object is deployed.
         """
@@ -80,22 +80,26 @@ class ILifeCycle(Interface):
         Internally used function to set the current location of the object.
         """
 
-    def getManager(self):
+    def get_manager(self):
         """
         Get the current Manager for this object.
         """
 
-    def getProxy(self):
+    def get_proxy(self):
         """
         Get a Proxy for this object (useful for callbacks)
         """
 
-    def getMetadata(self, data):
+    def get_metadata(self, data):
         """
-        Get object metadata.
+        Get metadata about this object to be added to other objects
+        (like images) metadata.
 
-        @param data: Context relevant data.
-        @type  data: object
+        @param data: The data to be processed by this object. Metadata
+        handlers could use this data as a source of extra metadata
+        information.
+        @type data: Whatever the caller want to pass, object doesn't need to use it.
 
-        @rtype: list
+        @return: Current object metadata to be added to data metadata.
+        @rtype: dict
         """

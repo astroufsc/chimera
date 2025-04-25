@@ -127,7 +127,7 @@ class WeatherRain(WeatherStation):
         :return: the precipitation rate.
         """
 
-    def isRaining(self):
+    def is_raining(self):
         """
         Returns True if it is raining and False otherwise
         """
@@ -156,7 +156,7 @@ class WeatherSafety(WeatherStation):
     Some weather stations can have some intelligency that returns to the OCS only if it is okay to open the dome or not.
     """
 
-    def okToOpen(self):
+    def ok_to_open(self):
         """
         Returns True if it is okay to open the dome and False otherwise.
         """

@@ -9,7 +9,7 @@ from http.server import HTTPServer
 
 class ImageServerHTTPHandler(SimpleHTTPRequestHandler):
 
-    def do_GET(self):
+    def do_GET(self):  # noqa: N802
         if self.path.startswith("/image/"):
             self.image()
         else:
@@ -48,7 +48,7 @@ class ImageServerHTTPHandler(SimpleHTTPRequestHandler):
         if len(args) < 2:
             return self.response(200, "What are you looking for?")
         else:
-            img = self.server.ctrl.getImageByID(args[1])
+            img = self.server.ctrl.get_image_by(args[1])
             if not img:
                 self.response(200, "Couldn't find the image.")
             else:
@@ -56,29 +56,26 @@ class ImageServerHTTPHandler(SimpleHTTPRequestHandler):
 
     def list(self):
 
-        toReturn = "<table><tr><th>Image ID</th><th>Path</th></tr>"
-        keys = list(self.server.ctrl.imagesByPath.keys())
+        to_return = "<table><tr><th>Image ID</th><th>Path</th></tr>"
+        keys = list(self.server.ctrl.images_by_path.keys())
         keys.sort()
         for key in keys:
-            image = self.server.ctrl.imagesByPath[key]
+            image = self.server.ctrl.images_by_path[key]
             id = image.GUID()
             path = image.filename
-            toReturn += f'<tr><td><a href="/image/{id}">{id}</a></td><td><a href="/image/{id}">{path}</a></td></tr>'
+            to_return += f'<tr><td><a href="/image/{id}">{id}</a></td><td><a href="/image/{id}">{path}</a></td></tr>'
 
-        self.response(200, toReturn, "text/html")
+        self.response(200, to_return, "text/html")
 
 
 class ImageServerHTTP(threading.Thread):
 
     def __init__(self, ctrl):
         threading.Thread.__init__(self)
-        self.setDaemon(True)
-        self.setName("Image Server HTTPD")
+        self.daemon = True
+        self.name = "Image Server HTTPD"
         self.ctrl = ctrl
         self.die = threading.Event()
-
-    def keep_running(self):
-        return self._keep_running
 
     def run(self):
 

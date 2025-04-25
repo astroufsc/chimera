@@ -13,10 +13,10 @@ class ClassLoader(object):
     def __init__(self):
         self._cache = {}
 
-    def loadClass(self, clsname, path=["."]):
-        return self._lookupClass(clsname, path)
+    def load_class(self, clsname, path=["."]):
+        return self._lookup_class(clsname, path)
 
-    def _lookupClass(self, clsname, path):
+    def _lookup_class(self, clsname, path):
         """
         Based on this recipe
         http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/52241

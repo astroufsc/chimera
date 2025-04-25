@@ -24,22 +24,22 @@ class DomeBase(ChimeraObject, DomeSlew, DomeSlit, DomeFlap, DomeSync):
         self._mode = None
 
         # to reuse telescope proxy on control method
-        self._tel = None
-        self._telChanged = False
+        self._telescope = None
+        self._telescope_changed = False
 
         # to cache for az_resolution of the dome
-        self.controlAzRes = None
+        self.control_az_res = None
 
-        self._waitAfterSlew = threading.Event()
-        self._waitAfterSlew.clear()
+        self._wait_after_slew = threading.Event()
+        self._wait_after_slew.clear()
 
     def __start__(self):
 
-        self.setHz(1 / 4.0)
+        self.set_hz(1 / 4.0)
 
-        tel = self.getTelescope()
-        if tel:
-            self._connectTelEvents()
+        telescope = self.get_telescope()
+        if telescope:
+            self._connect_telescope_events()
         else:
             self.log.warning(
                 "Couldn't find telescope. Telescope events would"
@@ -55,7 +55,7 @@ class DomeBase(ChimeraObject, DomeSlew, DomeSlit, DomeFlap, DomeSync):
             self.log.warning("Invalid dome mode: %s. " "Will use Stand mode instead.")
             self.stand()
 
-        self.log.debug(f"Dome started in {self.getMode()} mode.")
+        self.log.debug(f"Dome started in {self.get_mode()} mode.")
 
         return True
 
@@ -65,25 +65,25 @@ class DomeBase(ChimeraObject, DomeSlew, DomeSlit, DomeFlap, DomeSync):
             try:
                 self.stand()
                 self.log.info("Parking the dome...")
-                self.slewToAz(self["park_position"])
+                self.slew_to_az(self["park_position"])
             except Exception as e:
                 self.log.warning("Unable to park dome: %s", str(e))
 
-        if self["close_on_shutdown"] and self.isSlitOpen():
+        if self["close_on_shutdown"] and self.is_slit_open():
             try:
                 self.log.info("Closing the slit...")
-                self.closeSlit()
+                self.close_slit()
             except Exception as e:
                 self.log.warning("Unable to close dome: %s", str(e))
 
         # telescope events
-        self._disconnectTelEvents()
+        self._disconnect_telescope_events()
         return True
 
-    def _connectTelEvents(self):
+    def _connect_telescope_events(self):
 
-        tel = self.getTelescope()
-        if not tel:
+        telescope = self.get_telescope()
+        if not telescope:
             self.log.warning(
                 "Couldn't find telescope. Telescope events would"
                 " not be monitored. Dome will stay in Stand mode."
@@ -91,99 +91,101 @@ class DomeBase(ChimeraObject, DomeSlew, DomeSlit, DomeFlap, DomeSync):
             self["mode"] == Mode.Stand
             return False
 
-        tel.slewBegin += self.getProxy()._telSlewBeginClbk
-        tel.slewComplete += self.getProxy()._telSlewCompleteClbk
+        telescope.slew_begin += self.get_proxy()._telescope_slew_begin_callback
+        telescope.slew_complete += self.get_proxy()._telescope_slew_complete_callback
         return True
 
-    def _disconnectTelEvents(self):
+    def _disconnect_telescope_events(self):
 
-        tel = self.getTelescope()
-        if tel:
-            tel.slewBegin -= self.getProxy()._telSlewBeginClbk
-            tel.slewComplete -= self.getProxy()._telSlewCompleteClbk
+        telescope = self.get_telescope()
+        if telescope:
+            telescope.slew_begin -= self.get_proxy()._telescope_slew_begin_callback
+            telescope.slew_complete -= (
+                self.get_proxy()._telescope_slew_complete_callback
+            )
             return True
         return False
 
-    def _reconnectTelEvents(self):
-        self._disconnectTelEvents()
-        self._connectTelEvents()
+    def _reconnect_telescope_events(self):
+        self._disconnect_telescope_events()
+        self._connect_telescope_events()
 
     # telescope callbacks
-    def _telSlewBeginClbk(self, target):
+    def _telescope_slew_begin_callback(self, target):
         self.log.debug(f"[event] telescope slewing to {target}.")
 
-    def _telSlewCompleteClbk(self, target, status):
+    def _telescope_slew_complete_callback(self, target, status):
         self.log.debug(
             f"[event] telescope slew complete, position={target} status={status}."
         )
 
-    # utilitaries
-    def getTelescope(self):
+    # utilities
+    def get_telescope(self):
         try:
-            p = self.getManager().getProxy(self["telescope"])
-            if not p.ping():
+            proxy = self.get_manager().get_proxy(self["telescope"])
+            if not proxy.ping():
                 return False
             else:
-                return p
+                return proxy
         except ObjectNotFoundException:
             return False
 
     def control(self):
 
-        if self.getMode() == Mode.Stand:
+        if self.get_mode() == Mode.Stand:
             return True
 
         if not self.queue.empty():
-            self._processQueue()
+            self._process_queue()
             return True
 
         try:
-            if not self._tel or self._telChanged:
-                self._tel = self.getTelescope()
-                self._telChanged = False
-                if not self._tel:
+            if not self._telescope or self._telescope_changed:
+                self._telescope = self.get_telescope()
+                self._telescope_changed = False
+                if not self._telescope:
                     return True
 
-            if self._tel.isSlewing():
+            if self._telescope.is_slewing():
                 self.log.debug("[control] telescope slewing... not checking az.")
-                self._waitAfterSlew.set()
+                self._wait_after_slew.set()
                 return True
 
-            self._telescopeChanged(self._tel.getAz())
+            self._telescope_changed_position(self._telescope.get_az())
             # flag all waiting threads that the control loop already checked the new telescope position
             # probably adding new azimuth to the queue
-            self._waitAfterSlew.clear()
+            self._wait_after_slew.clear()
 
         except ObjectNotFoundException:
             raise ChimeraException(
-                "Couldn't found the selected telescope." " Dome cannnot track."
+                "Couldn't find the selected telescope." " Dome cannot track."
             )
 
         return True
 
-    def _telescopeChanged(self, az):
+    def _telescope_changed_position(self, az):
 
         if not isinstance(az, Coord):
-            az = Coord.fromDMS(az)
+            az = Coord.from_dms(az)
 
-        if self._needToMove(az):
+        if self._need_to_move(az):
             self.log.debug(
-                f"[control] adding {az} to the queue (delta={abs(self.getAz() - az)})"
+                f"[control] adding {az} to the queue (delta={abs(self.get_az() - az)})"
             )
             self.queue.put(az)
         else:
             self.log.debug(
                 "[control] standing"
-                f" (dome az={self.getAz()}, tel az={az}, delta={abs(self.getAz() - az)}.)"
+                f" (dome az={self.get_az()}, telescope az={az}, delta={abs(self.get_az() - az)}.)"
             )
 
-    def _needToMove(self, az):
-        return abs(az - self.getAz()) >= self["az_resolution"]
+    def _need_to_move(self, az):
+        return abs(az - self.get_az()) >= self["az_resolution"]
 
-    def _processQueue(self):
+    def _process_queue(self):
 
-        if self._waitAfterSlew.is_set():
-            self._telescopeChanged(self._tel.getAz())
+        if self._wait_after_slew.is_set():
+            self._telescope_changed_position(self._telescope.get_az())
 
         if self.queue.empty():
             return
@@ -195,23 +197,23 @@ class DomeBase(ChimeraObject, DomeSlew, DomeSlit, DomeFlap, DomeSync):
             target = self.queue.get()
             try:
                 self.log.debug(f"[queue] slewing to {target}")
-                self.slewToAz(target)
+                self.slew_to_az(target)
             finally:
                 self.log.debug(f"[queue] slew to {target} complete")
                 self.queue.task_done()
 
     @lock
     def track(self):
-        if self.getMode() == Mode.Track:
+        if self.get_mode() == Mode.Track:
             return
 
-        tel = self.getTelescope()
+        telescope = self.get_telescope()
 
-        if tel:
-            self._reconnectTelEvents()
-            self._telChanged = True
+        if telescope:
+            self._reconnect_telescope_events()
+            self._telescope_changed = True
             self.log.debug("[mode] tracking...")
-            self._telescopeChanged(tel.getAz())
+            self._telescope_changed_position(telescope.get_az())
             self._mode = Mode.Track
         else:
             self.log.warning(
@@ -220,70 +222,70 @@ class DomeBase(ChimeraObject, DomeSlew, DomeSlit, DomeFlap, DomeSync):
 
     @lock
     def stand(self):
-        self._processQueue()
+        self._process_queue()
         self.log.debug("[mode] standing...")
         self._mode = Mode.Stand
 
     @lock
-    def syncWithTel(self):
-        self.syncBegin()
+    def sync_with_telescope(self):
+        self.sync_begin()
 
-        if self.getMode() != Mode.Stand:
-            self._telescopeChanged(self._tel.getAz())
-            self._processQueue()
+        if self.get_mode() != Mode.Stand:
+            self._telescope_changed_position(self._telescope.get_az())
+            self._process_queue()
 
-        self.syncComplete()
+        self.sync_complete()
 
     @lock
-    def isSyncWithTel(self):
-        return self._needToMove(self._tel.getAz())
+    def is_sync_with_telescope(self):
+        return self._need_to_move(self._telescope.get_az())
 
-    def getMode(self):
+    def get_mode(self):
         return self._mode
 
     @lock
-    def slewToAz(self, az):
+    def slew_to_az(self, az):
         raise NotImplementedError()
 
-    def isSlewing(self):
+    def is_slewing(self):
         raise NotImplementedError()
 
-    def abortSlew(self):
-        raise NotImplementedError()
-
-    @lock
-    def getAz(self):
+    def abort_slew(self):
         raise NotImplementedError()
 
     @lock
-    def openSlit(self):
+    def get_az(self):
         raise NotImplementedError()
 
     @lock
-    def closeSlit(self):
-        raise NotImplementedError()
-
-    def isSlitOpen(self):
+    def open_slit(self):
         raise NotImplementedError()
 
     @lock
-    def openFlap(self):
+    def close_slit(self):
+        raise NotImplementedError()
+
+    def is_slit_open(self):
         raise NotImplementedError()
 
     @lock
-    def closeFlap(self):
+    def open_flap(self):
         raise NotImplementedError()
 
-    def isFlapOpen(self):
+    @lock
+    def close_flap(self):
         raise NotImplementedError()
 
-    def getMetadata(self, request):
-        # Check first if there is metadata from an metadata override method.
-        md = self.getMetadataOverride(request)
-        if md is not None:
-            return md
+    def is_flap_open(self):
+        raise NotImplementedError()
+
+    def get_metadata(self, request):
+        # Check first if there is metadata from a metadata override method.
+        metadata = self.get_metadata_override(request)
+        if metadata is not None:
+            return metadata
         # If not, just go on with the instrument's default metadata.
-        if self.isSlitOpen():
+        if self.is_slit_open():
             slit = "Open"
         else:
             slit = "Closed"

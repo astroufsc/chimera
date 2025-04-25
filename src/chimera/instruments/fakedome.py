@@ -18,19 +18,19 @@ class FakeDome(DomeBase):
 
         self._position = 0
         self._slewing = False
-        self._slitOpen = False
-        self._flapOpen = False
+        self._slit_open = False
+        self._flap_open = False
         self._abort = threading.Event()
-        self._maxSlewTime = 5 / 180.0
+        self._max_slew_time = 5 / 180.0
 
     def __start__(self):
-        self.setHz(1.0 / 30.0)
+        self.set_hz(1.0 / 30.0)
 
     @lock
-    def slewToAz(self, az):
+    def slew_to_az(self, az):
 
         if not isinstance(az, Coord):
-            az = Coord.fromDMS(az)
+            az = Coord.from_dms(az)
 
         if az > 360:
             raise InvalidDomePositionException(
@@ -40,7 +40,7 @@ class FakeDome(DomeBase):
         self._abort.clear()
         self._slewing = True
 
-        self.slewBegin(az)
+        self.slew_begin(az)
         self.log.info(f"Slewing to {az}")
 
         # slew time ~ distance from current position
@@ -50,7 +50,7 @@ class FakeDome(DomeBase):
 
         self.log.info(f"Slew distance {distance:.3f} deg")
 
-        slew_time = distance * self._maxSlewTime
+        slew_time = distance * self._max_slew_time
 
         self.log.info(f"Slew time ~ {slew_time:.3f} s")
 
@@ -74,60 +74,60 @@ class FakeDome(DomeBase):
             self._position = self.position + distance / 2.0
 
         self._slewing = False
-        self.slewComplete(self.getAz(), status)
+        self.slew_complete(self.get_az(), status)
 
-    def isSlewing(self):
+    def is_slewing(self):
         return self._slewing
 
-    def abortSlew(self):
-        if not self.isSlewing():
+    def abort_slew(self):
+        if not self.is_slewing():
             return
 
         self._abort.set()
-        while self.isSlewing():
+        while self.is_slewing():
             time.sleep(0.1)
 
     @lock
-    def getAz(self):
-        return Coord.fromD(self._position)
+    def get_az(self):
+        return Coord.from_d(self._position)
 
     @lock
-    def openSlit(self):
+    def open_slit(self):
         self.log.info("Opening slit")
         time.sleep(2)
-        self._slitOpen = True
-        self.slitOpened(self.getAz())
+        self._slit_open = True
+        self.slit_opened(self.get_az())
 
     @lock
-    def closeSlit(self):
+    def close_slit(self):
         self.log.info("Closing slit")
-        if self.isFlapOpen():
+        if self.is_flap_open():
             self.log.warning("Dome flap open. Closing it before closing the slit.")
-            self.closeFlap()
+            self.close_flap()
         time.sleep(2)
-        self._slitOpen = False
-        self.slitClosed(self.getAz())
+        self._slit_open = False
+        self.slit_closed(self.get_az())
 
-    def isSlitOpen(self):
-        return self._slitOpen
+    def is_slit_open(self):
+        return self._slit_open
 
     @lock
-    def openFlap(self):
+    def open_flap(self):
         self.log.info("Opening flap")
-        if not self.isSlitOpen():
+        if not self.is_slit_open():
             raise InvalidDomePositionException(
                 "Cannot open dome flap with slit closed."
             )
         time.sleep(2)
-        self._flapOpen = True
-        self.flapOpened(self.getAz())
+        self._flap_open = True
+        self.flap_opened(self.get_az())
 
     @lock
-    def closeFlap(self):
+    def close_flap(self):
         self.log.info("Closing flap")
         time.sleep(2)
-        self._slitOpen = False
-        self.slitClosed(self.getAz())
+        self._slit_open = False
+        self.slit_closed(self.get_az())
 
-    def isFlapOpen(self):
-        return self._flapOpen
+    def is_flap_open(self):
+        return self._flap_open

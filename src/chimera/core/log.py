@@ -11,10 +11,10 @@ from chimera.core.constants import (
     MANAGER_DEFAULT_PORT,
 )
 
-from chimera.core.exceptions import printException
+from chimera.core.exceptions import print_exception
 
 
-__all__ = ["setConsoleLevel"]
+__all__ = ["set_console_level"]
 
 
 class ChimeraFormatter(logging.Formatter):
@@ -22,9 +22,9 @@ class ChimeraFormatter(logging.Formatter):
     def __init__(self, fmt, datefmt):
         logging.Formatter.__init__(self, fmt, datefmt)
 
-    def formatException(self, exc_info):
+    def formatException(self, exc_info):  # noqa: N802
         stream = io.StringIO()
-        printException(exc_info[1], stream=stream)
+        print_exception(exc_info[1], stream=stream)
 
         try:
             return stream.getvalue()
@@ -70,7 +70,7 @@ consoleHandler.addFilter(flt)
 root.addHandler(consoleHandler)
 
 
-def setConsoleLevel(level):
+def set_console_level(level):
     consoleHandler.setLevel(level)
 
 

@@ -103,20 +103,20 @@ class SystemConfig(object):
     """
 
     @staticmethod
-    def fromString(string):
+    def from_string(string):
         s = SystemConfig()
         s.add(string)
         return s
 
     @staticmethod
-    def fromFile(filename):
+    def from_file(filename):
         s = SystemConfig()
         s.add(open(filename, "r").read())
         return s
 
     @staticmethod
-    def fromDefault():
-        return SystemConfig.fromFile(SYSTEM_CONFIG_DEFAULT_FILENAME)
+    def from_default():
+        return SystemConfig.from_file(SYSTEM_CONFIG_DEFAULT_FILENAME)
 
     def __init__(self):
 
@@ -149,14 +149,16 @@ class SystemConfig(object):
             "weatherstations",
         ]
 
-        self._instrumentsSections = self._specials + ["instrument", "instruments"]
-        self._controllersSections = ["controller", "controllers"]
+        self._instruments_sections = self._specials + ["instrument", "instruments"]
+        self._controllers_sections = ["controller", "controllers"]
         self._sections = (
-            self._instrumentsSections + self._controllersSections + ["site", "chimera"]
+            self._instruments_sections
+            + self._controllers_sections
+            + ["site", "chimera"]
         )
 
         # to create nice numbered names for objects without a name
-        self._useCount = {}
+        self._use_count = {}
 
         self.chimera["host"] = MANAGER_DEFAULT_HOST
         self.chimera["port"] = MANAGER_DEFAULT_PORT
@@ -179,13 +181,13 @@ class SystemConfig(object):
 
         # scan the buffer to determine section order, which would be
         # used to guarantee instrument initialization order
-        sectionsOrder = []
+        sections_order = []
         for token in yaml.scan(buffer):
             # get all ScalarTokens
             if isinstance(token, yaml.ScalarToken):
                 # add to order if is a known section and unique to order
-                if token.value in self._sections and token.value not in sectionsOrder:
-                    sectionsOrder.append(token.value)
+                if token.value in self._sections and token.value not in sections_order:
+                    sections_order.append(token.value)
 
         # parse chimera section first, to get host/port or set defaults
         for type, values in list(config.items()):
@@ -225,16 +227,16 @@ class SystemConfig(object):
                 values = [values]
 
             for instance in values:
-                loc = self._parseLocation(key, instance)
+                loc = self._parse_location(key, instance)
                 objects[key].append(loc)
 
-        # create instruments list ordered by sectionsOrder list created above
-        for section in sectionsOrder:
+        # create instruments list ordered by sections_order list created above
+        for section in sections_order:
 
-            if section in self._instrumentsSections and section in objects:
+            if section in self._instruments_sections and section in objects:
                 self.instruments += objects[section]
 
-            if section in self._controllersSections and section in objects:
+            if section in self._controllers_sections and section in objects:
                 self.controllers += objects[section]
 
         # always use a single site from the last added file
@@ -243,17 +245,17 @@ class SystemConfig(object):
 
         return True
 
-    def _getDefaultName(self, type):
-        if type not in self._useCount:
-            self._useCount[type] = 0
+    def _get_default_name(self, type):
+        if type not in self._use_count:
+            self._use_count[type] = 0
 
-        name = f"{str(type)}_{self._useCount[type]}"
-        self._useCount[type] += 1
+        name = f"{str(type)}_{self._use_count[type]}"
+        self._use_count[type] += 1
         return name
 
-    def _parseLocation(self, type, dic):
+    def _parse_location(self, type, dic):
 
-        name = dic.pop("name", self._getDefaultName(type))
+        name = dic.pop("name", self._get_default_name(type))
 
         # replace some invalid chars from object name
         name = name.replace(" ", "_")

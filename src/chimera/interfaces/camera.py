@@ -53,10 +53,10 @@ class CameraStatus(Enum):
 class ReadoutMode(object):
     """
     Store basic geometry for a given readout mode. Implementer should
-    provide an constuctor from a modeString (some instrument specific
+    provide an constuctor from a mode_string (some instrument specific
     internal value).
 
-    pixelWidth and pixelHeight should provide the virtual size of a
+    pixel_width and pixel_height should provide the virtual size of a
     pixel after any on-chip sum.
 
     gain is in e-/ADU. All others, except mode (which is an internal
@@ -67,28 +67,28 @@ class ReadoutMode(object):
     gain = 0.0
     width = 0
     height = 0
-    pixelWidth = 0.0
-    pixelHeight = 0.0
+    pixel_width = 0.0
+    pixel_height = 0.0
 
-    def __init__(self, modeString=""):
+    def __init__(self, mode_string=""):
         pass
 
-    def getSize(self):
+    def get_size(self):
         return (self.width, self.height)
 
-    def getWindow(self):
+    def get_window(self):
         return [0, 0, self.width, self.height]
 
-    def getPixelSize(self):
-        return (self.pixelWidth, self.pixelHeight)
+    def get_pixel_size(self):
+        return (self.pixel_width, self.pixel_height)
 
-    def getLine(self):
+    def get_line(self):
         return [0, self.width]
 
     def __str__(self):
         return (
             f"mode: {self.mode}: \n\tgain: {self.gain:.2f}\n\tWxH: [{self.width},{self.height}]"
-            f"\n\tpix WxH: [{self.pixelWidth:.2f}, {self.pixelHeight:.2f}]"
+            f"\n\tpix WxH: [{self.pixel_width:.2f}, {self.pixel_height:.2f}]"
         )
 
     def __repr__(self):
@@ -135,7 +135,7 @@ class CameraExpose(Camera):
         @rtype: tuple(L{Proxy})
         """
 
-    def abortExposure(self, readout=True):
+    def abort_exposure(self, readout=True):
         """
         Try abort the current exposure, reading out the current
         frame if asked to.
@@ -149,7 +149,7 @@ class CameraExpose(Camera):
         @rtype: bool
         """
 
-    def isExposing(self):
+    def is_exposing(self):
         """
         Ask if camera is exposing right now.(where exposing
         includes both integration time and readout).
@@ -161,24 +161,24 @@ class CameraExpose(Camera):
         """
 
     @event
-    def exposeBegin(self, request):
+    def expose_begin(self, request):
         """
         Indicates that new exposure is starting.
 
         When multiple frames are taken in a single shot, multiple
-        exposeBegin events will be fired.
+        expose_begin events will be fired.
 
         @param request: The image request.
         @type  request: L{ImageRequest}
         """
 
     @event
-    def exposeComplete(self, request, status):
+    def expose_complete(self, request, status):
         """
         Indicates that new exposure frame was taken.
 
         When multiple frames are taken in a single shot, multiple
-        exposeComplete events will be fired.
+        expose_complete events will be fired.
 
         @param request: The image request.
         @type  request: L{ImageRequest}
@@ -188,25 +188,26 @@ class CameraExpose(Camera):
         """
 
     @event
-    def readoutBegin(self, request):
+    def readout_begin(self, request):
         """
         Indicates that new readout is starting.
 
         When multiple frames are taken in a single shot, multiple
-        readoutBegin events will be fired.
+        readout_begin events will be fired.
 
         @param request: The image request.
         @type  request: L{ImageRequest}
         """
 
     @event
-    def readoutComplete(self, proxy, status):
-        """Indicates that a new frame was exposed and saved.
+    def readout_complete(self, proxy, status):
+        """
+        Indicates that new readout is complete.
 
         @param request: The just taken Image (as a Proxy) or None is status=[ERROR or ABORTED]..
         @type  request: L{Proxy} or None
 
-        @param status: current exposure status
+        @param status: The status of the current expose.
         @type  status: L{CameraStatus}
         """
 
@@ -216,18 +217,18 @@ class CameraTemperature(Camera):
     A camera that supports temperature monitoring and control.
     """
 
-    def startCooling(self, tempC):
+    def start_cooling(self, temp_c):
         """
-        Start cooling the camera with SetPoint setted to tempC.
+        Start cooling the camera with SetPoint setted to temp_c.
 
-        @param tempC: SetPoint temperature in degrees Celsius.
-        @type  tempC: float or int
+        @param temp_c: SetPoint temperature in degrees Celsius.
+        @type  temp_c: float or int
 
         @return: True if successful, False otherwise.
         @rtype: bool
         """
 
-    def stopCooling(self):
+    def stop_cooling(self):
         """
         Stop cooling the camera
 
@@ -235,7 +236,7 @@ class CameraTemperature(Camera):
         @rtype: bool
         """
 
-    def isCooling(self):
+    def is_cooling(self):
         """
         Returns whether the camera is currently cooling.
 
@@ -243,7 +244,7 @@ class CameraTemperature(Camera):
         @rtype: bool
         """
 
-    def getTemperature(self):
+    def get_temperature(self):
         """
         Get the current camera temperature.
 
@@ -251,7 +252,7 @@ class CameraTemperature(Camera):
         @rtype: float
         """
 
-    def getSetPoint(self):
+    def get_set_point(self):
         """
         Get the current camera temperature SetPoint.
 
@@ -259,24 +260,24 @@ class CameraTemperature(Camera):
         @rtype: float
         """
 
-    def startFan(self, rate=None):
+    def start_fan(self, rate=None):
         pass
 
-    def stopFan(self):
+    def stop_fan(self):
         pass
 
-    def isFanning(self):
+    def is_fanning(self):
         pass
 
     @event
-    def temperatureChange(self, newTempC, delta):
+    def temperature_change(self, new_temp_c, delta):
         """
         Camera temperature probe. Will be fired everytime that the camera
         temperature changes more than temperature_monitor_delta
         degrees Celsius.
 
-        @param newTempC: The current camera temperature in degrees Celsius.
-        @type newTempC: float
+        @param new_temp_c: The current camera temperature in degrees Celsius.
+        @type new_temp_c: float
 
         @param delta: How much the temperature has changed in degrees Celsius.
         @type  delta: float
@@ -285,7 +286,7 @@ class CameraTemperature(Camera):
 
 class CameraInformation(Camera):
 
-    # for getCCDs, getBinnings and getADCs, the instrument should return a
+    # for get_ccds, get_binnings and get_adcs, the instrument should return a
     # hash with keys as Human readable strings, which could be later passed as a
     # ImageRequest and be recognized by the intrument. Those strings can
     # be use as key to an internal hashmap.
@@ -293,28 +294,28 @@ class CameraInformation(Camera):
     # ADCs = {'12 bits': SomeInternalValueWhichMapsTo12BitsADC,
     #         '16 bits': SomeInternalValueWhichMapsTo16BitsADC}
 
-    def getCCDs(self):
+    def get_ccds(self):
         pass
 
-    def getCurrentCCD(self):
+    def get_current_ccd(self):
         pass
 
-    def getBinnings(self):
+    def get_binnings(self):
         pass
 
-    def getADCs(self):
+    def get_adcs(self):
         pass
 
-    def getPhysicalSize(self):
+    def get_physical_size(self):
         pass
 
-    def getPixelSize(self):
+    def get_pixel_size(self):
         pass
 
-    def getOverscanSize(self):
+    def get_overscan_size(self):
         pass
 
-    def getReadoutModes(self):
+    def get_readout_modes(self):
         """Get readout modes supported by this camera.
         The return value would have the following format:
          {ccd1: {mode1: ReadoutMode(), mode2: ReadoutMode2()},

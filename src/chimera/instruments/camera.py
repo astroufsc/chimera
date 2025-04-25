@@ -15,7 +15,7 @@ from chimera.interfaces.camera import (
     Shutter,
 )
 from chimera.controllers.imageserver.imagerequest import ImageRequest
-from chimera.controllers.imageserver.util import getImageServer
+from chimera.controllers.imageserver.util import get_image_server
 from chimera.core.lock import lock
 from chimera.util.image import Image, ImageUtil
 
@@ -28,12 +28,12 @@ class CameraBase(ChimeraObject, CameraExpose, CameraTemperature, CameraInformati
         self.abort = threading.Event()
         self.abort.clear()
 
-        self.__isExposing = threading.Event()
+        self.__is_exposing = threading.Event()
 
         self.extra_header_info = dict()
 
     def __stop__(self):
-        self.abortExposure(readout=False)
+        self.abort_exposure(readout=False)
 
     def get_extra_header_info(self):
         return self.extra_header_info
@@ -41,54 +41,54 @@ class CameraBase(ChimeraObject, CameraExpose, CameraTemperature, CameraInformati
     @lock
     def expose(self, request=None, **kwargs):
 
-        self.__isExposing.set()
+        self.__is_exposing.set()
 
         try:
-            return self._baseExpose(request, **kwargs)
+            return self._base_expose(request, **kwargs)
         finally:
-            self.__isExposing.clear()
+            self.__is_exposing.clear()
 
-    def _baseExpose(self, request, **kwargs):
+    def _base_expose(self, request, **kwargs):
 
         if request:
 
             if isinstance(request, ImageRequest):
-                imageRequest = request
+                image_request = request
             elif isinstance(request, dict):
-                imageRequest = ImageRequest(**request)
+                image_request = ImageRequest(**request)
         else:
             if kwargs:
-                imageRequest = ImageRequest(**kwargs)
+                image_request = ImageRequest(**kwargs)
             else:
-                imageRequest = ImageRequest()
+                image_request = ImageRequest()
 
-        frames = imageRequest["frames"]
-        interval = imageRequest["interval"]
+        frames = image_request["frames"]
+        interval = image_request["interval"]
 
         # validate shutter
-        if str(imageRequest["shutter"]).lower() == "open":
-            imageRequest["shutter"] = Shutter.OPEN
-        elif str(imageRequest["shutter"]).lower() == "close":
-            imageRequest["shutter"] = Shutter.CLOSE
+        if str(image_request["shutter"]).lower() == "open":
+            image_request["shutter"] = Shutter.OPEN
+        elif str(image_request["shutter"]).lower() == "close":
+            image_request["shutter"] = Shutter.CLOSE
         else:
-            imageRequest["shutter"] = Shutter.LEAVE_AS_IS
+            image_request["shutter"] = Shutter.LEAVE_AS_IS
 
         # validate readout mode
-        self._getReadoutModeInfo(imageRequest["binning"], imageRequest["window"])
+        self._get_readout_mode_info(image_request["binning"], image_request["window"])
 
         # use image server if any and save image on server's default dir if
         # filename given as a relative path.
-        server = getImageServer(self.getManager())
-        if not os.path.isabs(imageRequest["filename"]):
-            imageRequest["filename"] = os.path.join(
-                server.defaultNightDir(), imageRequest["filename"]
+        server = get_image_server(self.get_manager())
+        if not os.path.isabs(image_request["filename"]):
+            image_request["filename"] = os.path.join(
+                server.default_night_dir(), image_request["filename"]
             )
 
         # clear abort setting
         self.abort.clear()
 
         images = []
-        manager = self.getManager()
+        manager = self.get_manager()
 
         for frame_num in range(frames):
 
@@ -96,17 +96,17 @@ class CameraBase(ChimeraObject, CameraExpose, CameraTemperature, CameraInformati
             if self.abort.is_set():
                 return tuple(images)
 
-            imageRequest.beginExposure(manager)
-            self._expose(imageRequest)
+            image_request.begin_exposure(manager)
+            self._expose(image_request)
 
             # [ABORT POINT]
             if self.abort.is_set():
                 return tuple(images)
 
-            image = self._readout(imageRequest)
+            image = self._readout(image_request)
             if image is not None:
                 images.append(image)
-                imageRequest.endExposure(manager)
+                image_request.end_exposure(manager)
 
             # [ABORT POINT]
             if self.abort.is_set():
@@ -117,58 +117,58 @@ class CameraBase(ChimeraObject, CameraExpose, CameraTemperature, CameraInformati
 
         return tuple(images)
 
-    def abortExposure(self, readout=True):
+    def abort_exposure(self, readout=True):
 
-        if not self.isExposing():
+        if not self.is_exposing():
             return False
 
         # set our event, so current exposure know that it must abort
         self.abort.set()
 
         # then wait
-        while self.isExposing():
+        while self.is_exposing():
             time.sleep(0.1)
 
         return True
 
-    def _saveImage(self, imageRequest, imageData, extras=None):
+    def _save_image(self, image_request, image_data, extras=None):
 
         if extras is not None:
-            self.extra_header_info = extras
+            self.extra_header_info.update(extras)
 
-        imageRequest.headers += self.getMetadata(imageRequest)
-        img = Image.create(imageData, imageRequest)
+        image_request.headers += self.get_metadata(image_request)
+        img = Image.create(image_data, image_request)
 
         # register image on ImageServer
-        server = getImageServer(self.getManager())
+        server = get_image_server(self.get_manager())
         proxy = server.register(img)
 
         # and finally compress the image if asked
-        if imageRequest["compress_format"].lower() != "no":
-            img.compress(format=imageRequest["compress_format"], multiprocess=True)
+        if image_request["compress_format"].lower() != "no":
+            img.compress(format=image_request["compress_format"], multiprocess=True)
 
         return proxy
 
-    def _getReadoutModeInfo(self, binning, window):
+    def _get_readout_mode_info(self, binning, window):
         """
         Check if the given binning and window could be used on the given CCD.
 
-        Returns a tuple (modeId, binning, top, left, width, height)
+        Returns a tuple (mode_id, binning, top, left, width, height)
         """
 
         mode = None
 
         try:
-            binId = self.getBinnings()[binning]
-            mode = self.getReadoutModes()[self.getCurrentCCD()][binId]
+            bin_id = self.get_binnings()[binning]
+            mode = self.get_readout_modes()[self.get_current_ccd()][bin_id]
         except KeyError:
             # use full frame if None given
-            binId = self.getBinnings()["1x1"]
-            mode = self.getReadoutModes()[self.getCurrentCCD()][binId]
+            bin_id = self.get_binnings()["1x1"]
+            mode = self.get_readout_modes()[self.get_current_ccd()][bin_id]
 
         left = 0
         top = 0
-        width, height = mode.getSize()
+        width, height = mode.get_size()
 
         if window is not None:
             try:
@@ -211,78 +211,78 @@ class CameraBase(ChimeraObject, CameraExpose, CameraTemperature, CameraInformati
             except ValueError:
                 left = 0
                 top = 0
-                width, height = mode.getSize()
+                width, height = mode.get_size()
 
         if not binning:
-            binning = list(self.getBinnings().keys()).pop(
-                list(self.getBinnings().keys()).index("1x1")
+            binning = list(self.get_binnings().keys()).pop(
+                list(self.get_binnings().keys()).index("1x1")
             )
 
         return mode, binning, top, left, width, height
 
-    def isExposing(self):
-        return self.__isExposing.is_set()
+    def is_exposing(self):
+        return self.__is_exposing.is_set()
 
     @lock
-    def startCooling(self, tempC):
-        raise NotImplementedError()
-
-    @lock
-    def stopCooling(self):
-        raise NotImplementedError()
-
-    def isCooling(self):
+    def start_cooling(self, temp_c):
         raise NotImplementedError()
 
     @lock
-    def getTemperature(self):
+    def stop_cooling(self):
+        raise NotImplementedError()
+
+    def is_cooling(self):
         raise NotImplementedError()
 
     @lock
-    def getSetPoint(self):
+    def get_temperature(self):
         raise NotImplementedError()
 
     @lock
-    def startFan(self, rate=None):
+    def get_set_point(self):
         raise NotImplementedError()
 
     @lock
-    def stopFan(self):
+    def start_fan(self, rate=None):
         raise NotImplementedError()
 
-    def isFanning(self):
+    @lock
+    def stop_fan(self):
         raise NotImplementedError()
 
-    def getCCDs(self):
+    def is_fanning(self):
         raise NotImplementedError()
 
-    def getCurrentCCD(self):
+    def get_ccds(self):
         raise NotImplementedError()
 
-    def getBinnings(self):
+    def get_current_ccd(self):
         raise NotImplementedError()
 
-    def getADCs(self):
+    def get_binnings(self):
         raise NotImplementedError()
 
-    def getPhysicalSize(self):
+    def get_adcs(self):
         raise NotImplementedError()
 
-    def getPixelSize(self):
+    def get_physical_size(self):
         raise NotImplementedError()
 
-    def getOverscanSize(self, ccd=None):
+    def get_pixel_size(self):
         raise NotImplementedError()
 
-    def getReadoutModes(self):
+    def get_overscan_size(self, ccd=None):
+        raise NotImplementedError()
+
+    def get_readout_modes(self):
         raise NotImplementedError()
 
     def supports(self, feature=None):
         raise NotImplementedError()
 
-    def getMetadata(self, request):
+    def get_metadata(self, request):
         # Check first if there is metadata from an metadata override method.
-        md = self.getMetadataOverride(request)
+        md = self.get_metadata_override(request)
         if md is not None:
             return md
         # If not, just go on with the instrument's default metadata.
@@ -292,10 +292,10 @@ class CameraBase(ChimeraObject, CameraExpose, CameraTemperature, CameraInformati
             ("SHUTTER", str(request["shutter"]), "Requested shutter state"),
             ("INSTRUME", str(self["camera_model"]), "Name of instrument"),
             ("CCD", str(self["ccd_model"]), "CCD Model"),
-            ("CCD_DIMX", self.getPhysicalSize()[0], "CCD X Dimension Size"),
-            ("CCD_DIMY", self.getPhysicalSize()[1], "CCD Y Dimension Size"),
-            ("CCDPXSZX", self.getPixelSize()[0], "CCD X Pixel Size [micrometer]"),
-            ("CCDPXSZY", self.getPixelSize()[1], "CCD Y Pixel Size [micrometer]"),
+            ("CCD_DIMX", self.get_physical_size()[0], "CCD X Dimension Size"),
+            ("CCD_DIMY", self.get_physical_size()[1], "CCD Y Dimension Size"),
+            ("CCDPXSZX", self.get_pixel_size()[0], "CCD X Pixel Size [micrometer]"),
+            ("CCDPXSZY", self.get_pixel_size()[1], "CCD Y Pixel Size [micrometer]"),
         ]
 
         if request["window"] is not None:
@@ -314,14 +314,14 @@ class CameraBase(ChimeraObject, CameraExpose, CameraTemperature, CameraInformati
             md += [
                 (
                     "DATE-OBS",
-                    ImageUtil.formatDate(
+                    ImageUtil.format_date(
                         self.extra_header_info.get("frame_start_time")
                     ),
                     "Date exposure started",
                 )
             ]
 
-        mode, binning, top, left, width, height = self._getReadoutModeInfo(
+        mode, binning, top, left, width, height = self._get_readout_mode_info(
             request["binning"], request["window"]
         )
         # Binning keyword: http://iraf.noao.edu/projects/ccdmosaic/imagedef/mosaic/MosaicV1.html
@@ -342,14 +342,14 @@ class CameraBase(ChimeraObject, CameraExpose, CameraTemperature, CameraInformati
         if (
             focal_length is not None
         ):  # If there is no telescope_focal_length defined, don't store WCS
-            binFactor = self.extra_header_info.get("binning_factor", 1.0)
-            pix_w, pix_h = self.getPixelSize()
+            bin_factor = self.extra_header_info.get("binning_factor", 1.0)
+            pix_w, pix_h = self.get_pixel_size()
             focal_length = self["telescope_focal_length"]
 
-            scale_x = binFactor * (((180 / pi) / focal_length) * (pix_w * 0.001))
-            scale_y = binFactor * (((180 / pi) / focal_length) * (pix_h * 0.001))
+            scale_x = bin_factor * (((180 / pi) / focal_length) * (pix_w * 0.001))
+            scale_y = bin_factor * (((180 / pi) / focal_length) * (pix_h * 0.001))
 
-            full_width, full_height = self.getPhysicalSize()
+            full_width, full_height = self.get_physical_size()
             CRPIX1 = ((int(full_width / 2.0)) - left) - 1
             CRPIX2 = ((int(full_height / 2.0)) - top) - 1
 

@@ -5,21 +5,21 @@ if __name__ == "__main__":
     dark = Expose()
     dark.shutter = "CLOSE"
     dark.exptime = 10
-    dark.imageType = "dark"
-    dark.objectName = "dark"
+    dark.image_type = "dark"
+    dark.object_name = "dark"
 
     flat = Expose()
     flat.shutter = "OPEN"
     flat.filter = "U"
     flat.exptime = 10
-    flat.imageType = "flat"
-    flat.objectName = "flat"
+    flat.image_type = "flat"
+    flat.object_name = "flat"
 
     calibration = Program(name="Calibration")
     calibration.actions = [dark, flat]
 
     science = Program(name="Science")
-    science.actions.append(Point(targetName="M7"))
+    science.actions.append(Point(target_name="M7"))
 
     for i in range(10):
         science.actions.append(Expose(filter="U", exptime=i, shutter="OPEN"))

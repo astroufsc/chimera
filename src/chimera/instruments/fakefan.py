@@ -1,7 +1,7 @@
 from chimera.instruments.fan import FanBase
 from chimera.interfaces.fan import (
-    FanControllabeSpeed,
-    FanControllabeDirection,
+    FanControllableSpeed,
+    FanControllableDirection,
     FanDirection,
     FanStatus,
     FanState,
@@ -9,38 +9,38 @@ from chimera.interfaces.fan import (
 from chimera.core.lock import lock
 
 
-class FakeFan(FanBase, FanState, FanControllabeSpeed, FanControllabeDirection):
+class FakeFan(FanBase, FanState, FanControllableSpeed, FanControllableDirection):
     def __init__(self):
         FanBase.__init__(self)
 
-        self._currentSpeed = 0.0
-        self._isOn = False
-        self._currentStatus = FanStatus.OFF
-        self._currentDirection = FanDirection.FORWARD
+        self._current_speed = 0.0
+        self._is_on = False
+        self._current_status = FanStatus.OFF
+        self._current_direction = FanDirection.FORWARD
 
-    def getRotation(self):
-        return self._currentSpeed
+    def get_rotation(self):
+        return self._current_speed
 
     @lock
-    def setRotation(self, freq):
-        min_speed, max_speed = self.getRange()
-        if min_speed < freq < max_speed:
-            self._currentSpeed = float(freq)
+    def set_rotation(self, freq):
+        min_speed, max_speed = self.get_range()
+        if min_speed <= freq <= max_speed:
+            self._current_speed = float(freq)
         else:
             raise IOError(
                 f"Fan speed must be between {min_speed:.2f} and {max_speed:.2f}. Got {freq:.2f}."
             )
 
-    def getRange(self):
+    def get_range(self):
         return 0.0, 100.0
 
-    def getDirection(self):
-        return self._currentDirection
+    def get_direction(self):
+        return self._current_direction
 
     @lock
-    def setDirection(self, direction):
+    def set_direction(self, direction):
         if direction in FanDirection:
-            self._currentDirection = direction
+            self._current_direction = direction
         else:
             self.log.warning(
                 "Value {} not a valid fan direction. Should be one of {}. Leaving unchanged.".format(
@@ -49,27 +49,27 @@ class FakeFan(FanBase, FanState, FanControllabeSpeed, FanControllabeDirection):
             )
 
     @lock
-    def switchOn(self):
+    def switch_on(self):
 
-        self._currentStatus = FanStatus.ON
-        self._isOn = True
+        self._current_status = FanStatus.ON
+        self._is_on = True
 
-        self.switchedOn()
+        self.switched_on()
 
         return True
 
     @lock
-    def switchOff(self):
+    def switch_off(self):
 
-        self._currentStatus = FanStatus.OFF
-        self._isOn = False
+        self._current_status = FanStatus.OFF
+        self._is_on = False
 
-        self.switchedOff()
+        self.switched_off()
 
         return True
 
-    def isSwitchedOn(self):
-        return self._isOn
+    def is_switched_on(self):
+        return self._is_on
 
     def status(self):
-        return self._currentStatus
+        return self._current_status

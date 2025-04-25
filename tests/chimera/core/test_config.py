@@ -228,14 +228,14 @@ class TestConfig(object):
 
     def test_coord(self):
 
-        c = Config({"DMS": Coord.fromDMS(10), "HMS": Coord.fromHMS(10)})
+        c = Config({"DMS": Coord.from_dms(10), "HMS": Coord.from_hms(10)})
 
         assert c["DMS"].state == State.DMS
         assert c["HMS"].state == State.HMS
 
         c["DMS"] = 20
-        assert c["DMS"] == Coord.fromDMS(20)
+        assert c["DMS"] == Coord.from_dms(20)
 
         c["HMS"] = 20
-        assert c["HMS"] == Coord.fromHMS(20)
-        assert c["HMS"] == Coord.fromDMS(20 * 15)
+        assert c["HMS"] == Coord.from_hms(20)
+        assert c["HMS"] == Coord.from_dms(20 * 15)

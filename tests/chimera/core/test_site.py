@@ -13,7 +13,7 @@ import time
 
 class TestSite(object):
     def test_times(self, manager):
-        manager.addClass(
+        manager.add_class(
             Site,
             "lna",
             {
@@ -24,7 +24,7 @@ class TestSite(object):
             },
         )
 
-        site = manager.getProxy("/Site/0")
+        site = manager.get_proxy("/Site/0")
 
         try:
             print()
@@ -39,7 +39,7 @@ class TestSite(object):
 
     @pytest.mark.skip
     def test_sidereal_clock(self, manager):
-        manager.addClass(
+        manager.add_class(
             Site,
             "lna",
             {
@@ -50,7 +50,7 @@ class TestSite(object):
             },
         )
 
-        site = manager.getProxy("/Site/0")
+        site = manager.get_proxy("/Site/0")
 
         times = []
         real_times = []
@@ -67,7 +67,7 @@ class TestSite(object):
         print(sum(real_times) / len(real_times))
 
     def test_astros(self, manager):
-        manager.addClass(
+        manager.add_class(
             Site,
             "lna",
             {
@@ -78,7 +78,7 @@ class TestSite(object):
             },
         )
 
-        site = manager.getProxy(Site)
+        site = manager.get_proxy(Site)
 
         try:
             print()

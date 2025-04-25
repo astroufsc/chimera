@@ -13,16 +13,16 @@ class EventWrapperDispatcher(MethodWrapperDispatcher):
         MethodWrapperDispatcher.__init__(self, wrapper, instance, cls)
 
     def call(self, *args, **kwargs):
-        self.instance.getProxy().publish_event(
-            f"{self.instance.getLocation()}/{self.func.__name__}", args[1:], kwargs
+        self.instance.get_proxy().publish_event(
+            f"{self.instance.get_location()}/{self.func.__name__}", args[1:], kwargs
         )
 
     def __iadd__(self, other):
-        self.instance.getProxy().subscribe_event(
-            f"{self.instance.getLocation()}/{self.func.__name__}", other
+        self.instance.get_proxy().subscribe_event(
+            f"{self.instance.get_location()}/{self.func.__name__}", other
         )
 
     def __isub__(self, other):
-        self.instance.getProxy().unsubscribe_event(
-            f"{self.instance.getLocation()}/{self.func.__name__}", other
+        self.instance.get_proxy().unsubscribe_event(
+            f"{self.instance.get_location()}/{self.func.__name__}", other
         )

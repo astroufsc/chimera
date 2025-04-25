@@ -8,10 +8,10 @@ from chimera.core.systemconfig import (
 from chimera.core.location import InvalidLocationException
 from chimera.core.constants import MANAGER_DEFAULT_HOST, MANAGER_DEFAULT_PORT
 
-from chimera.core.log import setConsoleLevel
+from chimera.core.log import set_console_level
 import logging
 
-setConsoleLevel(logging.DEBUG)
+set_console_level(logging.DEBUG)
 
 
 class TestSystemConfig(object):
@@ -67,7 +67,7 @@ class TestSystemConfig(object):
           filters: [R, G, B, RGB, CLEAR]
         """
 
-        system = SystemConfig.fromString(s)
+        system = SystemConfig.from_string(s)
 
         assert system.sites[0].name == "site1"
         assert system.sites[0].cls == "SiteType"
@@ -125,7 +125,7 @@ class TestSystemConfig(object):
           config0: value0
         """
 
-        system = SystemConfig.fromString(s)
+        system = SystemConfig.from_string(s)
         assert system.sites[0].name == "site1"
         assert system.sites[0].cls == "Site"
         assert system.sites[0].host == "200.131.64.200"
@@ -141,7 +141,7 @@ class TestSystemConfig(object):
           #port: 10000 # default=None
         """
 
-        system = SystemConfig.fromString(s)
+        system = SystemConfig.from_string(s)
         assert system.sites[0].host == MANAGER_DEFAULT_HOST
         assert system.sites[0].port == MANAGER_DEFAULT_PORT
 
@@ -154,7 +154,7 @@ class TestSystemConfig(object):
         """
         # class cannot have $
         with pytest.raises(InvalidLocationException):
-            SystemConfig.fromString(s)
+            SystemConfig.from_string(s)
 
         s = """
         telescope
@@ -162,7 +162,7 @@ class TestSystemConfig(object):
         """
         # syntax eror on first line (forgot ':' after telescope)
         with pytest.raises(SystemConfigSyntaxException):
-            SystemConfig.fromString(s)
+            SystemConfig.from_string(s)
 
     #
     # instrument primitive
@@ -175,7 +175,7 @@ class TestSystemConfig(object):
          type: InstrumentType
         """
 
-        system = SystemConfig.fromString(s)
+        system = SystemConfig.from_string(s)
 
         assert system.instruments[0].name == "simple"
         assert system.instruments[0].cls == "InstrumentType"
@@ -190,7 +190,7 @@ class TestSystemConfig(object):
            type: InstrumentType
         """
 
-        system = SystemConfig.fromString(s)
+        system = SystemConfig.from_string(s)
         assert len(system.instruments) == 2
 
     def test_instrument_error(self):
@@ -200,7 +200,7 @@ class TestSystemConfig(object):
          #type: InstrumentType
         """
         with pytest.raises(TypeNotFoundException):
-            SystemConfig.fromString(s)
+            SystemConfig.from_string(s)
 
     #
     # controller primitive
@@ -213,7 +213,7 @@ class TestSystemConfig(object):
          type: ControllerType
         """
 
-        system = SystemConfig.fromString(s)
+        system = SystemConfig.from_string(s)
 
         assert system.controllers[0].name == "simple"
         assert system.controllers[0].cls == "ControllerType"
@@ -228,7 +228,7 @@ class TestSystemConfig(object):
            type: ControllerType
         """
 
-        system = SystemConfig.fromString(s)
+        system = SystemConfig.from_string(s)
         assert len(system.controllers) == 2
 
     def test_controller_error(self):
@@ -238,4 +238,4 @@ class TestSystemConfig(object):
          #type: ControllerType
         """
         with pytest.raises(TypeNotFoundException):
-            SystemConfig.fromString(s)
+            SystemConfig.from_string(s)

@@ -3,18 +3,18 @@ import sys
 from chimera.core.constants import TRACEBACK_ATTRIBUTE
 
 
-def printException(e, stream=sys.stdout):
+def print_exception(e, stream=sys.stdout):
 
-    print("".join(_strException(e)), file=stream)
+    print("".join(_str_exception(e)), file=stream)
 
     if hasattr(e, "cause") and getattr(e, "cause") is not None:
         print("Caused by:", end=" ", file=stream)
         print("".join(e.cause), file=stream)
 
 
-def _strException(e):
+def _str_exception(e):
 
-    def formatRemoteTraceback(remote_tb_lines):
+    def format_remote_traceback(remote_tb_lines):
         result = []
         result.append(" +--- Remote traceback:")
         for line in remote_tb_lines:
@@ -35,7 +35,7 @@ def _strException(e):
         local_tb = traceback.format_exception(exc_type, exc_value, exc_tb)
 
         if remote_tb:
-            remote_tb = formatRemoteTraceback(remote_tb)
+            remote_tb = format_remote_traceback(remote_tb)
             return local_tb + remote_tb
         else:
             # hmm. no remote tb info, return just the local tb.
@@ -56,7 +56,7 @@ class ChimeraException(Exception):
         if not all(sys.exc_info()):
             self.cause = None
         else:
-            # self.cause = strException(sys.exc_info()[1])
+            # self.cause = str_exception(sys.exc_info()[1])
             # FIXME: remote exception handling
             self.cause = None
 

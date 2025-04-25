@@ -17,36 +17,36 @@ from chimera.interfaces.camera import CameraStatus
 from chimera.instruments.fakecamera import FakeCamera
 from chimera.core.manager import Manager
 
-chimera.core.log.setConsoleLevel(int(1e10))
+chimera.core.log.set_console_level(int(1e10))
 log = logging.getLogger("chimera.tests")
 
 
-# hack for event  triggering asserts
-FiredEvents = {}
+# hack for event triggering asserts
+fired_events = {}
 
 
 @pytest.fixture(scope="class")
 def camera():
     manager = Manager()
-    manager.addClass(FakeCamera, "fake")
+    manager.add_class(FakeCamera, "fake")
 
-    def exposeBeginClbk(request):
-        FiredEvents["exposeBegin"] = (time.time(), request)
+    def expose_begin_clbk(request):
+        fired_events["expose_begin"] = (time.time(), request)
 
-    def exposeCompleteClbk(request, status):
-        FiredEvents["exposeComplete"] = (time.time(), request, status)
+    def expose_complete_clbk(request, status):
+        fired_events["expose_complete"] = (time.time(), request, status)
 
-    def readoutBeginClbk(request):
-        FiredEvents["readoutBegin"] = (time.time(), request)
+    def readout_begin_clbk(request):
+        fired_events["readout_begin"] = (time.time(), request)
 
-    def readoutCompleteClbk(proxy, status):
-        FiredEvents["readoutComplete"] = (time.time(), proxy, status)
+    def readout_complete_clbk(proxy, status):
+        fired_events["readout_complete"] = (time.time(), proxy, status)
 
-    cam = manager.getProxy("/FakeCamera/fake")
-    cam.exposeBegin += exposeBeginClbk
-    cam.exposeComplete += exposeCompleteClbk
-    cam.readoutBegin += readoutBeginClbk
-    cam.readoutComplete += readoutCompleteClbk
+    cam = manager.get_proxy("/FakeCamera/fake")
+    cam.expose_begin += expose_begin_clbk
+    cam.expose_complete += expose_complete_clbk
+    cam.readout_begin += readout_begin_clbk
+    cam.readout_complete += readout_complete_clbk
 
     yield cam
 
@@ -61,36 +61,38 @@ def pool():
 
 
 class TestCamera:
-    def assertEvents(self, exposeStatus, readoutStatus):
+    def assert_events(self, expose_status, readout_status):
         # for every exposure, we need to check if all events were fired in the right order
         # and with the right parameters
 
-        assert "exposeBegin" in FiredEvents
-        assert isinstance(FiredEvents["exposeBegin"][1], ImageRequest)
+        assert "expose_begin" in fired_events
+        assert isinstance(fired_events["expose_begin"][1], ImageRequest)
 
-        assert "exposeComplete" in FiredEvents
-        assert FiredEvents["exposeComplete"][0] > FiredEvents["exposeBegin"][0]
-        assert isinstance(FiredEvents["exposeComplete"][1], ImageRequest)
-        assert FiredEvents["exposeComplete"][2] in CameraStatus
-        assert FiredEvents["exposeComplete"][2] == exposeStatus
+        assert "expose_complete" in fired_events
+        assert fired_events["expose_complete"][0] > fired_events["expose_begin"][0]
+        assert isinstance(fired_events["expose_complete"][1], ImageRequest)
+        assert fired_events["expose_complete"][2] in CameraStatus
+        assert fired_events["expose_complete"][2] == expose_status
 
-        if readoutStatus:
-            assert "readoutBegin" in FiredEvents
-            assert FiredEvents["readoutBegin"][0] > FiredEvents["exposeComplete"][0]
-            assert isinstance(FiredEvents["readoutBegin"][1], ImageRequest)
+        if readout_status:
+            assert "readout_begin" in fired_events
+            assert fired_events["readout_begin"][0] > fired_events["expose_complete"][0]
+            assert isinstance(fired_events["readout_begin"][1], ImageRequest)
 
-            assert "readoutComplete" in FiredEvents
-            assert FiredEvents["readoutComplete"][0] > FiredEvents["readoutBegin"][0]
-            if readoutStatus == CameraStatus.OK:
-                assert isinstance(FiredEvents["readoutComplete"][1], Proxy)
+            assert "readout_complete" in fired_events
+            assert (
+                fired_events["readout_complete"][0] > fired_events["readout_begin"][0]
+            )
+            if readout_status == CameraStatus.OK:
+                assert isinstance(fired_events["readout_complete"][1], Proxy)
             else:
-                assert isinstance(FiredEvents["readoutComplete"][1], type(None))
+                assert isinstance(fired_events["readout_complete"][1], type(None))
 
-            assert FiredEvents["readoutComplete"][2] in CameraStatus
-            assert FiredEvents["readoutComplete"][2] == readoutStatus
+            assert fired_events["readout_complete"][2] in CameraStatus
+            assert fired_events["readout_complete"][2] == readout_status
 
     def test_simple(self, camera):
-        assert camera.isExposing() is False
+        assert camera.is_exposing() is False
 
     def test_single_expose(self, camera):
         frames = 0
@@ -103,7 +105,7 @@ class TestCamera:
         assert isinstance(frames[0], Proxy)
         assert isinstance(frames[1], Proxy)
 
-        self.assertEvents(CameraStatus.OK, CameraStatus.OK)
+        self.assert_events(CameraStatus.OK, CameraStatus.OK)
 
     def test_expose_checks(self, camera):
         # exp_time ranges
@@ -129,24 +131,24 @@ class TestCamera:
         begin_times = []
         end_times = []
 
-        def exposeBeginClbk(request):
+        def expose_begin_clbk(request):
             begin_times.append(time.time())
 
-        def readoutCompleteClbk(request, status):
+        def readout_complete_clbk(request, status):
             end_times.append(time.time())
 
-        camera.exposeBegin += exposeBeginClbk
-        camera.readoutComplete += readoutCompleteClbk
+        camera.expose_begin += expose_begin_clbk
+        camera.readout_complete += readout_complete_clbk
 
-        def doExpose():
+        def do_expose():
             # need to get another Proxy as Proxies cannot be shared among threads
-            # cam = manager.getProxy(self.CAMERA)
+            # cam = manager.get_proxy(self.CAMERA)
             camera.expose(exptime=2, filename="autogen-expose-lock.fits")
 
-        e1 = pool.submit(doExpose)
-        e2 = pool.submit(doExpose)
+        e1 = pool.submit(do_expose)
+        e2 = pool.submit(do_expose)
 
-        # wait doExpose to be scheduled
+        # wait do_expose to be scheduled
         time.sleep(1)
 
         while len(end_times) < 2:
@@ -160,86 +162,88 @@ class TestCamera:
 
         wait([e1, e2], timeout=10)
 
-        self.assertEvents(CameraStatus.OK, CameraStatus.OK)
+        self.assert_events(CameraStatus.OK, CameraStatus.OK)
 
     def test_expose_abort(self, camera, pool):
         print()
 
-        def doExpose():
+        def do_expose():
             # need to get another Proxy as Proxies cannot be shared among threads
-            # cam = self.manager.getProxy(self.CAMERA)
+            # cam = self.manager.get_proxy(self.CAMERA)
             camera.expose(exptime=10, filename="autogen-expose-abort.fits")
 
         #
         # abort exposure while exposing
         #
 
-        exposure = pool.submit(doExpose)
+        exposure = pool.submit(do_expose)
 
         # thread scheduling
         time.sleep(2)
 
-        assert camera.isExposing() is True
-        camera.abortExposure()
-        assert camera.isExposing() is False
+        assert camera.is_exposing() is True
+        camera.abort_exposure()
+        assert camera.is_exposing() is False
 
         wait([exposure], timeout=10)
 
-        self.assertEvents(CameraStatus.ABORTED, False)
+        self.assert_events(CameraStatus.ABORTED, False)
 
     def test_readout_abort(self, camera, pool):
-        exposeComplete = threading.Event()
+        expose_complete = threading.Event()
 
         print()
 
-        def doExpose():
+        def do_expose():
             # need to get another Proxy as Proxies cannot be shared among threads
-            # cam = manager.getProxy(self.CAMERA)
+            # cam = manager.get_proxy(self.CAMERA)
             camera.expose(exptime=5, filename="autogen-readout-abort.fits")
 
-        def exposeCompleteCallback(request, status):
-            exposeComplete.set()
+        def expose_complete_callback(request, status):
+            expose_complete.set()
 
-        camera.exposeComplete += exposeCompleteCallback
+        camera.expose_complete += expose_complete_callback
 
         #
         # abort exposure while reading out
         #
 
-        exposure = pool.submit(doExpose)
+        exposure = pool.submit(do_expose)
 
         # thread scheduling
         time.sleep(2)
 
-        assert camera.isExposing() is True
+        assert camera.is_exposing() is True
 
-        while not exposeComplete.is_set():
+        while not expose_complete.is_set():
             time.sleep(0.1)
 
-        assert camera.isExposing() is True
-        camera.abortExposure()
-        assert camera.isExposing() is False
+        assert camera.is_exposing() is True
+        camera.abort_exposure()
+        assert camera.is_exposing() is False
 
         wait([exposure], timeout=10)
 
-        self.assertEvents(CameraStatus.OK, CameraStatus.ABORTED)
+        self.assert_events(CameraStatus.OK, CameraStatus.ABORTED)
 
     def test_cooling(self, camera):
         def eps_equal(a, b, eps):
             return abs(a - b) <= eps
 
-        camera.stopCooling()
-        assert camera.isCooling() is False
+        camera.stop_cooling()
+        assert camera.is_cooling() is False
 
         cool = 10
-        camera.startCooling(cool)
-        assert camera.isCooling() is True
+        camera.start_cooling(cool)
+        assert camera.is_cooling() is True
 
         print()
-        while not eps_equal(camera.getTemperature(), cool, 0.25):
-            print(f"\rwaiting to cool to {cool} oC: {camera.getTemperature()}", end=" ")
+        while not eps_equal(camera.get_temperature(), cool, 0.25):
+            print(
+                f"\rwaiting to cool to {cool} oC: {camera.get_temperature()}", end=" "
+            )
             sys.stdout.flush()
             time.sleep(1)
 
-        camera.stopCooling()
-        assert camera.isCooling() is False
+        camera.stop_cooling()
+        assert camera.is_cooling() is False

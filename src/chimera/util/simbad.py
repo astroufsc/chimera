@@ -37,7 +37,7 @@ class Simbad(object):
             return Simbad.__cache[name]
 
         res = client.service.sesame(name, "x", True)
-        target = Simbad._parseSesame(res)
+        target = Simbad._parse_sesame(res)
 
         if not target:
             raise ObjectNotFoundException(f"Couldn't find {name} on SIMBAD")
@@ -47,7 +47,7 @@ class Simbad(object):
         return target
 
     @staticmethod
-    def _parseSesame(xml):
+    def _parse_sesame(xml):
 
         try:
             sesame = ET.fromstring(xml.replace("&", "&amp;"))
@@ -58,7 +58,7 @@ class Simbad(object):
                     jpos = resolver.find("jpos")
                     if jpos is None:
                         continue
-                    return Position.fromRaDec(*jpos.text.split())
+                    return Position.from_ra_dec(*jpos.text.split())
         except ExpatError:
             return False
 

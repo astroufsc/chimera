@@ -31,26 +31,28 @@ class TestManager(object):
     def test_add_start(self, manager):
 
         # add by class
-        assert manager.addClass(Simple, "simple", start=True)
+        assert manager.add_class(Simple, "simple", start=True)
 
         # already started
         with pytest.raises(InvalidLocationException):
-            manager.addClass(Simple, "simple")
+            manager.add_class(Simple, "simple")
 
         with pytest.raises(NotValidChimeraObjectException):
-            manager.addClass(NotValid, "nonono")
+            manager.add_class(NotValid, "nonono")
         with pytest.raises(InvalidLocationException):
-            manager.addClass(Simple, "")
+            manager.add_class(Simple, "")
 
         # by location
-        assert manager.addLocation("/ManagerHelper/h", path=[os.path.dirname(__file__)])
+        assert manager.add_location(
+            "/ManagerHelper/h", path=[os.path.dirname(__file__)]
+        )
         with pytest.raises(ClassLoaderException):
-            manager.addLocation("/What/h")
+            manager.add_location("/What/h")
         with pytest.raises(InvalidLocationException):
-            manager.addLocation("foo")
+            manager.add_location("foo")
 
         # start with error
-        # assert manager.addLocation('/ManagerHelperWithError/h', start=False)
+        # assert manager.add_location('/ManagerHelperWithError/h', start=False)
         # with pytest.raises(ChimeraObjectException):
         # manager.start, '/ManagerHelperWithError/h')
 
@@ -61,23 +63,23 @@ class TestManager(object):
         # exceptional cases
         # __init__
         with pytest.raises(ChimeraObjectException):
-            manager.addLocation(
+            manager.add_location(
                 "/ManagerHelperWithInitException/h", [os.path.dirname(__file__)]
             )
 
         # __start__
         with pytest.raises(ChimeraObjectException):
-            manager.addLocation(
+            manager.add_location(
                 "/ManagerHelperWithStartException/h", [os.path.dirname(__file__)]
             )
 
         # __main__
         # with pytest.raises(ChimeraObjectException):
-        # manager.addLocation("/ManagerHelperWithMainException/h")
+        # manager.add_location("/ManagerHelperWithMainException/h")
 
     def test_remove_stop(self, manager):
 
-        assert manager.addClass(Simple, "simple")
+        assert manager.add_class(Simple, "simple")
 
         # who?
         with pytest.raises(InvalidLocationException):
@@ -93,7 +95,7 @@ class TestManager(object):
         assert manager.remove("/Simple/simple") is True
 
         # __stop__ error
-        assert manager.addLocation(
+        assert manager.add_location(
             "/ManagerHelperWithStopException/h", path=[os.path.dirname(__file__)]
         )
         with pytest.raises(ChimeraObjectException):
@@ -104,25 +106,25 @@ class TestManager(object):
             manager.remove("/ManagerHelperWithStopException/h")
 
         # by index
-        assert manager.addClass(Simple, "simple")
+        assert manager.add_class(Simple, "simple")
         assert manager.remove("/Simple/0") is True
 
     def test_proxy(self, manager):
 
-        assert manager.addClass(Simple, "simple")
+        assert manager.add_class(Simple, "simple")
 
         # who?
         with pytest.raises(InvalidLocationException):
-            manager.getProxy("wrong")
+            manager.get_proxy("wrong")
         with pytest.raises(InvalidLocationException):
-            manager.getProxy("Simple/simple")
+            manager.get_proxy("Simple/simple")
 
         # ok
-        assert manager.getProxy("/Simple/simple")
-        assert manager.getProxy("/Simple/0")
+        assert manager.get_proxy("/Simple/simple")
+        assert manager.get_proxy("/Simple/0")
 
         # calling
-        p = manager.getProxy("/Simple/0")
+        p = manager.get_proxy("/Simple/0")
         assert isinstance(p, Proxy)
 
         # # assert p.answer() == 42
@@ -133,10 +135,10 @@ class TestManager(object):
 
     def test_manager(self, manager):
 
-        assert manager.addClass(Simple, "simple")
+        assert manager.add_class(Simple, "simple")
 
-        p = manager.getProxy("/Simple/simple")
+        p = manager.get_proxy("/Simple/simple")
         assert p
 
-        # m = p.getManager()
+        # m = p.get_manager()
         # assert m.GUID() == manager.GUID()

@@ -17,44 +17,44 @@ class ChimeraFilter(ChimeraCLI):
             self, "chimera-filter", "Filter Wheel Controller", _chimera_version_
         )
 
-        self.addHelpGroup("INFO", "Filter Wheel Information")
-        self.addHelpGroup("FILTER_CHANGE", "Filter Position")
+        self.add_help_group("INFO", "Filter Wheel Information")
+        self.add_help_group("FILTER_CHANGE", "Filter Position")
 
-        self.addHelpGroup("FILTER", "Filter Wheel configuration")
-        self.addInstrument(
+        self.add_help_group("FILTER", "Filter Wheel configuration")
+        self.add_instrument(
             name="wheel",
             cls="FilterWheel",
             required=True,
             help="Filter Wheel instrument to be used."
             "If blank, try to guess from chimera.config",
-            helpGroup="FILTER",
+            help_group="FILTER",
         )
 
     @action(
         short="F",
         long="--list-filters",
-        helpGroup="INFO",
+        help_group="INFO",
         help="Print available filter names.",
     )
     def filters(self, options):
         self.out("Available filters:", end="")
 
-        for i, f in enumerate(self.wheel.getFilters()):
+        for i, f in enumerate(self.wheel.get_filters()):
             self.out(str(f), end="")
 
         self.out()
         self.exit()
 
-    @action(help="Print Filter Wheel information and exit", helpGroup="INFO")
+    @action(help="Print Filter Wheel information and exit", help_group="INFO")
     def info(self, options):
         self.out("=" * 40)
         self.out(
-            "Filter Wheel: %s (%s)" % (self.wheel.getLocation(), self.wheel["device"])
+            "Filter Wheel: %s (%s)" % (self.wheel.get_location(), self.wheel["device"])
         )
-        self.out("Current Filter:", self.wheel.getFilter())
+        self.out("Current Filter:", self.wheel.get_filter())
 
         self.out("Available filters:", end="")
-        for i, f in enumerate(self.wheel.getFilters()):
+        for i, f in enumerate(self.wheel.get_filters()):
             self.out(str(f), end="")
         self.out()
         self.out("=" * 40)
@@ -62,11 +62,11 @@ class ChimeraFilter(ChimeraCLI):
     @action(
         long="--get-filter",
         help="Get the current filter name",
-        helpGroup="FILTER_CHANGE",
-        actionGroup="FILTER_CHANGE",
+        help_group="FILTER_CHANGE",
+        action_group="FILTER_CHANGE",
     )
-    def getFilter(self, options):
-        self.out("Current Filter:", self.wheel.getFilter())
+    def get_filter(self, options):
+        self.out("Current Filter:", self.wheel.get_filter())
         self.exit()
 
     @action(
@@ -75,17 +75,17 @@ class ChimeraFilter(ChimeraCLI):
         long="--set-filter",
         type="str",
         help="Set current filter.",
-        actionGroup="FILTER_CHANGE",
-        helpGroup="FILTER_CHANGE",
+        action_group="FILTER_CHANGE",
+        help_group="FILTER_CHANGE",
     )
-    def changeFilter(self, options):
-        if self.options.filtername not in self.wheel.getFilters():
+    def change_filter(self, options):
+        if self.options.filtername not in self.wheel.get_filters():
             self.err("Invalid filter '%s'" % self.options.filtername)
             self.exit()
 
         self.out("Changing current filter to %s ..." % self.options.filtername, end="")
         try:
-            self.wheel.setFilter(self.options.filtername)
+            self.wheel.set_filter(self.options.filtername)
             self.out("OK")
         except InvalidFilterPositionException:
             self.err("ERROR (Invalid Filter)")

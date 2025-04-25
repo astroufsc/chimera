@@ -33,26 +33,26 @@ class TelescopeBase(
         self.site = None
 
     @lock
-    def slewToObject(self, name):
+    def slew_to_object(self, name):
         target = Simbad.lookup(name)
-        self.slewToRaDec(target)
+        self.slew_to_ra_dec(target)
 
     @lock
-    def slewToRaDec(self, position):
+    def slew_to_ra_dec(self, position):
         raise NotImplementedError()
 
-    def _validateRaDec(self, position):
+    def _validate_ra_dec(self, position):
 
         if self.site is None:
-            self.site = self.getManager().getProxy("/Site/0")
-        lst = self.site.LST()
+            self.site = self.get_manager().get_proxy("/Site/0")
+        lst = self.site.lst()
         latitude = self.site["latitude"]
 
-        altAz = Position.raDecToAltAz(position, latitude, lst)
+        alt_az = Position.ra_dec_to_alt_az(position, latitude, lst)
 
-        return self._validateAltAz(altAz)
+        return self._validate_alt_az(alt_az)
 
-    def _validateAltAz(self, position):
+    def _validate_alt_az(self, position):
 
         if position.alt <= self["min_altitude"]:
             raise ObjectTooLowException(
@@ -61,7 +61,7 @@ class TelescopeBase(
 
         return True
 
-    def _getFinalPosition(self, position):
+    def _get_final_position(self, position):
 
         if str(position.epoch).lower() != str(Epoch.NOW).lower():
             self.log.info(
@@ -77,79 +77,79 @@ class TelescopeBase(
         return position_now
 
     @lock
-    def slewToAltAz(self, position):
+    def slew_to_alt_az(self, position):
         raise NotImplementedError()
 
-    def abortSlew(self):
+    def abort_slew(self):
         raise NotImplementedError()
 
-    def isSlewing(self):
-        raise NotImplementedError()
-
-    @lock
-    def moveEast(self, offset, rate=SlewRate.MAX):
+    def is_slewing(self):
         raise NotImplementedError()
 
     @lock
-    def moveWest(self, offset, rate=SlewRate.MAX):
+    def move_east(self, offset, rate=SlewRate.MAX):
         raise NotImplementedError()
 
     @lock
-    def moveNorth(self, offset, rate=SlewRate.MAX):
+    def move_west(self, offset, rate=SlewRate.MAX):
         raise NotImplementedError()
 
     @lock
-    def moveSouth(self, offset, rate=SlewRate.MAX):
+    def move_north(self, offset, rate=SlewRate.MAX):
         raise NotImplementedError()
 
     @lock
-    def moveOffset(self, offsetRA, offsetDec, rate=SlewRate.GUIDE):
+    def move_south(self, offset, rate=SlewRate.MAX):
+        raise NotImplementedError()
 
-        if offsetRA == 0:
+    @lock
+    def move_offset(self, offset_ra, offset_dec, rate=SlewRate.GUIDE):
+
+        if offset_ra == 0:
             pass
-        elif offsetRA > 0:
-            self.moveEast(offsetRA, rate)
+        elif offset_ra > 0:
+            self.move_east(offset_ra, rate)
         else:
-            self.moveWest(abs(offsetRA), rate)
+            self.move_west(abs(offset_ra), rate)
 
-        if offsetDec == 0:
+        if offset_dec == 0:
             pass
-        elif offsetDec > 0:
-            self.moveNorth(offsetDec, rate)
+        elif offset_dec > 0:
+            self.move_north(offset_dec, rate)
         else:
-            self.moveSouth(abs(offsetDec), rate)
+            self.move_south(abs(offset_dec), rate)
 
-    def getRa(self):
+    def get_ra(self):
         raise NotImplementedError()
 
-    def getDec(self):
+    def get_dec(self):
         raise NotImplementedError()
 
-    def getAz(self):
+    def get_az(self):
         raise NotImplementedError()
 
-    def getAlt(self):
+    def get_alt(self):
         raise NotImplementedError()
 
-    def getPositionRaDec(self):
+    def get_position_ra_dec(self):
         raise NotImplementedError()
 
-    def getPositionAltAz(self):
+    def get_position_alt_az(self):
         raise NotImplementedError()
 
-    def getTargetRaDec(self):
+    def get_target_ra_dec(self):
         raise NotImplementedError()
 
-    def getTargetAltAz(self):
+    def get_target_alt_az(self):
         raise NotImplementedError()
 
     @lock
-    def syncObject(self, name):
+    def sync_object(self, name):
         target = Simbad.lookup(name)
-        self.syncRaDec(target)
+        self.sync_ra_dec(target)
 
     @lock
-    def syncRaDec(self, position):
+    def sync_ra_dec(self, position):
         raise NotImplementedError()
 
     @lock
@@ -160,33 +160,33 @@ class TelescopeBase(
     def unpark(self):
         raise NotImplementedError()
 
-    def isParked(self):
+    def is_parked(self):
         raise NotImplementedError()
 
     @lock
-    def setParkPosition(self, position):
+    def set_park_position(self, position):
         self._park_position = position
 
-    def getParkPosition(self):
+    def get_park_position(self):
         return self._park_position or self["default_park_position"]
 
-    def startTracking(self):
+    def start_tracking(self):
         raise NotImplementedError()
 
-    def stopTracking(self):
+    def stop_tracking(self):
         raise NotImplementedError()
 
-    def isTracking(self):
+    def is_tracking(self):
         raise NotImplementedError()
 
-    def getMetadata(self, request):
+    def get_metadata(self, request):
         # Check first if there is metadata from an metadata override method.
-        md = self.getMetadataOverride(request)
+        md = self.get_metadata_override(request)
         if md is not None:
             return md
         # If not, just go on with the instrument's default metadata.
-        position = self.getPositionRaDec()
-        alt = self.getAlt()
+        position = self.get_position_ra_dec()
+        alt = self.get_alt()
         return [
             ("TELESCOP", self["model"], "Telescope Model"),
             ("OPTICS", self["optics"], "Telescope Optics Type"),
@@ -198,22 +198,22 @@ class TelescopeBase(
             # TODO: How to get ra,dec at start of exposure (not end)
             (
                 "RA",
-                position.ra.toHMS().__str__(),
+                position.ra.to_dms().__str__(),
                 "Right ascension of the observed object",
             ),
             (
                 "DEC",
-                position.dec.toDMS().__str__(),
+                position.dec.to_dms().__str__(),
                 "Declination of the observed object",
             ),
-            ("EQUINOX", position.epochString()[1:], "coordinate epoch"),
-            ("ALT", alt.toDMS().__str__(), "Altitude of the observed object"),
-            ("AZ", self.getAz().toDMS().__str__(), "Azimuth of the observed object"),
-            ("AIRMASS", alt.R, "Airmass of the observed object"),
+            ("EQUINOX", position.epoch_string()[1:], "coordinate epoch"),
+            ("ALT", alt.to_dms().__str__(), "Altitude of the observed object"),
+            ("AZ", self.get_az().to_dms().__str__(), "Azimuth of the observed object"),
+            ("AIRMASS", alt.radian, "Airmass of the observed object"),
             ("WCSAXES", 2, "wcs dimensionality"),
             ("RADESYS", "ICRS", "frame of reference"),
-            ("CRVAL1", position.ra.D, "coordinate system value at reference pixel"),
-            ("CRVAL2", position.dec.D, "coordinate system value at reference pixel"),
+            ("CRVAL1", position.ra.deg, "coordinate system value at reference pixel"),
+            ("CRVAL2", position.dec.deg, "coordinate system value at reference pixel"),
             ("CTYPE1", "RA---TAN", "name of the coordinate axis"),
             ("CTYPE2", "DEC--TAN", "name of the coordinate axis"),
             ("CUNIT1", "deg", "units of coordinate value"),

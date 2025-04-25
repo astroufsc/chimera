@@ -13,7 +13,7 @@ class TestClassLoader:
         loader = ClassLoader()
 
         t0 = time.time()
-        cls = loader.loadClass(
+        cls = loader.load_class(
             "ClassLoaderHelperWorking", path=[os.path.dirname(__file__)]
         )
         t = time.time()
@@ -22,7 +22,7 @@ class TestClassLoader:
 
         # test cache (use time to prove that cache is faster)
         t0 = time.time()
-        cls = loader.loadClass(
+        cls = loader.load_class(
             "ClassLoaderHelperWorking", path=[os.path.dirname(__file__)]
         )
         t1 = time.time() - t0
@@ -32,13 +32,13 @@ class TestClassLoader:
 
         # test case in-sensitivite when looking for ClasName
         loader._cache = {}  # clear cache
-        cls = loader.loadClass(
+        cls = loader.load_class(
             "ClAsSloAdErHeLpErWoRkiNg", path=[os.path.dirname(__file__)]
         )
 
         with pytest.raises(ClassLoaderException):
-            loader.loadClass("ClassLoaderHelperNotFound")
+            loader.load_class("ClassLoaderHelperNotFound")
         with pytest.raises(ClassLoaderException):
-            loader.loadClass("ClassLoaderHelperFoundWithoutClass")
+            loader.load_class("ClassLoaderHelperFoundWithoutClass")
         with pytest.raises(ClassLoaderException):
-            loader.loadClass("ClassLoaderHelperFoundNotWorking1")
+            loader.load_class("ClassLoaderHelperFoundNotWorking1")

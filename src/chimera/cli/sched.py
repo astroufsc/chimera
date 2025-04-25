@@ -32,7 +32,7 @@ from chimera.util.position import Position
 
 from .cli import ChimeraCLI, action
 
-actionDict = {
+action_dict = {
     "autofocus": AutoFocus,
     "autoflat": AutoFlat,
     "pointverify": PointVerify,
@@ -47,16 +47,16 @@ class ChimeraSched(ChimeraCLI):
             self, "chimera-sched", "Scheduler controller", _chimera_version_
         )
 
-        self.addHelpGroup("SCHEDULER", "Scheduler")
-        self.addController(
+        self.add_help_group("SCHEDULER", "Scheduler")
+        self.add_controller(
             name="scheduler",
             cls="Scheduler",
             required=True,
             help="Scheduler controller to be used",
-            helpGroup="SCHEDULER",
+            help_group="SCHEDULER",
         )
 
-        databaseHelp = """Database options.
+        database_help = """Database options.
 
         The quickest and less configurable way to configure the scheduler database is to use
         a file with the following format:
@@ -84,8 +84,8 @@ class ChimeraSched(ChimeraCLI):
                 name: PRG01           # (optional)
                 pi: Tiago Ribeiro     # (optional)
                 priority: 1           # (optional)
-                startAt: 57500.030    # Program start time in MJD or in ISO 8601 (yyyy-MM-ddTHH:mm:ss) (optional)
-                validFor: 50 #s       # Program only valid for N seconds after startAt (optional)
+                start_at: 57500.030    # Program start time in MJD or in ISO 8601 (yyyy-MM-ddTHH:mm:ss) (optional)
+                valid_for: 50 #s       # Program only valid for N seconds after start_at (optional)
 
                 # Add actions in the order they are intended to be performed.
                 actions:
@@ -112,23 +112,23 @@ class ChimeraSched(ChimeraCLI):
                         filter: V
                         frames: 1
                         exptime: 7
-                        imageType: OBJECT
-                        objectName: obj1 acq
+                        image_type: OBJECT
+                        object_name: obj1 acq
                         wait_dome: False        # Do not wait to dome sync to take the exposure
 
                     -   action: expose
                         filter: R
                         frames: 2
                         exptime: 6
-                        imageType: OBJECT
-                        objectName: obj1 acq
+                        image_type: OBJECT
+                        object_name: obj1 acq
 
                     -   action: expose
                         filter: B
                         frames: 2
                         exptime: 5
-                        imageType: OBJECT
-                        objectName: obj1 acq
+                        image_type: OBJECT
+                        object_name: obj1 acq
 
             # new target with no autofocus or pointverify
             -   program:
@@ -145,22 +145,22 @@ class ChimeraSched(ChimeraCLI):
                         filter: V
                         frames: 1
                         exptime: 7
-                        imageType: OBJECT
-                        objectName: obj1 acq
+                        image_type: OBJECT
+                        object_name: obj1 acq
 
                     -   action: expose
                         filter: R
                         frames: 2
                         exptime: 6
-                        imageType: OBJECT
-                        objectName: obj1 acq
+                        image_type: OBJECT
+                        object_name: obj1 acq
 
                     -   action: expose
                         filter: B
                         frames: 2
                         exptime: 5
-                        imageType: OBJECT
-                        objectName: obj1 acq
+                        image_type: OBJECT
+                        object_name: obj1 acq
 
             # Point to a target name
             -   program:
@@ -175,8 +175,8 @@ class ChimeraSched(ChimeraCLI):
                         filter: B
                         frames: 10
                         exptime: 10
-                        imageType: OBJECT
-                        objectName: "NGC 5272"
+                        image_type: OBJECT
+                        object_name: "NGC 5272"
 
         # calibrations
 
@@ -187,60 +187,60 @@ class ChimeraSched(ChimeraCLI):
                     # BIAS
                     -   action: expose
                         frames: 10
-                        imageType: BIAS  # This will set shutter to close
+                        image_type: BIAS  # This will set shutter to close
 
                     # DARK
                     -   action: expose
                         frames: 10
                         exptime: 100
-                        imageType: DARK  # This will set shutter to close already
+                        image_type: DARK  # This will set shutter to close already
 
                     # LIGHT DARK
                     -   action: expose
                         frames: 10
                         exptime: 100
                         shutter: OPEN    # In case you want to take light dark, you can specify shutter to be open
-                        imageType: DARK
+                        image_type: DARK
 
                     # FLAT FIELD
                     -   action: point
                         alt: "80:00:00"
                         az: "10:00:00"
-                        domeAz: "112:00:00"
-                        domeTracking: False
+                        dome_az: "112:00:00"
+                        dome_tracking: False
 
                     -   action: expose
                         frames: 10
                         filter: V
                         exptime: 10
-                        imageType: FLAT
+                        image_type: FLAT
 
                     -   action: expose
                         frames: 10
                         filter: R
                         exptime: 8
-                        imageType: FLAT
+                        image_type: FLAT
 
                     -   action: expose
                         frames: 9
                         filter: B
                         exptime: 20
-                        imageType: FLAT
+                        image_type: FLAT
 
                     -   action: point
-                        domeTracking: True   # Restart dome tracking
+                        dome_tracking: True   # Restart dome tracking
 
         """
 
-        self.addHelpGroup("DB", databaseHelp)
-        self.addHelpGroup("RUN", "Start/Stop/Info")
+        self.add_help_group("DB", database_help)
+        self.add_help_group("RUN", "Start/Stop/Info")
 
-        self.addParameters(
+        self.add_parameters(
             dict(
                 name="filename",
                 long="file",
                 short="f",
-                helpGroup="DB",
+                help_group="DB",
                 default="",
                 help="Filename of the input database.",
                 metavar="FILENAME",
@@ -249,7 +249,7 @@ class ChimeraSched(ChimeraCLI):
                 name="output",
                 short="o",
                 type="string",
-                helpGroup="DB",
+                help_group="DB",
                 help="Images base filename including full path if needed.",
                 default="$NAME-$DATE-$TIME",
             ),
@@ -258,10 +258,10 @@ class ChimeraSched(ChimeraCLI):
     @action(
         long="new",
         help="Generate a new database from a text file (excluding all programs already in database)",
-        helpGroup="DB",
-        actionGroup="DB",
+        help_group="DB",
+        action_group="DB",
     )
-    def newDatabase(self, options):
+    def new_database(self, options):
         # save a copy
         if os.path.exists(DEFAULT_PROGRAM_DATABASE):
             shutil.copy(
@@ -276,27 +276,28 @@ class ChimeraSched(ChimeraCLI):
             session.delete(program)
         session.commit()
 
-        self.generateDatabase(options)
+        self.generate_database(options)
 
     @action(
         long="append",
         help="Append programs to database from a text file",
-        helpGroup="DB",
-        actionGroup="DB",
+        help_group="DB",
+        action_group="DB",
     )
-    def appendDatabase(self, options):
-        self.generateDatabase(options)
+    def append_database(self, options):
+        self.generate_database(options)
 
-    def generateDatabase(self, options):
+    def generate_database(self, options):
         if os.path.splitext(options.filename)[-1] == ".yaml":
-            self._generateDatabase_yaml(options)
+            self._generate_database_yaml(options)
         else:
-            self._generateDatabase_basic(options)
+            self._generate_database_basic(options)
 
-    def _generateDatabase_yaml(self, options):
+    def _generate_database_yaml(self, options):
         with open(options.filename, "r") as stream:
             try:
-                prgconfig = yaml.load(stream)
+                print("Loading %s" % options.filename, stream)
+                prgconfig = yaml.safe_load(stream)
             except yaml.YAMLError as exc:
                 self.exit(exc)
 
@@ -304,11 +305,11 @@ class ChimeraSched(ChimeraCLI):
 
         programs = []
 
-        def _validateOffset(value):
+        def _validate_offset(value):
             try:
-                offset = Coord.fromAS(int(value))
+                offset = Coord.from_as(int(value))
             except ValueError:
-                offset = Coord.fromDMS(value)
+                offset = Coord.from_dms(value)
 
             return offset
 
@@ -318,7 +319,7 @@ class ChimeraSched(ChimeraCLI):
             program = Program()
             for key in list(prg.keys()):
                 if hasattr(program, key) and key != "actions":
-                    if key == "startAt" and "T" in prg[key]:
+                    if key == "start_at" and "T" in str(prg[key]):
                         prg[key] = Time(prg[key], format="isot").mjd
                     try:
                         setattr(program, key, prg[key])
@@ -333,75 +334,75 @@ class ChimeraSched(ChimeraCLI):
 
             # process actions
             for actconfig in prg["actions"]:
-                act = actionDict[actconfig["action"]]()
+                act = action_dict[actconfig["action"]]()
                 self.out("Action: %s" % actconfig["action"])
 
                 if actconfig["action"] == "point":
                     if "ra" in list(actconfig.keys()) and "dec" in list(
                         actconfig.keys()
                     ):
-                        epoch = (
-                            "J2000"
-                            if "epoch" not in list(actconfig.keys())
-                            else actconfig["epoch"]
-                        )
-                        position = Position.fromRaDec(
+                        epoch = actconfig.get("epoch", "J2000")
+                        position = Position.from_ra_dec(
                             actconfig["ra"], actconfig["dec"], epoch
                         )
                         self.out("\tCoords: %s" % position)
-                        act.targetRaDec = position
-                        # act = Point(targetRaDec=position)
+                        act.target_ra_dec = position
+                        # act = Point(target_ra_dec=position)
                     elif "alt" in list(actconfig.keys()) and "az" in list(
                         actconfig.keys()
                     ):
-                        position = Position.fromAltAz(actconfig["alt"], actconfig["az"])
+                        position = Position.from_alt_az(
+                            actconfig["alt"], actconfig["az"]
+                        )
                         self.out("\tCoords: %s" % position)
-                        act.targetAltAz = position
+                        act.target_alt_az = position
                     elif "name" in actconfig:
                         self.out("\tTarget name: %s" % actconfig["name"])
-                        act.targetName = actconfig["name"]
+                        act.target_name = actconfig["name"]
 
                     if (
                         "offset" not in actconfig
-                        and "domeAz" not in actconfig
-                        and "domeTracking" not in actconfig
+                        and "dome_az" not in actconfig
+                        and "dome_tracking" not in actconfig
                         and "name" not in actconfig
                     ):
-                        self.exit("[%s] Nothing to point at!" % red("ERROR"))
+                        self.exit(
+                            "[%s] Nothing to point at! %s" % (red("ERROR"), actconfig)
+                        )
 
                     if "offset" in actconfig:
                         if "north" in actconfig["offset"]:
-                            offset = _validateOffset(actconfig["offset"]["north"])
+                            offset = _validate_offset(actconfig["offset"]["north"])
                             self.out("\tOffset north: %s" % offset)
-                            act.offsetNS = offset
+                            act.offset_ns = offset
                         elif "south" in actconfig["offset"]:
-                            offset = _validateOffset(actconfig["offset"]["south"])
+                            offset = _validate_offset(actconfig["offset"]["south"])
                             self.out("\tOffset south: %s" % offset)
-                            act.offsetNS = Coord.fromAS(-offset.AS)
+                            act.offset_ns = Coord.from_as(-offset.arcsec)
 
                         if "west" in actconfig["offset"]:
-                            offset = _validateOffset(actconfig["offset"]["west"])
+                            offset = _validate_offset(actconfig["offset"]["west"])
                             self.out("\tOffset west: %s" % offset)
-                            act.offsetEW = offset
+                            act.offset_ew = offset
                         elif "east" in actconfig["offset"]:
-                            offset = _validateOffset(actconfig["offset"]["east"])
+                            offset = _validate_offset(actconfig["offset"]["east"])
                             self.out("\tOffset east: %s" % offset)
-                            act.offsetEW = Coord.fromAS(-offset.AS)
+                            act.offset_ew = Coord.from_as(-offset.arcsec)
 
                     # Special dome requirements... Needed mainly when doing dome FLATS.
-                    if "domeAz" in actconfig:
-                        actconfig["domeAz"] = Coord.fromDMS(actconfig["domeAz"])
-                        self.out("\tdomeAz: %s" % actconfig["domeAz"])
-                        act.domeAz = actconfig["domeAz"]
-                    if "domeTracking" in actconfig:
-                        if actconfig["domeTracking"] == "None":
-                            actconfig["domeTracking"] = None
+                    if "dome_az" in actconfig:
+                        actconfig["dome_az"] = Coord.from_dms(actconfig["dome_az"])
+                        self.out("\tdome_az: %s" % actconfig["dome_az"])
+                        act.dome_az = actconfig["dome_az"]
+                    if "dome_tracking" in actconfig:
+                        if actconfig["dome_tracking"] == "None":
+                            actconfig["dome_tracking"] = None
                             self.out("\tDome tracking left AS IS")
-                        elif actconfig["domeTracking"]:
+                        elif actconfig["dome_tracking"]:
                             self.out("\tDome tracking ENABLED")
                         else:
                             self.out("\tDome tracking DISABLED")
-                        act.domeTracking = actconfig["domeTracking"]
+                        act.dome_tracking = actconfig["dome_tracking"]
 
                 else:
                     for key in list(actconfig.keys()):
@@ -426,7 +427,7 @@ class ChimeraSched(ChimeraCLI):
 
         self.out("Restart the scheduler to run it with the new database.")
 
-    def _generateDatabase_basic(self, options):
+    def _generate_database_basic(self, options):
         f = None
         try:
             f = open(options.filename, "r")
@@ -436,7 +437,7 @@ class ChimeraSched(ChimeraCLI):
 
         session = Session()
 
-        lineRe = re.compile(
+        line_regex = re.compile(
             r"(?P<coord>(?P<ra>[\d:-]+)\s+(?P<dec>\+?[\d:-]+)\s+(?P<epoch>[\dnowNOWJjBb\.]+)\s+)?(?P<imagetype>[\w]+)"
             r'\s+(?P<objname>\'([^\\n\'\\\\]|\\\\.)*\'|"([^\\n"\\\\]|\\\\.)*"|([^ \\n"\\\\]|\\\\.)*)\s+(?P<exposures>[\w\d\s:\*\(\),]*)'
         )
@@ -448,7 +449,7 @@ class ChimeraSched(ChimeraCLI):
             if len(line) == 1:
                 continue
 
-            matchs = lineRe.search(line)
+            matchs = line_regex.search(line)
 
             if matchs is None:
                 print("Couldn't process line #%d" % i)
@@ -460,7 +461,7 @@ class ChimeraSched(ChimeraCLI):
             objname = None
 
             if params.get("coord", None):
-                position = Position.fromRaDec(
+                position = Position.from_ra_dec(
                     params["ra"], params["dec"], params["epoch"]
                 )
 
@@ -482,14 +483,14 @@ class ChimeraSched(ChimeraCLI):
 
                 if imagetype == "OBJECT":
                     if position:
-                        program.actions.append(Point(targetRaDec=position))
+                        program.actions.append(Point(target_ra_dec=position))
                     else:
-                        program.actions.append(Point(targetName=objname))
+                        program.actions.append(Point(target_name=objname))
 
                         # if imagetype == "FLAT":
-                        #     site = self._remoteManager.getProxy("/Site/0")
-                        #     flatPosition = Position.fromAltAz(site['flat_alt'], site['flat_az'])
-                        #     program.actions.append(Point(targetAltAz=flatPosition))
+                        #     site = self._remote_manager.get_proxy("/Site/0")
+                        #     flat_position = Position.from_alt_az(site['flat_alt'], site['flat_az'])
+                        #     program.actions.append(Point(target_alt_az=flat_position))
                         # TODO: point dome to its flat position too.
 
                 for exp in exps:
@@ -524,8 +525,8 @@ class ChimeraSched(ChimeraCLI):
                             filter=filter,
                             frames=frames,
                             exptime=exptime,
-                            imageType=imagetype,
-                            objectName=objname,
+                            image_type=imagetype,
+                            object_name=objname,
                         )
                     )
                 self.out("")
@@ -536,7 +537,7 @@ class ChimeraSched(ChimeraCLI):
 
         self.out("Restart the scheduler to run it with the new database.")
 
-    @action(help="Start the scheduler", helpGroup="RUN", actionGroup="RUN")
+    @action(help="Start the scheduler", help_group="RUN", action_group="RUN")
     def start(self, options):
         self.out("=" * 40)
         self.out("Starting ...", end="")
@@ -545,12 +546,12 @@ class ChimeraSched(ChimeraCLI):
         self.out("=" * 40)
         self.monitor(options)
 
-    @action(help="Stop the scheduler", helpGroup="RUN", actionGroup="RUN")
+    @action(help="Stop the scheduler", help_group="RUN", action_group="RUN")
     def stop(self, options):
         self.scheduler.stop()
         self.out("OK")
 
-    @action(help="Restart the scheduler", helpGroup="RUN", actionGroup="RUN")
+    @action(help="Restart the scheduler", help_group="RUN", action_group="RUN")
     def restart(self, options):
         self.out("=" * 40)
         self.out("Restarting ...", end="")
@@ -560,14 +561,14 @@ class ChimeraSched(ChimeraCLI):
         self.out("=" * 40)
         self.monitor(options)
 
-    @action(help="Print scheduler information", helpGroup="RUN")
+    @action(help="Print scheduler information", help_group="RUN")
     def info(self, options):
         self.out("=" * 40)
-        self.out("Scheduler: %s" % self.scheduler.getLocation())
+        self.out("Scheduler: %s" % self.scheduler.get_location())
         self.out("State: %s" % self.scheduler.state())
-        if self.scheduler.state() == State.BUSY and self.scheduler.currentAction():
+        if self.scheduler.state() == State.BUSY and self.scheduler.current_action():
             session = Session()
-            action = session.merge(self.scheduler.currentAction())
+            action = session.merge(self.scheduler.current_action())
             program = (
                 session.query(Program).filter(Program.id == action.program_id).one()
             )
@@ -575,15 +576,15 @@ class ChimeraSched(ChimeraCLI):
 
         self.out("=" * 40)
 
-    @action(help="Monitor scheduler actions", helpGroup="RUN")
+    @action(help="Monitor scheduler actions", help_group="RUN")
     def monitor(self, options):
-        def programBeginClbk(program):
+        def program_begin_clbk(program):
             session = Session()
             program = session.merge(program)
             self.out("=" * 40)
             self.out("%s %s" % (blue("[program]"), program.name))
 
-        def programCompleteClbk(program, status, message=None):
+        def program_complete_clbk(program, status, message=None):
             session = Session()
             program = session.merge(program)
             if status == SchedulerStatus.OK:
@@ -601,12 +602,12 @@ class ChimeraSched(ChimeraCLI):
                     )
                 )
 
-        def actionBeginClbk(action, message):
+        def action_begin_clbk(action, message):
             session = Session()
             action = session.merge(action)
             self.out("%s %s ..." % (blue("[action] "), message), end="")
 
-        def actionCompleteClbk(action, status, message=None):
+        def action_complete_clbk(action, status, message=None):
             session = Session()
             action = session.merge(action)
 
@@ -615,18 +616,18 @@ class ChimeraSched(ChimeraCLI):
             else:
                 self.out("%s (%s)" % (red(str(status)), red(str(message))))
 
-        def stateChangedClbk(newState, oldState):
-            if newState == State.OFF:
+        def state_changed_clbk(new_state, old_state):
+            if new_state == State.OFF:
                 self.out("=" * 40)
                 self.out("%s finished all programs" % blue("[scheduler]"))
                 self.out("=" * 40)
                 self.exit()
 
-        self.scheduler.programBegin += programBeginClbk
-        self.scheduler.programComplete += programCompleteClbk
-        self.scheduler.actionBegin += actionBeginClbk
-        self.scheduler.actionComplete += actionCompleteClbk
-        self.scheduler.stateChanged += stateChangedClbk
+        self.scheduler.program_begin += program_begin_clbk
+        self.scheduler.program_complete += program_complete_clbk
+        self.scheduler.action_begin += action_begin_clbk
+        self.scheduler.action_complete += action_complete_clbk
+        self.scheduler.state_changed += state_changed_clbk
 
         if self.scheduler.state() == State.OFF:
             self.out("%s no programs to do" % blue("[scheduler]"))

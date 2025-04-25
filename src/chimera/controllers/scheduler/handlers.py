@@ -1,11 +1,11 @@
 import copy
 
 from chimera.controllers.imageserver.imagerequest import ImageRequest
-from chimera.core.exceptions import ProgramExecutionException, printException
+from chimera.core.exceptions import ProgramExecutionException, print_exception
 
 
 def requires(instrument):
-    """Simple dependecy injection mechanism. See ProgramExecutor"""
+    """Simple dependency injection mechanism. See ProgramExecutor"""
 
     def requires_deco(func):
         if hasattr(func, "__requires__"):
@@ -43,34 +43,34 @@ class PointHandler(ActionHandler):
 
         try:
             # First slew telescope to given position (or none)
-            if action.targetRaDec is not None:
-                telescope.slewToRaDec(action.targetRaDec)
-            elif action.targetAltAz is not None:
-                telescope.slewToAltAz(action.targetAltAz)
-            elif action.targetName is not None:
-                telescope.slewToObject(action.targetName)
+            if action.target_ra_dec is not None:
+                telescope.slew_to_ra_dec(action.target_ra_dec)
+            elif action.target_alt_az is not None:
+                telescope.slew_to_alt_az(action.target_alt_az)
+            elif action.target_name is not None:
+                telescope.slew_to_object(action.target_name)
 
             # After slewing apply any given offset
-            if action.offsetNS is not None:
-                if action.offsetNS.AS > 0.0:
-                    telescope.moveNorth(action.offsetNS.AS)
+            if action.offset_ns is not None:
+                if action.offset_ns.arcsec > 0.0:
+                    telescope.move_north(action.offset_ns.arcsec)
                 else:
-                    telescope.moveSouth(-action.offsetNS.AS)
+                    telescope.move_south(-action.offset_ns.arcsec)
 
-            if action.offsetEW is not None:
-                if action.offsetEW.AS > 0.0:
-                    telescope.moveWest(action.offsetEW.AS)
+            if action.offset_ew is not None:
+                if action.offset_ew.arcsec > 0.0:
+                    telescope.move_west(action.offset_ew.arcsec)
                 else:
-                    telescope.moveEast(-action.offsetEW.AS)
+                    telescope.move_east(-action.offset_ew.arcsec)
 
             # If dome azimuth is given, point there.
-            if action.domeTracking is not None:
-                if action.domeTracking:
+            if action.dome_tracking is not None:
+                if action.dome_tracking:
                     dome.track()
                 else:
                     dome.stand()
-            if action.domeAz is not None:
-                dome.slewToAz(action.domeAz)
+            if action.dome_az is not None:
+                dome.slew_to_az(action.dome_az)
 
         except Exception as e:
             raise ProgramExecutionException(str(e))
@@ -81,49 +81,49 @@ class PointHandler(ActionHandler):
         telescope = copy.copy(PointHandler.telescope)
         dome = copy.copy(PointHandler.dome)
 
-        telescope.abortSlew()
-        dome.abortSlew()
+        telescope.abort_slew()
+        dome.abort_slew()
 
     @staticmethod
     def log(action):
 
-        offsetNS_str = (
+        offset_ns_str = (
             ""
-            if action.offsetNS is None
+            if action.offset_ns is None
             else (
-                f" north {action.offsetNS}"
-                if action.offsetNS > 0
-                else f" south {abs(action.offsetNS)}"
+                f" north {action.offset_ns}"
+                if action.offset_ns > 0
+                else f" south {abs(action.offset_ns)}"
             )
         )
-        offsetEW_str = (
+        offset_ew_str = (
             ""
-            if action.offsetEW is None
+            if action.offset_ew is None
             else (
-                f" west {abs(action.offsetEW)}"
-                if action.offsetEW > 0
-                else f" east {abs(action.offsetEW)}"
+                f" west {abs(action.offset_ew)}"
+                if action.offset_ew > 0
+                else f" east {abs(action.offset_ew)}"
             )
         )
 
         offset = (
             ""
-            if action.offsetNS is None and action.offsetEW is None
-            else f" offset:{offsetNS_str}{offsetEW_str}"
+            if action.offset_ns is None and action.offset_ew is None
+            else f" offset:{offset_ns_str}{offset_ew_str}"
         )
 
-        if action.targetRaDec is not None:
-            return f"slewing telescope to (ra dec) {action.targetRaDec}{offset}"
-        elif action.targetAltAz is not None:
-            return f"slewing telescope to (alt az) {action.targetAltAz}{offset}"
-        elif action.targetName is not None:
-            return f"slewing telescope to (object) {action.targetName}{offset}"
+        if action.target_ra_dec is not None:
+            return f"slewing telescope to (ra dec) {action.target_ra_dec}{offset}"
+        elif action.target_alt_az is not None:
+            return f"slewing telescope to (alt az) {action.target_alt_az}{offset}"
+        elif action.target_name is not None:
+            return f"slewing telescope to (object) {action.target_name}{offset}"
         elif offset != "":
             return f"applying telescope{offset}"
         else:
-            if action.domeTracking is None:
+            if action.dome_tracking is None:
                 tracking = "left AS IS"
-            elif action.domeTracking:
+            elif action.dome_tracking:
                 tracking = "STARTED"
             else:
                 tracking = "STOPPED"
@@ -142,15 +142,15 @@ class ExposeHandler(ActionHandler):
 
         # not considered in abort handling (should be fast enough to wait!)
         if action.filter is not None:
-            filterwheel.setFilter(str(action.filter))
+            filterwheel.set_filter(str(action.filter))
 
         ir = ImageRequest(
             frames=int(action.frames),
             exptime=float(action.exptime),
             shutter=str(action.shutter),
-            type=str(action.imageType),
+            type=str(action.image_type),
             filename=str(action.filename),
-            object_name=str(action.objectName),
+            object_name=str(action.object_name),
             window=action.window,
             binning=action.binning,
             wait_dome=action.wait_dome,
@@ -165,17 +165,17 @@ class ExposeHandler(ActionHandler):
         try:
             camera.expose(ir)
         except Exception as e:
-            printException(e)
+            print_exception(e)
             raise ProgramExecutionException("Error while exposing")
 
     @staticmethod
     def abort(action):
         camera = copy.copy(ExposeHandler.camera)
-        camera.abortExposure()
+        camera.abort_exposure()
 
     @staticmethod
     def log(action):
-        return f"exposing: filter={str(action.filter)} exptime={str(action.exptime)} frames={str(action.frames)} type={str(action.imageType)}"
+        return f"exposing: filter={str(action.filter)} exptime={str(action.exptime)} frames={str(action.frames)} type={str(action.image_type)}"
 
 
 class AutoFocusHandler(ActionHandler):
@@ -196,7 +196,7 @@ class AutoFocusHandler(ActionHandler):
                 filter=action.filter,
             )
         except Exception as e:
-            printException(e)
+            print_exception(e)
             raise ProgramExecutionException("Error while autofocusing")
 
     @staticmethod
@@ -218,9 +218,9 @@ class AutoFlatHandler(ActionHandler):
             request = {"binning": action.binning}
 
         try:
-            autoflat.getFlats(action.filter, n_flats=action.frames, request=request)
+            autoflat.get_flats(action.filter, n_flats=action.frames, request=request)
         except Exception as e:
-            printException(e)
+            print_exception(e)
             raise ProgramExecutionException("Error trying to take flats")
 
     @staticmethod
@@ -240,7 +240,7 @@ class PointVerifyHandler(ActionHandler):
 
         try:
             if action.here is not None:
-                pv.pointVerify()
+                pv.point_verify()
             elif action.choose is not None:
                 pv.choose()
         except Exception as e:

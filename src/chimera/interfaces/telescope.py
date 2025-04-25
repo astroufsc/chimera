@@ -75,7 +75,7 @@ class TelescopeSlew(Telescope):
         "min_altitude": 20,
     }
 
-    def slewToObject(self, name):
+    def slew_to_object(self, name):
         """
         Slew the scope to the coordinates of the given
         object. Object name will be converted to a coordinate using a
@@ -88,7 +88,7 @@ class TelescopeSlew(Telescope):
         @rtype: None
         """
 
-    def slewToRaDec(self, position):
+    def slew_to_ra_dec(self, position):
         """
         Slew the scope to the given equatorial coordinates.
 
@@ -99,7 +99,7 @@ class TelescopeSlew(Telescope):
         @rtype: None
         """
 
-    def slewToAltAz(self, position):
+    def slew_to_alt_az(self, position):
         """
         Slew the scope to the given local coordinates.
 
@@ -111,7 +111,7 @@ class TelescopeSlew(Telescope):
         @rtype: None
         """
 
-    def abortSlew(self):
+    def abort_slew(self):
         """
         Try to abort the current slew.
 
@@ -119,7 +119,7 @@ class TelescopeSlew(Telescope):
         @rtype: None
         """
 
-    def isSlewing(self):
+    def is_slewing(self):
         """
         Ask if the telescope is slewing right now.
 
@@ -127,7 +127,7 @@ class TelescopeSlew(Telescope):
         @rtype: bool
         """
 
-    def moveEast(self, offset, rate=SlewRate.MAX):
+    def move_east(self, offset, rate=SlewRate.MAX):
         """
         Move the scope I{offset} arcseconds East (if offset positive, West
         otherwise)
@@ -144,7 +144,7 @@ class TelescopeSlew(Telescope):
         @note: float accepted only to make life easier, probably we can't handle such precision.
         """
 
-    def moveWest(self, offset, rate=SlewRate.MAX):
+    def move_west(self, offset, rate=SlewRate.MAX):
         """
         Move the scope I{offset} arcseconds West (if offset positive, East
         otherwise)
@@ -162,7 +162,7 @@ class TelescopeSlew(Telescope):
         can't handle such precision.
         """
 
-    def moveNorth(self, offset, rate=SlewRate.MAX):
+    def move_north(self, offset, rate=SlewRate.MAX):
         """
         Move the scope I{offset} arcseconds North (if offset positive, South
         otherwise)
@@ -180,7 +180,7 @@ class TelescopeSlew(Telescope):
         can't handle such precision.
         """
 
-    def moveSouth(self, offset, rate=SlewRate.MAX):
+    def move_south(self, offset, rate=SlewRate.MAX):
         """
         Move the scope {offset} arcseconds South (if offset positive, North
         otherwise)
@@ -198,13 +198,13 @@ class TelescopeSlew(Telescope):
         can't handle such precision.
         """
 
-    def moveOffset(self, offsetRA, offsetDec, rate=SlewRate.GUIDE):
+    def move_offset(self, offset_ra, offset_dec, rate=SlewRate.GUIDE):
         """
-        @param offsetRA: Arcseconds to move in RA.
-        @type  offsetDec: int or float
+        @param offset_ra: Arcseconds to move in RA.
+        @type  offset_ra: int or float
 
-        @param offsetDec: Arcseconds to move in Dec
-        @type  offsetDec: int or float
+        @param offset_dec: Arcseconds to move in Dec
+        @type  offset_dec: int or float
 
         @param rate: Slew rate to be used when moving.
         @type  rate: L{SlewRate}
@@ -216,7 +216,7 @@ class TelescopeSlew(Telescope):
         can't handle such precision.
         """
 
-    def getRa(self):
+    def get_ra(self):
         """
         Get the current telescope Right Ascension.
 
@@ -224,7 +224,7 @@ class TelescopeSlew(Telescope):
         @rtype: L{Coord}
         """
 
-    def getDec(self):
+    def get_dec(self):
         """
         Get the current telescope Declination.
 
@@ -232,7 +232,7 @@ class TelescopeSlew(Telescope):
         @rtype: L{Coord}
         """
 
-    def getAz(self):
+    def get_az(self):
         """
         Get the current telescope Azimuth.
 
@@ -240,7 +240,7 @@ class TelescopeSlew(Telescope):
         @rtype: L{Coord}
         """
 
-    def getAlt(self):
+    def get_alt(self):
         """
         Get the current telescope Altitude.
 
@@ -248,7 +248,7 @@ class TelescopeSlew(Telescope):
         @rtype: L{Coord}
         """
 
-    def getPositionRaDec(self):
+    def get_position_ra_dec(self):
         """
         Get the current position of the telescope in equatorial coordinates.
 
@@ -256,7 +256,7 @@ class TelescopeSlew(Telescope):
         @rtype: L{Position}
         """
 
-    def getPositionAltAz(self):
+    def get_position_alt_az(self):
         """
         Get the current position of the telescope in local coordinates.
 
@@ -264,7 +264,7 @@ class TelescopeSlew(Telescope):
         @rtype: L{Position}
         """
 
-    def getTargetRaDec(self):
+    def get_target_ra_dec(self):
         """
         Get the current telescope target in equatorial coordinates.
 
@@ -272,7 +272,7 @@ class TelescopeSlew(Telescope):
         @rtype: L{Position}
         """
 
-    def getTargetAltAz(self):
+    def get_target_alt_az(self):
         """
         Get the current telescope target in local coordinates.
 
@@ -281,7 +281,7 @@ class TelescopeSlew(Telescope):
         """
 
     @event
-    def slewBegin(self, target):
+    def slew_begin(self, target):
         """
         Indicates that a slew operation started.
 
@@ -292,7 +292,7 @@ class TelescopeSlew(Telescope):
         """
 
     @event
-    def slewComplete(self, position, status):
+    def slew_complete(self, position, status):
         """
         Indicates that the last slew operation finished. This event
         will be fired even when problems impedes complete slew
@@ -308,7 +308,7 @@ class TelescopeSlew(Telescope):
 
 
 class TelescopePier(Telescope):
-    def getPierSide(self):
+    def get_pier_side(self):
         """
         Get the current side of pier of the telescope.
 
@@ -316,7 +316,7 @@ class TelescopePier(Telescope):
         @rtype: L{TelescopePierSide}
         """
 
-    def setPierSide(self, side):
+    def set_pier_side(self, side):
         """
         Sets side of pier of the telescope.
 
@@ -329,7 +329,7 @@ class TelescopeSync(Telescope):
     Telescope with sync support.
     """
 
-    def syncObject(self, name):
+    def sync_object(self, name):
         """
         Synchronize the telescope using the coordinates of the
         given object.
@@ -338,7 +338,7 @@ class TelescopeSync(Telescope):
         @type  name: str
         """
 
-    def syncRaDec(self, position):
+    def sync_ra_dec(self, position):
         """
         Synchronizes the telescope on the given equatorial
         coordinates.
@@ -349,7 +349,7 @@ class TelescopeSync(Telescope):
         to the given position.
 
         @param position: coordinates to sync on as a Position or a
-        tuple with arguments to Position.fromRaDec.
+        tuple with arguments to Position.from_ra_dec.
 
         @type  position: L{Position} or tuple
 
@@ -358,7 +358,7 @@ class TelescopeSync(Telescope):
         """
 
     @event
-    def syncComplete(self, position):
+    def sync_complete(self, position):
         """
         Fired when a synchronization operation finishes.
 
@@ -372,12 +372,12 @@ class TelescopePark(Telescope):
     Telescope with park/unpark support.
     """
 
-    __config__ = {"default_park_position": Position.fromAltAz(90, 180)}
+    __config__ = {"default_park_position": Position.from_alt_az(90, 180)}
 
     def park(self):
         """
         Park the telescope on the actual saved park position
-        (L{setParkPosition}) or on the default position if none
+        (L{set_park_position}) or on the default position if none
         set.
 
         When parked, the telescope will not track objects and may be
@@ -395,7 +395,7 @@ class TelescopePark(Telescope):
         @rtype: None
         """
 
-    def isParked(self):
+    def is_parked(self):
         """
         Ask if the telescope is at park position.
 
@@ -403,7 +403,7 @@ class TelescopePark(Telescope):
         @rtype: bool
         """
 
-    def setParkPosition(self, position):
+    def set_park_position(self, position):
         """
         Defines where the scope will park when asked to.
 
@@ -414,7 +414,7 @@ class TelescopePark(Telescope):
         @rtype: None
         """
 
-    def getParkPosition(self):
+    def get_park_position(self):
         """
         Get the Current park position.
 
@@ -423,13 +423,13 @@ class TelescopePark(Telescope):
         """
 
     @event
-    def parkComplete(self):
+    def park_complete(self):
         """
         Indicates that the scope has parked successfully.
         """
 
     @event
-    def unparkComplete(self):
+    def unpark_complete(self):
         """
         Indicates that the scope has unparked (waked up)
         successfully.
@@ -441,21 +441,21 @@ class TelescopeCover(Telescope):
     Telescope with mirror cover.
     """
 
-    def openCover(self):
+    def open_cover(self):
         """
         Open the telescope cover
 
         :return: None
         """
 
-    def closeCover(self):
+    def close_cover(self):
         """
         Close the telescope cover
 
         @:return: None
         """
 
-    def isCoverOpen(self):
+    def is_cover_open(self):
         """
         Ask if the telescope cover is open or not
 
@@ -468,7 +468,7 @@ class TelescopeTracking(Telescope):
     Telescope with support to start/stop tracking.
     """
 
-    def startTracking(self):
+    def start_tracking(self):
         """
         Start telescope tracking.
 
@@ -476,15 +476,15 @@ class TelescopeTracking(Telescope):
         @rtype: None
         """
 
-    def stopTracking(self):
+    def stop_tracking(self):
         """
         Stop telescope tracking.
 
-        @return: Nothing
+        @return: Nothing.
         @rtype: None
         """
 
-    def isTracking(self):
+    def is_tracking(self):
         """
         Ask if the telescope is tracking.
 
@@ -494,7 +494,7 @@ class TelescopeTracking(Telescope):
         """
 
     @event
-    def trackingStarted(self, position):
+    def tracking_started(self, position):
         """
         Indicates that a tracking operation started.
 
@@ -503,7 +503,7 @@ class TelescopeTracking(Telescope):
         """
 
     @event
-    def trackingStopped(self, position, status):
+    def tracking_stopped(self, position, status):
         """
         Indicates that the last tracking operation stopped. This event
         will be fired even when problems impedes tracking operation to resume

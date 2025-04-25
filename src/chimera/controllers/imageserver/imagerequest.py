@@ -3,7 +3,6 @@ import logging
 from chimera.interfaces.camera import Shutter, Bitpix
 from chimera.core.exceptions import ChimeraValueError, ObjectNotFoundException
 
-# import chimera.core.log
 log = logging.getLogger(__name__)
 
 
@@ -41,18 +40,18 @@ class ImageRequest(dict):
             "object_name": "",
         }
 
-        # Automatically call getMetadata on all instruments + site as long
+        # Automatically call get_metadata on all instruments + site as long
         # as only one instance of each is listed by the manager.
         self.auto_collect_metadata = True
 
         # URLs of proxies from which to get metadata before taking each image
-        self.metadataPre = []
+        self.metadata_pre = []
 
         # URLs of proxies from which to get metadata after taking each image
-        self.metadataPost = []
+        self.metadata_post = []
 
         # Headers accumulated during processing of each frame
-        # (=headers+metadatapre+metadatapost)
+        # (=headers+metadata_pre+metadata_post)
         self.headers = []
 
         self._proxies = {}
@@ -111,22 +110,22 @@ class ImageRequest(dict):
     def __str__(self):
         return f"exptime: {self['exptime']:.6f}, frames: {self['frames']}, shutter: {self['shutter']}, type: {self['type']}"
 
-    def beginExposure(self, manager):
+    def begin_exposure(self, manager):
 
-        self._fetchPreHeaders(manager)
+        self._fetch_pre_headers(manager)
 
         if self["wait_dome"]:
             try:
-                dome = manager.getProxy(manager.getResourcesByClass("Dome")[0])
-                dome.syncWithTel()
+                dome = manager.get_proxy(manager.get_resources_by_class("Dome")[0])
+                dome.sync_with_tel()
                 log.debug("Dome slit position synchronized with telescope position.")
             except (ObjectNotFoundException, IndexError):
                 log.info("No dome present, taking exposure without dome sync.")
 
-    def endExposure(self, manager):
-        self._fetchPostHeaders(manager)
+    def end_exposure(self, manager):
+        self._fetch_post_headers(manager)
 
-    def _fetchPreHeaders(self, manager):
+    def _fetch_pre_headers(self, manager):
         auto = []
         if self.auto_collect_metadata:
             for cls in (
@@ -139,7 +138,7 @@ class ImageRequest(dict):
                 "WeatherStation",
                 "SeeingMonitor",
             ):
-                locations = manager.getResourcesByClass(cls)
+                locations = manager.get_resources_by_class(cls)
                 if len(locations) == 1:
                     auto.append(str(locations[0]))
                 elif len(locations) == 0:
@@ -150,19 +149,19 @@ class ImageRequest(dict):
                     )
                     auto.append(str(locations[0]))
 
-            self._getHeaders(manager, auto + self.metadataPre)
+            self._get_headers(manager, auto + self.metadata_pre)
 
-    def _fetchPostHeaders(self, manager):
-        self._getHeaders(manager, self.metadataPost)
+    def _fetch_post_headers(self, manager):
+        self._get_headers(manager, self.metadata_post)
 
-    def _getHeaders(self, manager, locations):
+    def _get_headers(self, manager, locations):
 
         for location in locations:
 
             if location not in self._proxies:
                 try:
-                    self._proxies[location] = manager.getProxy(location)
+                    self._proxies[location] = manager.get_proxy(location)
                 except Exception:
                     log.exception(f"Unable to get metadata from {location}")
 
-            self.headers += self._proxies[location].getMetadata(self)
+            self.headers += self._proxies[location].get_metadata(self)

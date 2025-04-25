@@ -31,15 +31,15 @@ class WCSNotFoundException(ChimeraException):
 
 class ImageUtil(object):
     @staticmethod
-    def formatDate(datetime):
+    def format_date(datetime):
         if isinstance(datetime, float):
             datetime = dt.datetime.fromtimestamp(datetime)
 
         return datetime.strftime("%Y-%m-%dT%H:%M:%S.%f")
 
     @staticmethod
-    def makeFilename(
-        path="$DATE-$TIME", subs={}, dateFormat="%Y%m%d", timeFormat="%H%M%S"
+    def make_filename(
+        path="$DATE-$TIME", subs={}, date_format="%Y%m%d", time_format="%H%M%S"
     ):
         """
         Helper method to create filenames with increasing sequence number
@@ -69,30 +69,58 @@ class ImageUtil(object):
         @return: Filename.
         @rtype: str
         """
+        local_time = dt.datetime.now()
+        utc_time = dt.datetime.utcnow()
 
-        localtime = dt.datetime.now()
-        utctime = dt.datetime.utcnow()
-
-        if localtime.hour < 12:
-            jd_day = localtime - dt.timedelta(days=1)
+        if local_time.hour < 12:
+            jd_day = local_time - dt.timedelta(days=1)
         else:
-            jd_day = localtime
+            jd_day = local_time
 
         subs_dict = {
-            "LAST_NOON_DATE": jd_day.strftime(dateFormat),
-            "DATE": utctime.strftime(dateFormat),
-            "TIME": utctime.strftime(timeFormat),
+            "LAST_NOON_DATE": jd_day.strftime(date_format),
+            "DATE": utc_time.strftime(date_format),
+            "TIME": utc_time.strftime(time_format),
         }
 
         # add any user-specific keywords
         subs_dict.update(subs)
 
-        dirname, filename = os.path.split(path)
-        dirname = os.path.expanduser(dirname)
-        dirname = os.path.expandvars(dirname)
-        dirname = os.path.realpath(dirname)
+        dir_name, file_name = os.path.split(path)
+        dir_name = os.path.expanduser(dir_name)
+        dir_name = os.path.expandvars(dir_name)
+        dir_name = os.path.realpath(dir_name)
 
-        basename, ext = os.path.splitext(filename)
+        base_name, ext = os.path.splitext(file_name)
+        if not ext:
+            ext = "fits"
+        else:
+            ext = ext[1:]
+
+        dir_name = string.Template(dir_name).safe_substitute(subs_dict)
+        base_name = string.Template(base_name).safe_substitute(subs_dict)
+        ext = string.Template(ext).safe_substitute(subs_dict)
+
+        final_name = os.path.join(dir_name, f"{base_name}{os.path.extsep}{ext}")
+
+        if not os.path.exists(dir_name):
+            os.makedirs(dir_name)
+
+        if not os.path.isdir(dir_name):
+            raise OSError(
+                f"A file with the same name as the desired directory already exists. ('{dir_name}')"
+            )
+
+        if os.path.exists(final_name):
+            base, ext = os.path.splitext(final_name)
+            i = 1
+            while os.path.exists(f"{base}-{i:03d}{ext}"):
+                i += 1
+                if i == 1000:
+                    raise
+        dir_name = os.path.realpath(dir_name)
+
+        base_name, ext = os.path.splitext(file_name)
         if not ext:
             ext = "fits"
         else:
@@ -100,35 +128,35 @@ class ImageUtil(object):
             ext = ext[1:]
 
         # make substitutions
-        dirname = string.Template(dirname).safe_substitute(subs_dict)
-        basename = string.Template(basename).safe_substitute(subs_dict)
+        dir_name = string.Template(dir_name).safe_substitute(subs_dict)
+        base_name = string.Template(base_name).safe_substitute(subs_dict)
         ext = string.Template(ext).safe_substitute(subs_dict)
 
-        finalname = os.path.join(dirname, f"{basename}{os.path.extsep}{ext}")
+        final_name = os.path.join(dir_name, f"{base_name}{os.path.extsep}{ext}")
 
-        if not os.path.exists(dirname):
-            os.makedirs(dirname)
+        if not os.path.exists(dir_name):
+            os.makedirs(dir_name)
 
-        if not os.path.isdir(dirname):
+        if not os.path.isdir(dir_name):
             raise OSError(
-                f"A file with the same name as the desired directory already exists. ('{dirname}')"
+                f"A file with the same name as the desired directory already exists. ('{dir_name}')"
             )
 
         # If filename exists, append -NNN to the end of the file name.
         # A maximum of 1000 files can be generated with the same filename.
-        if os.path.exists(finalname):
-            base, ext = os.path.splitext(finalname)
+        if os.path.exists(final_name):
+            base, ext = os.path.splitext(final_name)
             i = 1
             while os.path.exists(f"{base}-{i:03d}{ext}"):
                 i += 1
                 if i == 1000:
                     raise OSError(
-                        f"Reached the maximum of 999 files with the same name ({finalname})."
+                        f"Reached the maximum of 999 files with the same name ({final_name})."
                     )
 
-            finalname = f"{base}-{i:03d}{ext}"
+            final_name = f"{base}-{i:03d}{ext}"
 
-        return finalname
+        return final_name
 
     @staticmethod
     def download(image, out_file=None, overwrite=False, max_attempts=2):
@@ -175,7 +203,7 @@ class Image(UserDict):
     """
 
     @staticmethod
-    def fromFile(filename, fix=False, mode="update"):
+    def from_file(filename, fix=False, mode="update"):
         fd = fits.open(filename, mode=mode)
         img = Image(filename, fd)
 
@@ -185,11 +213,10 @@ class Image(UserDict):
         return img
 
     @staticmethod
-    def create(data, imageRequest=None, filename=None):
-
-        if imageRequest:
+    def create(data, image_request=None, filename=None):
+        if image_request:
             try:
-                filename = imageRequest["filename"]
+                filename = image_request["filename"]
             except KeyError:
                 if not filename:
                     raise TypeError(
@@ -197,12 +224,12 @@ class Image(UserDict):
                         "or a valid ImageRequest object"
                     )
 
-        filename = ImageUtil.makeFilename(filename)
+        filename = ImageUtil.make_filename(filename)
 
         headers = [
             (
                 "DATE",
-                ImageUtil.formatDate(dt.datetime.utcnow()),
+                ImageUtil.format_date(dt.datetime.utcnow()),
                 "date of file creation",
             ),
             ("AUTHOR", "Chimera", "author of the data"),
@@ -213,8 +240,8 @@ class Image(UserDict):
         # TODO: Implement BITPIX support
         hdu.scale("int16", "", bzero=32768, bscale=1)
 
-        if imageRequest:
-            headers += imageRequest.headers
+        if image_request:
+            headers += image_request.headers
 
             for h in headers:
                 try:
@@ -222,24 +249,24 @@ class Image(UserDict):
                 except Exception as e:
                     log.warning(f"Couldn't add {str(h)}: {str(e)}")
 
-            if imageRequest["compress_format"] == "fits_rice":
+            if image_request["compress_format"] == "fits_rice":
                 filename = os.path.splitext(filename)[0] + ".fz"
                 img = fits.CompImageHDU(
                     data=data, header=hdu.header, compression_type="RICE_1"
                 )
                 img.writeto(filename, checksum=True)
-                return Image.fromFile(filename)
+                return Image.from_file(filename)
 
         hdu.data = data
 
-        hduList = fits.HDUList([hdu])
-        hduList.writeto(filename)
-        hduList.close()
+        hdu_list = fits.HDUList([hdu])
+        hdu_list.writeto(filename)
+        hdu_list.close()
 
-        del hduList
+        del hdu_list
         del hdu
 
-        return Image.fromFile(filename)
+        return Image.from_file(filename)
 
     #
     # standard constructor
@@ -305,13 +332,11 @@ class Image(UserDict):
     #
     # WCS
     #
-
-    def pixelAt(self, *world):
-
-        if not self._findWCS():
+    def pixel_at(self, *world):
+        if not self._find_wcs():
             return (0, 0)
 
-        pixel = self._valueAt(self._wcs.wcs_world2pix, *world)
+        pixel = self._value_at(self._wcs.wcs_world2pix, *world)
 
         # round pixel to avoid large decimal numbers and get out strange -0
         pixel = list(round(p, 6) for p in pixel)
@@ -323,19 +348,17 @@ class Image(UserDict):
 
         return tuple(pixel)
 
-    def worldAt(self, *pixel):
+    def world_at(self, *pixel):
+        if not self._find_wcs():
+            return Position.from_ra_dec(0, 0)
 
-        if not self._findWCS():
-            return Position.fromRaDec(0, 0)
+        world = self._value_at(self._wcs.wcs_pix2world, *pixel)
+        return Position.from_ra_dec(Coord.from_d(world[0]), Coord.from_d(world[1]))
 
-        world = self._valueAt(self._wcs.wcs_pix2world, *pixel)
-        return Position.fromRaDec(Coord.fromD(world[0]), Coord.fromD(world[1]))
+    def world_at_center(self):
+        return self.pixel_at(self.center())
 
-    def worldAtCenter(self):
-        return self.pixelAt(self.center())
-
-    def _findWCS(self):
-
+    def _find_wcs(self):
         if not self._wcs:
             try:
                 self._wcs = wcs.WCS(self._fd["PRIMARY"].header)
@@ -346,7 +369,7 @@ class Image(UserDict):
 
         return True
 
-    def _valueAt(self, fn, *coords):
+    def _value_at(self, fn, *coords):
         """
         Accepts a function callback and variable coords.
 
@@ -358,8 +381,8 @@ class Image(UserDict):
         assert self._wcs is not None
 
         if len(coords) == 2:
-            c1 = Coord.fromH(coords[0]).D
-            c2 = Coord.fromD(coords[1]).D
+            c1 = Coord.from_h(coords[0]).deg
+            c2 = Coord.from_d(coords[1]).deg
         else:
             if isinstance(coords[0], Position):
                 c1, c2 = coords[0].dd()
@@ -376,9 +399,7 @@ class Image(UserDict):
     #
     # Source extraction
     #
-
-    def extract(self, params={}, saveCatalog=False, saveConfig=False):
-
+    def extract(self, params={}, save_catalog=False, save_config=False):
         sex = SExtractor()
 
         # default params
@@ -405,22 +426,20 @@ class Image(UserDict):
             result = sex.catalog()
             return result
         finally:
-            if saveCatalog:
-                shutil.move(sex.config["CATALOG_NAME"], saveCatalog)
-            if saveConfig:
-                shutil.move(sex.config["CONFIG_FILE"], saveConfig)
+            if save_catalog:
+                shutil.move(sex.config["CATALOG_NAME"], save_catalog)
+            if save_config:
+                shutil.move(sex.config["CONFIG_FILE"], save_config)
 
             sex.clean(config=True, catalog=True, check=True)
 
     #
     # I/O and verification
     #
-
     def fix(self):
         self._fd.verify("fix")
 
     def save(self, filename=None, verify="exception"):
-
         if filename:
             self._fd.writeto(filename, output_verify=verify)
         else:
@@ -428,49 +447,42 @@ class Image(UserDict):
 
         return True
 
-    def _doCompress(self, filename, format):
+    def _do_compress(self, filename, format):
         if format.lower() == "bz2":
-            bzfilename = filename + ".bz2"
-            bzfp = bz2.BZ2File(bzfilename, "wb", compresslevel=4)
-            rawfp = open(filename)
-            bzfp.write(rawfp.read())
-            bzfp.close()
-            rawfp.close()
+            bz_filename = filename + ".bz2"
+            with bz2.BZ2File(bz_filename, "wb", compresslevel=4) as bz_fp:
+                with open(filename) as raw_fp:
+                    bz_fp.write(raw_fp.read())
             os.unlink(filename)
         elif format.lower() == "gzip":
-            gzfilename = filename + ".gz"
-            gzfp = gzip.GzipFile(gzfilename, "wb", compresslevel=5)
-            rawfp = open(filename)
-            gzfp.write(rawfp.read())
-            gzfp.close()
-            rawfp.close()
+            gz_filename = filename + ".gz"
+            with gzip.GzipFile(gz_filename, "wb", compresslevel=5) as gz_fp:
+                with open(filename) as raw_fp:
+                    gz_fp.write(raw_fp.read())
             os.unlink(filename)
         elif format.lower().startswith("fits_"):
             # compression methods inherent to fits standard, are done when saving image.
             return
         else:  # zip
-            zipfilename = filename + ".zip"
-            zipfp = zipfile.ZipFile(zipfilename, "w", zipfile.ZIP_DEFLATED)
-            zipfp.write(filename, os.path.basename(filename))
-            zipfp.close()
+            zip_filename = filename + ".zip"
+            with zipfile.ZipFile(zip_filename, "w", zipfile.ZIP_DEFLATED) as zip_fp:
+                zip_fp.write(filename, os.path.basename(filename))
             os.unlink(filename)
 
     def compress(self, format="bz2", multiprocess=False):
-
         if multiprocess and sys.version_info[0:2] >= (2, 6):
             from multiprocessing import Process
 
-            p = Process(target=self._doCompress, args=(self.filename, format))
+            p = Process(target=self._do_compress, args=(self.filename, format))
             p.start()
         else:
-            self._doCompress(self.filename, format)
+            self._do_compress(self.filename, format)
 
     # dict mixin implementation for headers
     def __getitem__(self, key):
         return self._fd["PRIMARY"].header.__getitem__(key)
 
     def __setitem__(self, key, value):
-
         if key not in self:
             self += (key, value)
             return True

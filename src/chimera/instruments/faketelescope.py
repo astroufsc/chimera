@@ -25,8 +25,8 @@ class FakeTelescope(TelescopeBase, TelescopeCover, TelescopePier):
         TelescopeBase.__init__(self)
 
         self.__slewing = False
-        self._az = Coord.fromDMS(0)
-        self._alt = Coord.fromDMS(70)
+        self._az = Coord.from_dms(0)
+        self._alt = Coord.from_dms(70)
 
         self._slewing = False
         self._tracking = True
@@ -37,66 +37,65 @@ class FakeTelescope(TelescopeBase, TelescopeCover, TelescopePier):
         self._epoch = Epoch.J2000
 
         self._cover = False
-        self._pierside = TelescopePierSide.UNKNOWN
+        self._pier_side = TelescopePierSide.UNKNOWN
 
-        self._ra = Position.fromRaDec(0, 0).ra
-        self._dec = Position.fromRaDec(0, 0).dec
-        self._alt = Position.fromAltAz(0, 0).alt
-        self._az = Position.fromAltAz(0, 0).az
+        self._ra = Position.from_ra_dec(0, 0).ra
+        self._dec = Position.from_ra_dec(0, 0).dec
+        self._alt = Position.from_alt_az(0, 0).alt
+        self._az = Position.from_alt_az(0, 0).az
 
-    def _setAltAzFromRaDec(self):
-        altAz = self._getSite().raDecToAltAz(Position.fromRaDec(self._ra, self._dec))
-        self._alt = altAz.alt
-        self._az = altAz.az
+    def _set_alt_az_from_ra_dec(self):
+        alt_az = self._get_site().ra_dec_to_alt_az(
+            Position.from_ra_dec(self._ra, self._dec)
+        )
+        self._alt = alt_az.alt
+        self._az = alt_az.az
 
-    def _getSite(self):
+    def _get_site(self):
         # FIXME: create the proxy directly and cache it
-        return self.getManager().getProxy("/Site/0")
+        return self.get_manager().get_proxy("/Site/0")
 
-    def _setRaDecFromAltAz(self):
-        raDec = self._getSite().altAzToRaDec(Position.fromAltAz(self._alt, self._az))
-        self._ra = raDec.ra
-        self._dec = raDec.dec
-
-    def _setAltAzFromRaDec(self):
-        altAz = self._getSite().raDecToAltAz(Position.fromRaDec(self._ra, self._dec))
-        self._alt = altAz.alt
-        self._az = altAz.az
+    def _set_ra_dec_from_alt_az(self):
+        ra_dec = self._get_site().alt_az_to_ra_dec(
+            Position.from_alt_az(self._alt, self._az)
+        )
+        self._ra = ra_dec.ra
+        self._dec = ra_dec.dec
 
     def __start__(self):
-        self.setHz(1)
+        self.set_hz(1)
 
     @lock
     def control(self):
-        self._getSite()
+        self._get_site()
         if not self._slewing:
             if self._tracking:
-                self._setAltAzFromRaDec()
+                self._set_alt_az_from_ra_dec()
                 try:
-                    self._validateAltAz(self.getPositionAltAz())
+                    self._validate_alt_az(self.get_position_alt_az())
                 except ObjectTooLowException as msg:
                     self.log.exception(msg)
-                    self._stopTracking()
-                    self.trackingStopped(
-                        self.getPositionRaDec(), TelescopeStatus.OBJECT_TOO_LOW
+                    self._stop_tracking()
+                    self.tracking_stopped(
+                        self.get_position_ra_dec(), TelescopeStatus.OBJECT_TOO_LOW
                     )
             else:
-                self._setRaDecFromAltAz()
+                self._set_ra_dec_from_alt_az()
         return True
 
-    def slewToRaDec(self, position):
+    def slew_to_ra_dec(self, position):
 
         if not isinstance(position, Position):
-            position = Position.fromRaDec(position[0], position[1], epoch=Epoch.J2000)
+            position = Position.from_ra_dec(position[0], position[1], epoch=Epoch.J2000)
 
-        self._validateRaDec(position)
+        self._validate_ra_dec(position)
 
-        self.slewBegin(position)
+        self.slew_begin(position)
 
-        ra_steps = position.ra - self.getRa()
+        ra_steps = position.ra - self.get_ra()
         ra_steps = float(ra_steps / 10.0)
 
-        dec_steps = position.dec - self.getDec()
+        dec_steps = position.dec - self.get_dec()
         dec_steps = float(dec_steps / 10.0)
 
         self._slewing = True
@@ -115,31 +114,31 @@ class FakeTelescope(TelescopeBase, TelescopeCover, TelescopePier):
 
             self._ra += ra_steps
             self._dec += dec_steps
-            self._setAltAzFromRaDec()
+            self._set_alt_az_from_ra_dec()
 
             time.sleep(0.5)
             t += 0.5
 
         self._slewing = False
 
-        self.startTracking()
+        self.start_tracking()
 
-        self.slewComplete(self.getPositionRaDec(), status)
+        self.slew_complete(self.get_position_ra_dec(), status)
 
     @lock
-    def slewToAltAz(self, position):
+    def slew_to_alt_az(self, position):
 
         if not isinstance(position, Position):
-            position = Position.fromAltAz(*position)
+            position = Position.from_alt_az(*position)
 
-        self._validateAltAz(position)
+        self._validate_alt_az(position)
 
-        self.slewBegin(self._getSite().altAzToRaDec(position))
+        self.slew_begin(self._get_site().alt_az_to_ra_dec(position))
 
-        alt_steps = position.alt - self.getAlt()
+        alt_steps = position.alt - self.get_alt()
         alt_steps = float(alt_steps / 10.0)
 
-        az_steps = position.az - self.getAz()
+        az_steps = position.az - self.get_az()
         az_steps = float(az_steps / 10.0)
 
         self._slewing = True
@@ -156,118 +155,118 @@ class FakeTelescope(TelescopeBase, TelescopeCover, TelescopePier):
 
             self._alt += alt_steps
             self._az += az_steps
-            self._setRaDecFromAltAz()
+            self._set_ra_dec_from_alt_az()
 
             time.sleep(0.5)
             t += 0.5
 
         self._slewing = False
 
-        self.slewComplete(self.getPositionRaDec(), status)
+        self.slew_complete(self.get_position_ra_dec(), status)
 
-    def abortSlew(self):
+    def abort_slew(self):
         self._abort.set()
-        while self.isSlewing():
+        while self.is_slewing():
             time.sleep(0.1)
 
         self._slewing = False
 
-    def isSlewing(self):
+    def is_slewing(self):
         return self._slewing
 
     @lock
-    def moveEast(self, offset, rate=SlewRate.MAX):
+    def move_east(self, offset, rate=SlewRate.MAX):
 
         self._slewing = True
 
-        pos = self.getPositionRaDec()
-        pos = Position.fromRaDec(pos.ra + Coord.fromAS(offset), pos.dec)
-        self.slewBegin(pos)
+        pos = self.get_position_ra_dec()
+        pos = Position.from_ra_dec(pos.ra + Coord.from_as(offset), pos.dec)
+        self.slew_begin(pos)
 
-        self._ra += Coord.fromAS(offset)
-        self._setAltAzFromRaDec()
+        self._ra += Coord.from_as(offset)
+        self._set_alt_az_from_ra_dec()
 
         self._slewing = False
-        self.slewComplete(self.getPositionRaDec(), TelescopeStatus.OK)
+        self.slew_complete(self.get_position_ra_dec(), TelescopeStatus.OK)
 
     @lock
-    def moveWest(self, offset, rate=SlewRate.MAX):
+    def move_west(self, offset, rate=SlewRate.MAX):
         self._slewing = True
 
-        pos = self.getPositionRaDec()
-        pos = Position.fromRaDec(pos.ra + Coord.fromAS(-offset), pos.dec)
-        self.slewBegin(pos)
+        pos = self.get_position_ra_dec()
+        pos = Position.from_ra_dec(pos.ra + Coord.from_as(-offset), pos.dec)
+        self.slew_begin(pos)
 
-        self._ra += Coord.fromAS(-offset)
-        self._setAltAzFromRaDec()
+        self._ra += Coord.from_as(-offset)
+        self._set_alt_az_from_ra_dec()
 
         self._slewing = False
-        self.slewComplete(self.getPositionRaDec(), TelescopeStatus.OK)
+        self.slew_complete(self.get_position_ra_dec(), TelescopeStatus.OK)
 
     @lock
-    def moveNorth(self, offset, rate=SlewRate.MAX):
+    def move_north(self, offset, rate=SlewRate.MAX):
         self._slewing = True
 
-        pos = self.getPositionRaDec()
-        pos = Position.fromRaDec(pos.ra, pos.dec + Coord.fromAS(offset))
-        self.slewBegin(pos)
+        pos = self.get_position_ra_dec()
+        pos = Position.from_ra_dec(pos.ra, pos.dec + Coord.from_as(offset))
+        self.slew_begin(pos)
 
-        self._dec += Coord.fromAS(offset)
-        self._setAltAzFromRaDec()
+        self._dec += Coord.from_as(offset)
+        self._set_alt_az_from_ra_dec()
 
         self._slewing = False
-        self.slewComplete(self.getPositionRaDec(), TelescopeStatus.OK)
+        self.slew_complete(self.get_position_ra_dec(), TelescopeStatus.OK)
 
     @lock
-    def moveSouth(self, offset, rate=SlewRate.MAX):
+    def move_south(self, offset, rate=SlewRate.MAX):
         self._slewing = True
 
-        pos = self.getPositionRaDec()
-        pos = Position.fromRaDec(pos.ra, pos.dec + Coord.fromAS(-offset))
-        self.slewBegin(pos)
+        pos = self.get_position_ra_dec()
+        pos = Position.from_ra_dec(pos.ra, pos.dec + Coord.from_as(-offset))
+        self.slew_begin(pos)
 
-        self._dec += Coord.fromAS(-offset)
-        self._setAltAzFromRaDec()
+        self._dec += Coord.from_as(-offset)
+        self._set_alt_az_from_ra_dec()
 
         self._slewing = False
-        self.slewComplete(self.getPositionRaDec(), TelescopeStatus.OK)
+        self.slew_complete(self.get_position_ra_dec(), TelescopeStatus.OK)
 
     @lock
-    def getRa(self):
+    def get_ra(self):
         return self._ra
 
     @lock
-    def getDec(self):
+    def get_dec(self):
         return self._dec
 
     @lock
-    def getAz(self):
+    def get_az(self):
         return self._az
 
     @lock
-    def getAlt(self):
+    def get_alt(self):
         return self._alt
 
     @lock
-    def getPositionRaDec(self):
-        return Position.fromRaDec(self.getRa(), self.getDec(), epoch=self._epoch)
+    def get_position_ra_dec(self):
+        return Position.from_ra_dec(self.get_ra(), self.get_dec(), epoch=self._epoch)
 
     @lock
-    def getPositionAltAz(self):
-        return Position.fromAltAz(self.getAlt(), self.getAz())
+    def get_position_alt_az(self):
+        return Position.from_alt_az(self.get_alt(), self.get_az())
 
     @lock
-    def getTargetRaDec(self):
-        return Position.fromRaDec(self.getRa(), self.getDec())
+    def get_target_ra_dec(self):
+        return Position.from_ra_dec(self.get_ra(), self.get_dec())
 
     @lock
-    def getTargetAltAz(self):
-        return Position.fromAltAz(self.getAlt(), self.getAz())
+    def get_target_alt_az(self):
+        return Position.from_alt_az(self.get_alt(), self.get_az())
 
     @lock
-    def syncRaDec(self, position):
+    def sync_ra_dec(self, position):
         if not isinstance(position, Position):
-            position = Position.fromRaDec(*position)
+            position = Position.from_ra_dec(*position)
 
         self._ra = position.ra
         self._dec = position.dec
@@ -276,44 +275,44 @@ class FakeTelescope(TelescopeBase, TelescopeCover, TelescopePier):
     def park(self):
         self.log.info("Parking...")
         self._parked = True
-        self.parkComplete()
+        self.park_complete()
 
     @lock
     def unpark(self):
         self.log.info("Unparking...")
         self._parked = False
-        self.unparkComplete()
+        self.unpark_complete()
 
-    def isParked(self):
+    def is_parked(self):
         return self._parked
 
     @lock
-    def startTracking(self):
+    def start_tracking(self):
         self._tracking = True
-        self.trackingStarted(self.getPositionRaDec())
+        self.tracking_started(self.get_position_ra_dec())
 
     @lock
-    def stopTracking(self):
-        self._stopTracking()
-        self.trackingStopped(self.getPositionRaDec(), TelescopeStatus.ABORTED)
+    def stop_tracking(self):
+        self._stop_tracking()
+        self.tracking_stopped(self.get_position_ra_dec(), TelescopeStatus.ABORTED)
 
-    def _stopTracking(self):
+    def _stop_tracking(self):
         self._tracking = False
 
-    def isTracking(self):
+    def is_tracking(self):
         return self._tracking
 
-    def openCover(self):
+    def open_cover(self):
         self._cover = True
 
-    def closeCover(self):
+    def close_cover(self):
         self._cover = False
 
-    def isCoverOpen(self):
+    def is_cover_open(self):
         return self._cover
 
-    def setPierSide(self, side):
-        self._pierside = side
+    def set_pier_side(self, side):
+        self._pier_side = side
 
-    def getPierSide(self):
-        return self._pierside
+    def get_pier_side(self):
+        return self._pier_side

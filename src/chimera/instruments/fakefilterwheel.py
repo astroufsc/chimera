@@ -12,19 +12,19 @@ class FakeFilterWheel(FilterWheelBase):
     def __init__(self):
         FilterWheelBase.__init__(self)
 
-        self._lastFilter = 0
+        self._last_filter = 0
 
-    def getFilter(self):
-        return self._getFilterName(self._lastFilter)
+    def get_filter(self):
+        return self._get_filter_name(self._last_filter)
 
     @lock
-    def setFilter(self, filter):
+    def set_filter(self, filter):
 
-        filterName = str(filter).upper()
+        filter_name = str(filter).upper()
 
-        if filterName not in self.getFilters():
+        if filter_name not in self.get_filters():
             raise InvalidFilterPositionException(f"Invalid filter {filter}.")
 
-        self.filterChange(filter, self._getFilterName(self._lastFilter))
+        self.filter_change(filter, self._get_filter_name(self._last_filter))
 
-        self._lastFilter = self._getFilterPosition(filter)
+        self._last_filter = self._get_filter_position(filter)

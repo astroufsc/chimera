@@ -13,13 +13,13 @@ log = logging.getLogger(__name__)
 class SequentialScheduler(IScheduler):
 
     def __init__(self):
-        self.rq = None
+        self.run_queue = None
         self.machine = None
 
     def reschedule(self, machine):
 
         self.machine = machine
-        self.rq = Queue(-1)
+        self.run_queue = Queue(-1)
 
         session = Session()
 
@@ -37,13 +37,13 @@ class SequentialScheduler(IScheduler):
         log.debug(f"rescheduling, found {len(list(programs))} runnable programs")
 
         for program in programs:
-            self.rq.put(program)
+            self.run_queue.put(program)
 
-        machine.wakeup()
+        machine.wake_up()
 
     def __next__(self):
-        if not self.rq.empty():
-            return self.rq.get()
+        if not self.run_queue.empty():
+            return self.run_queue.get()
 
         return None
 
@@ -55,5 +55,5 @@ class SequentialScheduler(IScheduler):
         else:
             task.finished = True
 
-        self.rq.task_done()
-        self.machine.wakeup()
+        self.run_queue.task_done()
+        self.machine.wake_up()

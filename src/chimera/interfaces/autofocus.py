@@ -43,7 +43,7 @@ class Autofocus(Interface):
         """
 
     @event
-    def stepComplete(self, position, star, frame):
+    def step_complete(self, position, star, frame):
         """Raised after every step in the focus sequence with
         information about the last step.
         """
