@@ -23,27 +23,20 @@ class TestLock(object):
 
                 self.t0 = time.time()
 
-            def doUnlocked(self):
+            def do_unlocked(self):
                 time.sleep(1)
                 t = time.time() - self.t0
                 print(f"[unlocked] - {threading.current_thread().name} - {t:.3f}")
                 return t
 
             @lock
-            def doLocked(self):
+            def do_locked(self):
                 time.sleep(1)
                 t = time.time() - self.t0
                 print(f"[ locked ] - {threading.current_thread().name} - {t:.3f}")
                 return t
 
-        #            def doLockedWith (self):
-        #                with self:
-        #                    time.sleep(1)
-        #                    t = time.time()-self.t0
-        #                    print "[ locked ] - %s - %.3f" % (threading.current_thread().name, t)
-        #                    return t
-
-        def doTest(obj):
+        def do_test(obj):
             """Rationale: We use 5 threads for each method (locked and
             unlocked). As unlocked methods isn't serialized, they run
             'at the same instant', while locked methods will be
@@ -63,7 +56,7 @@ class TestLock(object):
             unlocked = []
             locked = []
 
-            def getObj(o):
+            def get_obj(o):
                 """
                 Copy Proxy to share between threads.
                 """
@@ -71,27 +64,22 @@ class TestLock(object):
                     return copy.copy(o)
                 return o
 
-            def runUnlocked():
-                unlocked.append(getObj(obj).doUnlocked())
+            def run_unlocked():
+                unlocked.append(get_obj(obj).do_unlocked())
 
-            def runLocked():
-                locked.append(getObj(obj).doLocked())
-
-            #            def runLockedWith():
-            #                locked.append(getObj(obj).doLockedWith())
+            def run_locked():
+                locked.append(get_obj(obj).do_locked())
 
             threads = []
 
             print()
 
             for i in range(10):
-                t1 = threading.Thread(target=runUnlocked, name=f"unlocked-{i}")
-                t2 = threading.Thread(target=runLocked, name=f"  lock-{i}")
-                # t3 = threading.Thread(target=runLockedWith, name="  with-%d" % i)
+                t1 = threading.Thread(target=run_unlocked, name=f"unlocked-{i}")
+                t2 = threading.Thread(target=run_locked, name=f"  lock-{i}")
 
                 t1.start()
                 t2.start()
-                # t3.start()
 
                 threads += [t1, t2]
 
@@ -119,13 +107,13 @@ class TestLock(object):
 
         # direct metaobject
         m = Minimo()
-        doTest(m)
+        do_test(m)
 
         # proxy
-        manager.addClass(Minimo, "m", start=True)
+        manager.add_class(Minimo, "m", start=True)
 
-        p = manager.getProxy("/Minimo/m")
-        doTest(p)
+        p = manager.get_proxy("/Minimo/m")
+        do_test(p)
 
     def test_lock_config(self):
 
@@ -136,7 +124,7 @@ class TestLock(object):
             def __init__(self):
                 ChimeraObject.__init__(self)
 
-            def doWrite(self):
+            def do_write(self):
 
                 for i in range(10):
                     self["config"] = i
@@ -144,7 +132,7 @@ class TestLock(object):
                     sys.stdout.flush()
                     time.sleep(0.1)
 
-            def doRead(self):
+            def do_read(self):
 
                 for i in range(1000):
                     t0 = time.time()
@@ -155,8 +143,8 @@ class TestLock(object):
 
         m = Minimo()
 
-        t1 = threading.Thread(target=lambda: m.doWrite())
-        t2 = threading.Thread(target=lambda: m.doRead())
+        t1 = threading.Thread(target=lambda: m.do_write())
+        t2 = threading.Thread(target=lambda: m.do_read())
 
         print()
 

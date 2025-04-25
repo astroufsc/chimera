@@ -18,24 +18,24 @@ class ChimeraWeather(ChimeraCLI):
             self, "chimera-weather", "Weather station script", _chimera_version_
         )
 
-        self.addHelpGroup("WS", "Weather Station")
-        self.addHelpGroup("COMMANDS", "Commands")
+        self.add_help_group("ws", "Weather Station")
+        self.add_help_group("commands", "Commands")
 
-        self.addInstrument(
+        self.add_instrument(
             name="weatherstation",
             cls="WeatherStation",
             required=True,
-            helpGroup="WS",
+            help_group="ws",
             help="Weather Station instrument to be used",
         )
 
-        self.addParameters(
+        self.add_parameters(
             dict(
                 name="max_mins",
                 short="t",
                 type="float",
                 default=10,
-                helpGroup="COMMANDS",
+                help_group="commands",
                 help="Mark in red date/time values if older than this time in minutes",
             )
         )
@@ -43,14 +43,14 @@ class ChimeraWeather(ChimeraCLI):
     @action(
         short="i",
         help="Print weather station current information",
-        helpGroup="COMMANDS",
+        help_group="commands",
     )
     def info(self, options):
         self.out("=" * 80)
         self.out(
             "Weather Station: %s %s (%s)"
             % (
-                self.weatherstation.getLocation(),
+                self.weatherstation.get_location(),
                 self.weatherstation["model"],
                 self.weatherstation["device"],
             )
@@ -59,7 +59,7 @@ class ChimeraWeather(ChimeraCLI):
         if self.weatherstation.features(WeatherSafety):
             self.out(
                 "Dome is %s to open" % green("OK")
-                if self.weatherstation.okToOpen()
+                if self.weatherstation.ok_to_open()
                 else red("NOT OK")
             )
 

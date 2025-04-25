@@ -27,13 +27,13 @@ class ImageServer(ChimeraObject):
     def __init__(self):
         ChimeraObject.__init__(self)
 
-        self.imagesByID = OrderedDict()
-        self.imagesByPath = OrderedDict()
+        self.images_by_id = OrderedDict()
+        self.images_by_path = OrderedDict()
 
     def __start__(self):
 
         if self["http_host"] == "default":
-            self["http_host"] = self.getManager().getHostname()
+            self["http_host"] = self.get_manager().get_hostname()
 
         if self["httpd"]:
             self.http = ImageServerHTTP(self)
@@ -41,70 +41,70 @@ class ImageServer(ChimeraObject):
 
         if self["autoload"]:
             self.log.info("Loading existing images...")
-            loaddir = os.path.expanduser(self["images_dir"])
-            loaddir = os.path.expandvars(loaddir)
-            loaddir = os.path.realpath(loaddir)
-            self._loadImageDir(loaddir)
+            load_dir = os.path.expanduser(self["images_dir"])
+            load_dir = os.path.expandvars(load_dir)
+            load_dir = os.path.realpath(load_dir)
+            self._load_image_dir(load_dir)
 
     def __stop__(self):
 
         if self["httpd"]:
             self.http.stop()
 
-        for image in list(self.imagesByID.values()):
+        for image in list(self.images_by_id.values()):
             self.unregister(image)
 
-    def _loadImageDir(self, dir):
+    def _load_image_dir(self, dir):
 
-        filesToLoad = []
+        files_to_load = []
 
         if os.path.exists(dir):
 
             # build files list
             for root, dirs, files in os.walk(dir):
-                filesToLoad += [
+                files_to_load += [
                     os.path.join(dir, root, f) for f in files if f.endswith(".fits")
                 ]
 
-            for file in filesToLoad:
+            for file in files_to_load:
                 self.log.debug(f"Loading {file}")
-                self.register(Image.fromFile(file))
+                self.register(Image.from_file(file))
 
     def register(self, image):
-        if len(self.imagesByID) > self["max_images"]:
-            remove_items = list(self.imagesByID.keys())[: -self["max_images"]]
+        if len(self.images_by_id) > self["max_images"]:
+            remove_items = list(self.images_by_id.keys())[: -self["max_images"]]
 
             for item in remove_items:
                 self.log.debug(f"Unregistering image {item}")
-                self.unregister(self.imagesByID[item])
+                self.unregister(self.images_by_id[item])
 
-        self.imagesByID[image.id] = image
-        self.imagesByPath[image.filename] = image
+        self.images_by_id[image.id] = image
+        self.images_by_path[image.filename] = image
 
         # save Image's HTTP address
-        image.http(self.getHTTPByID(image.id))
+        image.http(self.get_http_by_id(image.id))
 
         return image
 
     def unregister(self, image):
-        del self.imagesByID[image.id]
-        del self.imagesByPath[image.filename]
+        del self.images_by_id[image.id]
+        del self.images_by_path[image.filename]
 
-    def getImageByID(self, id):
-        if id in self.imagesByID:
-            return self.imagesByID[id]
+    def get_image_by_id(self, id):
+        if id in self.images_by_id:
+            return self.images_by_id[id]
 
-    def getImageByPath(self, path):
-        if path in self.imagesByPath:
-            return self.imagesByPath[path]
+    def get_image_by_path(self, path):
+        if path in self.images_by_path:
+            return self.images_by_path[path]
 
-    def getProxyByID(self, id):
-        img = self.getImageByID(id)
+    def get_proxy_by_id(self, id):
+        img = self.get_image_by_id(id)
         if img:
-            return img.getProxy()
+            return img.get_proxy()
 
-    def getHTTPByID(self, id):
+    def get_http_by_id(self, id):
         return f"http://{self['http_host']}:{int(self['http_port'])}/image/{id}"
 
-    def defaultNightDir(self):
+    def default_night_dir(self):
         return os.path.join(self["images_dir"], self["night_dir"])

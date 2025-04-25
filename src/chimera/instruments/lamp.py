@@ -12,12 +12,12 @@ class LampBase(ChimeraObject, LampSwitch):
         ChimeraObject.__init__(self)
 
     @lock
-    def switchOn(self):
+    def switch_on(self):
         raise NotImplementedError()
 
     @lock
-    def switchOff(self):
+    def switch_off(self):
         raise NotImplementedError()
 
-    def isSwitchedOn(self):
+    def is_switched_on(self):
         raise NotImplementedError()

@@ -46,7 +46,7 @@ class Dome(Interface):
         "mode": Mode.Stand,
         "model": "Fake Domes Inc.",
         "style": Style.Classic,
-        "park_position": Coord.fromD(155),
+        "park_position": Coord.from_d(155),
         "park_on_shutdown": False,
         "close_on_shutdown": False,
         "az_resolution": 2,  # dome position resolution in degrees
@@ -63,7 +63,7 @@ class Dome(Interface):
 class DomeSlew(Dome):
     """Basic Interface for rotating observatory Domes."""
 
-    def slewToAz(self, az):
+    def slew_to_az(self, az):
         """
         Slew to the given Azimuth.
 
@@ -77,7 +77,7 @@ class DomeSlew(Dome):
         @rtype: None
         """
 
-    def isSlewing(self):
+    def is_slewing(self):
         """
         Ask if the dome is slewing right now.
 
@@ -85,7 +85,7 @@ class DomeSlew(Dome):
         @rtype: bool
         """
 
-    def abortSlew(self):
+    def abort_slew(self):
         """
         Try to abort the current slew.
 
@@ -94,7 +94,7 @@ class DomeSlew(Dome):
         """
 
     @event
-    def slewBegin(self, position):
+    def slew_begin(self, position):
         """
         Indicates that the a new slew operation started.
 
@@ -103,7 +103,7 @@ class DomeSlew(Dome):
         """
 
     @event
-    def slewComplete(self, position, status):
+    def slew_complete(self, position, status):
         """
         Indicates that the last slew operation finished (with or
         without success, check L{status} field for more information.).
@@ -122,21 +122,21 @@ class DomeSlit(Dome):
     Dome with Slit
     """
 
-    def openSlit(self):
+    def open_slit(self):
         """
         Open the dome slit.
 
         @rtype: None
         """
 
-    def closeSlit(self):
+    def close_slit(self):
         """
         Close the dome slit.
 
         @rtype: None
         """
 
-    def isSlitOpen(self):
+    def is_slit_open(self):
         """
         Ask the dome if the slit is opened.
 
@@ -145,7 +145,7 @@ class DomeSlit(Dome):
         """
 
     @event
-    def slitOpened(self, az):
+    def slit_opened(self, az):
         """
         Indicates that the slit was just opened
 
@@ -154,7 +154,7 @@ class DomeSlit(Dome):
         """
 
     @event
-    def slitClosed(self, az):
+    def slit_closed(self, az):
         """
         Indicates that the slit was just closed.
 
@@ -168,21 +168,21 @@ class DomeFlap(Dome):
     Dome with Slit
     """
 
-    def openFlap(self):
+    def open_flap(self):
         """
         Open the dome flap.
 
         @rtype: None
         """
 
-    def closeFlap(self):
+    def close_flap(self):
         """
         Close the dome flap.
 
         @rtype: None
         """
 
-    def isFlapOpen(self):
+    def is_flap_open(self):
         """
         Ask the dome if the flap is open.
 
@@ -191,7 +191,7 @@ class DomeFlap(Dome):
         """
 
     @event
-    def flapOpened(self, az):
+    def flap_opened(self, az):
         """
         Indicates that the flap was just opened
 
@@ -200,7 +200,7 @@ class DomeFlap(Dome):
         """
 
     @event
-    def flapClosed(self, az):
+    def flap_closed(self, az):
         """
         Indicates that the flap was just closed.
 
@@ -215,13 +215,13 @@ class DomeSync(Dome):
     """
 
     @event
-    def syncBegin(self):
+    def sync_begin(self):
         """
         Indicates that the dome was asked and is starting to sync with the telescope (if any).
         """
 
     @event
-    def syncComplete(self):
+    def sync_complete(self):
         """
         Indicates that the dome was asked and finished the sync with the telescope (if any).
         """
@@ -240,21 +240,21 @@ class DomeSync(Dome):
         @rtype: None
         """
 
-    def syncWithTel(self):
+    def sync_with_tel(self):
         """
         If dome was in Track mode, sync dome position with current scope position.
 
         @rtype: None
         """
 
-    def isSyncWithTel(self):
+    def is_sync_with_tel(self):
         """
         If dome was in Track mode, returns wether the dome slit is synchronized with telescope azimuth.
 
         @rtype: bool
         """
 
-    def getMode(self):
+    def get_mode(self):
         """
         Get the current Dome mode, Stand or Track, currently.
 
@@ -262,7 +262,7 @@ class DomeSync(Dome):
         @rtype: Mode
         """
 
-    def getAz(self):
+    def get_az(self):
         """
         Get the current dome Azimuth (Az)
 

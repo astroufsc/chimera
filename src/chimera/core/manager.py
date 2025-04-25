@@ -30,7 +30,7 @@ import threading
 import time
 
 
-__all__ = ["Manager", "getManagerURI", "ManagerNotFoundException"]
+__all__ = ["Manager", "get_manager_uri", "ManagerNotFoundException"]
 
 
 log = logging.getLogger(__name__)
@@ -40,7 +40,7 @@ class ManagerNotFoundException(ChimeraException):
     pass
 
 
-def getManagerURI(host=None, port=None):
+def get_manager_uri(host=None, port=None):
 
     host = host or MANAGER_DEFAULT_HOST
     port = port or MANAGER_DEFAULT_PORT
@@ -56,13 +56,13 @@ class Manager:
 
     @group Add/Remove: add*, remove
     @group Start/Stop: start, stop
-    @group Proxy: getProxy
+    @group Proxy: get_proxy
     @group Shutdown: wait, shutdown
     """
 
     @staticmethod
     def locate(host, port=MANAGER_DEFAULT_PORT) -> Proxy:
-        p = Proxy(Location(getManagerURI(host, port)))
+        p = Proxy(Location(get_manager_uri(host, port)))
         if not p.ping():
             raise ManagerNotFoundException(
                 f"Couldn't find manager running on {host}:{port}"
@@ -73,52 +73,52 @@ class Manager:
         log.info("Starting manager.")
 
         self.resources = ResourcesManager()
-        self.classLoader = ClassLoader()
+        self.class_loader = ClassLoader()
 
         # shutdown event
         self.died = threading.Event()
 
         # register ourselves
-        self.resources.add(getManagerURI(host, port), self),
+        self.resources.add(get_manager_uri(host, port), self),
 
         # our daemon server
         self.server = Server(self.resources, host, port)
         self.server.start()
-        self.serverThread = threading.Thread(target=self.server.loop, daemon=True)
-        self.serverThread.name = getManagerURI(host, port)
+        self.server_thread = threading.Thread(target=self.server.loop, daemon=True)
+        self.server_thread.name = get_manager_uri(host, port)
 
-        self.serverThread.start()
+        self.server_thread.start()
 
     # private
     def __repr__(self):
         return f"<Manager for {self.server.transport.host}:{self.server.transport.port} at {hex(id(self))}>"
 
     # host/port
-    def getHostname(self):
+    def get_hostname(self):
         return self.server.transport.host
 
-    def getPort(self):
+    def get_port(self):
         return self.server.transport.port
 
     # reflection (console)
-    def getResources(self):
+    def get_resources(self):
         """
         Returns a list with the Location of all the available resources
         """
         return list(self.resources.keys())
 
-    def getResourcesByClass(self, cls):
-        ret = self.resources.getByClass(cls)
+    def get_resources_by_class(self, cls):
+        ret = self.resources.get_by_class(cls)
         return [x.location for x in ret]
 
     # helpers
-    def getProxy(self, location):
+    def get_proxy(self, location):
         """
         Get a proxy for the object pointed by location. The given location
         can contain index instead of names, e.g. '/Object/0' to get objects
         when you don't know their names.
 
-        location can also be a class. getProxy will return an instance
+        location can also be a class. get_proxy will return an instance
         named 'name' at the given host/port (or on the current
         manager, if None given).
 
@@ -153,8 +153,8 @@ class Manager:
 
         location = Location(location)
         resolved_location = Location(
-            host=location.host or self.getHostname(),
-            port=location.port or self.getPort(),
+            host=location.host or self.get_hostname(),
+            port=location.port or self.get_port(),
             cls=location.cls,
             name=location.name,
             config=location.config,
@@ -162,7 +162,7 @@ class Manager:
 
         return Proxy(resolved_location)
 
-    def getInstance(self, location):
+    def get_instance(self, location):
         if not location:
             raise ObjectNotFoundException(
                 "Couldn't find an object at the" f" given location {location}"
@@ -214,7 +214,7 @@ class Manager:
                 # kill our server
                 self.server.stop()
 
-                self.serverThread.join()
+                self.server_thread.join()
 
                 # die!
                 self.died.set()
@@ -245,7 +245,7 @@ class Manager:
             self.shutdown()
 
     # objects lifecycle
-    def addLocation(self, location, path=[], start=True):
+    def add_location(self, location, path=[], start=True):
         """
         Add the class pointed by 'location' to the system configuring it
         using 'config'. Manager will look for the class in 'path' and sys.path.
@@ -272,10 +272,10 @@ class Manager:
 
         # get the class
         cls = None
-        cls = self.classLoader.loadClass(location.cls, path)
-        return self.addClass(cls, location.name, location.config, start)
+        cls = self.class_loader.load_class(location.cls, path)
+        return self.add_class(cls, location.name, location.config, start)
 
-    def addClass(self, cls, name, config={}, start=True):
+    def add_class(self, cls, name, config={}, start=True):
         """
         Add the class 'cls' to the system configuring it using 'config'.
 
@@ -303,8 +303,8 @@ class Manager:
             cls=cls.__name__,
             name=name,
             config=config,
-            host=self.getHostname(),
-            port=self.getPort(),
+            host=self.get_hostname(),
+            port=self.get_port(),
         )
 
         # names must not start with a digit
@@ -395,7 +395,7 @@ class Manager:
 
         resource = self.resources.get(location)
 
-        if resource.instance.getState() == State.RUNNING:
+        if resource.instance.get_state() == State.RUNNING:
             return True
 
         try:
@@ -456,7 +456,7 @@ class Manager:
                     # ignore Ctrl+C on shutdown
                     pass
 
-            if resource.instance.getState() != State.STOPPED:
+            if resource.instance.get_state() != State.STOPPED:
                 resource.instance.__stop__()
                 resource.instance.__setstate__(State.STOPPED)
 

@@ -37,20 +37,20 @@ class TestCoord(object):
             expected_ra_str.append(row[2].strip())
             expected_dec_str.append(row[3].strip())
 
-            ra.append(Coord.fromHMS(str(row[2])))
-            dec.append(Coord.fromDMS(str(row[3])))
+            ra.append(Coord.from_hms(str(row[2])))
+            dec.append(Coord.from_dms(str(row[3])))
 
         for i in range(len(bsc)):
             # use e=0.0001 'cause its the maximum we can get with Vizier data (4 decimal places only)
 
             # test conversion from HMS DMS to decimal
             assert TestCoord.equal(
-                ra[i].D, expected_ra[i], e=1e-4
-            ), f"ra: {expected_ra[i]:.6f} != coord ra: {ra[i].D:.6f} ({expected_ra[i] - ra[i].D:.6f})"
+                ra[i].deg, expected_ra[i], e=1e-4
+            ), f"ra: {expected_ra[i]:.6f} != coord ra: {ra[i].deg:.6f} ({expected_ra[i] - ra[i].deg:.6f})"
 
             assert TestCoord.equal(
-                dec[i].D, expected_dec[i], e=1e-4
-            ), f"dec: {expected_dec[i]:.6f} != coord dec: {dec[i].D:.64f} ({expected_dec[i] - dec[i].D:.6f})"
+                dec[i].deg, expected_dec[i], e=1e-4
+            ), f"dec: {expected_dec[i]:.6f} != coord dec: {dec[i].deg:.64f} ({expected_dec[i] - dec[i].deg:.6f})"
 
             # test strfcoord implementation
             assert expected_ra_str[i] == ra[i].strfcoord(
@@ -96,11 +96,11 @@ class TestCoord(object):
             expected_ra.append(float(row[2]))
             expected_dec.append(float(row[3]))
 
-            ra.append(Coord.fromD(str(row[2])))
-            dec.append(Coord.fromD(str(row[3])))
+            ra.append(Coord.from_d(str(row[2])))
+            dec.append(Coord.from_d(str(row[3])))
 
-            ra_hms.append(Coord.fromHMS(str(row[0])))
-            dec_dms.append(Coord.fromDMS(str(row[1])))
+            ra_hms.append(Coord.from_hms(str(row[0])))
+            dec_dms.append(Coord.from_dms(str(row[1])))
 
         for i in range(len(hipp)):
             assert expected_ra_str[i] == ra_hms[i].strfcoord(
@@ -119,21 +119,21 @@ class TestCoord(object):
 
             # test conversion from D to D
             assert TestCoord.equal(
-                ra[i].D, expected_ra[i], e=1e-8
-            ), f"ra: {expected_ra[i]:.6f} != coord ra: {ra[i].D:.6f} ({expected_ra[i] - ra[i].D:.6f})"
+                ra[i].deg, expected_ra[i], e=1e-8
+            ), f"ra: {expected_ra[i]:.6f} != coord ra: {ra[i].deg:.6f} ({expected_ra[i] - ra[i].deg:.6f})"
 
             assert TestCoord.equal(
-                dec[i].D, expected_dec[i], e=1e-8
-            ), f"dec: {expected_dec[i]:.6f} != coord dec: {dec[i].D:.64f} ({expected_dec[i] - dec[i].D:.6f})"
+                dec[i].deg, expected_dec[i], e=1e-8
+            ), f"dec: {expected_dec[i]:.6f} != coord dec: {dec[i].deg:.64f} ({expected_dec[i] - dec[i].deg:.6f})"
 
             # test conversion from DMS HMS to D
             assert TestCoord.equal(
-                ra_hms[i].D, expected_ra[i], e=1e-4
-            ), f"ra: {expected_ra[i]:.6f} != coord ra: {ra_hms[i].D:.6f} ({expected_ra[i] - ra_hms[i].D:.6f})"
+                ra_hms[i].deg, expected_ra[i], e=1e-4
+            ), f"ra: {expected_ra[i]:.6f} != coord ra: {ra_hms[i].deg:.6f} ({expected_ra[i] - ra_hms[i].deg:.6f})"
 
             assert TestCoord.equal(
-                dec_dms[i].D, expected_dec[i], e=1e-4
-            ), f"dec: {expected_dec[i]:.6f} != coord dec: {dec_dms[i].D:.64f} ({expected_dec[i] - dec_dms[i].D:.6f})"
+                dec_dms[i].deg, expected_dec[i], e=1e-4
+            ), f"dec: {expected_dec[i]:.6f} != coord dec: {dec_dms[i].deg:.64f} ({expected_dec[i] - dec_dms[i].deg:.6f})"
 
     def test_parse_dms(self):
 
@@ -147,16 +147,16 @@ class TestCoord(object):
                 for ss in range(0, 60):
                     s = f"{dd:+03d}:{mm:02d}:{ss:06.3f}"
 
-                    t = time.clock()
-                    c = Coord.fromDMS(s)
-                    t_parse += time.clock() - t
+                    t = time.time()
+                    c = Coord.from_dms(s)
+                    t_parse += time.time() - t
 
                     coords.append((s, c))
 
         for coord in coords:
-            t = time.clock()
+            t = time.time()
             assert coord[0] == str(coord[1]), (coord[0], "!=", str(coord[1]))
-            t_check += time.clock() - t
+            t_check += time.time() - t
 
         print(
             f"#{len(coords)} coords parsed in {t_parse:.3f}s ({len(coords) / t_parse:.3f}/s) and checked in {t_check:.3f}s ({len(coords) / t_check:.3f}/s) ..."

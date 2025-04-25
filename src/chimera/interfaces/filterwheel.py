@@ -24,7 +24,7 @@ class FilterWheel(Interface):
         "filters": "R G B LUNAR CLEAR",  # space separated filter names (in position order)
     }
 
-    def setFilter(self, filter):
+    def set_filter(self, filter):
         """
         Set the current filter.
 
@@ -34,7 +34,7 @@ class FilterWheel(Interface):
         @rtype: None
         """
 
-    def getFilter(self):
+    def get_filter(self):
         """
         Return the current filter.
 
@@ -42,7 +42,7 @@ class FilterWheel(Interface):
         @rtype: str
         """
 
-    def getFilters(self):
+    def get_filters(self):
         """
         Return a tuple with the available filter on this wheel.
 
@@ -51,13 +51,13 @@ class FilterWheel(Interface):
         """
 
     @event
-    def filterChange(self, newFilter, oldFilter):
+    def filter_change(self, new_filter, old_filter):
         """
         Fired when the wheel changes the current filter.
 
-        @param newFilter: The new current filter.
-        @type  newFilter: str
+        @param new_filter: The new current filter.
+        @type  new_filter: str
 
-        @param oldFilter: The last filter.
-        @type  oldFilter: str
+        @param old_filter: The last filter.
+        @type  old_filter: str
         """

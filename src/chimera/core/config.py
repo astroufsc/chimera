@@ -30,11 +30,11 @@ class Option(object):
     def set(self, value):
 
         try:
-            oldvalue = self._value
+            old_value = self._value
 
             self._value = self._checker.check(value)
 
-            return oldvalue
+            return old_value
         except OptionConversionException as e:
             log.debug(f"Error setting {self._name}: {str(e)}.")
             raise e
@@ -147,9 +147,9 @@ class BoolChecker(Checker):
     def __init__(self):
         Checker.__init__(self)
 
-        self._trueValues = ["true", "yes", "y", "on", "1"]
-        self._falseValues = ["false", "no", "n", "off", "0"]
-        self._truthTable = self._trueValues + self._falseValues
+        self._true_values = ["true", "yes", "y", "on", "1"]
+        self._false_values = ["false", "no", "n", "off", "0"]
+        self._truth_table = self._true_values + self._false_values
 
     def check(self, value):
         # we MUST return an bool or raise OptionConversionException
@@ -173,8 +173,8 @@ class BoolChecker(Checker):
 
             value = value.strip().lower()
 
-            if value in self._truthTable:
-                return value in self._trueValues
+            if value in self._truth_table:
+                return value in self._true_values
 
             raise OptionConversionException(f"couldn't convert '{value}' to bool.")
 
@@ -187,9 +187,9 @@ class OptionsChecker(Checker):
     def __init__(self, options):
         Checker.__init__(self)
 
-        self._options = self._readOptions(options)
+        self._options = self._read_options(options)
 
-    def _readOptions(self, opt):
+    def _read_options(self, opt):
 
         # options = [ {"value": value, "checker", checker}, ...]
         options = []
@@ -271,21 +271,21 @@ class EnumChecker(Checker):
     def __init__(self, value):
         Checker.__init__(self)
 
-        self.enumtype = value.enumtype
+        self.enum_type = value.enumtype
 
     def check(self, value):
 
         if isinstance(value, Enum):
-            if value in self.enumtype:
+            if value in self.enum_type:
                 return value
 
         if isinstance(value, str):
-            ret = [v for v in self.enumtype if str(v).upper() == value.upper()]
+            ret = [v for v in self.enum_type if str(v).upper() == value.upper()]
             if ret:
                 return ret[0]
 
         raise OptionConversionException(
-            f"invalid enum value {value}. not a {str(self.enumtype)} enum."
+            f"invalid enum value {value}. not a {str(self.enum_type)} enum."
         )
 
 
@@ -298,9 +298,9 @@ class CoordOption(Option):
 
     def set(self, value):
         try:
-            oldvalue = self._value
+            old_value = self._value
             self._value = self._checker.check(value, self._state)
-            return oldvalue
+            return old_value
         except OptionConversionException as e:
             log.debug(f"Error setting {self._name}: {str(e)}.")
             raise e
@@ -315,7 +315,7 @@ class CoordChecker(Checker):
 
         if not isinstance(value, Coord):
             try:
-                return Coord.fromState(value, state)
+                return Coord.from_state(value, state)
             except ValueError:
                 pass
 
@@ -333,9 +333,9 @@ class PositionOption(Option):
 
     def set(self, value):
         try:
-            oldvalue = self._value
+            old_value = self._value
             self._value = self._checker.check(value, self._system, self._epoch)
-            return oldvalue
+            return old_value
         except OptionConversionException as e:
             log.debug(f"Error setting {self._name}: {str(e)}.")
             raise e
@@ -358,11 +358,11 @@ class Config(object):
     def __init__(self, obj):
 
         if isinstance(obj, dict):
-            self._options = self._readOptions(obj)
+            self._options = self._read_options(obj)
         else:
-            self._options = self._readOptions(obj.__config__)
+            self._options = self._read_options(obj.__config__)
 
-    def _readOptions(self, opt):
+    def _read_options(self, opt):
 
         options = {}
 
@@ -453,14 +453,14 @@ class Config(object):
     def __iter__(self):
         return iter(self.keys())
 
-    def iterkeys(self):
+    def iter_keys(self):
         return self._options.__iter__()
 
-    def itervalues(self):
+    def iter_values(self):
         for name in self._options:
             yield self._options[name].get()
 
-    def iteritems(self):
+    def iter_items(self):
         for name in self._options:
             yield (name, self._options[name].get())
 

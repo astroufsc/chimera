@@ -17,104 +17,104 @@ class TestChimeraObject(object):
         # 1. simple class (no inheritance)
         class BaseClass(ChimeraObject):
 
-            __config__ = {"baseConfig": True}
+            __config__ = {"base_config": True}
 
             @event
-            def baseEvent(self):
+            def base_event(self):
                 pass
 
-            def baseMethod(self):
+            def base_method(self):
                 pass
 
-            def _basePrivateMethod(self):
+            def _base_private_method(self):
                 pass
 
         # NOTE: we don't use getattr to avoid descriptor protocol,
         #       which will bind the method when we call getattr
 
-        assert isinstance(BaseClass.__dict__["baseMethod"], MethodWrapper)
-        assert isinstance(BaseClass.__dict__["baseEvent"], MethodWrapper)
+        assert isinstance(BaseClass.__dict__["base_method"], MethodWrapper)
+        assert isinstance(BaseClass.__dict__["base_event"], MethodWrapper)
 
-        assert not isinstance(BaseClass.__dict__["_basePrivateMethod"], MethodWrapper)
+        assert not isinstance(BaseClass.__dict__["_base_private_method"], MethodWrapper)
 
-        assert BaseClass.__dict__[CONFIG_ATTRIBUTE_NAME]["baseConfig"] is True
+        assert BaseClass.__dict__[CONFIG_ATTRIBUTE_NAME]["base_config"] is True
 
         # 2. single inheritance
         class SingleClass(BaseClass):
 
-            __config__ = {"singleConfig": True}
+            __config__ = {"single_config": True}
 
             @event
-            def singleEvent(self):
+            def single_event(self):
                 pass
 
-            def singleMethod(self):
+            def single_method(self):
                 pass
 
         assert isinstance(
-            SingleClass.__bases__[0].__dict__["baseMethod"], MethodWrapper
+            SingleClass.__bases__[0].__dict__["base_method"], MethodWrapper
         )
-        assert isinstance(SingleClass.__dict__["singleMethod"], MethodWrapper)
-        assert isinstance(SingleClass.__dict__["singleEvent"], MethodWrapper)
+        assert isinstance(SingleClass.__dict__["single_method"], MethodWrapper)
+        assert isinstance(SingleClass.__dict__["single_event"], MethodWrapper)
 
         assert not isinstance(
-            SingleClass.__bases__[0].__dict__["_basePrivateMethod"], MethodWrapper
+            SingleClass.__bases__[0].__dict__["_base_private_method"], MethodWrapper
         )
 
-        assert SingleClass.__dict__[CONFIG_ATTRIBUTE_NAME]["baseConfig"] is True
-        assert SingleClass.__dict__[CONFIG_ATTRIBUTE_NAME]["singleConfig"] is True
+        assert SingleClass.__dict__[CONFIG_ATTRIBUTE_NAME]["base_config"] is True
+        assert SingleClass.__dict__[CONFIG_ATTRIBUTE_NAME]["single_config"] is True
 
         # 3. multiple inheritance
         class AnotherBase(ChimeraObject):
-            __config__ = {"anotherBaseConfig": True}
+            __config__ = {"another_base_config": True}
 
-            def anotherBaseMethod(self):
+            def another_base_method(self):
                 pass
 
         class NonChimeraClass(object):
             __config__ = {}
 
-            def nonChimeraMethod(self):
+            def non_chimera_method(self):
                 pass
 
         class MultipleClass(SingleClass, AnotherBase, NonChimeraClass):
-            __config__ = {"multipleConfig": True, "baseConfig": "overriden"}
+            __config__ = {"multiple_config": True, "base_config": "overridden"}
 
-            def multipleMethod(self):
+            def multiple_method(self):
                 pass
 
-        assert isinstance(MultipleClass.__dict__["multipleMethod"], MethodWrapper)
+        assert isinstance(MultipleClass.__dict__["multiple_method"], MethodWrapper)
         assert isinstance(
-            MultipleClass.__bases__[0].__dict__["singleMethod"], MethodWrapper
+            MultipleClass.__bases__[0].__dict__["single_method"], MethodWrapper
         )
         assert isinstance(
-            MultipleClass.__bases__[1].__dict__["anotherBaseMethod"], MethodWrapper
+            MultipleClass.__bases__[1].__dict__["another_base_method"], MethodWrapper
         )
 
         assert not isinstance(
-            MultipleClass.__bases__[2].__dict__["nonChimeraMethod"], MethodWrapper
+            MultipleClass.__bases__[2].__dict__["non_chimera_method"], MethodWrapper
         )
 
         assert (
-            MultipleClass.__dict__[CONFIG_ATTRIBUTE_NAME]["baseConfig"] == "overriden"
+            MultipleClass.__dict__[CONFIG_ATTRIBUTE_NAME]["base_config"] == "overridden"
         )
-        assert MultipleClass.__dict__[CONFIG_ATTRIBUTE_NAME]["singleConfig"] is True
+        assert MultipleClass.__dict__[CONFIG_ATTRIBUTE_NAME]["single_config"] is True
         assert (
-            MultipleClass.__dict__[CONFIG_ATTRIBUTE_NAME]["anotherBaseConfig"] is True
+            MultipleClass.__dict__[CONFIG_ATTRIBUTE_NAME]["another_base_config"] is True
         )
-        assert MultipleClass.__dict__[CONFIG_ATTRIBUTE_NAME]["multipleConfig"] is True
+        assert MultipleClass.__dict__[CONFIG_ATTRIBUTE_NAME]["multiple_config"] is True
 
     def test_method_wrapper(self):
 
         class Test(ChimeraObject):
-            def doFoo(self, a, b, c=None):
+            def do_foo(self, a, b, c=None):
                 assert isinstance(self, Test)
 
                 return True
 
         t = Test()
 
-        assert t.doFoo(1, 2, 3) is True
+        assert t.do_foo(1, 2, 3) is True
 
     def test_config(self):
 
@@ -169,13 +169,13 @@ class TestChimeraObject(object):
                 """
 
                 self.counter += 1
-                return self.counter < self.getHz()
+                return self.counter < self.get_hz()
 
         m = MainTest()
-        m.setHz(10)
+        m.set_hz(10)
 
         assert m.__main__() is True
-        assert m.counter == m.getHz()
+        assert m.counter == m.get_hz()
 
     def test_location(self):
 
@@ -184,10 +184,10 @@ class TestChimeraObject(object):
 
         f = Foo()
 
-        assert f.__setlocation__("/Foo/bar") is True
+        assert f.__set_location__("/Foo/bar") is True
         with pytest.raises(InvalidLocationException):
-            f.__setlocation__("Siberian Lakes")
-        assert f.getLocation() == "/Foo/bar"
+            f.__set_location__("Siberian Lakes")
+        assert f.get_location() == "/Foo/bar"
 
     def test_state(self):
 
@@ -196,26 +196,26 @@ class TestChimeraObject(object):
 
         f = Foo()
 
-        assert f.getState() == State.STOPPED, "Initial object state MUST be STOPPED"
+        assert f.get_state() == State.STOPPED, "Initial object state MUST be STOPPED"
 
         # setstate returns oldstate
-        assert f.__setstate__(State.RUNNING) == State.STOPPED
-        assert f.getState() == State.RUNNING
+        assert f.__set_state__(State.RUNNING) == State.STOPPED
+        assert f.get_state() == State.RUNNING
 
     def test_methods(self):
 
         class BaseClass(ChimeraObject):
 
-            __config__ = {"baseConfig": True}
+            __config__ = {"base_config": True}
 
             @event
-            def baseEvent(self):
+            def base_event(self):
                 pass
 
-            def baseMethod(self):
+            def base_method(self):
                 pass
 
-            def _basePrivateMethod(self):
+            def _base_private_method(self):
                 pass
 
         class Minimo(BaseClass):
@@ -232,47 +232,47 @@ class TestChimeraObject(object):
             def __stop__(self):
                 return True
 
-            def doMethod(self):
+            def do_method(self):
                 return self.answer
 
-            # def doEvent (self):
-            #    self.eventDone("Event works!")
+            # def do_event(self):
+            #    self.event_done("Event works!")
 
-            def doRaise(self):
+            def do_raise(self):
                 raise Exception(str(self.answer))
 
             @staticmethod
-            def doStatic():
+            def do_static():
                 return 42
 
             @classmethod
-            def doClass(cls):
+            def do_class(cls):
                 return cls.CONST
 
         m = Minimo()
 
         # normal bounded methods
-        assert m.doMethod() == 42
+        assert m.do_method() == 42
 
         # unbounded methods (our wrapper is a real duck ;)
-        assert Minimo.doMethod(m) == 42
+        assert Minimo.do_method(m) == 42
 
         # unbound must pass instance of the class as first parameter
         with pytest.raises(TypeError):
-            Minimo.doMethod()
+            Minimo.do_method()
 
         # static methods
         # FIXME: fix test
-        # assert m.doStatic() == 42
-        # assert Minimo.doStatic() == 42
+        # assert m.do_static() == 42
+        # assert Minimo.do_static() == 42
 
         # class methods
-        assert m.doClass() == 42
-        assert Minimo.doClass() == 42
+        assert m.do_class() == 42
+        assert Minimo.do_class() == 42
 
         # exceptions
         with pytest.raises(Exception):
-            m.doRaise()
+            m.do_raise()
 
         # features
         assert m.features(BaseClass)  # Minimo is a BaseClass subclass

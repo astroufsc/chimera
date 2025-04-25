@@ -11,7 +11,7 @@ def test_proxy_bench():
     )
 
     # telescope.__getitem__("device")
-    # p = telescope.getPositionRaDec()
+    # p = telescope.get_position_ra_dec()
     # # inspect(p)
 
     N = 10000
@@ -19,7 +19,7 @@ def test_proxy_bench():
     t0 = time.time()
 
     for i in range(N):
-        telescope.isParked()
+        telescope.is_parked()
 
     total = time.time() - t0
     us_per_call = (total * 1e6) / N

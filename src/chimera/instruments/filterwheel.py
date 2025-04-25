@@ -13,26 +13,26 @@ class FilterWheelBase(ChimeraObject, FilterWheel):
         ChimeraObject.__init__(self)
 
     @lock
-    def setFilter(self, filter):
+    def set_filter(self, filter):
         raise NotImplementedError()
 
-    def getFilter(self):
+    def get_filter(self):
         raise NotImplementedError()
 
-    def getFilters(self):
+    def get_filters(self):
         return self["filters"].upper().split()
 
-    def _getFilterName(self, index):
+    def _get_filter_name(self, index):
         try:
-            return self.getFilters()[index]
+            return self.get_filters()[index]
         except (ValueError, TypeError):
             raise InvalidFilterPositionException(f"Unknown filter ({str(index)}).")
 
-    def _getFilterPosition(self, name):
-        return self.getFilters().index(name)
+    def _get_filter_position(self, name):
+        return self.get_filters().index(name)
 
-    def getMetadata(self, request):
+    def get_metadata(self, request):
         return [
-            ("FWHEEL", str(self["filter_wheel_model"]), "FilterWheel Model"),
-            ("FILTER", str(self.getFilter()), "Filter used for this observation"),
+            ("FWHEEL", str(self["filter_wheel_model"]), "Filter Wheel Model"),
+            ("FILTER", str(self.get_filter()), "Filter used for this observation"),
         ]

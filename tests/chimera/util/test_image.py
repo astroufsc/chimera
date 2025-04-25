@@ -10,7 +10,7 @@ class TestImage(object):
 
     def test_headers(self):
 
-        img = Image.fromFile(os.path.join(self.base, "teste-sem-wcs.fits"), fix=False)
+        img = Image.from_file(os.path.join(self.base, "teste-sem-wcs.fits"), fix=False)
 
         print()
 
@@ -19,22 +19,22 @@ class TestImage(object):
 
     def test_wcs(self):
 
-        img = Image.fromFile(os.path.join(self.base, "teste-com-wcs.fits"), fix=False)
-        world = img.worldAt(0, 0)
+        img = Image.from_file(os.path.join(self.base, "teste-com-wcs.fits"), fix=False)
+        world = img.world_at(0, 0)
         print("world value at pixel 0,0:", world)
-        print(f"pixel value at world {world}:", img.pixelAt(world))
+        print(f"pixel value at world {world}:", img.pixel_at(world))
         print(
             f"world value at center pix {str(img.center())}:",
-            img.worldAt(img.center()),
+            img.world_at(img.center()),
         )
-        assert world.ra.D is not None
-        assert world.dec.D is not None
+        assert world.ra.deg is not None
+        assert world.dec.deg is not None
 
     def test_extractor(self):
 
         for f in ["teste-com-wcs.fits", "teste-sem-wcs.fits"]:
 
-            img = Image.fromFile(os.path.join(self.base, f), fix=False)
+            img = Image.from_file(os.path.join(self.base, f), fix=False)
 
             stars = img.extract()
 
@@ -56,7 +56,7 @@ class TestImage(object):
         names = []
 
         for i in range(10):
-            name = ImageUtil.makeFilename(
+            name = ImageUtil.make_filename(
                 os.path.join(os.path.curdir, "autogen-$OBJECT.fits"),
                 subs={"OBJECT": "M5"},
             )

@@ -19,25 +19,25 @@ class FocuserBase(ChimeraObject, Focuser):
         self._supports = {}
 
     @lock
-    def moveIn(self, n, axis=FocuserAxis.Z):
+    def move_in(self, n, axis=FocuserAxis.Z):
         raise NotImplementedError()
 
     @lock
-    def moveOut(self, n, axis=FocuserAxis.Z):
+    def move_out(self, n, axis=FocuserAxis.Z):
         raise NotImplementedError()
 
     @lock
-    def moveTo(self, position, axis=FocuserAxis.Z):
+    def move_to(self, position, axis=FocuserAxis.Z):
         raise NotImplementedError()
 
     @lock
-    def getPosition(self, axis=FocuserAxis.Z):
+    def get_position(self, axis=FocuserAxis.Z):
         raise NotImplementedError()
 
-    def getRange(self, axis=FocuserAxis.Z):
+    def get_range(self, axis=FocuserAxis.Z):
         raise NotImplementedError()
 
-    def getTemperature(self):
+    def get_temperature(self):
         raise NotImplementedError()
 
     def supports(self, feature=None):
@@ -47,25 +47,29 @@ class FocuserBase(ChimeraObject, Focuser):
             self.log.info(f"Invalid feature: {str(feature)}")
             return False
 
-    def _checkAxis(self, axis):
+    def _check_axis(self, axis):
         if not self.supports(AxisControllable[axis]):
             raise InvalidFocusPositionException(f"Cannot move {axis} axis.")
 
-    def getMetadata(self, request):
+    def get_metadata(self, request):
         # Check first if there is metadata from an metadata override method.
-        md = self.getMetadataOverride(request)
+        md = self.get_metadata_override(request)
         if md is not None:
             return md
         # If not, just go on with the instrument's default metadata.
         md = [
             ("FOCUSER", str(self["model"]), "Focuser Model"),
-            ("FOCUS", self.getPosition(), "Focuser position used for this observation"),
+            (
+                "FOCUS",
+                self.get_position(),
+                "Focuser position used for this observation",
+            ),
         ]
         try:
             md += [
                 (
                     "FOCUSTEM",
-                    self.getTemperature(),
+                    self.get_temperature(),
                     "Focuser Temperature at Exposure End [deg. C]",
                 )
             ]

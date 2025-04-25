@@ -16,7 +16,7 @@ class SchedulingAlgorithm(Enum):
     CIRCULAR = "CIRCULAR"
 
 
-SchedulingAlgorithms = {
+scheduling_algorithms = {
     SchedulingAlgorithm.SEQUENTIAL: SequentialScheduler(),
     SchedulingAlgorithm.CIRCULAR: CircularScheduler(),
 }
@@ -46,7 +46,7 @@ class Scheduler(ChimeraObject):
 
     def __start__(self):
         self.executor = ProgramExecutor(self)
-        self.scheduler = SchedulingAlgorithms[self["algorithm"]]
+        self.scheduler = scheduling_algorithms[self["algorithm"]]
         self.machine = Machine(self.scheduler, self.executor, self)
 
         self.log.debug("Using {} algorithm".format(self["algorithm"]))
@@ -63,11 +63,11 @@ class Scheduler(ChimeraObject):
         Session().commit()
         return True
 
-    def currentProgram(self):
-        return self.machine.currentProgram
+    def current_program(self):
+        return self.machine.current_program
 
-    def currentAction(self):
-        return self.executor.currentAction
+    def current_action(self):
+        return self.executor.current_action
 
     def start(self):
         if self.machine:
@@ -81,29 +81,29 @@ class Scheduler(ChimeraObject):
         if self.machine:
             self.machine.state(State.SHUTDOWN)
 
-    def restartAllPrograms(self):
+    def restart_all_programs(self):
         if self.machine:
-            self.machine.restartAllPrograms()
+            self.machine.restart_all_programs()
 
     def state(self):
         return self.machine.state()
 
     @event
-    def programBegin(self, program):
+    def program_begin(self, program):
         pass
 
     @event
-    def programComplete(self, program, status, message=None):
+    def program_complete(self, program, status, message=None):
         pass
 
     @event
-    def actionBegin(self, action, message):
+    def action_begin(self, action, message):
         pass
 
     @event
-    def actionComplete(self, action, status, message=None):
+    def action_complete(self, action, status, message=None):
         pass
 
     @event
-    def stateChanged(self, newState, oldState):
+    def state_changed(self, new_state, old_state):
         pass

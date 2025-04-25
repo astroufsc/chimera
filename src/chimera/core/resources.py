@@ -33,7 +33,7 @@ class ResourcesManager:
 
     def add(self, location, instance, loop=None):
 
-        location = self._validLocation(location)
+        location = self._valid_location(location)
 
         if location in self:
             raise InvalidLocationException("Location already on the resource pool.")
@@ -49,7 +49,7 @@ class ResourcesManager:
 
         # get the number of instances of this specific class, counting this one
         # and not including parents (minus 1 to start counting at 0)
-        return len(self.getByClass(location.cls, checkBases=False)) - 1
+        return len(self.get_by_class(location.cls, check_bases=False)) - 1
 
     def remove(self, location):
         entry = self.get(location)
@@ -58,37 +58,37 @@ class ResourcesManager:
 
     def get(self, item):
 
-        location = self._validLocation(item)
+        location = self._valid_location(item)
 
         try:
             index = int(location.name)
-            return self._getByIndex(location, index)
+            return self._get_by_index(location, index)
         except ValueError:
             # not a numbered instance
             pass
 
         return self._get(location)
 
-    def getByClass(self, cls, checkBases=True):
+    def get_by_class(self, cls, check_bases=True):
 
-        toRet = []
+        to_ret = []
 
         for k, v in list(self.items()):
 
-            if not checkBases:
+            if not check_bases:
                 if k.cls == cls:
-                    toRet.append(self._res[k])
+                    to_ret.append(self._res[k])
             else:
                 # return if class or any base matches
                 if cls == k.cls or cls in v.bases:
-                    toRet.append(self._res[k])
+                    to_ret.append(self._res[k])
 
-        toRet.sort(key=lambda entry: entry.created)
-        return toRet
+        to_ret.sort(key=lambda entry: entry.created)
+        return to_ret
 
     def _get(self, item):
-        location = self._validLocation(item)
-        locations = [x.location for x in self.getByClass(location.cls)]
+        location = self._valid_location(item)
+        locations = [x.location for x in self.get_by_class(location.cls)]
 
         if location in locations:
             ret = [x for x in list(self.keys()) if x == location]
@@ -96,9 +96,9 @@ class ResourcesManager:
         else:
             raise ObjectNotFoundException(f"Couldn't find {location}.")
 
-    def _getByIndex(self, item, index):
-        location = self._validLocation(item)
-        instances = self.getByClass(location.cls)
+    def _get_by_index(self, item, index):
+        location = self._valid_location(item)
+        instances = self.get_by_class(location.cls)
         if instances:
             try:
                 return self._res[instances[index].location]
@@ -109,7 +109,7 @@ class ResourcesManager:
         else:
             raise ObjectNotFoundException(f"Couldn't find {location}.")
 
-    def _validLocation(self, item):
+    def _valid_location(self, item):
         ret = item
 
         if not isinstance(item, Location):
@@ -127,7 +127,7 @@ class ResourcesManager:
         # note that our 'in'/'not in' tests are for keys (locations) and
         # not for values
 
-        item = self._validLocation(item)
+        item = self._valid_location(item)
 
         if item in list(self.keys()):
             return True
@@ -135,7 +135,7 @@ class ResourcesManager:
             # is this a numbered instance?
             try:
                 index = int(item.name)
-                return bool(self._getByIndex(item, index))
+                return bool(self._get_by_index(item, index))
             except ValueError:
                 # not a numbered instance
                 return False

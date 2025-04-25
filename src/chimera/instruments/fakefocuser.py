@@ -33,59 +33,59 @@ class FakeFocuser(FocuserBase):
         }
 
     def __start__(self):
-        self._position = int(self.getRange()[1] / 2.0)
+        self._position = int(self.get_range()[1] / 2.0)
         self["model"] = "Fake Focus v.1"
 
     @lock
-    def moveIn(self, n, axis=FocuserAxis.Z):
-        self._checkAxis(axis)
-        target = self.getPosition() - n
+    def move_in(self, n, axis=FocuserAxis.Z):
+        self._check_axis(axis)
+        target = self.get_position() - n
 
-        if self._inRange(target):
-            self._setPosition(target)
+        if self._in_range(target):
+            self._set_position(target)
         else:
             raise InvalidFocusPositionException(
                 f"{target} is outside focuser boundaries."
             )
 
     @lock
-    def moveOut(self, n, axis=FocuserAxis.Z):
-        self._checkAxis(axis)
-        target = self.getPosition() + n
+    def move_out(self, n, axis=FocuserAxis.Z):
+        self._check_axis(axis)
+        target = self.get_position() + n
 
-        if self._inRange(target):
-            self._setPosition(target)
+        if self._in_range(target):
+            self._set_position(target)
         else:
             raise InvalidFocusPositionException(
                 f"{target} is outside focuser boundaries."
             )
 
     @lock
-    def moveTo(self, position, axis=FocuserAxis.Z):
-        self._checkAxis(axis)
-        if self._inRange(position):
-            self._setPosition(position)
+    def move_to(self, position, axis=FocuserAxis.Z):
+        self._check_axis(axis)
+        if self._in_range(position):
+            self._set_position(position)
         else:
             raise InvalidFocusPositionException(
                 f"{int(position)} is outside focuser boundaries."
             )
 
     @lock
-    def getPosition(self, axis=FocuserAxis.Z):
-        self._checkAxis(axis)
+    def get_position(self, axis=FocuserAxis.Z):
+        self._check_axis(axis)
         return self._position
 
-    def getRange(self, axis=FocuserAxis.Z):
-        self._checkAxis(axis)
+    def get_range(self, axis=FocuserAxis.Z):
+        self._check_axis(axis)
         return (0, 7000)
 
-    def getTemperature(self):
+    def get_temperature(self):
         return random.randrange(10, 30)
 
-    def _setPosition(self, n):
+    def _set_position(self, n):
         self.log.info(f"Changing focuser to {n}")
         self._position = n
 
-    def _inRange(self, n):
-        min_pos, max_pos = self.getRange()
+    def _in_range(self, n):
+        min_pos, max_pos = self.get_range()
         return min_pos <= n <= max_pos

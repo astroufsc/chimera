@@ -35,7 +35,7 @@ class LampSwitch(Switch):
 
 
 class LampDimmer(Lamp):
-    def setIntensity(self, intensity):
+    def set_intensity(self, intensity):
         """
         Sets the intensity of the calibration lamp.
 
@@ -44,20 +44,20 @@ class LampDimmer(Lamp):
         """
         pass
 
-    def getIntensity(self):
+    def get_intensity(self):
         """
         Return the current intensity level of the calibration lamp.
 
         Note that a intensity of 0 does not mean that the lamp is switched off and a intensity >0 does not mean
         that the lamp in switched on. This will be implementation dependent. The best way to check if a lamp is
-        on or off is with the "isSwitchedOn" function.
+        on or off is with the "is_switched_on" function.
 
         @return: Current intensity
         @rtype: float
         """
         pass
 
-    def getRange(self):
+    def get_range(self):
         """
         Gets the dimmer total range
         @rtype: tuple

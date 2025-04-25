@@ -12,7 +12,7 @@ except ImportError:
     have_ds9 = False
 
 
-def xpaaccess(template="ds9"):
+def xpa_access(template="ds9"):
 
     try:
         p = subprocess.Popen(
@@ -51,7 +51,7 @@ class DS9(object):
             )
 
         id = "ds9"
-        ids = xpaaccess()
+        ids = xpa_access()
         if ids:
             id = ids[-1]
 
@@ -67,21 +67,21 @@ class DS9(object):
     def open(self):
         self.ds9.doOpen()
 
-    def isOpen(self):
+    def is_open(self):
         return self.ds9.isOpen()
 
     def quit(self):
-        if self.isOpen():
+        if self.is_open():
             self.set("exit")
 
-    def displayImage(self, image, frame=1):
+    def display_image(self, image, frame=1):
 
         if os.path.exists(image.filename):
-            self.displayFile(filename=image.filename, frame=frame)
+            self.display_file(filename=image.filename, frame=frame)
         else:
-            self.displayFile(url=image.http(), frame=frame)
+            self.display_file(url=image.http(), frame=frame)
 
-    def displayFile(self, filename=None, url=None, frame=1):
+    def display_file(self, filename=None, url=None, frame=1):
         """
         Display a file either from a local file or from a remote URL.
 
@@ -108,7 +108,7 @@ class DS9(object):
         if url:
             self.set(f"file url '{url}'")
 
-    def displayArray(self, array, frame=1):
+    def display_array(self, array, frame=1):
         pass
 
     def set(self, cmd, data=None):

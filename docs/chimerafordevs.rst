@@ -57,8 +57,8 @@ a specific base class, :class:`ChimeraObject`, the simplest
 
    manager = Manager()
 
-   example = manager.getProxy("localhost:8000/Example1/example")
-   example.doSomething("client argument")
+   example = manager.get_proxy("localhost:8000/Example1/example")
+   example.do_something("client argument")
 
 
 this object has no methods, configuration or events, so it's the simplest
@@ -99,9 +99,9 @@ this from Chimera.
          ChimeraObject.__init__(self)
 
       def __start__(self):
-         self.doSomething("test argument")
+         self.do_something("test argument")
 
-      def doSomething(self, arg):
+      def do_something(self, arg):
          self.log.warning("Hi, I'm doing something.")
          self.log.warning(f"My arg={arg}")
          self.log.warning("My param1={}".format(self["param1"]))
@@ -208,8 +208,8 @@ see how to use it in a client.
 
    manager = Manager()
 
-   example = manager.getProxy("localhost:8000/Example1/example")
-   example.doSomething("client argument")
+   example = manager.get_proxy("localhost:8000/Example1/example")
+   example.do_something("client argument")
 
 Save it to :file:`client.py`. First run, :file:`server.py` as
 explained above and then run :file:`client.py`.
@@ -228,14 +228,14 @@ You will see something like this::
    [date] WARNING chimera.example1 (example1) example1.py:17 My param1=a string parameter
 
 The first three lines are from :meth:`__start__` calling
-:meth:`doSomething`, and later three from our client calling it again.
+:meth:`do_something`, and later three from our client calling it again.
 
 In :file:`client.py`, you see we create a normal :class:`Manager`,
 just like in server.py, but we only use this :class:`Manager` to get
 access to :class:`Example1` running on other :class:`Manager`
 (localhost:8000).
 
-:meth:`Manager.getProxy` returns a :class:`Proxy` object for the
+:meth:`Manager.get_proxy` returns a :class:`Proxy` object for the
 specifies Location. For all purposes this :class:`Proxy` class acts
 like the original object, so you can call any method just like you
 would with the original object.

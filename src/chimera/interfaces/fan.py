@@ -40,12 +40,12 @@ class FanState(SwitchState):
     """
 
 
-class FanControllabeSpeed(Fan):
+class FanControllableSpeed(Fan):
     """
     Fans with controllable speeds.
     """
 
-    def getRotation(self):
+    def get_rotation(self):
         """
         Get fan current rotation speed.
 
@@ -53,7 +53,7 @@ class FanControllabeSpeed(Fan):
         @rtype: float
         """
 
-    def setRotation(self, freq):
+    def set_rotation(self, freq):
         """
         Set fan rotation speed.
 
@@ -62,7 +62,7 @@ class FanControllabeSpeed(Fan):
 
         """
 
-    def getRange(self):
+    def get_range(self):
         """
         Gets the fan valid speed range.
 
@@ -71,12 +71,12 @@ class FanControllabeSpeed(Fan):
         """
 
 
-class FanControllabeDirection(Fan):
+class FanControllableDirection(Fan):
     """
     Fans with controllable direction.
     """
 
-    def getDirection(self):
+    def get_direction(self):
         """
         Get fan rotation direction.
 
@@ -85,7 +85,7 @@ class FanControllabeDirection(Fan):
 
         """
 
-    def setDirection(self, direction):
+    def set_direction(self, direction):
         """
         Set fan rotation direction.
 

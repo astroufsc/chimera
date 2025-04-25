@@ -30,7 +30,7 @@ class FakeWeatherStation(
     def __init__(self):
         WeatherBase.__init__(self)
 
-    def _hourinradians(self, hour):
+    def _hour_in_radians(self, hour):
         """
         For testing purposes, the function converts a given hour in radians.
         """
@@ -47,7 +47,7 @@ class FakeWeatherStation(
         if unit_out not in self.__accepted_humidity_units__:
             raise OptionConversionException(f"Invalid humidity unit {unit_out}.")
 
-        humidity = 40 * math.cos(self._hourinradians(current_time.hour)) + 60.0
+        humidity = 40 * math.cos(self._hour_in_radians(current_time.hour)) + 60.0
 
         humidity = self._convert_units(humidity, units.pct, unit_out)
 
@@ -66,7 +66,8 @@ class FakeWeatherStation(
             raise OptionConversionException(f"Invalid temperature unit {unit_out}.")
 
         temperature = (
-            25 * math.sin(self._hourinradians(current_time.hour) - math.pi / 2.0) + 15.0
+            25 * math.sin(self._hour_in_radians(current_time.hour) - math.pi / 2.0)
+            + 15.0
         )
 
         temperature = self._convert_units(
@@ -107,7 +108,7 @@ class FakeWeatherStation(
 
         hour = datetime.datetime.utcnow().hour
 
-        reference_direction = 180 * math.sin(self._hourinradians(hour)) + 180
+        reference_direction = 180 * math.sin(self._hour_in_radians(hour)) + 180
 
         direction = self._convert_units(reference_direction, units.degree, unit_out)
 
@@ -160,7 +161,7 @@ class FakeWeatherStation(
 
         return WSValue(datetime.datetime.utcnow(), 0, unit_out)
 
-    def isRaining(self):
+    def is_raining(self):
         """
         Returns True for rain 20% of the time
         """
@@ -211,4 +212,4 @@ if __name__ == "__main__":
     rain = fws.rain_rate(unit_out=units.millimeter / units.hour)
     print((f"Rain: {rain.value:.2f} {rain.unit} @ {rain.time}."))
 
-    print((f"Metadata: {fws.getMetadata(None)}"))
+    print((f"Metadata: {fws.get_metadata(None)}"))

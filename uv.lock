@@ -1,5 +1,4 @@
 version = 1
-revision = 1
 requires-python = ">=3.12"
 
 [[package]]
@@ -162,11 +161,13 @@ dependencies = [
     { name = "redislite" },
     { name = "rich" },
     { name = "sqlalchemy" },
+    { name = "suds" },
 ]
 
 [package.dev-dependencies]
 dev = [
     { name = "black" },
+    { name = "chimera" },
     { name = "pre-commit" },
     { name = "pytest" },
     { name = "pytest-cov" },
@@ -188,11 +189,13 @@ requires-dist = [
     { name = "redislite", specifier = ">=6.2.912183" },
     { name = "rich", specifier = ">=13.9.4" },
     { name = "sqlalchemy", specifier = "==1.4" },
+    { name = "suds", specifier = ">=1.2.0" },
 ]
 
 [package.metadata.requires-dev]
 dev = [
     { name = "black", specifier = ">=25.1.0" },
+    { name = "chimera", editable = "." },
     { name = "pre-commit", specifier = ">=4.1.0" },
     { name = "pytest", specifier = ">=8.3.3" },
     { name = "pytest-cov", specifier = ">=6.0.0" },
@@ -968,6 +971,15 @@ dependencies = [
     { name = "greenlet" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/d4/73/d59247fa14556efa5981879252cef3d8e1bd1db9bb4895e34957b9f7d8e8/SQLAlchemy-1.4.0.tar.gz", hash = "sha256:9cfef2ad30c5ee1d494d98f3c55a9ac29ec6d294b70849c541d139e4fe1a74e6", size = 7440276 }
+
+[[package]]
+name = "suds"
+version = "1.2.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/3e/a1/c3783be8de318678c822d6edf9855729c528ba06ac9004398c225ecf2dbd/suds-1.2.0.tar.gz", hash = "sha256:83b162c3d2355374e11d8b9acf15eeaa158b416b4625821844f9f628d679deaf", size = 271331 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/c4/43/658bd1825a5f58c1182269eaa6165084d8d95e031cd7e34a2a1bcf773579/suds-1.2.0-py3-none-any.whl", hash = "sha256:2cf8ed43ed8a0df350027c741f5295d6be8443d4e820cb36f2c17b033e331d5b", size = 145151 },
+]
 
 [[package]]
 name = "typing-extensions"

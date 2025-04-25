@@ -22,7 +22,7 @@ class Switch(Interface):
         "switch_timeout": None,  # Maximum number of seconds to wait for state change
     }
 
-    def switchOn(self):
+    def switch_on(self):
         """
         Switch on.
 
@@ -30,7 +30,7 @@ class Switch(Interface):
         @rtype: bool
         """
 
-    def switchOff(self):
+    def switch_off(self):
         """
         Switch off.
 
@@ -38,7 +38,7 @@ class Switch(Interface):
         @rtype: bool
         """
 
-    def isSwitchedOn(self):
+    def is_switched_on(self):
         """
         Get current state of switch
 
@@ -47,14 +47,14 @@ class Switch(Interface):
         """
 
     @event
-    def switchedOn(self):
+    def switched_on(self):
         """
         Event triggered when switched ON
 
         """
 
     @event
-    def switchedOff(self):
+    def switched_off(self):
         """
         Event triggered when switched OFF
 

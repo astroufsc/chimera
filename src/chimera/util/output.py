@@ -7,10 +7,10 @@ import os
 import sys
 import re
 
-havecolor = 1
-dotitles = 1
+have_color = 1
+do_titles = 1
 
-spinpos = 0
+spin_pos = 0
 spinner = "/-\\|/-\\|/-\\|/-\\|\\-/|\\-/|\\-/|\\-/|"
 
 esc_seq = "\x1b["
@@ -58,10 +58,10 @@ g_attr["bg_default"] = 49
 
 # make_seq("blue", "black", "normal")
 def color(fg, bg="default", attr=["normal"]):
-    mystr = f"{esc_seq}{g_attr[fg]:02d}"
+    my_str = f"{esc_seq}{g_attr[fg]:02d}"
     for x in [bg] + attr:
-        mystr += f";{g_attr[x]:02d}"
-    return f"{mystr}m"
+        my_str += f";{g_attr[x]:02d}"
+    return f"{my_str}m"
 
 
 codes = {}
@@ -93,14 +93,14 @@ codes["red"] = esc_seq + "31;01m"
 codes["darkred"] = esc_seq + "31m"
 
 
-def nc_len(mystr):
-    tmp = re.sub(esc_seq + "^m]+m", "", mystr)
+def nc_len(my_str):
+    tmp = re.sub(esc_seq + "^m]+m", "", my_str)
     return len(tmp)
 
 
-def xtermTitle(mystr):
-    if havecolor and dotitles and "TERM" in os.environ and sys.stderr.isatty():
-        myt = os.environ["TERM"]
+def xterm_title(my_str):
+    if have_color and do_titles and "TERM" in os.environ and sys.stderr.isatty():
+        my_t = os.environ["TERM"]
         legal_terms = [
             "xterm",
             "Eterm",
@@ -111,28 +111,28 @@ def xtermTitle(mystr):
             "rxvt-unicode",
         ]
         for term in legal_terms:
-            if myt.startswith(term):
-                sys.stderr.write("\x1b]2;" + str(mystr) + "\x07")
+            if my_t.startswith(term):
+                sys.stderr.write("\x1b]2;" + str(my_str) + "\x07")
                 sys.stderr.flush()
                 break
 
 
-def xtermTitleReset():
-    if havecolor and dotitles and "TERM" in os.environ:
-        xtermTitle(os.environ["TERM"])
+def xterm_title_reset():
+    if have_color and do_titles and "TERM" in os.environ:
+        xterm_title(os.environ["TERM"])
 
 
-def notitles():
+def no_titles():
     "turn off title setting"
 
 
-def nocolor():
+def no_color():
     "turn off colorization"
     for x in list(codes.keys()):
         codes[x] = ""
 
 
-def resetColor():
+def reset_color():
     return codes["reset"]
 
 
@@ -160,7 +160,7 @@ def turquoise(text):
     return codes["turquoise"] + text + codes["reset"]
 
 
-def darkteal(text):
+def dark_teal(text):
     return turquoise(text)
 
 
@@ -180,7 +180,7 @@ def blue(text):
     return codes["blue"] + text + codes["reset"]
 
 
-def darkblue(text):
+def dark_blue(text):
     return codes["darkblue"] + text + codes["reset"]
 
 
@@ -188,7 +188,7 @@ def green(text):
     return codes["green"] + text + codes["reset"]
 
 
-def darkgreen(text):
+def dark_green(text):
     return codes["darkgreen"] + text + codes["reset"]
 
 
@@ -200,7 +200,7 @@ def brown(text):
     return codes["brown"] + text + codes["reset"]
 
 
-def darkyellow(text):
+def dark_yellow(text):
     return brown(text)
 
 
@@ -208,15 +208,15 @@ def red(text):
     return codes["red"] + text + codes["reset"]
 
 
-def darkred(text):
+def dark_red(text):
     return codes["darkred"] + text + codes["reset"]
 
 
 def update_basic_spinner():
-    global spinner, spinpos
-    spinpos = (spinpos + 1) % 500
-    if (spinpos % 100) == 0:
-        if spinpos == 0:
+    global spinner, spin_pos
+    spin_pos = (spin_pos + 1) % 500
+    if (spin_pos % 100) == 0:
+        if spin_pos == 0:
             sys.stdout.write(". ")
         else:
             sys.stdout.write(".")
@@ -224,19 +224,21 @@ def update_basic_spinner():
 
 
 def update_scroll_spinner():
-    global spinner, spinpos
-    if spinpos >= len(spinner):
+    global spinner, spin_pos
+    if spin_pos >= len(spinner):
         sys.stdout.write(
-            darkgreen(" \b\b\b" + spinner[len(spinner) - 1 - (spinpos % len(spinner))])
+            dark_green(
+                " \b\b\b" + spinner[len(spinner) - 1 - (spin_pos % len(spinner))]
+            )
         )
     else:
-        sys.stdout.write(green("\b " + spinner[spinpos]))
+        sys.stdout.write(green("\b " + spinner[spin_pos]))
     sys.stdout.flush()
-    spinpos = (spinpos + 1) % (2 * len(spinner))
+    spin_pos = (spin_pos + 1) % (2 * len(spinner))
 
 
 def update_spinner():
-    global spinner, spinpos
-    spinpos = (spinpos + 1) % len(spinner)
-    sys.stdout.write("\b\b " + spinner[spinpos])
+    global spinner, spin_pos
+    spin_pos = (spin_pos + 1) % len(spinner)
+    sys.stdout.write("\b\b " + spinner[spin_pos])
     sys.stdout.flush()

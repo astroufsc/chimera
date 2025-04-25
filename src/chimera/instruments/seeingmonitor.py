@@ -37,7 +37,7 @@ class SeeingBase(ChimeraObject, SeeingMonitor):
     def airmass(self, unit_out=units.dimensionless_unscaled):
         raise NotImplementedError()
 
-    def getMetadata(self, request):
+    def get_metadata(self, request):
         # TODO: Check if metadata parameter is implemented or not.
         return [
             ("SEEMOD", str(self["model"]), "Seeing monitor Model"),

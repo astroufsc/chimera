@@ -36,13 +36,13 @@ class Autoguider(Interface):
     }  # Number of tries to acquire the guide star offset before being lost.
 
     @event
-    def offsetComplete(self, offset):
+    def offset_complete(self, offset):
         """Raised after every offset is complete."""
 
     @event
-    def guideStart(self, position):
+    def guide_start(self, position):
         """Raised when a guider sequence starts."""
 
     @event
-    def guideStop(self, state, msg=None):
+    def guide_stop(self, state, msg=None):
         """Raised when a guider sequence stops."""

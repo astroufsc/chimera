@@ -17,11 +17,11 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relation, backref
 
 engine = create_engine(f"sqlite:///{DEFAULT_PROGRAM_DATABASE}", echo=False)
-metaData = MetaData()
-metaData.bind = engine
+metadata = MetaData()
+metadata.bind = engine
 
 Session = sessionmaker(bind=engine)
-Base = declarative_base(metadata=metaData)
+Base = declarative_base(metadata=metadata)
 
 
 class Targets(Base):
@@ -30,18 +30,18 @@ class Targets(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String, default="Program")
     type = Column(String, default=None)
-    lastObservation = Column(DateTime, default=None)
+    last_observation = Column(DateTime, default=None)
     observed = Column(Boolean, default=False)
     scheduled = Column(Boolean, default=False)
-    targetRa = Column(Float, default=0.0)
-    targetDec = Column(Float, default=0.0)
-    targetEpoch = Column(Float, default=2000.0)
-    targetMag = Column(Float, default=0.0)
-    magFilter = Column(String, default=None)
+    target_ra = Column(Float, default=0.0)
+    target_dec = Column(Float, default=0.0)
+    target_epoch = Column(Float, default=2000.0)
+    target_mag = Column(Float, default=0.0)
+    mag_filter = Column(String, default=None)
 
     def __str__(self):
         if self.observed:
-            return f"#{self.id} {self.name} [type: {self.type}] #LastObserved@: {self.lastObservation}"
+            return f"#{self.id} {self.name} [type: {self.type}] #LastObserved@: {self.last_observation}"
         else:
             return f"#{self.id} {self.name} [type: {self.type}] #NeverObserved"
 
@@ -56,10 +56,10 @@ class Program(Base):
 
     priority = Column(Integer, default=0)
 
-    createdAt = Column(DateTime, default=dt.datetime.today())
+    created_at = Column(DateTime, default=dt.datetime.today())
     finished = Column(Boolean, default=False)
-    startAt = Column(Float, default=0.0)
-    validFor = Column(Float, default=-1)
+    start_at = Column(Float, default=0.0)
+    valid_for = Column(Float, default=-1)
 
     actions = relation(
         "Action",
@@ -131,51 +131,51 @@ class Point(Action):
     __mapper_args__ = {"polymorphic_identity": "Point"}
 
     id = Column(Integer, ForeignKey("action.id"), primary_key=True)
-    targetRaDec = Column(PickleType, default=None)
-    targetAltAz = Column(PickleType, default=None)
-    domeAz = Column(
+    target_ra_dec = Column(PickleType, default=None)
+    target_alt_az = Column(PickleType, default=None)
+    dome_az = Column(
         PickleType, default=None
     )  # dome azimuth (can be any azimuth when taking flats)
-    domeTracking = Column(
+    dome_tracking = Column(
         PickleType, default=None
     )  # set dome tracking ON/OFF. Default: leave as is.
-    offsetNS = Column(PickleType, default=None)  # offset North (>0)/South (<0)
-    offsetEW = Column(PickleType, default=None)  # offset West (>0)/East (<0)
-    targetName = Column(String, default=None)
+    offset_ns = Column(PickleType, default=None)  # offset North (>0)/South (<0)
+    offset_ew = Column(PickleType, default=None)  # offset West (>0)/East (<0)
+    target_name = Column(String, default=None)
 
     def __str__(self):
-        offsetNS_str = (
+        offset_ns_str = (
             ""
-            if self.offsetNS is None
+            if self.offset_ns is None
             else (
-                f" north {self.offsetNS}"
-                if self.offsetNS > 0
-                else f" south {self.offsetNS}"
+                f" north {self.offset_ns}"
+                if self.offset_ns > 0
+                else f" south {self.offset_ns}"
             )
         )
-        offsetEW_str = (
+        offset_ew_str = (
             ""
-            if self.offsetEW is None
+            if self.offset_ew is None
             else (
-                f" west {self.offsetEW}"
-                if self.offsetEW > 0
-                else f" east {self.offsetNS}"
+                f" west {self.offset_ew}"
+                if self.offset_ew > 0
+                else f" east {self.offset_ns}"
             )
         )
 
         offset = (
             ""
-            if self.offsetNS is None and self.offsetEW is None
-            else f"offset: {offsetNS_str}{offsetEW_str}"
+            if self.offset_ns is None and self.offset_ew is None
+            else f"offset: {offset_ns_str}{offset_ew_str}"
         )
 
-        if self.targetRaDec is not None:
-            return f"point: (ra,dec) {self.targetRaDec}{offset}"
-        elif self.targetAltAz is not None:
-            return f"point: (alt,az) {self.targetAltAz}{offset}"
-        elif self.targetName is not None:
-            return f"point: (object) {self.targetName}{offset}"
-        elif self.offsetNS is not None or self.offsetEW is not None:
+        if self.target_ra_dec is not None:
+            return f"point: (ra,dec) {self.target_ra_dec}{offset}"
+        elif self.target_alt_az is not None:
+            return f"point: (alt,az) {self.target_alt_az}{offset}"
+        elif self.target_name is not None:
+            return f"point: (object) {self.target_name}{offset}"
+        elif self.offset_ns is not None or self.offset_ew is not None:
             return offset
         else:
             return "No target to point to."
@@ -198,19 +198,17 @@ class Expose(Action):
 
     wait_dome = Column(Boolean, default=True)
 
-    imageType = Column(String, default="")
+    image_type = Column(String, default="")
     filename = Column(String, default="$DATE-$TIME")
-    objectName = Column(String, default="")
+    object_name = Column(String, default="")
 
     compress_format = Column(String, default="NO")
 
     def __str__(self):
-        return (
-            f"expose: exptime={self.exptime} frames={self.frames} type={self.imageType}"
-        )
+        return f"expose: exptime={self.exptime} frames={self.frames} type={self.image_type}"
 
 
 ###
 
-# metaData.drop_all(engine)
-metaData.create_all(engine)
+# metadata.drop_all(engine)
+metadata.create_all(engine)

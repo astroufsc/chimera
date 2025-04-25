@@ -12,7 +12,7 @@ from chimera.core.manager import Manager
 from chimera.core.systemconfig import SystemConfig
 from chimera.core.version import _chimera_version_
 from chimera.core.exceptions import (
-    printException,
+    print_exception,
     InvalidLocationException,
     ChimeraException,
 )
@@ -37,26 +37,26 @@ class SiteController(object):
 
         self.wait = wait
 
-        self.options, self.args = self.parseArgs(args)
+        self.options, self.args = self.parse_args(args)
 
         if self.options.verbose == 1:
-            chimera.core.log.setConsoleLevel(logging.INFO)
-            # log.setConsoleLevel(logging.INFO)
+            chimera.core.log.set_console_level(logging.INFO)
+            # log.set_console_level(logging.INFO)
 
         if self.options.verbose > 1:
-            chimera.core.log.setConsoleLevel(logging.DEBUG)
-            # log.setConsoleLevel(logging.DEBUG)
+            chimera.core.log.set_console_level(logging.DEBUG)
+            # log.set_console_level(logging.DEBUG)
 
         self.manager = None
 
         self.paths = {"instruments": [], "controllers": []}
 
         # add system and plugins paths
-        Path = ChimeraPath()
-        self.paths["instruments"].extend(Path.instruments)
-        self.paths["controllers"].extend(Path.controllers)
+        path = ChimeraPath()
+        self.paths["instruments"].extend(path.instruments)
+        self.paths["controllers"].extend(path.controllers)
 
-    def parseArgs(self, args):
+    def parse_args(self, args):
 
         def check_location(option, opt_str, value, parser):
             try:
@@ -212,7 +212,7 @@ class SiteController(object):
 
         # system config
         try:
-            self.config = SystemConfig.fromFile(self.options.config_file)
+            self.config = SystemConfig.from_file(self.options.config_file)
         except (InvalidLocationException, IOError) as e:
             log.exception(e)
             log.error(f"There was a problem reading your configuration file. ({e})")
@@ -236,9 +236,9 @@ class SiteController(object):
 
             log.info(
                 "Chimera: running on "
-                + self.manager.getHostname()
+                + self.manager.get_hostname()
                 + ":"
-                + str(self.manager.getPort())
+                + str(self.manager.get_port())
             )
             log.info(
                 f"Chimera: reading configuration from {os.path.realpath(self.options.config_file)}"
@@ -248,7 +248,7 @@ class SiteController(object):
         if not self.options.dry:
 
             for site in self.config.sites:
-                self.manager.addClass(Site, site.name, site.config, True)
+                self.manager.add_class(Site, site.name, site.config, True)
 
         # search paths
         log.info("Setting objects include path from command line parameters...")
@@ -283,9 +283,9 @@ class SiteController(object):
 
     def _add(self, location, path, start):
         try:
-            self.manager.addLocation(location, path, start)
+            self.manager.add_location(location, path, start)
         except Exception as e:
-            printException(e)
+            print_exception(e)
 
     def shutdown(self):
         log.info("Shutting down system.")

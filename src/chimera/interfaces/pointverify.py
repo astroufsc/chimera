@@ -40,13 +40,13 @@ class PointVerify(Interface):
         "ra_tolerance": 0.0167,  # Maximum right ascension error tolerance (degrees).
     }
 
-    def checkPointing(self, n_fields):
+    def check_pointing(self, n_fields):
         """
         Check pointing choosing field and using default exposure time
         """
 
     @event
-    def pointComplete(self, position, star, frame):
+    def point_complete(self, position, star, frame):
         """Raised after every step in the focus sequence with
         information about the last step.
         """

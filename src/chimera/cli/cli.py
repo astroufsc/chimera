@@ -9,7 +9,7 @@ from chimera.core.manager import Manager
 from chimera.core.proxy import Proxy
 from chimera.core.path import ChimeraPath
 
-from chimera.core.exceptions import ObjectNotFoundException, printException
+from chimera.core.exceptions import ObjectNotFoundException, print_exception
 
 import sys
 import optparse
@@ -41,10 +41,10 @@ class Option(object):
 
     choices = None
 
-    actionGroup = None
+    action_group = None
 
     help = None
-    helpGroup = None
+    help_group = None
     metavar = None
 
     target = None
@@ -132,7 +132,7 @@ def action(*args, **kwargs):
 
     # @action(long='to', type='int')
     # def move_to (self, options):
-    #     inst.moveTo(options.to)
+    #     inst.move_to(options.to)
 
     See L{Action} for information about valid keywork arguments.
     """
@@ -175,7 +175,7 @@ def parameter(*args, **kwargs):
 class CLICheckers:
 
     @staticmethod
-    def check_includepath(option, opt_str, value, parser):
+    def check_include_path(option, opt_str, value, parser):
         if not value or not os.path.isdir(os.path.abspath(value)):
             raise optparse.OptionValueError(f"Couldn't find {value} include path.")
         getattr(parser.values, f"{option.dest}").append(value)
@@ -257,14 +257,14 @@ class ChimeraCLI(object):
     def slew(self, options):
         inst.slew(options.ra, options.dec)
 
-    To define parameters, use parameter decorator or addParameter method.
+    To define parameters, use parameter decorator or add_parameter method.
     The parameter method passed to the decorator will be called to validate
     the parameter value given on the command line. Otherwise, no
     validation, besides type checking, will be done.
 
     For example:
 
-    self.addParameter(name='ra', help='Help for RA', type=string)
+    self.add_parameter(name='ra', help='Help for RA', type=string)
 
     or
 
@@ -314,11 +314,11 @@ class ChimeraCLI(object):
         self._actions = {}
         self._parameters = {}
 
-        self._helpGroups = {}
+        self._help_groups = {}
 
         self._aborting = False
 
-        self._keepRemoteManager = True
+        self._keep_remote_manager = True
 
         # shutdown event
         self.died = threading.Event()
@@ -326,7 +326,7 @@ class ChimeraCLI(object):
         # base actions and parameters
 
         if verbosity:
-            self.addParameters(
+            self.add_parameters(
                 dict(
                     name="quiet",
                     short="q",
@@ -345,21 +345,21 @@ class ChimeraCLI(object):
                 ),
             )
 
-        self.addHelpGroup("CONFIG", "Client Configuration")
-        self.addParameters(
+        self.add_help_group("CONFIG", "Client Configuration")
+        self.add_parameters(
             dict(
                 name="config",
                 default=SYSTEM_CONFIG_DEFAULT_FILENAME,
                 help="Chimera configuration file to use. default=%default",
-                helpGroup="CONFIG",
+                help_group="CONFIG",
             ),
         )
 
-        self._remoteManager = None
+        self._remote_manager = None
         self.sysconfig = None
 
-        self._needInstrumentsPath = instrument_path
-        self._needControllersPath = controllers_path
+        self._need_instruments_path = instrument_path
+        self._need_controllers_path = controllers_path
 
     def _print(self, *args, **kwargs):
         sep = kwargs.pop("sep", " ")
@@ -380,33 +380,33 @@ class ChimeraCLI(object):
         kwargs["file"] = sys.stderr
         self._print(*args, **kwargs)
 
-    def addParameters(self, *params):
+    def add_parameters(self, *params):
         for param in params:
             p = Parameter(**param)
             self._parameters[p.name] = p
 
-    def addActions(self, *actions):
+    def add_actions(self, *actions):
         for action in actions:
             act = Action(**action)
             self._actions[act.name] = act
 
-    def addHelpGroup(self, name, shortdesc, longdesc=None):
-        self._helpGroups[name] = optparse.OptionGroup(self.parser, shortdesc, longdesc)
+    def add_help_group(self, name, shortdesc, longdesc=None):
+        self._help_groups[name] = optparse.OptionGroup(self.parser, shortdesc, longdesc)
 
-    def addInstrument(self, **params):
+    def add_instrument(self, **params):
         params["type"] = ParameterType.INSTRUMENT
-        self.addParameters(params)
+        self.add_parameters(params)
 
-        if self._needInstrumentsPath:
-            if "PATHS" not in self._helpGroups:
-                self.addHelpGroup("PATHS", "Object Paths")
+        if self._need_instruments_path:
+            if "PATHS" not in self._help_groups:
+                self.add_help_group("PATHS", "Object Paths")
 
-            self.addParameters(
+            self.add_parameters(
                 dict(
                     name="inst_dir",
                     short="I",
                     long="instruments-dir",
-                    helpGroup="PATHS",
+                    help_group="PATHS",
                     type=ParameterType.INCLUDE_PATH,
                     default=ChimeraPath().instruments,
                     help="Append PATH to {} load path. "
@@ -417,22 +417,22 @@ class ChimeraCLI(object):
                     metavar="PATH",
                 )
             )
-            self._needInstrumentsPath = False
+            self._need_instruments_path = False
 
-    def addController(self, **params):
+    def add_controller(self, **params):
         params["type"] = ParameterType.CONTROLLER
-        self.addParameters(params)
+        self.add_parameters(params)
 
-        if self._needControllersPath:
-            if "PATHS" not in self._helpGroups:
-                self.addHelpGroup("PATHS", "Object Paths")
+        if self._need_controllers_path:
+            if "PATHS" not in self._help_groups:
+                self.add_help_group("PATHS", "Object Paths")
 
-            self.addParameters(
+            self.add_parameters(
                 dict(
                     name="ctrl_dir",
                     short="C",
                     long="controllers-dir",
-                    helpGroup="PATHS",
+                    help_group="PATHS",
                     type=ParameterType.INCLUDE_PATH,
                     default=ChimeraPath().controllers,
                     help="Append PATH to controllers load path. "
@@ -441,7 +441,7 @@ class ChimeraCLI(object):
                     metavar="PATH",
                 )
             )
-            self._needControllersPath = False
+            self._need_controllers_path = False
 
     def exit(self, msg=None, ret=1):
         self.__stop__(self.options)
@@ -453,37 +453,37 @@ class ChimeraCLI(object):
 
         sys.exit(ret)
 
-    def run(self, cmdlineArgs):
-        t = threading.Thread(target=self._run, args=(cmdlineArgs,), daemon=True)
+    def run(self, cmdline_args):
+        t = threading.Thread(target=self._run, args=(cmdline_args,), daemon=True)
         t.start()
 
-    def _run(self, cmdlineArgs):
+    def _run(self, cmdline_args):
 
         # create parser from defined actions and parameters
-        self._createParser()
+        self._create_parser()
 
         # run the parser
         self.options, args = self.parser.parse_args(
-            cmdlineArgs,
+            cmdline_args,
             values=CLIValues(defaults=self.parser.get_default_values().__dict__),
         )
 
         # check which actions should run and if there is any conflict
-        actions = self._getActions(self.options)
+        actions = self._get_actions(self.options)
 
         if not actions:
             self.exit("Please select one action or --help for more information.")
 
         # for each defined parameter, run validation code
-        self._validateParameters(self.options)
+        self._validate_parameters(self.options)
 
         # setup objects
-        self._setupObjects(self.options)
+        self._setup_objects(self.options)
         self.__start__(self.options, args)
 
         # run actions
         for action in actions:
-            if not self._runAction(action, self.options):
+            if not self._run_action(action, self.options):
                 self.exit(ret=1)
 
         self.__stop__(self.options)
@@ -500,23 +500,23 @@ class ChimeraCLI(object):
             if abort:
                 self.abort()
 
-    def _startSystem(self, options):
-        self.sysconfig = SystemConfig.fromFile(options.config)
-        self._remoteManager = Manager.locate(
+    def _start_system(self, options):
+        self.sysconfig = SystemConfig.from_file(options.config)
+        self._remote_manager = Manager.locate(
             self.sysconfig.chimera["host"], self.sysconfig.chimera["port"]
         )
 
-    def _belongsTo(self, meHost, mePort, location):
+    def _belongs_to(self, me_host, me_port, location):
 
         if not location:
             return False
 
-        meName = socket.gethostbyname(meHost)
-        return (location.host is None or location.host in (meHost, meName)) and (
-            location.port is None or location.port == mePort
+        me_name = socket.gethostbyname(me_host)
+        return (location.host is None or location.host in (me_host, me_name)) and (
+            location.port is None or location.port == me_port
         )
 
-    def _setupObjects(self, options):
+    def _setup_objects(self, options):
 
         # CLI requested objects
         instruments = dict(
@@ -536,7 +536,7 @@ class ChimeraCLI(object):
 
         # starts a local Manager (not using sysconfig) or a full sysconfig
         # backed if needed.
-        self._startSystem(self.options)
+        self._start_system(self.options)
 
         # create locations
         for inst in list(instruments.values()) + list(controllers.values()):
@@ -553,8 +553,8 @@ class ChimeraCLI(object):
             else:
                 # no instrument selected, ask remote Chimera instance for the
                 # newest
-                if self._remoteManager:
-                    insts = self._remoteManager.getResourcesByClass(inst.cls)
+                if self._remote_manager:
+                    insts = self._remote_manager.get_resources_by_class(inst.cls)
                     if insts:
                         # get the older
                         inst.location = insts[0]
@@ -586,10 +586,10 @@ class ChimeraCLI(object):
         pass
 
     def __stop__(self, options):
-        if self._remoteManager and not self._keepRemoteManager:
-            self._remoteManager.shutdown()
+        if self._remote_manager and not self._keep_remote_manager:
+            self._remote_manager.shutdown()
 
-    def _createParser(self):
+    def _create_parser(self):
 
         for name in dir(self):
             attr = getattr(self, name)
@@ -610,15 +610,15 @@ class ChimeraCLI(object):
 
         for action in list(self._actions.values()):
 
-            if not action.actionGroup:
-                action.actionGroup = action.name
+            if not action.action_group:
+                action.action_group = action.name
 
             if action.type:
                 kind = "store"
             else:
                 kind = "store_true"
 
-            group = self._helpGroups.get(action.helpGroup, self.parser)
+            group = self._help_groups.get(action.help_group, self.parser)
 
             if action.short:
                 group.add_option(
@@ -645,7 +645,7 @@ class ChimeraCLI(object):
             if not param.type:
                 param.type = "string"
 
-            group = self._helpGroups.get(param.helpGroup, self.parser)
+            group = self._help_groups.get(param.help_group, self.parser)
 
             option_action = "store"
             option_callback = None
@@ -670,7 +670,7 @@ class ChimeraCLI(object):
             if param.type == ParameterType.INCLUDE_PATH:
                 option_action = "callback"
                 option_type = "string"
-                option_callback = CLICheckers.check_includepath
+                option_callback = CLICheckers.check_include_path
 
             if param.type == ParameterType.CHOICE:
                 option_action = "store"
@@ -701,7 +701,7 @@ class ChimeraCLI(object):
             else:
                 group.add_option(param.long, **option_kwargs)
 
-        for group in list(self._helpGroups.values()):
+        for group in list(self._help_groups.values()):
             self.parser.add_option_group(group)
 
         defaults = {}
@@ -716,7 +716,7 @@ class ChimeraCLI(object):
 
         self.parser.set_defaults(**defaults)
 
-    def _getActions(self, options):
+    def _get_actions(self, options):
 
         # actions in command line (and run) order
         actions = [
@@ -736,40 +736,40 @@ class ChimeraCLI(object):
 
         for action in actions:
             for other in actions:
-                if action != other and action.actionGroup == other.actionGroup:
+                if action != other and action.action_group == other.action_group:
                     self.exit(
                         f"Cannot use {action.long} and {other.long} at the same time."
                     )
 
         # remove duplicates
-        uniqueActions = []
+        unique_actions = []
 
         for action in actions:
-            if action in uniqueActions:
+            if action in unique_actions:
                 continue
-            uniqueActions.append(action)
+            unique_actions.append(action)
 
-        return uniqueActions
+        return unique_actions
 
-    def _validateParameters(self, options):
+    def _validate_parameters(self, options):
 
-        paramValues = [
+        param_values = [
             getattr(options, param) for param in list(self._parameters.keys())
         ]
 
-        for name, value in zip(list(self._parameters.keys()), paramValues):
+        for name, value in zip(list(self._parameters.keys()), param_values):
             param = self._parameters[name]
 
             try:
                 # to signal invalid values, use self.exit or throws a
                 # ValueError exception if None returned, just copy passed value
                 if param.target is not None:
-                    newValue = getattr(self, param.target.__name__)(value)
-                    setattr(options, name, newValue or value)
+                    new_value = getattr(self, param.target.__name__)(value)
+                    setattr(options, name, new_value or value)
             except ValueError as e:
                 self.exit(f"Invalid value for {name}: {e}")
 
-    def _runAction(self, action, options):
+    def _run_action(self, action, options):
 
         try:
             if action.target is not None:
@@ -777,7 +777,7 @@ class ChimeraCLI(object):
                 method(options)
         except Exception as e:
             self.err(f"Something wrong with '{action.name}' action.")
-            printException(e)
+            print_exception(e)
             return False
 
         return True
@@ -801,5 +801,5 @@ class ChimeraCLI(object):
 
         self.exit(ret=2)
 
-    def isAborting(self):
+    def is_aborting(self):
         return self._aborting

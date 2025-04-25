@@ -17,30 +17,32 @@ class ChimeraSeeing(ChimeraCLI):
             self, "chimera-seeing", "Seeing Monitor script", _chimera_version_
         )
 
-        self.addHelpGroup("SM", "Seeing Monitor")
-        self.addHelpGroup("COMMANDS", "Commands")
+        self.add_help_group("SM", "Seeing Monitor")
+        self.add_help_group("COMMANDS", "Commands")
 
-        self.addInstrument(
+        self.add_instrument(
             name="seeingmonitor",
             cls="SeeingMonitor",
             required=True,
-            helpGroup="WS",
+            help_group="WS",
             help="Seeing Monitor to be used",
         )
 
-        self.addParameters(
+        self.add_parameters(
             dict(
                 name="max_mins",
                 short="t",
                 type="float",
                 default=10,
-                helpGroup="COMMANDS",
+                help_group="COMMANDS",
                 help="Mark in red date/time values if older than this time in minutes",
             )
         )
 
     @action(
-        short="i", help="Print seeing monitor current information", helpGroup="COMMANDS"
+        short="i",
+        help="Print seeing monitor current information",
+        help_group="COMMANDS",
     )
     def info(self, options):
         self.out("=" * 80)

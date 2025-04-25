@@ -36,7 +36,7 @@ class IAutoFlat(Interface):
         "site": "/Site/0",
     }
 
-    def getFlats(self, filter_id, n_flats):
+    def get_flats(self, filter_id, n_flats):
         """
         Takes sequence of flats, starts taking one frame to determine current level
         Then predicts next exposure time based on exponential decay of sky brightness
@@ -44,13 +44,13 @@ class IAutoFlat(Interface):
         If not exponential raise some flag about sky condition.
         """
 
-    def getFlatLevel(self, filename, image):
+    def get_flat_level(self, filename, image):
         """
         Returns average level from image
         """
 
     @event
-    def exposeComplete(self, filter_id, i_flat, expTime, level):
+    def expose_complete(self, filter_id, i_flat, exp_time, level):
         """
         Called on exposuse completion
         """

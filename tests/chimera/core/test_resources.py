@@ -93,7 +93,7 @@ class TestResources:
         entries = [self.res.get("/Location/l1"), self.res.get("/Location/l2")]
 
         # get by class
-        found = self.res.getByClass("Location")
+        found = self.res.get_by_class("Location")
 
         assert entries == found
 
@@ -123,6 +123,6 @@ class TestResources:
         ]
 
         # get by class
-        found = self.res.getByClass("Base", checkBases=True)
+        found = self.res.get_by_class("Base", check_bases=True)
 
         assert entries == found

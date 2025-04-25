@@ -74,14 +74,14 @@ class Focuser(Interface):
         "move_timeout": 60,
     }
 
-    def moveIn(self, n, axis=FocuserAxis.Z):
+    def move_in(self, n, axis=FocuserAxis.Z):
         """
         Move the focuser IN by n steps. Steps could be absolute units
         (for focuser with absolute encoders) or just a pulse of
         time. Instruments use internal parameters to define the amount
         of movement depending of the type of the encoder.
 
-        Use L{moveTo} to move to exact positions (If the focuser
+        Use L{move_to} to move to exact positions (If the focuser
         support it).
 
         @type  n: int
@@ -93,14 +93,14 @@ class Focuser(Interface):
         @rtype   : None
         """
 
-    def moveOut(self, n, axis=FocuserAxis.Z):
+    def move_out(self, n, axis=FocuserAxis.Z):
         """
         Move the focuser OUT by n steps. Steps could be absolute units
         (for focuser with absolute encoders) or just a pulse of
         time. Instruments use internal parameters to define the amount
         of movement depending of the type of the encoder.
 
-        Use L{moveTo} to move to exact positions (If the focuser
+        Use L{move_to} to move to exact positions (If the focuser
         support it).
 
         @type  n: int
@@ -112,13 +112,13 @@ class Focuser(Interface):
         @rtype   : None
         """
 
-    def moveTo(self, position, axis=FocuserAxis.Z):
+    def move_to(self, position, axis=FocuserAxis.Z):
         """
         Move the focuser to the select position (if ENCODER_BASED
         supported).
 
         If the focuser doesn't support absolute position movement, use
-        L{moveIn} and L{moveOut} to command the focuser.
+        L{move_in} and L{move_out} to command the focuser.
 
         @type  position: int
         @param position: Position to move the focuser.
@@ -129,7 +129,7 @@ class Focuser(Interface):
         @rtype   : None
         """
 
-    def getPosition(self, axis=FocuserAxis.Z):
+    def get_position(self, axis=FocuserAxis.Z):
         """
         Gets the current focuser position (if the POSITION_FEEDBACK
         supported).
@@ -141,16 +141,16 @@ class Focuser(Interface):
         @return  : Current focuser position.
         """
 
-    def getRange(self, axis=FocuserAxis.Z):
+    def get_range(self, axis=FocuserAxis.Z):
         """
         Gets the focuser total range
         @rtype: tuple
         @return: Start and end positions of the focuser (start, end)
         """
 
-    def getTemperature(self):
+    def get_temperature(self):
         """
-        Retusn the temperature of the focuser probe
+        Returns the temperature of the focuser probe
         @rtype: float
         """
 

@@ -39,25 +39,25 @@ class ChimeraObject(ILifeCycle, metaclass=MetaObject):
         # logging.
         # put every logger on behalf of chimera's logger so
         # we can easily setup levels on all our parts
-        logName = self.__module__
-        if not logName.startswith("chimera."):
-            logName = "chimera." + logName + f" ({logName})"
+        log_name = self.__module__
+        if not log_name.startswith("chimera."):
+            log_name = "chimera." + log_name + f" ({log_name})"
 
-        self.log = logging.getLogger(logName)
+        self.log = logging.getLogger(log_name)
 
         # Hz
-        self._Hz = 2
+        self._hz = 2
         self._loop_abort = threading.Event()
 
         # To override metadata default values
-        self.__metadataOverrideMethod__ = None
+        self.__metadata_override_method__ = None
 
     # config implementation
     def __getitem__(self, item):
         # any thread can read if none writing at the time
         lock = getattr(self, RWLOCK_ATTRIBUTE_NAME)
         try:
-            lock.acquireRead()
+            lock.acquire_read()
             return self.__config_proxy__.__getitem__(item)
         finally:
             lock.release()
@@ -66,21 +66,21 @@ class ChimeraObject(ILifeCycle, metaclass=MetaObject):
         # only one thread can write
         lock = getattr(self, RWLOCK_ATTRIBUTE_NAME)
         try:
-            lock.acquireWrite()
+            lock.acquire_write()
             return self.__config_proxy__.__setitem__(item, value)
         finally:
             lock.release()
 
     # bulk configuration (pass a dict to config multiple values)
-    def __iadd__(self, configDict):
+    def __iadd__(self, config_dict):
         # only one thread can write
         lock = getattr(self, RWLOCK_ATTRIBUTE_NAME)
         try:
-            lock.acquireWrite()
-            self.__config_proxy__.__iadd__(configDict)
+            lock.acquire_write()
+            self.__config_proxy__.__iadd__(config_dict)
         finally:
             lock.release()
-            return self.getProxy()
+            return self.get_proxy()
 
     # locking
     def __enter__(self):
@@ -101,8 +101,8 @@ class ChimeraObject(ILifeCycle, metaclass=MetaObject):
     def notify(self, n=1):
         return getattr(self, INSTANCE_MONITOR_ATTRIBUTE_NAME).notify(n)
 
-    def notifyAll(self):
-        return getattr(self, INSTANCE_MONITOR_ATTRIBUTE_NAME).notifyAll()
+    def notify_all(self):
+        return getattr(self, INSTANCE_MONITOR_ATTRIBUTE_NAME).notify_all()
 
     # reflection
     def __get_events__(self):
@@ -121,24 +121,24 @@ class ChimeraObject(ILifeCycle, metaclass=MetaObject):
     def __stop__(self):
         return True
 
-    def getHz(self):
-        return self._Hz
+    def get_hz(self):
+        return self._hz
 
-    def setHz(self, freq):
-        tmpHz = self.getHz()
-        self._Hz = freq
-        return tmpHz
+    def set_hz(self, freq):
+        tmp_hz = self.get_hz()
+        self._hz = freq
+        return tmp_hz
 
     def __main__(self):
 
         self._loop_abort.clear()
         timeslice = 0.01
 
-        runCondition = True
+        run_condition = True
 
-        while runCondition:
+        while run_condition:
 
-            runCondition = self.control()
+            run_condition = self.control()
 
             if self._loop_abort.is_set():
                 return True
@@ -148,9 +148,9 @@ class ChimeraObject(ILifeCycle, metaclass=MetaObject):
             # if object set a long sleep time and Manager decides to
             # shutdown, we must be asleep to receive his message and
             # return.
-            timeToWakeUp = 1.0 / self.getHz()
+            time_to_wake_up = 1.0 / self.get_hz()
             slept = 0
-            while slept < timeToWakeUp:
+            while slept < time_to_wake_up:
                 time.sleep(timeslice)
                 if self._loop_abort.is_set():
                     return True
@@ -164,7 +164,7 @@ class ChimeraObject(ILifeCycle, metaclass=MetaObject):
     def control(self):
         return False
 
-    def getState(self):
+    def get_state(self):
         return self.__state__
 
     def __setstate__(self, state):
@@ -172,37 +172,37 @@ class ChimeraObject(ILifeCycle, metaclass=MetaObject):
         self.__state__ = state
         return oldstate
 
-    def getLocation(self):
+    def get_location(self):
         return self.__location__
 
     def __setlocation__(self, location):
         self.__location__ = Location(location)
         return True
 
-    def getManager(self):
+    def get_manager(self):
         return Proxy(
             f"{self.__location__.host}:{self.__location__.port}/Manager/manager"
         )
 
-    def getMetadata(self, request):
+    def get_metadata(self, request):
         # Check first if there is metadata from a metadata override method.
-        md = self.getMetadataOverride(request)
+        md = self.get_metadata_override(request)
         if md is not None:
             return md
         # If not, just go on with the instrument's default metadata.
         return []
 
-    def setMetadataMethod(self, location):
-        # Defines an alternative class to getMetadata()
-        self.__metadataOverrideMethod__ = location
+    def set_metadata_method(self, location):
+        # Defines an alternative class to get_metadata()
+        self.__metadata_override_method__ = location
 
-    def getMetadataOverride(self, request):
-        # Returns metadata from the override class or None if there is no override getMetadata() class.
-        if self.__metadataOverrideMethod__ is not None:
+    def get_metadata_override(self, request):
+        # Returns metadata from the override class or None if there is no override get_metadata() class.
+        if self.__metadata_override_method__ is not None:
             return (
-                self.getManager()
-                .getProxy(self.__metadataOverrideMethod__)
-                .getMetadata(request)
+                self.get_manager()
+                .get_proxy(self.__metadata_override_method__)
+                .get_metadata(request)
             )
         return None
 
@@ -215,5 +215,5 @@ class ChimeraObject(ILifeCycle, metaclass=MetaObject):
         """
         return isinstance(self, interface)
 
-    def getProxy(self) -> Proxy:
+    def get_proxy(self) -> Proxy:
         return Proxy(self.__location__)

@@ -39,7 +39,7 @@ class DCFocuser(FocuserBase):
 
     Those two paremeters will define the 'encoded' range of DCFocuser,
     for example: If dt=2000 ms and pulse_dt = 10 ms, this virtual
-    encoded focuser would be 2000/10= 200 units (getRange would return
+    encoded focuser would be 2000/10= 200 units (get_range would return
     (0, 200).
 
     Normally, before use this class you should do a handwork with a
@@ -72,7 +72,7 @@ class DCFocuser(FocuserBase):
 
         self._position = 0
         self._range = None
-        self._lastTimeLog = None
+        self._last_time_log = None
 
     def __start__(self):
 
@@ -85,54 +85,54 @@ class DCFocuser(FocuserBase):
             return False
 
         # restore last position
-        lastPosition = None
+        last_position = None
 
         filename = os.path.join(SYSTEM_CONFIG_DIRECTORY, "dc_focuser.memory")
         if os.path.exists(filename):
             try:
-                lastPosition = int(open(filename, "r").read())
+                last_position = int(open(filename, "r").read())
             except ValueError:
                 self.log.warning(
                     "Content of dc_focuser.memory file is invalid. Removing it."
                 )
                 os.unlink(filename)
 
-        self._lastPositionLog = open(filename, "w")
+        self._last_position_log = open(filename, "w")
 
         # assume focuser is at the same position last time unless it was zero
-        if lastPosition is None:
-            self._position = self.getRange()[1]
+        if last_position is None:
+            self._position = self.get_range()[1]
         else:
-            self._position = lastPosition
+            self._position = last_position
 
         # move focuser to our "zero" if needed
-        if lastPosition is None:
+        if last_position is None:
             self.log.info("Focuser not calibrated. Wait ...")
-            self.moveTo(0)
+            self.move_to(0)
             self.log.info("Calibration DONE")
 
         return True
 
-    def _savePosition(self, position):
-        self._lastPositionLog.truncate()
-        self._lastPositionLog.write(str(position))
-        self._lastPositionLog.flush()
+    def _save_position(self, position):
+        self._last_position_log.truncate()
+        self._last_position_log.write(str(position))
+        self._last_position_log.flush()
 
     @lock
-    def moveIn(self, n, axis=FocuserAxis.Z):
-        self._checkAxis(axis)
+    def move_in(self, n, axis=FocuserAxis.Z):
+        self._check_axis(axis)
         return self._move(Direction.IN, n)
 
     @lock
-    def moveOut(self, n, axis=FocuserAxis.Z):
-        self._checkAxis(axis)
+    def move_out(self, n, axis=FocuserAxis.Z):
+        self._check_axis(axis)
         return self._move(Direction.OUT, n)
 
     @lock
-    def moveTo(self, position, axis=FocuserAxis.Z):
-        self._checkAxis(axis)
+    def move_to(self, position, axis=FocuserAxis.Z):
+        self._check_axis(axis)
 
-        current = self.getPosition()
+        current = self.get_position()
 
         delta = position - current
 
@@ -145,44 +145,44 @@ class DCFocuser(FocuserBase):
             self.log.error(f"Invalid position {position}.")
             return
 
-        self._savePosition(position)
+        self._save_position(position)
         self._position = position
 
         return True
 
     def _move(self, direction, steps):
 
-        if not self._inRange(direction, steps):
+        if not self._in_range(direction, steps):
             raise InvalidFocusPositionException(f"{steps} is outside focuser limits.")
 
         if direction not in Direction:
             raise ValueError(f"Invalid direction '{direction}'.")
 
-        self._moveTo(direction, steps)
+        self._move_to(direction, steps)
 
         return True
 
-    def _inRange(self, direction, n):
+    def _in_range(self, direction, n):
 
         # Assumes:
         #   0 -------  N
         #  IN         OUT
 
-        current = self.getPosition()
+        current = self.get_position()
 
         if direction == Direction.IN:
             target = current - n
         else:
             target = current + n
 
-        min_pos, max_pos = self.getRange()
+        min_pos, max_pos = self.get_range()
 
         return min_pos <= target <= max_pos
 
-    def getPosition(self, axis=FocuserAxis.Z):
-        self._checkAxis(axis)
+    def get_position(self, axis=FocuserAxis.Z):
+        self._check_axis(axis)
         return self._position
 
-    def getRange(self, axis=FocuserAxis.Z):
-        self._checkAxis(axis)
+    def get_range(self, axis=FocuserAxis.Z):
+        self._check_axis(axis)
         return self._range
