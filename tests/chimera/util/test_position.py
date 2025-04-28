@@ -18,7 +18,7 @@ class TestPosition(object):
         assert p.dd() == (150, 20)
 
         with pytest.raises(ValueError) as _:
-            Position.from_ra_dec, "xyz", "abc"
+            Position.from_ra_dec("xyz", "abc")
 
     def test_alt_az(self):
 
@@ -26,7 +26,7 @@ class TestPosition(object):
         assert p.dd() == (60, 200)
 
         with pytest.raises(ValueError) as _:
-            Position.from_alt_az, "xyz", "abc"
+            Position.from_alt_az("xyz", "abc")
 
     def test_long_lat(self):
 
@@ -34,7 +34,7 @@ class TestPosition(object):
         assert p.dd() == (-27.5, -48.0)
 
         with pytest.raises(ValueError) as _:
-            Position.from_long_lat, "xyz", "abc"
+            Position.from_long_lat("xyz", "abc")
 
     def test_galactic(self):
 
@@ -42,7 +42,7 @@ class TestPosition(object):
         assert p.dd() == (-27.5, -48.0)
 
         with pytest.raises(ValueError) as _:
-            Position.from_galactic, "xyz", "abc"
+            Position.from_galactic("xyz", "abc")
 
     def test_ecliptic(self):
 
@@ -50,7 +50,7 @@ class TestPosition(object):
         assert p.dd() == (-27.5, -48.0)
 
         with pytest.raises(ValueError) as _:
-            Position.from_ecliptic, "xyz", "abc"
+            Position.from_ecliptic("xyz", "abc")
 
     def test_alt_az_ra_dec(self):
 
@@ -73,7 +73,7 @@ class TestPosition(object):
         p1 = Position.from_ra_dec("10:00:00", "0:0:0")
         p2 = Position.from_ra_dec("12:00:00", "0:0:0")
 
-        p1.ang_sep(p2)
+        p1.angsep(p2)
         assert p1.within(p2, Coord.from_d(29.99)) is False
         assert p1.within(p2, Coord.from_d(30.01)) is True
 

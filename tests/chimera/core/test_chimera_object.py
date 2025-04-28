@@ -184,9 +184,9 @@ class TestChimeraObject(object):
 
         f = Foo()
 
-        assert f.__set_location__("/Foo/bar") is True
+        assert f.__setlocation__("/Foo/bar") is True
         with pytest.raises(InvalidLocationException):
-            f.__set_location__("Siberian Lakes")
+            f.__setlocation__("Siberian Lakes")
         assert f.get_location() == "/Foo/bar"
 
     def test_state(self):
@@ -199,7 +199,7 @@ class TestChimeraObject(object):
         assert f.get_state() == State.STOPPED, "Initial object state MUST be STOPPED"
 
         # setstate returns oldstate
-        assert f.__set_state__(State.RUNNING) == State.STOPPED
+        assert f.__setstate__(State.RUNNING) == State.STOPPED
         assert f.get_state() == State.RUNNING
 
     def test_methods(self):

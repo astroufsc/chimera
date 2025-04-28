@@ -321,7 +321,7 @@ class Position(object):
         else:
             epoch = ephem.now()
 
-        return ephem.Equatorial(self.ra.R, self.dec.R, epoch=epoch)
+        return ephem.Equatorial(self.ra.radian, self.dec.radian, epoch=epoch)
 
     def to_epoch(self, epoch=Epoch.J2000):
         """
@@ -359,7 +359,7 @@ class Position(object):
         @returns: The distance from this point to L{other}.
         @rtype: L{Coord} in degress (convertable, as this is a Coord).
         """
-        return Coord.from_r(CoordUtil.gcdist(self.radian, other.R)).to_d()
+        return Coord.from_r(CoordUtil.gcdist(self.radian, other.radian)).to_d()
 
     def within(self, other, eps=Coord.from_as(60)):
         """
