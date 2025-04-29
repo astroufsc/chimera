@@ -74,3 +74,6 @@ addopts = "--import-mode=importlib"
 
 [tool.uv.sources]
 chimera = { workspace = true }
+
+[tool.ruff.lint]
+select = ["N802", "N803"]

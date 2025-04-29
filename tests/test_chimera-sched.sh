@@ -1,0 +1,11 @@
+  --version             show program's version number and exit
+  -h, --help            show this help message and exit
+    --append            Append programs to database from a text file
+    --new               Generate a new database from a text file (excluding
+    -f FILENAME, --file=FILENAME
+    -o OUTPUT, --output=OUTPUT
+    --info              Print scheduler information
+    --monitor           Monitor scheduler actions
+    --restart           Restart the scheduler
+    --start             Start the scheduler
+    --stop              Stop the scheduler
