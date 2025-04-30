@@ -6,7 +6,14 @@ import urllib.parse
 import json
 
 
-def simbad_lookup(object_name):
+def simbad_lookup(object_name) -> dict:
+    """
+    Perform a SIMBAD lookup for the given object name.
+
+    @param object_name: The name of the object to look up.
+    @return: A dictionary containing the SIMBAD OID, main ID, RA in hours, and DEC in degrees.
+    @rtype: dict
+    """
     # based on https://gist.github.com/daleghent/2d80fffbaef2f1614962f0ddc04bee92
     url = "https://simbad.u-strasbg.fr/simbad/sim-tap/sync"
     query = f"""
@@ -27,7 +34,7 @@ def simbad_lookup(object_name):
 
     oid = out["data"][0][0]
     main_id = out["data"][0][1]
-    ra = out["data"][0][2]
+    ra = out["data"][0][2] / 15.0  # Convert from degrees to hours
     dec = out["data"][0][3]
 
     result = {
