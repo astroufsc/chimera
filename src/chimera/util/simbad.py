@@ -1,82 +1,64 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 # SPDX-FileCopyrightText: 2006-present Paulo Henrique Silva <ph.silva@gmail.com>
 
-from chimera.util.position import Position
-
-from xml.etree import ElementTree as ET
-from chimera.core.exceptions import ObjectNotFoundException
-from xml.parsers.expat import ExpatError
-
-import logging
-
-logging.getLogger("suds").setLevel(1000000000)
-
-from suds.xsd.sxbasic import Import  # noqa: E402
-
-Import.bind("http://schemas.xmlsoap.org/soap/encoding/")
-
-from suds.client import Client  # noqa: E402
+import urllib.request
+import urllib.parse
+import json
 
 
-class Simbad(object):
+def simbad_lookup(object_name) -> dict:
+    """
+    Perform a SIMBAD lookup for the given object name.
 
-    WSDL = "http://cdsws.u-strasbg.fr/axis/services/Sesame?wsdl"
+    @param object_name: The name of the object to look up.
+    @return: A dictionary containing the SIMBAD OID, main ID, RA in hours, and DEC in degrees and epoch 2000.
+    @rtype: dict
+    """
+    # based on https://gist.github.com/daleghent/2d80fffbaef2f1614962f0ddc04bee92
+    url = "https://simbad.u-strasbg.fr/simbad/sim-tap/sync"
+    query = f"""
+    SELECT basic.OID, main_id, RA, DEC
+    FROM basic
+    JOIN ident ON oidref = oid
+    WHERE id = '{object_name}'
+    """
+    data = urllib.parse.urlencode(
+        {"query": query, "format": "json", "lang": "ADQL", "request": "doQuery"}
+    ).encode("utf-8")
 
-    __cache = {}
-    __client = None
+    req = urllib.request.Request(url, data=data, method="POST")
+    with urllib.request.urlopen(req) as response:
+        if response.status != 200:
+            raise Exception(f"HTTP Error: {response.status}")
+        out = json.load(response)
 
-    @staticmethod
-    def lookup(name):
+    if "data" not in out or not out["data"]:
+        raise ValueError("The response does not contain valid 'data'.")
+    oid = out["data"][0][0]
+    main_id = out["data"][0][1]
+    ra = out["data"][0][2] / 15.0  # Convert from degrees to hours
+    dec = out["data"][0][3]
 
-        if not Simbad.__client:
-            Simbad.__client = Client(Simbad.WSDL)
+    result = {
+        "simbad_oid": oid,
+        "main_id": main_id,
+        "ra": ra,
+        "dec": dec,
+    }
 
-        client = Simbad.__client
-
-        if name in Simbad.__cache:
-            return Simbad.__cache[name]
-
-        res = client.service.sesame(name, "x", True)
-        target = Simbad._parse_sesame(res)
-
-        if not target:
-            raise ObjectNotFoundException(f"Couldn't find {name} on SIMBAD")
-
-        Simbad.__cache[name] = target
-
-        return target
-
-    @staticmethod
-    def _parse_sesame(xml):
-
-        try:
-            sesame = ET.fromstring(xml.replace("&", "&amp;"))
-            target = sesame.findall("Target")
-
-            if target:
-                for resolver in target[0].findall("Resolver"):
-                    jpos = resolver.find("jpos")
-                    if jpos is None:
-                        continue
-                    return Position.from_ra_dec(*jpos.text.split())
-        except ExpatError:
-            return False
-
-        return False
+    return result
 
 
 if __name__ == "__main__":
-
-    s = Simbad()
 
     while True:
         try:
             obj = input("Give me an object name: ")
             if obj:
-                o = s.lookup(obj)
+                o = simbad_lookup(obj)
                 if not o:
                     continue
-                print(o.ra, o.dec)
+                print(o)
         except (KeyboardInterrupt, EOFError):
             print()
             break
