@@ -10,7 +10,7 @@ def test_simbad_lookup():
     expected_result = {
         "simbad_oid": 8399845,
         "main_id": "* alf CMa",
-        "ra": 101.28715533333335,
+        "ra": 6.752477022222223,
         "dec": -16.71611586111111,
     }
 
