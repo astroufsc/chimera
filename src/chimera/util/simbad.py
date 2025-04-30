@@ -32,6 +32,8 @@ def simbad_lookup(object_name) -> dict:
             raise Exception(f"HTTP Error: {response.status}")
         out = json.load(response)
 
+    if "data" not in out or not out["data"]:
+        raise ValueError("The response does not contain valid 'data'.")
     oid = out["data"][0][0]
     main_id = out["data"][0][1]
     ra = out["data"][0][2] / 15.0  # Convert from degrees to hours
