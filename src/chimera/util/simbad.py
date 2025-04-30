@@ -11,7 +11,7 @@ def simbad_lookup(object_name) -> dict:
     Perform a SIMBAD lookup for the given object name.
 
     @param object_name: The name of the object to look up.
-    @return: A dictionary containing the SIMBAD OID, main ID, RA in hours, and DEC in degrees.
+    @return: A dictionary containing the SIMBAD OID, main ID, RA in hours, and DEC in degrees and epoch 2000.
     @rtype: dict
     """
     # based on https://gist.github.com/daleghent/2d80fffbaef2f1614962f0ddc04bee92
