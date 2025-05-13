@@ -35,7 +35,7 @@ class TelescopeBase(
     @lock
     def slew_to_object(self, name):
         _, ra, dec, epoch = simbad_lookup(name) or (None, None, None, None)
-        if not ra or not dec:
+        if ra is None or dec is None:
             raise ObjectNotFoundException(f"Object {name} not found in SIMBAD")
         self.slew_to_ra_dec(
             Position.from_ra_dec(ra, dec)
