@@ -8,6 +8,7 @@ chimera-tel -v -q
 chimera-tel -v --slew --ra 10 --dec -10 --epoch J2001.1
 chimera-tel -v --slew --az 0 --alt 60
 chimera-tel -v --slew --object M42
+chimera-tel -v --slew --object bla_bla
 chimera-tel -v --rate=MAX -E 1
 chimera-tel -v --rate=CENTER -N 2
 chimera-tel -v --rate=FIND -S 3

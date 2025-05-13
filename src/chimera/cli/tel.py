@@ -28,7 +28,6 @@ from chimera.interfaces.telescope import (
 from chimera.util.coord import Coord
 from chimera.util.output import green, red, yellow
 from chimera.util.position import Position
-from chimera.util.simbad import Simbad
 
 from .cli import ChimeraCLI, ParameterType, action
 
@@ -164,20 +163,17 @@ class ChimeraTel(ChimeraCLI):
         telescope.slew_begin += slew_begin
         telescope.slew_complete += slew_complete
 
-        if options.object_name:
-            try:
-                Simbad.lookup(target)
-            except ObjectNotFoundException:
-                self.err("Object '%s' not found on Simbad database." % target)
-                self.exit()
-
         self.out(40 * "=")
         self.out("current position ra/dec: %s" % telescope.get_position_ra_dec())
         self.out("current position alt/az: %s" % telescope.get_position_alt_az())
 
         try:
             if options.object_name:
-                telescope.slew_to_object(target)
+                try:
+                    telescope.slew_to_object(target)
+                except ObjectNotFoundException:
+                    self.err(f"Object '{target}' not found on Simbad database.")
+                    self.exit()
             else:
                 if self.local_slew:
                     telescope.slew_to_alt_az(target)
