@@ -13,9 +13,9 @@ from chimera.interfaces.telescope import (
 )
 
 from chimera.core.lock import lock
-from chimera.core.exceptions import ObjectTooLowException
+from chimera.core.exceptions import ObjectNotFoundException, ObjectTooLowException
 
-from chimera.util.simbad import Simbad
+from chimera.util.simbad import simbad_lookup
 from chimera.util.position import Epoch, Position
 
 
@@ -34,8 +34,12 @@ class TelescopeBase(
 
     @lock
     def slew_to_object(self, name):
-        target = Simbad.lookup(name)
-        self.slew_to_ra_dec(target)
+        _, ra, dec, epoch = simbad_lookup(name) or (None, None, None, None)
+        if not ra or not dec:
+            raise ObjectNotFoundException(f"Object {name} not found in SIMBAD")
+        self.slew_to_ra_dec(
+            Position.from_ra_dec(ra, dec)
+        )  # todo use epoch from simbad_lookup
 
     @lock
     def slew_to_ra_dec(self, position):
@@ -145,8 +149,12 @@ class TelescopeBase(
 
     @lock
     def sync_object(self, name):
-        target = Simbad.lookup(name)
-        self.sync_ra_dec(target)
+        _, ra, dec, epoch = simbad_lookup(name) or (None, None, None, None)
+        if not ra or not dec:
+            raise ObjectNotFoundException(f"Object {name} not found in SIMBAD")
+        self.sync_ra_dec(
+            Position.from_ra_dec(ra, dec)
+        )  # todo use epoch from simbad_lookup
 
     @lock
     def sync_ra_dec(self, position):

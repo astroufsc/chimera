@@ -7,12 +7,7 @@ def test_simbad_lookup():
     """
     # Example object name for testing
     object_name = "Sirius"
-    expected_result = {
-        "simbad_oid": 8399845,
-        "main_id": "* alf CMa",
-        "ra": 6.752477022222223,
-        "dec": -16.71611586111111,
-    }
+    expected_result = ("* alf CMa", 6.752477022222223, -16.71611586111111, 2000.0)
 
     result = simbad_lookup(object_name)
 
