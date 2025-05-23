@@ -20,9 +20,6 @@ import logging
 import time
 import threading
 
-import tracy_client as tracy
-
-
 __all__ = ["ChimeraObject"]
 
 
@@ -140,8 +137,7 @@ class ChimeraObject(ILifeCycle, metaclass=MetaObject):
         while runCondition:
             t0 = time.time()
             with self:
-                with tracy.ScopedZone(f"{self.__location__}:step"):
-                    runCondition = self.control()
+                runCondition = self.control()
 
             if self._loop_abort.is_set():
                 return True
@@ -163,7 +159,6 @@ class ChimeraObject(ILifeCycle, metaclass=MetaObject):
     def __abort_loop__(self):
         self._loop_abort.set()
 
-    @tracy.ScopedFrameDecorator("control")
     def control(self):
         return False
 
