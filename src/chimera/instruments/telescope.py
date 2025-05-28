@@ -2,19 +2,22 @@
 # SPDX-FileCopyrightText: 2006-present Paulo Henrique Silva <ph.silva@gmail.com>
 
 
+from typing import Tuple
 from chimera.core.chimeraobject import ChimeraObject
 
+from chimera.core.exceptions import ObjectTooLowException
 from chimera.interfaces.telescope import (
     TelescopeSlew,
     TelescopeSync,
     TelescopePark,
     TelescopeTracking,
-    SlewRate,
+    TelescopePierSide,
 )
 
 from chimera.core.lock import lock
 from chimera.core.exceptions import ObjectNotFoundException, ObjectTooLowException
 
+from chimera.util.coord import Coord
 from chimera.util.simbad import simbad_lookup
 from chimera.util.position import Epoch, Position
 
@@ -37,77 +40,75 @@ class TelescopeBase(
         _, ra, dec, epoch = simbad_lookup(name) or (None, None, None, None)
         if ra is None or dec is None:
             raise ObjectNotFoundException(f"Object {name} not found in SIMBAD")
-        self.slew_to_ra_dec(
-            Position.from_ra_dec(ra, dec)
-        )  # todo use epoch from simbad_lookup
+        self.slew_to_ra_dec(ra, dec)  # todo use epoch from simbad_lookup
 
     @lock
-    def slew_to_ra_dec(self, position):
+    def slew_to_ra_dec(self, ra: float, dec: float, epoch: float = 2000) -> None:
         raise NotImplementedError()
 
-    def _validate_ra_dec(self, position):
+    def _validate_ra_dec(self, ra, dec):
+        # TODO: remove Position dependency
 
         if self.site is None:
             self.site = self.get_manager().get_proxy("/Site/0")
         lst = self.site.lst()
         latitude = self.site["latitude"]
 
-        alt_az = Position.ra_dec_to_alt_az(position, latitude, lst)
+        alt_az = Position.ra_dec_to_alt_az(Position.from_ra_dec(ra, dec), latitude, lst)
 
-        return self._validate_alt_az(alt_az)
+        return self._validate_alt_az(alt_az.alt, alt_az.az)
 
-    def _validate_alt_az(self, position):
+    def _validate_alt_az(self, alt, az):
 
-        if position.alt <= self["min_altitude"]:
+        if alt <= self["min_altitude"]:
             raise ObjectTooLowException(
-                f"Object too close to horizon (alt={position.alt} limit={self['min_altitude']})"
+                f"Object too close to horizon (alt={alt} limit={self['min_altitude']})"
             )
 
         return True
 
-    def _get_final_position(self, position):
+    # TODO: uncomment this method when precession is implemented.
+    # def _get_final_position(self, position):
 
-        if str(position.epoch).lower() != str(Epoch.NOW).lower():
-            self.log.info(
-                f"Precessing position ({str(position)}) from {position.epoch} to current epoch."
-            )
-            position_now = position.precess(Epoch.NOW)
-        else:
-            self.log.info(f"Current position ({str(position)}), no precession needed.")
-            position_now = position
+    #     if str(position.epoch).lower() != str(Epoch.NOW).lower():
+    #         self.log.info(f"Precessing position ({str(position)}) from {position.epoch} to current epoch.")
+    #         position_now = position.precess(Epoch.NOW)
+    #     else:
+    #         self.log.info(f"Current position ({str(position)}), no precession needed.")
+    #         position_now = position
 
-        self.log.info(f"Final precessed position {str(position_now)}")
+    #     self.log.info(f"Final precessed position {str(position_now)}")
 
-        return position_now
-
-    @lock
-    def slew_to_alt_az(self, position):
-        raise NotImplementedError()
-
-    def abort_slew(self):
-        raise NotImplementedError()
-
-    def is_slewing(self):
-        raise NotImplementedError()
+    #     return position_now
 
     @lock
-    def move_east(self, offset, rate=SlewRate.MAX):
+    def slew_to_alt_az(self, alt: float, az: float) -> None:
+        raise NotImplementedError()
+
+    def abort_slew(self) -> None:
+        raise NotImplementedError()
+
+    def is_slewing(self) -> bool:
         raise NotImplementedError()
 
     @lock
-    def move_west(self, offset, rate=SlewRate.MAX):
+    def move_east(self, offset: float, rate=None) -> None:
         raise NotImplementedError()
 
     @lock
-    def move_north(self, offset, rate=SlewRate.MAX):
+    def move_west(self, offset: float, rate=None) -> None:
         raise NotImplementedError()
 
     @lock
-    def move_south(self, offset, rate=SlewRate.MAX):
+    def move_north(self, offset: float, rate=None) -> None:
         raise NotImplementedError()
 
     @lock
-    def move_offset(self, offset_ra, offset_dec, rate=SlewRate.GUIDE):
+    def move_south(self, offset: float, rate=None) -> None:
+        raise NotImplementedError()
+
+    @lock
+    def move_offset(self, offset_ra: float, offset_dec: float, rate=None) -> None:
 
         if offset_ra == 0:
             pass
@@ -152,12 +153,10 @@ class TelescopeBase(
         _, ra, dec, epoch = simbad_lookup(name) or (None, None, None, None)
         if ra is None or dec is None:
             raise ObjectNotFoundException(f"Object {name} not found in SIMBAD")
-        self.sync_ra_dec(
-            Position.from_ra_dec(ra, dec)
-        )  # todo use epoch from simbad_lookup
+        self.sync_ra_dec(ra, dec, epoch=epoch)
 
     @lock
-    def sync_ra_dec(self, position):
+    def sync_ra_dec(self, ra: float, dec: float, epoch: float = 2000) -> None:
         raise NotImplementedError()
 
     @lock
@@ -193,8 +192,8 @@ class TelescopeBase(
         if md is not None:
             return md
         # If not, just go on with the instrument's default metadata.
-        position = self.get_position_ra_dec()
-        alt = self.get_alt()
+        ra, dec = self.get_position_ra_dec()
+        alt, az = self.get_position_alt_az()
         return [
             ("TELESCOP", self["model"], "Telescope Model"),
             ("OPTICS", self["optics"], "Telescope Optics Type"),
@@ -206,22 +205,30 @@ class TelescopeBase(
             # TODO: How to get ra,dec at start of exposure (not end)
             (
                 "RA",
-                position.ra.to_dms().__str__(),
+                str(Coord.from_h(ra).to_hms()),
                 "Right ascension of the observed object",
             ),
             (
                 "DEC",
-                position.dec.to_dms().__str__(),
+                str(Coord.from_d(dec).to_dms()),
                 "Declination of the observed object",
             ),
-            ("EQUINOX", position.epoch_string()[1:], "coordinate epoch"),
-            ("ALT", alt.to_dms().__str__(), "Altitude of the observed object"),
-            ("AZ", self.get_az().to_dms().__str__(), "Azimuth of the observed object"),
+            ("EQUINOX", "NOW", "coordinate epoch"),
+            ("ALT", str(Coord.from_d(alt).to_dms()), "Altitude of the observed object"),
+            ("AZ", str(Coord.from_d(az).to_dms()), "Azimuth of the observed object"),
             ("AIRMASS", alt.radian, "Airmass of the observed object"),
             ("WCSAXES", 2, "wcs dimensionality"),
             ("RADESYS", "ICRS", "frame of reference"),
-            ("CRVAL1", position.ra.deg, "coordinate system value at reference pixel"),
-            ("CRVAL2", position.dec.deg, "coordinate system value at reference pixel"),
+            (
+                "CRVAL1",
+                Coord.from_h(ra).deg,
+                "coordinate system value at reference pixel",
+            ),
+            (
+                "CRVAL2",
+                Coord.from_d(dec).deg,
+                "coordinate system value at reference pixel",
+            ),
             ("CTYPE1", "RA---TAN", "name of the coordinate axis"),
             ("CTYPE2", "DEC--TAN", "name of the coordinate axis"),
             ("CUNIT1", "deg", "units of coordinate value"),
