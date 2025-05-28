@@ -22,7 +22,7 @@ from chimera.instruments.filterwheel import (
 )
 
 from chimera.core.lock import lock
-from chimera.util.position import Epoch
+from chimera.util.position import Epoch, Position
 
 
 class FakeCamera(CameraBase, FilterWheelBase):
@@ -185,9 +185,11 @@ class FakeCamera(CameraBase, FilterWheelBase):
 
                 if dome.is_slit_open() and self["use_dss"]:
                     dome_az = dome.get_az().to_d()
-                    tel_az = telescope.get_az().to_d()
+                    tel_az = telescope.get_az()
 
-                    tel_position = telescope.get_position_ra_dec()
+                    tel_position = Position.from_ra_dec(
+                        *telescope.get_position_ra_dec(), epoch=Epoch.NOW
+                    )
                     tel_position = tel_position.to_epoch(Epoch.J2000)
 
                     self.log.debug(
@@ -196,11 +198,10 @@ class FakeCamera(CameraBase, FilterWheelBase):
                     if abs(dome_az - tel_az) <= 3:
                         self.log.debug("Dome & Slit aligned -- getting DSS")
                         url = "http://stdatu.stsci.edu/cgi-bin/dss_search?"
+                        ra, dec = telescope.get_position_ra_dec()
                         query_args = {
-                            "r": tel_position.ra.strfcoord("%(h)02d:%(m)02d:%(s)04d"),
-                            "d": tel_position.dec.strfcoord(
-                                "%(d)02d:%(m)02d:%(s)04d", signed=True
-                            ),
+                            "r": ra * 15,  # convert RA from hours to degrees
+                            "d": dec,
                             "f": "fits",
                             "e": "j2000",
                             "c": "gz",
@@ -209,7 +210,7 @@ class FakeCamera(CameraBase, FilterWheelBase):
 
                         # use POSS2-Red surbey ( -90 < d < -20 ) if below -25 deg declination, else use POSS1-Red (-30 < d < +90)
                         # http://www-gsss.stsci.edu/SkySurveys/Surveys.htm
-                        if tel_position.dec.D < -25:
+                        if tel_position.dec.deg < -25:
                             query_args["v"] = "poss2ukstu_red"
                             query_args["h"] = (
                                 ccd_height / 59.5
