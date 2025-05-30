@@ -2,6 +2,7 @@ import copy
 
 from chimera.controllers.imageserver.imagerequest import ImageRequest
 from chimera.core.exceptions import ProgramExecutionException, print_exception
+from chimera.util.position import Epoch
 
 
 def requires(instrument):
@@ -44,9 +45,17 @@ class PointHandler(ActionHandler):
         try:
             # First slew telescope to given position (or none)
             if action.target_ra_dec is not None:
-                telescope.slew_to_ra_dec(action.target_ra_dec)
+                ra_dec = action.target_ra_dec
+                # If epoch is not J2000, convert to J2000
+                if ra_dec.epoch is None or ra_dec.epoch != Epoch.J2000:
+                    ra_dec = ra_dec.to_epoch(Epoch.J2000)
+                telescope.slew_to_ra_dec(
+                    ra_dec.ra, ra_dec.dec, 2000.0
+                )  # epoch is always 2000.0 for pointing
             elif action.target_alt_az is not None:
-                telescope.slew_to_alt_az(action.target_alt_az)
+                telescope.slew_to_alt_az(
+                    action.target_alt_az.alt, action.target_alt_az.az
+                )
             elif action.target_name is not None:
                 telescope.slew_to_object(action.target_name)
 
@@ -113,7 +122,7 @@ class PointHandler(ActionHandler):
         )
 
         if action.target_ra_dec is not None:
-            return f"slewing telescope to (ra dec) {action.target_ra_dec}{offset}"
+            return f"slewing telescope to (ra dec) {action.target_ra_dec}{offset} ({action.target_ra_dec.epoch if action.target_ra_dec.epoch else ''})"
         elif action.target_alt_az is not None:
             return f"slewing telescope to (alt az) {action.target_alt_az}{offset}"
         elif action.target_name is not None:

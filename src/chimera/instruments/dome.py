@@ -215,6 +215,7 @@ class DomeBase(ChimeraObject, DomeSlew, DomeSlit, DomeFlap, DomeSync):
             self.log.debug("[mode] tracking...")
             self._telescope_changed_position(telescope.get_az())
             self._mode = Mode.Track
+            self._process_queue()
         else:
             self.log.warning(
                 "Could not contact the given telescope, staying in Stand mode."

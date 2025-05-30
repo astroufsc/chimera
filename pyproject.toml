@@ -77,3 +77,6 @@ chimera = { workspace = true }
 
 [tool.ruff.lint]
 select = ["N802", "N803"]
+
+[tool.ruff.lint.flake8-copyright]
+notice-rgx = "(?i)# SPDX-FileCopyrightText:\\s\\d{4}(-(\\d{4}|present))*"
