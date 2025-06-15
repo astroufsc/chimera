@@ -19,7 +19,7 @@ from chimera.core.exceptions import ObjectNotFoundException, ObjectTooLowExcepti
 
 from chimera.util.coord import Coord
 from chimera.util.simbad import simbad_lookup
-from chimera.util.position import Epoch, Position
+from chimera.util.position import Position
 
 
 __all__ = ["TelescopeBase"]
