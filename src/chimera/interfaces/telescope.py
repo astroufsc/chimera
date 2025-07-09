@@ -56,7 +56,7 @@ class TelescopeSlew(Telescope):
 
     __config__ = {
         "timeout": 30,  # s
-        "slew_rate": None,  # Slew rate to be used when moving in Arcseconds per second. If None, use the default rate.
+        "slew_rate": None,  # Slew rate to be used when moving in Degrees per second. If None, use the default rate.
         "auto_align": True,
         "align_mode": AlignMode.POLAR,
         "slew_idle_time": 0.1,  # s
@@ -82,12 +82,12 @@ class TelescopeSlew(Telescope):
 
     def slew_to_ra_dec(self, ra: float, dec: float, epoch: float = 2000) -> None:
         """
-        Slew the scope to the given equatorial coordinates.
+        Slew the scope to the given equatorial coordinates. Coordinates are always in ICRS frame.
 
-        @param ra: Right Ascension to slew to.
+        @param ra: Right Ascension to slew to in hours.
         @type ra: float
 
-        @param dec: Declination to slew to.
+        @param dec: Declination to slew to in degrees.
         @type dec: float
 
         @param epoch: Epoch for the coordinates, default is 2000.
@@ -101,10 +101,10 @@ class TelescopeSlew(Telescope):
         """
         Slew the scope to the given local coordinates.
 
-        @param alt: Altitude to slew to.
+        @param alt: Altitude to slew to in degrees.
         @type alt: float
 
-        @param az: Azimuth to slew to.
+        @param az: Azimuth to slew to in degrees.
         @type az: float
 
         @returns: Nothing.
@@ -135,7 +135,7 @@ class TelescopeSlew(Telescope):
         @param offset: Arcseconds to move East.
         @type  offset: int or float
 
-        @param rate: Slew rate to be used when moving in Arcseconds per second. If None, use the default rate.
+        @param rate: Slew rate to be used when moving in Degrees per second. If None, use the default rate.
         @type  rate: float | None
 
         @return: Nothing.
@@ -152,7 +152,7 @@ class TelescopeSlew(Telescope):
         @param offset: Arcseconds to move West.
         @type  offset: int or float
 
-        @param rate: Slew rate to be used when moving in Arcseconds per second. If None, use the default rate.
+        @param rate: Slew rate to be used when moving in Degrees per second. If None, use the default rate.
         @type  rate: float | None
 
         @return: Nothing.
@@ -170,7 +170,7 @@ class TelescopeSlew(Telescope):
         @param offset: Arcseconds to move North.
         @type  offset: int or float
 
-        @param rate: Slew rate to be used when moving in Arcseconds per second. If None, use the default rate.
+        @param rate: Slew rate to be used when moving in Degrees per second. If None, use the default rate.
         @type  rate: float | None
 
         @return: Nothing.
@@ -188,7 +188,7 @@ class TelescopeSlew(Telescope):
         @param offset: Arcseconds to move South.
         @type  offset: int or float
 
-        @param rate: Slew rate to be used when moving in Arcseconds per second. If None, use the default rate.
+        @param rate: Slew rate to be used when moving in Degrees per second. If None, use the default rate.
         @type  rate: float | None
 
         @return: Nothing.
@@ -208,7 +208,7 @@ class TelescopeSlew(Telescope):
         @param offset_dec: Arcseconds to move in Dec
         @type  offset_dec: int or float
 
-        @param rate: Slew rate to be used when moving in Arcseconds per second. If None, use the default rate.
+        @param rate: Slew rate to be used when moving in Degrees per second. If None, use the default rate.
         @type  rate: float | None
 
         @return: Nothing.
@@ -220,7 +220,7 @@ class TelescopeSlew(Telescope):
 
     def get_ra(self) -> float:
         """
-        Get the current telescope Right Ascension.
+        Get the current telescope Right Ascension in hours.
 
         @return: Telescope's current Right Ascension in hours. ICRS coordinates and current, i.e. NOW, epoch.
         @rtype: float
@@ -228,7 +228,7 @@ class TelescopeSlew(Telescope):
 
     def get_dec(self) -> float:
         """
-        Get the current telescope Declination.
+        Get the current telescope Declination in degrees.
 
         @return: Telescope's current Declination in degrees. ICRS coordinates and current, i.e. NOW, epoch.
         @rtype: float
@@ -244,7 +244,7 @@ class TelescopeSlew(Telescope):
 
     def get_alt(self) -> float:
         """
-        Get the current telescope Altitude.
+        Get the current telescope Altitude in degrees.
 
         @return: Telescope's current Altitude in degrees.
         @rtype: float
