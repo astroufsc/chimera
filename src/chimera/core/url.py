@@ -1,0 +1,100 @@
+from dataclasses import dataclass
+from urllib.parse import urlsplit
+
+
+@dataclass(frozen=True)
+class URL:
+    raw: str
+
+    # FIXME: this should be named bus
+    url: str  # tcp://host:port
+    host: str
+    port: int
+
+    path: str  # /<cls>/<name>
+    cls: str
+    name: str
+
+    indexed: bool
+
+    # this shoud be a cached property named url and also the same as the __str__
+    def __str__(self):
+        return f"{self.url}{self.path}"
+
+    # TODO: add __repr__
+
+
+def parse_url(url: str | URL) -> URL:
+    if isinstance(url, URL):
+        return url
+
+    # urlsplit needs the URL to have a scheme, otherwise if will join netloc and path as path
+    if not url.startswith("tcp://"):
+        url = f"tcp://{url}"
+
+    parts = urlsplit(url)
+
+    host, port = parse_host(parts.netloc)
+    cls, name = parse_path(parts.path)
+    indexed = isinstance(name, int)
+
+    return URL(
+        raw=url,
+        url=f"tcp://{host}:{port}",
+        host=host,
+        port=port,
+        path=f"/{cls}/{name}",
+        cls=cls,
+        name=str(name),
+        indexed=indexed,
+    )
+
+
+def parse_host(host: str) -> tuple[str, int]:
+    parts = host.split(":")
+    if len(parts) != 2:
+        raise ValueError(
+            f"Invalid host '{host}': host must be in the format '[tcp://]<host>:<port>'"
+        )
+
+    host, port = parts
+
+    if host == "" or " " in host:
+        raise ValueError(
+            f"Invalid host '{host}': host name is empty or contains spaces"
+        )
+
+    try:
+        port = int(port)
+    except ValueError:
+        raise ValueError(f"Invalid port '{host}': port is not a valid integer")
+
+    return host, port
+
+
+def parse_path(path: str) -> tuple[str, int | str]:
+    if not path.startswith("/"):
+        raise ValueError(f"Invalid path '{path}': path does not start with '/'")
+
+    parts = path.split("/")
+    if len(parts) < 3:
+        raise ValueError(
+            f"Invalid path '{path}': path is not in the format '/<class>/<name|index>'"
+        )
+
+    _, cls, name = parts
+
+    if cls == "" or "$" in cls or " " in cls:
+        raise ValueError(f"Invalid path '{path}': class is empty or contains spaces")
+
+    if name == "" or " " in name:
+        raise ValueError(f"Invalid path '{path}': name is empty or contains spaces")
+
+    if name[0].isdigit():
+        try:
+            return cls, int(name)
+        except ValueError:
+            pass
+
+    # not a numbered instance
+    return cls, name

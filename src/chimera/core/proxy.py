@@ -1,55 +1,29 @@
-from chimera.core.client import Client
-from chimera.core.location import Location
+import random
+from collections.abc import Callable
+from typing import Any
 
-import logging
-
+from chimera.core.bus import Bus
 
 __all__ = ["Proxy", "ProxyMethod"]
 
 
-log = logging.getLogger(__name__)
-
-
 class Proxy:
+    def __init__(self, url: str, bus: Bus):
+        n = random.randint(0, 2**32)
+        self.__location__ = f"{bus.url.url}/Proxy/{n}"
+        self.__bus__ = bus
+        self.__url__ = url
 
-    def __init__(self, location):
-        self.location: Location = Location(location)
-        self.client: Client = Client(self.location)
-
-    def __getstate__(self):
-        return {"location": self.__dict__["location"]}
-
-    def __setstate__(self, state):
-        location = state["location"]
-
-        setattr(self, "location", location)
-        setattr(self, "client", Client(location))
-
-    def ping(self):
-        return self.client.ping()
-
-    def publish_event(self, topic: str, args, kwargs):
-        return self.client.publish_event(topic, args, kwargs)
-
-    def subscribe_event(self, topic, handler):
-        self.client.subscribe_event(topic, handler)
-
-    def unsubscribe_event(self, topic, handler):
-        self.client.unsubscribe_event(topic, handler)
-
-    def __getnewargs__(self):
-        return tuple()
-
-    def __getattr__(self, attr):
+    def __getattr__(self, attr: str):
         return ProxyMethod(self, attr)
 
-    def __getitem__(self, item):
+    def __getitem__(self, item: str):
         return ProxyMethod(self, "__getitem__")(item)
 
-    def __setitem__(self, item, value):
+    def __setitem__(self, item: str, value: Any):
         return ProxyMethod(self, "__setitem__")(item, value)
 
-    def __iadd__(self, config_dict):
+    def __iadd__(self, config_dict: dict[str, Any]):
         ProxyMethod(self, "__iadd__")(config_dict)
         return self
 
@@ -60,42 +34,55 @@ class Proxy:
         return f"[proxy for {self.location}]"
 
 
-class ProxyMethod(object):
-
+class ProxyMethod:
     def __init__(self, proxy: Proxy, method: str):
-
         self.proxy = proxy
         self.method = method
 
         self.__name__ = method
 
     def __repr__(self):
-        return (
-            f"<{self.proxy.location}.{self.method} method proxy at {hex(hash(self))}>"
-        )
+        return f"<{self.proxy.__location__}.{self.method} method proxy at {hex(hash(self))}>"
 
     def __str__(self):
-        return f"[method proxy for {self.proxy.location} {self.method} method]"
+        return f"[method proxy for {self.proxy.__location__} {self.method} method]"
 
     # synchronous call
-    def __call__(self, *args, **kwargs):
-        return self.proxy.client.request(self.method, args, kwargs)
+    def __call__(self, *args: Any, **kwargs: Any):
+        # this is not thread safe
+        response = self.proxy.__bus__.request(
+            src=self.proxy.__location__,
+            dst=self.proxy.__url__,
+            method=self.method,
+            # FIXME: requests should use tuple
+            args=list(args),
+            kwargs=kwargs,
+        )
 
-    # async pattern begin
-    def begin(self, *args, **kwargs):
-        return self.proxy.client.request(f"{self.method}.begin", args, kwargs)
+        # FIXME: bus should not return None, either good or error
+        if response is None:
+            raise RuntimeError("bus is dead")
 
-    # async pattern end
-    def end(self, *args, **kwargs):
-        return self.proxy.client.request(f"{self.method}.end", args, kwargs)
+        if response.error:
+            raise Exception(response.error)
+
+        return response.result
 
     # event handling
-    def __iadd__(self, other):
-        topic = f"{self.proxy.location}/{self.method}"
-        self.proxy.client.subscribe_event(topic, other)
+    def __iadd__(self, other: Callable[..., Any]):
+        self.proxy.__bus__.subscribe(
+            sub=self.proxy.__location__,
+            pub=self.proxy.__url__,
+            event=self.method,
+            callback=other,
+        )
         return self
 
-    def __isub__(self, other):
-        topic = f"{self.proxy.location}/{self.method}"
-        self.proxy.client.unsubscribe_event(topic, other)
+    def __isub__(self, other: Callable[..., Any]):
+        self.proxy.__bus__.unsubscribe(
+            sub=self.proxy.__location__,
+            pub=self.proxy.__url__,
+            event=self.method,
+            callback=other,
+        )
         return self

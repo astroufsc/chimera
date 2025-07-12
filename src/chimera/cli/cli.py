@@ -1,22 +1,19 @@
 import enum
-
-from chimera.core.version import _chimera_version_
-from chimera.core.constants import SYSTEM_CONFIG_DEFAULT_FILENAME
-from chimera.core.location import Location, InvalidLocationException
-
-from chimera.core.systemconfig import SystemConfig
-from chimera.core.manager import Manager
-from chimera.core.proxy import Proxy
-from chimera.core.path import ChimeraPath
-
-from chimera.core.exceptions import ObjectNotFoundException, print_exception
-
-import sys
 import optparse
 import os.path
-import threading
+import random
 import socket
-import time
+import sys
+import threading
+
+from chimera.core.bus import Bus
+from chimera.core.constants import SYSTEM_CONFIG_DEFAULT_FILENAME
+from chimera.core.exceptions import ObjectNotFoundException
+from chimera.core.path import ChimeraPath
+from chimera.core.proxy import Proxy
+from chimera.core.systemconfig import SystemConfig
+from chimera.core.url import parse_url
+from chimera.core.version import _chimera_version_
 
 __all__ = ["ChimeraCLI", "Action", "Parameter", "action", "parameter"]
 
@@ -30,7 +27,7 @@ class ParameterType(enum.StrEnum):
     CONSTANT = "CONSTANT"
 
 
-class Option(object):
+class Option:
     name = None
 
     short = None
@@ -181,16 +178,16 @@ class CLICheckers:
         getattr(parser.values, f"{option.dest}").append(value)
 
     @staticmethod
-    def check_location(option, opt_str, value, parser):
+    def check_url(option, opt_str, value, parser):
         try:
-            Location(value)
-        except InvalidLocationException:
-            raise optparse.OptionValueError(f"{value} isnt't a valid location.")
+            parse_url(value)
+        except ValueError:
+            raise optparse.OptionValueError(f"{value} isnt't a valid URL.")
 
         setattr(parser.values, f"{option.dest}", value)
 
 
-class CLIValues(object):
+class CLIValues:
     """
     This class mimics optparse.Values class, but add an order list to keep
     track of the order in which the command line parameters was parser. This
@@ -218,7 +215,7 @@ class CLIValues(object):
             order.append(attr)
 
 
-class ChimeraCLI(object):
+class ChimeraCLI:
     """
     Create a command line program with automatic parsing of actions
     and parameters based on decorators.
@@ -318,8 +315,6 @@ class ChimeraCLI(object):
 
         self._aborting = False
 
-        self._keep_remote_manager = True
-
         # shutdown event
         self.died = threading.Event()
 
@@ -355,7 +350,6 @@ class ChimeraCLI(object):
             ),
         )
 
-        self._remote_manager = None
         self.sysconfig = None
 
         self._need_instruments_path = instrument_path
@@ -444,8 +438,6 @@ class ChimeraCLI(object):
             self._need_controllers_path = False
 
     def exit(self, msg=None, ret=1):
-        self.__stop__(self.options)
-
         if msg:
             self.err(msg)
 
@@ -454,8 +446,7 @@ class ChimeraCLI(object):
         sys.exit(ret)
 
     def run(self, cmdline_args):
-        t = threading.Thread(target=self._run, args=(cmdline_args,), daemon=True)
-        t.start()
+        self._run(cmdline_args)
 
     def _run(self, cmdline_args):
 
@@ -479,32 +470,34 @@ class ChimeraCLI(object):
 
         # setup objects
         self._setup_objects(self.options)
-        self.__start__(self.options, args)
 
+        t = threading.Thread(target=self._run_actions, args=(actions,), daemon=True)
+        t.start()
+
+    def _run_actions(self, actions):
         # run actions
         for action in actions:
             if not self._run_action(action, self.options):
                 self.exit(ret=1)
 
-        self.__stop__(self.options)
-
         self.died.set()
-
+        self.bus.shutdown()
         self.exit()
 
-    def wait(self, abort=True):
-        try:
-            while not self.died.is_set():
-                time.sleep(0.1)
-        except KeyboardInterrupt:
-            if abort:
-                self.abort()
+    def wait(self, abort: bool = True):
+        self.bus.run_forever()
+
+        # FIXME: bus is already dead now, cannot abort anymore
+        # if abort:
+        #     self.abort()
+
+        self.bus.shutdown()
 
     def _start_system(self, options):
         self.sysconfig = SystemConfig.from_file(options.config)
-        self._remote_manager = Manager.locate(
-            self.sysconfig.chimera["host"], self.sysconfig.chimera["port"]
-        )
+        # FIXME: how to assign this in a nice way?
+        n = random.randint(10000, 60000)
+        self.bus = Bus(f"tcp://127.0.0.1:{10000}")
 
     def _belongs_to(self, me_host, me_port, location):
 
@@ -544,20 +537,14 @@ class ChimeraCLI(object):
             # use user instrument if given
             if inst.default != getattr(options, inst.name):
                 try:
-                    inst.location = Location(getattr(options, inst.name))
-                except InvalidLocationException:
+                    inst.location = parse_url(getattr(options, inst.name))
+                except ValueError:
                     self.exit(
                         f"Invalid location: {getattr(options, inst.name)}. See --help for more information"
                     )
 
             else:
-                # no instrument selected, ask remote Chimera instance for the
-                # newest
-                if self._remote_manager:
-                    insts = self._remote_manager.get_resources_by_class(inst.cls)
-                    if insts:
-                        # get the older
-                        inst.location = insts[0]
+                inst.location = None
 
             if not inst.location and inst.required:
                 self.exit(
@@ -571,23 +558,16 @@ class ChimeraCLI(object):
 
             if inst.location:
                 try:
-                    inst_proxy = Proxy(inst.location)
+                    inst_proxy = Proxy(str(inst.location), self.bus)
+                # FIXME: I don't think this exception exists anymore
                 except ObjectNotFoundException:
                     if inst.required:
                         self.exit(
                             f"Couldn't find {inst.name.capitalize()}. (see --help for more information)"
                         )
 
-                # save values in CLI object (which users are supposed to inherits
-                # from).
+                # save values in CLI object (which users are supposed to inherits from).
                 setattr(self, inst.name, inst_proxy)
-
-    def __start__(self, options, args):
-        pass
-
-    def __stop__(self, options):
-        if self._remote_manager and not self._keep_remote_manager:
-            self._remote_manager.shutdown()
 
     def _create_parser(self):
 
@@ -656,7 +636,7 @@ class ChimeraCLI(object):
             if param.type in (ParameterType.INSTRUMENT, ParameterType.CONTROLLER):
                 option_type = "string"
                 option_action = "callback"
-                option_callback = CLICheckers.check_location
+                option_callback = CLICheckers.check_url
 
             if param.type == ParameterType.BOOLEAN:
                 option_action = "store_true"
@@ -770,7 +750,6 @@ class ChimeraCLI(object):
                 self.exit(f"Invalid value for {name}: {e}")
 
     def _run_action(self, action, options):
-
         try:
             if action.target is not None:
                 method = getattr(self, action.target.__name__)

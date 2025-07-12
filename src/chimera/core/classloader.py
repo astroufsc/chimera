@@ -8,15 +8,14 @@ import traceback
 from chimera.core.exceptions import ClassLoaderException
 
 
-class ClassLoader(object):
-
+class ClassLoader:
     def __init__(self):
         self._cache = {}
 
     def load_class(self, clsname, path=["."]):
         return self._lookup_class(clsname, path)
 
-    def _lookup_class(self, clsname, path):
+    def _lookup_class(self, clsname, path: list[str] | None = None):
         """
         Based on this recipe
         http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/52241
@@ -26,17 +25,12 @@ class ClassLoader(object):
         if clsname.lower() in self._cache:
             return self._cache[clsname.lower()]
 
-        if not isinstance(path, (list, tuple)):
-            path = [path]
-
-        sys.path = path + sys.path
+        if path is not None:
+            sys.path = path + sys.path
 
         try:
-
             module = __import__(clsname.lower(), globals(), locals(), [clsname])
-
         except ImportError:
-
             # Python trick: An ImportError exception caught here
             # could come from both the __import__ above or from the
             # module imported by the __import__ above... So, we need a
@@ -66,7 +60,8 @@ class ClassLoader(object):
             )
 
         # turns sys.path back
-        [sys.path.remove(p) for p in path]
+        if path is not None:
+            [sys.path.remove(p) for p in path]
 
         cls = None
 

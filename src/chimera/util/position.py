@@ -32,7 +32,7 @@ class PositionOutsideLimitsError(Exception):
     pass
 
 
-class Position(object):
+class Position:
     """Position represents a coordinate pair in a reference frame.
 
     There are five factories available, that can be used to create
@@ -295,17 +295,17 @@ class Position(object):
     ra = property(lambda self: self._coords[0])
     dec = property(lambda self: self._coords[1])
 
-    alt = property(lambda self: self._coords[0])
-    az = property(lambda self: self._coords[1])
+    alt = property(lambda self: self._coords[0].deg)
+    az = property(lambda self: self._coords[1].deg)
 
     long = property(lambda self: self._coords[0])
     lat = property(lambda self: self._coords[1])
 
     # primitive conversion
-    deg = property(lambda self: tuple((c.deg for c in self.coords)))
-    radian = property(lambda self: tuple((c.radian for c in self.coords)))
-    arcsec = property(lambda self: tuple((c.arcsec for c in self.coords)))
-    hour = property(lambda self: tuple((c.hour for c in self.coords)))
+    deg = property(lambda self: tuple(c.deg for c in self.coords))
+    radian = property(lambda self: tuple(c.radian for c in self.coords))
+    arcsec = property(lambda self: tuple(c.arcsec for c in self.coords))
+    hour = property(lambda self: tuple(c.hour for c in self.coords))
 
     def dd(self):
         return self.deg

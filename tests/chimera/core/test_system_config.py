@@ -1,28 +1,28 @@
+import logging
+
 import pytest
 
+from chimera.core.constants import MANAGER_DEFAULT_HOST, MANAGER_DEFAULT_PORT
+from chimera.core.log import set_console_level
 from chimera.core.systemconfig import (
     SystemConfig,
-    TypeNotFoundException,
     SystemConfigSyntaxException,
+    TypeNotFoundException,
 )
-from chimera.core.location import InvalidLocationException
-from chimera.core.constants import MANAGER_DEFAULT_HOST, MANAGER_DEFAULT_PORT
-
-from chimera.core.log import set_console_level
-import logging
 
 set_console_level(logging.DEBUG)
 
 
-class TestSystemConfig(object):
-
+class TestSystemConfig:
     #
     # test specials
     #
 
     def test_specials(self):
-
         s = """
+        chimera:
+            host: 127.0.0.1
+            port: 8000
         site:
           name: site1
           type: SiteType
@@ -33,9 +33,7 @@ class TestSystemConfig(object):
         telescope:
           name: tel1
           type: TelescopeType
-          host: 200.131.64.201
-          port: 10001
-          config1: value1          
+          config1: value1
 
         camera:
           name: cam1
@@ -69,42 +67,42 @@ class TestSystemConfig(object):
 
         system = SystemConfig.from_string(s)
 
-        assert system.sites[0].name == "site1"
-        assert system.sites[0].cls == "SiteType"
-        assert system.sites[0].host == "200.131.64.200"
-        assert system.sites[0].port == 10000
-        assert system.sites[0].config["config0"] == "value0"
+        assert system.sites[0][0].name == "site1"
+        assert system.sites[0][0].cls == "SiteType"
+        assert system.sites[0][0].host == "200.131.64.200"
+        assert system.sites[0][0].port == 10000
+        assert system.sites[0][1]["config0"] == "value0"
 
-        assert system.instruments[0].name == "tel1"
-        assert system.instruments[0].cls == "TelescopeType"
-        assert system.instruments[0].host == "200.131.64.201"
-        assert system.instruments[0].port == 10001
-        assert system.instruments[0].config["config1"] == "value1"
+        assert system.instruments[0][0].name == "tel1"
+        assert system.instruments[0][0].cls == "TelescopeType"
+        assert system.instruments[0][0].host == "127.0.0.1"
+        assert system.instruments[0][0].port == 8000
+        assert system.instruments[0][1]["config1"] == "value1"
 
-        assert system.instruments[1].name == "cam1"
-        assert system.instruments[1].cls == "CameraType"
-        assert system.instruments[1].host == "200.131.64.202"
-        assert system.instruments[1].port == 10002
-        assert system.instruments[1].config["config2"] == "value2"
+        assert system.instruments[1][0].name == "cam1"
+        assert system.instruments[1][0].cls == "CameraType"
+        assert system.instruments[1][0].host == "200.131.64.202"
+        assert system.instruments[1][0].port == 10002
+        assert system.instruments[1][1]["config2"] == "value2"
 
-        assert system.instruments[2].name == "focuser1"
-        assert system.instruments[2].cls == "FocuserType"
-        assert system.instruments[2].host == "200.131.64.203"
-        assert system.instruments[2].port == 10003
-        assert system.instruments[2].config["config3"] == "value3"
+        assert system.instruments[2][0].name == "focuser1"
+        assert system.instruments[2][0].cls == "FocuserType"
+        assert system.instruments[2][0].host == "200.131.64.203"
+        assert system.instruments[2][0].port == 10003
+        assert system.instruments[2][1]["config3"] == "value3"
 
-        assert system.instruments[3].name == "dome1"
-        assert system.instruments[3].cls == "DomeType"
-        assert system.instruments[3].host == "200.131.64.204"
-        assert system.instruments[3].port == 10004
-        assert system.instruments[3].config["config4"] == "value4"
+        assert system.instruments[3][0].name == "dome1"
+        assert system.instruments[3][0].cls == "DomeType"
+        assert system.instruments[3][0].host == "200.131.64.204"
+        assert system.instruments[3][0].port == 10004
+        assert system.instruments[3][1]["config4"] == "value4"
 
-        assert system.instruments[4].name == "wheel1"
-        assert system.instruments[4].cls == "FilterWheelType"
-        assert system.instruments[4].host == "200.131.64.205"
-        assert system.instruments[4].port == 10005
-        assert system.instruments[4].config["config5"] == "value5"
-        assert system.instruments[4].config["filters"] == [
+        assert system.instruments[4][0].name == "wheel1"
+        assert system.instruments[4][0].cls == "FilterWheelType"
+        assert system.instruments[4][0].host == "200.131.64.205"
+        assert system.instruments[4][0].port == 10005
+        assert system.instruments[4][1]["config5"] == "value5"
+        assert system.instruments[4][1]["filters"] == [
             "R",
             "G",
             "B",
@@ -115,7 +113,6 @@ class TestSystemConfig(object):
         assert len(system.instruments) == 5
 
     def test_auto_type_name(self):
-
         s = """
         site:
           name: site1
@@ -126,14 +123,13 @@ class TestSystemConfig(object):
         """
 
         system = SystemConfig.from_string(s)
-        assert system.sites[0].name == "site1"
-        assert system.sites[0].cls == "Site"
-        assert system.sites[0].host == "200.131.64.200"
-        assert system.sites[0].port == 10000
-        assert system.sites[0].config["config0"] == "value0"
+        assert system.sites[0][0].name == "site1"
+        assert system.sites[0][0].cls == "Site"
+        assert system.sites[0][0].host == "200.131.64.200"
+        assert system.sites[0][0].port == 10000
+        assert system.sites[0][1]["config0"] == "value0"
 
     def test_auto_host_port(self):
-
         s = """
         site:
           name: site1
@@ -142,18 +138,17 @@ class TestSystemConfig(object):
         """
 
         system = SystemConfig.from_string(s)
-        assert system.sites[0].host == MANAGER_DEFAULT_HOST
-        assert system.sites[0].port == MANAGER_DEFAULT_PORT
+        assert system.sites[0][0].host == MANAGER_DEFAULT_HOST
+        assert system.sites[0][0].port == MANAGER_DEFAULT_PORT
 
     def test_errors(self):
-
         s = """
         telescope:
            type: $lahlah
            name: tel1
         """
         # class cannot have $
-        with pytest.raises(InvalidLocationException):
+        with pytest.raises(ValueError):
             SystemConfig.from_string(s)
 
         s = """
@@ -168,7 +163,6 @@ class TestSystemConfig(object):
     # instrument primitive
     #
     def test_instrument(self):
-
         s = """
         instrument:
          name: simple
@@ -177,8 +171,8 @@ class TestSystemConfig(object):
 
         system = SystemConfig.from_string(s)
 
-        assert system.instruments[0].name == "simple"
-        assert system.instruments[0].cls == "InstrumentType"
+        assert system.instruments[0][0].name == "simple"
+        assert system.instruments[0][0].cls == "InstrumentType"
 
     def test_multiple_instruments(self):
         s = """
@@ -206,7 +200,6 @@ class TestSystemConfig(object):
     # controller primitive
     #
     def test_controller(self):
-
         s = """
         controller:
          name: simple
@@ -215,8 +208,8 @@ class TestSystemConfig(object):
 
         system = SystemConfig.from_string(s)
 
-        assert system.controllers[0].name == "simple"
-        assert system.controllers[0].cls == "ControllerType"
+        assert system.controllers[0][0].name == "simple"
+        assert system.controllers[0][0].cls == "ControllerType"
 
     def test_multiple_controllers(self):
         s = """

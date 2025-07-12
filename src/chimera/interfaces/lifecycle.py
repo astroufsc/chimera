@@ -75,17 +75,7 @@ class ILifeCycle(Interface):
         Get the current L{Location} where the object is deployed.
         """
 
-    def __setlocation__(self, location):
-        """
-        Internally used function to set the current location of the object.
-        """
-
-    def get_manager(self):
-        """
-        Get the current Manager for this object.
-        """
-
-    def get_proxy(self):
+    def get_proxy(self, url: str | None = None):
         """
         Get a Proxy for this object (useful for callbacks)
         """

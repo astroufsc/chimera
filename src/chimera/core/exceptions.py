@@ -48,7 +48,7 @@ def _str_exception(e):
 # exceptions hierarchy
 
 
-class ChimeraException(Exception):
+class ChimeraException(Exception):  # noqa: N818
 
     def __init__(self, msg="", *args):
         Exception.__init__(self, msg, *args)
@@ -59,10 +59,6 @@ class ChimeraException(Exception):
             # self.cause = str_exception(sys.exc_info()[1])
             # FIXME: remote exception handling
             self.cause = None
-
-
-class InvalidLocationException(ChimeraException):
-    pass
 
 
 class ObjectNotFoundException(ChimeraException):

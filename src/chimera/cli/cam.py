@@ -384,10 +384,14 @@ class ChimeraCam(ChimeraCLI):
             self.out("%s " % adc, end="")
         self.out()
 
+        pix_w, pix_h = camera.get_pixel_size()
+        pix_w_um, pix_h_um = camera.get_physical_size()
+        overscan_w, overscan_h = camera.get_overscan_size()
+
         self.out("=" * 40)
-        self.out("CCD size (pixel)       : %d x %d" % camera.get_physical_size())
-        self.out("Pixel size (micrometer): %.2f x %.2f" % camera.get_pixel_size())
-        self.out("Overscan size (pixel)  : %d x %d" % camera.get_overscan_size())
+        self.out(f"CCD size (pixel)       : {pix_w} x {pix_h}")
+        self.out(f"Pixel size (micrometer): {pix_w_um:.2f} x {pix_h_um:.2f}")
+        self.out(f"Overscan size (pixel)  : {overscan_w} x {overscan_h}")
 
         self.out("=" * 40)
         self.out("Available binnings: ", end="")
@@ -515,7 +519,7 @@ class ChimeraCam(ChimeraCLI):
         ) or options.force_display:
             try:
                 ds9 = DS9(open=True)
-            except IOError:
+            except OSError:
                 self.err("Problems starting DS9. DIsplay disabled.")
 
         def expose_begin(request):
@@ -673,7 +677,7 @@ class ChimeraCam(ChimeraCLI):
                         object_name=object_name,
                     )
 
-            except IOError as e:
+            except OSError as e:
                 self.err("Error trying to take exposures (%s)" % str(e))
             except Exception as e:
                 self.err("Error trying to take exposures. (%s)" % print_exception(e))

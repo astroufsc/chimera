@@ -1,165 +1,92 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 # SPDX-FileCopyrightText: 2006-present Paulo Henrique Silva <ph.silva@gmail.com>
 
-from chimera.core.location import Location
-from chimera.core.exceptions import (
-    InvalidLocationException,
-    ObjectNotFoundException,
-    ChimeraException,
-)
-
 import time
-import sys
-from threading import Thread
-
+from concurrent.futures import Future
 from dataclasses import dataclass, field
-from typing import Any, Type
+from typing import Any
+
+from chimera.core.url import parse_path
 
 
 @dataclass
 class Resource:
-    location: Location | None = None
+    path: str
+    cls: str
+    name: str | int
     instance: Any | None = None
-    uri: str = ""
-    bases: list[Type] = field(default_factory=list)
-    created: float = field(default_factory=time.time)
-    loop: Thread | None = None
+    bases: list[str] = field(default_factory=list)
+    created: float = field(default_factory=time.monotonic)
+    loop: Future | None = None
 
 
 class ResourcesManager:
-
     def __init__(self):
         self._res = {}
 
-    def add(self, location, instance, loop=None):
+    def add(
+        self, path: str, instance: Any | None = None, loop: Future | None = None
+    ) -> None:
+        cls, name = parse_path(path)
+        if path in self:
+            raise ValueError(f"'{path}' already exists.")
 
-        location = self._valid_location(location)
+        resource = Resource(path=path, cls=cls, name=name)
+        resource.instance = instance
+        if resource.instance is not None:
+            resource.bases = [b.__name__ for b in type(resource.instance).mro()]
+        resource.loop = loop
 
-        if location in self:
-            raise InvalidLocationException("Location already on the resource pool.")
+        self._res[path] = resource
 
-        entry = Resource()
-        entry.location = location
-        entry.instance = instance
-        if entry.instance is not None:
-            entry.bases = [b.__name__ for b in type(entry.instance).mro()]
-        entry.loop = loop
+    def remove(self, path: str) -> None:
+        if path not in self:
+            raise KeyError(f"{path} not found")
 
-        self._res[location] = entry
+        del self._res[path]
 
-        # get the number of instances of this specific class, counting this one
-        # and not including parents (minus 1 to start counting at 0)
-        return len(self.get_by_class(location.cls, check_bases=False)) - 1
+    def get(self, path: str) -> Resource | None:
+        cls, name = parse_path(path)
+        if isinstance(name, int):
+            return self._get_by_index(cls, name)
+        return self._get(cls, name)
 
-    def remove(self, location):
-        entry = self.get(location)
-        del self._res[entry.location]
-        return True
+    def get_by_class(self, cls: str) -> list[Resource]:
+        resources = []
 
-    def get(self, item):
+        for k, v in list(self._res.items()):
+            if cls == v.cls or cls in v.bases:
+                resources.append(self._res[k])
 
-        location = self._valid_location(item)
+        resources.sort(key=lambda entry: entry.created)
+        return resources
 
-        try:
-            index = int(location.name)
-            return self._get_by_index(location, index)
-        except ValueError:
-            # not a numbered instance
-            pass
+    def _get_by_index(self, cls: str, index: int) -> Resource | None:
+        resources = self.get_by_class(cls)
+        if not resources or index > len(resources):
+            return None
+        return self._res[resources[index].path]
 
-        return self._get(location)
+    def _get(self, cls: str, name: str) -> Resource | None:
+        path = f"/{cls}/{name}"
 
-    def get_by_class(self, cls, check_bases=True):
+        resources = self.get_by_class(cls)
+        for resource in resources:
+            if resource.path == path:
+                return resource
+        return None
 
-        to_ret = []
-
-        for k, v in list(self.items()):
-
-            if not check_bases:
-                if k.cls == cls:
-                    to_ret.append(self._res[k])
-            else:
-                # return if class or any base matches
-                if cls == k.cls or cls in v.bases:
-                    to_ret.append(self._res[k])
-
-        to_ret.sort(key=lambda entry: entry.created)
-        return to_ret
-
-    def _get(self, item):
-        location = self._valid_location(item)
-        locations = [x.location for x in self.get_by_class(location.cls)]
-
-        if location in locations:
-            ret = [x for x in list(self.keys()) if x == location]
-            return self._res[ret[0]]
-        else:
-            raise ObjectNotFoundException(f"Couldn't find {location}.")
-
-    def _get_by_index(self, item, index):
-        location = self._valid_location(item)
-        instances = self.get_by_class(location.cls)
-        if instances:
-            try:
-                return self._res[instances[index].location]
-            except IndexError:
-                raise ObjectNotFoundException(
-                    f"Couldn't find {location} instance #{index}."
-                )
-        else:
-            raise ObjectNotFoundException(f"Couldn't find {location}.")
-
-    def _valid_location(self, item):
-        ret = item
-
-        if not isinstance(item, Location):
-            ret = Location(item)
-
-        return ret
-
-    def __getitem__(self, item):
-        try:
-            return self.get(item)
-        except ChimeraException:
-            raise KeyError(f"Couldn't find {item}").with_traceback(sys.exc_info()[2])
-
-    def __contains__(self, item):
-        # note that our 'in'/'not in' tests are for keys (locations) and
-        # not for values
-
-        item = self._valid_location(item)
-
-        if item in list(self.keys()):
-            return True
-        else:
-            # is this a numbered instance?
-            try:
-                index = int(item.name)
-                return bool(self._get_by_index(item, index))
-            except ValueError:
-                # not a numbered instance
-                return False
-            except ObjectNotFoundException:
-                # nor a valid object
-                return False
-
-    def __iter__(self):
-        return iter(self._res)
+    def __contains__(self, path: str):
+        return self.get(path) is not None
 
     def __len__(self):
         return len(self._res)
 
-    def keys(self):
-        return list(self._res.keys())
-
-    def values(self):
-        return list(self._res.values())
-
     def items(self):
-        return list(self._res.items())
+        return self._res.items()
 
-    def iterkeys(self):
+    def keys(self):
         return iter(self._res.keys())
 
-    def iteritems(self):
-        return iter(self._res.items())
+    def values(self):
+        return iter(self._res.values())

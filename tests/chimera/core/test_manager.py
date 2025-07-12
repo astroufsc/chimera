@@ -1,20 +1,18 @@
+import os.path
+
 import pytest
 
 from chimera.core.chimeraobject import ChimeraObject
-from chimera.core.proxy import Proxy
-
 from chimera.core.exceptions import (
-    InvalidLocationException,
-    NotValidChimeraObjectException,
     ChimeraObjectException,
     ClassLoaderException,
+    InvalidLocationException,
+    NotValidChimeraObjectException,
 )
-
-import os.path
+from chimera.core.proxy import Proxy
 
 
 class Simple(ChimeraObject):
-
     def __init__(self):
         ChimeraObject.__init__(self)
 
@@ -22,14 +20,12 @@ class Simple(ChimeraObject):
         return 42
 
 
-class NotValid(object):
+class NotValid:
     pass
 
 
-class TestManager(object):
-
+class TestManager:
     def test_add_start(self, manager):
-
         # add by class
         assert manager.add_class(Simple, "simple", start=True)
 
@@ -78,7 +74,6 @@ class TestManager(object):
         # manager.add_location("/ManagerHelperWithMainException/h")
 
     def test_remove_stop(self, manager):
-
         assert manager.add_class(Simple, "simple")
 
         # who?
@@ -110,7 +105,6 @@ class TestManager(object):
         assert manager.remove("/Simple/0") is True
 
     def test_proxy(self, manager):
-
         assert manager.add_class(Simple, "simple")
 
         # who?
@@ -134,7 +128,6 @@ class TestManager(object):
         #     p.wrong()
 
     def test_manager(self, manager):
-
         assert manager.add_class(Simple, "simple")
 
         p = manager.get_proxy("/Simple/simple")

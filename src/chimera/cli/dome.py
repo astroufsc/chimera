@@ -246,7 +246,7 @@ class ChimeraDome(ChimeraCLI):
     )
     def start_fan(self, options):
         try:
-            domefan = self.dome.get_manager().get_proxy(options.fan)
+            domefan = self.dome.get_proxy(options.fan)
         except ObjectNotFoundException:
             self.exit("%s: Could not find requested fan." % red("ERROR"))
 

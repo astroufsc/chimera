@@ -1,13 +1,12 @@
-from chimera.core.chimeraobject import ChimeraObject
-from chimera.core.proxy import Proxy
-from chimera.core.event import event
-
-import time
 import math
+import time
+
+from chimera.core.chimeraobject import ChimeraObject
+from chimera.core.event import event
+from chimera.core.proxy import Proxy
 
 
 class Publisher(ChimeraObject):
-
     def __init__(self):
         ChimeraObject.__init__(self)
         self.counter = 0
@@ -36,7 +35,6 @@ class Publisher(ChimeraObject):
 
 
 class Subscriber(ChimeraObject):
-
     def __init__(self):
         ChimeraObject.__init__(self)
         self.counter = 0
@@ -55,9 +53,7 @@ class Subscriber(ChimeraObject):
 
 
 class TestEvents:
-
     def test_publish(self, manager):
-
         assert manager.add_class(Publisher, "p") is not False
         assert manager.add_class(Subscriber, "s") is not False
 
@@ -89,7 +85,6 @@ class TestEvents:
         assert p.get_counter() == 2
 
     def test_performance(self, manager):
-
         assert manager.add_class(Publisher, "p") is not False
         assert manager.add_class(Subscriber, "s") is not False
 
@@ -102,7 +97,6 @@ class TestEvents:
         p.foo_done += s.foo_done_clbk
 
         for check in range(1):
-
             start = time.time()
             for i in range(100):
                 p.foo()

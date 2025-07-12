@@ -1,5 +1,11 @@
+import logging
+from typing import Self
+
+logger = logging.getLogger(__name__)
+
+
 class Serializer:
-    def dumps(self, obj): ...
+    def dumps(self, obj) -> bytes | None: ...
 
     def loads(self, data): ...
 
@@ -16,7 +22,7 @@ class Serializable:
             return None
 
     @classmethod
-    def load(cls: Type[Self], serializer: Serializer, data: bytes) -> Self | None:
+    def load(cls: type[Self], serializer: Serializer, data: bytes) -> Self | None:
         try:
             if serializer.object_mode:
                 return serializer.loads(data)

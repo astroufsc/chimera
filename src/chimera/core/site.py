@@ -3,7 +3,6 @@
 
 
 import datetime as dt
-
 from dateutil import tz
 import ephem
 import numpy as np
@@ -62,7 +61,7 @@ class Site(ChimeraObject):
     )
 
     def __init__(self):
-        ChimeraObject.__init__(self)
+        super().__init__()
 
         self._sun = ephem.Sun()
         self._moon = ephem.Moon()
@@ -82,7 +81,7 @@ class Site(ChimeraObject):
     def _date_to_local(self, date):
         # convert date to a non-naive datetime with TZ set to UTC
         time_tuple = date.tuple()
-        time_tuple = tuple((int(t) for t in time_tuple))
+        time_tuple = tuple(int(t) for t in time_tuple)
         time_tuple += (0, self.utc_tz)
         d_utc = dt.datetime(*time_tuple)
         # then return it in local timezone
