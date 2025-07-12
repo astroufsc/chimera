@@ -1,14 +1,12 @@
 import pytest
 
 from chimera.core.config import Config, OptionConversionException
-from chimera.util.enum import Enum
 from chimera.util.coord import Coord, State
+from chimera.util.enum import Enum
 
 
-class TestConfig(object):
-
+class TestConfig:
     def test_str(self):
-
         c = Config({"key_str": "value"})
 
         # valid
@@ -24,7 +22,6 @@ class TestConfig(object):
         # any?
 
     def test_number(self):
-
         c = Config({"key_int": 10, "key_float": 1.0})
 
         # valid
@@ -51,7 +48,6 @@ class TestConfig(object):
                 c.__setitem__("key_float", i)
 
     def test_bool(self):
-
         c = Config({"key_bool": True})
 
         # valid
@@ -79,7 +75,6 @@ class TestConfig(object):
             True,
             False,
         ):
-
             # no assert because setitem returns the old and this can be False
             # we get errors if any set raises OptionConversionException
             c.__setitem__("key_bool", i)
@@ -93,7 +88,6 @@ class TestConfig(object):
                 c.__setitem__("key_bool", i)
 
     def test_options(self):
-
         c = Config(
             {
                 "key_opt_int": [1, 2, 3],
@@ -131,7 +125,6 @@ class TestConfig(object):
                 c.__setitem__("key_opt_str", i)
 
     def test_range(self):
-
         c = Config({"key_range": (1, 10)})  # ranges are inclusive
 
         # valid
@@ -149,7 +142,6 @@ class TestConfig(object):
                 c.__setitem__("key_range", i)
 
     def test_iter(self):
-
         d = {
             "device": "/dev/ttyS0",
             "ccd": ["imaging", "tracking"],
@@ -195,7 +187,6 @@ class TestConfig(object):
         )  # __iadd__ protocol, return self to allow daisy chaining
 
     def test_enum(self):
-
         class Values(Enum):
             A_VALUE = "A_VALUE"
             OTHER_VALUE = "OTHER_VALUE"
@@ -227,7 +218,6 @@ class TestConfig(object):
             c.__getitem__("WHATERVER")
 
     def test_coord(self):
-
         c = Config({"DMS": Coord.from_dms(10), "HMS": Coord.from_hms(10)})
 
         assert c["DMS"].state == State.DMS

@@ -1,106 +1,74 @@
 import pytest
 
 from chimera.core.resources import ResourcesManager
-from chimera.core.exceptions import InvalidLocationException, ObjectNotFoundException
+
+
+@pytest.fixture
+def resources():
+    return ResourcesManager()
 
 
 class TestResources:
+    def test_add(self, resources: ResourcesManager):
+        assert len(resources) == 0
 
-    def setup_method(self):
-        # each test will receive a fresh new class, so define our fixture right here
-        self.res = ResourcesManager()
+        resources.add("/Location/l1")
+        assert len(resources) == 1
 
-    def test_add(self):
+        # path already added
+        with pytest.raises(ValueError):
+            resources.add("/Location/l1")
 
-        assert len(self.res) == 0
+        # FIXME: parse_url: tcp://127.0.0.1:6379//Telescope/0 fails because of the double bars
 
-        assert self.res.add("/Location/l1", "instance-1", "uri-1") == 0
+        resources.add("/Location/l2")
+        assert len(resources) == 2
 
-        # location already added
-        with pytest.raises(InvalidLocationException):
-            self.res.add("/Location/l1", "instance-1", "uri-1")
+        with pytest.raises(ValueError):
+            resources.add("Location/l1")
 
-        assert self.res.add("/Location/l2", "instance-2", "uri-2") == 1
+        with pytest.raises(ValueError):
+            resources.add("/Location")
 
-        with pytest.raises(InvalidLocationException):
-            self.res.add("wrong location", "instance-2", "uri-2")
+        with pytest.raises(ValueError):
+            resources.add("//l1")
 
-        assert "/Location/l1" in self.res
-        assert "/Location/l2" in self.res
-        assert "/Location/0" in self.res
-        assert "/LocationNotExistent/l2" not in self.res
+        with pytest.raises(ValueError):
+            resources.add("/Location/")
 
-        assert len(self.res) == 2
+        with pytest.raises(ValueError):
+            resources.add("wrong location")
 
-    def test_str(self):
+    def test_remove(self, resources: ResourcesManager):
+        assert len(resources) == 0
+        resources.add("/Location/l1")
+        assert len(resources) == 1
 
-        assert len(self.res) == 0
-        assert self.res.add("/Location/l1", "instance-1", "uri-1") == 0
-        assert isinstance(str(self.res.get("/Location/0")), str)
+        resources.remove("/Location/l1")
 
-    def test_remove(self):
+        assert len(resources) == 0
+        assert "/Location/l1" not in resources
 
-        assert len(self.res) == 0
-
-        assert self.res.add("/Location/l1", "instance-1", "uri-1") == 0
-        assert self.res.remove("/Location/l1") is True
-
-        with pytest.raises(ObjectNotFoundException):
-            self.res.remove("/What/l1")
-        with pytest.raises(InvalidLocationException):
-            self.res.remove("wrong location")
-
-        assert "/Location/l1" not in self.res
-
-    def test_get(self):
-        assert len(self.res) == 0
-
-        assert self.res.add("/Location/l2", "instance-2") == 0
-        assert self.res.add("/Location/l1", "instance-1") == 1
-
-        ret = self.res.get("/Location/l1")
-
-        assert ret.location == "/Location/l1"
-        assert ret.instance == "instance-1"
-
-        with pytest.raises(ObjectNotFoundException):
-            self.res.get("/Location/l99")
-
-        # get using subscription
-        assert self.res["/Location/l1"].location == "/Location/l1"
         with pytest.raises(KeyError):
-            self.res.__getitem__("/LocationNotExistent/l1")
-        with pytest.raises(KeyError):
-            self.res.__getitem__("wrong location")
+            resources.remove("/What/l1")
+        with pytest.raises(ValueError):
+            resources.remove("wrong location")
 
-        # get by index
-        assert self.res.get("/Location/0").location == "/Location/l2"
-        assert self.res.get("/Location/1").location == "/Location/l1"
-        with pytest.raises(ObjectNotFoundException):
-            self.res.get("/Location/9")
-        with pytest.raises(ObjectNotFoundException):
-            self.res.get("/LocationNotExistent/0")
-        with pytest.raises(InvalidLocationException):
-            self.res.get("wrong location")
+    def test_get(self, resources: ResourcesManager):
+        instance = object()
+        resources.add("/Location/l1", instance)
 
-    def test_get_by_class(self):
+        resource = resources.get("/Location/l1")
 
-        assert len(self.res) == 0
+        assert resource is not None
+        assert resource.path == "/Location/l1"
+        assert resource.instance is instance
 
-        assert self.res.add("/Location/l1", "instance-1", "uri-1") == 0
-        assert self.res.add("/Location/l2", "instance-2", "uri-2") == 1
+        assert resources.get("/Location/l99") is None
+        assert resources.get("/OtherLocation/l1") is None
 
-        entries = [self.res.get("/Location/l1"), self.res.get("/Location/l2")]
-
-        # get by class
-        found = self.res.get_by_class("Location")
-
-        assert entries == found
-
-    def test_get_by_class_and_bases(self):
-        assert len(self.res) == 0
-
-        class Base(object):
+    def test_get_by_class(self, resources: ResourcesManager):
+        class Base:
             pass
 
         class A(Base):
@@ -109,20 +77,53 @@ class TestResources:
         class B(A):
             pass
 
-        assert self.res.add("/A/a", A()) == 0
-        assert self.res.add("/B/b", B()) == 0
+        resources.add("/A/a", A())
+        resources.add("/B/b", B())
+        resources.add("/A/aa", A())
+        resources.add("/B/bb", B())
 
-        assert self.res.add("/A/aa", A()) == 1
-        assert self.res.add("/B/bb", B()) == 1
-
-        entries = [
-            self.res.get("/A/a"),
-            self.res.get("/B/b"),
-            self.res.get("/A/aa"),
-            self.res.get("/B/bb"),
-        ]
-
+        assert len(resources) == 4
         # get by class
-        found = self.res.get_by_class("Base", check_bases=True)
+        assert len(resources.get_by_class("Base")) == 4
+        assert len(resources.get_by_class("A")) == 4
+        assert len(resources.get_by_class("B")) == 2
 
-        assert entries == found
+    def test_get_by_index(self, resources: ResourcesManager):
+        instance_l1 = object()
+        instance_l2 = object()
+        resources.add("/Location/l1", instance_l1)
+        resources.add("/Location/l2", instance_l2)
+
+        resource_l1 = resources.get("/Location/0")
+        assert resource_l1 is not None
+        assert resource_l1.path == "/Location/l1"
+
+        resource_l2 = resources.get("/Location/1")
+        assert resource_l2 is not None
+        assert resource_l2.path == "/Location/l2"
+
+        assert resources.get("/Location/9") is None
+        assert resources.get("/LocationNotExistent/0") is None
+
+        with pytest.raises(ValueError):
+            resources.get("wrong location")
+
+    def test_contains(self, resources: ResourcesManager):
+        resources.add("/Location/l1")
+        resources.add("/Location/l2")
+
+        assert "/Location/l1" in resources
+        assert "/Location/l2" in resources
+        assert "/Location/0" in resources
+        assert "/LocationNotExistent/l2" not in resources
+
+    def test_dict_behavior(self, resources: ResourcesManager):
+        resources.add("/Location/l2")
+        resources.add("/Location/l1")
+
+        expected_paths = list(resources.keys())
+        expected_resources = list(resources.values())
+
+        for k, v in resources.items():
+            assert k == expected_paths.pop(0)
+            assert v == expected_resources.pop(0)

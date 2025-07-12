@@ -4,6 +4,7 @@
 
 import queue
 import threading
+import functools
 
 from chimera.core.chimeraobject import ChimeraObject
 from chimera.interfaces.dome import Mode, DomeSlew, DomeSlit, DomeFlap, DomeSync
@@ -11,6 +12,9 @@ from chimera.core.lock import lock
 from chimera.core.exceptions import ObjectNotFoundException
 from chimera.core.exceptions import ChimeraException
 from chimera.util.coord import Coord
+from chimera.core.site import Site
+from chimera.core.proxy import Proxy
+
 
 
 __all__ = ["DomeBase"]

@@ -250,9 +250,7 @@ class RangeChecker(Checker):
 
         try:
             tmp = self._checker.check(value)
-
         except OptionConversionException:
-
             raise OptionConversionException(f"'{str(value)}' isn't a valid option.")
 
         else:

@@ -11,13 +11,10 @@ from chimera.core.lock import lock
 from chimera.core.proxy import Proxy
 
 
-class TestLock(object):
-
+class TestLock:
     @pytest.mark.slow
     def test_autolock(self, manager):
-
         class Minimo(ChimeraObject):
-
             def __init__(self):
                 ChimeraObject.__init__(self)
 
@@ -116,16 +113,13 @@ class TestLock(object):
         do_test(p)
 
     def test_lock_config(self):
-
         class Minimo(ChimeraObject):
-
             __config__ = {"config": 0}
 
             def __init__(self):
                 ChimeraObject.__init__(self)
 
             def do_write(self):
-
                 for i in range(10):
                     self["config"] = i
                     print(f"[ write ] - config={i}")
@@ -133,7 +127,6 @@ class TestLock(object):
                     time.sleep(0.1)
 
             def do_read(self):
-
                 for i in range(1000):
                     t0 = time.time()
                     value = self["config"]

@@ -2,7 +2,6 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 # SPDX-FileCopyrightText: 2006-present Paulo Henrique Silva <ph.silva@gmail.com>
 
-import copy
 import sys
 
 from chimera.core.exceptions import (
@@ -151,6 +150,7 @@ class ChimeraTel(ChimeraCLI):
             else:
                 self.out("")
 
+        # FIXME: this won't work as we cannot resolve these methods!
         telescope.slew_begin += slew_begin
         telescope.slew_complete += slew_complete
 
@@ -369,21 +369,19 @@ class ChimeraTel(ChimeraCLI):
         telescope = self.telescope
 
         self.out(40 * "=")
-        self.out(
-            "telescope: %s (%s)." % (telescope.get_location(), telescope["device"])
-        )
+        self.out(f"telescope: {telescope.get_location()}, device={telescope['device']}")
 
         ra, dec = telescope.get_position_ra_dec()
         self._print_current_position()
         self.out(
             "tracking: %s" % ("enabled" if telescope.is_tracking() else "disabled")
         )
-        if self.telescope.features(TelescopeCover):
+        if self.telescope.features("TelescopeCover"):
             self.out(
                 "telescope cover: %s "
                 % ("open" if telescope.is_cover_open() else "closed")
             )
-        if self.telescope.features(TelescopePier):
+        if self.telescope.features("TelescopePier"):
             self.out(
                 "current side of pier: %s "
                 % telescope.get_pier_side().__str__().lower()
@@ -560,10 +558,8 @@ class ChimeraTel(ChimeraCLI):
     def __abort__(self):
         self.out("\naborting... ", end="")
 
-        # create a copy of telescope proxy
         if hasattr(self, "telescope"):
-            tel = copy.copy(self.telescope)
-            tel.abort_slew()
+            self.telescope.abort_slew()
 
     def _validate_offset(self, value):
         try:

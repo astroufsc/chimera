@@ -1,14 +1,15 @@
-from chimera.core.location import Location
-from chimera.core.exceptions import ChimeraException
-from chimera.core.constants import (
-    SYSTEM_CONFIG_DEFAULT_FILENAME,
-    MANAGER_DEFAULT_HOST,
-    MANAGER_DEFAULT_PORT,
-)
-import yaml
-
 # import chimera.core.log
 import logging
+
+import yaml
+
+from chimera.core.constants import (
+    MANAGER_DEFAULT_HOST,
+    MANAGER_DEFAULT_PORT,
+    SYSTEM_CONFIG_DEFAULT_FILENAME,
+)
+from chimera.core.exceptions import ChimeraException
+from chimera.core.url import parse_url
 
 log = logging.getLogger(__name__)
 
@@ -21,13 +22,13 @@ class SystemConfigSyntaxException(ChimeraException):
     pass
 
 
-class SystemConfig(object):
+class SystemConfig:
     """
 
     Chimera configuration system
     ============================
 
-    Chimera uses YAML format to the configutation system. YAML use
+    Chimera uses YAML format for its configuration system. YAML uses
     basic syntax to allow sequences and maps to be easily parsed.
 
     A map (a key=value sequence) is defined using:
@@ -54,7 +55,7 @@ class SystemConfig(object):
       parameter_2: value2
       parameter_3: value3
 
-    To define more than one instance, just pass an sequence as the
+    To define more than one instance, just pass a sequence as the
     maps value, as in:
 
      instrument:
@@ -111,7 +112,7 @@ class SystemConfig(object):
     @staticmethod
     def from_file(filename):
         s = SystemConfig()
-        s.add(open(filename, "r").read())
+        s.add(open(filename).read())
         return s
 
     @staticmethod
@@ -119,7 +120,6 @@ class SystemConfig(object):
         return SystemConfig.from_file(SYSTEM_CONFIG_DEFAULT_FILENAME)
 
     def __init__(self):
-
         # primitives
         self.chimera = {}
 
@@ -164,7 +164,6 @@ class SystemConfig(object):
         self.chimera["port"] = MANAGER_DEFAULT_PORT
 
     def add(self, buffer):
-
         try:
             config = yaml.load(buffer, yaml.Loader)
             if not config:  # empty file
@@ -219,7 +218,6 @@ class SystemConfig(object):
         objects = {}
 
         for type, values in list(config.items()):
-
             key = type.lower()
             objects[key] = []
 
@@ -227,12 +225,11 @@ class SystemConfig(object):
                 values = [values]
 
             for instance in values:
-                loc = self._parse_location(key, instance)
-                objects[key].append(loc)
+                url = self._parse_location(key, instance)
+                objects[key].append((url, instance))
 
         # create instruments list ordered by sections_order list created above
         for section in sections_order:
-
             if section in self._instruments_sections and section in objects:
                 self.instruments += objects[section]
 
@@ -254,7 +251,6 @@ class SystemConfig(object):
         return name
 
     def _parse_location(self, type, dic):
-
         name = dic.pop("name", self._get_default_name(type))
 
         # replace some invalid chars from object name
@@ -276,4 +272,4 @@ class SystemConfig(object):
         host = dic.pop("host", self.chimera["host"])
         port = dic.pop("port", self.chimera["port"])
 
-        return Location(name=name, cls=cls, host=host, port=port, config=dic)
+        return parse_url(f"tcp://{host}:{port}/{cls}/{name}")

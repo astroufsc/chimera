@@ -2,7 +2,6 @@ from chimera.core.chimeraobject import ChimeraObject
 
 
 class ManagerHelperWithStopException(ChimeraObject):
-
     def __init__(self):
         ChimeraObject.__init__(self)
 

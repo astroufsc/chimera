@@ -1,17 +1,15 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 # SPDX-FileCopyrightText: 2006-present Paulo Henrique Silva <ph.silva@gmail.com>
 
+import time
+
 import pytest
+from dateutil.relativedelta import relativedelta
 
 from chimera.core.site import Site
 
 
-from dateutil.relativedelta import relativedelta
-
-import time
-
-
-class TestSite(object):
+class TestSite:
     def test_times(self, manager):
         manager.add_class(
             Site,

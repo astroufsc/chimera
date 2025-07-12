@@ -1,8 +1,7 @@
-from chimera.core.chimeraobject import ChimeraObject
-from chimera.core.exceptions import ChimeraException
-
 import logging
 
+from chimera.core.chimeraobject import ChimeraObject
+from chimera.core.exceptions import ChimeraException
 
 log = logging.getLogger("chimera.test_log")
 
@@ -19,8 +18,7 @@ class Simple(ChimeraObject):
             raise ChimeraException("I'm a new Exception, sorry again")
 
 
-class TestLog(object):
-
+class TestLog:
     def test_log(self, manager):
         manager.add_class(Simple, "simple")
 

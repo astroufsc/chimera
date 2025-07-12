@@ -1,34 +1,33 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 # SPDX-FileCopyrightText: 2006-present Paulo Henrique Silva <ph.silva@gmail.com>
 
-from chimera.core.classloader import ClassLoader
-from chimera.core.server import Server
-from chimera.core.resources import ResourcesManager
-from chimera.core.location import Location
+import concurrent.futures
+import logging
+import operator
+import threading
+import time
+from collections.abc import Callable
+from typing import Any, Literal
 
+from chimera.core.bus import Bus
 from chimera.core.chimeraobject import ChimeraObject
-from chimera.core.proxy import Proxy
-from chimera.core.state import State
-
-from chimera.core.exceptions import (
-    InvalidLocationException,
-    ObjectNotFoundException,
-    NotValidChimeraObjectException,
-    ChimeraObjectException,
-    ChimeraException,
-    OptionConversionException,
-)
-
+from chimera.core.classloader import ClassLoader
 from chimera.core.constants import (
     MANAGER_DEFAULT_HOST,
     MANAGER_DEFAULT_PORT,
     MANAGER_LOCATION,
 )
-
-import logging
-import threading
-import time
-
+from chimera.core.exceptions import (
+    ChimeraException,
+    ChimeraObjectException,
+    NotValidChimeraObjectException,
+    ObjectNotFoundException,
+    OptionConversionException,
+)
+from chimera.core.proxy import Proxy
+from chimera.core.resources import ResourcesManager
+from chimera.core.state import State
+from chimera.core.url import parse_url
 
 __all__ = ["Manager", "get_manager_uri", "ManagerNotFoundException"]
 
@@ -40,12 +39,11 @@ class ManagerNotFoundException(ChimeraException):
     pass
 
 
-def get_manager_uri(host=None, port=None):
-
+def get_manager_uri(host: str | None = None, port: int | None = None):
     host = host or MANAGER_DEFAULT_HOST
     port = port or MANAGER_DEFAULT_PORT
 
-    return f"{host}:{port}{MANAGER_LOCATION}"
+    return parse_url(f"{host}:{port}{MANAGER_LOCATION}")
 
 
 class Manager:
@@ -60,45 +58,53 @@ class Manager:
     @group Shutdown: wait, shutdown
     """
 
-    @staticmethod
-    def locate(host, port=MANAGER_DEFAULT_PORT) -> Proxy:
-        p = Proxy(Location(get_manager_uri(host, port)))
-        if not p.ping():
-            raise ManagerNotFoundException(
-                f"Couldn't find manager running on {host}:{port}"
-            )
-        return p
-
-    def __init__(self, host=MANAGER_DEFAULT_HOST, port=MANAGER_DEFAULT_PORT):
+    def __init__(self, bus: Bus):
         log.info("Starting manager.")
+
+        self._bus = bus
+        self._bus.resolve_request = self._resolve_request
 
         self.resources = ResourcesManager()
         self.class_loader = ClassLoader()
+        self._pool = concurrent.futures.ThreadPoolExecutor(
+            thread_name_prefix=f"{self._bus.url.url}/Manager-"
+        )
 
         # shutdown event
         self.died = threading.Event()
 
         # register ourselves
-        self.resources.add(get_manager_uri(host, port), self),
+        self.resources.add("/Manager/manager", self)
 
-        # our daemon server
-        self.server = Server(self.resources, host, port)
-        self.server.start()
-        self.server_thread = threading.Thread(target=self.server.loop, daemon=True)
-        self.server_thread.name = get_manager_uri(host, port)
+    def _resolve_request(
+        self, object: str, method: str
+    ) -> tuple[bool, Literal[False] | Callable[..., Any]]:
 
-        self.server_thread.start()
+        resource = self.resources.get(object)
+        if not resource:
+            return False, False
+            # TODO: handle invalid request
+            # self.transport.send(Protocol.error("Invalid request"))
+
+        instance = resource.instance
+        method_getter = operator.attrgetter(method)
+
+        try:
+            callable = method_getter(instance)
+            return True, callable
+        except AttributeError:
+            return True, False
 
     # private
     def __repr__(self):
-        return f"<Manager for {self.server.transport.host}:{self.server.transport.port} at {hex(id(self))}>"
+        return f"<Manager for {self._bus.url} at {hex(id(self))}>"
 
     # host/port
     def get_hostname(self):
-        return self.server.transport.host
+        return self._bus.url.url.replace("tcp://", "").split(":")[0]
 
     def get_port(self):
-        return self.server.transport.port
+        return self._bus.url.url.replace("tcp://", "").split(":")[1]
 
     # reflection (console)
     def get_resources(self):
@@ -108,8 +114,7 @@ class Manager:
         return list(self.resources.keys())
 
     def get_resources_by_class(self, cls):
-        ret = self.resources.get_by_class(cls)
-        return [x.location for x in ret]
+        return [r.path for r in self.resources.get_by_class(cls)]
 
     # helpers
     def get_proxy(self, location):
@@ -131,15 +136,6 @@ class Manager:
         @param location: Object location or class.
         @type location: Location or class
 
-        @param name: Instance name.
-        @type name: str
-
-        @param host: Manager's hostname.
-        @type host: str
-
-        @param port: Manager's port.
-        @type port: int
-
         @raises NotValidChimeraObjectException: When a object which doesn't
                                                 inherit from ChimeraObject
                                                 is given in location.
@@ -151,32 +147,8 @@ class Manager:
         @rtype: Proxy
         """
 
-        location = Location(location)
-        resolved_location = Location(
-            host=location.host or self.get_hostname(),
-            port=location.port or self.get_port(),
-            cls=location.cls,
-            name=location.name,
-            config=location.config,
-        )
-
-        return Proxy(resolved_location)
-
-    def get_instance(self, location):
-        if not location:
-            raise ObjectNotFoundException(
-                "Couldn't find an object at the" f" given location {location}"
-            )
-        ret = self.resources.get(location)
-
-        if not ret:
-            raise ObjectNotFoundException(
-                "Couldn't found an object at the" f" given location {location}"
-            )
-
-        return ret
-
-    # shutdown management
+        url = parse_url(location)
+        return Proxy(url, self._bus)
 
     def shutdown(self):
         """
@@ -188,64 +160,33 @@ class Manager:
         """
 
         # die, but only if we are alive ;)
-        if not self.died.is_set():
+        if self.died.is_set():
+            return
 
-            log.info("Shutting down manager.")
+        log.info("Shutting down manager.")
 
-            # stop objects
+        # stop objects
+        elderly_first = sorted(
+            self.resources.values(), key=lambda res: res.created, reverse=True
+        )
+
+        for resource in elderly_first:
+            # except Manager
+            if resource.path == MANAGER_LOCATION:
+                continue
+
+            # stop object
             try:
-
-                elderly_first = sorted(
-                    self.resources.values(), key=lambda res: res.created, reverse=True
-                )
-
-                for resource in elderly_first:
-
-                    # except Manager
-                    if resource.location == MANAGER_LOCATION:
-                        continue
-
-                    # stop object
-                    self.stop(resource.location)
-
+                self.stop(resource.path)
             except ChimeraException:
                 pass
-            finally:
-                # kill our server
-                self.server.stop()
 
-                self.server_thread.join()
-
-                # die!
-                self.died.set()
-                log.info("Manager finished.")
-
-    def wait(self):
-        """
-        Ask the system to wait until anyone calls L{shutdown}.
-
-        If nobody calls L{shutdown}, you can stop the system using
-        Ctrl+C.
-
-        @return: Nothing
-        @rtype: None
-        """
-
-        try:
-            try:
-                while not self.died.is_set():
-                    time.sleep(1)
-            except IOError:
-                # On Windows, Ctrl+C on a sleep call raise IOError 'cause
-                # of the interrupted syscall
-                pass
-        except KeyboardInterrupt:
-            # On Windows, Ctrl+C on a sleep call raise IOError 'cause
-            # of the interrupted syscall
-            self.shutdown()
+        # die!
+        self.died.set()
+        log.info("Manager shut down.")
 
     # objects lifecycle
-    def add_location(self, location, path=[], start=True):
+    def add_location(self, location, path=[], start=True, config: dict[str, Any] = {}):
         """
         Add the class pointed by 'location' to the system configuring it
         using 'config'. Manager will look for the class in 'path' and sys.path.
@@ -266,14 +207,9 @@ class Manager:
         @return: returns a proxy for the object if successful, False otherwise.
         @rtype: Proxy or bool
         """
-
-        if not isinstance(location, Location):
-            location = Location(location)
-
         # get the class
-        cls = None
         cls = self.class_loader.load_class(location.cls, path)
-        return self.add_class(cls, location.name, location.config, start)
+        return self.add_class(cls, location.name, config, start)
 
     def add_class(self, cls, name, config={}, start=True):
         """
@@ -299,23 +235,18 @@ class Manager:
         @rtype: Proxy or bool
         """
 
-        location = Location(
-            cls=cls.__name__,
-            name=name,
-            config=config,
-            host=self.get_hostname(),
-            port=self.get_port(),
+        url = parse_url(
+            f"{self.get_hostname()}:{self.get_port()}/{cls.__name__}/{name}"
         )
-
         # names must not start with a digit
-        if location.name[0] in "0123456789":
-            raise InvalidLocationException(
-                f"Invalid instance name: {location} (must start with a letter)"
+        if url.name[0] in "0123456789":
+            raise ValueError(
+                f"Invalid instance name: {url.name} (must start with a letter)"
             )
 
-        if location in self.resources:
-            raise InvalidLocationException(
-                f"Location {location} is already in the system. Only one allowed (Tip: change the name!)."
+        if url.path in self.resources:
+            raise ValueError(
+                f"Location {url.path} is already in the system. Only one allowed (Tip: change the name!)."
             )
 
         # check if it's a valid ChimeraObject
@@ -330,24 +261,25 @@ class Manager:
         try:
             obj = cls()
         except Exception:
-            log.exception(f"Error in {location} __init__.")
-            raise ChimeraObjectException(f"Error in {location} __init__.")
+            log.exception(f"Error in {url} __init__.")
+            raise ChimeraObjectException(f"Error in {url} __init__.")
 
         try:
-            for k, v in list(location.config.items()):
+            for k, v in list(config.items()):
                 obj[k] = v
         except (OptionConversionException, KeyError) as e:
-            log.exception(f"Error configuring {location}.")
-            raise ChimeraObjectException(f"Error configuring {location}. ({e})")
+            log.exception(f"Error configuring {url.path}.")
+            raise ChimeraObjectException(f"Error configuring {url}. ({e})")
 
         # connect
-        obj.__setlocation__(location)
-        self.resources.add(location, obj)
+        obj.__location__ = str(url)
+        obj.__bus__ = self._bus
+        self.resources.add(url.path, obj)
 
         if start:
-            self.start(location)
+            self.start(url.path)
 
-        return Proxy(location)
+        return Proxy(str(url), self._bus)
 
     def remove(self, location):
         """
@@ -374,7 +306,7 @@ class Manager:
 
         return True
 
-    def start(self, location):
+    def start(self, location) -> bool:
         """
         Start the object pointed by 'location'.
 
@@ -407,11 +339,9 @@ class Manager:
         try:
             # FIXME: thread exception handling
             # ok, now schedule object main in a new thread
-            log.info(f"Running {location}. __main___.")
+            log.info(f"Running {location}.__main___.")
 
-            loop = threading.Thread(target=resource.instance.__main__, daemon=True)
-            loop.name = str(resource.location)
-            loop.start()
+            loop = self._pool.submit(resource.instance.__main__)
 
             resource.instance.__setstate__(State.RUNNING)
             resource.created = time.time()
@@ -446,12 +376,11 @@ class Manager:
         resource = self.resources.get(location)
 
         try:
-
             # stop control loop
-            if resource.loop and resource.loop.is_alive():
+            if resource.loop:
                 resource.instance.__abort_loop__()
                 try:
-                    resource.loop.join()
+                    resource.loop.cancel()
                 except KeyboardInterrupt:
                     # ignore Ctrl+C on shutdown
                     pass

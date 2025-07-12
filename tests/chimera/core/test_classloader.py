@@ -1,15 +1,13 @@
+import os.path
+import time
+
 import pytest
 
 from chimera.core.classloader import ClassLoader, ClassLoaderException
 
-import time
-import os.path
-
 
 class TestClassLoader:
-
     def test_load_class(self):
-
         loader = ClassLoader()
 
         t0 = time.time()

@@ -1,22 +1,19 @@
 import pytest
 
 from chimera.core.chimeraobject import ChimeraObject
-from chimera.core.methodwrapper import MethodWrapper
-from chimera.core.event import event
-from chimera.core.state import State
 from chimera.core.config import OptionConversionException
-from chimera.core.exceptions import InvalidLocationException
 from chimera.core.constants import CONFIG_ATTRIBUTE_NAME
+from chimera.core.event import event
+from chimera.core.exceptions import InvalidLocationException
+from chimera.core.metaobject import MethodWrapper
+from chimera.core.state import State
 
 
-class TestChimeraObject(object):
-
+class TestChimeraObject:
     # FIXME: use fixtures to put each test on their own method (unit tests in small units!)
     def test_class_creation(self):
-
         # 1. simple class (no inheritance)
         class BaseClass(ChimeraObject):
-
             __config__ = {"base_config": True}
 
             @event
@@ -41,7 +38,6 @@ class TestChimeraObject(object):
 
         # 2. single inheritance
         class SingleClass(BaseClass):
-
             __config__ = {"single_config": True}
 
             @event
@@ -71,7 +67,7 @@ class TestChimeraObject(object):
             def another_base_method(self):
                 pass
 
-        class NonChimeraClass(object):
+        class NonChimeraClass:
             __config__ = {}
 
             def non_chimera_method(self):
@@ -105,7 +101,6 @@ class TestChimeraObject(object):
         assert MultipleClass.__dict__[CONFIG_ATTRIBUTE_NAME]["multiple_config"] is True
 
     def test_method_wrapper(self):
-
         class Test(ChimeraObject):
             def do_foo(self, a, b, c=None):
                 assert isinstance(self, Test)
@@ -117,9 +112,7 @@ class TestChimeraObject(object):
         assert t.do_foo(1, 2, 3) is True
 
     def test_config(self):
-
         class ConfigTest(ChimeraObject):
-
             __config__ = {"key1": True, "key2": False}
 
         c = ConfigTest()
@@ -154,9 +147,7 @@ class TestChimeraObject(object):
             c.__getitem__(100)
 
     def test_main(self):
-
         class MainTest(ChimeraObject):
-
             def __init__(self):
                 ChimeraObject.__init__(self)
 
@@ -178,7 +169,6 @@ class TestChimeraObject(object):
         assert m.counter == m.get_hz()
 
     def test_location(self):
-
         class Foo(ChimeraObject):
             pass
 
@@ -190,7 +180,6 @@ class TestChimeraObject(object):
         assert f.get_location() == "/Foo/bar"
 
     def test_state(self):
-
         class Foo(ChimeraObject):
             pass
 
@@ -203,9 +192,7 @@ class TestChimeraObject(object):
         assert f.get_state() == State.RUNNING
 
     def test_methods(self):
-
         class BaseClass(ChimeraObject):
-
             __config__ = {"base_config": True}
 
             @event
@@ -219,7 +206,6 @@ class TestChimeraObject(object):
                 pass
 
         class Minimo(BaseClass):
-
             CONST = 42
 
             def __init__(self):

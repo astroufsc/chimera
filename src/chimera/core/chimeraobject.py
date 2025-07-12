@@ -1,31 +1,29 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 # SPDX-FileCopyrightText: 2006-present Paulo Henrique Silva <ph.silva@gmail.com>
 
-from chimera.core.metaobject import MetaObject
-from chimera.core.config import Config
-from chimera.core.proxy import Proxy
-
-from chimera.core.state import State
-from chimera.core.location import Location
-
-from chimera.core.constants import EVENTS_ATTRIBUTE_NAME
-from chimera.core.constants import METHODS_ATTRIBUTE_NAME
-from chimera.core.constants import CONFIG_PROXY_NAME
-from chimera.core.constants import INSTANCE_MONITOR_ATTRIBUTE_NAME
-from chimera.core.constants import RWLOCK_ATTRIBUTE_NAME
-
-from chimera.interfaces.lifecycle import ILifeCycle
-
 import logging
-import time
 import threading
+import time
 
+from chimera.core.bus import Bus
+from chimera.core.config import Config
+from chimera.core.constants import (
+    CONFIG_PROXY_NAME,
+    EVENTS_ATTRIBUTE_NAME,
+    INSTANCE_MONITOR_ATTRIBUTE_NAME,
+    METHODS_ATTRIBUTE_NAME,
+    RWLOCK_ATTRIBUTE_NAME,
+)
+from chimera.core.metaobject import MetaObject
+from chimera.core.proxy import Proxy
+from chimera.core.state import State
+from chimera.core.url import parse_url
+from chimera.interfaces.lifecycle import ILifeCycle
 
 __all__ = ["ChimeraObject"]
 
 
 class ChimeraObject(ILifeCycle, metaclass=MetaObject):
-
     def __init__(self):
         ILifeCycle.__init__(self)
 
@@ -34,7 +32,8 @@ class ChimeraObject(ILifeCycle, metaclass=MetaObject):
 
         self.__state__ = State.STOPPED
 
-        self.__location__: Location
+        self.__location__: str
+        self.__bus__: Bus
 
         # logging.
         # put every logger on behalf of chimera's logger so
@@ -114,55 +113,9 @@ class ChimeraObject(ILifeCycle, metaclass=MetaObject):
     def __get_config__(self):
         return list(getattr(self, CONFIG_PROXY_NAME).items())
 
-    # ILifeCycle implementation
-    def __start__(self):
-        return True
+    def __start__(self): ...
 
-    def __stop__(self):
-        return True
-
-    def get_hz(self):
-        return self._hz
-
-    def set_hz(self, freq):
-        tmp_hz = self.get_hz()
-        self._hz = freq
-        return tmp_hz
-
-    def __main__(self):
-
-        self._loop_abort.clear()
-        timeslice = 0.01
-
-        run_condition = True
-
-        while run_condition:
-
-            run_condition = self.control()
-
-            if self._loop_abort.is_set():
-                return True
-
-            # FIXME: better idle loop
-            # we can't sleep for the whole time because
-            # if object set a long sleep time and Manager decides to
-            # shutdown, we must be asleep to receive his message and
-            # return.
-            time_to_wake_up = 1.0 / self.get_hz()
-            slept = 0
-            while slept < time_to_wake_up:
-                time.sleep(timeslice)
-                if self._loop_abort.is_set():
-                    return True
-                slept += timeslice
-
-        return True
-
-    def __abort_loop__(self):
-        self._loop_abort.set()
-
-    def control(self):
-        return False
+    def __stop__(self): ...
 
     def get_state(self):
         return self.__state__
@@ -175,14 +128,37 @@ class ChimeraObject(ILifeCycle, metaclass=MetaObject):
     def get_location(self):
         return self.__location__
 
-    def __setlocation__(self, location):
-        self.__location__ = Location(location)
-        return True
+    def get_hz(self):
+        return self._hz
 
-    def get_manager(self):
-        return Proxy(
-            f"{self.__location__.host}:{self.__location__.port}/Manager/manager"
-        )
+    def set_hz(self, freq):
+        tmp_hz = self.get_hz()
+        self._hz = freq
+        return tmp_hz
+
+    def __main__(self):
+        self._loop_abort.clear()
+        run_condition = True
+
+        while run_condition:
+            t0 = time.monotonic()
+            with self:
+                run_condition = self.control()
+            loop_time = time.monotonic() - t0
+
+            time_to_wake_up = (1.0 / self.get_hz()) - loop_time
+            if time_to_wake_up > 0:
+                run_condition = not self._loop_abort.wait(time_to_wake_up)
+            else:
+                self.log.warning(
+                    f"Loop is taking more than {1.0 / self.get_hz()} seconds to run."
+                )
+
+    def __abort_loop__(self):
+        self._loop_abort.set()
+
+    def control(self):
+        return False
 
     def get_metadata(self, request):
         # Check first if there is metadata from a metadata override method.
@@ -206,14 +182,22 @@ class ChimeraObject(ILifeCycle, metaclass=MetaObject):
             )
         return None
 
-    def features(self, interface):
+    def features(self, interface: str):
         """
         Checks if self is an instance of an interface.
         This is useful to check if some interface/capability is supported by an instrument
         :param interface: One of from chimera interfaces
         :return: True if is instance, False otherwise
         """
-        return isinstance(self, interface)
+        return interface in self.__class__.__mro__
 
-    def get_proxy(self) -> Proxy:
-        return Proxy(self.__location__)
+    def get_proxy(self, url: str | None = None) -> Proxy:
+        if url is not None:
+            try:
+                u = parse_url(url)
+            except ValueError:
+                # assume that url only contains the path, so use our bus as the url
+                u = parse_url(f"{self.__bus__.url.url}{url}")
+            return Proxy(str(u), self.__bus__)
+
+        return Proxy(str(self.__location__), self.__bus__)

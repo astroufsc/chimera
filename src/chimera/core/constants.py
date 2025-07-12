@@ -5,8 +5,8 @@
 import sys
 import os
 
-MANAGER_DEFAULT_HOST = "localhost"
-MANAGER_DEFAULT_PORT = 7666
+MANAGER_DEFAULT_HOST = "127.0.0.1"
+MANAGER_DEFAULT_PORT = 6379
 
 MANAGER_LOCATION = "/Manager/manager"
 
@@ -37,14 +37,9 @@ else:
 
 SYSTEM_CONFIG_DEFAULT_FILENAME = os.path.join(SYSTEM_CONFIG_DIRECTORY, "chimera.config")
 
-if hasattr(sys, "frozen"):
-    SYSTEM_CONFIG_DEFAULT_SAMPLE = os.path.join(
-        os.path.dirname(sys.executable), "samples", "chimera.sample.config"
-    )
-else:
-    SYSTEM_CONFIG_DEFAULT_SAMPLE = os.path.join(
-        os.path.dirname(__file__), "chimera.sample.config"
-    )
+SYSTEM_CONFIG_DEFAULT_SAMPLE = os.path.join(
+    os.path.dirname(__file__), "chimera.sample.config"
+)
 
 SYSTEM_CONFIG_LOG_NAME = os.path.join(SYSTEM_CONFIG_DIRECTORY, "chimera.log")
 
