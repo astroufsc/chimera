@@ -1,20 +1,21 @@
-from typing import override
+import orjson as json
 
-import pickle
+from typing import override
 
 from chimera.core.serializer import Serializer
 
 
-class PickleSerializer(Serializer):
+class JSONSerializer(Serializer):
+
     @override
     def dumps(self, obj):
-        return pickle.dumps(obj)
+        return json.dumps(obj)
 
     @override
     def loads(self, data):
-        return pickle.loads(data)
+        return json.loads(data)
 
     @property
     @override
     def object_mode(self) -> bool:
-        return True
+        return False

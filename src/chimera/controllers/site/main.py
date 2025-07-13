@@ -47,8 +47,6 @@ class SiteController(object):
             chimera.core.log.set_console_level(logging.DEBUG)
             # log.set_console_level(logging.DEBUG)
 
-        self.manager = None
-
         self.paths = {"instruments": [], "controllers": []}
 
         # add system and plugins paths
@@ -84,7 +82,7 @@ class SiteController(object):
             "-H",
             "--host",
             action="store",
-            dest="pyro_host",
+            dest="host",
             type="string",
             help="Host name/IP address to run as; [default=%default]",
             metavar="HOST",
@@ -94,7 +92,7 @@ class SiteController(object):
             "-P",
             "--port",
             action="store",
-            dest="pyro_port",
+            dest="port",
             type="string",
             help="Port on which to listen for requests; [default=%default]",
             metavar="PORT",
@@ -198,18 +196,13 @@ class SiteController(object):
             dry=False,
             verbose=0,
             daemon=False,
-            pyro_host=MANAGER_DEFAULT_HOST,
-            pyro_port=MANAGER_DEFAULT_PORT,
+            host=MANAGER_DEFAULT_HOST,
+            port=MANAGER_DEFAULT_PORT,
         )
 
         return parser.parse_args(args)
 
     def startup(self):
-
-        if self.options.daemon:
-            # detach
-            log.info("FIXME: Daemon...")
-
         # system config
         try:
             self.config = SystemConfig.from_file(self.options.config_file)

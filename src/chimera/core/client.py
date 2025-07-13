@@ -1,8 +1,6 @@
 from chimera.core.location import Location
 from chimera.core.protocol import Protocol
-from chimera.core.serializer_pickle import PickleSerializer
-from chimera.core.transport import create_transport
-from chimera.core.transport_redis import RedisTransport
+from chimera.core.transport_factory import create_transport
 
 
 class Client:
@@ -10,20 +8,19 @@ class Client:
         self,
         location: Location,
         protocol=Protocol,
-        transport=RedisTransport,
-        serializer=PickleSerializer,
     ):
         self.location = location
         self.protocol = protocol()
-        self.transport = create_transport(
-            location.host, location.port, transport, serializer
-        )
+        self.transport = create_transport(str(location))
         self.transport.connect()
+
+    def __del__(self):
+        self.transport.close()
 
     def ping(self):
         return self.transport.ping()
 
-    # start in protocol and handle to bytes
+    # TODO: implement timeout
     def request(self, method, args, kwargs, timeout=None):
         request = self.protocol.request(
             location=self.location,
@@ -34,22 +31,23 @@ class Client:
 
         self.transport.send_request(request)
 
-        # FIXME: timeout should be configurable, calls can take a long time.
         response = self.transport.recv_response(request)
+        # TODO: handle more errors
+        # if response is None:
+        #     raise Exception("Server is down")
         if response is None:
-            raise Exception("Server is down")
+            raise Exception("Invalid response")
 
         if response.error:
             raise Exception(response.error)
 
         return response.result
 
-    def publish_event(self, topic, args, kwargs):
-        data = self.protocol.event(topic, args, kwargs)
-        return self.transport.publish(topic, data)
+    def publish_event(self, topic: str, args, kwargs):
+        self.transport.publish(topic, self.protocol.event(topic, args, kwargs))
 
-    def subscribe_event(self, topic, handler):
-        return self.transport.subscribe(topic, handler)
+    def subscribe_event(self, topic: str, handler):
+        self.transport.subscribe(topic, handler)
 
-    def unsubscribe_event(self, topic, handler):
-        return self.transport.unsubscribe(topic, handler)
+    def unsubscribe_event(self, topic: str, handler):
+        self.transport.unsubscribe(topic, handler)

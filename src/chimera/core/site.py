@@ -3,7 +3,6 @@
 
 
 import datetime as dt
-
 from dateutil import tz
 import ephem
 import numpy as np
@@ -62,7 +61,7 @@ class Site(ChimeraObject):
     )
 
     def __init__(self):
-        ChimeraObject.__init__(self)
+        super().__init__()
 
         self._sun = ephem.Sun()
         self._moon = ephem.Moon()

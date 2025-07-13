@@ -2,10 +2,11 @@ import traceback
 import uuid
 from dataclasses import dataclass
 from typing import Any
+from .serializer import Serializable
 
 
 @dataclass
-class Request:
+class Request(Serializable):
     id: str
     version: int
     location: str
@@ -15,7 +16,7 @@ class Request:
 
 
 @dataclass
-class Event:
+class Event(Serializable):
     id: str
     version: int
     location: str
@@ -24,7 +25,7 @@ class Event:
 
 
 @dataclass
-class Response:
+class Response(Serializable):
     id: str
     code: int
 

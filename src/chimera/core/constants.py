@@ -5,7 +5,7 @@
 import sys
 import os
 
-MANAGER_DEFAULT_HOST = "localhost"
+MANAGER_DEFAULT_HOST = "127.0.0.1"
 MANAGER_DEFAULT_PORT = 7666
 
 MANAGER_LOCATION = "/Manager/manager"

@@ -1,12 +1,12 @@
 import logging
-from typing import Type
+from typing import Type, override
 
 import redis
+import redis.exceptions
 import redislite
 
 from chimera.core.protocol import Event, Request, Response
 from chimera.core.serializer import Serializer
-from chimera.core.serializer_pickle import PickleSerializer
 from chimera.core.transport import Transport
 
 log = logging.getLogger(__name__)
@@ -15,20 +15,20 @@ log = logging.getLogger(__name__)
 class RedisTransport(Transport):
     REQUESTS_KEY: str = "chimera_requests"
 
-    def __init__(
-        self, host: str, port: int, serializer: Type[Serializer] = PickleSerializer
-    ):
+    def __init__(self, host: str, port: int, serializer: Type[Serializer]):
         super().__init__(host, port, serializer)
-        self._r = None
+        self._r: redis.Redis | None = None
         self._pubsub = None
         self._pubsub_thread = None
 
-    def bind(self):
+    @override
+    def bind(self) -> None:
         self._r = redislite.Redis(serverconfig={"bind": self.host, "port": self.port})
         self._r.delete(RedisTransport.REQUESTS_KEY)
         self._init_pubsub()
 
     def _init_pubsub(self):
+        assert self._r is not None
 
         def exception_handler(e, pubsub, thread):
             if isinstance(e, redis.ConnectionError):
@@ -43,7 +43,8 @@ class RedisTransport(Transport):
             )
             self._pubsub_thread.name = f"{self.host}:{self.port}/RedisTransport/0"
 
-    def connect(self):
+    @override
+    def connect(self) -> None:
         if self._r is None:
             self._r = redislite.Redis(host=self.host, port=self.port)
             self._init_pubsub()
@@ -53,21 +54,29 @@ class RedisTransport(Transport):
             self._pubsub.close()
             self._pubsub_thread.stop()
 
-    def close(self):
-        # close pubsub
+    @override
+    def close(self) -> None:
+        assert self._r is not None
         self._close_pubsub()
-        # shutdown the server
         self._r.shutdown()
 
+    @override
     def ping(self) -> bool:
+        assert self._r is not None
         try:
             return self._r.ping()
         except redis.exceptions.ConnectionError:
             log.error("ping failed. Is server down?")
             return False
 
+    @override
     def send_request(self, request: Request) -> None:
-        request_bytes = self.serializer.dumps(request)
+        assert self._r is not None
+        request_bytes = request.dump(self.serializer)
+        if not request_bytes:
+            # TODO: is this the better way to handle this?
+            log.error("Failed to serialize request")
+            return
 
         try:
             self._r.rpush(self.REQUESTS_KEY, request_bytes)
@@ -75,7 +84,9 @@ class RedisTransport(Transport):
             # server is down, just ignore
             return
 
+    @override
     def recv_request(self) -> Request | None:
+        assert self._r is not None
         try:
             data = self._r.blpop(
                 [
@@ -83,15 +94,23 @@ class RedisTransport(Transport):
                 ]
             )
             _, request_bytes = data
-            return self.serializer.loads(request_bytes)
+            return Request.load(self.serializer, request_bytes)
         except redis.exceptions.ConnectionError:
             return None
 
+    @override
     def send_response(self, request: Request, response: Response) -> None:
-        response_bytes = self.serializer.dumps(response)
+        assert self._r is not None
+        response_bytes = response.dump(self.serializer)
+        if response_bytes is None:
+            # TODO: is this the better way to handle this?
+            log.error("Failed to serialize response")
+            return
         self._r.rpush(f"chimera_response_{request.id}", response_bytes)
 
+    @override
     def recv_response(self, request: Request) -> Response | None:
+        assert self._r is not None
         try:
             data = self._r.blpop(
                 [
@@ -99,15 +118,20 @@ class RedisTransport(Transport):
                 ]
             )
             _, request_bytes = data
-            return self.serializer.loads(request_bytes)
+            return Response.load(self.serializer, request_bytes)
         except redis.exceptions.ConnectionError:
             return None
 
-    def publish(self, topic: str, data: Event) -> int:
+    @override
+    def publish(self, topic: str, event: Event) -> None:
+        assert self._r is not None
         """Publish a message to a topic. Return the number of subscribers."""
-        return self._r.publish(topic, self.serializer.dumps(data))
+        self._r.publish(topic, event.dump(self.serializer))
 
+    @override
     def subscribe(self, topic: str, callback) -> None:
+        assert self._pubsub is not None
+
         def parse_call(message):
             event = self.serializer.loads(message["data"])
             try:
@@ -118,5 +142,7 @@ class RedisTransport(Transport):
 
         self._pubsub.subscribe(**{topic: parse_call})
 
-    def unsubscribe(self, channel: str, callback) -> None:
-        self._pubsub.unsubscribe(channel)
+    @override
+    def unsubscribe(self, topic: str, callback) -> None:
+        assert self._pubsub is not None
+        self._pubsub.unsubscribe(topic)

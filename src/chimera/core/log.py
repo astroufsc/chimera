@@ -4,6 +4,9 @@ import logging.handlers
 import sys
 import os.path
 
+from rich.logging import RichHandler
+
+
 from chimera.core.constants import (
     SYSTEM_CONFIG_LOG_NAME,
     SYSTEM_CONFIG_DIRECTORY,
@@ -67,7 +70,7 @@ consoleHandler = logging.StreamHandler(sys.stderr)
 consoleHandler.setFormatter(fmt)
 consoleHandler.setLevel(logging.WARNING)
 consoleHandler.addFilter(flt)
-root.addHandler(consoleHandler)
+root.addHandler(RichHandler())
 
 
 def set_console_level(level):

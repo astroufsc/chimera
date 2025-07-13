@@ -20,7 +20,6 @@ import logging
 import time
 import threading
 
-
 __all__ = ["ChimeraObject"]
 
 
@@ -130,31 +129,27 @@ class ChimeraObject(ILifeCycle, metaclass=MetaObject):
         return tmp_hz
 
     def __main__(self):
-
         self._loop_abort.clear()
-        timeslice = 0.01
-
         run_condition = True
 
         while run_condition:
-
-            run_condition = self.control()
+            t0 = time.time()
+            with self:
+                run_condition = self.control()
 
             if self._loop_abort.is_set():
                 return True
 
-            # FIXME: better idle loop
-            # we can't sleep for the whole time because
-            # if object set a long sleep time and Manager decides to
-            # shutdown, we must be asleep to receive his message and
-            # return.
-            time_to_wake_up = 1.0 / self.get_hz()
-            slept = 0
-            while slept < time_to_wake_up:
-                time.sleep(timeslice)
-                if self._loop_abort.is_set():
-                    return True
-                slept += timeslice
+            loop_time = time.time() - t0
+            time_to_wake_up = (1.0 / self.get_hz()) - loop_time
+            if time_to_wake_up > 0:
+                # FIXME: we should use some condvar to wait until someone notify us or time_to_wake_up is over
+                #        so we can release the GIL but also be alert in case someone kill this object.
+                time.sleep(time_to_wake_up)
+            else:
+                self.log.warning(
+                    f"Loop is taking more than {1.0 / self.get_hz()} seconds to run."
+                )
 
         return True
 

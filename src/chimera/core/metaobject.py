@@ -25,7 +25,7 @@ __all__ = ["MetaObject"]
 
 class MetaObject(type):
 
-    def __new__(meta, clsname, bases, _dict):
+    def __new__(cls, clsname, bases, _dict):
 
         # join __config__ dicts, class configuration override base classes
         # configs
@@ -75,4 +75,4 @@ class MetaObject(type):
         _dict[INSTANCE_MONITOR_ATTRIBUTE_NAME] = threading.Condition(threading.RLock())
         _dict[RWLOCK_ATTRIBUTE_NAME] = ReadWriteLock()
 
-        return super(MetaObject, meta).__new__(meta, clsname, bases, _dict)
+        return super(MetaObject, cls).__new__(cls, clsname, bases, _dict)
