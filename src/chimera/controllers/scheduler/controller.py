@@ -26,6 +26,7 @@ class Scheduler(ChimeraObject):
 
     __config__ = {
         "telescope": "/Telescope/0",
+        "rotator": "/Rotator/0",
         "camera": "/Camera/0",
         "filterwheel": "/FilterWheel/0",
         "focuser": "/Focuser/0",

@@ -142,6 +142,7 @@ class Point(Action):
     offset_ns = Column(PickleType, default=None)  # offset North (>0)/South (<0)
     offset_ew = Column(PickleType, default=None)  # offset West (>0)/East (<0)
     target_name = Column(String, default=None)
+    pa = Column(Float, default=None)  # rotator position angle
 
     def __str__(self):
         offset_ns_str = (
@@ -208,7 +209,4 @@ class Expose(Action):
         return f"expose: exptime={self.exptime} frames={self.frames} type={self.image_type}"
 
 
-###
-
-# metadata.drop_all(engine)
 metadata.create_all(engine)
