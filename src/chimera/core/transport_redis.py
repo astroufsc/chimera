@@ -22,6 +22,7 @@ class RedisTransport(Transport):
         self._r = None
         self._pubsub = None
         self._pubsub_thread = None
+        self._registered_channels = {}
 
     def bind(self):
         self._r = redislite.Redis(serverconfig={"bind": self.host, "port": self.port})
@@ -108,15 +109,31 @@ class RedisTransport(Transport):
         return self._r.publish(topic, self.serializer.dumps(data))
 
     def subscribe(self, topic: str, callback) -> None:
+
+        self._registered_channels[topic] = self._registered_channels.get(topic, {})
+        self._registered_channels[topic][hash(callback)] = callback
+
         def parse_call(message):
+            exception_ = False
             event = self.serializer.loads(message["data"])
-            try:
-                callback(*event.args, **event.kwargs)
-            except:
-                log.exception("Error while calling callback")
+            for callback in self._registered_channels[topic].values():
+                try:
+                    callback(*event.args, **event.kwargs)
+                except:
+                    log.exception("Error while calling callback")
+                    exception_ = True
+            if exception_:
                 raise
 
         self._pubsub.subscribe(**{topic: parse_call})
 
     def unsubscribe(self, channel: str, callback) -> None:
-        self._pubsub.unsubscribe(channel)
+        if (
+            channel in self._registered_channels
+            and hash(callback) in self._registered_channels[channel]
+        ):
+            del self._registered_channels[channel][hash(callback)]
+
+        if not len(self._registered_channels[channel]):
+            del self._registered_channels[channel]
+            self._pubsub.unsubscribe(channel)
