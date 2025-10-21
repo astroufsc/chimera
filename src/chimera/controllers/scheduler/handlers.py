@@ -85,7 +85,6 @@ class PointHandler(ActionHandler):
 
             # If rotator position angle is given, set it.
             if action.pa is not None:
-                rotator = PointHandler.rotator
                 rotator.move_to(action.pa)
 
         except Exception as e:
