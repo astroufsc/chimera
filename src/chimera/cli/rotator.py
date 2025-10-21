@@ -40,10 +40,7 @@ class ChimeraRotator(ChimeraCLI):
         help_group="COMMANDS",
     )
     def move_to(self, options):
-        try:
-            angle = float(options.move_to)
-        except ValueError as e:
-            self.exit("Invalid angle (%s)" % e)
+        angle = options.move_to
 
         self.out("Moving rotator to %.2f degrees ... " % angle, end="")
         self.rotator.move_to(angle)
