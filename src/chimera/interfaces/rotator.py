@@ -46,22 +46,37 @@ class Rotator(Interface):
         @rtype: None
         """
 
-    @event
-    def slew_begin(self, angle: float) -> None:
+    def is_moving(self):
         """
-        Rotator slew begins.
+        Ask if the rotator is moving right now.
+
+        @return: True if the rotator is moving, False otherwise.
+        @rtype: bool
+        """
+
+    def abort_move(self) -> None:
+        """
+        Abort the current rotator move operation.
+
+        @rtype: None
+        """
+
+    @event
+    def move_begin(self, angle: float) -> None:
+        """
+        Rotator move begins.
 
         @param angle: The new position in degrees.
         @type  angle: float
         """
 
     @event
-    def slew_complete(self, angle: float, status: RotatorStatus) -> None:
+    def move_complete(self, angle: float, status: RotatorStatus) -> None:
         """
-        Rotator slew is complete.
+        Rotator move is complete.
 
         @param angle: The current position in degrees.
         @type  angle: float
-        @param status: The status of the slew operation.
+        @param status: The status of the move operation.
         @type  status: RotatorStatus
         """

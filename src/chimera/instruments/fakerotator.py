@@ -12,8 +12,12 @@ class FakeRotator(RotatorBase):
     def get_position(self):
         return self._position
 
+    def abort_move(self):
+        self.move_complete(self._position, RotatorStatus.ABORTED)
+        return True
+
     def move_to(self, angle):
-        self.slew_begin(angle)
+        self.move_begin(angle)
         time.sleep(1)  # Simulate time taken to move
         self._position = angle
-        self.slew_complete(angle, RotatorStatus.OK)
+        self.move_complete(angle, RotatorStatus.OK)
