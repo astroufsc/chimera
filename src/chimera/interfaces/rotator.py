@@ -54,11 +54,12 @@ class Rotator(Interface):
         @rtype: bool
         """
 
-    def abort_move(self) -> None:
+    def abort_move(self) -> bool:
         """
         Abort the current rotator move operation.
 
-        @rtype: None
+        @return: False if move couldn't be aborted, True otherwise.
+        @rtype: bool
         """
 
     @event
