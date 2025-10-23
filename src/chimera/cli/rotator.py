@@ -40,10 +40,8 @@ class ChimeraRotator(ChimeraCLI):
         help_group="COMMANDS",
     )
     def move_to(self, options):
-        angle = options.move_to
-
-        self.out("Moving rotator to %.2f degrees ... " % angle, end="")
-        self.rotator.move_to(angle)
+        self.out("Moving rotator to %.2f degrees ... " % options.move_to, end="")
+        self.rotator.move_to(options.move_to)
         self.out("OK")
 
     @action(
@@ -54,13 +52,8 @@ class ChimeraRotator(ChimeraCLI):
         help_group="COMMANDS",
     )
     def move_by(self, options):
-        try:
-            angle = float(options.move_by)
-        except ValueError as e:
-            self.exit("Invalid angle (%s)" % e)
-
-        self.out("Moving rotator by %.2f degrees ... " % angle, end="")
-        self.rotator.move_by(angle)
+        self.out("Moving rotator by %.2f degrees ... " % options.move_by, end="")
+        self.rotator.move_by(options.move_by)
         self.out("OK")
 
     @action(help="Print rotator information", help_group="COMMANDS")
@@ -82,9 +75,7 @@ class ChimeraRotator(ChimeraCLI):
         # copy self.rotator Proxy because we are running from a different thread
         if hasattr(self, "rotator"):
             rotator = copy.copy(self.rotator)
-            # Note: rotator interface doesn't define abort_slew, but we can try
-            if hasattr(rotator, "abort_slew"):
-                rotator.abort_slew()
+            rotator.abort_move()
 
 
 def main():
