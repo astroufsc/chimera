@@ -46,7 +46,7 @@ class Rotator(Interface):
         @rtype: None
         """
 
-    def is_moving(self):
+    def is_moving(self) -> bool:
         """
         Ask if the rotator is moving right now.
 
