@@ -16,7 +16,6 @@ from chimera.core.site import Site
 from chimera.core.proxy import Proxy
 
 
-
 __all__ = ["DomeBase"]
 
 
@@ -126,7 +125,7 @@ class DomeBase(ChimeraObject, DomeSlew, DomeSlit, DomeFlap, DomeSync):
     # utilities
     def get_telescope(self):
         try:
-            proxy = self.get_manager().get_proxy(self["telescope"])
+            proxy = self.get_proxy(self["telescope"])
             if not proxy.ping():
                 return False
             else:
