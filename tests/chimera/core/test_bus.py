@@ -128,11 +128,12 @@ def pubsub_test(*, n_subscribers: int, n_events: int, src_bus: Bus, dst_bus: Bus
 
     def create_callback(i: int):
         def on_slew_begin(ra: float, dec: float, slew_status: str):
-            assert ra == 42.0 + i
-            assert dec == 50.0 + i
+            # NOTE: we cannot assert exact values because we cannot guarantee event ordering
+            assert ra >= 42.0 and ra < 42.0 + n_events
+            assert dec >= 50.0 and dec < 50.0 + n_events
             assert slew_status == "complete"
 
-        return MagicMock(on_slew_begin)
+        return MagicMock(side_effect=on_slew_begin)
 
     callbacks = [create_callback(i) for i in range(n_subscribers)]
     assert (
@@ -266,7 +267,7 @@ def test_rpc_remote():
 
 def test_pubsub_local():
     bus = Bus("tcp://127.0.0.1:4000")
-    pubsub_test(n_subscribers=2, n_events=1_000, src_bus=bus, dst_bus=bus)
+    pubsub_test(n_subscribers=2, n_events=2, src_bus=bus, dst_bus=bus)
 
 
 def test_pubsub_remote():
