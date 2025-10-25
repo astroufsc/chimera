@@ -422,6 +422,8 @@ class Bus:
 
             for callback in self._callbacks[event_id].values():
                 method = callback.callable
+                # FIXME: we cannot see exception happening inside the event handlers, implement
+                #        something to call the futures and check for exceptions later
                 self._pool.submit(method, *event.args, **event.kwargs)
         except Exception:
             log.exception("error handling event")
