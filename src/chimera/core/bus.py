@@ -136,7 +136,7 @@ class Bus:
                 # TODO: block or not?
                 self._outbound[message.dst_bus].connect()
 
-            # FIXME: serialization could failt, handle it
+            # FIXME: serialization could fail, handle it
             self._outbound[message.dst_bus].send(self._encoder.encode(message))
 
     def _pop(self, /, key: str | None = None) -> Messages | None:
