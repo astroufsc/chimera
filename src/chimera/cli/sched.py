@@ -389,6 +389,11 @@ class ChimeraSched(ChimeraCLI):
                             self.out("\tOffset east: %s" % offset)
                             act.offset_ew = Coord.from_as(-offset.arcsec)
 
+                    # Rotator position angle
+                    if "pa" in actconfig:
+                        act.pa = actconfig["pa"]
+                        self.out("\tPA: %s" % act.pa)
+
                     # Special dome requirements... Needed mainly when doing dome FLATS.
                     if "dome_az" in actconfig:
                         actconfig["dome_az"] = Coord.from_dms(actconfig["dome_az"])

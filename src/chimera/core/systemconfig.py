@@ -141,6 +141,8 @@ class SystemConfig(object):
             "focusers",
             "lamp",
             "lamps",
+            "rotator",
+            "rotators",
             "telescope",
             "telescopes",
             "seeingmonitor",

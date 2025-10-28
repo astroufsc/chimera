@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # SPDX-License-Identifier: GPL-2.0-or-later
 # SPDX-FileCopyrightText: 2006-present Paulo Henrique Silva <ph.silva@gmail.com>
-
 import copy
 import sys
 
@@ -103,9 +102,9 @@ class ChimeraTel(ChimeraCLI):
         self.add_parameters(
             dict(
                 name="fan",
-                default="/Fan/0",
+                default="",
                 help_group="FANS",
-                help="Fan instrument to be used.",
+                help="Fan instrument to be used. Defaults to first fan in telescope['fans'] list.",
             )
         )
 
@@ -295,6 +294,7 @@ class ChimeraTel(ChimeraCLI):
         action_group="FANS",
     )
     def set_fan_speed(self, options):
+        self._get_fan(options)
         try:
             fan = self.telescope.get_manager().get_proxy(options.fan)
         except ObjectNotFoundException:
@@ -310,6 +310,12 @@ class ChimeraTel(ChimeraCLI):
         self.out("%s" % (green("OK")))
         self.out("=" * 40)
 
+    def _get_fan(self, options):
+        if options.fan == "":
+            if self.telescope["fans"] is None or len(self.telescope["fans"]) == 0:
+                self.exit("%s: No fans configured on this telescope." % red("ERROR"))
+            options.fan = self.telescope["fans"][0]  # use the first fan
+
     @action(
         long="fan-on",
         help="Start telescope fan",
@@ -317,6 +323,7 @@ class ChimeraTel(ChimeraCLI):
         action_group="FANS",
     )
     def start_fan(self, options):
+        self._get_fan(options)
         try:
             fan = self.telescope.get_manager().get_proxy(options.fan)
         except ObjectNotFoundException:
@@ -344,6 +351,7 @@ class ChimeraTel(ChimeraCLI):
         action_group="FANS",
     )
     def stop_fan(self, options):
+        self._get_fan(options)
         try:
             fan = self.telescope.get_manager().get_proxy(options.fan)
         except ObjectNotFoundException:

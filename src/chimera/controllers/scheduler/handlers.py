@@ -38,9 +38,11 @@ class PointHandler(ActionHandler):
     @staticmethod
     @requires("telescope")
     @requires("dome")
+    @requires("rotator")
     def process(action):
         telescope = PointHandler.telescope
         dome = PointHandler.dome
+        rotator = PointHandler.rotator
 
         try:
             # First slew telescope to given position (or none)
@@ -80,6 +82,10 @@ class PointHandler(ActionHandler):
                     dome.stand()
             if action.dome_az is not None:
                 dome.slew_to_az(action.dome_az)
+
+            # If rotator position angle is given, set it.
+            if action.pa is not None:
+                rotator.move_to(action.pa)
 
         except Exception as e:
             raise ProgramExecutionException(str(e))
@@ -121,14 +127,16 @@ class PointHandler(ActionHandler):
             else f" offset:{offset_ns_str}{offset_ew_str}"
         )
 
+        position_angle_str = "" if action.pa is None else f" PA: {action.pa}"
+
         if action.target_ra_dec is not None:
-            return f"slewing telescope to (ra dec) {action.target_ra_dec}{offset} ({action.target_ra_dec.epoch if action.target_ra_dec.epoch else ''})"
+            return f"slewing telescope to (ra dec) {action.target_ra_dec}{offset} ({action.target_ra_dec.epoch if action.target_ra_dec.epoch else ''}){position_angle_str}"
         elif action.target_alt_az is not None:
-            return f"slewing telescope to (alt az) {action.target_alt_az}{offset}"
+            return f"slewing telescope to (alt az) {action.target_alt_az}{offset}{position_angle_str}"
         elif action.target_name is not None:
-            return f"slewing telescope to (object) {action.target_name}{offset}"
+            return f"slewing telescope to (object) {action.target_name}{offset}{position_angle_str}"
         elif offset != "":
-            return f"applying telescope{offset}"
+            return f"applying telescope{offset}{position_angle_str}"
         else:
             if action.dome_tracking is None:
                 tracking = "left AS IS"

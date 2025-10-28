@@ -28,8 +28,6 @@ class CameraBase(ChimeraObject, CameraExpose, CameraTemperature, CameraInformati
         self.abort = threading.Event()
         self.abort.clear()
 
-        self.__is_exposing = threading.Event()
-
         self.extra_header_info = dict()
 
     def __stop__(self):
@@ -40,15 +38,6 @@ class CameraBase(ChimeraObject, CameraExpose, CameraTemperature, CameraInformati
 
     @lock
     def expose(self, request=None, **kwargs):
-
-        self.__is_exposing.set()
-
-        try:
-            return self._base_expose(request, **kwargs)
-        finally:
-            self.__is_exposing.clear()
-
-    def _base_expose(self, request, **kwargs):
 
         if request:
 
@@ -146,7 +135,6 @@ class CameraBase(ChimeraObject, CameraExpose, CameraTemperature, CameraInformati
         # and finally compress the image if asked
         if image_request["compress_format"].lower() != "no":
             img.compress(format=image_request["compress_format"], multiprocess=True)
-
         return proxy
 
     def _get_readout_mode_info(self, binning, window):
@@ -221,7 +209,7 @@ class CameraBase(ChimeraObject, CameraExpose, CameraTemperature, CameraInformati
         return mode, binning, top, left, width, height
 
     def is_exposing(self):
-        return self.__is_exposing.is_set()
+        return NotImplementedError()
 
     @lock
     def start_cooling(self, temp_c):
@@ -278,7 +266,7 @@ class CameraBase(ChimeraObject, CameraExpose, CameraTemperature, CameraInformati
         raise NotImplementedError()
 
     def supports(self, feature=None):
-        raise NotImplementedError()
+        return self.supported_features.get(feature, False)
 
     def get_metadata(self, request):
         # Check first if there is metadata from an metadata override method.
