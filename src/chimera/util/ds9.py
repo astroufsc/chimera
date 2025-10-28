@@ -1,6 +1,6 @@
-import warnings
 import os
 import subprocess
+import warnings
 
 try:
     # disable RO warning
@@ -34,7 +34,7 @@ def xpa_access(template="ds9"):
         return []
 
 
-class DS9(object):
+class DS9:
     """
     A wrapper to enable programmatic control of DS9
     (http://www.astro.washington.edu/rowen/) instances. Thanks to
@@ -45,7 +45,7 @@ class DS9(object):
     def __init__(self, open=False):
 
         if not have_ds9:
-            raise IOError(
+            raise OSError(
                 "No DS9 available. Check if you have DS9 and XPA"
                 " installed and correctly accesible from Chimera's PATH."
             )
@@ -60,7 +60,7 @@ class DS9(object):
         except RuntimeError:
             # even with RO installed, we still need XPA package to get DS9
             # working
-            raise IOError(
+            raise OSError(
                 "DS9 is not available, check if you have the XPA package installed. Display disabled."
             )
 
@@ -101,7 +101,7 @@ class DS9(object):
 
         if filename:
             if not os.path.exists(filename):
-                raise IOError(f"{filename} doesn't exists")
+                raise OSError(f"{filename} doesn't exists")
 
             self.set(f"file '{filename}'")
 

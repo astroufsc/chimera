@@ -5,7 +5,7 @@
 
 import sys
 
-from chimera.core.version import _chimera_version_
+from chimera.core.version import chimera_version
 from chimera.interfaces.filterwheel import InvalidFilterPositionException
 
 from .cli import ChimeraCLI, action
@@ -14,7 +14,7 @@ from .cli import ChimeraCLI, action
 class ChimeraFilter(ChimeraCLI):
     def __init__(self):
         ChimeraCLI.__init__(
-            self, "chimera-filter", "Filter Wheel Controller", _chimera_version_
+            self, "chimera-filter", "Filter Wheel Controller", chimera_version
         )
 
         self.add_help_group("INFO", "Filter Wheel Information")

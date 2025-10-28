@@ -2,9 +2,9 @@
 # SPDX-FileCopyrightText: 2006-present Paulo Henrique Silva <ph.silva@gmail.com>
 
 
-from chimera.interfaces.filterwheel import InvalidFilterPositionException
-from chimera.instruments.filterwheel import FilterWheelBase
 from chimera.core.lock import lock
+from chimera.instruments.filterwheel import FilterWheelBase
+from chimera.interfaces.filterwheel import InvalidFilterPositionException
 
 
 class FakeFilterWheel(FilterWheelBase):

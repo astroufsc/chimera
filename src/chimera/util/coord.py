@@ -28,7 +28,7 @@ class State(Enum):
     AS = "AS"
 
 
-class CoordUtil(object):
+class CoordUtil:
 
     COORD_RE = re.compile(
         r"((?P<dd>(?P<sign>[+-]?)[\s]*\d+)[dh]?[\s:]*)?((?P<mm>\d+)[m]?[\s:]*)?((?P<ss>\d+)(?P<msec>\.\d*)?([\ss]*))?"
@@ -375,7 +375,7 @@ class CoordUtil(object):
         return ans
 
 
-class Coord(object):
+class Coord:
     """
     L{Coord} represents a single angular coordinate.
 

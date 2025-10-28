@@ -2,25 +2,24 @@
 # SPDX-FileCopyrightText: 2006-present Paulo Henrique Silva <ph.silva@gmail.com>
 
 
-from typing import Tuple
-from chimera.core.chimeraobject import ChimeraObject
+import functools
+from typing import cast
 
-from chimera.core.exceptions import ObjectTooLowException
+from chimera.core.chimeraobject import ChimeraObject
+from chimera.core.exceptions import ObjectNotFoundException, ObjectTooLowException
+from chimera.core.lock import lock
+from chimera.core.proxy import Proxy
+from chimera.core.site import Site
+from chimera.core.url import resolve_url
 from chimera.interfaces.telescope import (
+    TelescopePark,
     TelescopeSlew,
     TelescopeSync,
-    TelescopePark,
     TelescopeTracking,
-    TelescopePierSide,
 )
-
-from chimera.core.lock import lock
-from chimera.core.exceptions import ObjectNotFoundException, ObjectTooLowException
-
 from chimera.util.coord import Coord
+from chimera.util.output import red
 from chimera.util.simbad import simbad_lookup
-from chimera.util.position import Position
-
 
 __all__ = ["TelescopeBase"]
 
@@ -30,10 +29,14 @@ class TelescopeBase(
 ):
 
     def __init__(self):
-        ChimeraObject.__init__(self)
+        super().__init__()
 
         self._park_position = None
-        self.site = None
+
+    # @property
+    # @functools.cache
+    def site(self) -> Site:
+        return cast(Site, self.get_proxy("/Site/0"))
 
     @lock
     def slew_to_object(self, name):
@@ -50,9 +53,9 @@ class TelescopeBase(
         # TODO: remove Position dependency
 
         if self.site is None:
-            self.site = self.get_manager().get_proxy("/Site/0")
-        lst = self.site.lst()
-        latitude = self.site["latitude"]
+            self.site = self.get_proxy("/Site/0")
+        lst = self.site().lst()
+        latitude = -23  # self.site["latitude"]
 
         alt_az = Position.ra_dec_to_alt_az(Position.from_ra_dec(ra, dec), latitude, lst)
 

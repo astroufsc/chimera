@@ -6,9 +6,9 @@ import os
 import shutil
 import string
 import sys
-import urllib.request
 import urllib.error
 import urllib.parse
+import urllib.request
 import uuid
 import zipfile
 from collections import UserDict
@@ -29,7 +29,7 @@ class WCSNotFoundException(ChimeraException):
     pass
 
 
-class ImageUtil(object):
+class ImageUtil:
     @staticmethod
     def format_date(datetime):
         if isinstance(datetime, float):

@@ -3,13 +3,13 @@
 
 from chimera.core.chimeraobject import ChimeraObject
 from chimera.interfaces.weatherstation import (
-    WeatherStation,
-    WeatherTemperature,
     WeatherHumidity,
-    WeatherWind,
     WeatherPressure,
     WeatherRain,
+    WeatherStation,
+    WeatherTemperature,
     WeatherTransparency,
+    WeatherWind,
 )
 
 

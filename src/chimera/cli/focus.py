@@ -8,7 +8,7 @@ import re
 import sys
 import time
 
-from chimera.core.version import _chimera_version_
+from chimera.core.version import chimera_version
 from chimera.interfaces.autofocus import FocusNotFoundException, StarNotFoundException
 from chimera.interfaces.filterwheel import InvalidFilterPositionException
 from chimera.interfaces.focuser import (
@@ -26,7 +26,7 @@ from .cli import ChimeraCLI, ParameterType, action, parameter
 class ChimeraFocus(ChimeraCLI):
     def __init__(self):
         ChimeraCLI.__init__(
-            self, "chimera-focus", "Focuser controller", _chimera_version_
+            self, "chimera-focus", "Focuser controller", chimera_version
         )
 
         self.add_help_group("FOCUS", "Focus")
@@ -246,7 +246,7 @@ class ChimeraFocus(ChimeraCLI):
         if not options.autofocus_nodisplay:
             try:
                 ds9 = DS9(open=True)
-            except IOError:
+            except OSError:
                 pass
 
         def step_complete(position, star, filename):
@@ -308,7 +308,7 @@ class ChimeraFocus(ChimeraCLI):
             self.out("Best focus position found at %d." % result["best"])
             self.out("Moving focuser to %d .. OK" % result["best"])
 
-        except IOError as e:
+        except OSError as e:
             self.exit(str(e))
         except FocusNotFoundException as e:
             self.exit(str(e))
@@ -339,7 +339,8 @@ class ChimeraFocus(ChimeraCLI):
         return
 
     def _valid_range(self, options):
-        self.out("Valid range: %s-%s" % self.focuser.get_range())
+        min, max = self.focuser.get_range()
+        self.out(f"Valid range: [{min}, {max}]")
 
         for ax in ControllableAxis:
             if self.focuser.supports(ax) and ax != FocuserFeature.CONTROLLABLE_Z:

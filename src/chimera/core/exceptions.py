@@ -1,10 +1,11 @@
-import traceback
 import sys
+import traceback
+from typing import TextIO
+
 from chimera.core.constants import TRACEBACK_ATTRIBUTE
 
 
-def print_exception(e, stream=sys.stdout):
-
+def print_exception(e: Exception, stream: TextIO = sys.stdout):
     print("".join(_str_exception(e)), file=stream)
 
     if hasattr(e, "cause") and getattr(e, "cause") is not None:
@@ -12,8 +13,7 @@ def print_exception(e, stream=sys.stdout):
         print("".join(e.cause), file=stream)
 
 
-def _str_exception(e):
-
+def _str_exception(e: Exception):
     def format_remote_traceback(remote_tb_lines):
         result = []
         result.append(" +--- Remote traceback:")

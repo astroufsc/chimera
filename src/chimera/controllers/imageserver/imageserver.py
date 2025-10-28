@@ -1,11 +1,9 @@
-from chimera.core.chimeraobject import ChimeraObject
-from chimera.controllers.imageserver.imageserverhttp import ImageServerHTTP
-
-from chimera.util.image import Image
-
 import os
-
 from collections import OrderedDict
+
+from chimera.controllers.imageserver.imageserverhttp import ImageServerHTTP
+from chimera.core.chimeraobject import ChimeraObject
+from chimera.util.image import Image
 
 
 class ImageServer(ChimeraObject):
@@ -33,7 +31,7 @@ class ImageServer(ChimeraObject):
     def __start__(self):
 
         if self["http_host"] == "default":
-            self["http_host"] = self.get_manager().get_hostname()
+            self["http_host"] = self.__bus__.url.host
 
         if self["httpd"]:
             self.http = ImageServerHTTP(self)

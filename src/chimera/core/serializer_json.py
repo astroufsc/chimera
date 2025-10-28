@@ -1,6 +1,6 @@
-import orjson as json
-
 from typing import override
+
+import orjson as json
 
 from chimera.core.serializer import Serializer
 

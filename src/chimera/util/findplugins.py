@@ -2,7 +2,7 @@ import os
 from pkgutil import iter_modules
 
 
-def find_chimera_plugins(prefix="chimera_"):
+def find_chimera_plugins(prefix: str = "chimera_") -> tuple[list[str], list[str]]:
     """
     Returns chimera plugins paths for instruments and controllers.
 

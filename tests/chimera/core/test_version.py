@@ -1,6 +1,6 @@
-from chimera.core.version import _chimera_version_
+from chimera.core.version import chimera_version
 
 
 class TestVersion:
-    assert isinstance(_chimera_version_, str)
+    assert isinstance(chimera_version, str)
     pass

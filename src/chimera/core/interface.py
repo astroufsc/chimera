@@ -7,5 +7,5 @@ from chimera.core.metaobject import MetaObject
 __all__ = ["Interface"]
 
 
-class Interface(object, metaclass=MetaObject):
+class Interface(metaclass=MetaObject):
     pass

@@ -1,34 +1,33 @@
+import logging
+import threading
+import time
+
 from chimera.controllers.scheduler.handlers import (
+    ActionHandler,
+    AutoFlatHandler,
+    AutoFocusHandler,
     ExposeHandler,
     PointHandler,
-    AutoFocusHandler,
-    AutoFlatHandler,
     PointVerifyHandler,
 )
 from chimera.controllers.scheduler.model import (
+    AutoFlat,
+    AutoFocus,
     Expose,
     Point,
-    AutoFocus,
-    AutoFlat,
     PointVerify,
 )
-from chimera.controllers.scheduler.handlers import ActionHandler
 from chimera.controllers.scheduler.status import SchedulerStatus
-
 from chimera.core.exceptions import (
     ObjectNotFoundException,
     ProgramExecutionAborted,
     ProgramExecutionException,
 )
 
-import logging
-import threading
-import time
-
 log = logging.getLogger(__name__)
 
 
-class ProgramExecutor(object):
+class ProgramExecutor:
 
     def __init__(self, controller):
 
@@ -105,9 +104,7 @@ class ProgramExecutor(object):
                 setattr(
                     handler,
                     instrument,
-                    self.controller.get_manager().get_proxy(
-                        self.controller[instrument]
-                    ),
+                    self.controller.get_proxy(self.controller[instrument]),
                 )
             except ObjectNotFoundException:
                 log.error(f"No instrument to inject on {handler} handler")

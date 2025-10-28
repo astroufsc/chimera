@@ -2,20 +2,18 @@
 # SPDX-FileCopyrightText: 2006-present Paulo Henrique Silva <ph.silva@gmail.com>
 
 
+import logging
 from types import NoneType
 
 from chimera.core.exceptions import OptionConversionException
-
 from chimera.util.coord import Coord
 from chimera.util.enum import Enum
 from chimera.util.position import Position
 
-import logging
-
 log = logging.getLogger(__name__)
 
 
-class Option(object):
+class Option:
 
     def __init__(self, name, value, checker):
 
@@ -43,7 +41,7 @@ class Option(object):
         return self._value
 
 
-class Checker(object):
+class Checker:
 
     def check(self, value):
         pass
@@ -351,7 +349,7 @@ class PositionChecker(Checker):
         return value
 
 
-class Config(object):
+class Config:
 
     def __init__(self, obj):
 

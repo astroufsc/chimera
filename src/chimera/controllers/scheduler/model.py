@@ -1,20 +1,21 @@
 import datetime as dt
-from chimera.core.constants import DEFAULT_PROGRAM_DATABASE
 
 from sqlalchemy import (
-    Column,
-    String,
-    Integer,
-    DateTime,
     Boolean,
-    ForeignKey,
+    Column,
+    DateTime,
     Float,
-    PickleType,
+    ForeignKey,
+    Integer,
     MetaData,
+    PickleType,
+    String,
     create_engine,
 )
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, relation, backref
+from sqlalchemy.orm import backref, relation, sessionmaker
+
+from chimera.core.constants import DEFAULT_PROGRAM_DATABASE
 
 engine = create_engine(f"sqlite:///{DEFAULT_PROGRAM_DATABASE}", echo=False)
 metadata = MetaData()

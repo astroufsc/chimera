@@ -2,18 +2,18 @@ import logging
 
 import pytest
 
-from chimera.core.constants import MANAGER_DEFAULT_HOST, MANAGER_DEFAULT_PORT
-from chimera.core.log import set_console_level
-from chimera.core.systemconfig import (
-    SystemConfig,
-    SystemConfigSyntaxException,
+from chimera.core.chimera_config import (
+    ChimeraConfig,
+    ChimeraConfigSyntaxException,
     TypeNotFoundException,
 )
+from chimera.core.constants import MANAGER_DEFAULT_HOST, MANAGER_DEFAULT_PORT
+from chimera.core.log import set_console_level
 
 set_console_level(logging.DEBUG)
 
 
-class TestSystemConfig:
+class TestChimeraConfig:
     #
     # test specials
     #
@@ -65,7 +65,7 @@ class TestSystemConfig:
           filters: [R, G, B, RGB, CLEAR]
         """
 
-        system = SystemConfig.from_string(s)
+        system = ChimeraConfig.from_string(s)
 
         assert system.sites[0][0].name == "site1"
         assert system.sites[0][0].cls == "SiteType"
@@ -122,7 +122,7 @@ class TestSystemConfig:
           config0: value0
         """
 
-        system = SystemConfig.from_string(s)
+        system = ChimeraConfig.from_string(s)
         assert system.sites[0][0].name == "site1"
         assert system.sites[0][0].cls == "Site"
         assert system.sites[0][0].host == "200.131.64.200"
@@ -137,7 +137,7 @@ class TestSystemConfig:
           #port: 10000 # default=None
         """
 
-        system = SystemConfig.from_string(s)
+        system = ChimeraConfig.from_string(s)
         assert system.sites[0][0].host == MANAGER_DEFAULT_HOST
         assert system.sites[0][0].port == MANAGER_DEFAULT_PORT
 
@@ -149,15 +149,15 @@ class TestSystemConfig:
         """
         # class cannot have $
         with pytest.raises(ValueError):
-            SystemConfig.from_string(s)
+            ChimeraConfig.from_string(s)
 
         s = """
         telescope
            name: 0
         """
         # syntax eror on first line (forgot ':' after telescope)
-        with pytest.raises(SystemConfigSyntaxException):
-            SystemConfig.from_string(s)
+        with pytest.raises(ChimeraConfigSyntaxException):
+            ChimeraConfig.from_string(s)
 
     #
     # instrument primitive
@@ -169,7 +169,7 @@ class TestSystemConfig:
          type: InstrumentType
         """
 
-        system = SystemConfig.from_string(s)
+        system = ChimeraConfig.from_string(s)
 
         assert system.instruments[0][0].name == "simple"
         assert system.instruments[0][0].cls == "InstrumentType"
@@ -184,7 +184,7 @@ class TestSystemConfig:
            type: InstrumentType
         """
 
-        system = SystemConfig.from_string(s)
+        system = ChimeraConfig.from_string(s)
         assert len(system.instruments) == 2
 
     def test_instrument_error(self):
@@ -194,7 +194,7 @@ class TestSystemConfig:
          #type: InstrumentType
         """
         with pytest.raises(TypeNotFoundException):
-            SystemConfig.from_string(s)
+            ChimeraConfig.from_string(s)
 
     #
     # controller primitive
@@ -206,7 +206,7 @@ class TestSystemConfig:
          type: ControllerType
         """
 
-        system = SystemConfig.from_string(s)
+        system = ChimeraConfig.from_string(s)
 
         assert system.controllers[0][0].name == "simple"
         assert system.controllers[0][0].cls == "ControllerType"
@@ -221,7 +221,7 @@ class TestSystemConfig:
            type: ControllerType
         """
 
-        system = SystemConfig.from_string(s)
+        system = ChimeraConfig.from_string(s)
         assert len(system.controllers) == 2
 
     def test_controller_error(self):
@@ -231,4 +231,4 @@ class TestSystemConfig:
          #type: ControllerType
         """
         with pytest.raises(TypeNotFoundException):
-            SystemConfig.from_string(s)
+            ChimeraConfig.from_string(s)

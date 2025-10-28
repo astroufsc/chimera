@@ -1,25 +1,23 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 # SPDX-FileCopyrightText: 2006-present Paulo Henrique Silva <ph.silva@gmail.com>
 
-import time
 import threading
+import time
+from typing import override
 
+from chimera.core.lock import lock
+from chimera.instruments.telescope import ObjectTooLowException, TelescopeBase
 from chimera.interfaces.telescope import (
-    TelescopeStatus,
     TelescopeCover,
     TelescopePier,
     TelescopePierSide,
+    TelescopeStatus,
 )
-from chimera.instruments.telescope import TelescopeBase, ObjectTooLowException
-
-from chimera.core.lock import lock
-
 from chimera.util.coord import Coord
-from chimera.util.position import Position, Epoch
+from chimera.util.position import Epoch, Position
 
 
 class FakeTelescope(TelescopeBase, TelescopeCover, TelescopePier):
-
     def __init__(self):
         TelescopeBase.__init__(self)
 
@@ -37,10 +35,10 @@ class FakeTelescope(TelescopeBase, TelescopeCover, TelescopePier):
         self._cover = False
         self._pier_side = TelescopePierSide.UNKNOWN
 
-        self._ra = 0
-        self._dec = 0
-        self._alt = 0
-        self._az = 0
+        self._ra: float = 0.0
+        self._dec: float = 0.0
+        self._alt: float = 0.0
+        self._az: float = 0.0
 
     def _set_alt_az_from_ra_dec(self):
         alt_az = self._get_site().ra_dec_to_alt_az(
@@ -51,7 +49,7 @@ class FakeTelescope(TelescopeBase, TelescopeCover, TelescopePier):
 
     def _get_site(self):
         # FIXME: create the proxy directly and cache it
-        return self.get_manager().get_proxy("/Site/0")
+        return self.get_proxy("/Site/0")
 
     def _set_ra_dec_from_alt_az(self):
         ra_dec = self._get_site().alt_az_to_ra_dec(
@@ -63,9 +61,7 @@ class FakeTelescope(TelescopeBase, TelescopeCover, TelescopePier):
     def __start__(self):
         self.set_hz(1)
 
-    @lock
     def control(self):
-        self._get_site()
         if not self._slewing:
             if self._tracking:
                 self._set_alt_az_from_ra_dec()
@@ -176,7 +172,7 @@ class FakeTelescope(TelescopeBase, TelescopeCover, TelescopePier):
         pos = Position.from_ra_dec(ra + Coord.from_as(offset), dec, epoch=Epoch.NOW)
         self.slew_begin(pos.ra, pos.dec)
 
-        self._ra += Coord.from_as(offset).to_h()
+        self._ra += Coord.from_as(offset).to_h().deg
         self._set_alt_az_from_ra_dec()
 
         self._slewing = False
@@ -190,7 +186,7 @@ class FakeTelescope(TelescopeBase, TelescopeCover, TelescopePier):
         pos = Position.from_ra_dec(ra + Coord.from_as(-offset), dec)
         self.slew_begin(pos.ra, pos.dec)
 
-        self._ra += Coord.from_as(-offset).to_h()
+        self._ra += Coord.from_as(-offset).to_h().deg
         self._set_alt_az_from_ra_dec()
 
         self._slewing = False
@@ -225,11 +221,13 @@ class FakeTelescope(TelescopeBase, TelescopeCover, TelescopePier):
         self.slew_complete(pos.ra, pos.dec, TelescopeStatus.OK)
 
     @lock
-    def get_ra(self):
+    @override
+    def get_ra(self) -> float:
         return self._ra
 
     @lock
-    def get_dec(self):
+    @override
+    def get_dec(self) -> float:
         return self._dec
 
     @lock
@@ -265,8 +263,8 @@ class FakeTelescope(TelescopeBase, TelescopeCover, TelescopePier):
             raise NotImplementedError("Only J2000 epoch is supported")
         # Convert to Current Epoch before syncing
         position.to_epoch(Epoch.NOW)
-        self._ra = position.ra.to_h()
-        self._dec = position.dec.to_d()
+        self._ra = position.ra.to_h().deg
+        self._dec = position.dec.to_d().deg
 
     @lock
     def park(self):

@@ -4,19 +4,23 @@
 
 
 import copy
+import functools
 import sys
+from typing import cast
 
-from chimera.core.exceptions import ObjectNotFoundException, print_exception
-from chimera.core.version import _chimera_version_
+from chimera.core.exceptions import print_exception
+from chimera.core.proxy import Proxy
+from chimera.core.url import resolve_url
+from chimera.core.version import chimera_version
 from chimera.interfaces.dome import Mode
 from chimera.interfaces.fan import (
+    Fan,
     FanControllableDirection,
     FanControllableSpeed,
     FanState,
     FanStatus,
 )
-from chimera.interfaces.lamp import IntensityOutOfRangeException, LampDimmer
-from chimera.util.coord import Coord
+from chimera.interfaces.lamp import IntensityOutOfRangeException, Lamp, LampDimmer
 from chimera.util.output import green, red, yellow
 
 from .cli import ChimeraCLI, action
@@ -24,7 +28,7 @@ from .cli import ChimeraCLI, action
 
 class ChimeraDome(ChimeraCLI):
     def __init__(self):
-        ChimeraCLI.__init__(self, "chimera-dome", "Dome controller", _chimera_version_)
+        ChimeraCLI.__init__(self, "chimera-dome", "Dome controller", chimera_version)
 
         self.add_help_group("DOME", "Dome")
         self.add_instrument(
@@ -122,12 +126,7 @@ class ChimeraDome(ChimeraCLI):
     )
     def light_off(self, options):
         self.out("Turning light off ... ", end="")
-
-        try:
-            lamp = self.dome.get_manager().get_proxy(options.lamp)
-        except ObjectNotFoundException:
-            self.exit("%s: Could not find requested calibration lamp." % red("ERROR"))
-        lamp.switch_off()
+        self.lamp().switch_off()
         self.out(green("OK"))
 
     @action(
@@ -135,12 +134,7 @@ class ChimeraDome(ChimeraCLI):
     )
     def light_on(self, options):
         self.out("Turning light on ... ", end="")
-        try:
-            lamp = self.dome.get_manager().get_proxy(options.lamp)
-        except ObjectNotFoundException:
-            self.exit("%s: Could not find requested calibration lamp." % red("ERROR"))
-
-        lamp.switch_on()
+        self.lamp().switch_on()
         self.out(green("OK"))
 
     @action(
@@ -153,28 +147,17 @@ class ChimeraDome(ChimeraCLI):
     )
     def intensity(self, options):
         self.out("Setting light intensity to %.2f ... " % options.intensity, end="")
-
-        # lamp = None
-        # try:
         try:
-            lamp = self.dome.get_manager().get_proxy(options.lamp)
-        except ObjectNotFoundException:
-            self.exit("%s: Could not find requested calibration lamp." % red("ERROR"))
-        try:
-            if not lamp.is_switched_on():
+            if not self.lamp().is_switched_on():
                 self.exit("%s: Cannot set intensity with lamp OFF." % red("ERROR"))
-            if lamp.features(LampDimmer):
-                lamp.set_intensity(options.intensity)
+            if self.lamp().features("LampDimmer"):
+                self.lamp().set_intensity(options.intensity)
             else:
                 self.exit("Lamp does not support light intensity setting.")
-        # except ObjectNotFoundException, e:
-        #     self.exit('%s: Could not find requested calibration lamp.' % red('ERROR'))
         except IntensityOutOfRangeException:
             self.exit(
                 "\n%s: Intensity out of range: %s" % (red("ERROR"), lamp.get_range())
             )
-        # except Exception, e:
-        #     self.exit('%s: (%s).' % (red('ERROR'), print_exception(e)))
 
         self.out(green("OK"))
 
@@ -206,11 +189,11 @@ class ChimeraDome(ChimeraCLI):
     )
     def move_to(self, options):
         try:
-            target = Coord.from_dms(options.move_to)
+            target = float(options.move_to)
         except ValueError as e:
-            self.exit("Invalid azimuth (%s)" % e)
+            self.exit(f"Invalid azimuth: '{options.move_to}' [{e}]")
 
-        self.out("Moving dome to %s ... " % target, end="")
+        self.out(f"Moving dome to {target} ... ", end="")
         self.dome.slew_to_az(target)
         self.out("OK")
 
@@ -223,20 +206,33 @@ class ChimeraDome(ChimeraCLI):
         action_group="DOMEFANS",
     )
     def set_fan_speed(self, options):
-        try:
-            domefan = self.dome.get_manager().get_proxy(options.fan)
-        except ObjectNotFoundException:
-            self.exit("%s: Could not find requested fan." % red("ERROR"))
-
         self.out("=" * 40)
         self.out("Changing fan speed to %.2f " % (options.set_fan_speed), end=" ")
         try:
-            domefan.set_rotation(options.set_fan_speed)
+            self.fan().set_rotation(options.set_fan_speed)
         except Exception as e:
             self.exit("%s. \n%s" % (red("FAILED"), print_exception(e)))
 
         self.out("%s" % (green("OK")))
         self.out("=" * 40)
+
+    # @functools.cached_property
+    def fan(self) -> Fan:
+        fan_proxy = Proxy(
+            resolve_url(self.options.fan, bus=self.dome.get_location()), bus=self.bus
+        )
+        if not fan_proxy.ping():
+            self.exit(f"{red('ERROR')}: Could not find fan '{self.options.fan}.")
+        return cast(Fan, fan_proxy)
+
+    # @functools.cached_property
+    def lamp(self) -> Fan:
+        lamp_proxy = Proxy(
+            resolve_url(self.options.lamp, bus=self.dome.get_location()), bus=self.bus
+        )
+        if not lamp_proxy.ping():
+            self.exit(f"{red('ERROR')}: Could not find lamp '{self.options.lamp}.")
+        return cast(Lamp, lamp_proxy)
 
     @action(
         long="fan-on",
@@ -245,19 +241,14 @@ class ChimeraDome(ChimeraCLI):
         action_group="DOMEFANS",
     )
     def start_fan(self, options):
-        try:
-            domefan = self.dome.get_proxy(options.fan)
-        except ObjectNotFoundException:
-            self.exit("%s: Could not find requested fan." % red("ERROR"))
-
-        if domefan.is_switched_on():
+        if self.fan().is_switched_on():
             self.exit("Fan is already running... ")
 
         self.out("=" * 40)
 
         self.out("Starting %s" % self.options.fan, end="")
         try:
-            if domefan.switch_on():
+            if self.fan().switch_on():
                 self.out(green("OK"))
             else:
                 self.out(red("FAILED"))
@@ -272,19 +263,14 @@ class ChimeraDome(ChimeraCLI):
         action_group="DOMEFANS",
     )
     def stop_fan(self, options):
-        try:
-            domefan = self.dome.get_manager().get_proxy(options.fan)
-        except ObjectNotFoundException:
-            self.exit("%s: Could not find requested fan." % red("ERROR"))
-
-        if not domefan.is_switched_on():
+        if not self.fan().is_switched_on():
             self.exit("Fan is not running... ")
 
         self.out("=" * 40)
 
         self.out("Stopping %s" % self.options.fan, end="")
         try:
-            if domefan.switch_off():
+            if self.fan().switch_off():
                 self.out(green("OK"))
             else:
                 self.out(red("FAILED"))
@@ -310,20 +296,20 @@ class ChimeraDome(ChimeraCLI):
 
         if self.dome["lamps"] is not None:
             for lamp in self.dome["lamps"]:
-                lamp = self.dome.get_manager().get_proxy(lamp)
-                onoff = green("ON") if lamp.is_switched_on() else red("OFF")
+                onoff = green("ON") if self.lamp().is_switched_on() else red("OFF")
                 dimming = (
-                    " intensity: %3.2f" % lamp.get_intensity()
-                    if lamp.features(LampDimmer)
+                    " intensity: %3.2f" % self.lamp().get_intensity()
+                    if self.lamp().features("LampDimmer")
                     else ""
                 )
-                self.out("Lamp %s: %s %s" % (lamp.get_location(), onoff, dimming))
+                self.out(
+                    "Lamp %s: %s %s" % (self.lamp().get_location(), onoff, dimming)
+                )
 
         if self.dome["fans"] is not None:
             for fan in self.dome["fans"]:
-                domefan = self.dome.get_manager().get_proxy(fan)
-                if domefan.features(FanState):
-                    st = domefan.status()
+                if self.fan().features("FanState"):
+                    st = self.fan().status()
                     if st == FanStatus.ON:
                         stats = green("ON")
                     elif st == FanStatus.OFF:
@@ -331,20 +317,20 @@ class ChimeraDome(ChimeraCLI):
                     else:
                         stats = yellow(st.__str__())
                 else:
-                    stats = green("ON") if domefan.is_switched_on() else red("OFF")
+                    stats = green("ON") if self.fan().is_switched_on() else red("OFF")
                 rotation = (
-                    " speed %.2f" % domefan.get_rotation()
-                    if domefan.features(FanControllableSpeed)
+                    " speed %.2f" % self.fan().get_rotation()
+                    if self.fan().features("FanControllableSpeed")
                     else ""
                 )
                 direction = (
-                    " direction %s" % domefan.get_direction()
-                    if domefan.features(FanControllableDirection)
+                    " direction %s" % self.fan().get_direction()
+                    if self.fan().features("FanControllableDirection")
                     else ""
                 )
                 self.out(
                     "Fan %s: %s%s%s"
-                    % (domefan.get_location(), stats, rotation, direction)
+                    % (self.fan().get_location(), stats, rotation, direction)
                 )
 
         self.out("=" * 40)

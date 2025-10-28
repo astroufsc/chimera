@@ -1,15 +1,12 @@
-from chimera.controllers.scheduler.states import State
-from chimera.controllers.scheduler.model import Session, Program
-from chimera.controllers.scheduler.status import SchedulerStatus
-
-from chimera.core.exceptions import ProgramExecutionException, ProgramExecutionAborted
-
-from chimera.core.site import Site
-
-import threading
 import logging
-
+import threading
 import time
+
+from chimera.controllers.scheduler.model import Program, Session
+from chimera.controllers.scheduler.states import State
+from chimera.controllers.scheduler.status import SchedulerStatus
+from chimera.core.exceptions import ProgramExecutionAborted, ProgramExecutionException
+from chimera.core.site import Site
 
 log = logging.getLogger(__name__)
 

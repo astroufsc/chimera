@@ -12,10 +12,10 @@ class ClassLoader:
     def __init__(self):
         self._cache = {}
 
-    def load_class(self, clsname, path=["."]):
-        return self._lookup_class(clsname, path)
+    def load_class(self, clsname: str, path: list[str] | None = None) -> type:
+        return self._lookup_class(clsname, path or ["."])
 
-    def _lookup_class(self, clsname, path: list[str] | None = None):
+    def _lookup_class(self, clsname: str, path: list[str] | None = None) -> type:
         """
         Based on this recipe
         http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/52241

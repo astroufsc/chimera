@@ -70,10 +70,11 @@ class ILifeCycle(Interface):
         @see: L{State} for possible values.
         """
 
-    def get_location(self):
+    def get_location(self) -> str:
         """
         Get the current L{Location} where the object is deployed.
         """
+        ...
 
     def get_proxy(self, url: str | None = None):
         """

@@ -1,9 +1,9 @@
 #!/bin/bash
 set -xe
-chimera-filter -vvvvv --version
-chimera-filter -vvvvv -h
-chimera-filter -vvvvv -F
-chimera-filter -vvvvv --info
-chimera-filter -vvvvv -f U
-chimera-filter -vvvvv -f B
-chimera-filter -vvvvv --get-filter
+chimera-filter --wheel 127.0.0.1:9000/Camera/0 -vv --version
+chimera-filter --wheel 127.0.0.1:9000/Camera/0 -vv -h
+chimera-filter --wheel 127.0.0.1:9000/Camera/0 -vv -F
+chimera-filter --wheel 127.0.0.1:9000/Camera/0 -vv --info
+chimera-filter --wheel 127.0.0.1:9000/Camera/0 -vv -f U
+chimera-filter --wheel 127.0.0.1:9000/Camera/0 -vv -f B
+chimera-filter --wheel 127.0.0.1:9000/Camera/0 -vv --get-filter

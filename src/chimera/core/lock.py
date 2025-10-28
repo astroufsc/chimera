@@ -2,12 +2,15 @@
 # SPDX-FileCopyrightText: 2006-present Paulo Henrique Silva <ph.silva@gmail.com>
 
 
+from collections.abc import Callable
+from typing import Any
+
 from chimera.core.constants import LOCK_ATTRIBUTE_NAME
 
 __all__ = ["lock"]
 
 
-def lock(method):
+def lock(method: Callable[..., Any]):
     """
     Lock annotation.
     """

@@ -1,11 +1,10 @@
-from chimera.controllers.scheduler.ischeduler import IScheduler
-from chimera.controllers.scheduler.model import Session, Program
+import logging
+from queue import Queue
 
 from sqlalchemy import desc
 
-from queue import Queue
-
-import logging
+from chimera.controllers.scheduler.ischeduler import IScheduler
+from chimera.controllers.scheduler.model import Program, Session
 
 log = logging.getLogger(__name__)
 
