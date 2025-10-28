@@ -176,7 +176,7 @@ class FakeTelescope(TelescopeBase, TelescopeCover, TelescopePier):
         pos = Position.from_ra_dec(ra + Coord.from_as(offset), dec, epoch=Epoch.NOW)
         self.slew_begin(pos.ra, pos.dec)
 
-        self._ra += Coord.from_as(offset).to_h()
+        self._ra += float(Coord.from_as(offset).to_h())
         self._set_alt_az_from_ra_dec()
 
         self._slewing = False
@@ -190,7 +190,7 @@ class FakeTelescope(TelescopeBase, TelescopeCover, TelescopePier):
         pos = Position.from_ra_dec(ra + Coord.from_as(-offset), dec)
         self.slew_begin(pos.ra, pos.dec)
 
-        self._ra += Coord.from_as(-offset).to_h()
+        self._ra += float(Coord.from_as(-offset).to_h())
         self._set_alt_az_from_ra_dec()
 
         self._slewing = False
@@ -204,7 +204,7 @@ class FakeTelescope(TelescopeBase, TelescopeCover, TelescopePier):
         pos = Position.from_ra_dec(ra, dec + Coord.from_as(offset))
         self.slew_begin(pos.ra, pos.dec)
 
-        self._dec += Coord.from_as(offset)
+        self._dec += float(Coord.from_as(offset))
         self._set_alt_az_from_ra_dec()
 
         self._slewing = False
@@ -218,7 +218,7 @@ class FakeTelescope(TelescopeBase, TelescopeCover, TelescopePier):
         pos = Position.from_ra_dec(ra, dec + Coord.from_as(-offset))
         self.slew_begin(pos.ra, pos.dec)
 
-        self._dec += Coord.from_as(-offset)
+        self._dec += float(Coord.from_as(-offset))
         self._set_alt_az_from_ra_dec()
 
         self._slewing = False
@@ -246,8 +246,7 @@ class FakeTelescope(TelescopeBase, TelescopeCover, TelescopePier):
 
     @lock
     def get_position_alt_az(self):
-        pos = Position.from_alt_az(self.get_alt(), self.get_az())
-        return pos.alt, pos.az
+        return self.get_alt(), self.get_az()
 
     @lock
     def get_target_ra_dec(self):
