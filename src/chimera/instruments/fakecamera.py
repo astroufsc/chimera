@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 # SPDX-FileCopyrightText: 2006-present Paulo Henrique Silva <ph.silva@gmail.com>
 
+import threading
 import time
 import datetime as dt
 import random
@@ -41,6 +42,8 @@ class FakeCamera(CameraBase, FilterWheelBase):
         self.__last_frame_start = 0
         self.__is_fanning = False
 
+        self.__is_exposing = threading.Event()
+
         # my internal CCD code
         self._my_ccd = 1 << 1
         self._my_adc = 1 << 2
@@ -54,7 +57,7 @@ class FakeCamera(CameraBase, FilterWheelBase):
 
         self._binning_factors = {"1x1": 1}
 
-        self._supports = {
+        self.supported_features = {
             CameraFeature.TEMPERATURE_CONTROL: True,
             CameraFeature.PROGRAMMABLE_GAIN: False,
             CameraFeature.PROGRAMMABLE_OVERSCAN: False,
@@ -87,12 +90,13 @@ class FakeCamera(CameraBase, FilterWheelBase):
         return True
 
     def _expose(self, image_request):
+        self.__is_exposing.set()
         self.expose_begin(image_request)
 
         status = CameraStatus.OK
 
         t = 0
-        self.__last_frame_start = dt.datetime.utcnow()
+        self.__last_frame_start = dt.datetime.now(dt.timezone.utc)
         while t < image_request["exptime"]:
             # [ABORT POINT]
             if self.abort.is_set():
@@ -103,6 +107,10 @@ class FakeCamera(CameraBase, FilterWheelBase):
             t += 0.1
 
         self.expose_complete(image_request, status)
+        self.__is_exposing.clear()
+
+    def is_exposing(self):
+        return self.__is_exposing.is_set()
 
     def make_dark(self, shape, dtype, exptime):
         ret = np.zeros(shape, dtype=dtype)
@@ -266,7 +274,6 @@ class FakeCamera(CameraBase, FilterWheelBase):
         # Last resort if nothing else could make a picture
         if pix is None:
             pix = np.zeros((ccd_height, ccd_width), dtype=np.int32)
-
         proxy = self._save_image(
             image_request,
             pix,
@@ -317,9 +324,6 @@ class FakeCamera(CameraBase, FilterWheelBase):
     def is_fanning(self):
         return self.__is_fanning
 
-    def get_ccds(self):
-        return self._ccds
-
     def get_current_ccd(self):
         return self._my_ccd
 
@@ -340,9 +344,6 @@ class FakeCamera(CameraBase, FilterWheelBase):
 
     def get_readout_modes(self):
         return self._readout_modes
-
-    def supports(self, feature=None):
-        return self._supports.get(feature, False)
 
     #
     # filter wheel

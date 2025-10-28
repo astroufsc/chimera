@@ -356,38 +356,44 @@ class ChimeraCam(ChimeraCLI):
         else:
             self.out("Cooling disabled.")
 
-        self.out("Current CCD temperature:", "%.1f" % camera.get_temperature(), "oC")
-        if camera.is_fanning():
-            self.out("Cooler fan active.")
-        else:
-            self.out("Cooler fan inactive.")
+        self.out(
+            "Current detector temperature:", "%.1f" % camera.get_temperature(), "oC"
+        )
+        if camera.supports(CameraFeature.PROGRAMMABLE_FAN):
+            if camera.is_fanning():
+                self.out("Cooler fan active.")
+            else:
+                self.out("Cooler fan inactive.")
 
         self.out("=" * 40)
         for feature in CameraFeature:
             self.out(str(feature), str(bool(camera.supports(feature))))
 
-        self.out("=" * 40)
-        ccds = camera.get_ccds()
-        current_ccd = camera.get_current_ccd()
-        self.out("Available CCDs: ", end="")
-        for ccd in list(ccds.keys()):
-            if ccd == current_ccd:
-                self.out("*%s* " % str(ccds[ccd]), end="")
-            else:
-                self.out("%s " % str(ccds[ccd]), end="")
-        self.out()
+        if camera.supports(CameraFeature.MULTIPLE_DETECTORS):
+            self.out("=" * 40)
+            ccds = camera.get_ccds()
+            current_ccd = camera.get_current_ccd()
+            self.out("Available CCDs: ", end="")
+            for ccd in list(ccds.keys()):
+                if ccd == current_ccd:
+                    self.out("*%s* " % str(ccds[ccd]), end="")
+                else:
+                    self.out("%s " % str(ccds[ccd]), end="")
+            self.out()
 
-        self.out("=" * 40)
-        self.out("ADCs: ", end="")
-        adcs = camera.get_adcs()
-        for adc in list(adcs.keys()):
-            self.out("%s " % adc, end="")
-        self.out()
+        if camera.supports(CameraFeature.PROGRAMMABLE_ADC):
+            self.out("=" * 40)
+            self.out("ADCs: ", end="")
+            adcs = camera.get_adcs()
+            for adc in list(adcs.keys()):
+                self.out("%s " % adc, end="")
+            self.out()
 
         self.out("=" * 40)
         self.out("CCD size (pixel)       : %d x %d" % camera.get_physical_size())
         self.out("Pixel size (micrometer): %.2f x %.2f" % camera.get_pixel_size())
-        self.out("Overscan size (pixel)  : %d x %d" % camera.get_overscan_size())
+        if camera.supports(CameraFeature.PROGRAMMABLE_OVERSCAN):
+            self.out("Overscan size (pixel)  : %d x %d" % camera.get_overscan_size())
 
         self.out("=" * 40)
         self.out("Available binnings: ", end="")

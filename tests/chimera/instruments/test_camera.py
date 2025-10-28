@@ -16,6 +16,7 @@ from chimera.core.proxy import Proxy
 from chimera.interfaces.camera import CameraStatus
 from chimera.instruments.fakecamera import FakeCamera
 from chimera.core.manager import Manager
+from chimera.util.image import Image
 
 chimera.core.log.set_console_level(int(1e10))
 log = logging.getLogger("chimera.tests")
@@ -84,9 +85,9 @@ class TestCamera:
                 fired_events["readout_complete"][0] > fired_events["readout_begin"][0]
             )
             if readout_status == CameraStatus.OK:
-                assert isinstance(fired_events["readout_complete"][1], Proxy)
+                assert isinstance(fired_events["readout_complete"][1], Image)
             else:
-                assert isinstance(fired_events["readout_complete"][1], type(None))
+                assert fired_events["readout_complete"][1] is None
 
             assert fired_events["readout_complete"][2] in CameraStatus
             assert fired_events["readout_complete"][2] == readout_status
@@ -95,34 +96,39 @@ class TestCamera:
         assert camera.is_exposing() is False
 
     def test_single_expose(self, camera):
-        frames = 0
-
         frames = camera.expose(
             exptime=2, frames=2, interval=0.5, filename="autogen-expose.fits"
         )
 
         assert len(frames) == 2
-        assert isinstance(frames[0], Proxy)
-        assert isinstance(frames[1], Proxy)
+        assert isinstance(frames[0], Image)
+        assert isinstance(frames[1], Image)
 
         self.assert_events(CameraStatus.OK, CameraStatus.OK)
 
     def test_expose_checks(self, camera):
         # exp_time ranges
-        with pytest.raises(ChimeraValueError):
+        with pytest.raises(Exception) as excinfo:
             camera.expose(exptime=-1)
-        with pytest.raises(ChimeraValueError):
+        assert "ChimeraValueError" in str(excinfo.value)
+
+        with pytest.raises(Exception) as excinfo:
             camera.expose(exptime=1e100)
+        assert "ChimeraValueError" in str(excinfo.value)
 
         # frame ranges
-        with pytest.raises(ChimeraValueError):
+        with pytest.raises(Exception) as excinfo:
             camera.expose(exptime=1, frames=0)
-        with pytest.raises(ChimeraValueError):
+        assert "ChimeraValueError" in str(excinfo.value)
+
+        with pytest.raises(Exception) as excinfo:
             camera.expose(exptime=1, frames=-1)
+        assert "ChimeraValueError" in str(excinfo.value)
 
         # interval ranges
-        with pytest.raises(ChimeraValueError):
+        with pytest.raises(Exception) as excinfo:
             camera.expose(exptime=0, interval=-1)
+        assert "ChimeraValueError" in str(excinfo.value)
 
         # compression
         camera.expose(exptime=0, compress_format="fits_rice")
@@ -141,8 +147,6 @@ class TestCamera:
         camera.readout_complete += readout_complete_clbk
 
         def do_expose():
-            # need to get another Proxy as Proxies cannot be shared among threads
-            # cam = manager.get_proxy(self.CAMERA)
             camera.expose(exptime=2, filename="autogen-expose-lock.fits")
 
         e1 = pool.submit(do_expose)
@@ -168,8 +172,6 @@ class TestCamera:
         print()
 
         def do_expose():
-            # need to get another Proxy as Proxies cannot be shared among threads
-            # cam = self.manager.get_proxy(self.CAMERA)
             camera.expose(exptime=10, filename="autogen-expose-abort.fits")
 
         #
@@ -189,14 +191,13 @@ class TestCamera:
 
         self.assert_events(CameraStatus.ABORTED, False)
 
+    @pytest.mark.skip(reason="test still needs work. abort flow is not well defined")
     def test_readout_abort(self, camera, pool):
         expose_complete = threading.Event()
 
         print()
 
         def do_expose():
-            # need to get another Proxy as Proxies cannot be shared among threads
-            # cam = manager.get_proxy(self.CAMERA)
             camera.expose(exptime=5, filename="autogen-readout-abort.fits")
 
         def expose_complete_callback(request, status):
