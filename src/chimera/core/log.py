@@ -1,21 +1,18 @@
 import io
 import logging
 import logging.handlers
-import sys
 import os.path
+import sys
 
 from rich.logging import RichHandler
 
-
 from chimera.core.constants import (
-    SYSTEM_CONFIG_LOG_NAME,
-    SYSTEM_CONFIG_DIRECTORY,
     MANAGER_DEFAULT_HOST,
     MANAGER_DEFAULT_PORT,
+    SYSTEM_CONFIG_DIRECTORY,
+    SYSTEM_CONFIG_LOG_NAME,
 )
-
 from chimera.core.exceptions import print_exception
-
 
 __all__ = ["set_console_level"]
 
@@ -66,24 +63,24 @@ fmt = ChimeraFormatter(
 
 flt = ChimeraFilter()
 
-consoleHandler = logging.StreamHandler(sys.stderr)
-consoleHandler.setFormatter(fmt)
-consoleHandler.setLevel(logging.WARNING)
-consoleHandler.addFilter(flt)
+console_handler = logging.StreamHandler(sys.stderr)
+console_handler.setFormatter(fmt)
+console_handler.setLevel(logging.WARNING)
+console_handler.addFilter(flt)
 root.addHandler(RichHandler())
 
 
-def set_console_level(level):
-    consoleHandler.setLevel(level)
+def set_console_level(level: int):
+    console_handler.setLevel(level)
 
 
 try:
-    fileHandler = logging.handlers.RotatingFileHandler(
+    file_handler = logging.handlers.RotatingFileHandler(
         SYSTEM_CONFIG_LOG_NAME, maxBytes=5 * 1024 * 1024, backupCount=10
     )
-    fileHandler.setFormatter(fmt)
-    fileHandler.setLevel(logging.DEBUG)
-    fileHandler.addFilter(flt)
-    root.addHandler(fileHandler)
+    file_handler.setFormatter(fmt)
+    file_handler.setLevel(logging.DEBUG)
+    file_handler.addFilter(flt)
+    root.addHandler(file_handler)
 except Exception as e:
     root.warning(f"Couldn't start Log System FileHandler ({e})")

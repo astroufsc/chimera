@@ -1,6 +1,6 @@
-import random
 import time
 import traceback
+import uuid
 from functools import cached_property
 from typing import Any, override
 
@@ -46,13 +46,13 @@ class Ping(RpcMessage, frozen=True):
     id: int
     ok: bool = False
 
-    def pong(self) -> "Pong":
+    def pong(self, *, ok: bool = True) -> "Pong":
         return Pong(
             ts=Protocol.timestamp(),
             src=self.dst,
             dst=self.src,
             id=self.id,
-            ok=True,
+            ok=ok,
         )
 
 
@@ -190,7 +190,7 @@ class Event(RpcMessage, frozen=True):
 class Protocol:
     @staticmethod
     def id() -> int:
-        return random.randint(0, 2**32)
+        return uuid.uuid4().int
 
     @staticmethod
     def timestamp() -> int:

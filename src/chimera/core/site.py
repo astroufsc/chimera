@@ -3,9 +3,10 @@
 
 
 import datetime as dt
-from dateutil import tz
+
 import ephem
 import numpy as np
+from dateutil import tz
 
 from chimera.core.chimeraobject import ChimeraObject
 from chimera.util.coord import Coord, CoordUtil

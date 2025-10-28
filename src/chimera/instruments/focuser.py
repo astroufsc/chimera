@@ -3,11 +3,10 @@
 
 from chimera.core.chimeraobject import ChimeraObject
 from chimera.core.lock import lock
-
 from chimera.interfaces.focuser import (
+    AxisControllable,
     Focuser,
     FocuserAxis,
-    AxisControllable,
     InvalidFocusPositionException,
 )
 

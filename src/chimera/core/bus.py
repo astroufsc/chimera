@@ -1,9 +1,9 @@
 import collections
 import logging
 import queue
-import random
 import selectors
 import threading
+import uuid
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
@@ -57,10 +57,9 @@ class Callback(NamedTuple):
 
 
 class Bus:
-    def __init__(self, url: str, n: int | None = None):
-        n = n or random.randint(0, 2**32)
+    def __init__(self, url: str):
+        self.url = parse_url(f"{url}/Bus/{uuid.uuid4().hex}")
 
-        self.url = parse_url(f"{url}/Bus/{n}")
         self._pool = ThreadPoolExecutor()
 
         self._running = threading.Event()
@@ -139,9 +138,11 @@ class Bus:
             # FIXME: serialization could fail, handle it
             self._outbound[message.dst_bus].send(self._encoder.encode(message))
 
-    def _pop(self, /, key: str | None = None) -> Messages | None:
+    def _pop(
+        self, /, key: str | None = None, timeout: float | None = None
+    ) -> Messages | None:
         key = key or str(self.url)
-        return self._q[key].get(block=True)
+        return self._q[key].get(block=True, timeout=timeout)
 
     def run_forever(self):
         try:
@@ -202,13 +203,12 @@ class Bus:
     #
     # bus client API
     #
-
-    # TODO: add timeout?
     def ping(
         self,
         *,
         src: str,
         dst: str,
+        timeout: float = 5.0,
     ) -> None | Pong:
         ping = Protocol.ping(
             src=src,
@@ -217,9 +217,12 @@ class Bus:
 
         self._push(ping)
 
-        response = self._pop(ping.src)
+        try:
+            response = self._pop(ping.src)
+        except queue.Empty:
+            return ping.pong(ok=False)
         if response is None or not isinstance(response, Pong):
-            return
+            return None
 
         return response
 
@@ -316,7 +319,7 @@ class Bus:
 
                 match message:
                     case Ping():
-                        self._push(message.pong())
+                        _ = self._pool.submit(self._handle_ping, message)
                     case Request():
                         _ = self._pool.submit(self._handle_request, message)
                     case Subscribe():
@@ -370,6 +373,12 @@ class Bus:
 
     def subscribers(self, /, event_id: EventId) -> set[Subscriber]:
         return self._subscribers[event_id]
+
+    def _handle_ping(self, message: Ping) -> None:
+        try:
+            self._push(message.pong())
+        except Exception:
+            log.exception("error handling subscribe")
 
     def _handle_subscribe(self, message: Subscribe):
         try:

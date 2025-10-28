@@ -1,10 +1,10 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 # SPDX-FileCopyrightText: 2006-present Paulo Henrique Silva <ph.silva@gmail.com>
 
-from functools import cache
-import urllib.request
-import urllib.parse
 import json
+import urllib.parse
+import urllib.request
+from functools import cache
 
 
 @cache

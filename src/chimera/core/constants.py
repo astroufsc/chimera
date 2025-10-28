@@ -2,8 +2,8 @@
 # SPDX-FileCopyrightText: 2006-present Paulo Henrique Silva <ph.silva@gmail.com>
 
 
-import sys
 import os
+import sys
 
 MANAGER_DEFAULT_HOST = "127.0.0.1"
 MANAGER_DEFAULT_PORT = 6379
@@ -35,7 +35,9 @@ if sys.platform == "win32":
 else:
     SYSTEM_CONFIG_DIRECTORY = os.path.expanduser("~/.chimera")
 
-SYSTEM_CONFIG_DEFAULT_FILENAME = os.path.join(SYSTEM_CONFIG_DIRECTORY, "chimera.config")
+CHIMERA_CONFIG_DEFAULT_FILENAME = os.path.join(
+    SYSTEM_CONFIG_DIRECTORY, "chimera.config"
+)
 
 SYSTEM_CONFIG_DEFAULT_SAMPLE = os.path.join(
     os.path.dirname(__file__), "chimera.sample.config"

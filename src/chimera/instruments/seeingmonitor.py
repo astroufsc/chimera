@@ -1,9 +1,10 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 # SPDX-FileCopyrightText: 2006-present Paulo Henrique Silva <ph.silva@gmail.com>
 
+import astropy.units as units
+
 from chimera.core.chimeraobject import ChimeraObject
 from chimera.interfaces.seeingmonitor import SeeingMonitor
-import astropy.units as units
 
 
 class SeeingBase(ChimeraObject, SeeingMonitor):

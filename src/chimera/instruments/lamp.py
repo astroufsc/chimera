@@ -3,8 +3,8 @@
 # SPDX-FileCopyrightText: 2006-present Antonio Kanaan <kanaan@astro.ufsc.br>
 
 from chimera.core.chimeraobject import ChimeraObject
-from chimera.interfaces.lamp import LampSwitch
 from chimera.core.lock import lock
+from chimera.interfaces.lamp import LampSwitch
 
 
 class LampBase(ChimeraObject, LampSwitch):

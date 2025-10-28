@@ -146,11 +146,10 @@ Example of use:
 # ======================================================================
 
 import builtins
-
-import os
-import subprocess
-import re
 import copy
+import os
+import re
+import subprocess
 
 from chimera.util.sexcatalog import SExtractorfile
 
@@ -396,7 +395,7 @@ class SExtractor:
                 if versionline.find("SExtractor") != -1:
                     selected = candidate
                     break
-            except IOError:
+            except OSError:
                 continue
 
         if not (selected):

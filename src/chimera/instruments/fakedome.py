@@ -1,22 +1,19 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 # SPDX-FileCopyrightText: 2006-present Paulo Henrique Silva <ph.silva@gmail.com>
 
-from chimera.core.lock import lock
-from chimera.util.coord import Coord
-
-from chimera.interfaces.dome import InvalidDomePositionException, DomeStatus
-from chimera.instruments.dome import DomeBase
-
-import time
 import threading
+import time
+
+from chimera.core.lock import lock
+from chimera.instruments.dome import DomeBase
+from chimera.interfaces.dome import DomeStatus, InvalidDomePositionException
 
 
 class FakeDome(DomeBase):
-
     def __init__(self):
         DomeBase.__init__(self)
 
-        self._position = 0
+        self._position: float = 0.0
         self._slewing = False
         self._slit_open = False
         self._flap_open = False
@@ -27,14 +24,10 @@ class FakeDome(DomeBase):
         self.set_hz(1.0 / 30.0)
 
     @lock
-    def slew_to_az(self, az):
-
-        if not isinstance(az, Coord):
-            az = Coord.from_dms(az)
-
+    def slew_to_az(self, az: float):
         if az > 360:
             raise InvalidDomePositionException(
-                f"Cannot slew to {az}. " "Outside azimuth limits."
+                f"Cannot slew to {az}. Outside azimuth limits."
             )
 
         self._abort.clear()
@@ -58,7 +51,6 @@ class FakeDome(DomeBase):
 
         t = 0
         while t < slew_time:
-
             if self._abort.is_set():
                 self._slewing = False
                 status = DomeStatus.ABORTED
@@ -71,12 +63,12 @@ class FakeDome(DomeBase):
             self._position = az  # move :)
         else:
             # assume half movement in case of abort
-            self._position = self.position + distance / 2.0
+            self._position += distance / 2.0
 
         self._slewing = False
         self.slew_complete(self.get_az(), status)
 
-    def is_slewing(self):
+    def is_slewing(self) -> bool:
         return self._slewing
 
     def abort_slew(self):
@@ -88,8 +80,8 @@ class FakeDome(DomeBase):
             time.sleep(0.1)
 
     @lock
-    def get_az(self):
-        return Coord.from_d(self._position)
+    def get_az(self) -> float:
+        return self._position
 
     @lock
     def open_slit(self):

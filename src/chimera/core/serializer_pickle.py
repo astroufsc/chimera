@@ -1,6 +1,5 @@
-from typing import override
-
 import pickle
+from typing import override
 
 from chimera.core.serializer import Serializer
 

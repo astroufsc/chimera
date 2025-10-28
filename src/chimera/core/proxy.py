@@ -1,18 +1,34 @@
-import random
 from collections.abc import Callable
-from typing import Any
+from typing import Any, Self
 
 from chimera.core.bus import Bus
+from chimera.core.url import URL, create_url, parse_url
 
 __all__ = ["Proxy", "ProxyMethod"]
 
 
 class Proxy:
     def __init__(self, url: str, bus: Bus):
-        n = random.randint(0, 2**32)
-        self.__location__ = f"{bus.url.url}/Proxy/{n}"
+        if isinstance(url, URL):
+            self.__url__ = str(url)
+        else:
+            self.__url__ = url
+        self.__proxy_url__ = create_url(bus=bus.url, cls="Proxy")
         self.__bus__ = bus
-        self.__url__ = url
+
+    def ping(self) -> bool:
+        pong = self.__bus__.ping(src=str(self.__proxy_url__), dst=str(self.__url__))
+        if pong is None:
+            raise RuntimeError("bus is dead")
+        return pong.ok
+
+    def get_proxy(self, url: str) -> Self:
+        try:
+            u = parse_url(url)
+        except ValueError:
+            # assume that url only contains the path, so use our bus as the url
+            u = parse_url(f"{self.__url__}{url}")
+        return Proxy(str(u), self.__bus__)
 
     def __getattr__(self, attr: str):
         return ProxyMethod(self, attr)
@@ -42,16 +58,16 @@ class ProxyMethod:
         self.__name__ = method
 
     def __repr__(self):
-        return f"<{self.proxy.__location__}.{self.method} method proxy at {hex(hash(self))}>"
+        return f"<{self.proxy.__proxy_url__}.{self.method} method proxy at {hex(hash(self))}>"
 
     def __str__(self):
-        return f"[method proxy for {self.proxy.__location__} {self.method} method]"
+        return f"[method proxy for {self.proxy.__proxy_url__} {self.method} method]"
 
     # synchronous call
     def __call__(self, *args: Any, **kwargs: Any):
         # this is not thread safe
         response = self.proxy.__bus__.request(
-            src=self.proxy.__location__,
+            src=str(self.proxy.__proxy_url__),
             dst=self.proxy.__url__,
             method=self.method,
             # FIXME: requests should use tuple
@@ -71,7 +87,7 @@ class ProxyMethod:
     # event handling
     def __iadd__(self, other: Callable[..., Any]):
         self.proxy.__bus__.subscribe(
-            sub=self.proxy.__location__,
+            sub=str(self.proxy.__proxy_url__),
             pub=self.proxy.__url__,
             event=self.method,
             callback=other,
@@ -80,7 +96,7 @@ class ProxyMethod:
 
     def __isub__(self, other: Callable[..., Any]):
         self.proxy.__bus__.unsubscribe(
-            sub=self.proxy.__location__,
+            sub=str(self.proxy.__proxy_url__),
             pub=self.proxy.__url__,
             event=self.method,
             callback=other,

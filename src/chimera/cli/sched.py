@@ -25,7 +25,7 @@ from chimera.controllers.scheduler.model import (
 from chimera.controllers.scheduler.states import State
 from chimera.controllers.scheduler.status import SchedulerStatus
 from chimera.core.constants import DEFAULT_PROGRAM_DATABASE
-from chimera.core.version import _chimera_version_
+from chimera.core.version import chimera_version
 from chimera.util.coord import Coord
 from chimera.util.output import blue, green, red
 from chimera.util.position import Position
@@ -44,7 +44,7 @@ action_dict = {
 class ChimeraSched(ChimeraCLI):
     def __init__(self):
         ChimeraCLI.__init__(
-            self, "chimera-sched", "Scheduler controller", _chimera_version_
+            self, "chimera-sched", "Scheduler controller", chimera_version
         )
 
         self.add_help_group("SCHEDULER", "Scheduler")
@@ -294,7 +294,7 @@ class ChimeraSched(ChimeraCLI):
             self._generate_database_basic(options)
 
     def _generate_database_yaml(self, options):
-        with open(options.filename, "r") as stream:
+        with open(options.filename) as stream:
             try:
                 print("Loading %s" % options.filename, stream)
                 prgconfig = yaml.safe_load(stream)
@@ -430,7 +430,7 @@ class ChimeraSched(ChimeraCLI):
     def _generate_database_basic(self, options):
         f = None
         try:
-            f = open(options.filename, "r")
+            f = open(options.filename)
         # FIXME: remove noqa
         except:  # noqa
             self.exit("Could not find '%s'." % options.filename)

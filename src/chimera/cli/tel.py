@@ -9,8 +9,7 @@ from chimera.core.exceptions import (
     ObjectTooLowException,
     print_exception,
 )
-
-from chimera.core.version import _chimera_version_
+from chimera.core.version import chimera_version
 from chimera.interfaces.fan import (
     FanControllableDirection,
     FanControllableSpeed,
@@ -34,7 +33,7 @@ from .cli import ChimeraCLI, action
 class ChimeraTel(ChimeraCLI):
     def __init__(self):
         ChimeraCLI.__init__(
-            self, "chimera-tel", "Telescope controller", _chimera_version_
+            self, "chimera-tel", "Telescope controller", chimera_version
         )
 
         self.local_slew = False
@@ -108,10 +107,6 @@ class ChimeraTel(ChimeraCLI):
             )
         )
 
-    @action(help="Initialize the telescope (Lat/long/Date/Time)", help_group="INIT")
-    def init(self, options):
-        pass
-
     def _print_current_position(self, tag="current"):
         ra, dec = self.telescope.get_position_ra_dec()
         alt, az = self.telescope.get_position_alt_az()
@@ -168,7 +163,8 @@ class ChimeraTel(ChimeraCLI):
                 if self.local_slew:
                     telescope.slew_to_alt_az(target.alt, target.az)
                 else:
-                    telescope.slew_to_ra_dec(target.ra, target.dec, epoch=options.epoch)
+                    ra, dec = target
+                    telescope.slew_to_ra_dec(ra, dec, epoch=2000.0)
         except ObjectTooLowException as e:
             self.err("ERROR: %s" % str(e))
             self.exit()
@@ -296,7 +292,7 @@ class ChimeraTel(ChimeraCLI):
     )
     def set_fan_speed(self, options):
         try:
-            fan = self.telescope.get_manager().get_proxy(options.fan)
+            fan = self.telescope.get_proxy(options.fan)
         except ObjectNotFoundException:
             self.exit("%s: Could not find requested fan." % red("ERROR"))
 
@@ -318,7 +314,7 @@ class ChimeraTel(ChimeraCLI):
     )
     def start_fan(self, options):
         try:
-            fan = self.telescope.get_manager().get_proxy(options.fan)
+            fan = self.telescope.get_proxy(options.fan)
         except ObjectNotFoundException:
             self.exit("%s: Could not find requested fan." % red("ERROR"))
 
@@ -345,7 +341,7 @@ class ChimeraTel(ChimeraCLI):
     )
     def stop_fan(self, options):
         try:
-            fan = self.telescope.get_manager().get_proxy(options.fan)
+            fan = self.telescope.get_proxy(options.fan)
         except ObjectNotFoundException:
             self.exit("%s: Could not find requested fan." % red("ERROR"))
 
@@ -354,7 +350,7 @@ class ChimeraTel(ChimeraCLI):
 
         self.out("=" * 40)
 
-        self.out("Stopping %s" % self.options.fan, end="")
+        self.out(f"Stopping {self.options.fan}", end="")
         try:
             if fan.switch_off():
                 self.out(green("OK"))
@@ -389,7 +385,7 @@ class ChimeraTel(ChimeraCLI):
 
         if self.telescope["fans"] is not None:
             for fan in self.telescope["fans"]:
-                fan = self.telescope.get_manager().get_proxy(fan)
+                fan = self.telescope.get_proxy(fan)
                 if fan.features(FanState):
                     st = fan.status()
                     if st == FanStatus.ON:
@@ -539,7 +535,8 @@ class ChimeraTel(ChimeraCLI):
                 if options.epoch != 2000:
                     self.out("ERROR: epoch %s is not supported." % options.epoch)
                     self.exit()
-                target = Position.from_ra_dec(options.ra, options.dec)  # todo: epoch
+                # target = Position.from_ra_dec(options.ra, options.dec)  # todo: epoch
+                target = (options.ra, options.dec)
             except Exception as e:
                 self.exit(str(e))
 

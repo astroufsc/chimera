@@ -8,7 +8,7 @@ import sys
 import time
 
 from chimera.core.exceptions import ObjectNotFoundException, print_exception
-from chimera.core.version import _chimera_version_
+from chimera.core.version import chimera_version
 from chimera.interfaces.camera import CameraFeature, CameraStatus
 from chimera.interfaces.filterwheel import InvalidFilterPositionException
 from chimera.util.ds9 import DS9
@@ -35,7 +35,7 @@ def get_compressed_name(filename, compression):
 
 class ChimeraCam(ChimeraCLI):
     def __init__(self):
-        ChimeraCLI.__init__(self, "chimera-cam", "Camera controller", _chimera_version_)
+        ChimeraCLI.__init__(self, "chimera-cam", "Camera controller", chimera_version)
 
         self.add_help_group("CAM", "Camera and Filter Wheel configuration")
         self.add_instrument(

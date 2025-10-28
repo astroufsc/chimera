@@ -1,10 +1,7 @@
-import threading
-
 # import logging
 import os
-
-from http.server import SimpleHTTPRequestHandler
-from http.server import HTTPServer
+import threading
+from http.server import HTTPServer, SimpleHTTPRequestHandler
 
 
 class ImageServerHTTPHandler(SimpleHTTPRequestHandler):
@@ -27,9 +24,9 @@ class ImageServerHTTPHandler(SimpleHTTPRequestHandler):
         self.send_header("Last-Modified", self.date_time_string(modified))
         self.end_headers()
 
-    def response(self, code, txt, ctype):
+    def response(self, code: int, txt: str, ctype: str):
         self.send_head(code, ctype, len(txt))
-        self.wfile.write(txt)
+        self.wfile.write(txt.encode())
 
     def response_file(self, filename, ctype):
         f = open(filename, "rb")

@@ -1,27 +1,25 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 # SPDX-FileCopyrightText: 2006-present Paulo Henrique Silva <ph.silva@gmail.com>
 
-import time
 import datetime as dt
-import random
-import urllib.request
-import urllib.parse
-import urllib.error
 import os
+import random
 import shutil
+import time
+import urllib.error
+import urllib.parse
+import urllib.request
 
 import numpy as np
 from astropy.io import fits
 
-from chimera.interfaces.camera import CCD, CameraFeature, ReadoutMode, CameraStatus
-
+from chimera.core.lock import lock
 from chimera.instruments.camera import CameraBase
 from chimera.instruments.filterwheel import (
     FilterWheelBase,
     InvalidFilterPositionException,
 )
-
-from chimera.core.lock import lock
+from chimera.interfaces.camera import CCD, CameraFeature, CameraStatus, ReadoutMode
 from chimera.util.position import Epoch, Position
 
 
@@ -151,13 +149,13 @@ class FakeCamera(CameraBase, FilterWheelBase):
 
         telescopes = self.get_manager().get_resources_by_class("Telescope")
         if telescopes:
-            telescope = self.get_manager().get_proxy(telescopes[0])
+            telescope = self.get_proxy(telescopes[0])
         else:
             telescope = None
 
         domes = self.get_manager().get_resources_by_class("Dome")
         if domes:
-            dome = self.get_manager().get_proxy(domes[0])
+            dome = self.get_proxy(domes[0])
         else:
             dome = None
 

@@ -1,4 +1,4 @@
-class Catalog(object):
+class Catalog:
 
     def get_name(self):
         """

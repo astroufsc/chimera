@@ -1,9 +1,13 @@
 {
     "[python]": {
-        "editor.defaultFormatter": "charliermarsh.ruff"
+        "editor.defaultFormatter": "charliermarsh.ruff",
+        "editor.formatOnSave": true,
+        "editor.formatOnSaveMode": "modifications",
     },
     "[toml]": {
-        "editor.defaultFormatter": "tamasfe.even-better-toml"
+        "editor.formatOnSave": true,
+        "editor.defaultFormatter": "tamasfe.even-better-toml",
+        "editor.formatOnSaveMode": "modifications",
     },
     "python.testing.pytestArgs": [
         "tests"

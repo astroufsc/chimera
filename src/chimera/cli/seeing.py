@@ -5,7 +5,7 @@
 import datetime
 import sys
 
-from chimera.core.version import _chimera_version_
+from chimera.core.version import chimera_version
 from chimera.util.output import green, red
 
 from .cli import ChimeraCLI, action
@@ -14,7 +14,7 @@ from .cli import ChimeraCLI, action
 class ChimeraSeeing(ChimeraCLI):
     def __init__(self):
         ChimeraCLI.__init__(
-            self, "chimera-seeing", "Seeing Monitor script", _chimera_version_
+            self, "chimera-seeing", "Seeing Monitor script", chimera_version
         )
 
         self.add_help_group("SM", "Seeing Monitor")
@@ -68,10 +68,7 @@ class ChimeraSeeing(ChimeraCLI):
                     else green(v.time.__str__())
                 )
                 self.out(
-                    t
-                    + "  "
-                    + attr.replace("_", " ")
-                    + ": {0.value:.2f} {0.unit:s} ".format(v)
+                    t + "  " + attr.replace("_", " ") + f": {v.value:.2f} {v.unit:s} "
                 )
             except NotImplementedError:
                 pass

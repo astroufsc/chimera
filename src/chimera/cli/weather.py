@@ -5,8 +5,7 @@
 import datetime
 import sys
 
-from chimera.core.version import _chimera_version_
-from chimera.interfaces.weatherstation import WeatherSafety
+from chimera.core.version import chimera_version
 from chimera.util.output import green, red
 
 from .cli import ChimeraCLI, action
@@ -15,7 +14,7 @@ from .cli import ChimeraCLI, action
 class ChimeraWeather(ChimeraCLI):
     def __init__(self):
         ChimeraCLI.__init__(
-            self, "chimera-weather", "Weather station script", _chimera_version_
+            self, "chimera-weather", "Weather station script", chimera_version
         )
 
         self.add_help_group("ws", "Weather Station")
@@ -56,7 +55,7 @@ class ChimeraWeather(ChimeraCLI):
             )
         )
 
-        if self.weatherstation.features(WeatherSafety):
+        if self.weatherstation.features("WeatherSafety"):
             self.out(
                 "Dome is %s to open" % green("OK")
                 if self.weatherstation.ok_to_open()
@@ -86,10 +85,7 @@ class ChimeraWeather(ChimeraCLI):
                     else green(v.time.__str__())
                 )
                 self.out(
-                    t
-                    + "  "
-                    + attr.replace("_", " ")
-                    + ": {0.value:.2f} {0.unit:s} ".format(v)
+                    t + "  " + attr.replace("_", " ") + f": {v.value:.2f} {v.unit:s} "
                 )
             except NotImplementedError:
                 pass

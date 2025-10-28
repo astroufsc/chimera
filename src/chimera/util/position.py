@@ -11,7 +11,6 @@ except ImportError:
 
 import ephem
 
-
 __all__ = ["Position"]
 
 

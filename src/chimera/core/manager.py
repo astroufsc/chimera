@@ -27,7 +27,7 @@ from chimera.core.exceptions import (
 from chimera.core.proxy import Proxy
 from chimera.core.resources import ResourcesManager
 from chimera.core.state import State
-from chimera.core.url import parse_url
+from chimera.core.url import URL, parse_url
 
 __all__ = ["Manager", "get_manager_uri", "ManagerNotFoundException"]
 
@@ -79,7 +79,6 @@ class Manager:
     def _resolve_request(
         self, object: str, method: str
     ) -> tuple[bool, Literal[False] | Callable[..., Any]]:
-
         resource = self.resources.get(object)
         if not resource:
             return False, False
@@ -186,7 +185,14 @@ class Manager:
         log.info("Manager shut down.")
 
     # objects lifecycle
-    def add_location(self, location, path=[], start=True, config: dict[str, Any] = {}):
+    def add_location(
+        self,
+        location: URL,
+        *,
+        config: dict[str, Any] = {},
+        path: list[str] | None = None,
+        start: bool = True,
+    ):
         """
         Add the class pointed by 'location' to the system configuring it
         using 'config'. Manager will look for the class in 'path' and sys.path.
@@ -211,7 +217,9 @@ class Manager:
         cls = self.class_loader.load_class(location.cls, path)
         return self.add_class(cls, location.name, config, start)
 
-    def add_class(self, cls, name, config={}, start=True):
+    def add_class(
+        self, cls: type, name: str, config: dict[str, Any] = {}, start: bool = True
+    ):
         """
         Add the class 'cls' to the system configuring it using 'config'.
 

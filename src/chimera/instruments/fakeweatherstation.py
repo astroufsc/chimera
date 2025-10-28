@@ -1,21 +1,23 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 # SPDX-FileCopyrightText: 2006-present Paulo Henrique Silva <ph.silva@gmail.com>
 
+import datetime
 import math
-from chimera.instruments.weatherstation import WeatherBase
+
+import numpy as np
+from astropy import units
+
 from chimera.core.exceptions import OptionConversionException
+from chimera.instruments.weatherstation import WeatherBase
 from chimera.interfaces.weatherstation import (
-    WSValue,
-    WeatherTemperature,
     WeatherHumidity,
     WeatherPressure,
-    WeatherWind,
     WeatherRain,
+    WeatherTemperature,
     WeatherTransparency,
+    WeatherWind,
+    WSValue,
 )
-from astropy import units
-import numpy as np
-import datetime
 
 
 class FakeWeatherStation(
@@ -182,34 +184,28 @@ if __name__ == "__main__":
     fws = FakeWeatherStation()
 
     humidity = fws.humidity(units.pct)
-    print((f"Humidity: {humidity.value:.2f} % @ {humidity.time}."))
+    print(f"Humidity: {humidity.value:.2f} % @ {humidity.time}.")
 
     temperature = fws.temperature(units.imperial.deg_F)
     print(
-        (
-            f"Temperature: {temperature.value:.2f} {temperature.unit} @ {temperature.time}."
-        )
+        f"Temperature: {temperature.value:.2f} {temperature.unit} @ {temperature.time}."
     )
 
     wind_speed = fws.wind_speed(units.kilometer / units.hour)
-    print(
-        (f"Wind Speed: {wind_speed.value:.2f} {wind_speed.unit} @ {wind_speed.time}.")
-    )
+    print(f"Wind Speed: {wind_speed.value:.2f} {wind_speed.unit} @ {wind_speed.time}.")
 
     wind_direction = fws.wind_direction(units.radian)
     print(
-        (
-            f"Wind Direction: {wind_direction.value:.2f} {wind_direction.unit} @ {wind_direction.time}."
-        )
+        f"Wind Direction: {wind_direction.value:.2f} {wind_direction.unit} @ {wind_direction.time}."
     )
 
     dew_point = fws.dew_point(units.K)
-    print((f"Dew Point: {dew_point.value:.2f} {dew_point.unit} @ {dew_point.time}."))
+    print(f"Dew Point: {dew_point.value:.2f} {dew_point.unit} @ {dew_point.time}.")
 
     pressure = fws.pressure(units.cds.atm)
-    print((f"Pressure: {pressure.value:.2f} {pressure.unit} @ {pressure.time}."))
+    print(f"Pressure: {pressure.value:.2f} {pressure.unit} @ {pressure.time}.")
 
     rain = fws.rain_rate(unit_out=units.millimeter / units.hour)
-    print((f"Rain: {rain.value:.2f} {rain.unit} @ {rain.time}."))
+    print(f"Rain: {rain.value:.2f} {rain.unit} @ {rain.time}.")
 
-    print((f"Metadata: {fws.get_metadata(None)}"))
+    print(f"Metadata: {fws.get_metadata(None)}")

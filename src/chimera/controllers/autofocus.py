@@ -1,28 +1,23 @@
-from chimera.core.chimeraobject import ChimeraObject
-from chimera.core.lock import lock
-from chimera.core.exceptions import ChimeraException, ClassLoaderException
-from chimera.core.constants import SYSTEM_CONFIG_DIRECTORY
-
-from chimera.interfaces.autofocus import Autofocus as IAutofocus
-from chimera.interfaces.autofocus import StarNotFoundException, FocusNotFoundException
-from chimera.interfaces.focuser import InvalidFocusPositionException
-
-from chimera.controllers.imageserver.imagerequest import ImageRequest
-from chimera.controllers.imageserver.util import get_image_server
-
+import logging
 import ntpath
-
-from chimera.util.image import Image, ImageUtil
-from chimera.util.output import red, green
+import os
+import time
+from math import sqrt
 
 import numpy as N
 import yaml
 
-from math import sqrt
-import time
-import os
-import logging
-
+from chimera.controllers.imageserver.imagerequest import ImageRequest
+from chimera.controllers.imageserver.util import get_image_server
+from chimera.core.chimeraobject import ChimeraObject
+from chimera.core.constants import SYSTEM_CONFIG_DIRECTORY
+from chimera.core.exceptions import ChimeraException, ClassLoaderException
+from chimera.core.lock import lock
+from chimera.interfaces.autofocus import Autofocus as IAutofocus
+from chimera.interfaces.autofocus import FocusNotFoundException, StarNotFoundException
+from chimera.interfaces.focuser import InvalidFocusPositionException
+from chimera.util.image import Image, ImageUtil
+from chimera.util.output import green, red
 
 try:
     import pylab as P
@@ -32,7 +27,7 @@ except (ImportError, RuntimeError, ClassLoaderException):
     plot = False
 
 
-class FocusFit(object):
+class FocusFit:
 
     def __init__(self):
 
@@ -183,13 +178,13 @@ class Autofocus(ChimeraObject, IAutofocus):
         self._log_handler = None
 
     def get_cam(self):
-        return self.get_manager().get_proxy(self["camera"])
+        return self.get_proxy(self["camera"])
 
     def get_filter(self):
-        return self.get_manager().get_proxy(self["filterwheel"])
+        return self.get_proxy(self["filterwheel"])
 
     def get_focuser(self):
-        return self.get_manager().get_proxy(self["focuser"])
+        return self.get_proxy(self["focuser"])
 
     def _get_id(self):
         return "autofocus-{}".format(time.strftime("%Y%m%d-%H%M%S"))
@@ -235,7 +230,7 @@ class Autofocus(ChimeraObject, IAutofocus):
         self._open_logger()
 
         if debug:
-            debug_file = open(os.path.join(debug, "autofocus.debug"), "r")
+            debug_file = open(os.path.join(debug, "autofocus.debug"))
             debug_data = yaml.load(debug_file.read())
 
             start = debug_data["start"]
@@ -258,7 +253,7 @@ class Autofocus(ChimeraObject, IAutofocus):
                 )
                 debug_file.write(yaml.dump(debug_data))
                 debug_file.close()
-            except IOError:
+            except OSError:
                 self.log.warning(
                     "Cannot save debug information. Debug will be a little harder later."
                 )

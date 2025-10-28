@@ -13,7 +13,6 @@ Released under the BSD-license.
 from threading import Condition, Lock, current_thread
 from time import time
 
-
 # Read write lock
 # ---------------
 

@@ -1,4 +1,4 @@
-class IScheduler(object):
+class IScheduler:
 
     def reschedule(self, machine):
         """

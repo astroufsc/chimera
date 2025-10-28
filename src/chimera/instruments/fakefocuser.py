@@ -2,15 +2,14 @@
 # SPDX-FileCopyrightText: 2006-present Paulo Henrique Silva <ph.silva@gmail.com>
 
 import random
-from chimera.core.lock import lock
 
+from chimera.core.lock import lock
+from chimera.instruments.focuser import FocuserBase
 from chimera.interfaces.focuser import (
+    FocuserAxis,
     FocuserFeature,
     InvalidFocusPositionException,
-    FocuserAxis,
 )
-
-from chimera.instruments.focuser import FocuserBase
 
 
 class FakeFocuser(FocuserBase):

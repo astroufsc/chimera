@@ -4,8 +4,8 @@
 
 
 import os
-import sys
 import re
+import sys
 
 have_color = 1
 do_titles = 1

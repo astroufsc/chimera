@@ -18,7 +18,7 @@ def requires(instrument):
     return requires_deco
 
 
-class ActionHandler(object):
+class ActionHandler:
 
     @staticmethod
     def process(action):

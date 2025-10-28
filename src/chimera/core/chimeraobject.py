@@ -17,7 +17,7 @@ from chimera.core.constants import (
 from chimera.core.metaobject import MetaObject
 from chimera.core.proxy import Proxy
 from chimera.core.state import State
-from chimera.core.url import parse_url
+from chimera.core.url import URL, parse_url
 from chimera.interfaces.lifecycle import ILifeCycle
 
 __all__ = ["ChimeraObject"]
@@ -25,7 +25,7 @@ __all__ = ["ChimeraObject"]
 
 class ChimeraObject(ILifeCycle, metaclass=MetaObject):
     def __init__(self):
-        ILifeCycle.__init__(self)
+        super().__init__()
 
         # configuration handling
         self.__config_proxy__ = Config(self)
@@ -125,13 +125,13 @@ class ChimeraObject(ILifeCycle, metaclass=MetaObject):
         self.__state__ = state
         return oldstate
 
-    def get_location(self):
+    def get_location(self) -> str:
         return self.__location__
 
     def get_hz(self):
         return self._hz
 
-    def set_hz(self, freq):
+    def set_hz(self, freq: float):
         tmp_hz = self.get_hz()
         self._hz = freq
         return tmp_hz
@@ -157,7 +157,7 @@ class ChimeraObject(ILifeCycle, metaclass=MetaObject):
     def __abort_loop__(self):
         self._loop_abort.set()
 
-    def control(self):
+    def control(self) -> bool:
         return False
 
     def get_metadata(self, request):

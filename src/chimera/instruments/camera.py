@@ -1,22 +1,21 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 # SPDX-FileCopyrightText: 2006-present Paulo Henrique Silva <ph.silva@gmail.com>
-from math import pi, cos, sin
-
+import os
 import threading
 import time
-import os
+from math import cos, pi, sin
 
+from chimera.controllers.imageserver.imagerequest import ImageRequest
+from chimera.controllers.imageserver.util import get_image_server
 from chimera.core.chimeraobject import ChimeraObject
+from chimera.core.lock import lock
 from chimera.interfaces.camera import (
     CameraExpose,
-    CameraTemperature,
     CameraInformation,
+    CameraTemperature,
     InvalidReadoutMode,
     Shutter,
 )
-from chimera.controllers.imageserver.imagerequest import ImageRequest
-from chimera.controllers.imageserver.util import get_image_server
-from chimera.core.lock import lock
 from chimera.util.image import Image, ImageUtil
 
 

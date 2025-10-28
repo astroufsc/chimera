@@ -1,4 +1,5 @@
 import os
+
 from chimera.util.findplugins import find_chimera_plugins
 
 __all__ = ["ChimeraPath"]
@@ -6,7 +7,6 @@ __all__ = ["ChimeraPath"]
 
 class ChimeraPath:
     def __init__(self):
-        # Search for chimera plugins on the sys.path
         self._controllers_plugins, self._instruments_plugins = find_chimera_plugins()
         self._instruments = [os.path.join(self.root(), "instruments")]
         self._instruments.extend(self._instruments_plugins)

@@ -1,3 +1,4 @@
+import uuid
 from dataclasses import dataclass
 from urllib.parse import urlsplit
 
@@ -98,3 +99,32 @@ def parse_path(path: str) -> tuple[str, int | str]:
 
     # not a numbered instance
     return cls, name
+
+
+def create_url(bus: URL, cls: str, name: str | int | None = None) -> URL:
+    if name is None:
+        name = uuid.uuid4().hex
+
+    path = f"/{cls}/{name}"
+    return parse_url(f"{bus.url}{path}")
+
+
+def resolve_url(url: str, bus: str | URL) -> URL:
+    """Resolves a possibly relative URL against a bus URL.
+
+    If the given URL is already absolute, it is returned as-is.
+    If it is relative (i.e., missing host/port), it is combined with the bus URL.
+
+    Args:
+        url: The URL to resolve, either absolute or relative.
+        bus: The bus URL to use for resolution if `url` is relative.
+
+    Returns:
+        The resolved absolute URL.
+    """
+    if url.startswith("tcp://" or not url.startswith("/")):
+        return parse_url(url)
+
+    bus_url = parse_url(bus)
+
+    return parse_url(f"{bus_url.url}{url}")

@@ -1,10 +1,11 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 # SPDX-FileCopyrightText: 2006-present Paulo Henrique Silva <ph.silva@gmail.com>
 
-from chimera.core.lock import lock
-from chimera.interfaces.lamp import LampDimmer, IntensityOutOfRangeException
-from chimera.instruments.lamp import LampBase
 import time
+
+from chimera.core.lock import lock
+from chimera.instruments.lamp import LampBase
+from chimera.interfaces.lamp import IntensityOutOfRangeException, LampDimmer
 
 
 class FakeLamp(LampBase, LampDimmer):

@@ -1,7 +1,7 @@
 from chimera.core.exceptions import (
     ChimeraException,
-    ObjectNotFoundException,
     ClassLoaderException,
+    ObjectNotFoundException,
 )
 from chimera.core.path import ChimeraPath
 

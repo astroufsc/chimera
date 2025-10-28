@@ -1,8 +1,8 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 # SPDX-FileCopyrightText: 2006-present Paulo Henrique Silva <ph.silva@gmail.com>
-
 import logging
 import threading
+from collections.abc import Callable
 
 from chimera.core.constants import (
     CONFIG_ATTRIBUTE_NAME,
@@ -23,7 +23,7 @@ __all__ = []
 
 
 class MethodWrapper:
-    def __init__(self, func, specials=None, dispatcher=None):
+    def __init__(self, func: Callable[..., None], dispatcher=None):
         # our wrapped function
         self.func = func
 
@@ -38,7 +38,7 @@ class MethodWrapper:
 
     # MOST important here: descriptor to bind our dispatcher to an instance
     # and a class
-    def __get__(self, instance, cls=None):
+    def __get__(self, instance: object, cls: type | None = None):
         # bind ourselves to pass to our specials
         self.cls = cls
         self.instance = instance
@@ -88,12 +88,15 @@ class MethodWrapperDispatcher:
 
 
 class EventWrapperDispatcher(MethodWrapperDispatcher):
-    def __init__(self, wrapper, instance, cls):
+    def __init__(self, wrapper: MethodWrapper, instance, cls):
         MethodWrapperDispatcher.__init__(self, wrapper, instance, cls)
 
     def call(self, *args, **kwargs):
         self.instance.__bus__.publish(
-            f"{self.instance.get_location()}/{self.func.__name__}", args[1:], kwargs
+            pub=self.instance.get_location(),
+            event=self.wrapper.func.__name__,
+            args=args[1:],
+            kwargs=kwargs,
         )
 
     def __iadd__(self, other):
