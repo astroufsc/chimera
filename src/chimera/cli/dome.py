@@ -60,9 +60,9 @@ class ChimeraDome(ChimeraCLI):
         self.add_parameters(
             dict(
                 name="lamp",
-                default="/Lamp/0",
+                default="",
                 help_group="LIGHT",
-                help="Calibration lamp to be used.",
+                help="Dome light to be controlled.",
             )
         )
 
@@ -114,6 +114,12 @@ class ChimeraDome(ChimeraCLI):
         self.dome.close_flap()
         self.out("OK")
 
+    def _get_lamp(self, options):
+        if options.lamp == "":
+            if self.dome["lamps"] is None or len(self.dome["lamps"]) == 0:
+                self.exit("%s: No lamps configured on this telescope." % red("ERROR"))
+            options.lamp = self.dome["lamps"][0]  # use the first lamp
+
     @action(
         long="light-off",
         help="Turn light off",
@@ -121,6 +127,7 @@ class ChimeraDome(ChimeraCLI):
         action_group="LIGHT",
     )
     def light_off(self, options):
+        self._get_lamp(options)
         self.out("Turning light off ... ", end="")
 
         try:
@@ -134,6 +141,7 @@ class ChimeraDome(ChimeraCLI):
         long="light-on", help="Turn light on", help_group="LIGHT", action_group="LIGHT"
     )
     def light_on(self, options):
+        self._get_lamp(options)
         self.out("Turning light on ... ", end="")
         try:
             lamp = self.dome.get_manager().get_proxy(options.lamp)
@@ -152,6 +160,7 @@ class ChimeraDome(ChimeraCLI):
         action_group="LIGHT",
     )
     def intensity(self, options):
+        self._get_lamp(options)
         self.out("Setting light intensity to %.2f ... " % options.intensity, end="")
 
         # lamp = None
@@ -214,6 +223,12 @@ class ChimeraDome(ChimeraCLI):
         self.dome.slew_to_az(target)
         self.out("OK")
 
+    def _get_fan(self, options):
+        if options.fan == "":
+            if self.dome["fans"] is None or len(self.dome["fans"]) == 0:
+                self.exit("%s: No fans configured on this telescope." % red("ERROR"))
+            options.fan = self.dome["fans"][0]  # use the first fan
+
     @action(
         long="fan-speed",
         type="float",
@@ -223,6 +238,7 @@ class ChimeraDome(ChimeraCLI):
         action_group="DOMEFANS",
     )
     def set_fan_speed(self, options):
+        self._get_fan(options)
         try:
             domefan = self.dome.get_manager().get_proxy(options.fan)
         except ObjectNotFoundException:
@@ -245,6 +261,7 @@ class ChimeraDome(ChimeraCLI):
         action_group="DOMEFANS",
     )
     def start_fan(self, options):
+        self._get_fan(options)
         try:
             domefan = self.dome.get_manager().get_proxy(options.fan)
         except ObjectNotFoundException:
@@ -272,6 +289,7 @@ class ChimeraDome(ChimeraCLI):
         action_group="DOMEFANS",
     )
     def stop_fan(self, options):
+        self._get_fan(options)
         try:
             domefan = self.dome.get_manager().get_proxy(options.fan)
         except ObjectNotFoundException:
