@@ -1,11 +1,11 @@
-name: Chimera test
+name: Chimera
 on:
   push:
     branches:
-      - main
+      - master
   pull_request:
     branches:
-      - main
+      - master
 
 jobs:
   test:
@@ -14,7 +14,16 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      - name: Install uv
+      - name: install uv
         uses: astral-sh/setup-uv@v6
         with:
           enable-cache: true        
+
+      - name: install chimera
+        run: uv sync --locked --all-extras --dev        
+
+      - name: lint
+        run: uv run pre-commit run --all-files
+
+      - name: tests
+        run: uv run pytest
