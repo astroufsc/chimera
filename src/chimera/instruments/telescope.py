@@ -14,8 +14,8 @@ from chimera.interfaces.telescope import (
     TelescopeSync,
     TelescopeTracking,
 )
-from chimera.util.coord import Coord
 from chimera.util.position import Position
+from chimera.util.coord import Coord
 from chimera.util.simbad import simbad_lookup
 
 __all__ = ["TelescopeBase"]
@@ -52,7 +52,7 @@ class TelescopeBase(
         if self.site is None:
             self.site = self.get_proxy("/Site/0")
         lst = self.site().lst()
-        latitude = self.site["latitude"]
+        latitude = self.site()["latitude"]
 
         alt_az = Position.ra_dec_to_alt_az(Position.from_ra_dec(ra, dec), latitude, lst)
 
