@@ -219,7 +219,7 @@ class ChimeraDome(ChimeraCLI):
         return cast(Fan, fan_proxy)
 
     # @functools.cached_property
-    def lamp(self) -> Fan:
+    def lamp(self) -> Lamp:
         lamp_proxy = self.dome.get_proxy(self.options.lamp)
         if not lamp_proxy.ping():
             self.exit(f"{red('ERROR')}: Could not find lamp '{self.options.lamp}.")
