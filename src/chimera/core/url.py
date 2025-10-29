@@ -1,14 +1,22 @@
 import uuid
 from dataclasses import dataclass
+from functools import cached_property
 from urllib.parse import urlsplit
+
+
+class URLInvalidHostError(ValueError):
+    pass
+
+
+class URLInvalidPathError(ValueError):
+    pass
 
 
 @dataclass(frozen=True)
 class URL:
     raw: str
 
-    # FIXME: this should be named bus
-    url: str  # tcp://host:port
+    bus: str  # tcp://host:port
     host: str
     port: int
 
@@ -18,11 +26,15 @@ class URL:
 
     indexed: bool
 
-    # this shoud be a cached property named url and also the same as the __str__
-    def __str__(self):
-        return f"{self.url}{self.path}"
+    @cached_property
+    def url(self) -> str:
+        return f"{self.bus}{self.path}"
 
-    # TODO: add __repr__
+    def __str__(self) -> str:
+        return self.url
+
+    def __repr__(self) -> str:
+        return f"URL(bus={self.bus!r}, path={self.path!r})"
 
 
 def parse_url(url: str | URL) -> URL:
@@ -41,7 +53,7 @@ def parse_url(url: str | URL) -> URL:
 
     return URL(
         raw=url,
-        url=f"tcp://{host}:{port}",
+        bus=f"tcp://{host}:{port}",
         host=host,
         port=port,
         path=f"/{cls}/{name}",

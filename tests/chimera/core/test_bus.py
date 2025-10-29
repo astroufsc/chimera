@@ -18,8 +18,8 @@ def print_results(op: str, n: int, dt: float):
 def ping_test(*, n: int, src_bus: Bus, dst_bus: Bus):
     print()
 
-    src = f"{src_bus.url.url}/Proxy/932032"
-    dst = f"{dst_bus.url.url}/Telescope/0"
+    src = f"{src_bus.url.bus}/Proxy/932032"
+    dst = f"{dst_bus.url.bus}/Telescope/0"
 
     def sender():
         t0 = time.monotonic()
@@ -53,11 +53,11 @@ def ping_test(*, n: int, src_bus: Bus, dst_bus: Bus):
 def rpc_test(*, n: int, src_bus: Bus, dst_bus: Bus):
     print()
 
-    dst = f"{dst_bus.url.url}/Telescope/0"
-    src = f"{src_bus.url.url}/Proxy/0"
+    dst = f"{dst_bus.url.bus}/Telescope/0"
+    src = f"{src_bus.url.bus}/Proxy/0"
 
-    src_not_found = f"{src_bus.url.url}/Proxy/1"
-    dst_not_found = f"{dst_bus.url.url}/Telescope/not-found"
+    src_not_found = f"{src_bus.url.bus}/Proxy/1"
+    dst_not_found = f"{dst_bus.url.bus}/Telescope/not-found"
 
     def fake_get_az():
         return 42.0
@@ -123,8 +123,8 @@ def rpc_test(*, n: int, src_bus: Bus, dst_bus: Bus):
 def pubsub_test(*, n_subscribers: int, n_events: int, src_bus: Bus, dst_bus: Bus):
     print()
 
-    sub = [f"{src_bus.url.url}/Proxy/{i}" for i in range(n_subscribers)]
-    pub = f"{dst_bus.url.url}/Telescope/0"
+    sub = [f"{src_bus.url.bus}/Proxy/{i}" for i in range(n_subscribers)]
+    pub = f"{dst_bus.url.bus}/Telescope/0"
 
     def create_callback(i: int):
         def on_slew_begin(ra: float, dec: float, slew_status: str):

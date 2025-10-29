@@ -67,7 +67,7 @@ class Manager:
         self.resources = ResourcesManager()
         self.class_loader = ClassLoader()
         self._pool = concurrent.futures.ThreadPoolExecutor(
-            thread_name_prefix=f"{self._bus.url.url}/Manager-"
+            thread_name_prefix=f"{self._bus.url.bus}/Manager-"
         )
 
         # shutdown event
@@ -100,13 +100,13 @@ class Manager:
 
     # host/port
     def get_hostname(self):
-        return self._bus.url.url.replace("tcp://", "").split(":")[0]
+        return self._bus.url.host
 
     def get_port(self):
-        return self._bus.url.url.replace("tcp://", "").split(":")[1]
+        return self._bus.url.port
 
     # reflection (console)
-    def get_resources(self):
+    def get_resources(self) -> list[str]:
         """
         Returns a list with the Location of all the available resources
         """
