@@ -280,7 +280,7 @@ class Manager:
             raise ChimeraObjectException(f"Error configuring {url}. ({e})")
 
         # connect
-        obj.__location__ = str(url)
+        obj.__location__ = url
         obj.__bus__ = self._bus
         self.resources.add(url.path, obj)
 

@@ -17,7 +17,7 @@ from chimera.core.constants import (
 from chimera.core.metaobject import MetaObject
 from chimera.core.proxy import Proxy
 from chimera.core.state import State
-from chimera.core.url import parse_url
+from chimera.core.url import URL, parse_url
 from chimera.interfaces.lifecycle import ILifeCycle
 
 __all__ = ["ChimeraObject"]
@@ -32,7 +32,7 @@ class ChimeraObject(ILifeCycle, metaclass=MetaObject):
 
         self.__state__ = State.STOPPED
 
-        self.__location__: str
+        self.__location__: URL
         self.__bus__: Bus
 
         # logging.
@@ -126,7 +126,7 @@ class ChimeraObject(ILifeCycle, metaclass=MetaObject):
         return oldstate
 
     def get_location(self) -> str:
-        return self.__location__
+        return str(self.__location__)
 
     def get_hz(self):
         return self._hz
