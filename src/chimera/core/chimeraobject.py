@@ -17,7 +17,7 @@ from chimera.core.constants import (
 from chimera.core.metaobject import MetaObject
 from chimera.core.proxy import Proxy
 from chimera.core.state import State
-from chimera.core.url import URL, parse_url
+from chimera.core.url import parse_url
 from chimera.interfaces.lifecycle import ILifeCycle
 
 __all__ = ["ChimeraObject"]
@@ -197,7 +197,7 @@ class ChimeraObject(ILifeCycle, metaclass=MetaObject):
                 u = parse_url(url)
             except ValueError:
                 # assume that url only contains the path, so use our bus as the url
-                u = parse_url(f"{self.__bus__.url.url}{url}")
+                u = parse_url(f"{self.__bus__.url.bus}{url}")
             return Proxy(str(u), self.__bus__)
 
         return Proxy(str(self.__location__), self.__bus__)

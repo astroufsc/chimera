@@ -5,7 +5,7 @@ import selectors
 import threading
 import uuid
 from collections.abc import Callable
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import Future, ThreadPoolExecutor
 from dataclasses import dataclass
 from typing import Any, Literal, NamedTuple, Self
 
@@ -79,7 +79,7 @@ class Bus:
             collections.defaultdict(set)
         )
 
-        self._inbound: Transport = create_transport(self.url.url)
+        self._inbound: Transport = create_transport(self.url.bus)
         self._inbound.bind()
 
         self._outbound: dict[str, Transport] = {}
@@ -122,12 +122,12 @@ class Bus:
             log.warning("push failed, bus is dead, not accepting new messages")
             return
 
-        if message.dst_bus == self.url.url:
+        if message.dst_bus == self.url.bus:
             # FIXME: this could block if you send too much without receiving.
             if isinstance(message, Response) or isinstance(message, Pong):
                 self._q[message.dst].put(message)
             else:
-                self._q[str(self.url)].put(message)
+                self._q[self.url.url].put(message)
         else:
             if message.dst_bus not in self._outbound:
                 # TODO: define some policy to handle closing of these sockets when not in use
@@ -165,7 +165,9 @@ class Bus:
 
         self._running.set()
 
-        self._process_queue_future = self._pool.submit(self._process_queue)
+        self._process_queue_future: Future[None] = self._pool.submit(
+            self._process_queue
+        )
 
         self._bus_started.set()
 
@@ -412,7 +414,7 @@ class Bus:
                 return
 
             # unique set of buses where we have subscribers
-            urls = set([sub.subscriber.url for sub in subscribers])
+            urls = set([sub.subscriber.bus for sub in subscribers])
 
             for url in urls:
                 event = message.callback(

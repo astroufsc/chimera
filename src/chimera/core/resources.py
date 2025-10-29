@@ -15,9 +15,9 @@ class Resource:
     cls: str
     name: str | int
     instance: Any | None = None
-    bases: list[str] = field(default_factory=list)
+    bases: list[str] = field(default_factory=list[str])
     created: float = field(default_factory=time.monotonic)
-    loop: Future | None = None
+    loop: Future[bool] | None = None
 
 
 class ResourcesManager:
@@ -25,7 +25,7 @@ class ResourcesManager:
         self._res = {}
 
     def add(
-        self, path: str, instance: Any | None = None, loop: Future | None = None
+        self, path: str, instance: Any | None = None, loop: Future[bool] | None = None
     ) -> None:
         cls, name = parse_path(path)
         if path in self:

@@ -1,6 +1,7 @@
+import random
+import sys
 import time
 import traceback
-import uuid
 from functools import cached_property
 from typing import Any, override
 
@@ -34,12 +35,12 @@ class RpcMessage(Message, frozen=True):
     @cached_property
     @override
     def src_bus(self) -> str:
-        return parse_url(self.src).url
+        return parse_url(self.src).bus
 
     @cached_property
     @override
     def dst_bus(self) -> str:
-        return parse_url(self.dst).url
+        return parse_url(self.dst).bus
 
 
 class Ping(RpcMessage, frozen=True):
@@ -118,12 +119,12 @@ class SubMessage(Message, frozen=True):
     @cached_property
     @override
     def src_bus(self) -> str:
-        return parse_url(self.pub).url
+        return parse_url(self.pub).bus
 
     @cached_property
     @override
     def dst_bus(self) -> str:
-        return parse_url(self.sub).url
+        return parse_url(self.sub).bus
 
 
 class Subscribe(SubMessage, frozen=True):
@@ -147,12 +148,12 @@ class PubMessage(Message, frozen=True):
     @cached_property
     @override
     def src_bus(self) -> str:
-        return parse_url(self.pub).url
+        return parse_url(self.pub).bus
 
     @cached_property
     @override
     def dst_bus(self) -> str:
-        return parse_url(self.pub).url
+        return parse_url(self.pub).bus
 
 
 class Publish(PubMessage, frozen=True):
@@ -190,7 +191,7 @@ class Event(RpcMessage, frozen=True):
 class Protocol:
     @staticmethod
     def id() -> int:
-        return uuid.uuid4().int
+        return random.randint(0, sys.maxsize)
 
     @staticmethod
     def timestamp() -> int:
