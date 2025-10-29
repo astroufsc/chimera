@@ -3,7 +3,6 @@ import logging
 import queue
 import selectors
 import threading
-import uuid
 from collections.abc import Callable
 from concurrent.futures import Future, ThreadPoolExecutor
 from dataclasses import dataclass
@@ -25,7 +24,7 @@ from chimera.core.protocol import (
 )
 from chimera.core.transport import Transport
 from chimera.core.transport_factory import create_transport
-from chimera.core.url import URL, parse_url
+from chimera.core.url import URL, create_url, parse_url
 
 log = logging.getLogger(__name__)
 
@@ -58,7 +57,7 @@ class Callback(NamedTuple):
 
 class Bus:
     def __init__(self, url: str):
-        self.url = parse_url(f"{url}/Bus/{uuid.uuid4().hex}")
+        self.url = create_url(url, cls="Bus")
 
         self._pool = ThreadPoolExecutor()
 

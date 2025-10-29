@@ -127,14 +127,12 @@ def parse_path(path: str) -> tuple[str, int | str]:
     return cls, name
 
 
-def create_url(bus: str | URL, cls: str, name: str | int | None = None) -> URL:
-    bus = parse_url(bus)
-
+def create_url(bus: str, cls: str, name: str | int | None = None) -> URL:
     if name is None:
-        name = uuid.uuid4().hex
+        name = f"{cls.lower()}_{uuid.uuid4().hex}"
 
     path = f"/{cls}/{name}"
-    return parse_url(f"{bus.bus}{path}")
+    return parse_url(f"{bus}{path}")
 
 
 def resolve_url(url: str, bus: str | URL) -> URL:
@@ -142,7 +140,7 @@ def resolve_url(url: str, bus: str | URL) -> URL:
     try:
         resolved_url = parse_url(url)
         return create_url(
-            bus=bus_url,
+            bus=bus_url.bus,
             cls=resolved_url.cls,
             name=resolved_url.name,
         )
