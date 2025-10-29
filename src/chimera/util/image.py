@@ -13,7 +13,7 @@ import uuid
 import zipfile
 from collections import UserDict
 
-import numpy as N
+import numpy as np
 from astropy import wcs
 from astropy.io import fits
 
@@ -389,7 +389,7 @@ class Image(UserDict):
             else:  # assumes as tuple
                 c1, c2 = coords[0]
 
-        value = fn(N.array([[c1, c2]]), 1)
+        value = fn(np.array([[c1, c2]]), 1)
 
         if len(value) >= 1:
             return tuple(value[0])
@@ -502,12 +502,10 @@ class Image(UserDict):
         return key in self._fd["PRIMARY"].header
 
     def __iter__(self):
-        for k in list(self.keys()):
-            yield k
+        yield from self.keys()
 
     def iteritems(self):
-        for item in list(self.items()):
-            yield item
+        yield from self.items()
 
     def __iadd__(self, headers):
         """

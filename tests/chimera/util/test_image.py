@@ -1,10 +1,11 @@
-from chimera.util.image import Image, ImageUtil
-
-import numpy as N
 import os
 
+import numpy as np
 
-class TestImage(object):
+from chimera.util.image import Image, ImageUtil
+
+
+class TestImage:
 
     base = os.path.dirname(__file__)
 
@@ -68,8 +69,7 @@ class TestImage(object):
             os.unlink(name)
 
     def test_create(self):
-
-        img = Image.create(N.zeros((100, 100)), filename="autogen-teste.fits")
+        img = Image.create(np.zeros((100, 100)), filename="autogen-teste.fits")
         assert os.path.exists(img.filename)
         assert img.width() == 100
         assert img.height() == 100

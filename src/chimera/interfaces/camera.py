@@ -2,9 +2,9 @@
 # SPDX-FileCopyrightText: 2006-present Paulo Henrique Silva <ph.silva@gmail.com>
 
 
-from chimera.core.interface import Interface
 from chimera.core.event import event
 from chimera.core.exceptions import ChimeraException
+from chimera.core.interface import Interface
 from chimera.util.enum import Enum
 
 
@@ -50,7 +50,7 @@ class CameraStatus(Enum):
     ABORTED = "ABORTED"
 
 
-class ReadoutMode(object):
+class ReadoutMode:
     """
     Store basic geometry for a given readout mode. Implementer should
     provide an constuctor from a mode_string (some instrument specific

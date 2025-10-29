@@ -2,24 +2,21 @@
 # SPDX-FileCopyrightText: 2006-present Paulo Henrique Silva <ph.silva@gmail.com>
 
 
-from concurrent.futures import ThreadPoolExecutor, wait
-import time
-import sys
 import logging
+import sys
+import time
+from concurrent.futures import ThreadPoolExecutor, wait
 
 import pytest
 
+import chimera.core.log
 from chimera.core.manager import Manager
 from chimera.core.site import Site
-
+from chimera.interfaces.telescope import SlewRate, TelescopeStatus
 from chimera.util.coord import Coord
 from chimera.util.position import Position
 
-from chimera.interfaces.telescope import SlewRate, TelescopeStatus
-
 from .base import FakeHardwareTest, RealHardwareTest
-
-import chimera.core.log
 
 
 def assert_eps_equal(a, b, e=60):
@@ -36,7 +33,7 @@ log = logging.getLogger("chimera.tests")
 fired_events = {}
 
 
-class TelescopeTest(object):
+class TelescopeTest:
 
     telescope = ""
 

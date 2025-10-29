@@ -1,15 +1,15 @@
-import pytest
-
-from chimera.util.ds9 import DS9
-
 import os
 import signal
 import subprocess
 import time
 
+import pytest
+
+from chimera.util.ds9 import DS9
+
 
 @pytest.mark.skip
-class TestDS9(object):
+class TestDS9:
 
     def test_basics(self):
         ds9 = DS9()

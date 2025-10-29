@@ -349,16 +349,16 @@ class CameraBase(ChimeraObject, CameraExpose, CameraTemperature, CameraInformati
             scale_y = bin_factor * (((180 / pi) / focal_length) * (pix_h * 0.001))
 
             full_width, full_height = self.get_physical_size()
-            CRPIX1 = ((int(full_width / 2.0)) - left) - 1
-            CRPIX2 = ((int(full_height / 2.0)) - top) - 1
+            crpix1 = ((int(full_width / 2.0)) - left) - 1
+            crpix2 = ((int(full_height / 2.0)) - top) - 1
 
             # Adding WCS coordinates according to FITS standard.
             # Quick sheet: http://www.astro.iag.usp.br/~moser/notes/GAi_FITSimgs.html
             # http://adsabs.harvard.edu/abs/2002A%26A...395.1061G
             # http://adsabs.harvard.edu/abs/2002A%26A...395.1077C
             md += [
-                ("CRPIX1", CRPIX1, "coordinate system reference pixel"),
-                ("CRPIX2", CRPIX2, "coordinate system reference pixel"),
+                ("CRPIX1", crpix1, "coordinate system reference pixel"),
+                ("CRPIX2", crpix2, "coordinate system reference pixel"),
                 (
                     "CD1_1",
                     scale_x * cos(self["rotation"] * pi / 180.0),

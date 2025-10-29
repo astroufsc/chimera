@@ -4,7 +4,6 @@
 
 
 import copy
-import functools
 import sys
 from typing import cast
 
@@ -15,12 +14,9 @@ from chimera.core.version import chimera_version
 from chimera.interfaces.dome import Mode
 from chimera.interfaces.fan import (
     Fan,
-    FanControllableDirection,
-    FanControllableSpeed,
-    FanState,
     FanStatus,
 )
-from chimera.interfaces.lamp import IntensityOutOfRangeException, Lamp, LampDimmer
+from chimera.interfaces.lamp import IntensityOutOfRangeException, Lamp
 from chimera.util.output import green, red, yellow
 
 from .cli import ChimeraCLI, action
@@ -156,7 +152,8 @@ class ChimeraDome(ChimeraCLI):
                 self.exit("Lamp does not support light intensity setting.")
         except IntensityOutOfRangeException:
             self.exit(
-                "\n%s: Intensity out of range: %s" % (red("ERROR"), lamp.get_range())
+                "\n%s: Intensity out of range: %s"
+                % (red("ERROR"), self.lamp().get_range())
             )
 
         self.out(green("OK"))

@@ -1,10 +1,10 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 # SPDX-FileCopyrightText: 2006-present Paulo Henrique Silva <ph.silva@gmail.com>
 
-from typing import Tuple
-from chimera.core.interface import Interface
+
 from chimera.core.event import event
 from chimera.core.exceptions import ChimeraException
+from chimera.core.interface import Interface
 from chimera.util.enum import Enum
 
 
@@ -250,7 +250,7 @@ class TelescopeSlew(Telescope):
         @rtype: float
         """
 
-    def get_position_ra_dec(self) -> Tuple[float, float]:
+    def get_position_ra_dec(self) -> tuple[float, float]:
         """
         Get the current position of the telescope in equatorial coordinates.
 
@@ -258,7 +258,7 @@ class TelescopeSlew(Telescope):
         @rtype: Tuple[float, float]
         """
 
-    def get_position_alt_az(self) -> Tuple[float, float]:
+    def get_position_alt_az(self) -> tuple[float, float]:
         """
         Get the current position of the telescope in local coordinates.
 
@@ -266,7 +266,7 @@ class TelescopeSlew(Telescope):
         @rtype: Tuple[float, float]
         """
 
-    def get_target_ra_dec(self) -> Tuple[float, float, float]:
+    def get_target_ra_dec(self) -> tuple[float, float, float]:
         """
         Get the current telescope target in equatorial coordinates.
 
@@ -274,7 +274,7 @@ class TelescopeSlew(Telescope):
         @rtype: Tuple[float, float, float]
         """
 
-    def get_target_alt_az(self) -> Tuple[float, float]:
+    def get_target_alt_az(self) -> tuple[float, float]:
         """
         Get the current telescope target in local coordinates.
 
@@ -443,7 +443,7 @@ class TelescopePark(Telescope):
         @rtype: None
         """
 
-    def get_park_position(self) -> Tuple[float, float]:
+    def get_park_position(self) -> tuple[float, float]:
         """
         Get the Current park position.
 

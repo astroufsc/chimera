@@ -3,7 +3,7 @@
 
 
 from chimera.core.interface import Interface
-from chimera.interfaces.switch import Switch, SwitchStatus, SwitchState
+from chimera.interfaces.switch import Switch, SwitchState, SwitchStatus
 from chimera.util.enum import Enum
 
 

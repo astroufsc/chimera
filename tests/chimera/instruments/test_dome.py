@@ -2,23 +2,21 @@
 # SPDX-FileCopyrightText: 2006-present Paulo Henrique Silva <ph.silva@gmail.com>
 
 
-import time
+import logging
 import random
 import threading
-import logging
+import time
 
+import pytest
+
+import chimera.core.log
 from chimera.core.manager import Manager
 from chimera.core.site import Site
-
+from chimera.interfaces.dome import DomeStatus, InvalidDomePositionException
 from chimera.util.coord import Coord
 from chimera.util.position import Position
 
-from chimera.interfaces.dome import InvalidDomePositionException, DomeStatus
-
 from .base import FakeHardwareTest, RealHardwareTest
-
-import chimera.core.log
-import pytest
 
 chimera.core.log.set_console_level(int(1e10))
 log = logging.getLogger("chimera.tests")
@@ -33,7 +31,7 @@ def assert_dome_az(dome_az, other_az, eps):
     ), f"dome az={dome_az} other az={other_az} (eps={eps})"
 
 
-class DomeTest(object):
+class DomeTest:
 
     dome = ""
     telescope = ""
@@ -175,8 +173,8 @@ class TestFakeDome(FakeHardwareTest, DomeTest):
             },
         )
 
-        from chimera.instruments.faketelescope import FakeTelescope
         from chimera.instruments.fakedome import FakeDome
+        from chimera.instruments.faketelescope import FakeTelescope
 
         self.manager.add_class(FakeTelescope, "fake")
         self.manager.add_class(

@@ -18,7 +18,7 @@ from chimera.interfaces.focuser import (
     InvalidFocusPositionException,
 )
 from chimera.util.ds9 import DS9
-from chimera.util.sextractor import SExtractorException
+from chimera.util.sextractor import SExtractorError
 
 from .cli import ChimeraCLI, ParameterType, action, parameter
 
@@ -314,7 +314,7 @@ class ChimeraFocus(ChimeraCLI):
             self.exit(str(e))
         except StarNotFoundException as e:
             self.exit(str(e))
-        except SExtractorException:
+        except SExtractorError:
             self.exit(
                 "Couldn't find SExtractor. If you have it installed, please add it to yout PATH variable."
             )

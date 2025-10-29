@@ -3,15 +3,16 @@
 
 import random
 
-from chimera.core.manager import Manager
-from chimera.core.site import Site
-
-from chimera.interfaces.focuser import InvalidFocusPositionException
-from .base import FakeHardwareTest, RealHardwareTest
 import pytest
 
+from chimera.core.manager import Manager
+from chimera.core.site import Site
+from chimera.interfaces.focuser import InvalidFocusPositionException
 
-class FocuserTest(object):
+from .base import FakeHardwareTest, RealHardwareTest
+
+
+class FocuserTest:
 
     FOCUSER = ""
 

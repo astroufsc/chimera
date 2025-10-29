@@ -4,7 +4,7 @@ import os
 import time
 from math import sqrt
 
-import numpy as N
+import numpy as np
 import yaml
 
 from chimera.controllers.imageserver.imagerequest import ImageRequest
@@ -20,7 +20,7 @@ from chimera.util.image import Image, ImageUtil
 from chimera.util.output import green, red
 
 try:
-    import pylab as P
+    import matplotlib.pyplot as plt
 
     plot = True
 except (ImportError, RuntimeError, ClassLoaderException):
@@ -38,9 +38,9 @@ class FocusFit:
         self.minmax = None
 
         # calculated
-        self.A = 0
-        self.B = 0
-        self.C = 0
+        self.a = 0
+        self.b = 0
+        self.c = 0
 
         self.fwhm_fit = None
         self.err = 1e20
@@ -57,10 +57,10 @@ class FocusFit:
         global plot
 
         if plot:
-            P.figure(1)
-            P.plot(self.position, self.fwhm, "ro", label="data")
-            P.plot(self.position, self.fwhm_fit, "b--", label="fit")
-            P.plot(
+            plt.figure(1)
+            plt.plot(self.position, self.fwhm, "ro", label="data")
+            plt.plot(self.position, self.fwhm_fit, "b--", label="fit")
+            plt.plot(
                 [self.best_focus[0]],
                 [self.best_focus[1]],
                 "bD",
@@ -68,12 +68,12 @@ class FocusFit:
             )
 
             if self.minmax:
-                P.ylim(*self.minmax)
+                plt.ylim(*self.minmax)
 
-            P.title("Focus")
-            P.xlabel("Focus position")
-            P.ylabel("FWHM (pixel)")
-            P.savefig(filename)
+            plt.title("Focus")
+            plt.xlabel("Focus position")
+            plt.ylabel("FWHM (pixel)")
+            plt.savefig(filename)
 
     def log(self, filename):
 
@@ -97,7 +97,7 @@ class FocusFit:
         log.close()
 
     def __iter__(self):
-        return (self.A, self.B, self.C).__iter__()
+        return (self.a, self.b, self.c).__iter__()
 
     def __cmp__(self, other):
         if isinstance(other, FocusFit):
@@ -106,7 +106,7 @@ class FocusFit:
             return self.err - other
 
     def __hash__(self):
-        return hash((self.A, self.B, self.C, self.err))
+        return hash((self.a, self.b, self.c, self.err))
 
     def __bool__(self):
         return (self.position is not None) and (self.fwhm is not None)
@@ -119,9 +119,9 @@ class FocusFit:
             position = position[idxs]
             fwhm = fwhm[idxs]
 
-        A, B, C = N.polyfit(position, fwhm, 2)
+        a, b, c = np.polyfit(position, fwhm, 2)
 
-        fwhm_fit = N.polyval([A, B, C], position)
+        fwhm_fit = np.polyval([a, b, c], position)
 
         err = sqrt(sum((fwhm_fit - fwhm) ** 2) / len(position))
 
@@ -131,7 +131,7 @@ class FocusFit:
         fit.temperature = temperature
         fit.minmax = minmax
 
-        fit.A, fit.B, fit.C = A, B, C
+        fit.a, fit.b, fit.c = a, b, c
         fit.err = err
         fit.fwhm_fit = fwhm_fit
 
@@ -239,7 +239,7 @@ class Autofocus(ChimeraObject, IAutofocus):
 
             debug_file.close()
 
-        positions = N.arange(start, end + 1, step)
+        positions = np.arange(start, end + 1, step)
 
         if not debug:
             # save parameter to ease a debug run later
@@ -316,9 +316,9 @@ class Autofocus(ChimeraObject, IAutofocus):
 
             return {
                 "current_run": self.current_run,
-                "A": fit.A,
-                "B": fit.B,
-                "C": fit.C,
+                "A": fit.a,
+                "B": fit.b,
+                "C": fit.c,
                 "best": int(fit.best_focus[0]),
             }
 
@@ -377,7 +377,10 @@ class Autofocus(ChimeraObject, IAutofocus):
             except NotImplementedError:
                 temp = None
             fit = FocusFit.fit(
-                N.array(valid_positions), N.array(fwhm), temperature=temp, minmax=minmax
+                np.array(valid_positions),
+                np.array(fwhm),
+                temperature=temp,
+                minmax=minmax,
             )
         except Exception:
             focuser.move_to(initial_position)
@@ -399,7 +402,7 @@ class Autofocus(ChimeraObject, IAutofocus):
 
         # leave focuser at best position
         try:
-            if N.isnan(fit.best_focus[0]):
+            if np.isnan(fit.best_focus[0]):
                 raise FocusNotFoundException(
                     "Focus fitting error: fitting do not converges (NaN result). See logs for more info."
                 )

@@ -2,10 +2,9 @@
 # SPDX-FileCopyrightText: 2006-present Paulo Henrique Silva <ph.silva@gmail.com>
 
 
-from chimera.core.interface import Interface
 from chimera.core.event import event
-
 from chimera.core.exceptions import ChimeraException
+from chimera.core.interface import Interface
 
 
 class InvalidFilterPositionException(ChimeraException):
