@@ -208,13 +208,13 @@ class Bus:
     def ping(
         self,
         *,
-        src: str,
-        dst: str,
+        src: str | URL,
+        dst: str | URL,
         timeout: float = 5.0,
     ) -> None | Pong:
         ping = Protocol.ping(
-            src=src,
-            dst=dst,
+            src=parse_url(src).url,
+            dst=parse_url(dst).url,
         )
 
         self._push(ping)
@@ -232,15 +232,15 @@ class Bus:
     def request(
         self,
         *,
-        src: str,
-        dst: str,
+        src: str | URL,
+        dst: str | URL,
         method: str,
         args: list[Any] | None = None,
         kwargs: dict[str, Any] | None = None,
     ) -> None | Response:
         request = Protocol.request(
-            src=src,
-            dst=dst,
+            src=parse_url(src).url,
+            dst=parse_url(dst).url,
             method=method,
             args=args or [],
             kwargs=kwargs or {},
@@ -255,16 +255,23 @@ class Bus:
         return response
 
     def subscribe(
-        self, *, sub: str, pub: str, event: str, callback: Callable[..., None]
+        self,
+        *,
+        sub: str | URL,
+        pub: str | URL,
+        event: str,
+        callback: Callable[..., None],
     ):
+        pub_url = parse_url(pub)
+
         callback_id = CallbackId.new(callback)
         subscriber = Subscriber(parse_url(sub), callback_id)
-        event_id = EventId(pub, event)
+        event_id = EventId(pub_url.url, event)
 
         self._push(
             Protocol.subscribe(
-                sub=sub,
-                pub=pub,
+                sub=parse_url(sub).url,
+                pub=pub_url.url,
                 event=event,
                 callback=callback_id,
             )
@@ -273,16 +280,22 @@ class Bus:
         self._callbacks[event_id][subscriber] = Callback(callback_id, callback)
 
     def unsubscribe(
-        self, *, sub: str, pub: str, event: str, callback: Callable[..., None]
+        self,
+        *,
+        sub: str | URL,
+        pub: str | URL,
+        event: str,
+        callback: Callable[..., None],
     ):
+        pub_url = parse_url(pub)
         callback_id = CallbackId.new(callback)
         subscriber = Subscriber(parse_url(sub), callback_id)
-        event_id = EventId(pub, event)
+        event_id = EventId(pub_url.url, event)
 
         self._push(
             Protocol.unsubscribe(
-                sub=sub,
-                pub=pub,
+                sub=parse_url(sub).url,
+                pub=pub_url.url,
                 event=event,
                 callback=callback_id,
             )
