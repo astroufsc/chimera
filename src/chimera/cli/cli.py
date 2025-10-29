@@ -354,6 +354,7 @@ class ChimeraCLI:
 
     def add_controller(self, **params: Any):
         params["type"] = ParameterType.CONTROLLER
+        params["default"] = f"/{params.get('cls')}/0"
         self.add_parameters(params)
 
     def exit(self, msg: str | None = None, ret: int = 1):
