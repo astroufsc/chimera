@@ -2,5 +2,5 @@ from chimera.core.version import chimera_version
 
 
 class TestVersion:
-    assert isinstance(chimera_version, str)
-    pass
+    def test_chimera_version(self):
+        assert isinstance(chimera_version, str)

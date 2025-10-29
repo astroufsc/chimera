@@ -1,8 +1,10 @@
 import time
-from collections.abc import Callable
+from collections.abc import Callable, Generator
 from concurrent.futures.thread import ThreadPoolExecutor
 from typing import Any, Literal
 from unittest.mock import MagicMock
+
+import pytest
 
 from chimera.core.bus import Bus, Callback, CallbackId, EventId, Subscriber
 from chimera.core.url import parse_url
@@ -243,34 +245,49 @@ def pubsub_test(*, n_subscribers: int, n_events: int, src_bus: Bus, dst_bus: Bus
     pool.shutdown()
 
 
-def test_ping_local():
-    bus = Bus("tcp://127.0.0.1:2000")
+@pytest.fixture
+def create_bus() -> Generator[Callable[[str], Bus]]:
+    buses: list[Bus] = []
+
+    def _wrapper(url: str) -> Bus:
+        bus = Bus(url)
+        buses.append(bus)
+        return bus
+
+    yield _wrapper
+
+    for bus in buses:
+        bus.shutdown()
+
+
+def test_ping_local(create_bus: Callable[[str], Bus]):
+    bus = create_bus("tcp://127.0.0.1:2000")
     ping_test(n=50_000, src_bus=bus, dst_bus=bus)
 
 
-def test_ping_remote():
-    my_bus = Bus("tcp://127.0.0.1:2001")
-    other_bus = Bus("tcp://127.0.0.1:2002")
+def test_ping_remote(create_bus: Callable[[str], Bus]):
+    my_bus = create_bus("tcp://127.0.0.1:2001")
+    other_bus = create_bus("tcp://127.0.0.1:2002")
     ping_test(n=10_000, src_bus=my_bus, dst_bus=other_bus)
 
 
-def test_rpc_local():
-    bus = Bus("tcp://127.0.0.1:3000")
+def test_rpc_local(create_bus: Callable[[str], Bus]):
+    bus = create_bus("tcp://127.0.0.1:3000")
     rpc_test(n=10_000, src_bus=bus, dst_bus=bus)
 
 
-def test_rpc_remote():
-    my_bus = Bus("tcp://127.0.0.1:3001")
-    other_bus = Bus("tcp://127.0.0.1:3002")
+def test_rpc_remote(create_bus: Callable[[str], Bus]):
+    my_bus = create_bus("tcp://127.0.0.1:3001")
+    other_bus = create_bus("tcp://127.0.0.1:3002")
     rpc_test(n=2_000, src_bus=my_bus, dst_bus=other_bus)
 
 
-def test_pubsub_local():
-    bus = Bus("tcp://127.0.0.1:4000")
+def test_pubsub_local(create_bus: Callable[[str], Bus]):
+    bus = create_bus("tcp://127.0.0.1:4000")
     pubsub_test(n_subscribers=2, n_events=2, src_bus=bus, dst_bus=bus)
 
 
-def test_pubsub_remote():
-    my_bus = Bus("tcp://127.0.0.1:4001")
-    other_bus = Bus("tcp://127.0.0.1:4002")
+def test_pubsub_remote(create_bus: Callable[[str], Bus]):
+    my_bus = create_bus("tcp://127.0.0.1:4001")
+    other_bus = create_bus("tcp://127.0.0.1:4002")
     pubsub_test(n_subscribers=2, n_events=1_000, src_bus=my_bus, dst_bus=other_bus)
