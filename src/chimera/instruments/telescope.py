@@ -2,21 +2,19 @@
 # SPDX-FileCopyrightText: 2006-present Paulo Henrique Silva <ph.silva@gmail.com>
 
 
-import functools
 from typing import cast
 
 from chimera.core.chimeraobject import ChimeraObject
 from chimera.core.exceptions import ObjectNotFoundException, ObjectTooLowException
 from chimera.core.lock import lock
-from chimera.core.proxy import Proxy
 from chimera.core.site import Site
-from chimera.core.url import resolve_url
 from chimera.interfaces.telescope import (
     TelescopePark,
     TelescopeSlew,
     TelescopeSync,
     TelescopeTracking,
 )
+from chimera.util.position import Position
 from chimera.util.coord import Coord
 from chimera.util.output import red
 from chimera.util.simbad import simbad_lookup
@@ -55,7 +53,7 @@ class TelescopeBase(
         if self.site is None:
             self.site = self.get_proxy("/Site/0")
         lst = self.site().lst()
-        latitude = -23  # self.site["latitude"]
+        latitude = self.site["latitude"]
 
         alt_az = Position.ra_dec_to_alt_az(Position.from_ra_dec(ra, dec), latitude, lst)
 
