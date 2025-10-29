@@ -4,11 +4,11 @@ from functools import cached_property
 from urllib.parse import urlsplit
 
 
-class URLInvalidHostError(ValueError):
+class InvalidHostError(ValueError):
     pass
 
 
-class URLInvalidPathError(ValueError):
+class InvalidPathError(ValueError):
     pass
 
 
@@ -66,20 +66,20 @@ def parse_url(url: str | URL) -> URL:
 def parse_host(host: str) -> tuple[str, int]:
     parts = host.split(":")
     if len(parts) != 2:
-        raise ValueError(
+        raise InvalidHostError(
             f"Invalid host '{host}': host must be in the format '[tcp://]<host>:<port>'"
         )
 
     host, port = parts
 
     if host == "" or " " in host:
-        raise ValueError(
+        raise InvalidHostError(
             f"Invalid host '{host}': host name is empty or contains spaces"
         )
 
     try:
         port = int(port)
-    except ValueError:
+    except InvalidHostError:
         raise ValueError(f"Invalid port '{host}': port is not a valid integer")
 
     return host, port
@@ -87,21 +87,25 @@ def parse_host(host: str) -> tuple[str, int]:
 
 def parse_path(path: str) -> tuple[str, int | str]:
     if not path.startswith("/"):
-        raise ValueError(f"Invalid path '{path}': path does not start with '/'")
+        raise InvalidPathError(f"Invalid path '{path}': path does not start with '/'")
 
     parts = path.split("/")
     if len(parts) < 3:
-        raise ValueError(
+        raise InvalidPathError(
             f"Invalid path '{path}': path is not in the format '/<class>/<name|index>'"
         )
 
     _, cls, name = parts
 
     if cls == "" or "$" in cls or " " in cls:
-        raise ValueError(f"Invalid path '{path}': class is empty or contains spaces")
+        raise InvalidPathError(
+            f"Invalid path '{path}': class is empty or contains spaces"
+        )
 
     if name == "" or " " in name:
-        raise ValueError(f"Invalid path '{path}': name is empty or contains spaces")
+        raise InvalidPathError(
+            f"Invalid path '{path}': name is empty or contains spaces"
+        )
 
     if name[0].isdigit():
         try:
@@ -113,30 +117,26 @@ def parse_path(path: str) -> tuple[str, int | str]:
     return cls, name
 
 
-def create_url(bus: URL, cls: str, name: str | int | None = None) -> URL:
+def create_url(bus: str | URL, cls: str, name: str | int | None = None) -> URL:
+    bus = parse_url(bus)
+
     if name is None:
         name = uuid.uuid4().hex
 
     path = f"/{cls}/{name}"
-    return parse_url(f"{bus.url}{path}")
+    return parse_url(f"{bus.bus}{path}")
 
 
 def resolve_url(url: str, bus: str | URL) -> URL:
-    """Resolves a possibly relative URL against a bus URL.
-
-    If the given URL is already absolute, it is returned as-is.
-    If it is relative (i.e., missing host/port), it is combined with the bus URL.
-
-    Args:
-        url: The URL to resolve, either absolute or relative.
-        bus: The bus URL to use for resolution if `url` is relative.
-
-    Returns:
-        The resolved absolute URL.
-    """
-    if url.startswith("tcp://" or not url.startswith("/")):
-        return parse_url(url)
-
     bus_url = parse_url(bus)
-
-    return parse_url(f"{bus_url.url}{url}")
+    try:
+        resolved_url = parse_url(url)
+        return create_url(
+            bus=bus_url,
+            cls=resolved_url.cls,
+            name=resolved_url.name,
+        )
+    except InvalidHostError:
+        # this is a relative URL
+        cls, name = parse_path(url)
+        return parse_url(f"{bus_url.bus}/{cls}/{name}")
