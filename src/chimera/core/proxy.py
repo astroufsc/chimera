@@ -11,7 +11,7 @@ class Proxy:
     def __init__(self, url: str | URL, bus: Bus):
         self.__url__ = parse_url(url)
         self.__bus__ = bus
-        self.__proxy_url__ = create_url(bus=bus.url, cls="Proxy")
+        self.__proxy_url__ = create_url(bus=bus.url.bus, cls="Proxy")
 
     def ping(self) -> bool:
         pong = self.__bus__.ping(src=self.__proxy_url__, dst=self.__url__)
