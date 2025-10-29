@@ -1,16 +1,18 @@
-from chimera.util.position import Position, Epoch
-from chimera.util.coord import Coord
-import ephem
 from datetime import datetime as dt
-from dateutil import tz
+
+import ephem
 import pytest
+from dateutil import tz
+
+from chimera.util.coord import Coord
+from chimera.util.position import Epoch, Position
 
 
 def equal(a, b, e=0.0001):
     return abs(a - b) <= e
 
 
-class TestPosition(object):
+class TestPosition:
 
     def test_ra_dec(self):
 

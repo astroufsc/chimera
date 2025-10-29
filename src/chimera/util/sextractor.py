@@ -160,7 +160,7 @@ __version__ = "1.15.0 (2005-07-06)"
 # ======================================================================
 
 
-class SExtractorException(Exception):
+class SExtractorError(Exception):
     pass
 
 
@@ -399,7 +399,7 @@ class SExtractor:
                 continue
 
         if not (selected):
-            raise SExtractorException(
+            raise SExtractorError(
                 """
                   Cannot find SExtractor program. Check your PATH,
                   or provide the SExtractor program path in the constructor.
@@ -411,11 +411,11 @@ class SExtractor:
         # print versionline
         _version_match = re.search("[Vv]ersion ([0-9.])+", versionline)
         if not _version_match:
-            raise SExtractorException("Cannot determine SExtractor version.")
+            raise SExtractorError("Cannot determine SExtractor version.")
 
         _version = _version_match.group()[8:]
         if not _version:
-            raise SExtractorException("Cannot determine SExtractor version.")
+            raise SExtractorError("Cannot determine SExtractor version.")
 
         # print "Use " + self.program + " [" + self.version + "]"
 
@@ -503,7 +503,7 @@ class SExtractor:
         rcode = os.system(commandline)
 
         if rcode:
-            raise SExtractorException(f"SExtractor command [{commandline}] failed.")
+            raise SExtractorError(f"SExtractor command [{commandline}] failed.")
 
         if clean:
             self.clean()

@@ -14,9 +14,8 @@ from chimera.interfaces.telescope import (
     TelescopeSync,
     TelescopeTracking,
 )
-from chimera.util.position import Position
 from chimera.util.coord import Coord
-from chimera.util.output import red
+from chimera.util.position import Position
 from chimera.util.simbad import simbad_lookup
 
 __all__ = ["TelescopeBase"]

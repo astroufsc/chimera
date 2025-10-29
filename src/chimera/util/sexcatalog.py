@@ -156,7 +156,7 @@ OVERFLOW_DEBLEND = 64
 OVERFLOW_EXTRACT = 128
 
 
-class WrongSExtractorfileException(Exception):
+class WrongSExtractorfileError(Exception):
     pass
 
 
@@ -720,21 +720,19 @@ class SExtractorfile:
 
         self._line = self._file.readline()
         if not (self._line):
-            raise WrongSExtractorfileException(
-                "not a SExtractor text catalog (empty file)"
-            )
+            raise WrongSExtractorfileError("not a SExtractor text catalog (empty file)")
 
         while self._line:
             __ll = (self._line).replace("\n", "")
             if __ll[0] == "#":  # Still in header
                 columns = __ll.split()
                 if len(columns) < 3:
-                    raise WrongSExtractorfileException(
+                    raise WrongSExtractorfileError(
                         "not a SExtractor text catalog (invalid header)"
                     )
                 name = columns[2]
                 if name not in list(SExtractorfile._SE_keys.keys()):
-                    raise WrongSExtractorfileException(
+                    raise WrongSExtractorfileError(
                         f"not a SExtractor text catalog (unknown keyword {name})"
                     )
                 self._keys_positions[name] = int(columns[1]) - 1
@@ -744,7 +742,7 @@ class SExtractorfile:
             self._line = self._file.readline()
 
         if not (self._keys):
-            raise WrongSExtractorfileException(
+            raise WrongSExtractorfileError(
                 "not a SExtractor text catalog (empty header)"
             )
 

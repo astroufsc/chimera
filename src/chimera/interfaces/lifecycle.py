@@ -4,7 +4,6 @@
 
 from chimera.core.interface import Interface
 
-
 __all__ = ["ILifeCycle"]
 
 

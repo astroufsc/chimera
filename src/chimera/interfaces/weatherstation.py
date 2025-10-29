@@ -2,9 +2,11 @@
 # SPDX-FileCopyrightText: 2006-present Paulo Henrique Silva <ph.silva@gmail.com>
 
 
-from chimera.core.interface import Interface
-from astropy import units
 from collections import namedtuple
+
+from astropy import units
+
+from chimera.core.interface import Interface
 
 
 class WSValue(namedtuple("WSValue", "time value unit")):

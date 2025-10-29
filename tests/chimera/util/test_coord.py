@@ -1,12 +1,12 @@
-from chimera.util.coord import Coord
-
-from astropy.io import ascii
-
 import os
 import time
 
+from astropy.io import ascii
 
-class TestCoord(object):
+from chimera.util.coord import Coord
+
+
+class TestCoord:
 
     @staticmethod
     def equal(a, b, e=0.0001):

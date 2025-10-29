@@ -1,6 +1,6 @@
 if __name__ == "__main__":
 
-    from chimera.controllers.scheduler.model import Program, Expose, Point, Session
+    from chimera.controllers.scheduler.model import Expose, Point, Program, Session
 
     dark = Expose()
     dark.shutter = "CLOSE"

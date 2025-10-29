@@ -1,17 +1,17 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 # SPDX-FileCopyrightText: 2006-present Paulo Henrique Silva <ph.silva@gmail.com>
 
-from .base import FakeHardwareTest, RealHardwareTest
-
 import time
 
 from chimera.core.manager import Manager
+
+from .base import FakeHardwareTest, RealHardwareTest
 
 # hack for event triggering asserts
 fired_events = {}
 
 
-class FilterWheelTest(object):
+class FilterWheelTest:
 
     filter_wheel = ""
 

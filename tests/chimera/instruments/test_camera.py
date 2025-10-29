@@ -11,11 +11,9 @@ import pytest
 
 import chimera.core.log
 from chimera.controllers.imageserver.imagerequest import ImageRequest
-from chimera.core.exceptions import ChimeraValueError
-from chimera.core.proxy import Proxy
-from chimera.interfaces.camera import CameraStatus
-from chimera.instruments.fakecamera import FakeCamera
 from chimera.core.manager import Manager
+from chimera.instruments.fakecamera import FakeCamera
+from chimera.interfaces.camera import CameraStatus
 from chimera.util.image import Image
 
 chimera.core.log.set_console_level(int(1e10))

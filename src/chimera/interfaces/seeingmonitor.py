@@ -1,5 +1,7 @@
 from collections import namedtuple
+
 from astropy import units
+
 from chimera.core.interface import Interface
 
 

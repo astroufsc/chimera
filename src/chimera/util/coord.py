@@ -659,8 +659,7 @@ class Coord:
 
     def __iter__(self):
         if self.state in [State.DMS, State.HMS]:
-            for v in self.get():
-                yield v
+            yield from self.get()
         else:
             yield self.get()
 

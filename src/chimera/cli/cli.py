@@ -12,7 +12,7 @@ from typing import Any, TextIO
 from chimera.core.bus import Bus
 from chimera.core.chimera_config import ChimeraConfig
 from chimera.core.constants import CHIMERA_CONFIG_DEFAULT_FILENAME
-from chimera.core.exceptions import ObjectNotFoundException, print_exception
+from chimera.core.exceptions import ObjectNotFoundException
 from chimera.core.proxy import Proxy
 from chimera.core.url import parse_url
 from chimera.core.version import chimera_version
@@ -650,7 +650,7 @@ class ChimeraCLI:
             if action.target is not None:
                 method = getattr(self, action.target.__name__)
                 method(options)
-        except Exception as e:
+        except Exception:
             # import rich.console
 
             # rich.console.Console().print_exception()

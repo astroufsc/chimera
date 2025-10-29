@@ -415,8 +415,6 @@ class ChimeraTel(ChimeraCLI):
     def _move(self, direction, cmd, offset):
         offset = self._validate_offset(offset)
 
-        telescope = self.telescope
-
         self.out(40 * "=")
         self._print_current_position()
         self.out(40 * "=")
