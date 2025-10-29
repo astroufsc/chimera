@@ -72,7 +72,7 @@ docs = ["furo>=2024.8.6", "sphinx>=8.1.3"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "--import-mode=importlib --cov --cov-branch --cov-report=html"
+addopts = "--import-mode=importlib --cov --cov-branch --cov-report=html -sv --continue-on-collection-errors"
 
 [tool.ruff]
 line-length = 88
