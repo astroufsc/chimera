@@ -21,7 +21,7 @@ class Proxy:
 
     def get_proxy(self, url: str) -> "Proxy":
         """Returns a Proxy for a resource relative to this Proxy's URL."""
-        resolved_url = resolve_url(url, bus=self.__url__)
+        resolved_url = resolve_url(url, bus=self.__url__.bus)
         return Proxy(resolved_url, self.__bus__)
 
     def __getattr__(self, attr: str):

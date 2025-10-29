@@ -219,7 +219,7 @@ class Bus:
         self._push(ping)
 
         try:
-            response = self._pop(ping.src)
+            response = self._pop(ping.src, timeout=timeout)
         except queue.Empty:
             return ping.pong(ok=False)
         if response is None or not isinstance(response, Pong):

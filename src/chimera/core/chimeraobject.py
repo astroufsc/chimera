@@ -126,7 +126,7 @@ class ChimeraObject(ILifeCycle, metaclass=MetaObject):
         return oldstate
 
     def get_location(self) -> str:
-        return str(self.__location__)
+        return self.__location__.url
 
     def get_hz(self):
         return self._hz

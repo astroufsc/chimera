@@ -8,8 +8,6 @@ import sys
 from typing import cast
 
 from chimera.core.exceptions import print_exception
-from chimera.core.proxy import Proxy
-from chimera.core.url import resolve_url
 from chimera.core.version import chimera_version
 from chimera.interfaces.dome import Mode
 from chimera.interfaces.fan import (
@@ -215,18 +213,14 @@ class ChimeraDome(ChimeraCLI):
 
     # @functools.cached_property
     def fan(self) -> Fan:
-        fan_proxy = Proxy(
-            resolve_url(self.options.fan, bus=self.dome.get_location()), bus=self.bus
-        )
+        fan_proxy = self.dome.get_proxy(self.options.fan)
         if not fan_proxy.ping():
             self.exit(f"{red('ERROR')}: Could not find fan '{self.options.fan}.")
         return cast(Fan, fan_proxy)
 
     # @functools.cached_property
     def lamp(self) -> Fan:
-        lamp_proxy = Proxy(
-            resolve_url(self.options.lamp, bus=self.dome.get_location()), bus=self.bus
-        )
+        lamp_proxy = self.dome.get_proxy(self.options.lamp)
         if not lamp_proxy.ping():
             self.exit(f"{red('ERROR')}: Could not find lamp '{self.options.lamp}.")
         return cast(Lamp, lamp_proxy)

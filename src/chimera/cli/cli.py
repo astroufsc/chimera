@@ -2,7 +2,6 @@ import enum
 
 # TODO migrate to argparse
 import optparse
-import os.path
 import random
 import sys
 import threading
@@ -12,7 +11,6 @@ from typing import Any, TextIO
 from chimera.core.bus import Bus
 from chimera.core.chimera_config import ChimeraConfig
 from chimera.core.constants import CHIMERA_CONFIG_DEFAULT_FILENAME
-from chimera.core.exceptions import ObjectNotFoundException
 from chimera.core.proxy import Proxy
 from chimera.core.url import parse_url
 from chimera.core.version import chimera_version
@@ -49,8 +47,8 @@ class _Option:
     cls = None
 
     # for ParameterType.INSTRUMENT or ParameterType.CONTROLLER
-    required = False
-    location = None
+    required: bool = False
+    url: str | None = None
 
     const = None
 
@@ -351,6 +349,7 @@ class ChimeraCLI:
 
     def add_instrument(self, **params: Any):
         params["type"] = ParameterType.INSTRUMENT
+        params["default"] = f"/{params.get('cls')}/0"
         self.add_parameters(params)
 
     def add_controller(self, **params: Any):
@@ -586,48 +585,29 @@ class ChimeraCLI:
         instruments = {
             x.name: x
             for x in list(self._parameters.values())
-            if x.type == ParameterType.INSTRUMENT
+            if x.type is not None and x.type == ParameterType.INSTRUMENT
         }
         controllers = {
             x.name: x
             for x in list(self._parameters.values())
-            if x.type == ParameterType.CONTROLLER
+            if x.type is not None and x.type == ParameterType.CONTROLLER
         }
 
-        # create locations
         for inst in list(instruments.values()) + list(controllers.values()):
+            url = getattr(options, inst.name)
+
             # use user instrument if given
-            if inst.default != getattr(options, inst.name):
-                try:
-                    inst.location = parse_url(getattr(options, inst.name))
-                except ValueError:
-                    self.exit(
-                        f"Invalid location: {getattr(options, inst.name)}. See --help for more information"
-                    )
-
+            if url != inst.default:
+                inst.url = parse_url(url)
             else:
-                inst.location = None
-
-            if not inst.location and inst.required:
-                self.exit(
-                    f"Couldn't find {inst.name.capitalize()} configuration. "
-                    f"Edit {os.path.abspath(options.config)} or see --help for more information"
+                inst.url = parse_url(
+                    f"{self.config.host}:{self.config.port}{inst.default}"
                 )
 
-        for inst in list(instruments.values()) + list(controllers.values()):
-            inst_proxy = None
+            if inst.required:
+                inst_proxy = Proxy(inst.url.url, self.bus)
+                # FIXME: we should pint the bus, but ping won't work because the bus isn't ready
 
-            if inst.location:
-                try:
-                    inst_proxy = Proxy(str(inst.location), self.bus)
-                # FIXME: I don't think this exception exists anymore
-                except ObjectNotFoundException:
-                    if inst.required:
-                        self.exit(
-                            f"Couldn't find {inst.name.capitalize()}. (see --help for more information)"
-                        )
-
-                # save values in CLI object (which users are supposed to inherits from).
                 setattr(self, inst.name, inst_proxy)
 
     def _start_system(self, options: optparse.Values):
