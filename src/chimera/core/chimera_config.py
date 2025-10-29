@@ -163,10 +163,5 @@ class ChimeraConfig:
         cls = config.pop("type")
         name = config.pop("name")
 
-        # # FIXME: raise and let user fix it
-        # name = name.replace(" ", "_")
-        # name = name.replace('"', "_")
-        # name = name.replace("'", "_")
-
         url = parse_url(f"tcp://{host}:{port}/{cls}/{name}")
         return url, config

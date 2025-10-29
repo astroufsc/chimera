@@ -79,8 +79,8 @@ def parse_host(host: str) -> tuple[str, int]:
 
     try:
         port = int(port)
-    except InvalidHostError:
-        raise ValueError(f"Invalid port '{host}': port is not a valid integer")
+    except ValueError:
+        raise InvalidHostError(f"Invalid port '{host}': port is not a valid integer")
 
     return host, port
 
@@ -90,7 +90,7 @@ def parse_path(path: str) -> tuple[str, int | str]:
         raise InvalidPathError(f"Invalid path '{path}': path does not start with '/'")
 
     parts = path.split("/")
-    if len(parts) < 3:
+    if len(parts) != 3:
         raise InvalidPathError(
             f"Invalid path '{path}': path is not in the format '/<class>/<name|index>'"
         )
@@ -102,9 +102,19 @@ def parse_path(path: str) -> tuple[str, int | str]:
             f"Invalid path '{path}': class is empty or contains spaces"
         )
 
+    if cls[0].isdigit():
+        raise InvalidPathError(
+            f"Invalid path '{path}': class cannot start with a number"
+        )
+
     if name == "" or " " in name:
         raise InvalidPathError(
             f"Invalid path '{path}': name is empty or contains spaces"
+        )
+
+    if name[0].isdigit() and not all(c.isdigit() for c in name):
+        raise InvalidPathError(
+            f"Invalid path '{path}': name cannot start with a number unless it is fully numeric"
         )
 
     if name[0].isdigit():
