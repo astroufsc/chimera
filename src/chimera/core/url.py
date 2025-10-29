@@ -135,16 +135,15 @@ def create_url(bus: str, cls: str, name: str | int | None = None) -> URL:
     return parse_url(f"{bus}{path}")
 
 
-def resolve_url(url: str, bus: str | URL) -> URL:
-    bus_url = parse_url(bus)
+def resolve_url(url: str, bus: str) -> URL:
     try:
         resolved_url = parse_url(url)
         return create_url(
-            bus=bus_url.bus,
+            bus=bus,
             cls=resolved_url.cls,
             name=resolved_url.name,
         )
     except InvalidHostError:
         # this is a relative URL
         cls, name = parse_path(url)
-        return parse_url(f"{bus_url.bus}/{cls}/{name}")
+        return parse_url(f"{bus}/{cls}/{name}")
