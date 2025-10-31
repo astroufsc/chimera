@@ -151,7 +151,7 @@ class ChimeraObject(ILifeCycle, metaclass=MetaObject):
                 run_condition = not self._loop_abort.wait(time_to_wake_up)
             else:
                 self.log.warning(
-                    f"Loop is taking more than {1.0 / self.get_hz()} seconds to run."
+                    f"{self.get_location()}: control loop took more than {1.0 / self.get_hz()} seconds to run."
                 )
 
     def __abort_loop__(self):

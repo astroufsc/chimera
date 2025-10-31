@@ -2,3 +2,7 @@
 9f4689a5d514893e8571595b9f05ff667e8b1919
 # reformatted code to follow Python codestyle guidelines using black
 44859ca927600ccf01482ba5e57e24a636664eb7
+
+# move from CamelCase to snake_case
+b6bd5651f0a9bd68b64a068829f38539b59ff0b5
+

@@ -14,8 +14,8 @@ from chimera.interfaces.telescope import (
     TelescopeSync,
     TelescopeTracking,
 )
-from chimera.util.position import Position
 from chimera.util.coord import Coord
+from chimera.util.position import Position
 from chimera.util.simbad import simbad_lookup
 
 __all__ = ["TelescopeBase"]
@@ -46,11 +46,8 @@ class TelescopeBase(
     def slew_to_ra_dec(self, ra: float, dec: float, epoch: float = 2000) -> None:
         raise NotImplementedError()
 
-    def _validate_ra_dec(self, ra, dec):
+    def _validate_ra_dec(self, ra: float, dec: float):
         # TODO: remove Position dependency
-
-        if self.site is None:
-            self.site = self.get_proxy("/Site/0")
         lst = self.site().lst()
         latitude = self.site()["latitude"]
 

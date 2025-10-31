@@ -1,7 +1,7 @@
 import time
 from collections.abc import Callable, Generator
 from concurrent.futures.thread import ThreadPoolExecutor
-from typing import Any, Literal
+from typing import Any
 from unittest.mock import MagicMock
 
 import pytest
@@ -17,18 +17,51 @@ def print_results(op: str, n: int, dt: float):
     )
 
 
+def fake_get_az() -> float:
+    return 42.0
+
+
+def fake_get_location() -> str:
+    return "/FakeTelescope/fake"
+
+
+def resolve_request(
+    object: str, method: str
+) -> tuple[str | None, Callable[..., Any] | None]:
+    if object == "/Telescope/0" and method == "get_az":
+        return "/FakeTelescope/fake", fake_get_az
+    elif object == "/Telescope/0" and method == "get_location":
+        return "/FakeTelescope/fake", fake_get_location
+    elif object == "/Telescope/0" and method == "unknown_method":
+        return "/FakeTelescope/fake", None
+    return None, None
+
+
 def ping_test(*, n: int, src_bus: Bus, dst_bus: Bus):
     print()
 
     src = f"{src_bus.url.bus}/Proxy/932032"
     dst = f"{dst_bus.url.bus}/Telescope/0"
+    dst_not_found = f"{dst_bus.url.bus}/Camera/0"
+
+    dst_bus.resolve_request = resolve_request
 
     def sender():
         t0 = time.monotonic()
         for _ in range(n):
             pong = src_bus.ping(src=src, dst=dst)
-            assert pong is not None and pong.ok is True
-        print_results("ping", n, time.monotonic() - t0)
+            assert (
+                pong is not None
+                and pong.ok is True
+                and pong.resolved_url == "/FakeTelescope/fake"
+            )
+        print_results("ping ok", n, time.monotonic() - t0)
+
+        t0 = time.monotonic()
+        for _ in range(n):
+            pong = src_bus.ping(src=src, dst=dst_not_found)
+            assert pong is not None and pong.ok is False and pong.resolved_url is None
+        print_results("ping not-found", n, time.monotonic() - t0)
 
     pool = ThreadPoolExecutor()
     dst_bus_future = pool.submit(dst_bus.run_forever)
@@ -60,18 +93,6 @@ def rpc_test(*, n: int, src_bus: Bus, dst_bus: Bus):
 
     src_not_found = f"{src_bus.url.bus}/Proxy/1"
     dst_not_found = f"{dst_bus.url.bus}/Telescope/not-found"
-
-    def fake_get_az():
-        return 42.0
-
-    def resolve_request(
-        object: str, method: str
-    ) -> tuple[bool, Literal[False] | Callable[..., Any]]:
-        if object == "/Telescope/0" and method == "get_az":
-            return True, fake_get_az
-        elif object == "/Telescope/0" and method == "unknown_method":
-            return True, False
-        return False, False
 
     dst_bus.resolve_request = resolve_request
 
