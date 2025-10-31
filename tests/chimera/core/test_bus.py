@@ -30,7 +30,7 @@ def resolve_request(
 ) -> tuple[str | None, Callable[..., Any] | None]:
     if object == "/Telescope/0" and method == "get_az":
         return "/FakeTelescope/fake", fake_get_az
-    if object == "/Telescope/0" and method == "get_location":
+    elif object == "/Telescope/0" and method == "get_location":
         return "/FakeTelescope/fake", fake_get_location
     elif object == "/Telescope/0" and method == "unknown_method":
         return "/FakeTelescope/fake", None
