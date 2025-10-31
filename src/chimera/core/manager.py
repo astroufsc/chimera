@@ -7,7 +7,7 @@ import operator
 import threading
 import time
 from collections.abc import Callable
-from typing import Any, Literal
+from typing import Any
 
 from chimera.core.bus import Bus
 from chimera.core.chimeraobject import ChimeraObject
@@ -78,21 +78,19 @@ class Manager:
 
     def _resolve_request(
         self, object: str, method: str
-    ) -> tuple[bool, Literal[False] | Callable[..., Any]]:
+    ) -> tuple[str | None, Callable[..., Any] | None]:
         resource = self.resources.get(object)
         if not resource:
-            return False, False
-            # TODO: handle invalid request
-            # self.transport.send(Protocol.error("Invalid request"))
+            return None, None
 
         instance = resource.instance
         method_getter = operator.attrgetter(method)
 
         try:
             callable = method_getter(instance)
-            return True, callable
+            return resource.path, callable
         except AttributeError:
-            return True, False
+            return resource.path, None
 
     # private
     def __repr__(self):

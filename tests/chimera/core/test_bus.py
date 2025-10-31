@@ -1,7 +1,7 @@
 import time
 from collections.abc import Callable, Generator
 from concurrent.futures.thread import ThreadPoolExecutor
-from typing import Any, Literal
+from typing import Any
 from unittest.mock import MagicMock
 
 import pytest
@@ -66,12 +66,12 @@ def rpc_test(*, n: int, src_bus: Bus, dst_bus: Bus):
 
     def resolve_request(
         object: str, method: str
-    ) -> tuple[bool, Literal[False] | Callable[..., Any]]:
+    ) -> tuple[str | None, Callable[..., Any] | None]:
         if object == "/Telescope/0" and method == "get_az":
-            return True, fake_get_az
+            return "/FakeTelescope/fake", fake_get_az
         elif object == "/Telescope/0" and method == "unknown_method":
-            return True, False
-        return False, False
+            return "/FakeTelescope/fake", None
+        return None, None
 
     dst_bus.resolve_request = resolve_request
 

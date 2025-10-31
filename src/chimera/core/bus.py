@@ -6,7 +6,7 @@ import threading
 from collections.abc import Callable
 from concurrent.futures import Future, ThreadPoolExecutor
 from dataclasses import dataclass
-from typing import Any, Literal, NamedTuple, Self
+from typing import Any, NamedTuple, Self
 
 import msgspec
 
@@ -122,6 +122,16 @@ class Bus:
             return
 
         if message.dst_bus == self.url.bus:
+            # NOTE: we don't need to serialize/deserialize messages sent to ourselves
+            #       but we must check if they are serializable, otherwise code won't
+            #       work when sending to other buses.
+            try:
+                _ = self._encoder.encode(message)
+            except Exception:
+                log.exception(
+                    f"bus: serialization issue, won't work on remote buses: {message}"
+                )
+
             # FIXME: this could block if you send too much without receiving.
             if isinstance(message, Response) or isinstance(message, Pong):
                 self._q[message.dst].put(message)
@@ -140,7 +150,7 @@ class Bus:
     def _pop(
         self, /, key: str | None = None, timeout: float | None = None
     ) -> Messages | None:
-        key = key or str(self.url)
+        key = key or self.url.url
         return self._q[key].get(block=True, timeout=timeout)
 
     def run_forever(self):
@@ -356,8 +366,8 @@ class Bus:
 
     def resolve_request(
         self, object: str, method: str
-    ) -> tuple[bool, Literal[False] | Callable[..., Any]]:
-        return False, False
+    ) -> tuple[str | None, Callable[..., Any] | None]:
+        return None, None
 
     def _handle_request(self, request: Request) -> None:
         try:
@@ -445,8 +455,15 @@ class Bus:
 
             for callback in self._callbacks[event_id].values():
                 method = callback.callable
-                # FIXME: we cannot see exception happening inside the event handlers, implement
-                #        something to call the futures and check for exceptions later
-                self._pool.submit(method, *event.args, **event.kwargs)
+                # NOTE: we cannot see exception happening inside the event handlers,
+                #       so we schedule a check on the future result in a separate task.
+                event_future = self._pool.submit(method, *event.args, **event.kwargs)
+                self._pool.submit(self._check_event_result, event, event_future)
         except Exception:
             log.exception("error handling event")
+
+    def _check_event_result(self, event: Event, future: Future[Any]) -> None:
+        try:
+            _ = future.result()
+        except Exception:
+            log.exception(f"error in event handler: {event.event}")
