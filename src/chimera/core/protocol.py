@@ -116,16 +116,6 @@ class SubMessage(Message, frozen=True):
     pub: str  # an URL [tcp://]host:port/Object/[0|instance]
     sub: str  # an URL [tcp://]host:port/Object/[0|instance]
 
-    @cached_property
-    @override
-    def src_bus(self) -> str:
-        return parse_url(self.pub).bus
-
-    @cached_property
-    @override
-    def dst_bus(self) -> str:
-        return parse_url(self.sub).bus
-
 
 class Subscribe(SubMessage, frozen=True):
     # late-binding: someone can subscribe to events that are not yet bound to any publishers
@@ -134,12 +124,32 @@ class Subscribe(SubMessage, frozen=True):
     # an id representing the callbackas we cannot pass a reference to the callable
     callback: int  #  id(self.on_slew_complete)
 
+    @cached_property
+    @override
+    def src_bus(self) -> str:
+        return parse_url(self.sub).bus
+
+    @cached_property
+    @override
+    def dst_bus(self) -> str:
+        return parse_url(self.pub).bus
+
 
 class Unsubscribe(SubMessage, frozen=True):
     event: str  # slew_complete
 
     # an id representing the callbackas we cannot pass a reference to the callable
     callback: int  #  id(self.on_slew_complete)
+
+    @cached_property
+    @override
+    def src_bus(self) -> str:
+        return parse_url(self.sub).bus
+
+    @cached_property
+    @override
+    def dst_bus(self) -> str:
+        return parse_url(self.pub).bus
 
 
 class PubMessage(Message, frozen=True):

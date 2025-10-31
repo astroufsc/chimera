@@ -8,7 +8,6 @@ from typing import override
 from chimera.core.lock import lock
 from chimera.instruments.telescope import ObjectTooLowException, TelescopeBase
 from chimera.interfaces.telescope import (
-    TelescopeCover,
     TelescopePier,
     TelescopePierSide,
     TelescopeStatus,

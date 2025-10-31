@@ -131,7 +131,7 @@ class ChimeraTel(ChimeraCLI):
                     end="",
                 )
             else:
-                self.out(f"slewing to {target} ({target.epoch_string()})... ", end="")
+                self.out(f"slewing to {target} ... ", end="")
 
         def slew_complete(ra, dec, status):
             if status == TelescopeStatus.OK:
@@ -140,7 +140,6 @@ class ChimeraTel(ChimeraCLI):
             else:
                 self.out("")
 
-        # FIXME: this won't work as we cannot resolve these methods!
         telescope.slew_begin += slew_begin
         telescope.slew_complete += slew_complete
 
