@@ -45,21 +45,23 @@ class RpcMessage(Message, frozen=True):
 
 class Ping(RpcMessage, frozen=True):
     id: int
-    ok: bool = False
 
-    def pong(self, *, ok: bool = True) -> "Pong":
+    def pong(self, *, ok: bool = True, resolved_url: str | None = None) -> "Pong":
         return Pong(
             ts=Protocol.timestamp(),
             src=self.dst,
             dst=self.src,
             id=self.id,
             ok=ok,
+            resolved_url=resolved_url,
         )
 
 
 class Pong(RpcMessage, frozen=True):
     id: int
     ok: bool = True
+
+    resolved_url: str | None = None
 
 
 class Request(RpcMessage, frozen=True):
@@ -121,7 +123,7 @@ class Subscribe(SubMessage, frozen=True):
     # late-binding: someone can subscribe to events that are not yet bound to any publishers
     event: str  # slew_complete
 
-    # an id representing the callbackas we cannot pass a reference to the callable
+    # an id representing the callback, as we cannot pass a reference to the callable
     callback: int  #  id(self.on_slew_complete)
 
     @cached_property
@@ -138,7 +140,7 @@ class Subscribe(SubMessage, frozen=True):
 class Unsubscribe(SubMessage, frozen=True):
     event: str  # slew_complete
 
-    # an id representing the callbackas we cannot pass a reference to the callable
+    # an id representing the callback, as we cannot pass a reference to the callable
     callback: int  #  id(self.on_slew_complete)
 
     @cached_property

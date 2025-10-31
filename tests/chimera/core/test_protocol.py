@@ -51,7 +51,6 @@ class TestProtocol:
         assert ping.ts == 12345
         assert ping.src == self.src
         assert ping.dst == self.dst
-        assert ping.ok is False
 
     @patch("chimera.core.protocol.Protocol.timestamp")
     def test_pong_creation(self, mock_timestamp: Mock):

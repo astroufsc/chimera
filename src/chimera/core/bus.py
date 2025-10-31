@@ -6,7 +6,7 @@ import threading
 from collections.abc import Callable
 from concurrent.futures import Future, ThreadPoolExecutor
 from dataclasses import dataclass
-from typing import Any, NamedTuple, Self
+from typing import Any, NamedTuple
 
 import msgspec
 
@@ -33,10 +33,10 @@ type PublisherId = str
 type SubscriberId = URL
 
 
-class CallbackId(int):
+class CallbackId:
     @classmethod
-    def new(cls, callable: Callable[..., None]) -> Self:
-        return cls(id(callable))
+    def new(cls, callable: Callable[..., None]) -> int:
+        return id(callable)
 
 
 class EventId(NamedTuple):
@@ -47,11 +47,11 @@ class EventId(NamedTuple):
 @dataclass(frozen=True)
 class Subscriber:
     subscriber: SubscriberId
-    callback: CallbackId
+    callback: int
 
 
 class Callback(NamedTuple):
-    id: CallbackId
+    id: int
     callable: Callable[..., None]
 
 
@@ -77,6 +77,7 @@ class Bus:
         self._subscribers: collections.defaultdict[EventId, set[Subscriber]] = (
             collections.defaultdict(set)
         )
+        self._pubsub_lock = threading.Lock()
 
         self._inbound: Transport = create_transport(self.url.bus)
         self._inbound.bind()
@@ -286,7 +287,8 @@ class Bus:
             )
         )
 
-        self._callbacks[event_id][subscriber] = Callback(callback_id, callback)
+        with self._pubsub_lock:
+            self._callbacks[event_id][subscriber] = Callback(callback_id, callback)
 
     def unsubscribe(
         self,
@@ -310,8 +312,9 @@ class Bus:
             )
         )
 
-        if subscriber in self._callbacks[event_id]:
-            del self._callbacks[event_id][subscriber]
+        with self._pubsub_lock:
+            if subscriber in self._callbacks[event_id]:
+                del self._callbacks[event_id][subscriber]
 
     def publish(
         self,
@@ -400,29 +403,35 @@ class Bus:
 
     def _handle_ping(self, message: Ping) -> None:
         try:
-            self._push(message.pong())
+            # resolve the dst URL and return the resolved URL in the pong
+            dst_url = parse_url(message.dst)
+            cls, method = self.resolve_request(dst_url.path, "get_location")
+            if cls is not None and method is not None:
+                resolved_url = method()
+                pong = message.pong(ok=True, resolved_url=resolved_url)
+                self._push(pong)
+            else:
+                self._push(message.pong(ok=False))
         except Exception:
-            log.exception("error handling subscribe")
+            log.exception("error handling ping")
 
     def _handle_subscribe(self, message: Subscribe):
         try:
-            event_id = EventId(message.pub, message.event)
-            subscriber = Subscriber(
-                parse_url(message.sub), CallbackId(message.callback)
-            )
-            self._subscribers[event_id].add(subscriber)
+            with self._pubsub_lock:
+                event_id = EventId(message.pub, message.event)
+                subscriber = Subscriber(parse_url(message.sub), message.callback)
+                self._subscribers[event_id].add(subscriber)
         except Exception:
             log.exception("error handling subscribe")
 
     def _handle_unsubscribe(self, message: Unsubscribe):
         try:
-            event_id = EventId(message.pub, message.event)
-            subscriber = Subscriber(
-                parse_url(message.sub), CallbackId(message.callback)
-            )
+            with self._pubsub_lock:
+                event_id = EventId(message.pub, message.event)
+                subscriber = Subscriber(parse_url(message.sub), message.callback)
 
-            if subscriber in self._subscribers[event_id]:
-                self._subscribers[event_id].remove(subscriber)
+                if subscriber in self._subscribers[event_id]:
+                    self._subscribers[event_id].remove(subscriber)
         except Exception:
             log.exception("error handling unsubscribe")
 

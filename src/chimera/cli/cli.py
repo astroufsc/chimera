@@ -11,6 +11,7 @@ from typing import Any, TextIO
 from chimera.core.bus import Bus
 from chimera.core.chimera_config import ChimeraConfig
 from chimera.core.constants import CHIMERA_CONFIG_DEFAULT_FILENAME
+from chimera.core.exceptions import ObjectNotFoundException
 from chimera.core.proxy import Proxy
 from chimera.core.url import parse_url
 from chimera.core.version import chimera_version
@@ -417,7 +418,6 @@ class ChimeraCLI:
 
         self._validate_parameters(self.options)
         self._start_system(self.options)
-        self._setup_objects(self.options)
 
         t = threading.Thread(target=self._run_actions, args=(action,), daemon=True)
         t.start()
@@ -606,7 +606,12 @@ class ChimeraCLI:
 
             if inst.required:
                 inst_proxy = Proxy(inst.url.url, self.bus)
-                # FIXME: we should pint the bus, but ping won't work because the bus isn't ready
+                try:
+                    inst_proxy.resolve()
+                except ObjectNotFoundException:
+                    self.exit(
+                        f"Could not connect to {inst.cls} at {inst.url.url}. [Ping failed]"
+                    )
 
                 setattr(self, inst.name, inst_proxy)
 
@@ -616,6 +621,9 @@ class ChimeraCLI:
         self.bus = Bus(f"tcp://{self.config.host}:{random_port}")
 
     def _run_actions(self, actions: list[Action]):
+        # NOTE: we do this here to make sure the Bus is ready before we ask for Proxies
+        self._setup_objects(self.options)
+
         # run actions
         for action in actions:
             if not self._run_action(action, self.options):
