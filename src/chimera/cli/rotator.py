@@ -6,11 +6,7 @@
 import copy
 import sys
 
-from chimera.core.exceptions import ObjectNotFoundException, print_exception
 from chimera.core.version import _chimera_version_
-from chimera.interfaces.rotator import RotatorStatus
-from chimera.util.coord import Coord
-from chimera.util.output import green, red, yellow
 
 from .cli import ChimeraCLI, action
 

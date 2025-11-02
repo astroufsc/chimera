@@ -1,11 +1,8 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 # SPDX-FileCopyrightText: 2006-present Paulo Henrique Silva <ph.silva@gmail.com>
 
-import time
-import pytest
 from chimera.core.manager import Manager
 from chimera.core.site import Site
-from chimera.interfaces.rotator import RotatorStatus
 
 
 class TestRotator:

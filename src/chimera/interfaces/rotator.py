@@ -1,4 +1,5 @@
 from enum import Enum
+
 from chimera.core.event import event
 from chimera.core.interface import Interface
 
