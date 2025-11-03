@@ -110,22 +110,23 @@ class ImageRequest(dict):
     def __str__(self):
         return f"exptime: {self['exptime']:.6f}, frames: {self['frames']}, shutter: {self['shutter']}, type: {self['type']}"
 
-    def begin_exposure(self, manager):
+    def begin_exposure(self, chimera_obj):
 
-        self._fetch_pre_headers(manager)
+        self._fetch_pre_headers(chimera_obj)
 
-        if self["wait_dome"]:
-            try:
-                dome = manager.get_proxy(manager.get_resources_by_class("Dome")[0])
-                dome.sync_with_tel()
-                log.debug("Dome slit position synchronized with telescope position.")
-            except (ObjectNotFoundException, IndexError):
-                log.info("No dome present, taking exposure without dome sync.")
+        # fixme: ...
+        # if self["wait_dome"]:
+        #     try:
+        #         dome = chimera_obj.get_proxy(chimera_obj.get_resources_by_class("Dome")[0])
+        #         dome.sync_with_tel()
+        #         log.debug("Dome slit position synchronized with telescope position.")
+        #     except (ObjectNotFoundException, IndexError):
+        #         log.info("No dome present, taking exposure without dome sync.")
 
-    def end_exposure(self, manager):
-        self._fetch_post_headers(manager)
+    def end_exposure(self, chimera_obj):
+        self._fetch_post_headers(chimera_obj)
 
-    def _fetch_pre_headers(self, manager):
+    def _fetch_pre_headers(self, chimera_obj):
         auto = []
         if self.auto_collect_metadata:
             for cls in (
@@ -138,7 +139,9 @@ class ImageRequest(dict):
                 "WeatherStation",
                 "SeeingMonitor",
             ):
-                locations = manager.get_resources_by_class(cls)
+                # fixme: ...
+                # locations = chimera_obj.get_resources_by_class(cls)
+                locations = []
                 if len(locations) == 1:
                     auto.append(str(locations[0]))
                 elif len(locations) == 0:
@@ -149,18 +152,18 @@ class ImageRequest(dict):
                     )
                     auto.append(str(locations[0]))
 
-            self._get_headers(manager, auto + self.metadata_pre)
+            self._get_headers(chimera_obj, auto + self.metadata_pre)
 
-    def _fetch_post_headers(self, manager):
-        self._get_headers(manager, self.metadata_post)
+    def _fetch_post_headers(self, chimera_obj):
+        self._get_headers(chimera_obj, self.metadata_post)
 
-    def _get_headers(self, manager, locations):
+    def _get_headers(self, chimera_obj, locations):
 
         for location in locations:
 
             if location not in self._proxies:
                 try:
-                    self._proxies[location] = manager.get_proxy(location)
+                    self._proxies[location] = chimera_obj.get_proxy(location)
                 except Exception:
                     log.exception(f"Unable to get metadata from {location}")
 

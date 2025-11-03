@@ -100,6 +100,7 @@ class FakeCamera(CameraBase, FilterWheelBase):
             time.sleep(0.1)
             t += 0.1
 
+        time.sleep(0.1)  # simulate shutter close time
         self.expose_complete(image_request, status)
 
     def make_dark(self, shape, dtype, exptime):
@@ -147,17 +148,21 @@ class FakeCamera(CameraBase, FilterWheelBase):
         )
         self.readout_begin(image_request)
 
-        telescopes = self.get_manager().get_resources_by_class("Telescope")
-        if telescopes:
-            telescope = self.get_proxy(telescopes[0])
-        else:
-            telescope = None
+        telescope = None
+        # fixme: ...
+        # telescopes = self.get_resources_by_class("Telescope")
+        # if telescopes:
+        #     telescope = self.get_proxy(telescopes[0])
+        # else:
+        #     telescope = None
 
-        domes = self.get_manager().get_resources_by_class("Dome")
-        if domes:
-            dome = self.get_proxy(domes[0])
-        else:
-            dome = None
+        dome = None
+        # fixme: ...
+        # domes = self.get_resources_by_class("Dome")
+        # if domes:
+        #     dome = self.get_proxy(domes[0])
+        # else:
+        #     dome = None
 
         if not telescope:
             self.log.debug("FakeCamera couldn't find telescope.")
@@ -265,7 +270,7 @@ class FakeCamera(CameraBase, FilterWheelBase):
         if pix is None:
             pix = np.zeros((ccd_height, ccd_width), dtype=np.int32)
 
-        proxy = self._save_image(
+        image = self._save_image(
             image_request,
             pix,
             {
@@ -277,11 +282,14 @@ class FakeCamera(CameraBase, FilterWheelBase):
 
         # [ABORT POINT]
         if self.abort.is_set():
+            print("self.readout_complete(None, CameraStatus.ABORTED)")
             self.readout_complete(None, CameraStatus.ABORTED)
             return None
 
-        self.readout_complete(proxy, CameraStatus.OK)
-        return proxy
+        time.sleep(0.1)  # simulate readout time
+        self.readout_complete(None, CameraStatus.OK)
+        print("self.readout_complete(image, CameraStatus.OK)")
+        return image
 
     @lock
     def start_cooling(self, setpoint):

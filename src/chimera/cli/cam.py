@@ -13,6 +13,8 @@ from chimera.interfaces.camera import CameraFeature, CameraStatus
 from chimera.interfaces.filterwheel import InvalidFilterPositionException
 from chimera.util.ds9 import DS9
 
+from chimera.util.image import Image
+
 from .cli import ChimeraCLI, ParameterType, action
 
 current_frame = 0
@@ -428,7 +430,7 @@ class ChimeraCam(ChimeraCLI):
             cam.abort_exposure()
 
     @action(
-        default=True,
+        # default=True,
         help_group="EXPOSE",
         help="Take an exposure with selected parameters",
     )
@@ -547,6 +549,8 @@ class ChimeraCam(ChimeraCLI):
 
         def readout_complete(image, status):
             global current_frame, current_frame_expose_start, current_frame_readout_start
+            print("lixxxxx")
+            self.out("XXreadout_completeXX", end="\n")  # DEBUG
 
             if status == CameraStatus.OK:
                 self.out(
@@ -580,13 +584,13 @@ class ChimeraCam(ChimeraCLI):
 
         # do we have a Dome?
         dome = None
-        remote_manager = camera.get_manager()
-        try:
-            dome = remote_manager.get_proxy(
-                remote_manager.get_resources_by_class("Dome")[0]
-            )
-        except ObjectNotFoundException:
-            pass
+        # remote_manager = camera.get_manager()
+        # try:
+        #     dome = remote_manager.get_proxy(
+        #         remote_manager.get_resources_by_class("Dome")[0]
+        #     )
+        # except ObjectNotFoundException:
+        #     pass
 
         if dome:
 
