@@ -120,6 +120,9 @@ class Site(ChimeraObject):
         if not date:
             date = self.ut()
         return float(self._get_ephem(date=date).sidereal_time())
+    
+    def latitude_in_degs(self):
+        return float(self["latitude"].to_d())
 
     def lst(self, date=None):
         """
@@ -210,22 +213,27 @@ class Site(ChimeraObject):
         self._moon.compute(self._get_ephem(date))
         return self._moon.phase / 100.0
 
-    def ra_to_ha(self, ra):
-        return CoordUtil.ra_to_ha(ra, self.lst_in_rads())
+    def ra_to_ha(self, ra: float):
+        # ra in hours
+        # returns ha in hours
+        return float(CoordUtil.ra_to_ha(ra, self.lst_in_rads()).to_h())
 
-    def ha_to_ra(self, ha):
-        return CoordUtil.ra_to_ha(ha, self.lst_in_rads())
+    def ha_to_ra(self, ha: float):
+        return float(CoordUtil.ha_to_ra(ha, self.lst_in_rads()).to_h())
 
-    def ra_dec_to_alt_az(self, ra_dec, lst_in_rads=None):
+    def ra_dec_to_alt_az(self, ra: float, dec: float, lst_in_rads: float | None = None):
+        # ra in hours, dec in degrees, lst in radians
+        # returns alt, az in degrees
         if not lst_in_rads:
             lst_in_rads = self.lst_in_rads()
-        return Position.ra_dec_to_alt_az(ra_dec, self["latitude"], lst_in_rads)
+        return Position.ra_dec_to_alt_az(ra, dec, self["latitude"].to_d(), lst_in_rads)
 
-    def alt_az_to_ra_dec(self, alt_az, lst_in_rads=None):
+    def alt_az_to_ra_dec(self, alt: float, az: float, lst_in_rads: float | None = None) -> tuple[float, float]:
+        # alt, az in degrees, lst in radians
+        # returns ra in hours, dec in degrees
         if not lst_in_rads:
             lst_in_rads = self.lst_in_rads()
-
-        return Position.alt_az_to_ra_dec(alt_az, self["latitude"], lst_in_rads)
+        return Position.alt_az_to_ra_dec(alt, az, self["latitude"].to_d(), lst_in_rads)
 
     def get_metadata(self, request):
         # Check first if there is metadata from an metadata override method.

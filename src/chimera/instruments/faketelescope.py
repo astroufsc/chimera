@@ -40,22 +40,15 @@ class FakeTelescope(TelescopeBase, TelescopePier):
         self._az: float = 0.0
 
     def _set_alt_az_from_ra_dec(self):
-        alt_az = self._get_site().ra_dec_to_alt_az(
-            Position.from_ra_dec(Coord.from_h(self._ra), Coord.from_d(self._dec))
-        )
-        self._alt = float(alt_az.alt)
-        self._az = float(alt_az.az)
+        self._alt, self._az = self._get_site().ra_dec_to_alt_az(self._ra, self._dec)
 
     def _get_site(self):
         # FIXME: create the proxy directly and cache it
         return self.get_proxy("/Site/0")
 
     def _set_ra_dec_from_alt_az(self):
-        ra_dec = self._get_site().alt_az_to_ra_dec(
-            Position.from_alt_az(Coord.from_d(self._alt), Coord.from_d(self._az))
-        )
-        self._ra = float(ra_dec.ra.to_h())
-        self._dec = float(ra_dec.dec.to_d())
+        # alt, az in degrees
+        self._ra, self._dec = self._get_site().alt_az_to_ra_dec(self._alt, self._az)
 
     def __start__(self):
         self.set_hz(1)
@@ -123,8 +116,8 @@ class FakeTelescope(TelescopeBase, TelescopePier):
 
         self._validate_alt_az(alt, az)
 
-        pos = self._get_site().alt_az_to_ra_dec(Position.from_alt_az(alt, az))
-        self.slew_begin(pos.alt, pos.az)  # todo: remove Position dependency
+        alt, az = self._get_site().alt_az_to_ra_dec(alt, az)
+        self.slew_begin(alt, az)
 
         alt_steps = (alt - self.get_alt()) / 10
         az_steps = (az - self.get_az()) / 10
@@ -169,13 +162,13 @@ class FakeTelescope(TelescopeBase, TelescopePier):
 
         ra, dec = self.get_position_ra_dec()
         pos = Position.from_ra_dec(ra + Coord.from_as(offset), dec, epoch=Epoch.NOW)
-        self.slew_begin(pos.ra, pos.dec)
+        self.slew_begin(float(pos.ra), float(pos.dec))
 
         self._ra += float(Coord.from_as(offset).to_h())
         self._set_alt_az_from_ra_dec()
 
         self._slewing = False
-        self.slew_complete(pos.ra, pos.dec, TelescopeStatus.OK)
+        self.slew_complete(self._ra, self._dec, TelescopeStatus.OK)
 
     @lock
     def move_west(self, offset, rate=None):
@@ -183,13 +176,13 @@ class FakeTelescope(TelescopeBase, TelescopePier):
 
         ra, dec = self.get_position_ra_dec()
         pos = Position.from_ra_dec(ra + Coord.from_as(-offset), dec)
-        self.slew_begin(pos.ra, pos.dec)
+        self.slew_begin(float(pos.ra), float(pos.dec))
 
         self._ra += float(Coord.from_as(-offset).to_h())
         self._set_alt_az_from_ra_dec()
 
         self._slewing = False
-        self.slew_complete(pos.ra, pos.dec, TelescopeStatus.OK)
+        self.slew_complete(self._ra, self._dec, TelescopeStatus.OK)
 
     @lock
     def move_north(self, offset, rate=None):
@@ -197,13 +190,13 @@ class FakeTelescope(TelescopeBase, TelescopePier):
 
         ra, dec = self.get_position_ra_dec()
         pos = Position.from_ra_dec(ra, dec + Coord.from_as(offset))
-        self.slew_begin(pos.ra, pos.dec)
+        self.slew_begin(float(pos.ra), float(pos.dec))
 
         self._dec += float(Coord.from_as(offset).to_d())
         self._set_alt_az_from_ra_dec()
 
         self._slewing = False
-        self.slew_complete(pos.ra, pos.dec, TelescopeStatus.OK)
+        self.slew_complete(self._ra, self._dec, TelescopeStatus.OK)
 
     @lock
     def move_south(self, offset, rate=None):
@@ -211,13 +204,13 @@ class FakeTelescope(TelescopeBase, TelescopePier):
 
         ra, dec = self.get_position_ra_dec()
         pos = Position.from_ra_dec(ra, dec + Coord.from_as(-offset))
-        self.slew_begin(pos.ra, pos.dec)
+        self.slew_begin(float(pos.ra), float(pos.dec))
 
         self._dec += float(Coord.from_as(-offset).to_d())
         self._set_alt_az_from_ra_dec()
 
         self._slewing = False
-        self.slew_complete(pos.ra, pos.dec, TelescopeStatus.OK)
+        self.slew_complete(self._ra, self._dec, TelescopeStatus.OK)
 
     @lock
     @override
@@ -244,7 +237,7 @@ class FakeTelescope(TelescopeBase, TelescopePier):
     @lock
     def get_position_alt_az(self):
         pos = Position.from_alt_az(self.get_alt(), self.get_az())
-        return pos.alt, pos.az
+        return float(pos.alt), float(pos.az)
 
     @lock
     def get_target_ra_dec(self):
