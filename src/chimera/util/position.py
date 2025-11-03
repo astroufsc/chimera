@@ -380,29 +380,28 @@ class Position:
     # http://www.nmt.edu/tcc/help/lang/python/examples/sidereal/ims/
 
     @staticmethod
-    def ra_dec_to_alt_az(ra_dec, latitude, lst):
-        dec_r = CoordUtil.coord_to_r(ra_dec.dec)
-        lat_r = CoordUtil.coord_to_r(latitude)
-        ha = CoordUtil.ra_to_ha(ra_dec.ra, lst)
+    def ra_dec_to_alt_az(ra: float, dec: float, latitude: float, lst: float | None) -> tuple[float, float]:
+        # ra in hours, dec in degrees, lat in degrees, lst in radians
+        # returns alt, az in degrees
+        dec_r = CoordUtil.coord_to_r(Coord.from_d(dec))
+        lat_r = CoordUtil.coord_to_r(Coord.from_d(latitude))
+        ha = CoordUtil.ra_to_ha(Coord.from_h(ra), Coord.from_r(lst))
         ha_r = CoordUtil.coord_to_r(ha)
 
         alt_r, az_r = CoordUtil.coord_rotate(dec_r, lat_r, ha_r)
 
-        return Position.from_alt_az(
-            Coord.from_r(CoordUtil.make_valid_180_to_180(alt_r)),
-            Coord.from_r(CoordUtil.make_valid_0_to_360(az_r)),
-        )
+        return float(Coord.from_r(CoordUtil.make_valid_180_to_180(alt_r)).to_d()), float(Coord.from_r(CoordUtil.make_valid_0_to_360(az_r)).to_d())
 
     @staticmethod
-    def alt_az_to_ra_dec(alt_az, latitude, lst):
-        alt_r = CoordUtil.coord_to_r(alt_az.alt)
-        lat_r = CoordUtil.coord_to_r(latitude)
-        az_r = CoordUtil.coord_to_r(alt_az.az)
+    def alt_az_to_ra_dec(alt: float, az: float, latitude: float, lst: float | None) -> tuple[float, float]:
+        # alt, az, lat in degrees, lst in radians
+        # returns ra in hours, dec in degrees
+        alt_r = CoordUtil.coord_to_r(Coord.from_d(alt))
+        lat_r = CoordUtil.coord_to_r(Coord.from_d(latitude))
+        az_r = CoordUtil.coord_to_r(Coord.from_d(az))
 
         dec_r, ha_r = CoordUtil.coord_rotate(alt_r, lat_r, az_r)
 
         ra = CoordUtil.ha_to_ra(ha_r, lst)
 
-        return Position.from_ra_dec(
-            CoordUtil.make_valid_0_to_360(ra), CoordUtil.make_valid_180_to_180(dec_r)
-        )
+        return float(CoordUtil.make_valid_0_to_360(ra).to_h()), float(CoordUtil.make_valid_180_to_180(dec_r).to_d())
