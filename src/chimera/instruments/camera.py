@@ -77,7 +77,7 @@ class CameraBase(ChimeraObject, CameraExpose, CameraTemperature, CameraInformati
 
         # use image server if any and save image on server's default dir if
         # filename given as a relative path.
-        server = get_image_server(self.get_manager())
+        server = get_image_server(self)
         if not os.path.isabs(image_request["filename"]):
             image_request["filename"] = os.path.join(
                 server.default_night_dir(), image_request["filename"]
@@ -87,7 +87,6 @@ class CameraBase(ChimeraObject, CameraExpose, CameraTemperature, CameraInformati
         self.abort.clear()
 
         images = []
-        manager = self.get_manager()
 
         for frame_num in range(frames):
 
@@ -95,7 +94,7 @@ class CameraBase(ChimeraObject, CameraExpose, CameraTemperature, CameraInformati
             if self.abort.is_set():
                 return tuple(images)
 
-            image_request.begin_exposure(manager)
+            image_request.begin_exposure(self)
             self._expose(image_request)
 
             # [ABORT POINT]
@@ -104,8 +103,8 @@ class CameraBase(ChimeraObject, CameraExpose, CameraTemperature, CameraInformati
 
             image = self._readout(image_request)
             if image is not None:
-                images.append(image)
-                image_request.end_exposure(manager)
+                # images.append(image)
+                image_request.end_exposure(self)
 
             # [ABORT POINT]
             if self.abort.is_set():
@@ -139,14 +138,14 @@ class CameraBase(ChimeraObject, CameraExpose, CameraTemperature, CameraInformati
         img = Image.create(image_data, image_request)
 
         # register image on ImageServer
-        server = get_image_server(self.get_manager())
-        proxy = server.register(img)
+        server = get_image_server(self)
+        image: Image = server.register(img)
 
         # and finally compress the image if asked
         if image_request["compress_format"].lower() != "no":
             img.compress(format=image_request["compress_format"], multiprocess=True)
 
-        return proxy
+        return dict(image)
 
     def _get_readout_mode_info(self, binning, window):
         """
