@@ -40,7 +40,7 @@ class TelescopeBase(
         _, ra, dec, epoch = simbad_lookup(name) or (None, None, None, None)
         if ra is None or dec is None:
             raise ObjectNotFoundException(f"Object {name} not found in SIMBAD")
-        self.slew_to_ra_dec(ra, dec)  # todo use epoch from simbad_lookup
+        self.slew_to_ra_dec(float(ra), float(dec))  # todo use epoch from simbad_lookup
 
     @lock
     def slew_to_ra_dec(self, ra: float, dec: float, epoch: float = 2000) -> None:
@@ -48,12 +48,12 @@ class TelescopeBase(
 
     def _validate_ra_dec(self, ra: float, dec: float):
         # TODO: remove Position dependency
-        lst = self.site().lst()
-        latitude = self.site()["latitude"]
+        lst = self.site().lst_in_rads() # in radians
+        latitude = self.site().latitude_in_degs()
 
-        alt_az = Position.ra_dec_to_alt_az(Position.from_ra_dec(ra, dec), latitude, lst)
+        alt, az = Position.ra_dec_to_alt_az(ra, dec, latitude, lst)
 
-        return self._validate_alt_az(alt_az.alt, alt_az.az)
+        return self._validate_alt_az(alt, az)
 
     def _validate_alt_az(self, alt, az):
 
