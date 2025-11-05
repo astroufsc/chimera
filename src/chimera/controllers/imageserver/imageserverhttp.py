@@ -45,8 +45,8 @@ class ImageServerHTTPHandler(SimpleHTTPRequestHandler):
         if len(args) < 2:
             return self.response(200, "What are you looking for?")
         else:
-            img = self.server.ctrl.get_image_by(args[1])
-            if not img:
+            img = self.server.ctrl.get_image_by_id(args[1])
+            if not img.filename:
                 self.response(200, "Couldn't find the image.")
             else:
                 self.response_file(img.filename, "image/fits")
@@ -58,7 +58,7 @@ class ImageServerHTTPHandler(SimpleHTTPRequestHandler):
         keys.sort()
         for key in keys:
             image = self.server.ctrl.images_by_path[key]
-            id = image.GUID()
+            id = image.id
             path = image.filename
             to_return += f'<tr><td><a href="/image/{id}">{id}</a></td><td><a href="/image/{id}">{path}</a></td></tr>'
 

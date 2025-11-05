@@ -68,7 +68,7 @@ class ImageServer(ChimeraObject):
                 self.log.debug(f"Loading {file}")
                 self.register(Image.from_file(file))
 
-    def register(self, image):
+    def register(self, image_filename):
         if len(self.images_by_id) > self["max_images"]:
             remove_items = list(self.images_by_id.keys())[: -self["max_images"]]
 
@@ -76,13 +76,14 @@ class ImageServer(ChimeraObject):
                 self.log.debug(f"Unregistering image {item}")
                 self.unregister(self.images_by_id[item])
 
+        image = Image.from_file(image_filename)
         self.images_by_id[image.id] = image
         self.images_by_path[image.filename] = image
 
         # save Image's HTTP address
         image.http(self.get_http_by_id(image.id))
 
-        return image
+        return image.http()
 
     def unregister(self, image):
         del self.images_by_id[image.id]

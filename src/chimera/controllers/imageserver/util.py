@@ -1,3 +1,5 @@
+from chimera.controllers.imageserver.imageserver import ImageServer
+from chimera.util.output import red
 from chimera.core.exceptions import (
     ChimeraException,
     ClassLoaderException,
@@ -6,10 +8,16 @@ from chimera.core.exceptions import (
 from chimera.core.path import ChimeraPath
 
 
-def get_image_server(chimera_object):
+def get_image_server(chimera_object) -> ImageServer:
 
 
-    to_return = chimera_object.get_proxy("/ImageServer/0")
+    try:
+        to_return = chimera_object.get_proxy("/ImageServer/0")
+        to_return.resolve()
+        to_return.ping()
+    except Exception as e:
+        print(red(f"ImageServer not found: {e}"))
+        return None
 
     # try:
     #     to_return = chimera_object.get_proxy("/ImageServer/0")

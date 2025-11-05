@@ -6,7 +6,6 @@ import os
 import random
 import shutil
 import time
-import urllib.error
 import urllib.parse
 import urllib.request
 
@@ -282,13 +281,11 @@ class FakeCamera(CameraBase, FilterWheelBase):
 
         # [ABORT POINT]
         if self.abort.is_set():
-            print("self.readout_complete(None, CameraStatus.ABORTED)")
             self.readout_complete(None, CameraStatus.ABORTED)
             return None
 
         time.sleep(0.1)  # simulate readout time
-        self.readout_complete(None, CameraStatus.OK)
-        print("self.readout_complete(image, CameraStatus.OK)")
+        self.readout_complete(image.url(), CameraStatus.OK)
         return image
 
     @lock
