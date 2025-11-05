@@ -547,10 +547,10 @@ class ChimeraCam(ChimeraCLI):
             current_frame_readout_start = time.time()
             self.out("reading out and saving ...", end="")
 
-        def readout_complete(image, status):
+        def readout_complete(image_url, status):
             global current_frame, current_frame_expose_start, current_frame_readout_start
-            print("lixxxxx")
-            self.out("XXreadout_completeXX", end="\n")  # DEBUG
+
+            image = Image.from_url(image_url)
 
             if status == CameraStatus.OK:
                 self.out(

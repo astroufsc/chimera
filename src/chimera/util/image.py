@@ -202,9 +202,27 @@ class Image(UserDict):
     files.
     """
 
+    def url(self):
+        return f"file://{self.filename},{self.http()}"
+
+    @staticmethod
+    def from_url(url, fix=False, mode="readonly"):
+        url_parts = url.split(",")
+        if url_parts[0].startswith("file://"):
+            # try local file first
+            filename = url_parts[0][7:]
+            if os.path.exists(filename):
+                return Image.from_file(filename, fix=fix, mode=mode)
+            # try http next
+            elif len(url_parts) >= 2 and url_parts[1].startswith("http"):
+                http_url = url_parts[1]
+                return Image.from_file(http_url, fix=fix, mode=mode)
+
     @staticmethod
     def from_file(filename, fix=False, mode="update"):
         fd = fits.open(filename, mode=mode)
+        if "http" in filename:
+            filename = os.path.basename(filename)
         img = Image(filename, fd)
 
         if fix:
@@ -450,23 +468,27 @@ class Image(UserDict):
     def _do_compress(self, filename, format):
         if format.lower() == "bz2":
             bz_filename = filename + ".bz2"
-            with bz2.BZ2File(bz_filename, "wb", compresslevel=4) as bz_fp:
-                with open(filename) as raw_fp:
-                    bz_fp.write(raw_fp.read())
+            with open(filename, "rb") as raw_fp:
+                with bz2.BZ2File(bz_filename, "wb", compresslevel=4) as bz_fp:
+                    print("bz2 open", filename)  # DEBUG
+                    bz_fp.writelines(raw_fp)
             os.unlink(filename)
         elif format.lower() == "gzip":
             gz_filename = filename + ".gz"
-            with gzip.GzipFile(gz_filename, "wb", compresslevel=5) as gz_fp:
-                with open(filename) as raw_fp:
-                    gz_fp.write(raw_fp.read())
+            with open(filename, "rb") as raw_fp:
+                with gzip.GzipFile(gz_filename, "wb", compresslevel=5) as gz_fp:
+                    print("gzip open", filename)  # DEBUG
+                    gz_fp.writelines(raw_fp)
             os.unlink(filename)
         elif format.lower().startswith("fits_"):
             # compression methods inherent to fits standard, are done when saving image.
             return
         else:  # zip
             zip_filename = filename + ".zip"
-            with zipfile.ZipFile(zip_filename, "w", zipfile.ZIP_DEFLATED) as zip_fp:
-                zip_fp.write(filename, os.path.basename(filename))
+            with open(filename, "rb") as raw_fp:
+                with zipfile.ZipFile(zip_filename, "w", zipfile.ZIP_DEFLATED) as zip_fp:
+                    print("zip open", filename)  # DEBUG
+                    zip_fp.writestr(os.path.basename(filename), raw_fp.read())
             os.unlink(filename)
 
     def compress(self, format="bz2", multiprocess=False):

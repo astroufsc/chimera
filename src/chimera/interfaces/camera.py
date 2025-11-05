@@ -131,8 +131,8 @@ class CameraExpose(Camera):
         @param request: ImageRequest containing details of the image to be taken
         @type  request: ImageRequest
 
-        @return: tuple of L{Image} proxies (empty if no one was taken)
-        @rtype: tuple(L{Proxy})
+        @return: tuple of L{str} Image URLs (empty if no one was taken)
+        @rtype: tuple(L{str})
         """
 
     def abort_exposure(self, readout=True):
@@ -200,12 +200,12 @@ class CameraExpose(Camera):
         """
 
     @event
-    def readout_complete(self, proxy, status):
+    def readout_complete(self, image_url, status):
         """
         Indicates that new readout is complete.
 
-        @param request: The just taken Image (as a Proxy) or None is status=[ERROR or ABORTED]..
-        @type  request: L{Proxy} or None
+        @param image: The just taken Image URL or None is status=[ERROR or ABORTED]..
+        @type  image: L{str} or None
 
         @param status: The status of the current expose.
         @type  status: L{CameraStatus}
