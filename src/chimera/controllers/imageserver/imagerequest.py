@@ -149,13 +149,10 @@ class ImageRequest(dict):
         self._get_headers(chimera_obj, self.metadata_post)
 
     def _get_headers(self, chimera_obj, locations):
-
         for location in locations:
-
             if location not in self._proxies:
-                try:
-                    self._proxies[location] = chimera_obj.get_proxy(location)
-                except Exception:
-                    log.exception(f"Unable to get metadata from {location}")
-
-            self.headers += self._proxies[location].get_metadata(self)
+                self._proxies[location] = chimera_obj.get_proxy(location)
+            try:
+                self.headers += self._proxies[location].get_metadata(self)
+            except Exception:
+                log.warning(f"Unable to get metadata from {location}")
