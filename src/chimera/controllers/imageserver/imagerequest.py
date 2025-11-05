@@ -1,6 +1,6 @@
 import logging
 
-from chimera.core.exceptions import ChimeraValueError, ObjectNotFoundException
+from chimera.core.exceptions import ChimeraValueError
 from chimera.interfaces.camera import Bitpix, Shutter
 
 log = logging.getLogger(__name__)
@@ -129,28 +129,19 @@ class ImageRequest(dict):
     def _fetch_pre_headers(self, chimera_obj):
         auto = []
         if self.auto_collect_metadata:
-            for cls in (
-                "Site",
-                "Camera",
-                "Dome",
-                "FilterWheel",
-                "Focuser",
-                "Telescope",
-                "WeatherStation",
-                "SeeingMonitor",
-            ):
-                # fixme: ...
-                # locations = chimera_obj.get_resources_by_class(cls)
-                locations = []
-                if len(locations) == 1:
-                    auto.append(str(locations[0]))
-                elif len(locations) == 0:
-                    log.warning(f"No {cls} available, header would be incomplete.")
-                else:
-                    log.warning(
-                        f"More than one {cls} available, header may be incorrect. Using the first {cls}."
-                    )
-                    auto.append(str(locations[0]))
+            auto += [
+                f"/{cls}/0"
+                for cls in (
+                    "Site",
+                    "Camera",
+                    "Dome",
+                    "FilterWheel",
+                    "Focuser",
+                    "Telescope",
+                    "WeatherStation",
+                    "SeeingMonitor",
+                )
+            ]
 
             self._get_headers(chimera_obj, auto + self.metadata_pre)
 
