@@ -605,16 +605,16 @@ class ChimeraCLI:
                     f"{self.config.host}:{self.config.port}{inst.default}"
                 )
 
-            if inst.required:
-                inst_proxy = Proxy(inst.url.url, self.bus)
-                try:
-                    inst_proxy.resolve()
-                except ObjectNotFoundException:
+            inst_proxy = Proxy(inst.url.url, self.bus)
+            try:
+                inst_proxy.resolve()
+                setattr(self, inst.name, inst_proxy)
+            except ObjectNotFoundException:
+                if inst.required:
                     self.exit(
                         f"Could not connect to {inst.cls} at {inst.url.url}. [Ping failed]"
                     )
 
-                setattr(self, inst.name, inst_proxy)
 
     def _start_system(self, options: optparse.Values):
         self.config = ChimeraConfig.from_file(options.config)
