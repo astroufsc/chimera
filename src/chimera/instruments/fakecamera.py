@@ -14,25 +14,19 @@ from astropy.io import fits
 
 from chimera.core.lock import lock
 from chimera.instruments.camera import CameraBase
-from chimera.instruments.filterwheel import (
-    FilterWheelBase,
-    InvalidFilterPositionException,
-)
 from chimera.interfaces.camera import CCD, CameraFeature, CameraStatus, ReadoutMode
 from chimera.util.position import Epoch, Position
 
 
-class FakeCamera(CameraBase, FilterWheelBase):
+class FakeCamera(CameraBase):
 
     __config__ = {"use_dss": True, "ccd_width": 512, "ccd_height": 512}
 
     def __init__(self):
         CameraBase.__init__(self)
-        FilterWheelBase.__init__(self)
 
         self.__cooling = False
 
-        self.__last_filter = self._get_filter_name(0)
         self.__temperature = 20.0
         self.__setpoint = 0
         self.__last_frame_start = 0
@@ -338,17 +332,3 @@ class FakeCamera(CameraBase, FilterWheelBase):
 
     def supports(self, feature=None):
         return self._supports.get(feature, False)
-
-    #
-    # filter wheel
-    #
-    def get_filter(self):
-        return self.__last_filter
-
-    @lock
-    def set_filter(self, filter):
-        if filter not in self.get_filters():
-            raise InvalidFilterPositionException(f"{filter} is not a valid filter")
-
-        self.filter_change(filter, self.__last_filter)
-        self.__last_filter = filter
