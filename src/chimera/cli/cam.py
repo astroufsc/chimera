@@ -693,10 +693,16 @@ class ChimeraCam(ChimeraCLI):
             self.out("%s" % time.strftime("%c"))
             self.out(40 * "=")
 
+            # fixme: Should not be necessary. Bus should handle this.
             camera.expose_begin -= expose_begin
             camera.expose_complete -= expose_complete
             camera.readout_begin -= readout_begin
             camera.readout_complete -= readout_complete
+            if dome:
+                dome.sync_begin -= sync_begin
+                dome.sync_complete -= sync_complete
+            # fixme: end
+            
 
 
 def main():
