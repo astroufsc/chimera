@@ -147,21 +147,13 @@ class FakeCamera(CameraBase, FilterWheelBase):
         )
         self.readout_begin(image_request)
 
-        telescope = None
-        # fixme: ...
-        # telescopes = self.get_resources_by_class("Telescope")
-        # if telescopes:
-        #     telescope = self.get_proxy(telescopes[0])
-        # else:
-        #     telescope = None
+        telescope = self.get_proxy("/Telescope/0")
+        if not telescope.ping():
+            telescope = None
 
-        dome = None
-        # fixme: ...
-        # domes = self.get_resources_by_class("Dome")
-        # if domes:
-        #     dome = self.get_proxy(domes[0])
-        # else:
-        #     dome = None
+        dome = self.get_proxy("/Dome/0")
+        if not dome.ping():
+            dome = None
 
         if not telescope:
             self.log.debug("FakeCamera couldn't find telescope.")
