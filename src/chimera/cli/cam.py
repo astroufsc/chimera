@@ -240,6 +240,8 @@ class ChimeraCam(ChimeraCLI):
         help="Print available filter names.",
     )
     def filters(self, options):
+        if not hasattr(self, "wheel"):
+            self.exit("No Filter Wheel instrument configured.")
         if not self.wheel:
             self.exit(
                 "No Filter Wheel found. Edit chimera.config or pass --wheel (see --help)"
