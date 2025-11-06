@@ -470,14 +470,12 @@ class Image(UserDict):
             bz_filename = filename + ".bz2"
             with open(filename, "rb") as raw_fp:
                 with bz2.BZ2File(bz_filename, "wb", compresslevel=4) as bz_fp:
-                    print("bz2 open", filename)  # DEBUG
                     bz_fp.writelines(raw_fp)
             os.unlink(filename)
         elif format.lower() == "gzip":
             gz_filename = filename + ".gz"
             with open(filename, "rb") as raw_fp:
                 with gzip.GzipFile(gz_filename, "wb", compresslevel=5) as gz_fp:
-                    print("gzip open", filename)  # DEBUG
                     gz_fp.writelines(raw_fp)
             os.unlink(filename)
         elif format.lower().startswith("fits_"):
@@ -487,7 +485,6 @@ class Image(UserDict):
             zip_filename = filename + ".zip"
             with open(filename, "rb") as raw_fp:
                 with zipfile.ZipFile(zip_filename, "w", zipfile.ZIP_DEFLATED) as zip_fp:
-                    print("zip open", filename)  # DEBUG
                     zip_fp.writestr(os.path.basename(filename), raw_fp.read())
             os.unlink(filename)
 
