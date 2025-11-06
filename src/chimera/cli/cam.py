@@ -54,6 +54,13 @@ class ChimeraCam(ChimeraCLI):
             help_group="CAM",
         )
 
+        self.add_instrument(
+            name="dome",
+            cls="Dome",
+            help="Dome instrument to be used. If blank, try to guess from chimera.config",
+            help_group="CAM",
+        )
+
         self.add_help_group("EXPOSE", "Exposure control")
         self.add_parameters(
             dict(
@@ -584,14 +591,7 @@ class ChimeraCam(ChimeraCLI):
         camera.readout_complete += readout_complete
 
         # do we have a Dome?
-        dome = None
-        # remote_manager = camera.get_manager()
-        # try:
-        #     dome = remote_manager.get_proxy(
-        #         remote_manager.get_resources_by_class("Dome")[0]
-        #     )
-        # except ObjectNotFoundException:
-        #     pass
+        dome = self.dome if hasattr(self, "dome") else None
 
         if dome:
 
