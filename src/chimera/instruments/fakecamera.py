@@ -83,7 +83,7 @@ class FakeCamera(CameraBase):
         status = CameraStatus.OK
 
         t = 0
-        self.__last_frame_start = dt.datetime.utcnow()
+        self.__last_frame_start = dt.datetime.now(dt.timezone.utc)
         while t < image_request["exptime"]:
             # [ABORT POINT]
             if self.abort.is_set():
@@ -172,7 +172,7 @@ class FakeCamera(CameraBase):
                 self.log.debug("Dome open? " + str(dome.is_slit_open()))
 
                 if dome.is_slit_open() and self["use_dss"]:
-                    dome_az = dome.get_az().to_d()
+                    dome_az = dome.get_az()
                     tel_az = telescope.get_az()
 
                     tel_position = Position.from_ra_dec(
