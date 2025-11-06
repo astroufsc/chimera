@@ -248,8 +248,6 @@ class ChimeraCam(ChimeraCLI):
     )
     def filters(self, options):
         if not hasattr(self, "wheel"):
-            self.exit("No Filter Wheel instrument configured.")
-        if not self.wheel:
             self.exit(
                 "No Filter Wheel found. Edit chimera.config or pass --wheel (see --help)"
             )
@@ -499,7 +497,10 @@ class ChimeraCam(ChimeraCLI):
 
             # validate filters
             for filter_name in filter_list:
-                if self.wheel and filter_name not in self.wheel.get_filters():
+                if (
+                    hasattr(self, "wheel")
+                    and filter_name not in self.wheel.get_filters()
+                ):
                     self.err("Invalid filter '%s'" % filter_name)
                     self.exit()
 
@@ -627,15 +628,19 @@ class ChimeraCam(ChimeraCLI):
             self.out("Full Frame")
 
         def change_filter(f):
-            if options.filter is not None and self.wheel:
+            if not hasattr(self, "wheel"):
+                self.exit(
+                    "No Filter Wheel found. Edit chimera.config or pass --wheel (see --help)"
+                )
+
+            if options.filter is not None and hasattr(self, "wheel"):
                 self.out(40 * "=")
                 try:
                     self.out("Changing to filter %s... " % f, end="")
                     self.wheel.set_filter(f)
                     self.out("OK")
                 except InvalidFilterPositionException as e:
-                    self.err("ERROR. Couldn't move filter wheel to %s. (%s)" % (f, e))
-                    self.exit()
+                    self.exit("ERROR. Couldn't move filter wheel to %s. (%s)" % (f, e))
 
         # finally, expose
         start = time.time()
@@ -702,7 +707,6 @@ class ChimeraCam(ChimeraCLI):
                 dome.sync_begin -= sync_begin
                 dome.sync_complete -= sync_complete
             # fixme: end
-            
 
 
 def main():
