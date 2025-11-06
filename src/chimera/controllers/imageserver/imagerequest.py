@@ -1,6 +1,6 @@
 import logging
 
-from chimera.core.exceptions import ChimeraValueError, ObjectNotFoundException
+from chimera.core.exceptions import ChimeraValueError
 from chimera.interfaces.camera import Bitpix, Shutter
 
 log = logging.getLogger(__name__)
@@ -129,28 +129,19 @@ class ImageRequest(dict):
     def _fetch_pre_headers(self, chimera_obj):
         auto = []
         if self.auto_collect_metadata:
-            for cls in (
-                "Site",
-                "Camera",
-                "Dome",
-                "FilterWheel",
-                "Focuser",
-                "Telescope",
-                "WeatherStation",
-                "SeeingMonitor",
-            ):
-                # fixme: ...
-                # locations = chimera_obj.get_resources_by_class(cls)
-                locations = []
-                if len(locations) == 1:
-                    auto.append(str(locations[0]))
-                elif len(locations) == 0:
-                    log.warning(f"No {cls} available, header would be incomplete.")
-                else:
-                    log.warning(
-                        f"More than one {cls} available, header may be incorrect. Using the first {cls}."
-                    )
-                    auto.append(str(locations[0]))
+            auto += [
+                f"/{cls}/0"
+                for cls in (
+                    "Site",
+                    "Camera",
+                    "Dome",
+                    "FilterWheel",
+                    "Focuser",
+                    "Telescope",
+                    "WeatherStation",
+                    "SeeingMonitor",
+                )
+            ]
 
             self._get_headers(chimera_obj, auto + self.metadata_pre)
 
@@ -158,13 +149,10 @@ class ImageRequest(dict):
         self._get_headers(chimera_obj, self.metadata_post)
 
     def _get_headers(self, chimera_obj, locations):
-
         for location in locations:
-
             if location not in self._proxies:
-                try:
-                    self._proxies[location] = chimera_obj.get_proxy(location)
-                except Exception:
-                    log.exception(f"Unable to get metadata from {location}")
-
-            self.headers += self._proxies[location].get_metadata(self)
+                self._proxies[location] = chimera_obj.get_proxy(location)
+            try:
+                self.headers += self._proxies[location].get_metadata(self)
+            except Exception:
+                log.warning(f"Unable to get metadata from {location}")

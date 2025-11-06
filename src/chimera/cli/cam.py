@@ -7,12 +7,11 @@ import os
 import sys
 import time
 
-from chimera.core.exceptions import ObjectNotFoundException, print_exception
+from chimera.core.exceptions import print_exception
 from chimera.core.version import chimera_version
 from chimera.interfaces.camera import CameraFeature, CameraStatus
 from chimera.interfaces.filterwheel import InvalidFilterPositionException
 from chimera.util.ds9 import DS9
-
 from chimera.util.image import Image
 
 from .cli import ChimeraCLI, ParameterType, action
@@ -691,6 +690,11 @@ class ChimeraCam(ChimeraCLI):
             self.out(40 * "=")
             self.out("%s" % time.strftime("%c"))
             self.out(40 * "=")
+
+            camera.expose_begin -= expose_begin
+            camera.expose_complete -= expose_complete
+            camera.readout_begin -= readout_begin
+            camera.readout_complete -= readout_complete
 
 
 def main():
