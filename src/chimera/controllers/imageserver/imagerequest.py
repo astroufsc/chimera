@@ -114,14 +114,16 @@ class ImageRequest(dict):
 
         self._fetch_pre_headers(chimera_obj)
 
-        # fixme: ...
-        # if self["wait_dome"]:
-        #     try:
-        #         dome = chimera_obj.get_proxy(chimera_obj.get_resources_by_class("Dome")[0])
-        #         dome.sync_with_tel()
-        #         log.debug("Dome slit position synchronized with telescope position.")
-        #     except (ObjectNotFoundException, IndexError):
-        #         log.info("No dome present, taking exposure without dome sync.")
+        if self["wait_dome"]:
+            dome = chimera_obj.get_proxy("/Dome/0")
+            if not dome.ping():
+                log.info("No dome present, taking exposure without dome sync.")
+                return
+            dome.sync_with_tel()
+            if dome.is_sync_with_tel():
+                log.debug("Dome slit position synchronized with telescope position.")
+            else:
+                log.info("Dome slit position could not be synchronized with telescope position.")
 
     def end_exposure(self, chimera_obj):
         self._fetch_post_headers(chimera_obj)

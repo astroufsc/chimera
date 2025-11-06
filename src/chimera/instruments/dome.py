@@ -90,7 +90,7 @@ class DomeBase(ChimeraObject, DomeSlew, DomeSlit, DomeFlap, DomeSync):
     def _get_telescope_az(self) -> float:
         if not self.telescope.ping():
             self.log.warning(
-                f"Could not contact {self['telescope']}, changin to Stand mode."
+                f"Could not contact {self['telescope']}, switching to Stand mode."
             )
             self.stand()
             return self.get_az()
@@ -105,7 +105,7 @@ class DomeBase(ChimeraObject, DomeSlew, DomeSlit, DomeFlap, DomeSync):
             self.queue.put(az)
         else:
             self.log.debug(
-                "[control] standing"
+                "[control] no need to move"
                 f" (dome az={self.get_az()}, telescope az={az}, delta={abs(self.get_az() - az)}.)"
             )
 
@@ -144,18 +144,18 @@ class DomeBase(ChimeraObject, DomeSlew, DomeSlit, DomeFlap, DomeSync):
         self._mode = Mode.Stand
 
     @lock
-    def sync_with_telescope(self):
+    def sync_with_tel(self):
+        self.log.debug("Synchronizing dome with telescope...")
         self.sync_begin()
-
         if self.get_mode() != Mode.Stand:
             self._move_if_needed(self._get_telescope_az())
             self._process_queue()
-
+        self.log.debug("Sync complete.")
         self.sync_complete()
 
     @lock
-    def is_sync_with_telescope(self):
-        return self._need_to_move(self._get_telescope_az())
+    def is_sync_with_tel(self):
+        return not self._need_to_move(self._get_telescope_az())
 
     def get_mode(self):
         return self._mode
