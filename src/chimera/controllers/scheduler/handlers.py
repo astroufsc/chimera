@@ -19,7 +19,6 @@ def requires(instrument):
 
 
 class ActionHandler:
-
     @staticmethod
     def process(action):
         pass
@@ -34,7 +33,6 @@ class ActionHandler:
 
 
 class PointHandler(ActionHandler):
-
     @staticmethod
     @requires("telescope")
     @requires("dome")
@@ -101,7 +99,6 @@ class PointHandler(ActionHandler):
 
     @staticmethod
     def log(action):
-
         offset_ns_str = (
             ""
             if action.offset_ns is None
@@ -148,12 +145,10 @@ class PointHandler(ActionHandler):
 
 
 class ExposeHandler(ActionHandler):
-
     @staticmethod
     @requires("camera")
     @requires("filterwheel")
     def process(action):
-
         camera = ExposeHandler.camera
         filterwheel = ExposeHandler.filterwheel
 
@@ -196,7 +191,6 @@ class ExposeHandler(ActionHandler):
 
 
 class AutoFocusHandler(ActionHandler):
-
     @staticmethod
     @requires("autofocus")
     def process(action):
@@ -223,7 +217,6 @@ class AutoFocusHandler(ActionHandler):
 
 
 class AutoFlatHandler(ActionHandler):
-
     @staticmethod
     @requires("autoflat")
     def process(action):
@@ -247,11 +240,9 @@ class AutoFlatHandler(ActionHandler):
 
 
 class PointVerifyHandler(ActionHandler):
-
     @staticmethod
     @requires("point_verify")
     def process(action):
-
         # FIXME: better pv interface
         pv = PointVerifyHandler.point_verify
 

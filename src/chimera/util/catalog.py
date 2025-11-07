@@ -1,5 +1,4 @@
 class Catalog:
-
     def get_name(self):
         """
         Return the catalog name

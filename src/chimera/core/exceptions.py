@@ -49,7 +49,6 @@ def _str_exception(e: Exception):
 
 
 class ChimeraException(Exception):  # noqa: N818
-
     def __init__(self, msg="", *args):
         Exception.__init__(self, msg, *args)
 

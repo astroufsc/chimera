@@ -10,7 +10,6 @@ from chimera.util.ds9 import DS9
 
 @pytest.mark.skip
 class TestDS9:
-
     def test_basics(self):
         ds9 = DS9()
         assert ds9 is not None

@@ -93,7 +93,6 @@ class Position:
 
     @staticmethod
     def from_ra_dec(ra, dec, epoch=Epoch.J2000):
-
         try:
             if isinstance(ra, str):
                 ra = Coord.from_hms(ra)
@@ -235,7 +234,6 @@ class Position:
         return True
 
     def __init__(self, coords, epoch=Epoch.J2000, system=System.CELESTIAL):
-
         self._coords = coords
         self.system = System[str(system)]
         self.epoch = Epoch[str(epoch)]
@@ -380,7 +378,9 @@ class Position:
     # http://www.nmt.edu/tcc/help/lang/python/examples/sidereal/ims/
 
     @staticmethod
-    def ra_dec_to_alt_az(ra: float, dec: float, latitude: float, lst: float | None) -> tuple[float, float]:
+    def ra_dec_to_alt_az(
+        ra: float, dec: float, latitude: float, lst: float | None
+    ) -> tuple[float, float]:
         # ra in hours, dec in degrees, lat in degrees, lst in radians
         # returns alt, az in degrees
         dec_r = CoordUtil.coord_to_r(Coord.from_d(dec))
@@ -390,10 +390,14 @@ class Position:
 
         alt_r, az_r = CoordUtil.coord_rotate(dec_r, lat_r, ha_r)
 
-        return float(Coord.from_r(CoordUtil.make_valid_180_to_180(alt_r)).to_d()), float(Coord.from_r(CoordUtil.make_valid_0_to_360(az_r)).to_d())
+        return float(
+            Coord.from_r(CoordUtil.make_valid_180_to_180(alt_r)).to_d()
+        ), float(Coord.from_r(CoordUtil.make_valid_0_to_360(az_r)).to_d())
 
     @staticmethod
-    def alt_az_to_ra_dec(alt: float, az: float, latitude: float, lst: float | None) -> tuple[float, float]:
+    def alt_az_to_ra_dec(
+        alt: float, az: float, latitude: float, lst: float | None
+    ) -> tuple[float, float]:
         # alt, az, lat in degrees, lst in radians
         # returns ra in hours, dec in degrees
         alt_r = CoordUtil.coord_to_r(Coord.from_d(alt))
@@ -404,4 +408,6 @@ class Position:
 
         ra = CoordUtil.ha_to_ra(ha_r, lst)
 
-        return float(CoordUtil.make_valid_0_to_360(ra).to_h()), float(CoordUtil.make_valid_180_to_180(dec_r).to_d())
+        return float(CoordUtil.make_valid_0_to_360(ra).to_h()), float(
+            CoordUtil.make_valid_180_to_180(dec_r).to_d()
+        )

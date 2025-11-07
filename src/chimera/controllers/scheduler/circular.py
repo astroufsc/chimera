@@ -7,7 +7,6 @@ log = logging.getLogger(__name__)
 
 
 class CircularScheduler(SequentialScheduler):
-
     def __init__(self):
         SequentialScheduler.__init__(self)
 

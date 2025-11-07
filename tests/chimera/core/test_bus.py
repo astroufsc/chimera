@@ -159,9 +159,9 @@ def pubsub_test(*, n_subscribers: int, n_events: int, src_bus: Bus, dst_bus: Bus
         return MagicMock(side_effect=on_slew_begin)
 
     callbacks = [create_callback(i) for i in range(n_subscribers)]
-    assert (
-        len(set([id(cb) for cb in callbacks])) == n_subscribers
-    ), "callbacks must be unique"
+    assert len(set([id(cb) for cb in callbacks])) == n_subscribers, (
+        "callbacks must be unique"
+    )
 
     event = "slew_begin"
 

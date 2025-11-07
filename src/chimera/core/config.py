@@ -14,9 +14,7 @@ log = logging.getLogger(__name__)
 
 
 class Option:
-
     def __init__(self, name, value, checker):
-
         self._name = name
         self._value = value
         self._default = value
@@ -26,7 +24,6 @@ class Option:
         return f"<Option {self._name}={self._value}>"
 
     def set(self, value):
-
         try:
             old_value = self._value
 
@@ -42,13 +39,11 @@ class Option:
 
 
 class Checker:
-
     def check(self, value):
         pass
 
 
 class IgnoreChecker(Checker):
-
     def __init__(self):
         Checker.__init__(self)
 
@@ -57,7 +52,6 @@ class IgnoreChecker(Checker):
 
 
 class IntChecker(Checker):
-
     def __init__(self):
         Checker.__init__(self)
 
@@ -87,7 +81,6 @@ class IntChecker(Checker):
 
 
 class FloatChecker(Checker):
-
     def __init__(self):
         Checker.__init__(self)
 
@@ -100,7 +93,6 @@ class FloatChecker(Checker):
             return float(value)
 
         if isinstance(value, str):
-
             # try to convert to int
             try:
                 tmp = float(value)
@@ -117,7 +109,6 @@ class FloatChecker(Checker):
 
 
 class StringChecker(Checker):
-
     def __init__(self):
         Checker.__init__(self)
 
@@ -131,7 +122,6 @@ class StringChecker(Checker):
 
 
 class NoneChecker(Checker):
-
     def __init__(self):
         Checker.__init__(self)
 
@@ -141,7 +131,6 @@ class NoneChecker(Checker):
 
 
 class BoolChecker(Checker):
-
     def __init__(self):
         Checker.__init__(self)
 
@@ -160,7 +149,6 @@ class BoolChecker(Checker):
         # cause a lot of problems in OptionChecker accept the same as python
         # truth tables assume
         if isinstance(value, (int, float)):
-
             if value == 1:
                 return True
 
@@ -168,7 +156,6 @@ class BoolChecker(Checker):
                 return False
 
         if isinstance(value, str):
-
             value = value.strip().lower()
 
             if value in self._truth_table:
@@ -181,19 +168,16 @@ class BoolChecker(Checker):
 
 
 class OptionsChecker(Checker):
-
     def __init__(self, options):
         Checker.__init__(self)
 
         self._options = self._read_options(options)
 
     def _read_options(self, opt):
-
         # options = [ {"value": value, "checker", checker}, ...]
         options = []
 
         for value in opt:
-
             if isinstance(value, int):
                 options.append({"value": value, "checker": IntChecker()})
                 continue
@@ -213,9 +197,7 @@ class OptionsChecker(Checker):
         return options
 
     def check(self, value):
-
         for option in self._options:
-
             try:
                 tmp = option["checker"].check(value)
 
@@ -231,7 +213,6 @@ class OptionsChecker(Checker):
 
 
 class RangeChecker(Checker):
-
     def __init__(self, value):
         Checker.__init__(self)
 
@@ -245,14 +226,12 @@ class RangeChecker(Checker):
             self._checker = IntChecker()
 
     def check(self, value):
-
         try:
             tmp = self._checker.check(value)
         except OptionConversionException:
             raise OptionConversionException(f"'{str(value)}' isn't a valid option.")
 
         else:
-
             # inclusive
             if (tmp >= self._min) and (tmp <= self._max):
                 return tmp
@@ -263,14 +242,12 @@ class RangeChecker(Checker):
 
 
 class EnumChecker(Checker):
-
     def __init__(self, value):
         Checker.__init__(self)
 
         self.enum_type = value.enumtype
 
     def check(self, value):
-
         if isinstance(value, Enum):
             if value in self.enum_type:
                 return value
@@ -286,7 +263,6 @@ class EnumChecker(Checker):
 
 
 class CoordOption(Option):
-
     def __init__(self, name, value, checker):
         Option.__init__(self, name, value, checker)
 
@@ -303,12 +279,10 @@ class CoordOption(Option):
 
 
 class CoordChecker(Checker):
-
     def __init__(self, value):
         Checker.__init__(self)
 
     def check(self, value, state=None):
-
         if not isinstance(value, Coord):
             try:
                 return Coord.from_state(value, state)
@@ -320,7 +294,6 @@ class CoordChecker(Checker):
 
 
 class PositionOption(Option):
-
     def __init__(self, name, value, checker):
         Option.__init__(self, name, value, checker)
 
@@ -341,7 +314,6 @@ class PositionOption(Option):
 
 
 class PositionChecker(Checker):
-
     def __init__(self, value):
         Checker.__init__(self)
 
@@ -350,20 +322,16 @@ class PositionChecker(Checker):
 
 
 class Config:
-
     def __init__(self, obj):
-
         if isinstance(obj, dict):
             self._options = self._read_options(obj)
         else:
             self._options = self._read_options(obj.__config__)
 
     def _read_options(self, opt):
-
         options = {}
 
         for name, value in list(opt.items()):
-
             if isinstance(value, int):
                 options[name] = Option(name, value, IntChecker())
                 continue
@@ -426,7 +394,6 @@ class Config:
         return len(self._options)
 
     def __getitem__(self, name):
-
         if not isinstance(name, str):
             raise TypeError
 
@@ -437,7 +404,6 @@ class Config:
             raise KeyError(f"invalid option: {name}.")
 
     def __setitem__(self, name, value):
-
         # if value exists, run template checker and set _config
         if name in self:
             return self._options[name].set(value)
@@ -470,7 +436,6 @@ class Config:
         return [(name, value) for name, value in self._options.items()]
 
     def __iadd__(self, other):
-
         if isinstance(other, (Config, dict)):
             return self
 

@@ -5,7 +5,6 @@ from http.server import HTTPServer, SimpleHTTPRequestHandler
 
 
 class ImageServerHTTPHandler(SimpleHTTPRequestHandler):
-
     def do_GET(self):  # noqa: N802
         if self.path.startswith("/image/"):
             self.image()
@@ -39,7 +38,6 @@ class ImageServerHTTPHandler(SimpleHTTPRequestHandler):
             f.close()
 
     def image(self):
-
         args = self.path.split("/image/")
 
         if len(args) < 2:
@@ -52,7 +50,6 @@ class ImageServerHTTPHandler(SimpleHTTPRequestHandler):
                 self.response_file(img.filename, "image/fits")
 
     def list(self):
-
         to_return = "<table><tr><th>Image ID</th><th>Path</th></tr>"
         keys = list(self.server.ctrl.images_by_path.keys())
         keys.sort()
@@ -66,7 +63,6 @@ class ImageServerHTTPHandler(SimpleHTTPRequestHandler):
 
 
 class ImageServerHTTP(threading.Thread):
-
     def __init__(self, ctrl):
         threading.Thread.__init__(self)
         self.daemon = True
@@ -75,7 +71,6 @@ class ImageServerHTTP(threading.Thread):
         self.die = threading.Event()
 
     def run(self):
-
         srv = HTTPServer(
             (self.ctrl["http_host"], self.ctrl["http_port"]), ImageServerHTTPHandler
         )

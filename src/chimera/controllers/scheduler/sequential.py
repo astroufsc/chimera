@@ -10,13 +10,11 @@ log = logging.getLogger(__name__)
 
 
 class SequentialScheduler(IScheduler):
-
     def __init__(self):
         self.run_queue = None
         self.machine = None
 
     def reschedule(self, machine):
-
         self.machine = machine
         self.run_queue = Queue(-1)
 
@@ -47,7 +45,6 @@ class SequentialScheduler(IScheduler):
         return None
 
     def done(self, task, error=None):
-
         if error:
             log.debug(f"Error processing program {str(task)}.")
             log.exception(error)

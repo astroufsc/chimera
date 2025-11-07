@@ -23,6 +23,7 @@ class Bitpix(Enum):
     float32 = "float32"
     float64 = "float64"
 
+
 # Special features parameters can be passed as ImageRequest
 # parameters. The Camera.supports(feature) method can be used
 # to ask if the current camera support a given feature (useful for
@@ -278,7 +279,6 @@ class CameraTemperature(Camera):
 
 
 class CameraInformation(Camera):
-
     # for get_binnings and get_adcs, the instrument should return a
     # hash with keys as Human readable strings, which could be later passed as a
     # ImageRequest and be recognized by the intrument. Those strings can

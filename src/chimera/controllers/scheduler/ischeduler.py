@@ -1,5 +1,4 @@
 class IScheduler:
-
     def reschedule(self, machine):
         """
         Re-schedule using current database state. This will setup a

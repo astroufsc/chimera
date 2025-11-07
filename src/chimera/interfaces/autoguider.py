@@ -21,7 +21,6 @@ class StarNotFoundException(ChimeraException):
 
 
 class Autoguider(Interface):
-
     __config__ = {
         "site": "/Site/0",  # Telescope Site.
         "telescope": "/Telescope/0",  # Telescope instrument that will be guided by the autoguider.

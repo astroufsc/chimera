@@ -34,11 +34,9 @@ fired_events = {}
 
 
 class TelescopeTest:
-
     telescope = ""
 
     def assert_events(self, slew_status):
-
         # for every exposure, we need to check if all events were fired in the right order
         # and with the right parameters
 
@@ -52,7 +50,6 @@ class TelescopeTest:
         assert fired_events["slew_complete"][2] == slew_status
 
     def setup_events(self):
-
         def slew_begin_callback(position):
             fired_events["slew_begin"] = (time.time(), position)
 
@@ -64,7 +61,6 @@ class TelescopeTest:
         tel.slew_complete += slew_complete_callback
 
     def test_slew(self):
-
         site = self.manager.get_proxy("/Site/0")
 
         dest = Position.from_ra_dec(site.LST(), site["latitude"])
@@ -87,7 +83,6 @@ class TelescopeTest:
         self.assert_events(TelescopeStatus.OK)
 
     def test_slew_abort(self):
-
         site = self.manager.get_proxy("/Site/0")
 
         # go to know position
@@ -133,7 +128,6 @@ class TelescopeTest:
         self.assert_events(TelescopeStatus.ABORTED)
 
     def test_sync(self):
-
         # get current position, drift the scope, and sync on the first
         # position (like done when aligning the telescope).
 
@@ -157,7 +151,6 @@ class TelescopeTest:
 
     @pytest.mark.skip
     def test_park(self):
-
         def print_position():
             print(self.tel.get_position_ra_dec(), self.tel.get_position_alt_az())
             sys.stdout.flush()
@@ -206,7 +199,6 @@ class TelescopeTest:
     pytest.mark.skip("FIXME: make a real test.")
 
     def test_jog(self):
-
         print()
 
         dt = Coord.from_dms("00:20:00")
@@ -284,9 +276,7 @@ class TelescopeTest:
 # setup real and fake tests
 #
 class TestFakeTelescope(FakeHardwareTest, TelescopeTest):
-
     def setup(self):
-
         self.manager = Manager(port=8000)
 
         self.manager.add_class(
@@ -314,9 +304,7 @@ class TestFakeTelescope(FakeHardwareTest, TelescopeTest):
 
 
 class TestRealTelescope(RealHardwareTest, TelescopeTest):
-
     def setup(self):
-
         self.manager = Manager(port=8000)
 
         self.manager.add_class(

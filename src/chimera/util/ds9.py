@@ -13,7 +13,6 @@ except ImportError:
 
 
 def xpa_access(template="ds9"):
-
     try:
         p = subprocess.Popen(
             f"xpaaccess -v {template}", stdout=subprocess.PIPE, shell=True
@@ -43,7 +42,6 @@ class DS9:
     """
 
     def __init__(self, open=False):
-
         if not have_ds9:
             raise OSError(
                 "No DS9 available. Check if you have DS9 and XPA"
@@ -75,7 +73,6 @@ class DS9:
             self.set("exit")
 
     def display_image(self, image, frame=1):
-
         if os.path.exists(image.filename):
             self.display_file(filename=image.filename, frame=frame)
         else:

@@ -74,7 +74,6 @@ class DCFocuser(FocuserBase):
         self._last_time_log = None
 
     def __start__(self):
-
         # range setting
         self._range = (0, int(self["dt"] / float(self["pulse_dt"])))
         if self._range[1] <= 0:
@@ -150,7 +149,6 @@ class DCFocuser(FocuserBase):
         return True
 
     def _move(self, direction, steps):
-
         if not self._in_range(direction, steps):
             raise InvalidFocusPositionException(f"{steps} is outside focuser limits.")
 
@@ -162,7 +160,6 @@ class DCFocuser(FocuserBase):
         return True
 
     def _in_range(self, direction, n):
-
         # Assumes:
         #   0 -------  N
         #  IN         OUT

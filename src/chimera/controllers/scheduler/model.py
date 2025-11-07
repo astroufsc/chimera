@@ -73,7 +73,6 @@ class Program(Base):
 
 
 class Action(Base):
-
     id = Column(Integer, primary_key=True)
     program_id = Column(Integer, ForeignKey("program.id"))
     action_type = Column("type", String(100))

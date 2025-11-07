@@ -26,7 +26,6 @@ class Target(Enum):
 
 
 class PointVerify(Interface):
-
     __config__ = {
         "camera": "/Camera/0",  # Camera attached to the telescope.
         "filterwheel": "/FilterWheel/0",  # Filterwheel, if exists.

@@ -26,19 +26,17 @@ fired_events = {}
 
 
 def assert_dome_az(dome_az, other_az, eps):
-    assert (
-        abs(dome_az - other_az) <= eps
-    ), f"dome az={dome_az} other az={other_az} (eps={eps})"
+    assert abs(dome_az - other_az) <= eps, (
+        f"dome az={dome_az} other az={other_az} (eps={eps})"
+    )
 
 
 class DomeTest:
-
     dome = ""
     telescope = ""
     manager = None
 
     def assert_events(self, slew_status=None, sync=False):
-
         # for every exposure, we need to check if all events were fired in the right order
         # and with the right parameters
 
@@ -58,7 +56,6 @@ class DomeTest:
             assert fired_events["sync_complete"][0] > fired_events["sync_begin"][0]
 
     def setup_events(self):
-
         def slew_begin_clbk(position):
             fired_events["slew_begin"] = (time.time(), position)
 
@@ -78,14 +75,12 @@ class DomeTest:
         dome.sync_complete += sync_complete_clbk
 
     def test_stress_dome_track(self):
-
         dome = self.manager.get_proxy(self.dome)
         tel = self.manager.get_proxy(self.telescope)
 
         dome.track()
 
         for i in range(10):
-
             self.setup_events()
 
             ra = f"{random.randint(7, 15)} {random.randint(0, 59)} 00"
@@ -126,7 +121,6 @@ class DomeTest:
         assert dome.get_az() >= 0
 
     def test_slew_to_az(self):
-
         dome = self.manager.get_proxy(self.dome)
 
         start = dome.get_az()
@@ -143,7 +137,6 @@ class DomeTest:
         self.assert_events(DomeStatus.OK)
 
     def test_slit(self):
-
         dome = self.manager.get_proxy(self.dome)
 
         dome.open_slit()
@@ -157,9 +150,7 @@ class DomeTest:
 # setup real and fake tests
 #
 class TestFakeDome(FakeHardwareTest, DomeTest):
-
     def setup(self):
-
         self.manager = Manager()
 
         self.manager.add_class(
@@ -190,9 +181,7 @@ class TestFakeDome(FakeHardwareTest, DomeTest):
 
 
 class TestRealDome(RealHardwareTest, DomeTest):
-
     def setup(self):
-
         self.manager = Manager()
 
         self.manager.add_class(

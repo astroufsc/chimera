@@ -50,7 +50,6 @@ class FakeFan(FanBase, FanState, FanControllableSpeed, FanControllableDirection)
 
     @lock
     def switch_on(self):
-
         self._current_status = FanStatus.ON
         self._is_on = True
 
@@ -60,7 +59,6 @@ class FakeFan(FanBase, FanState, FanControllableSpeed, FanControllableDirection)
 
     @lock
     def switch_off(self):
-
         self._current_status = FanStatus.OFF
         self._is_on = False
 
