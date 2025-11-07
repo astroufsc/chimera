@@ -2,7 +2,6 @@ import io
 import logging
 import logging.handlers
 import os.path
-import sys
 
 from rich.logging import RichHandler
 
@@ -18,7 +17,6 @@ __all__ = ["set_console_level"]
 
 
 class ChimeraFormatter(logging.Formatter):
-
     def __init__(self, fmt, datefmt):
         logging.Formatter.__init__(self, fmt, datefmt)
 
@@ -33,7 +31,6 @@ class ChimeraFormatter(logging.Formatter):
 
 
 class ChimeraFilter(logging.Filter):
-
     def __init__(self):
         # Explicitely set this filter for all loggers.
         logging.Filter.__init__(self, name="")
@@ -63,11 +60,8 @@ fmt = ChimeraFormatter(
 
 flt = ChimeraFilter()
 
-console_handler = logging.StreamHandler(sys.stderr)
-console_handler.setFormatter(fmt)
-console_handler.setLevel(logging.WARNING)
-console_handler.addFilter(flt)
-root.addHandler(RichHandler())
+console_handler = RichHandler()
+root.addHandler(console_handler)
 
 
 def set_console_level(level: int):

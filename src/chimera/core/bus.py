@@ -83,6 +83,14 @@ class Bus:
         self._inbound.bind()
 
         self._outbound: dict[str, Transport] = {}
+        self._outbound_failures: collections.defaultdict[str, int] = (
+            collections.defaultdict(int)
+        )
+
+        self._outbound_lock = threading.Lock()
+
+        # Maximum consecutive failures before we consider a connection dead
+        self._max_send_failures = 3
 
         self._encoder = msgspec.json.Encoder()
         self._decoder = msgspec.json.Decoder(Messages)
@@ -117,18 +125,41 @@ class Bus:
     def __del__(self):
         self.shutdown()
 
+    def _cleanup_dead_subscribers(self, bus_url: str) -> None:
+        with self._pubsub_lock:
+            # Iterate through all events and remove subscribers from the dead bus
+            for event_id in list(self._subscribers.keys()):
+                dead_subscribers = {
+                    sub
+                    for sub in self._subscribers[event_id]
+                    if sub.subscriber.bus == bus_url
+                }
+                for sub in dead_subscribers:
+                    self._subscribers[event_id].discard(sub)
+                    # Also clean up from callbacks if this is our local bus
+                    if event_id in self._callbacks and sub in self._callbacks[event_id]:
+                        del self._callbacks[event_id][sub]
+
+                # Clean up empty event_ids
+                if not self._subscribers[event_id]:
+                    del self._subscribers[event_id]
+                if event_id in self._callbacks and not self._callbacks[event_id]:
+                    del self._callbacks[event_id]
+
+        log.debug(f"bus: cleaned up subscribers from dead bus: {bus_url}")
+
     def _push(self, message: Messages) -> None:
         if self.is_dead():
             log.warning("push failed, bus is dead, not accepting new messages")
             return
 
         if message.dst_bus == self.url.bus:
-            # NOTE: we don't need to serialize/deserialize messages sent to ourselves
+            # NOTE: we don't need to serialize/deserialize messages sent locally
             #       but we must check if they are serializable, otherwise code won't
-            #       work when sending to other buses.
+            #       work when sending to remote buses.
             try:
                 _ = self._encoder.encode(message)
-            except Exception:
+            except msgspec.EncodeError:
                 log.exception(
                     f"bus: serialization issue, won't work on remote buses: {message}"
                 )
@@ -139,14 +170,57 @@ class Bus:
             else:
                 self._q[self.url.url].put(message)
         else:
-            if message.dst_bus not in self._outbound:
-                # TODO: define some policy to handle closing of these sockets when not in use
-                self._outbound[message.dst_bus] = create_transport(message.dst_bus)
-                # TODO: block or not?
-                self._outbound[message.dst_bus].connect()
+            with self._outbound_lock:
+                if message.dst_bus not in self._outbound:
+                    # TODO: define some policy to handle closing of these sockets when not in use
+                    self._outbound[message.dst_bus] = create_transport(message.dst_bus)
+                    try:
+                        self._outbound[message.dst_bus].connect()
+                        self._outbound_failures[message.dst_bus] = 0
+                    except Exception:
+                        log.exception(
+                            f"bus: failed to connect to outbound bus: {message.dst_bus}"
+                        )
+                        return
 
-            # FIXME: serialization could fail, handle it
-            self._outbound[message.dst_bus].send(self._encoder.encode(message))
+                try:
+                    message_bytes = self._encoder.encode(message)
+                except msgspec.EncodeError:
+                    log.exception(f"bus: failed to encode message: {message}")
+                    return
+
+                # Non-blocking send - if it fails, log and continue
+                # This prevents blocking on dead or slow remote buses
+                if not self._outbound[message.dst_bus].send(message_bytes):
+                    self._outbound_failures[message.dst_bus] += 1
+
+                    if (
+                        self._outbound_failures[message.dst_bus]
+                        >= self._max_send_failures
+                    ):
+                        log.debug(
+                            f"bus: too many failures ({self._outbound_failures[message.dst_bus]}) "
+                            f"sending to {message.dst_bus}, closing connection"
+                        )
+                        # Close and remove the dead connection
+                        try:
+                            self._outbound[message.dst_bus].close()
+                        except Exception:
+                            pass
+                        del self._outbound[message.dst_bus]
+                        del self._outbound_failures[message.dst_bus]
+
+                        # Clean up dead subscribers from this bus
+                        self._cleanup_dead_subscribers(message.dst_bus)
+                    else:
+                        log.debug(
+                            f"bus: failed to send message to {message.dst_bus} "
+                            f"({self._outbound_failures[message.dst_bus]}/{self._max_send_failures}), "
+                            f"remote bus may be dead or send buffer full"
+                        )
+                else:
+                    # Send succeeded, reset failure counter
+                    self._outbound_failures[message.dst_bus] = 0
 
     def _pop(
         self, /, key: str | None = None, timeout: float | None = None
@@ -170,8 +244,8 @@ class Bus:
         self._internal.bind()
 
         selector = selectors.DefaultSelector()
-        selector.register(self._inbound.fd(), selectors.EVENT_READ)
-        selector.register(self._internal.fd(), selectors.EVENT_READ)
+        selector.register(self._inbound.recv_fd(), selectors.EVENT_READ)
+        selector.register(self._internal.recv_fd(), selectors.EVENT_READ)
 
         self._running.set()
 
@@ -189,7 +263,7 @@ class Bus:
                 continue
 
             shutdown_requested = any(
-                [key.fd == self._internal.fd() for key, _ in events]
+                [key.fd == self._internal.recv_fd() for key, _ in events]
             )
             # NOTE: if asked for shutdown, the caller is already closing sockets, so we cannot
             #       handle anything more, so better exit here. If we implement a way to ack the
@@ -198,7 +272,7 @@ class Bus:
                 log.debug("bus: shutdown requested")
                 return
 
-            new_messages = any([key.fd == self._inbound.fd() for key, _ in events])
+            new_messages = any([key.fd == self._inbound.recv_fd() for key, _ in events])
             if new_messages:
                 recv_bytes = self._inbound.recv()
 

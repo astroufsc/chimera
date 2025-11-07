@@ -34,10 +34,11 @@ class ChimeraCLI:
             log.error(f"There was a problem reading your configuration file. ({e})")
             sys.exit(1)
 
-        if self.options.verbose == 1:
+        if self.options.verbose == 0:
+            chimera.core.log.set_console_level(logging.WARNING)
+        elif self.options.verbose == 1:
             chimera.core.log.set_console_level(logging.INFO)
-
-        if self.options.verbose > 1:
+        elif self.options.verbose >= 2:
             chimera.core.log.set_console_level(logging.DEBUG)
 
         if self.options.host is None:
