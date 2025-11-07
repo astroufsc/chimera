@@ -217,6 +217,7 @@ class Image(UserDict):
             elif len(url_parts) >= 2 and url_parts[1].startswith("http"):
                 http_url = url_parts[1]
                 return Image.from_file(http_url, fix=fix, mode=mode)
+        return None
 
     @staticmethod
     def from_file(filename, fix=False, mode="update"):
@@ -468,25 +469,54 @@ class Image(UserDict):
     def _do_compress(self, filename, format):
         if format.lower() == "bz2":
             bz_filename = filename + ".bz2"
-            with open(filename, "rb") as raw_fp:
-                with bz2.BZ2File(bz_filename, "wb", compresslevel=4) as bz_fp:
-                    bz_fp.writelines(raw_fp)
-            os.unlink(filename)
+            try:
+                with open(filename, "rb") as raw_fp:
+                    with bz2.BZ2File(bz_filename, "wb", compresslevel=4) as bz_fp:
+                        # Read in chunks to avoid memory issues with large files
+                        while True:
+                            chunk = raw_fp.read(8192)  # 8KB chunks
+                            if not chunk:
+                                break
+                            bz_fp.write(chunk)
+                os.unlink(filename)
+            except Exception:
+                # Clean up compressed file if compression failed
+                if os.path.exists(bz_filename):
+                    os.unlink(bz_filename)
+                raise
         elif format.lower() == "gzip":
             gz_filename = filename + ".gz"
-            with open(filename, "rb") as raw_fp:
-                with gzip.GzipFile(gz_filename, "wb", compresslevel=5) as gz_fp:
-                    gz_fp.writelines(raw_fp)
-            os.unlink(filename)
+            try:
+                with open(filename, "rb") as raw_fp:
+                    with gzip.GzipFile(gz_filename, "wb", compresslevel=5) as gz_fp:
+                        # Read in chunks to avoid memory issues with large files
+                        while True:
+                            chunk = raw_fp.read(8192)  # 8KB chunks
+                            if not chunk:
+                                break
+                            gz_fp.write(chunk)
+                os.unlink(filename)
+            except Exception:
+                # Clean up compressed file if compression failed
+                if os.path.exists(gz_filename):
+                    os.unlink(gz_filename)
+                raise
         elif format.lower().startswith("fits_"):
             # compression methods inherent to fits standard, are done when saving image.
             return
         else:  # zip
             zip_filename = filename + ".zip"
-            with open(filename, "rb") as raw_fp:
-                with zipfile.ZipFile(zip_filename, "w", zipfile.ZIP_DEFLATED) as zip_fp:
-                    zip_fp.writestr(os.path.basename(filename), raw_fp.read())
-            os.unlink(filename)
+            try:
+                with open(filename, "rb") as raw_fp:
+                    with zipfile.ZipFile(zip_filename, "w", zipfile.ZIP_DEFLATED) as zip_fp:
+                        # For zip, we need to read all at once due to writestr API
+                        zip_fp.writestr(os.path.basename(filename), raw_fp.read())
+                os.unlink(filename)
+            except Exception:
+                # Clean up compressed file if compression failed
+                if os.path.exists(zip_filename):
+                    os.unlink(zip_filename)
+                raise
 
     def compress(self, format="bz2", multiprocess=False):
         if multiprocess and sys.version_info[0:2] >= (2, 6):
@@ -494,6 +524,7 @@ class Image(UserDict):
 
             p = Process(target=self._do_compress, args=(self.filename, format))
             p.start()
+            p.join()  # Wait for the process to complete
         else:
             self._do_compress(self.filename, format)
 
