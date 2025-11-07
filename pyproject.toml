@@ -59,7 +59,6 @@ build-backend = "uv_build"
 
 [dependency-groups]
 dev = [
-    "black>=25.1.0",
     "memray>=1.18.0",
     "pre-commit>=4.1.0",
     "pystack>=1.5.1; sys_platform == 'linux'",
@@ -67,7 +66,7 @@ dev = [
     "pytest-memray>=1.8.0",
     "pytest-mock>=3.14.1",
     "pytest>=8.3.3",
-    "ruff>=0.9.4",
+    "ruff>=0.14.4",
 ]
 docs = ["furo>=2024.8.6", "sphinx>=8.1.3"]
 
