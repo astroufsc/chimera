@@ -1,5 +1,4 @@
 from chimera.controllers.imageserver.imageserver import ImageServer
-from chimera.util.output import red
 from chimera.core.exceptions import (
     ChimeraException,
     ClassLoaderException,
