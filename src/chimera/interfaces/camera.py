@@ -131,8 +131,8 @@ class CameraExpose(Camera):
         @param request: ImageRequest containing details of the image to be taken
         @type  request: ImageRequest
 
-        @return: tuple of L{str} Image URLs (empty if no one was taken)
-        @rtype: tuple(L{str})
+        @return: Iterable of L{str} Image URLs (empty if no one was taken)
+        @rtype: Iterable(L{str})
         """
 
     def abort_exposure(self, readout=True):
@@ -204,7 +204,7 @@ class CameraExpose(Camera):
         """
         Indicates that new readout is complete.
 
-        @param image: The just taken Image URL or None is status=[ERROR or ABORTED]..
+        @param image: The just taken Image URL or None if status=[ERROR or ABORTED].
         @type  image: L{str} or None
 
         @param status: The status of the current expose.
