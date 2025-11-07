@@ -7,7 +7,6 @@ log = logging.getLogger(__name__)
 
 
 class ImageRequest(dict):
-
     valid_keys = [
         "exptime",
         "frames",
@@ -24,7 +23,6 @@ class ImageRequest(dict):
     ]
 
     def __init__(self, **kwargs):
-
         defaults = {
             "exptime": 1.0,
             "frames": 1,
@@ -101,7 +99,6 @@ class ImageRequest(dict):
             )
 
     def __setitem__(self, key, value):
-
         if key not in ImageRequest.valid_keys:
             raise KeyError(f"{key} is not a valid key for ImageRequest")
 
@@ -111,7 +108,6 @@ class ImageRequest(dict):
         return f"exptime: {self['exptime']:.6f}, frames: {self['frames']}, shutter: {self['shutter']}, type: {self['type']}"
 
     def begin_exposure(self, chimera_obj):
-
         self._fetch_pre_headers(chimera_obj)
 
         if self["wait_dome"]:
@@ -123,7 +119,9 @@ class ImageRequest(dict):
             if dome.is_sync_with_tel():
                 log.debug("Dome slit position synchronized with telescope position.")
             else:
-                log.info("Dome slit position could not be synchronized with telescope position.")
+                log.info(
+                    "Dome slit position could not be synchronized with telescope position."
+                )
 
     def end_exposure(self, chimera_obj):
         self._fetch_post_headers(chimera_obj)

@@ -28,9 +28,7 @@ except (ImportError, RuntimeError, ClassLoaderException):
 
 
 class FocusFit:
-
     def __init__(self):
-
         # input
         self.temperature = None
         self.position = None
@@ -48,12 +46,11 @@ class FocusFit:
     best_focus = property(
         lambda self: (
             -self.B / (2 * self.A),
-            (-self.B**2 + 4 * self.A * self.C) / (4 * self.A),
+            (-(self.B**2) + 4 * self.A * self.C) / (4 * self.A),
         )
     )
 
     def plot(self, filename):
-
         global plot
 
         if plot:
@@ -76,7 +73,6 @@ class FocusFit:
             plt.savefig(filename)
 
     def log(self, filename):
-
         log = open(filename, "w")
 
         print("#", time.strftime("%c"), file=log)
@@ -113,7 +109,6 @@ class FocusFit:
 
     @staticmethod
     def fit(position, fwhm, temperature=None, minmax=None):
-
         if minmax and len(minmax) >= 2:
             idxs = (fwhm >= minmax[0]) & (fwhm <= minmax[1])
             position = position[idxs]
@@ -190,7 +185,6 @@ class Autofocus(ChimeraObject, IAutofocus):
         return "autofocus-{}".format(time.strftime("%Y%m%d-%H%M%S"))
 
     def _open_logger(self):
-
         if self._log_handler:
             self._close_logger()
 
@@ -219,7 +213,6 @@ class Autofocus(ChimeraObject, IAutofocus):
         minmax=(0, 30),
         debug=False,
     ):
-
         self._debugging = debug
 
         self.current_run = self._get_id()
@@ -294,7 +287,6 @@ class Autofocus(ChimeraObject, IAutofocus):
         star_found = self._find_best_star_to_focus(self._take_image_and_resolve_stars())
 
         if not star_found:
-
             tries = 0
 
             while not star_found and tries < self["max_tries"]:
@@ -327,7 +319,6 @@ class Autofocus(ChimeraObject, IAutofocus):
             self._debug_image = 0
 
     def _fit_focus(self, positions, minmax=None):
-
         focuser = self.get_focuser()
         initial_position = focuser.get_position()
 
@@ -337,7 +328,6 @@ class Autofocus(ChimeraObject, IAutofocus):
         valid_positions = []
 
         for i, position in enumerate(positions):
-
             self.log.debug(f"Moving focuser to {int(position)}")
 
             focuser.move_to(position)
@@ -420,14 +410,12 @@ class Autofocus(ChimeraObject, IAutofocus):
         return fit
 
     def _take_image_and_resolve_stars(self):
-
         frame_path, frame = self._take_image()
         stars = self._find_stars(frame_path)
 
         return stars
 
     def _take_image(self):
-
         if self._debugging:
             try:
                 frame = self._debug_images[self._debug_image]
@@ -457,7 +445,6 @@ class Autofocus(ChimeraObject, IAutofocus):
             if not os.path.exists(
                 image_path
             ):  # If image is on a remote server, donwload it.
-
                 #  If remote is windows, image_path will be c:\...\image.fits, so use ntpath instead of os.path.
                 if ":\\" in image_path:
                     modpath = ntpath
@@ -483,7 +470,6 @@ class Autofocus(ChimeraObject, IAutofocus):
             raise Exception("Could not take an image")
 
     def _find_stars(self, frame_path):
-
         frame = Image.from_file(frame_path)
 
         config = {}
@@ -523,13 +509,11 @@ class Autofocus(ChimeraObject, IAutofocus):
         return frame.extract(config, saveCatalog=catalog_name, saveConfig=config_name)
 
     def _find_best_star_to_focus(self, catalog):
-
         # simple plan: brighter star
         # FIXME: avoid "border" stars
         return self._find_brighter_star(catalog)
 
     def _find_brighter_star(self, catalog):
-
         fluxes = [star for star in catalog if star["FLAGS"] == 0]
 
         if not fluxes:  # empty catalog
@@ -539,7 +523,6 @@ class Autofocus(ChimeraObject, IAutofocus):
 
 
 if __name__ == "__main__":
-
     x = Autofocus()
     # x.check_pointing()
     x._take_image()

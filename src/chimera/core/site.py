@@ -120,7 +120,7 @@ class Site(ChimeraObject):
         if not date:
             date = self.ut()
         return float(self._get_ephem(date=date).sidereal_time())
-    
+
     def latitude_in_degs(self):
         return float(self["latitude"].to_d())
 
@@ -216,10 +216,18 @@ class Site(ChimeraObject):
     def ra_to_ha(self, ra: float):
         # ra in hours
         # returns ha in hours
-        return float(CoordUtil.ra_to_ha(Coord.from_h(ra), Coord.from_r(self.lst_in_rads())).to_h())
+        return float(
+            CoordUtil.ra_to_ha(
+                Coord.from_h(ra), Coord.from_r(self.lst_in_rads())
+            ).to_h()
+        )
 
     def ha_to_ra(self, ha: float):
-        return float(CoordUtil.ha_to_ra(Coord.from_h(ha), Coord.from_r(self.lst_in_rads())).to_h())
+        return float(
+            CoordUtil.ha_to_ra(
+                Coord.from_h(ha), Coord.from_r(self.lst_in_rads())
+            ).to_h()
+        )
 
     def ra_dec_to_alt_az(self, ra: float, dec: float, lst_in_rads: float | None = None):
         # ra in hours, dec in degrees, lst in radians
@@ -228,7 +236,9 @@ class Site(ChimeraObject):
             lst_in_rads = self.lst_in_rads()
         return Position.ra_dec_to_alt_az(ra, dec, self["latitude"].to_d(), lst_in_rads)
 
-    def alt_az_to_ra_dec(self, alt: float, az: float, lst_in_rads: float | None = None) -> tuple[float, float]:
+    def alt_az_to_ra_dec(
+        self, alt: float, az: float, lst_in_rads: float | None = None
+    ) -> tuple[float, float]:
         # alt, az in degrees, lst in radians
         # returns ra in hours, dec in degrees
         if not lst_in_rads:

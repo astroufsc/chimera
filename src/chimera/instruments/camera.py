@@ -20,7 +20,6 @@ from chimera.util.image import Image, ImageUtil
 
 
 class CameraBase(ChimeraObject, CameraExpose, CameraTemperature, CameraInformation):
-
     def __init__(self):
         ChimeraObject.__init__(self)
 
@@ -39,7 +38,6 @@ class CameraBase(ChimeraObject, CameraExpose, CameraTemperature, CameraInformati
 
     @lock
     def expose(self, request=None, **kwargs):
-
         self.__is_exposing.set()
 
         try:
@@ -48,9 +46,7 @@ class CameraBase(ChimeraObject, CameraExpose, CameraTemperature, CameraInformati
             self.__is_exposing.clear()
 
     def _base_expose(self, request, **kwargs):
-
         if request:
-
             if isinstance(request, ImageRequest):
                 image_request = request
             elif isinstance(request, dict):
@@ -89,7 +85,6 @@ class CameraBase(ChimeraObject, CameraExpose, CameraTemperature, CameraInformati
         images = []
 
         for frame_num in range(frames):
-
             # [ABORT POINT]
             if self.abort.is_set():
                 return tuple(images)
@@ -116,7 +111,6 @@ class CameraBase(ChimeraObject, CameraExpose, CameraTemperature, CameraInformati
         return tuple(images)
 
     def abort_exposure(self, readout=True):
-
         if not self.is_exposing():
             return False
 
@@ -130,7 +124,6 @@ class CameraBase(ChimeraObject, CameraExpose, CameraTemperature, CameraInformati
         return True
 
     def _save_image(self, image_request, image_data, extras=None):
-
         if extras is not None:
             self.extra_header_info.update(extras)
 

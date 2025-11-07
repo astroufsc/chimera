@@ -13,9 +13,7 @@ def equal(a, b, e=0.0001):
 
 
 class TestPosition:
-
     def test_ra_dec(self):
-
         p = Position.from_ra_dec("10:00:00", "20 00 00")
         assert p.dd() == (150, 20)
 
@@ -23,7 +21,6 @@ class TestPosition:
             Position.from_ra_dec("xyz", "abc")
 
     def test_alt_az(self):
-
         p = Position.from_alt_az("60", "200")
         assert p.dd() == (60, 200)
 
@@ -31,7 +28,6 @@ class TestPosition:
             Position.from_alt_az("xyz", "abc")
 
     def test_long_lat(self):
-
         p = Position.from_long_lat("-27 30", "-48 00")
         assert p.dd() == (-27.5, -48.0)
 
@@ -39,7 +35,6 @@ class TestPosition:
             Position.from_long_lat("xyz", "abc")
 
     def test_galactic(self):
-
         p = Position.from_galactic("-27 30", "-48 00")
         assert p.dd() == (-27.5, -48.0)
 
@@ -47,7 +42,6 @@ class TestPosition:
             Position.from_galactic("xyz", "abc")
 
     def test_ecliptic(self):
-
         p = Position.from_ecliptic("-27 30", "-48 00")
         assert p.dd() == (-27.5, -48.0)
 
@@ -55,7 +49,6 @@ class TestPosition:
             Position.from_ecliptic("xyz", "abc")
 
     def test_alt_az_ra_dec(self):
-
         alt_az = Position.from_alt_az("20:30:40", "222:11:00")
         lat = Coord.from_d(0)
         o = ephem.Observer()
@@ -71,7 +64,6 @@ class TestPosition:
         )
 
     def test_distances(self):
-
         p1 = Position.from_ra_dec("10:00:00", "0:0:0")
         p2 = Position.from_ra_dec("12:00:00", "0:0:0")
 
@@ -80,7 +72,6 @@ class TestPosition:
         assert p1.within(p2, Coord.from_d(30.01)) is True
 
     def test_change_epoch(self):
-
         sirius_j2000 = Position.from_ra_dec("06 45 08.9173", "-16 42 58.017")
         sirius_now = sirius_j2000.to_epoch(epoch=Epoch.NOW)
 

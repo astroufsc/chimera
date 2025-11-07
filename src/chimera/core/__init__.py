@@ -17,7 +17,6 @@ logging.getLogger().setLevel(logging.DEBUG)
 
 
 def init_sysconfig():
-
     if not os.path.exists(SYSTEM_CONFIG_DIRECTORY):
         try:
             logging.info(

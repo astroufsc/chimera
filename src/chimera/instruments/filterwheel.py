@@ -8,7 +8,6 @@ from chimera.interfaces.filterwheel import FilterWheel, InvalidFilterPositionExc
 
 
 class FilterWheelBase(ChimeraObject, FilterWheel):
-
     def __init__(self):
         ChimeraObject.__init__(self)
 

@@ -5,7 +5,6 @@ from chimera.core.exceptions import (
 
 
 def get_image_server(chimera_object) -> ImageServer:
-
     try:
         imgsrv = chimera_object.get_proxy("/ImageServer/0")
         imgsrv.ping()

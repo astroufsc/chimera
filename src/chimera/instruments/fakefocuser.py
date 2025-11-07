@@ -13,7 +13,6 @@ from chimera.interfaces.focuser import (
 
 
 class FakeFocuser(FocuserBase):
-
     def __init__(self):
         FocuserBase.__init__(self)
 

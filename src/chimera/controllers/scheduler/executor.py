@@ -28,9 +28,7 @@ log = logging.getLogger(__name__)
 
 
 class ProgramExecutor:
-
     def __init__(self, controller):
-
         self.current_handler = None
         self.current_action = None
 
@@ -50,11 +48,9 @@ class ProgramExecutor:
             self._inject_instrument(handler)
 
     def execute(self, program):
-
         self.must_stop.clear()
 
         for action in program.actions:
-
             # aborted?
             if self.must_stop.is_set():
                 raise ProgramExecutionAborted()

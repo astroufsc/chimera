@@ -508,7 +508,9 @@ class Image(UserDict):
             zip_filename = filename + ".zip"
             try:
                 with open(filename, "rb") as raw_fp:
-                    with zipfile.ZipFile(zip_filename, "w", zipfile.ZIP_DEFLATED) as zip_fp:
+                    with zipfile.ZipFile(
+                        zip_filename, "w", zipfile.ZIP_DEFLATED
+                    ) as zip_fp:
                         # For zip, we need to read all at once due to writestr API
                         zip_fp.writestr(os.path.basename(filename), raw_fp.read())
                 os.unlink(filename)

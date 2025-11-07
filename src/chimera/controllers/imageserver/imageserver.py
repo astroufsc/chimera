@@ -7,7 +7,6 @@ from chimera.util.image import Image
 
 
 class ImageServer(ChimeraObject):
-
     __config__ = {  # root directory where images are stored
         "images_dir": "~/images",
         # path relative to images_dir where images for a
@@ -29,7 +28,6 @@ class ImageServer(ChimeraObject):
         self.images_by_path = OrderedDict()
 
     def __start__(self):
-
         if self["http_host"] == "default":
             self["http_host"] = self.__bus__.url.host
 
@@ -45,7 +43,6 @@ class ImageServer(ChimeraObject):
             self._load_image_dir(load_dir)
 
     def __stop__(self):
-
         if self["httpd"]:
             self.http.stop()
 
@@ -53,11 +50,9 @@ class ImageServer(ChimeraObject):
             self.unregister(image)
 
     def _load_image_dir(self, dir):
-
         files_to_load = []
 
         if os.path.exists(dir):
-
             # build files list
             for root, dirs, files in os.walk(dir):
                 files_to_load += [

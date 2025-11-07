@@ -615,7 +615,6 @@ class ChimeraCLI:
                         f"Could not connect to {inst.cls} at {inst.url.url}. [Ping failed]"
                     )
 
-
     def _start_system(self, options: optparse.Values):
         self.config = ChimeraConfig.from_file(options.config)
         random_port = random.randint(10000, 60000)

@@ -68,7 +68,6 @@ class FakeTelescope(TelescopeBase, TelescopePier):
         return True
 
     def slew_to_ra_dec(self, ra: float, dec: float, epoch=None):
-
         # TODO: remove checks after Position dependency is removed
         if epoch is None:
             epoch = 2000
@@ -92,7 +91,6 @@ class FakeTelescope(TelescopeBase, TelescopePier):
 
         t = 0
         while t < 5:
-
             if self._abort.is_set():
                 self._slewing = False
                 status = TelescopeStatus.ABORTED
@@ -113,7 +111,6 @@ class FakeTelescope(TelescopeBase, TelescopePier):
 
     @lock
     def slew_to_alt_az(self, alt: float, az: float):
-
         self._validate_alt_az(alt, az)
 
         ra, dec = self._get_site().alt_az_to_ra_dec(alt, az)
@@ -128,7 +125,6 @@ class FakeTelescope(TelescopeBase, TelescopePier):
         status = TelescopeStatus.OK
         t = 0
         while t < 5:
-
             if self._abort.is_set():
                 self._slewing = False
                 status = TelescopeStatus.ABORTED
@@ -157,7 +153,6 @@ class FakeTelescope(TelescopeBase, TelescopePier):
 
     @lock
     def move_east(self, offset, rate=None):
-
         self._slewing = True
 
         ra, dec = self.get_position_ra_dec()

@@ -24,7 +24,6 @@ __all__ = ["TelescopeBase"]
 class TelescopeBase(
     ChimeraObject, TelescopeSlew, TelescopeSync, TelescopePark, TelescopeTracking
 ):
-
     def __init__(self):
         super().__init__()
 
@@ -56,7 +55,6 @@ class TelescopeBase(
         return self._validate_alt_az(alt, az)
 
     def _validate_alt_az(self, alt, az):
-
         if alt <= self["min_altitude"]:
             raise ObjectTooLowException(
                 f"Object too close to horizon (alt={alt} limit={self['min_altitude']})"
@@ -106,7 +104,6 @@ class TelescopeBase(
 
     @lock
     def move_offset(self, offset_ra: float, offset_dec: float, rate=None) -> None:
-
         if offset_ra == 0:
             pass
         elif offset_ra > 0:

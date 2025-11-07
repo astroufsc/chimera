@@ -16,7 +16,6 @@ class FocusNotFoundException(ChimeraException):
 
 
 class Autofocus(Interface):
-
     __config__ = {
         "camera": "/Camera/0",
         "filterwheel": "/FilterWheel/0",

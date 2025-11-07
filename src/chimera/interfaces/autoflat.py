@@ -26,7 +26,6 @@ class Target(Enum):
 
 
 class IAutoFlat(Interface):
-
     __config__ = {
         "telescope": "/Telescope/0",
         "dome": "/Dome/0",

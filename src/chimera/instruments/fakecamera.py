@@ -19,7 +19,6 @@ from chimera.util.position import Epoch, Position
 
 
 class FakeCamera(CameraBase):
-
     __config__ = {"use_dss": True, "ccd_width": 512, "ccd_height": 512}
 
     def __init__(self):
