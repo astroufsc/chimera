@@ -46,7 +46,7 @@ class ImageServerHTTPHandler(SimpleHTTPRequestHandler):
             return self.response(200, "What are you looking for?")
         else:
             img = self.server.ctrl.get_image_by_id(args[1])
-            if not img.filename:
+            if img is None or not img.filename:
                 self.response(200, "Couldn't find the image.")
             else:
                 self.response_file(img.filename, "image/fits")

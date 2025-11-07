@@ -216,10 +216,10 @@ class Site(ChimeraObject):
     def ra_to_ha(self, ra: float):
         # ra in hours
         # returns ha in hours
-        return float(CoordUtil.ra_to_ha(ra, self.lst_in_rads()).to_h())
+        return float(CoordUtil.ra_to_ha(Coord.from_h(ra), Coord.from_r(self.lst_in_rads())).to_h())
 
     def ha_to_ra(self, ha: float):
-        return float(CoordUtil.ha_to_ra(ha, self.lst_in_rads()).to_h())
+        return float(CoordUtil.ha_to_ra(Coord.from_h(ha), Coord.from_r(self.lst_in_rads())).to_h())
 
     def ra_dec_to_alt_az(self, ra: float, dec: float, lst_in_rads: float | None = None):
         # ra in hours, dec in degrees, lst in radians

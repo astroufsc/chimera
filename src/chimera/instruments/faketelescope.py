@@ -116,8 +116,8 @@ class FakeTelescope(TelescopeBase, TelescopePier):
 
         self._validate_alt_az(alt, az)
 
-        alt, az = self._get_site().alt_az_to_ra_dec(alt, az)
-        self.slew_begin(alt, az)
+        ra, dec = self._get_site().alt_az_to_ra_dec(alt, az)
+        self.slew_begin(ra, dec)
 
         alt_steps = (alt - self.get_alt()) / 10
         az_steps = (az - self.get_az()) / 10
