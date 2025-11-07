@@ -48,7 +48,7 @@ class TelescopeBase(
 
     def _validate_ra_dec(self, ra: float, dec: float):
         # TODO: remove Position dependency
-        lst = self.site().lst_in_rads()  # in radians
+        lst = self.site().lst_in_rads() # in radians
         latitude = self.site().latitude_in_degs()
 
         alt, az = Position.ra_dec_to_alt_az(ra, dec, latitude, lst)
@@ -213,7 +213,7 @@ class TelescopeBase(
             ("EQUINOX", "NOW", "coordinate epoch"),
             ("ALT", str(Coord.from_d(alt).to_dms()), "Altitude of the observed object"),
             ("AZ", str(Coord.from_d(az).to_dms()), "Azimuth of the observed object"),
-            ("AIRMASS", alt, "Airmass of the observed object"),
+            ("AIRMASS", alt.radian, "Airmass of the observed object"),
             ("WCSAXES", 2, "wcs dimensionality"),
             ("RADESYS", "ICRS", "frame of reference"),
             (
