@@ -23,12 +23,6 @@ class Bitpix(Enum):
     float32 = "float32"
     float64 = "float64"
 
-
-class CCD(Enum):
-    IMAGING = "IMAGING"
-    TRACKING = "TRACKING"
-
-
 # Special features parameters can be passed as ImageRequest
 # parameters. The Camera.supports(feature) method can be used
 # to ask if the current camera support a given feature (useful for
@@ -106,7 +100,6 @@ class Camera(Interface):
 
     __config__ = {
         "device": "Unknown",  # Bus address identifier for this camera. E.g. USB, LPT1, ...
-        "ccd": CCD.IMAGING,  # CCD to be used when multiple ccd camera. IMAGING or TRACKING.
         "camera_model": "Unknown",  # Camera model string. To be used by metadata purposes
         "ccd_model": "Unknown",  # CCD model string. To be used by metadata purposes
         "ccd_saturation_level": None,  # CCD level at which arises saturation (in ADUs).
@@ -286,19 +279,13 @@ class CameraTemperature(Camera):
 
 class CameraInformation(Camera):
 
-    # for get_ccds, get_binnings and get_adcs, the instrument should return a
+    # for get_binnings and get_adcs, the instrument should return a
     # hash with keys as Human readable strings, which could be later passed as a
     # ImageRequest and be recognized by the intrument. Those strings can
     # be use as key to an internal hashmap.
     # example:
     # ADCs = {'12 bits': SomeInternalValueWhichMapsTo12BitsADC,
     #         '16 bits': SomeInternalValueWhichMapsTo16BitsADC}
-
-    def get_ccds(self):
-        pass
-
-    def get_current_ccd(self):
-        pass
 
     def get_binnings(self):
         pass
@@ -318,8 +305,7 @@ class CameraInformation(Camera):
     def get_readout_modes(self):
         """Get readout modes supported by this camera.
         The return value would have the following format:
-         {ccd1: {mode1: ReadoutMode(), mode2: ReadoutMode2()},
-          ccd2: {mode1: ReadoutMode(), mode2: ReadoutMode2()}}
+         {mode1: ReadoutMode(), mode2: ReadoutMode2(), ...}
         """
 
     #

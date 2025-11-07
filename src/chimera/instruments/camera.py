@@ -151,7 +151,7 @@ class CameraBase(ChimeraObject, CameraExpose, CameraTemperature, CameraInformati
 
     def _get_readout_mode_info(self, binning, window):
         """
-        Check if the given binning and window could be used on the given CCD.
+        Check if the given binning and window could be used.
 
         Returns a tuple (mode_id, binning, top, left, width, height)
         """
@@ -160,11 +160,11 @@ class CameraBase(ChimeraObject, CameraExpose, CameraTemperature, CameraInformati
 
         try:
             bin_id = self.get_binnings()[binning]
-            mode = self.get_readout_modes()[self.get_current_ccd()][bin_id]
+            mode = self.get_readout_modes()[bin_id]
         except KeyError:
             # use full frame if None given
             bin_id = self.get_binnings()["1x1"]
-            mode = self.get_readout_modes()[self.get_current_ccd()][bin_id]
+            mode = self.get_readout_modes()[bin_id]
 
         left = 0
         top = 0
@@ -253,12 +253,6 @@ class CameraBase(ChimeraObject, CameraExpose, CameraTemperature, CameraInformati
     def is_fanning(self):
         raise NotImplementedError()
 
-    def get_ccds(self):
-        raise NotImplementedError()
-
-    def get_current_ccd(self):
-        raise NotImplementedError()
-
     def get_binnings(self):
         raise NotImplementedError()
 
@@ -271,7 +265,7 @@ class CameraBase(ChimeraObject, CameraExpose, CameraTemperature, CameraInformati
     def get_pixel_size(self):
         raise NotImplementedError()
 
-    def get_overscan_size(self, ccd=None):
+    def get_overscan_size(self):
         raise NotImplementedError()
 
     def get_readout_modes(self):
