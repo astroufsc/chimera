@@ -23,7 +23,7 @@ class TransportNNG(Transport):
     @override
     def connect(self):
         self._sk = pynng.Push0()
-        self._sk.dial(f"{self.url}")
+        self._sk.dial(f"{self.url}", block=True)
 
     @override
     def close(self):
@@ -33,9 +33,20 @@ class TransportNNG(Transport):
         self._sk = None
 
     @override
-    def send(self, data: bytes) -> None:
+    def send(self, data: bytes) -> bool:
         assert self._sk is not None
-        self._sk.send(data)
+        try:
+            self._sk.send(data, block=False)
+            return True
+        except pynng.TryAgain:
+            # Would block - send buffer is full
+            return False
+        except (pynng.Closed, pynng.ConnectionRefused, pynng.exceptions.Timeout):
+            # Connection is dead or refusing
+            return False
+        except Exception:
+            # Any other error - log it but don't crash
+            return False
 
     @override
     def recv(self) -> bytes:
@@ -43,11 +54,21 @@ class TransportNNG(Transport):
         return self._sk.recv(block=False)
 
     @override
-    def fd(self) -> int:
+    def recv_fd(self) -> int:
         if self._sk is None:
             return -1
 
         try:
             return self._sk.recv_fd
+        except pynng.exceptions.Closed:
+            return -1
+
+    @override
+    def send_fd(self) -> int:
+        if self._sk is None:
+            return -1
+
+        try:
+            return self._sk.send_fd
         except pynng.exceptions.Closed:
             return -1
