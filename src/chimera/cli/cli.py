@@ -639,12 +639,7 @@ class ChimeraCLI:
                 method = getattr(self, action.target.__name__)
                 method(options)
         except Exception:
-            # import rich.console
-
-            # rich.console.Console().print_exception()
             self.err(f"Something wrong with '{action.name}' action.")
-            # print_exception(e)
             raise
-            return False
 
         return True

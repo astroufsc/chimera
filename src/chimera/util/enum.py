@@ -1,7 +1,7 @@
+# SPDX-License-Identifier: GPL-2.0-or-later
+# SPDX-FileCopyrightText: 2006-present Paulo Henrique Silva <ph.silva@gmail.com>
+
 from enum import StrEnum
 
 
-class Enum(StrEnum):
-    def __getitem__(self, name):
-        # still needed for serialization - fixme
-        return super().__getitem__(name.split(".")[-1])
+class Enum(StrEnum): ...
