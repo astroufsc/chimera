@@ -103,7 +103,7 @@ class CameraBase(ChimeraObject, CameraExpose, CameraTemperature, CameraInformati
 
             image = self._readout(image_request)
             if image is not None:
-                # images.append(image)
+                images.append(image.url())
                 image_request.end_exposure(self)
 
             # [ABORT POINT]
