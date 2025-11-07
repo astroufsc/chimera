@@ -83,7 +83,7 @@ class FakeCamera(CameraBase):
         status = CameraStatus.OK
 
         t = 0
-        self.__last_frame_start = dt.datetime.now(dt.timezone.utc)
+        self.__last_frame_start = dt.datetime.now(dt.UTC)
         while t < image_request["exptime"]:
             # [ABORT POINT]
             if self.abort.is_set():
