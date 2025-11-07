@@ -5,7 +5,6 @@
 import datetime as dt
 
 import ephem
-import numpy as np
 from dateutil import tz
 
 from chimera.core.chimeraobject import ChimeraObject
@@ -13,42 +12,6 @@ from chimera.util.coord import Coord, CoordUtil
 from chimera.util.position import Position
 
 __all__ = ["Site"]
-
-
-# More conversion functions.
-
-
-def datetime_from_jd(jd):
-    """Returns a date corresponding to the given Julian day number."""
-    if not isinstance(jd, float):
-        raise TypeError(f"{str(jd)} is not a float.")
-
-    n = int(np.floor(jd))
-    if jd > np.floor(jd) + 0.5:
-        n += 1
-
-    a = n + 32044
-    b = (4 * a + 3) // 146097
-    c = a - (146097 * b) // 4
-    d = (4 * c + 3) // 1461
-    e = c - (1461 * d) // 4
-    m = (5 * e + 2) // 153
-
-    jd += 0.5
-
-    hh = (jd - np.floor(jd)) * 24.0
-    mm = int(np.floor((hh - np.floor(hh)) * 60.0))
-    hh = int(np.floor(hh))
-
-    ret = dt.datetime(
-        year=100 * b + d - 4800 + m / 10,
-        month=m + 3 - 12 * (m // 10),
-        day=e + 1 - (153 * m + 2) // 5,
-        hour=hh,
-        minute=mm,
-    )
-
-    return ret
 
 
 class Site(ChimeraObject):
