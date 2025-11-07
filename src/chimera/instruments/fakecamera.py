@@ -14,7 +14,7 @@ from astropy.io import fits
 
 from chimera.core.lock import lock
 from chimera.instruments.camera import CameraBase
-from chimera.interfaces.camera import CCD, CameraFeature, CameraStatus, ReadoutMode
+from chimera.interfaces.camera import CameraFeature, CameraStatus, ReadoutMode
 from chimera.util.position import Epoch, Position
 
 
@@ -33,11 +33,8 @@ class FakeCamera(CameraBase):
         self.__is_fanning = False
 
         # my internal CCD code
-        self._my_ccd = 1 << 1
         self._my_adc = 1 << 2
         self._my_readout_mode = 1 << 3
-
-        self._ccds = {self._my_ccd: CCD.IMAGING}
 
         self._adcs = {"12 bits": self._my_adc}
 
@@ -62,7 +59,7 @@ class FakeCamera(CameraBase):
         readout_mode.pixel_width = 9.0
         readout_mode.pixel_height = 9.0
 
-        self._readout_modes = {self._my_ccd: {self._my_readout_mode: readout_mode}}
+        self._readout_modes = {self._my_readout_mode: readout_mode}
 
     def __start__(self):
         self["camera_model"] = "Fake Cameras Inc."
@@ -306,12 +303,6 @@ class FakeCamera(CameraBase):
     def is_fanning(self):
         return self.__is_fanning
 
-    def get_ccds(self):
-        return self._ccds
-
-    def get_current_ccd(self):
-        return self._my_ccd
-
     def get_binnings(self):
         return self._binnings
 
@@ -324,7 +315,7 @@ class FakeCamera(CameraBase):
     def get_pixel_size(self):
         return (9, 9)
 
-    def get_overscan_size(self, ccd=None):
+    def get_overscan_size(self):
         return (0, 0)
 
     def get_readout_modes(self):

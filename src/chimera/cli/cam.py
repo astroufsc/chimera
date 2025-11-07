@@ -375,15 +375,6 @@ class ChimeraCam(ChimeraCLI):
             self.out(str(feature), str(bool(camera.supports(feature))))
 
         self.out("=" * 40)
-        ccds = camera.get_ccds()
-        current_ccd = camera.get_current_ccd()
-        self.out("Available CCDs: ", end="")
-        for ccd in list(ccds.keys()):
-            if ccd == current_ccd:
-                self.out("*%s* " % str(ccds[ccd]), end="")
-            else:
-                self.out("%s " % str(ccds[ccd]), end="")
-        self.out()
 
         self.out("=" * 40)
         self.out("ADCs: ", end="")
