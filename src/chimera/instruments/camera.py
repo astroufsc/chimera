@@ -138,6 +138,7 @@ class CameraBase(ChimeraObject, CameraExpose, CameraTemperature, CameraInformati
         image = Image.create(image_data, image_request)
 
         # register image on ImageServer
+
         server = get_image_server(self)
         if server:
             image.http(server.register(image.filename))
