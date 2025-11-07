@@ -159,7 +159,7 @@ class Bus:
             #       work when sending to remote buses.
             try:
                 _ = self._encoder.encode(message)
-            except msgspec.EncodeError:
+            except Exception:
                 log.exception(
                     f"bus: serialization issue, won't work on remote buses: {message}"
                 )
@@ -185,7 +185,7 @@ class Bus:
 
                 try:
                     message_bytes = self._encoder.encode(message)
-                except msgspec.EncodeError:
+                except Exception:
                     log.exception(f"bus: failed to encode message: {message}")
                     return
 
