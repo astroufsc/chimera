@@ -310,7 +310,7 @@ class Image(UserDict):
     def close(self):
         self._fd.close()
 
-    def http(self, http=None):
+    def http(self, http: str | None = None) -> str:
         if http:
             self._http = http
         return self._http

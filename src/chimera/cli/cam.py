@@ -520,7 +520,7 @@ class ChimeraCam(ChimeraCLI):
             not self.options.disable_display and exp_times[0] >= 5
         ) or options.force_display:
             try:
-                ds9 = DS9(open=True)
+                ds9 = DS9()
             except OSError:
                 self.err("Problems starting DS9. DIsplay disabled.")
 
@@ -577,7 +577,7 @@ class ChimeraCam(ChimeraCLI):
                 )
 
                 if ds9:
-                    ds9.set("scale mode 99.5")
+                    ds9.cmd("scale mode 99.5")
                     ds9.display_image(image)
 
         camera.expose_begin += expose_begin

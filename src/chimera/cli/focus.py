@@ -245,7 +245,7 @@ class ChimeraFocus(ChimeraCLI):
 
         if not options.autofocus_nodisplay:
             try:
-                ds9 = DS9(open=True)
+                ds9 = DS9()
             except OSError:
                 pass
 
@@ -263,7 +263,7 @@ class ChimeraFocus(ChimeraCLI):
             )
             if ds9:
                 ds9.display_file(filename)
-                ds9.set(
+                ds9.cmd(
                     "regions command { circle %d %d %d}"
                     % (
                         int(star["XWIN_IMAGE"]),
@@ -271,8 +271,8 @@ class ChimeraFocus(ChimeraCLI):
                         int(star["FWHM_IMAGE"]),
                     )
                 )
-                ds9.set("zoom to fit")
-                ds9.set("scale mode zscale")
+                ds9.cmd("zoom to fit")
+                ds9.cmd("scale mode zscale")
 
         self.autofocus.step_complete += step_complete
 
