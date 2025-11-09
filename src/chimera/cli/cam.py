@@ -577,7 +577,6 @@ class ChimeraCam(ChimeraCLI):
                 )
 
                 if ds9:
-                    print("DS9")
                     ds9.cmd("scale mode 99.5")
                     ds9.display_image(image)
 
