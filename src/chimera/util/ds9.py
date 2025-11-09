@@ -24,7 +24,7 @@ class DS9:
 
     def display_file(self, filename: str, frame: int = 1):
         if not os.path.exists(filename):
-            raise OSError(f"{filename} doesn't exists")
+            raise OSError(f"{filename} doesn't exist")
 
         self.cmd(f"frame {frame}")
         self.cmd(f"fits '{filename}'")
