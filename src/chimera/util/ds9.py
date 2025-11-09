@@ -45,5 +45,4 @@ if __name__ == "__main__":
         sys.exit(1)
 
     ds9 = DS9()
-    ds9.open()
     ds9.display_file(filename=sys.argv[1], frame=1)
