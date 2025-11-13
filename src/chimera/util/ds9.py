@@ -1,122 +1,48 @@
+import logging
 import os
-import subprocess
-import warnings
 
-try:
-    # disable RO warning
-    warnings.filterwarnings(action="ignore", module="RO.DS9")
-    from RO.DS9 import DS9Win
+from astropy.samp import SAMPHubError, SAMPIntegratedClient
 
-    have_ds9 = True
-except ImportError:
-    have_ds9 = False
+from chimera.util.image import Image
 
-
-def xpa_access(template="ds9"):
-    try:
-        p = subprocess.Popen(
-            f"xpaaccess -v {template}", stdout=subprocess.PIPE, shell=True
-        )
-        p.wait()
-
-        aps = p.stdout.read()
-
-        aps = aps.split("\n")
-
-        if len(aps):
-            aps = [x for x in aps if len(x) >= 2]
-
-        return aps
-
-    except OSError:
-        # xpaaccess not found
-        return []
+log = logging.getLogger(__name__)
 
 
 class DS9:
-    """
-    A wrapper to enable programmatic control of DS9
-    (http://www.astro.washington.edu/rowen/) instances. Thanks to
-    Russel Owen (http://www.astro.washington.edu/rowen/) for great
-    RO.DS9 module.
-    """
-
-    def __init__(self, open=False):
-        if not have_ds9:
-            raise OSError(
-                "No DS9 available. Check if you have DS9 and XPA"
-                " installed and correctly accesible from Chimera's PATH."
-            )
-
-        id = "ds9"
-        ids = xpa_access()
-        if ids:
-            id = ids[-1]
-
+    def __init__(self):
+        self.ds9 = SAMPIntegratedClient()
         try:
-            self.ds9 = DS9Win(doRaise=True, doOpen=open, template=id, closeFDs=True)
-        except RuntimeError:
-            # even with RO installed, we still need XPA package to get DS9
-            # working
-            raise OSError(
-                "DS9 is not available, check if you have the XPA package installed. Display disabled."
-            )
+            self.ds9.connect()
+        except SAMPHubError as e:
+            raise OSError("Could not connect to DS9 SAMP hub") from e
 
-    def open(self):
-        self.ds9.doOpen()
-
-    def is_open(self):
-        return self.ds9.isOpen()
-
-    def quit(self):
-        if self.is_open():
-            self.set("exit")
-
-    def display_image(self, image, frame=1):
+    def display_image(self, image: Image, frame: int = 1):
         if os.path.exists(image.filename):
-            self.display_file(filename=image.filename, frame=frame)
+            self.display_file(image.filename, frame=frame)
         else:
-            self.display_file(url=image.http(), frame=frame)
+            self.display_url(image.http(), frame=frame)
 
-    def display_file(self, filename=None, url=None, frame=1):
-        """
-        Display a file either from a local file or from a remote URL.
+    def display_file(self, filename: str, frame: int = 1):
+        if not os.path.exists(filename):
+            raise OSError(f"{filename} doesn't exist")
 
-        @param filename: local filename.
-        @type  filename: str
+        self.cmd(f"frame {frame}")
+        self.cmd(f"fits '{filename}'")
 
-        @param url: remote URL
-        @type  url: str
+    def display_url(self, url: str, frame: int = 1):
+        self.cmd(f"frame {frame}")
+        self.cmd(f"fits '{url}'")
 
-        @rtype: None
-        """
+    def cmd(self, cmd: str) -> None:
+        self.ds9.ecall_and_wait("c1", "ds9.set", "10", cmd=cmd)
 
-        if not filename and not url:
-            raise TypeError("You must pass either a filename or a url.")
 
-        self.set(f"frame {frame}")
+if __name__ == "__main__":
+    import sys
 
-        if filename:
-            if not os.path.exists(filename):
-                raise OSError(f"{filename} doesn't exists")
+    if len(sys.argv) != 2:
+        print("Usage: python ds9.py <filename>")
+        sys.exit(1)
 
-            self.set(f"file '{filename}'")
-
-        if url:
-            self.set(f"file url '{url}'")
-
-    def display_array(self, array, frame=1):
-        pass
-
-    def set(self, cmd, data=None):
-        self.ds9.xpaset(cmd, data)
-
-    def get(self, cmd):
-        ret = self.ds9.xpaget(cmd)
-        if ret:
-            return ret[:-1]
-        else:
-            return None
-
-    def id(self):
-        return self.ds9.template
+    ds9 = DS9()
+    ds9.display_file(filename=sys.argv[1], frame=1)
