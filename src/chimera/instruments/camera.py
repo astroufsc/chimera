@@ -265,7 +265,7 @@ class CameraBase(ChimeraObject, CameraExpose, CameraTemperature, CameraInformati
         raise NotImplementedError()
 
     def supports(self, feature=None):
-        raise NotImplementedError()
+        return feature in self.supported_features and self.supported_features[feature]
 
     def get_metadata(self, request):
         # Check first if there is metadata from an metadata override method.

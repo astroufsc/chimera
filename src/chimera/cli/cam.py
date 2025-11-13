@@ -359,16 +359,18 @@ class ChimeraCam(ChimeraCLI):
         self.out("=" * 40)
         self.out("Camera: %s (%s)." % (camera.get_location(), camera["device"]))
 
-        if camera.is_cooling() is True:
-            self.out("Cooling enabled, Setpoint: %.1f oC" % camera.get_set_point())
-        else:
-            self.out("Cooling disabled.")
+        if camera.supports(CameraFeature.TEMPERATURE_CONTROL):
+            if camera.is_cooling() is True:
+                self.out("Cooling enabled, Setpoint: %.1f oC" % camera.get_set_point())
+            else:
+                self.out("Cooling disabled.")
+            self.out("Current CCD temperature:", "%.1f" % camera.get_temperature(), "oC")
 
-        self.out("Current CCD temperature:", "%.1f" % camera.get_temperature(), "oC")
-        if camera.is_fanning():
-            self.out("Cooler fan active.")
-        else:
-            self.out("Cooler fan inactive.")
+        if camera.supports(CameraFeature.FAN_CONTROL):
+            if camera.is_fanning():
+                self.out("Cooler fan active.")
+            else:
+                self.out("Cooler fan inactive.")
 
         self.out("=" * 40)
         for feature in CameraFeature:
@@ -604,12 +606,13 @@ class ChimeraCam(ChimeraCLI):
         self.out("Taking %d %s frame[s]" % (options.frames, imagetype.upper()))
         self.out("Shutter: %s" % options.shutter)
         self.out("Interval between frames: %.3fs" % options.interval)
-        if camera.is_cooling():
-            self.out("Cooling enabled, setpoint: %.3f oC" % camera.get_set_point())
-        else:
-            self.out("Cooling disabled.")
+        if camera.supports(CameraFeature.TEMPERATURE_CONTROL):
+            if camera.is_cooling():
+                self.out("Cooling enabled, setpoint: %.3f oC" % camera.get_set_point())
+            else:
+                self.out("Cooling disabled.")
 
-        self.out("Current CCD temperature: %.3f oC" % camera.get_temperature())
+            self.out("Current CCD temperature: %.3f oC" % camera.get_temperature())
 
         if options.binning:
             self.out("Binning: %s" % options.binning)

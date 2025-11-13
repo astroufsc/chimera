@@ -37,6 +37,7 @@ class CameraFeature(Enum):
     PROGRAMMABLE_FAN = "PROGRAMMABLE_FAN"
     PROGRAMMABLE_LEDS = "PROGRAMMABLE_LEDS"
     PROGRAMMABLE_BIAS_LEVEL = "PROGRAMMABLE_BIAS_LEVEL"
+    PROGRAMMABLE_ADC = "PROGRAMMABLE_ADC"
 
 
 class CameraStatus(Enum):
@@ -109,7 +110,14 @@ class Camera(Interface):
         "telescope_focal_length": None,  # Telescope focal length (in millimeters)
         "rotation": 0.0,  # Angle between the North and the second axis of the image counted
         # positive to the East (in degrees)
+        "ccd_width": 1,  # CCD width (in pixels)
+        "ccd_height": 1,  # CCD height (in pixels)
+        "pixel_size_x": 1.0,  # Pixel size along X axis (in micrometers)
+        "pixel_size_y": 1.0,  # Pixel size along Y axis (in micrometers)
     }
+
+    # List of supported features by this camera. e.g. {CameraFeature.TEMPERATURE_CONTROL: True}
+    supported_features = {}
 
 
 class CameraExpose(Camera):
