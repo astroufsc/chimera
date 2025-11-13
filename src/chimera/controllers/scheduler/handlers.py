@@ -263,7 +263,6 @@ class OperatorHandler(ActionHandler):
     @staticmethod
     @requires("operator")
     def process(action):
-        # FIXME: better pv interface
         op = OperatorHandler.operator
 
         try:
