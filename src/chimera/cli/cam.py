@@ -354,7 +354,7 @@ class ChimeraCam(ChimeraCLI):
                 "Current CCD temperature:", "%.1f" % camera.get_temperature(), "oC"
             )
 
-        if camera.supports(CameraFeature.FAN_CONTROL):
+        if camera.supports(CameraFeature.PROGRAMMABLE_FAN):
             if camera.is_fanning():
                 self.out("Cooler fan active.")
             else:
@@ -366,21 +366,23 @@ class ChimeraCam(ChimeraCLI):
 
         self.out("=" * 40)
 
-        self.out("=" * 40)
-        self.out("ADCs: ", end="")
-        adcs = camera.get_adcs()
-        for adc in list(adcs.keys()):
-            self.out("%s " % adc, end="")
-        self.out()
+        if camera.supports(CameraFeature.PROGRAMMABLE_ADC):
+            self.out("=" * 40)
+            self.out("ADCs: ", end="")
+            adcs = camera.get_adcs()
+            for adc in list(adcs.keys()):
+                self.out("%s " % adc, end="")
+            self.out()
 
         pix_w, pix_h = camera.get_pixel_size()
         pix_w_um, pix_h_um = camera.get_physical_size()
-        overscan_w, overscan_h = camera.get_overscan_size()
 
         self.out("=" * 40)
         self.out(f"CCD size (pixel)       : {pix_w} x {pix_h}")
         self.out(f"Pixel size (micrometer): {pix_w_um:.2f} x {pix_h_um:.2f}")
-        self.out(f"Overscan size (pixel)  : {overscan_w} x {overscan_h}")
+        if camera.supports(CameraFeature.PROGRAMMABLE_OVERSCAN):
+            overscan_w, overscan_h = camera.get_overscan_size()
+            self.out(f"Overscan size (pixel)  : {overscan_w} x {overscan_h}")
 
         self.out("=" * 40)
         self.out("Available binnings: ", end="")
