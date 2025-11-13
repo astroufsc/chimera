@@ -5,7 +5,6 @@ import logging
 import os
 import shutil
 import string
-import sys
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -303,6 +302,14 @@ class Image(UserDict):
     def filename(self):
         return self._filename
 
+    @filename.setter
+    def filename(self, value):
+        """
+        Setter for filename. Keeps internal _filename in sync and attempts
+        to update the 'FILENAME' header in the PRIMARY HDU if present.
+        """
+        self._filename = value
+
     @property
     def id(self):
         return self._id
@@ -478,6 +485,7 @@ class Image(UserDict):
                             if not chunk:
                                 break
                             bz_fp.write(chunk)
+                self.filename = bz_filename
                 os.unlink(filename)
             except Exception:
                 # Clean up compressed file if compression failed
@@ -495,6 +503,7 @@ class Image(UserDict):
                             if not chunk:
                                 break
                             gz_fp.write(chunk)
+                self.filename = gz_filename
                 os.unlink(filename)
             except Exception:
                 # Clean up compressed file if compression failed
@@ -513,6 +522,7 @@ class Image(UserDict):
                     ) as zip_fp:
                         # For zip, we need to read all at once due to writestr API
                         zip_fp.writestr(os.path.basename(filename), raw_fp.read())
+                self.filename = zip_filename
                 os.unlink(filename)
             except Exception:
                 # Clean up compressed file if compression failed
@@ -520,15 +530,8 @@ class Image(UserDict):
                     os.unlink(zip_filename)
                 raise
 
-    def compress(self, format="bz2", multiprocess=False):
-        if multiprocess and sys.version_info[0:2] >= (2, 6):
-            from multiprocessing import Process
-
-            p = Process(target=self._do_compress, args=(self.filename, format))
-            p.start()
-            p.join()  # Wait for the process to complete
-        else:
-            self._do_compress(self.filename, format)
+    def compress(self, format="bz2"):
+        self._do_compress(self.filename, format)
 
     # dict mixin implementation for headers
     def __getitem__(self, key):

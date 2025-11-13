@@ -71,7 +71,7 @@ class ImageServer(ChimeraObject):
                 self.log.debug(f"Unregistering image {item}")
                 self.unregister(self.images_by_id[item])
 
-        image = Image.from_file(image_filename)
+        image = Image.from_file(image_filename, mode="readonly")
         self.images_by_id[image.id] = image
         self.images_by_path[image.filename] = image
 

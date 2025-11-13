@@ -3,7 +3,6 @@
 # SPDX-FileCopyrightText: 2006-present Paulo Henrique Silva <ph.silva@gmail.com>
 
 import copy
-import os
 import sys
 import time
 
@@ -19,19 +18,6 @@ from .cli import ChimeraCLI, ParameterType, action
 current_frame = 0
 current_frame_expose_start = 0
 current_frame_readout_start = 0
-
-
-def get_compressed_name(filename, compression):
-    if compression.lower() == "no":
-        return filename
-    elif compression.lower() == "bz2":
-        return filename + ".bz2"
-    elif compression.lower() == "gzip":
-        return filename + ".gz"
-    elif compression.lower() == "zip":
-        return filename + ".zip"
-    elif compression.lower() == "fits_rice":
-        return os.path.splitext(filename)[0] + ".fz"
 
 
 class ChimeraCam(ChimeraCLI):
@@ -359,16 +345,20 @@ class ChimeraCam(ChimeraCLI):
         self.out("=" * 40)
         self.out("Camera: %s (%s)." % (camera.get_location(), camera["device"]))
 
-        if camera.is_cooling() is True:
-            self.out("Cooling enabled, Setpoint: %.1f oC" % camera.get_set_point())
-        else:
-            self.out("Cooling disabled.")
+        if camera.supports(CameraFeature.TEMPERATURE_CONTROL):
+            if camera.is_cooling() is True:
+                self.out("Cooling enabled, Setpoint: %.1f oC" % camera.get_set_point())
+            else:
+                self.out("Cooling disabled.")
+            self.out(
+                "Current CCD temperature:", "%.1f" % camera.get_temperature(), "oC"
+            )
 
-        self.out("Current CCD temperature:", "%.1f" % camera.get_temperature(), "oC")
-        if camera.is_fanning():
-            self.out("Cooler fan active.")
-        else:
-            self.out("Cooler fan inactive.")
+        if camera.supports(CameraFeature.PROGRAMMABLE_FAN):
+            if camera.is_fanning():
+                self.out("Cooler fan active.")
+            else:
+                self.out("Cooler fan inactive.")
 
         self.out("=" * 40)
         for feature in CameraFeature:
@@ -376,21 +366,23 @@ class ChimeraCam(ChimeraCLI):
 
         self.out("=" * 40)
 
-        self.out("=" * 40)
-        self.out("ADCs: ", end="")
-        adcs = camera.get_adcs()
-        for adc in list(adcs.keys()):
-            self.out("%s " % adc, end="")
-        self.out()
+        if camera.supports(CameraFeature.PROGRAMMABLE_ADC):
+            self.out("=" * 40)
+            self.out("ADCs: ", end="")
+            adcs = camera.get_adcs()
+            for adc in list(adcs.keys()):
+                self.out("%s " % adc, end="")
+            self.out()
 
         pix_w, pix_h = camera.get_pixel_size()
         pix_w_um, pix_h_um = camera.get_physical_size()
-        overscan_w, overscan_h = camera.get_overscan_size()
 
         self.out("=" * 40)
         self.out(f"CCD size (pixel)       : {pix_w} x {pix_h}")
         self.out(f"Pixel size (micrometer): {pix_w_um:.2f} x {pix_h_um:.2f}")
-        self.out(f"Overscan size (pixel)  : {overscan_w} x {overscan_h}")
+        if camera.supports(CameraFeature.PROGRAMMABLE_OVERSCAN):
+            overscan_w, overscan_h = camera.get_overscan_size()
+            self.out(f"Overscan size (pixel)  : {overscan_w} x {overscan_h}")
 
         self.out("=" * 40)
         self.out("Available binnings: ", end="")
@@ -560,10 +552,7 @@ class ChimeraCam(ChimeraCLI):
                     "OK (took %.3f s)" % (time.time() - current_frame_expose_start)
                 )
 
-                self.out(
-                    " (%s) " % get_compressed_name(image.filename, compress_format),
-                    end="",
-                )
+                self.out(f" ({image.filename}) ", end="")
                 self.out(
                     "OK (took %.3f s)" % (time.time() - current_frame_readout_start)
                 )
@@ -604,12 +593,13 @@ class ChimeraCam(ChimeraCLI):
         self.out("Taking %d %s frame[s]" % (options.frames, imagetype.upper()))
         self.out("Shutter: %s" % options.shutter)
         self.out("Interval between frames: %.3fs" % options.interval)
-        if camera.is_cooling():
-            self.out("Cooling enabled, setpoint: %.3f oC" % camera.get_set_point())
-        else:
-            self.out("Cooling disabled.")
+        if camera.supports(CameraFeature.TEMPERATURE_CONTROL):
+            if camera.is_cooling():
+                self.out("Cooling enabled, setpoint: %.3f oC" % camera.get_set_point())
+            else:
+                self.out("Cooling disabled.")
 
-        self.out("Current CCD temperature: %.3f oC" % camera.get_temperature())
+            self.out("Current CCD temperature: %.3f oC" % camera.get_temperature())
 
         if options.binning:
             self.out("Binning: %s" % options.binning)

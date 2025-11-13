@@ -126,6 +126,18 @@ class PointVerify(Action):
             return "pointing verification: current field"
 
 
+class Operator(Action):
+    __tablename__ = "action_operator"
+    __mapper_args__ = {"polymorphic_identity": "Operator"}
+
+    id = Column(Integer, ForeignKey("action.id"), primary_key=True)
+    type = Column(String, default="")  # confirmation, input, alert, etc.
+    message = Column(String, default="")
+
+    def __str__(self):
+        return f"operator action: type={self.type} message='{self.message}'"
+
+
 class Point(Action):
     __tablename__ = "action_point"
     __mapper_args__ = {"polymorphic_identity": "Point"}

@@ -257,3 +257,19 @@ class PointVerifyHandler(ActionHandler):
     @staticmethod
     def abort(action):
         pass
+
+
+class OperatorHandler(ActionHandler):
+    @staticmethod
+    @requires("operator")
+    def process(action):
+        op = OperatorHandler.operator
+
+        try:
+            op.request(action.type, action.message)
+        except Exception as e:
+            raise ProgramExecutionException(str(e))
+
+    @staticmethod
+    def abort(action):
+        pass
