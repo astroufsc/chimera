@@ -130,15 +130,14 @@ class CameraBase(ChimeraObject, CameraExpose, CameraTemperature, CameraInformati
         image_request.headers += self.get_metadata(image_request)
         image = Image.create(image_data, image_request)
 
-        # register image on ImageServer
+        # compress the image if asked
+        if image_request["compress_format"].lower() != "no":
+            image.compress(format=image_request["compress_format"])
 
+        # register image on ImageServer
         server = get_image_server(self)
         if server:
             image.http(server.register(image.filename))
-
-        # and finally compress the image if asked
-        if image_request["compress_format"].lower() != "no":
-            image.compress(format=image_request["compress_format"], multiprocess=True)
 
         return image
 

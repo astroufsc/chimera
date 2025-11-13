@@ -3,7 +3,6 @@
 # SPDX-FileCopyrightText: 2006-present Paulo Henrique Silva <ph.silva@gmail.com>
 
 import copy
-import os
 import sys
 import time
 
@@ -19,19 +18,6 @@ from .cli import ChimeraCLI, ParameterType, action
 current_frame = 0
 current_frame_expose_start = 0
 current_frame_readout_start = 0
-
-
-def get_compressed_name(filename, compression):
-    if compression.lower() == "no":
-        return filename
-    elif compression.lower() == "bz2":
-        return filename + ".bz2"
-    elif compression.lower() == "gzip":
-        return filename + ".gz"
-    elif compression.lower() == "zip":
-        return filename + ".zip"
-    elif compression.lower() == "fits_rice":
-        return os.path.splitext(filename)[0] + ".fz"
 
 
 class ChimeraCam(ChimeraCLI):
@@ -364,7 +350,9 @@ class ChimeraCam(ChimeraCLI):
                 self.out("Cooling enabled, Setpoint: %.1f oC" % camera.get_set_point())
             else:
                 self.out("Cooling disabled.")
-            self.out("Current CCD temperature:", "%.1f" % camera.get_temperature(), "oC")
+            self.out(
+                "Current CCD temperature:", "%.1f" % camera.get_temperature(), "oC"
+            )
 
         if camera.supports(CameraFeature.FAN_CONTROL):
             if camera.is_fanning():
@@ -562,10 +550,7 @@ class ChimeraCam(ChimeraCLI):
                     "OK (took %.3f s)" % (time.time() - current_frame_expose_start)
                 )
 
-                self.out(
-                    " (%s) " % get_compressed_name(image.filename, compress_format),
-                    end="",
-                )
+                self.out(f" ({image.filename}) ", end="")
                 self.out(
                     "OK (took %.3f s)" % (time.time() - current_frame_readout_start)
                 )
