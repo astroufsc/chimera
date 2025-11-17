@@ -31,6 +31,7 @@ class Scheduler(ChimeraObject):
         "autofocus": "/Autofocus/0",
         "autoflat": "/Autoflat/0",
         "point_verify": "/PointVerify/0",
+        "operator": "/Operator/0",
         "site": "/Site/0",
         "algorithm": SchedulingAlgorithm.SEQUENTIAL,
     }

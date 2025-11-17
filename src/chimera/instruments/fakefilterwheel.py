@@ -18,7 +18,7 @@ class FakeFilterWheel(FilterWheelBase):
 
     @lock
     def set_filter(self, filter):
-        filter_name = str(filter).upper()
+        filter_name = str(filter)
 
         if filter_name not in self.get_filters():
             raise InvalidFilterPositionException(f"Invalid filter {filter}.")

@@ -19,7 +19,7 @@ class FilterWheelBase(ChimeraObject, FilterWheel):
         raise NotImplementedError()
 
     def get_filters(self):
-        return self["filters"].upper().split()
+        return self["filters"].split()
 
     def _get_filter_name(self, index):
         try:

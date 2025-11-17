@@ -130,15 +130,14 @@ class CameraBase(ChimeraObject, CameraExpose, CameraTemperature, CameraInformati
         image_request.headers += self.get_metadata(image_request)
         image = Image.create(image_data, image_request)
 
-        # register image on ImageServer
+        # compress the image if asked
+        if image_request["compress_format"].lower() != "no":
+            image.compress(format=image_request["compress_format"])
 
+        # register image on ImageServer
         server = get_image_server(self)
         if server:
             image.http(server.register(image.filename))
-
-        # and finally compress the image if asked
-        if image_request["compress_format"].lower() != "no":
-            image.compress(format=image_request["compress_format"], multiprocess=True)
 
         return image
 
@@ -265,7 +264,7 @@ class CameraBase(ChimeraObject, CameraExpose, CameraTemperature, CameraInformati
         raise NotImplementedError()
 
     def supports(self, feature=None):
-        raise NotImplementedError()
+        return feature in self.supported_features and self.supported_features[feature]
 
     def get_metadata(self, request):
         # Check first if there is metadata from an metadata override method.
