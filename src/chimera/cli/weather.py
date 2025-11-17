@@ -5,6 +5,8 @@
 import datetime
 import sys
 
+from astropy.time import Time
+
 from chimera.core.version import chimera_version
 from chimera.util.output import green, red
 
@@ -57,12 +59,21 @@ class ChimeraWeather(ChimeraCLI):
 
         if self.weatherstation.features("WeatherSafety"):
             self.out(
-                "Dome is %s to open" % green("OK")
-                if self.weatherstation.ok_to_open()
-                else red("NOT OK")
+                "Dome is %s to open" % green("SAFE")
+                if self.weatherstation.is_safe_to_open()
+                else red("NOT SAFE")
             )
 
         self.out("=" * 80)
+
+        t = self.weatherstation.get_last_measurement_time()
+        t = Time(t, format="fits")
+        if datetime.datetime.now(datetime.UTC) - t.to_datetime(
+            timezone=datetime.UTC
+        ) > datetime.timedelta(minutes=options.max_mins):
+            last_meas = red(t.iso)
+        else:
+            last_meas = green(t.iso)
 
         for attr in (
             "temperature",
@@ -74,27 +85,12 @@ class ChimeraWeather(ChimeraCLI):
             "rain_rate",
             "sky_transparency",
         ):
-            try:
-                v = self.weatherstation.__getattr__(attr)()
-                if isinstance(v, NotImplementedError) or not v:
-                    continue
-                t = (
-                    red(v.time.__str__())
-                    if datetime.datetime.utcnow() - v.time
-                    > datetime.timedelta(minutes=self.options.max_mins)
-                    else green(v.time.__str__())
-                )
-                self.out(
-                    t + "  " + attr.replace("_", " ") + f": {v.value:.2f} {v.unit:s} "
-                )
-            except NotImplementedError:
-                pass
-            except AttributeError:
-                pass
-
+            v = getattr(self.weatherstation, attr)()
+            self.out(
+                f"{attr.replace('_', ' ').removeprefix('sky ')}:\t{v:.2f}\t{self.weatherstation.get_units(attr)}"
+            )
+        self.out(f"Last data:\t{last_meas}")
         self.out("=" * 80)
-
-        return
 
 
 def main():

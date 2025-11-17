@@ -5,18 +5,16 @@ import datetime
 import math
 
 import numpy as np
-from astropy import units
 
-from chimera.core.exceptions import OptionConversionException
 from chimera.instruments.weatherstation import WeatherBase
 from chimera.interfaces.weatherstation import (
     WeatherHumidity,
     WeatherPressure,
     WeatherRain,
+    WeatherSafety,
     WeatherTemperature,
     WeatherTransparency,
     WeatherWind,
-    WSValue,
 )
 
 
@@ -28,140 +26,54 @@ class FakeWeatherStation(
     WeatherWind,
     WeatherRain,
     WeatherTransparency,
+    WeatherSafety,
 ):
     def __init__(self):
         WeatherBase.__init__(self)
+        self["model"] = "FakeWeatherStation v1.0"
 
-    def _hour_in_radians(self, hour):
+    def _hour_in_radians(self, hour=datetime.datetime.now(datetime.UTC).hour):
         """
         For testing purposes, the function converts a given hour in radians.
         """
         return (math.pi / 12.0) * hour
 
-    def humidity(self, unit_out=units.pct):
-        """
-        Returns the 100% relative humidity in the range between 20% and 100%.
-        :param unit: Unit in which the instrument should return the humidity.
-        :return: the humidity.
-        """
-        current_time = datetime.datetime.utcnow()
+    def get_last_measurement_time(self):
+        return datetime.datetime.now(datetime.UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")
 
-        if unit_out not in self.__accepted_humidity_units__:
-            raise OptionConversionException(f"Invalid humidity unit {unit_out}.")
+    def humidity(self):
+        humidity = 40 * math.cos(self._hour_in_radians()) + 60.0
+        return humidity
 
-        humidity = 40 * math.cos(self._hour_in_radians(current_time.hour)) + 60.0
+    def temperature(self):
+        temperature = 25 * math.sin(self._hour_in_radians() - math.pi / 2.0) + 15.0
+        return temperature
 
-        humidity = self._convert_units(humidity, units.pct, unit_out)
-
-        return WSValue(current_time, humidity, unit_out)
-
-    def temperature(self, unit_out=units.Celsius):
-        """
-        Returns the temperature in the chosen unit in the range between -10 C and +40 C.
-        :param unit:  Unit in which the instrument should return the temperature.
-        :return: the temperature.
-        """
-
-        current_time = datetime.datetime.utcnow()
-
-        if unit_out not in self.__accepted_temperature_units__:
-            raise OptionConversionException(f"Invalid temperature unit {unit_out}.")
-
-        temperature = (
-            25 * math.sin(self._hour_in_radians(current_time.hour) - math.pi / 2.0)
-            + 15.0
-        )
-
-        temperature = self._convert_units(
-            temperature,
-            units.Celsius,
-            unit_out,
-            equivalencies=units.equivalencies.temperature(),
-        )
-
-        return WSValue(current_time, temperature, unit_out)
-
-    def wind_speed(self, unit_out=units.meter / units.second):
-        """
-        Returns the wind speed in the chosen unit (Default: Meters per second).
-        :param unit:  Unit in which the instrument should return the wind speed.
-        :return: the wind speed.
-        """
-
+    def wind_speed(self):
         reference_speed = 10  # M_PER_S
+        return reference_speed
 
-        if unit_out not in self.__accepted_speed_units__:
-            raise OptionConversionException(f"Invalid speed unit {unit_out}.")
+    def wind_direction(self):
+        reference_direction = 180 * math.sin(self._hour_in_radians()) + 180
+        return reference_direction
 
-        speed = self._convert_units(
-            reference_speed, units.meter / units.second, unit_out
-        )
-
-        return WSValue(datetime.datetime.utcnow(), speed, unit_out)
-
-    def wind_direction(self, unit_out=units.degree):
-        """
-        Returns the wind direction in the chosen unit in the range between 0 to 360 degrees.
-        :param unit:  Unit in which the instrument should return the angle.
-        :return: the angle.
-        """
-        if unit_out not in self.__accepted_direction_unit__:
-            raise OptionConversionException(f"Invalid direction unit {unit_out}.")
-
-        hour = datetime.datetime.utcnow().hour
-
-        reference_direction = 180 * math.sin(self._hour_in_radians(hour)) + 180
-
-        direction = self._convert_units(reference_direction, units.degree, unit_out)
-
-        return WSValue(datetime.datetime.utcnow(), direction, unit_out)
-
-    def dew_point(self, unit_out=units.Celsius):
+    def dew_point(self):
         """
         Some simulations ran on 'http://www.cactus2000.de/uk/unit/masshum.shtml' suggests that
         the dew point at 1.5mm Hg and low temperatures are very low, around -20 C.
         Here I'm using -10 C.
-
-        :param unit:  Unit in which the instrument should return the temperature.
-        :return: the angle.
         """
+        return -20.0
 
-        if unit_out not in self.__accepted_temperature_units__:
-            raise OptionConversionException(f"Invalid temperature unit {unit_out}.")
-
-        temperature = self._convert_units(
-            10, units.Celsius, unit_out, equivalencies=units.equivalencies.temperature()
-        )
-
-        return WSValue(datetime.datetime.utcnow(), temperature, unit_out)
-
-    def pressure(self, unit_out=units.Pa):
+    def pressure(self):
         """
         Pressure at 1.5 atm
-        :param unit:
-        :return:
         """
-
         pressure_reference = 151987.5  # Pa
+        return pressure_reference
 
-        if unit_out not in self.__accepted_pressures_unit__:
-            raise OptionConversionException(f"Invalid pressure unit {unit_out}.")
-
-        pressure = self._convert_units(pressure_reference, units.Pa, unit_out)
-
-        return WSValue(datetime.datetime.utcnow(), pressure, unit_out)
-
-    def rain_rate(self, unit_out=units.imperial.inch / units.hour):
-        """
-        For testing purposes, it never rains.
-        :param unit:
-        :return:
-        """
-
-        if unit_out not in self.__accepted_precipitation_unit__:
-            raise OptionConversionException(f"Invalid precipitation unit {unit_out}.")
-
-        return WSValue(datetime.datetime.utcnow(), 0, unit_out)
+    def rain_rate(self):
+        return 0.0
 
     def is_raining(self):
         """
@@ -169,43 +81,53 @@ class FakeWeatherStation(
         """
         return np.random.rand < 0.2
 
-    def sky_transparency(self, unit_out=units.pct):
+    def sky_transparency(self):
         """
         Returns, in percent, the sky transparency
-        :param unit_out:
         """
-        if unit_out not in self.__accepted_transparency_unit__:
-            raise OptionConversionException(f"Invalid transparency unit {unit_out}.")
+        return 84.0
 
-        return WSValue(datetime.datetime.utcnow(), np.random.rand() * 100, unit_out)
+    def is_safe_to_open(self):
+        """
+        Fake weather station is always safe to open
+        """
+        return True
 
 
 if __name__ == "__main__":
     fws = FakeWeatherStation()
 
-    humidity = fws.humidity(units.pct)
-    print(f"Humidity: {humidity.value:.2f} % @ {humidity.time}.")
+    last_measurement_time = fws.get_last_measurement_time()
 
-    temperature = fws.temperature(units.imperial.deg_F)
+    humidity = fws.humidity()
+    print(f"Humidity: {humidity:.2f} % @ {last_measurement_time}.")
+
+    temperature = fws.temperature()
     print(
-        f"Temperature: {temperature.value:.2f} {temperature.unit} @ {temperature.time}."
+        f"Temperature: {temperature:.2f} {fws.units['temperature']} @ {last_measurement_time}."
     )
 
-    wind_speed = fws.wind_speed(units.kilometer / units.hour)
-    print(f"Wind Speed: {wind_speed.value:.2f} {wind_speed.unit} @ {wind_speed.time}.")
-
-    wind_direction = fws.wind_direction(units.radian)
+    wind_speed = fws.wind_speed()
     print(
-        f"Wind Direction: {wind_direction.value:.2f} {wind_direction.unit} @ {wind_direction.time}."
+        f"Wind Speed: {wind_speed:.2f} {fws.units['wind_speed']} @ {last_measurement_time}."
     )
 
-    dew_point = fws.dew_point(units.K)
-    print(f"Dew Point: {dew_point.value:.2f} {dew_point.unit} @ {dew_point.time}.")
+    wind_direction = fws.wind_direction()
+    print(
+        f"Wind Direction: {wind_direction:.2f} {fws.units['wind_direction']} @ {last_measurement_time}."
+    )
 
-    pressure = fws.pressure(units.cds.atm)
-    print(f"Pressure: {pressure.value:.2f} {pressure.unit} @ {pressure.time}.")
+    dew_point = fws.dew_point()
+    print(
+        f"Dew Point: {dew_point:.2f} {fws.units['dew_point']} @ {last_measurement_time}."
+    )
 
-    rain = fws.rain_rate(unit_out=units.millimeter / units.hour)
-    print(f"Rain: {rain.value:.2f} {rain.unit} @ {rain.time}.")
+    pressure = fws.pressure()
+    print(
+        f"Pressure: {pressure:.2f} {fws.units['pressure']} @ {last_measurement_time}."
+    )
+
+    rain = fws.rain_rate()
+    print(f"Rain: {rain:.2f} {fws.units['rain_rate']} @ {last_measurement_time}.")
 
     print(f"Metadata: {fws.get_metadata(None)}")
