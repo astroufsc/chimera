@@ -6,7 +6,7 @@
 import copy
 import sys
 
-from chimera.core.version import _chimera_version_
+from chimera.core.version import chimera_version
 
 from .cli import ChimeraCLI, action
 
@@ -14,7 +14,7 @@ from .cli import ChimeraCLI, action
 class ChimeraRotator(ChimeraCLI):
     def __init__(self):
         ChimeraCLI.__init__(
-            self, "chimera-rotator", "Rotator controller", _chimera_version_
+            self, "chimera-rotator", "Rotator controller", chimera_version
         )
 
         self.add_help_group("ROTATOR", "Rotator")
