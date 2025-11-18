@@ -17,7 +17,7 @@ class WeatherStation(Interface):
         "model": "unknown",  # weather station model (str)
     }
 
-    # Helping dictionary for units used in weather station interfaces. They should be convertable using astropy.units.Unit()
+    # Helping dictionary for units used in weather station interfaces. They should be convertible using astropy.units.Unit()
     units = {
         "temperature": "deg_C",
         "dew_point": "deg_C",
