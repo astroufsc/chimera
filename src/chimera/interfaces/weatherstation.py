@@ -35,7 +35,7 @@ class WeatherStation(Interface):
         The keys are: temperature, dew_point, humidity, pressure, wind_speed, wind_direction, rain_rate, sky_transparency
         The values are strings representing the units, compatible with astropy.units.Unit()
         @param u: The key for which to retrieve the unit. If None, return all units.
-        @return: dictionary with units.
+        @return: A string representing the unit if u is provided, otherwise a dictionary with all units.
         """
         if u is not None:
             if u in self.units:
