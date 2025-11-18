@@ -63,7 +63,7 @@ class FakeWeatherStation(
         the dew point at 1.5mm Hg and low temperatures are very low, around -20 C.
         Here I'm using -10 C.
         """
-        return -20.0
+        return -10.0
 
     def pressure(self):
         """
