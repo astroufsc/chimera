@@ -155,7 +155,7 @@ class WeatherSafety(WeatherStation):
     Some weather stations can have some intelligence that returns to the OCS only if it is okay to open the dome or not.
     """
 
-    def ok_to_open(self) -> bool:
+    def is_safe_to_open(self) -> bool:
         """
-        Returns True if it is okay to open the dome and False otherwise.
+        Returns True if it is SAFE to open the dome and False otherwise.
         """
