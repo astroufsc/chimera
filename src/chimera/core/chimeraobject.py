@@ -189,7 +189,7 @@ class ChimeraObject(ILifeCycle, metaclass=MetaObject):
         :param interface: One of from chimera interfaces
         :return: True if is instance, False otherwise
         """
-        return interface in self.__class__.__mro__
+        return any(interface == cls.__name__ for cls in self.__class__.__mro__)
 
     def get_proxy(self, url: str | None = None) -> Proxy:
         if url is not None:

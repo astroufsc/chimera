@@ -258,8 +258,8 @@ class TestChimeraObject:
 
         # exceptions
         with pytest.raises(Exception):
-            m.do_raise()
+            m.doRaise()
 
         # features
-        assert m.features(BaseClass)  # Minimo is a BaseClass subclass
-        assert not m.features(str)  # But not a basestring subclass
+        assert m.features("BaseClass")  # Minimo is a BaseClass subclass
+        assert not m.features("str")  # But not a basestring subclass

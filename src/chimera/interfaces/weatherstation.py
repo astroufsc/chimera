@@ -1,29 +1,60 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 # SPDX-FileCopyrightText: 2006-present Paulo Henrique Silva <ph.silva@gmail.com>
-
-
-from collections import namedtuple
-
-from astropy import units
-
 from chimera.core.interface import Interface
-
-
-class WSValue(namedtuple("WSValue", "time value unit")):
-    """
-    Named tuple that represents a measurement
-    """
 
 
 class WeatherStation(Interface):
     """
-    Instrument interface for weather stations
+    Instrument interface for weather stations.
+
+    __config__ keys:
+        device (str or None): Identifier or path for the weather station device (e.g., serial port, network address, or device name). Should be set to the appropriate value for the specific hardware.
+        model (str): The model name or identifier of the weather station. Defaults to "unknown" if not specified.
     """
 
     __config__ = {
-        "device": None,  # weather station device
-        "model": "unknown",  # weather station model
+        "device": None,  # weather station device (str or None)
+        "model": "unknown",  # weather station model (str)
     }
+
+    # Helping dictionary for units used in weather station interfaces. They should be convertible using astropy.units.Unit()
+    units = {
+        "temperature": "deg_C",
+        "dew_point": "deg_C",
+        "humidity": "%",
+        "pressure": "Pa",
+        "wind_speed": "m/s",
+        "wind_direction": "deg",
+        "rain_rate": "mm/h",
+        "sky_transparency": "%",
+    }
+
+    def get_units(self, u: str | None) -> str | dict:
+        """
+        Returns a dictionary with the units used by the weather station.
+        The keys are: temperature, dew_point, humidity, pressure, wind_speed, wind_direction, rain_rate, sky_transparency
+        The values are strings representing the units, compatible with astropy.units.Unit()
+        @param u: The key for which to retrieve the unit. If None, return all units.
+        @return: A string representing the unit if u is provided, otherwise a dictionary with all units.
+        """
+        if u is not None:
+            if u in self.units:
+                return self.units[u]
+            else:
+                # Raise a KeyError if the unit key is unknown
+                raise KeyError(f"Unknown unit key: {u}")
+        return self.units
+
+    def get_last_measurement_time(self) -> str:
+        """
+        Returns the timestamp of the last measurement taken by the weather station.
+
+        @return: The UTC time of the last measurement as a string in FITS format ("YYYY-MM-DDThh:mm:ss.sss").
+                 E.g.: '2025-11-17T21:46:41.896'
+                 Can be converted into an astropy Time object using:
+                 Time('2025-11-17T21:46:41.896', format="fits")
+        """
+        pass
 
 
 class WeatherHumidity(WeatherStation):
@@ -31,13 +62,10 @@ class WeatherHumidity(WeatherStation):
     Humidity units accepted by the interface.
     """
 
-    __accepted_humidity_units__ = [units.pct]
-
-    def humidity(self, unit_out=units.pct):
+    def humidity(self) -> float:
         """
-        Returns the 100% relative humidity (Default: Percentage).
-        :param unit: Unit in which the instrument should return the humidity.
-        :return: the humidity.
+        Returns the 100% relative humidity in percentage.
+        @return: the humidity.
         """
 
 
@@ -46,21 +74,16 @@ class WeatherTemperature(WeatherStation):
     Methods related to temperature
     """
 
-    # Temperature units accepted by the interface.
-    __accepted_temperature_units__ = [units.Celsius, units.Kelvin, units.imperial.deg_F]
-
-    def temperature(self, unit_out=units.Celsius):
+    def temperature(self) -> float:
         """
-        Returns the temperature in the chosen unit (Default: Celsius).
-        :param unit:  Unit in which the instrument should return the temperature.
-        :return: the temperature.
+        Returns the temperature in Celsius.
+        @return: the temperature.
         """
 
-    def dew_point(self, unit_out=units.Celsius):
+    def dew_point(self) -> float:
         """
-        Returns the dew point temperature in the chosen unit (Default: Celsius).
-        :param unit:  Unit in which the instrument should return the dew point.
-        :return: the dew point temperature.
+        Returns the dew point temperature in Celsius.
+        @return: the dew point temperature.
         """
 
 
@@ -69,29 +92,16 @@ class WeatherWind(WeatherStation):
     Methods related to wind
     """
 
-    # Wind Speed units accepted by the interface.
-    __accepted_speed_units__ = [
-        units.meter / units.second,
-        units.kilometer / units.hour,
-        units.imperial.mile / units.hour,
-        units.imperial.foot / units.second,
-    ]
-
-    # Wind Direction units accepted by the interface.
-    __accepted_direction_unit__ = [units.degree, units.radian]
-
-    def wind_speed(self, unit_out=units.meter / units.second):
+    def wind_speed(self) -> float:
         """
-        Returns the wind speed in the chosen unit (Default: meters per second).
-        :param unit:  Unit in which the instrument should return the wind speed.
-        :return: the wind speed.
+        Returns the wind speed in meters per second.
+        @return: the wind speed.
         """
 
-    def wind_direction(self, unit_out=units.degree):
+    def wind_direction(self) -> float:
         """
-        Returns the wind direction in the chosen unit (Default: Degrees).
-        :param unit:  Unit in which the instrument should return the wind direction.
-        :return: the wind direction.
+        Returns the wind direction in Degrees.
+        @return: the wind direction.
         """
 
 
@@ -100,14 +110,10 @@ class WeatherPressure(WeatherStation):
     Methods related to pressure
     """
 
-    # Pressure units accepted by the interface.
-    __accepted_pressures_unit__ = [units.bar, units.Pa]
-
-    def pressure(self, unit_out=units.Pa):
+    def pressure(self) -> float:
         """
-        Returns the pressure in the chosen unit (Default: units.Pa).
-        :param unit:  Unit in which the instrument should return the pressure.
-        :return: the pressure.
+        Returns the atmospheric pressure in Pascals.
+        @return: the pressure.
         """
 
 
@@ -116,20 +122,13 @@ class WeatherRain(WeatherStation):
     Methods related to rain
     """
 
-    # Precipitation units accepted by the interface.
-    __accepted_precipitation_unit__ = [
-        units.imperial.inch / units.hour,
-        units.millimeter / units.hour,
-    ]
-
-    def rain_rate(self, unit_out=units.imperial.inch / units.hour):
+    def rain_rate(self) -> float:
         """
-        Returns the precipitation rate in the chosen unit (Default: inch/h).
-        :param unit:  Unit in which the instrument should return the precipitation rate.
-        :return: the precipitation rate.
+        Returns the precipitation rate in mm/hour.
+        @return: the precipitation rate.
         """
 
-    def is_raining(self):
+    def is_raining(self) -> bool:
         """
         Returns True if it is raining and False otherwise
         """
@@ -140,9 +139,7 @@ class WeatherTransparency(WeatherStation):
     Methods related to cloud and sky transparency
     """
 
-    __accepted_transparency_unit__ = [units.pct]
-
-    def sky_transparency(self, unit_out=units.pct):
+    def sky_transparency(self) -> float:
         """
         Returns sky transparency, or 100% - clouds coverage.
 
@@ -153,12 +150,12 @@ class WeatherTransparency(WeatherStation):
 
 class WeatherSafety(WeatherStation):
     """
-    Methods related to weather enviroment safety.
+    Methods related to weather environment safety.
 
-    Some weather stations can have some intelligency that returns to the OCS only if it is okay to open the dome or not.
+    Some weather stations can have some intelligence that returns to the OCS only if it is okay to open the dome or not.
     """
 
-    def ok_to_open(self):
+    def is_safe_to_open(self) -> bool:
         """
-        Returns True if it is okay to open the dome and False otherwise.
+        Returns True if it is SAFE to open the dome and False otherwise.
         """
