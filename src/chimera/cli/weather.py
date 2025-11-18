@@ -85,10 +85,14 @@ class ChimeraWeather(ChimeraCLI):
             "rain_rate",
             "sky_transparency",
         ):
-            v = getattr(self.weatherstation, attr)()
-            self.out(
-                f"{attr.replace('_', ' ').removeprefix('sky ')}:\t{v:.2f}\t{self.weatherstation.get_units(attr)}"
-            )
+            try:
+                v = getattr(self.weatherstation, attr)()
+                self.out(
+                    f"{attr.replace('_', ' ').removeprefix('sky ')}:\t{v:.2f}\t{self.weatherstation.get_units(attr)}"
+                )
+            except Exception as e:
+                if "not found" in str(e):  # skip if not implemented
+                    continue
         self.out(f"Last data:\t{last_meas}")
         self.out("=" * 80)
 
