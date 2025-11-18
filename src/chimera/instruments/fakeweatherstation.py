@@ -79,7 +79,7 @@ class FakeWeatherStation(
         """
         Returns True for rain 20% of the time
         """
-        return np.random.rand < 0.2
+        return np.random.rand() < 0.2
 
     def sky_transparency(self):
         """
