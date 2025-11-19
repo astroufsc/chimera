@@ -101,52 +101,40 @@ class WeatherStationBase(ChimeraObject, WeatherStation):
 
         # Seeing
         if self.features("WeatherSeeing"):
-            try:
-                seeing = self.seeing()
-                md += [
-                    (
-                        "SEEING",
-                        round(seeing, 2),
-                        (f"[{self.units['seeing']}] Seeing measurement"),
-                    )
-                ]
-            except (NotImplementedError, AttributeError):
-                pass
+            seeing = self.seeing()
+            md += [
+                (
+                    "SEEING",
+                    round(seeing, 2),
+                    (f"[{self.units['seeing']}] Seeing measurement"),
+                )
+            ]
 
-            try:
-                seeing_zen = self.seeing_at_zenith()
-                md += [
-                    (
-                        "SEEINGZ",
-                        round(seeing_zen, 2),
-                        (f"[{self.units['seeing_at_zenith']}] Seeing at zenith"),
-                    )
-                ]
-            except (NotImplementedError, AttributeError):
-                pass
+            seeing_zen = self.seeing_at_zenith()
+            md += [
+                (
+                    "SEEINGZ",
+                    round(seeing_zen, 2),
+                    (f"[{self.units['seeing_at_zenith']}] Seeing at zenith"),
+                )
+            ]
 
-            try:
-                flux = self.flux()
-                md += [
-                    (
-                        "SEEFLUX",
-                        round(flux, 2),
-                        (f"[{self.units['flux']}] Flux from seeing source"),
-                    )
-                ]
-            except (NotImplementedError, AttributeError):
-                pass
+            flux = self.flux()
+            md += [
+                (
+                    "SEEFLUX",
+                    round(flux, 2),
+                    (f"[{self.units['flux']}] Flux from seeing source"),
+                )
+            ]
 
-            try:
-                airmass = self.airmass()
-                md += [
-                    (
-                        "SEEAIRM",
-                        round(airmass, 2),
-                        "Airmass of seeing source",
-                    )
-                ]
-            except (NotImplementedError, AttributeError):
-                pass
+            airmass = self.airmass()
+            md += [
+                (
+                    "SEEAIRM",
+                    round(airmass, 2),
+                    "Airmass of seeing source",
+                )
+            ]
 
         return md
