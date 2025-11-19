@@ -51,7 +51,6 @@ chimera-rotator = "chimera.cli.rotator:main"
 chimera-focus = "chimera.cli.focus:main"
 chimera-sched = "chimera.cli.sched:main"
 chimera-weather = "chimera.cli.weather:main"
-chimera-seeing = "chimera.cli.seeing:main"
 
 [build-system]
 requires = ["uv_build>=0.7.19,<0.8.0"]

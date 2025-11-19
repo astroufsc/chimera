@@ -12,6 +12,7 @@ from chimera.interfaces.weatherstation import (
     WeatherPressure,
     WeatherRain,
     WeatherSafety,
+    WeatherSeeing,
     WeatherTemperature,
     WeatherTransparency,
     WeatherWind,
@@ -27,6 +28,7 @@ class FakeWeatherStation(
     WeatherRain,
     WeatherTransparency,
     WeatherSafety,
+    WeatherSeeing,
 ):
     def __init__(self):
         WeatherStationBase.__init__(self)
@@ -93,6 +95,52 @@ class FakeWeatherStation(
         """
         return True
 
+    def seeing(self) -> float:
+        """
+        Returns a simulated seeing value in arcseconds that varies with time.
+        Typical seeing ranges from 0.5 to 3.0 arcseconds.
+        """
+        # Seeing varies with hour, worse during day, better at night
+        hour_radians = self._hour_in_radians()
+        # Base seeing of 1.0 arcsec, varies ±0.5 with time, plus some random variation
+        base_seeing = 1.0 + 0.5 * math.sin(hour_radians)
+        noise = np.random.normal(0, 0.2)  # Add some random variation
+        seeing_value = max(0.5, base_seeing + noise)  # Ensure minimum of 0.5
+        return seeing_value
+
+    def seeing_at_zenith(self) -> float:
+        """
+        Returns seeing corrected for zenith position.
+        Typically better (smaller) than actual seeing.
+        """
+        current_seeing = self.seeing()
+        # Zenith seeing is typically the seeing value corrected by airmass
+        # For simplification, assume 20% better seeing at zenith
+        return current_seeing * 0.8
+
+    def flux(self) -> float:
+        """
+        Returns flux from the seeing monitor star in counts.
+        Typical values range from 1000 to 50000 counts.
+        """
+        # Flux varies with atmospheric conditions and time
+        hour_radians = self._hour_in_radians()
+        base_flux = 10000 + 5000 * math.cos(hour_radians)
+        noise = np.random.normal(0, 500)
+        flux_value = max(100, base_flux + noise)
+        return flux_value
+
+    def airmass(self) -> float:
+        """
+        Returns the airmass of the seeing monitor star.
+        Typical values range from 1.0 (zenith) to 3.0 (near horizon).
+        """
+        # Simulate airmass varying throughout the day
+        hour_radians = self._hour_in_radians()
+        # Airmass between 1.0 and 2.5
+        airmass_value = 1.0 + 0.75 * (1 + math.sin(hour_radians))
+        return airmass_value
+
 
 if __name__ == "__main__":
     fws = FakeWeatherStation()
@@ -129,5 +177,20 @@ if __name__ == "__main__":
 
     rain = fws.rain_rate()
     print(f"Rain: {rain:.2f} {fws.units['rain_rate']} @ {last_measurement_time}.")
+
+    # Test seeing measurements
+    seeing = fws.seeing()
+    print(f"Seeing: {seeing:.2f} {fws.units['seeing']} @ {last_measurement_time}.")
+
+    seeing_zenith = fws.seeing_at_zenith()
+    print(
+        f"Seeing at Zenith: {seeing_zenith:.2f} {fws.units['seeing_at_zenith']} @ {last_measurement_time}."
+    )
+
+    flux = fws.flux()
+    print(f"Flux: {flux:.2f} {fws.units['flux']} @ {last_measurement_time}.")
+
+    airmass = fws.airmass()
+    print(f"Airmass: {airmass:.2f} {fws.units['airmass']} @ {last_measurement_time}.")
 
     print(f"Metadata: {fws.get_metadata(None)}")

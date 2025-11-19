@@ -27,12 +27,16 @@ class WeatherStation(Interface):
         "wind_direction": "deg",
         "rain_rate": "mm/h",
         "sky_transparency": "%",
+        "seeing": "arcsec",
+        "seeing_at_zenith": "arcsec",
+        "flux": "count",
+        "airmass": "",
     }
 
     def get_units(self, u: str | None) -> str | dict:
         """
         Returns a dictionary with the units used by the weather station.
-        The keys are: temperature, dew_point, humidity, pressure, wind_speed, wind_direction, rain_rate, sky_transparency
+        The keys are: temperature, dew_point, humidity, pressure, wind_speed, wind_direction, rain_rate, sky_transparency, seeing, seeing_at_zenith, flux, airmass
         The values are strings representing the units, compatible with astropy.units.Unit()
         @param u: The key for which to retrieve the unit. If None, return all units.
         @return: A string representing the unit if u is provided, otherwise a dictionary with all units.
@@ -158,4 +162,34 @@ class WeatherSafety(WeatherStation):
     def is_safe_to_open(self) -> bool:
         """
         Returns True if it is SAFE to open the dome and False otherwise.
+        """
+
+
+class WeatherSeeing(WeatherStation):
+    """
+    Methods related to atmospheric seeing measurements.
+    """
+
+    def seeing(self) -> float:
+        """
+        Returns the current seeing measurement in arcseconds.
+        @return: the seeing value.
+        """
+
+    def seeing_at_zenith(self) -> float:
+        """
+        Returns the current seeing corrected for the zenith position in arcseconds.
+        @return: the seeing at zenith value.
+        """
+
+    def flux(self) -> float:
+        """
+        Returns the flux of the source being used for measuring seeing in counts.
+        @return: the flux value.
+        """
+
+    def airmass(self) -> float:
+        """
+        Returns the airmass of the source used for measuring seeing (dimensionless).
+        @return: the airmass value.
         """
