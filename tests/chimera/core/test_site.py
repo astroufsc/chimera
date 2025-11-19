@@ -114,3 +114,30 @@ class TestSite:
 
         except Exception as e:
             print(e)
+
+    def test_site_name_configuration(self, manager):
+        """Test that site name from configuration is properly set and appears in metadata"""
+        # Add a site with a custom name
+        manager.add_class(
+            Site,
+            "test_site",
+            {
+                "name": "Swope",
+                "latitude": "-70:42:00.877",
+                "longitude": "-29:00:43.175",
+                "altitude": "2187",
+            },
+        )
+
+        site = manager.get_proxy("/Site/0")
+
+        # Verify the name was properly set
+        assert site["name"] == "Swope", f"Site name should be 'Swope' but got '{site['name']}'"
+
+        # Verify the metadata contains the correct name
+        metadata = site.get_metadata(None)
+        site_metadata = [item for item in metadata if item[0] == "SITE"]
+        assert len(site_metadata) == 1, "Should have exactly one SITE entry in metadata"
+        assert (
+            site_metadata[0][1] == "Swope"
+        ), f"SITE header should be 'Swope' but got '{site_metadata[0][1]}'"

@@ -164,4 +164,6 @@ class ChimeraConfig:
         name = config.pop("name")
 
         url = parse_url(f"tcp://{host}:{port}/{cls}/{name}")
+        # Add name back to config so objects can use it as a configuration parameter
+        config["name"] = name
         return url, config
