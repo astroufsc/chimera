@@ -6,7 +6,7 @@ import math
 
 import numpy as np
 
-from chimera.instruments.weatherstation import WeatherBase
+from chimera.instruments.weatherstation import WeatherStationBase
 from chimera.interfaces.weatherstation import (
     WeatherHumidity,
     WeatherPressure,
@@ -19,7 +19,7 @@ from chimera.interfaces.weatherstation import (
 
 
 class FakeWeatherStation(
-    WeatherBase,
+    WeatherStationBase,
     WeatherTemperature,
     WeatherHumidity,
     WeatherPressure,
@@ -29,7 +29,7 @@ class FakeWeatherStation(
     WeatherSafety,
 ):
     def __init__(self):
-        WeatherBase.__init__(self)
+        WeatherStationBase.__init__(self)
         self["model"] = "FakeWeatherStation v1.0"
 
     def _hour_in_radians(self, hour=datetime.datetime.now(datetime.UTC).hour):

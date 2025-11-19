@@ -5,7 +5,7 @@ from chimera.core.chimeraobject import ChimeraObject
 from chimera.interfaces.weatherstation import WeatherStation
 
 
-class WeatherBase(ChimeraObject, WeatherStation):
+class WeatherStationBase(ChimeraObject, WeatherStation):
     def __init__(self):
         ChimeraObject.__init__(self)
 
