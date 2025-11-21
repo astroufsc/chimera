@@ -178,7 +178,7 @@ class WeatherSeeing(WeatherStation):
 
     def seeing_at_zenith(self) -> float:
         """
-        Returns the current seeing corrected for the zenith position in arcseconds.
+        Returns the seeing extrapolated to zenith (airmass = 1.0) in arcseconds.
         @return: the seeing at zenith value.
         """
 
