@@ -141,7 +141,7 @@ class ChimeraConfig:
         assert isinstance(site_config, dict)
 
         site_config["type"] = "Site"
-        site_url, site_conf = self._parse_config(site_config)
+        site_url, site_conf = self._parse_config(site_config, preserve_name=True)
         self.sites[site_url] = site_conf
 
         for type, object_configs in config.items():
@@ -157,11 +157,16 @@ class ChimeraConfig:
                     case _:
                         self.instruments[url] = conf
 
-    def _parse_config(self, config: dict[str, Any]) -> tuple[URL, dict[str, Any]]:
+    def _parse_config(
+        self, config: dict[str, Any], preserve_name: bool = False
+    ) -> tuple[URL, dict[str, Any]]:
         host = config.pop("host", self.host)
         port = config.pop("port", self.port)
         cls = config.pop("type")
         name = config.pop("name")
 
         url = parse_url(f"tcp://{host}:{port}/{cls}/{name}")
+        # Add name back to config for objects that use it as a configuration parameter (e.g., Site)
+        if preserve_name:
+            config["name"] = name
         return url, config
