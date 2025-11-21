@@ -5,7 +5,7 @@ from chimera.core.chimeraobject import ChimeraObject
 from chimera.interfaces.weatherstation import WeatherStation
 
 
-class WeatherBase(ChimeraObject, WeatherStation):
+class WeatherStationBase(ChimeraObject, WeatherStation):
     def __init__(self):
         ChimeraObject.__init__(self)
 
@@ -98,5 +98,43 @@ class WeatherBase(ChimeraObject, WeatherStation):
         if self.features("WeatherSafety"):
             safe = self.is_safe_to_open()
             md += [("ENVSAFE", safe, "Weather station safe to open flag")]
+
+        # Seeing
+        if self.features("WeatherSeeing"):
+            seeing = self.seeing()
+            md += [
+                (
+                    "SEEING",
+                    round(seeing, 2),
+                    (f"[{self.units['seeing']}] Seeing measurement"),
+                )
+            ]
+
+            seeing_zen = self.seeing_at_zenith()
+            md += [
+                (
+                    "SEEINGZ",
+                    round(seeing_zen, 2),
+                    (f"[{self.units['seeing_at_zenith']}] Seeing at zenith"),
+                )
+            ]
+
+            flux = self.flux()
+            md += [
+                (
+                    "SEEFLUX",
+                    round(flux, 2),
+                    (f"[{self.units['flux']}] Flux from seeing source"),
+                )
+            ]
+
+            airmass = self.airmass()
+            md += [
+                (
+                    "SEEAIRM",
+                    round(airmass, 2),
+                    "Airmass of seeing source",
+                )
+            ]
 
         return md

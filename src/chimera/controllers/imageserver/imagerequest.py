@@ -139,7 +139,6 @@ class ImageRequest(dict):
                     "Focuser",
                     "Telescope",
                     "WeatherStation",
-                    "SeeingMonitor",
                 )
             ]
 

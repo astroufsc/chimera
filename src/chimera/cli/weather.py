@@ -93,6 +93,18 @@ class ChimeraWeather(ChimeraCLI):
             except Exception as e:
                 if "not found" in str(e):  # skip if not implemented
                     continue
+
+        # Add seeing measurements if available
+        if self.weatherstation.features("WeatherSeeing"):
+            for attr in ("seeing", "seeing_at_zenith", "airmass", "flux"):
+                try:
+                    v = getattr(self.weatherstation, attr)()
+                    if v is not None:
+                        unit = self.weatherstation.get_units(attr)
+                        self.out(f"{attr.replace('_', ' ')}:\t{v:.2f}\t{unit}")
+                except (NotImplementedError, AttributeError):
+                    pass
+
         self.out(f"Last data:\t{last_meas}")
         self.out("=" * 80)
 
