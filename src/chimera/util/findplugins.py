@@ -14,6 +14,9 @@ def find_chimera_plugins(prefix: str = "chimera_") -> tuple[list[str], list[str]
     for i in iter_modules():
         if i[1].startswith(prefix):
             dirname = os.path.dirname(i[0].find_spec(i[1]).origin)
+            if os.path.isdir(dirname):
+                instruments_path.append(dirname)
+                controllers_path.append(dirname)
             if os.path.isdir(f"{dirname}/controllers"):
                 controllers_path.append(f"{dirname}/controllers")
             if os.path.isdir(f"{dirname}/instruments"):
