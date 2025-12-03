@@ -348,7 +348,6 @@ class ChimeraSched(ChimeraCLI):
                         )
                         self.out("\tCoords: %s" % position)
                         act.target_ra_dec = position
-                        # act = Point(target_ra_dec=position)
                     elif "alt" in list(actconfig.keys()) and "az" in list(
                         actconfig.keys()
                     ):
