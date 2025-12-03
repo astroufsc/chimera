@@ -50,11 +50,12 @@ class PointHandler(ActionHandler):
                 if ra_dec.epoch is None or ra_dec.epoch != Epoch.J2000:
                     ra_dec = ra_dec.to_epoch(Epoch.J2000)
                 telescope.slew_to_ra_dec(
-                    float(ra_dec.ra), float(ra_dec.dec), 2000.0
+                    float(ra_dec.ra.to_h()), float(ra_dec.dec.to_d()), 2000.0
                 )  # epoch is always 2000.0 for pointing
             elif action.target_alt_az is not None:
                 telescope.slew_to_alt_az(
-                    float(action.target_alt_az.alt), float(action.target_alt_az.az)
+                    float(action.target_alt_az.alt.to_d()),
+                    float(action.target_alt_az.az.to_d()),
                 )
             elif action.target_name is not None:
                 telescope.slew_to_object(action.target_name)
