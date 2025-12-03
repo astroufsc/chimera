@@ -465,7 +465,6 @@ class ChimeraSched(ChimeraCLI):
         def action_complete_clbk(action_id, status, message=None):
             session = Session()
             action = session.query(Action).filter(Action.id == action_id).one()
-            action = session.merge(action)
 
             if status == SchedulerStatus.OK:
                 self.out("%s" % green(str(status)))
