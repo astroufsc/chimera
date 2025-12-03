@@ -143,7 +143,7 @@ class Machine(threading.Thread):
                                 "[start] Program is not valid anymore {program.start_at}, {program.valid_for}"
                             )
                             self.controller.program_complete(
-                                program,
+                                program.id,
                                 SchedulerStatus.OK,
                                 "Program not valid anymore.",
                             )
@@ -158,23 +158,25 @@ class Machine(threading.Thread):
             log.debug(
                 "[start] Proceeding since MJD %f should have passed", program.start_at
             )
-            self.controller.program_begin(program)
+            self.controller.program_begin(program.id)
 
             try:
                 self.executor.execute(task)
                 log.debug(f"[finish] {str(task)}")
                 self.scheduler.done(task)
-                self.controller.program_complete(program, SchedulerStatus.OK)
+                self.controller.program_complete(program.id, SchedulerStatus.OK)
                 self.state(State.IDLE)
             except ProgramExecutionException as e:
                 self.scheduler.done(task, error=e)
-                self.controller.program_complete(program, SchedulerStatus.ERROR, str(e))
+                self.controller.program_complete(
+                    program.id, SchedulerStatus.ERROR, str(e)
+                )
                 self.state(State.IDLE)
                 log.debug(f"[error] {str(task)} ({str(e)})")
             except ProgramExecutionAborted as e:
                 self.scheduler.done(task, error=e)
                 self.controller.program_complete(
-                    program, SchedulerStatus.ABORTED, "Aborted by user."
+                    program.id, SchedulerStatus.ABORTED, "Aborted by user."
                 )
                 self.state(State.OFF)
                 log.debug(f"[aborted by user] {str(task)}")

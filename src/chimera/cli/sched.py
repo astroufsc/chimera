@@ -9,6 +9,7 @@ import shutil
 import string
 import sys
 import time
+from textwrap import indent
 
 import yaml
 from astropy.time import Time
@@ -55,180 +56,26 @@ class ChimeraSched(ChimeraCLI):
             help="Scheduler controller to be used",
             help_group="SCHEDULER",
         )
+        with open(
+            os.path.dirname(__file__) + "/../controllers/scheduler/sample-sched.yaml"
+        ) as f:
+            example_yaml = f.read()
+        with open(
+            os.path.dirname(__file__) + "/../controllers/scheduler/sample-sched.txt"
+        ) as f:
+            example_txt = f.read()
 
-        database_help = """Database options.
+        database_help = f"""Database options.
 
         The quickest and less configurable way to configure the scheduler database is to use
         a file with the following format:
 
-        # RA      dec       epoch  type    name  N*(f1:t1:n1, f2:t2:n2, ......)
-        14:00:00 -30:00:00  J2000  OBJECT  obj1  2*(V:7, R:6:2, B:5:2)
-        15:00:00 -30:00:00  NOW    OBJECT  obj2  2*(V:7, R:6:2, B:5:2)
-
-        # special targets follow different format
-        # for bias and dark, filter is ignored, we use same format just to keep it simple
-
-        # type name       N[*(f1:t1:n1, ...)]
-        FLAT   flat       3*(V:10:1, R:8:2, B:9:3)
-        BIAS   bias       1*(V:0)
-        DARK   dark       1*(V:1:4)
-        OBJECT \"NGC 5272\" 1*(B:10:10)
-
+{indent(example_txt, "        ")}
+        
         It is also possible to use a ".yaml" file with the database configuration for each program. The file
         must have a .yaml extension so the script knows how to parse it.
 
-        programs:
-            # You can configure each database to its fullest.
-
-            -   program:
-                name: PRG01           # (optional)
-                pi: Tiago Ribeiro     # (optional)
-                priority: 1           # (optional)
-                start_at: 57500.030    # Program start time in MJD or in ISO 8601 (yyyy-MM-ddTHH:mm:ss) (optional)
-                valid_for: 50 #s       # Program only valid for N seconds after start_at (optional)
-
-                # Add actions in the order they are intended to be performed.
-                actions:
-                    -   action: point
-                        ra: "14:00:00"
-                        dec: "-30:00:00"
-                        epoch: J2000
-                        offset:
-                            south: 600 # arcsec
-                            east: 300 # arcsec
-
-                    -   action: autofocus
-                        start: 100
-                        end: 200
-                        step: 10
-                        filter: R
-                        exptime: 10
-                        compress_format: fits_rice   # Enable output file compression
-
-                    -   action: pointverify
-                        here: True
-
-                    -   action: expose
-                        filter: V
-                        frames: 1
-                        exptime: 7
-                        image_type: OBJECT
-                        object_name: obj1 acq
-                        wait_dome: False        # Do not wait to dome sync to take the exposure
-
-                    -   action: expose
-                        filter: R
-                        frames: 2
-                        exptime: 6
-                        image_type: OBJECT
-                        object_name: obj1 acq
-
-                    -   action: expose
-                        filter: B
-                        frames: 2
-                        exptime: 5
-                        image_type: OBJECT
-                        object_name: obj1 acq
-
-            # new target with no autofocus or pointverify
-            -   program:
-                name: PRG02
-                pi: William Schoenell
-                priority: 2
-                actions:
-                    -   action: point
-                        ra: "15:00:00"
-                        dec: "-30:00:00"
-                        epoch: NOW
-
-                    -   action: expose
-                        filter: V
-                        frames: 1
-                        exptime: 7
-                        image_type: OBJECT
-                        object_name: obj1 acq
-
-                    -   action: expose
-                        filter: R
-                        frames: 2
-                        exptime: 6
-                        image_type: OBJECT
-                        object_name: obj1 acq
-
-                    -   action: expose
-                        filter: B
-                        frames: 2
-                        exptime: 5
-                        image_type: OBJECT
-                        object_name: obj1 acq
-
-            # Point to a target name
-            -   program:
-                name: PROG03
-                pi: Antonio Kanaan
-                priority: 3
-                actions:
-                    -   action: point
-                        name: "NGC 5272"
-
-                    -   action: expose
-                        filter: B
-                        frames: 10
-                        exptime: 10
-                        image_type: OBJECT
-                        object_name: "NGC 5272"
-
-        # calibrations
-
-            -   program:
-                name: DAYLIGHT CALIBRATIONS
-                pi: Tiago Ribeiro
-                actions:
-                    # BIAS
-                    -   action: expose
-                        frames: 10
-                        image_type: BIAS  # This will set shutter to close
-
-                    # DARK
-                    -   action: expose
-                        frames: 10
-                        exptime: 100
-                        image_type: DARK  # This will set shutter to close already
-
-                    # LIGHT DARK
-                    -   action: expose
-                        frames: 10
-                        exptime: 100
-                        shutter: OPEN    # In case you want to take light dark, you can specify shutter to be open
-                        image_type: DARK
-
-                    # FLAT FIELD
-                    -   action: point
-                        alt: "80:00:00"
-                        az: "10:00:00"
-                        dome_az: "112:00:00"
-                        dome_tracking: False
-
-                    -   action: expose
-                        frames: 10
-                        filter: V
-                        exptime: 10
-                        image_type: FLAT
-
-                    -   action: expose
-                        frames: 10
-                        filter: R
-                        exptime: 8
-                        image_type: FLAT
-
-                    -   action: expose
-                        frames: 9
-                        filter: B
-                        exptime: 20
-                        image_type: FLAT
-
-                    -   action: point
-                        dome_tracking: True   # Restart dome tracking
+{indent(example_yaml, "        ")}
 
         """
 
@@ -347,7 +194,6 @@ class ChimeraSched(ChimeraCLI):
                         )
                         self.out("\tCoords: %s" % position)
                         act.target_ra_dec = position
-                        # act = Point(target_ra_dec=position)
                     elif "alt" in list(actconfig.keys()) and "az" in list(
                         actconfig.keys()
                     ):
@@ -573,7 +419,6 @@ class ChimeraSched(ChimeraCLI):
         self.out("State: %s" % self.scheduler.state())
         if self.scheduler.state() == State.BUSY and self.scheduler.current_action():
             session = Session()
-            action = session.merge(self.scheduler.current_action())
             program = (
                 session.query(Program).filter(Program.id == action.program_id).one()
             )
@@ -583,15 +428,15 @@ class ChimeraSched(ChimeraCLI):
 
     @action(help="Monitor scheduler actions", help_group="RUN")
     def monitor(self, options):
-        def program_begin_clbk(program):
+        def program_begin_clbk(program_id):
             session = Session()
-            program = session.merge(program)
+            program = session.query(Program).filter(Program.id == program_id).one()
             self.out("=" * 40)
             self.out("%s %s" % (blue("[program]"), program.name))
 
-        def program_complete_clbk(program, status, message=None):
+        def program_complete_clbk(program_id, status, message=None):
             session = Session()
-            program = session.merge(program)
+            program = session.query(Program).filter(Program.id == program_id).one()
             if status == SchedulerStatus.OK:
                 self.out(
                     "%s %s %s" % (blue("[program]"), program.name, green(str(status)))
@@ -607,15 +452,10 @@ class ChimeraSched(ChimeraCLI):
                     )
                 )
 
-        def action_begin_clbk(action, message):
-            session = Session()
-            action = session.merge(action)
+        def action_begin_clbk(action_id, message):
             self.out("%s %s ..." % (blue("[action] "), message), end="")
 
-        def action_complete_clbk(action, status, message=None):
-            session = Session()
-            action = session.merge(action)
-
+        def action_complete_clbk(action_id, status, message=None):
             if status == SchedulerStatus.OK:
                 self.out("%s" % green(str(status)))
             else:
@@ -626,7 +466,6 @@ class ChimeraSched(ChimeraCLI):
                 self.out("=" * 40)
                 self.out("%s finished all programs" % blue("[scheduler]"))
                 self.out("=" * 40)
-                self.exit()
 
         self.scheduler.program_begin += program_begin_clbk
         self.scheduler.program_complete += program_complete_clbk
@@ -636,8 +475,11 @@ class ChimeraSched(ChimeraCLI):
 
         if self.scheduler.state() == State.OFF:
             self.out("%s no programs to do" % blue("[scheduler]"))
-        else:
-            self.wait(abort=False)
+
+        while True:
+            if self.scheduler.state() == State.OFF:
+                self.exit()
+            time.sleep(0.1)
 
 
 def main():

@@ -17,7 +17,9 @@ from sqlalchemy.orm import backref, relation, sessionmaker
 
 from chimera.core.constants import DEFAULT_PROGRAM_DATABASE
 
-engine = create_engine(f"sqlite:///{DEFAULT_PROGRAM_DATABASE}", echo=False)
+engine = create_engine(
+    f"sqlite:///{DEFAULT_PROGRAM_DATABASE}?check_same_thread=False", echo=False
+)
 metadata = MetaData()
 metadata.bind = engine
 
