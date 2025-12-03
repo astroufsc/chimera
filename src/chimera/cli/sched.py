@@ -15,7 +15,6 @@ import yaml
 from astropy.time import Time
 
 from chimera.controllers.scheduler.model import (
-    Action,
     AutoFlat,
     AutoFocus,
     Expose,
@@ -420,7 +419,6 @@ class ChimeraSched(ChimeraCLI):
         self.out("State: %s" % self.scheduler.state())
         if self.scheduler.state() == State.BUSY and self.scheduler.current_action():
             session = Session()
-            action = session.merge(self.scheduler.current_action())
             program = (
                 session.query(Program).filter(Program.id == action.program_id).one()
             )
@@ -433,14 +431,12 @@ class ChimeraSched(ChimeraCLI):
         def program_begin_clbk(program_id):
             session = Session()
             program = session.query(Program).filter(Program.id == program_id).one()
-            program = session.merge(program)
             self.out("=" * 40)
             self.out("%s %s" % (blue("[program]"), program.name))
 
         def program_complete_clbk(program_id, status, message=None):
             session = Session()
             program = session.query(Program).filter(Program.id == program_id).one()
-            program = session.merge(program)
             if status == SchedulerStatus.OK:
                 self.out(
                     "%s %s %s" % (blue("[program]"), program.name, green(str(status)))
@@ -457,15 +453,9 @@ class ChimeraSched(ChimeraCLI):
                 )
 
         def action_begin_clbk(action_id, message):
-            session = Session()
-            action = session.query(Action).filter(Action.id == action_id).one()
-            action = session.merge(action)
             self.out("%s %s ..." % (blue("[action] "), message), end="")
 
         def action_complete_clbk(action_id, status, message=None):
-            session = Session()
-            action = session.query(Action).filter(Action.id == action_id).one()
-
             if status == SchedulerStatus.OK:
                 self.out("%s" % green(str(status)))
             else:
