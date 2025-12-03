@@ -14,6 +14,7 @@ import yaml
 from astropy.time import Time
 
 from chimera.controllers.scheduler.model import (
+    Action,
     AutoFlat,
     AutoFocus,
     Expose,
@@ -583,14 +584,16 @@ class ChimeraSched(ChimeraCLI):
 
     @action(help="Monitor scheduler actions", help_group="RUN")
     def monitor(self, options):
-        def program_begin_clbk(program):
+        def program_begin_clbk(program_id):
             session = Session()
+            program = session.query(Program).filter(Program.id == program_id).one()
             program = session.merge(program)
             self.out("=" * 40)
             self.out("%s %s" % (blue("[program]"), program.name))
 
-        def program_complete_clbk(program, status, message=None):
+        def program_complete_clbk(program_id, status, message=None):
             session = Session()
+            program = session.query(Program).filter(Program.id == program_id).one()
             program = session.merge(program)
             if status == SchedulerStatus.OK:
                 self.out(
@@ -607,13 +610,15 @@ class ChimeraSched(ChimeraCLI):
                     )
                 )
 
-        def action_begin_clbk(action, message):
+        def action_begin_clbk(action_id, message):
             session = Session()
+            action = session.query(Action).filter(Action.id == action_id).one()
             action = session.merge(action)
             self.out("%s %s ..." % (blue("[action] "), message), end="")
 
-        def action_complete_clbk(action, status, message=None):
+        def action_complete_clbk(action_id, status, message=None):
             session = Session()
+            action = session.query(Action).filter(Action.id == action_id).one()
             action = session.merge(action)
 
             if status == SchedulerStatus.OK:
@@ -626,7 +631,6 @@ class ChimeraSched(ChimeraCLI):
                 self.out("=" * 40)
                 self.out("%s finished all programs" % blue("[scheduler]"))
                 self.out("=" * 40)
-                self.exit()
 
         self.scheduler.program_begin += program_begin_clbk
         self.scheduler.program_complete += program_complete_clbk
@@ -636,8 +640,11 @@ class ChimeraSched(ChimeraCLI):
 
         if self.scheduler.state() == State.OFF:
             self.out("%s no programs to do" % blue("[scheduler]"))
-        else:
-            self.wait(abort=False)
+
+        while True:
+            if self.scheduler.state() == State.OFF:
+                self.exit()
+            time.sleep(0.1)
 
 
 def main():
