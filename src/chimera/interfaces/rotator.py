@@ -63,6 +63,15 @@ class Rotator(Interface):
         @rtype: bool
         """
 
+    def sync(self, position: float) -> None:
+        """
+        Synchronize the rotator position to the given value.
+
+        @param position: The position to synchronize to in degrees.
+        @type  position: float
+        @rtype: None
+        """
+
     @event
     def move_begin(self, angle: float) -> None:
         """
