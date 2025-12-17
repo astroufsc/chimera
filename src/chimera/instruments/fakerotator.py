@@ -21,3 +21,6 @@ class FakeRotator(RotatorBase):
         time.sleep(1)  # Simulate time taken to move
         self._position = angle
         self.move_complete(angle, RotatorStatus.OK)
+
+    def sync(self, position):
+        self._position = position

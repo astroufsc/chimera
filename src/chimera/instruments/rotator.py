@@ -12,6 +12,9 @@ class RotatorBase(ChimeraObject, Rotator):
     def move_to(self, angle):
         raise NotImplementedError("Subclasses should implement this method.")
 
+    def sync(self, position):
+        raise NotImplementedError("Subclasses should implement this method.")
+
     def is_moving(self):
         raise NotImplementedError("Subclasses should implement this method.")
 

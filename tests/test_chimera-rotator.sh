@@ -8,3 +8,4 @@ chimera-rotator -v --by=3
 chimera-rotator -v --info
 chimera-rotator -v --by=-3
 chimera-rotator -v --info
+chimera-rotator --sync 42.42

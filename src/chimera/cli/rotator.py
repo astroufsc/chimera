@@ -52,6 +52,18 @@ class ChimeraRotator(ChimeraCLI):
         self.rotator.move_by(options.move_by)
         self.out("OK")
 
+    @action(
+        long="sync",
+        type="float",
+        help="Synchronize rotator to ANGLE position (in degrees)",
+        metavar="ANGLE",
+        help_group="COMMANDS",
+    )
+    def sync(self, options):
+        self.out("Synchronizing rotator to %.2f degrees ... " % options.sync, end="")
+        self.rotator.sync(options.sync)
+        self.out("OK")
+
     @action(help="Print rotator information", help_group="COMMANDS")
     def info(self, options):
         self.out("=" * 40)
