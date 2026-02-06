@@ -150,6 +150,9 @@ class DomeBase(ChimeraObject, DomeSlew, DomeSlit, DomeFlap, DomeSync):
         if self.get_mode() != Mode.Stand:
             self._move_if_needed(self._get_telescope_az())
             self._process_queue()
+        else:
+            self.log.debug("Dome is in Stand mode; sync skipped.")
+
         self.log.debug("Sync complete.")
         self.sync_complete()
 

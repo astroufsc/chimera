@@ -183,6 +183,7 @@ class ExposeHandler(ActionHandler):
 
     @staticmethod
     def abort(action):
+        # FIXME: use newer Proxies as Proxies cannot be shared between threads
         camera = copy.copy(ExposeHandler.camera)
         camera.abort_exposure()
 
