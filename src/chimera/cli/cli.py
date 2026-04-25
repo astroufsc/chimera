@@ -547,9 +547,18 @@ class ChimeraCLI:
         # FIXME: handle default actions. So far, only chimera-cam has it for expose
 
         for action_name, action in self._actions.items():
-            action_selected = getattr(options, action_name)
             # FIXME: ignoring default actions for now
-            if action_selected and action.default is None:
+            if action.default is not None:
+                continue
+            action_selected = getattr(options, action_name)
+            # Typed actions (e.g. --to ANGLE) store the parsed value and
+            # default to None when unset — distinguish from flag actions
+            # so falsy values like 0/0.0/"" still count as selected.
+            if action.type:
+                is_set = action_selected is not None
+            else:
+                is_set = bool(action_selected)
+            if is_set:
                 selected.append(action)
 
         # do not allow more than one action per action group
