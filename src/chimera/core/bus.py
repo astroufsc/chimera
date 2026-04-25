@@ -100,8 +100,14 @@ class Bus:
             self._running.clear()
 
             shutdown = create_transport(f"inproc://{self.url.path}")
-            shutdown.connect()
-            shutdown.send(b"shutdown request")
+            try:
+                shutdown.connect()
+                shutdown.send(b"shutdown request")
+            finally:
+                try:
+                    shutdown.close()
+                except Exception:
+                    pass
 
             # signal all response queue handlers that we are shutting down
             for key in self._q.keys():
