@@ -144,6 +144,13 @@ class Bus:
             except Exception:
                 log.exception("bus: error closing internal transport")
 
+        selector = getattr(self, "_selector", None)
+        if selector is not None:
+            try:
+                selector.close()
+            except Exception:
+                log.exception("bus: error closing selector")
+
         for socket in self._outbound.values():
             try:
                 socket.close()
@@ -282,9 +289,9 @@ class Bus:
         self._internal = create_transport(f"inproc://{self.url.path}")
         self._internal.bind()
 
-        selector = selectors.DefaultSelector()
-        selector.register(self._inbound.recv_fd(), selectors.EVENT_READ)
-        selector.register(self._internal.recv_fd(), selectors.EVENT_READ)
+        self._selector = selectors.DefaultSelector()
+        self._selector.register(self._inbound.recv_fd(), selectors.EVENT_READ)
+        self._selector.register(self._internal.recv_fd(), selectors.EVENT_READ)
 
         self._running.set()
 
@@ -295,7 +302,7 @@ class Bus:
         self._bus_started.set()
 
         while self._running.is_set():
-            events = selector.select(timeout=None)
+            events = self._selector.select(timeout=None)
             if not events:
                 log.warning("bus: selector returned no events")
                 # Do spurious events happen? unprobably, but just in case...
