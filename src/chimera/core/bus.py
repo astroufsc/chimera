@@ -93,6 +93,13 @@ class Bus:
         # Maximum consecutive failures before we consider a connection dead
         self._max_send_failures = 3
 
+        # Periodic health check for outbound sockets. After
+        # _max_send_failures consecutive ping timeouts the socket is
+        # closed and removed; this is the eviction policy referenced
+        # by the TODO in _push.
+        self._outbound_ping_interval = 30.0
+        self._outbound_ping_timeout = 2.0
+
         self._encoder = msgspec.json.Encoder()
         self._decoder = msgspec.json.Decoder(Messages)
 
@@ -130,6 +137,14 @@ class Bus:
                 process_queue_future.result()
             except Exception:
                 log.exception("bus: process queue exited with error")
+
+        health_check_future = getattr(self, "_health_check_future", None)
+        if health_check_future is not None:
+            try:
+                health_check_future.result()
+            except Exception:
+                log.exception("bus: health check exited with error")
+
         self._pool.shutdown()
 
         try:
@@ -162,9 +177,6 @@ class Bus:
         if self._shutdown_done.is_set():
             return True
         return self._bus_started.is_set() and self._running.is_set() is False
-
-    def __del__(self):
-        self.shutdown()
 
     def _cleanup_dead_subscribers(self, bus_url: str) -> None:
         with self._pubsub_lock:
@@ -297,6 +309,9 @@ class Bus:
 
         self._process_queue_future: Future[None] = self._pool.submit(
             self._process_queue
+        )
+        self._health_check_future: Future[None] = self._pool.submit(
+            self._outbound_health_check
         )
 
         self._bus_started.set()
@@ -453,6 +468,60 @@ class Bus:
                 kwargs=kwargs or {},
             )
         )
+
+    def _outbound_health_check(self) -> None:
+        # Periodically ping every outbound peer. Increment the per-peer
+        # failure counter on no/invalid response; once the counter
+        # reaches _max_send_failures, close and evict the socket and
+        # cleanup any subscribers from that bus.
+        while not self._shutdown_done.wait(timeout=self._outbound_ping_interval):
+            try:
+                with self._outbound_lock:
+                    targets = list(self._outbound.keys())
+                for dst_bus in targets:
+                    if self._shutdown_done.is_set():
+                        return
+                    if self._ping_outbound(dst_bus):
+                        with self._outbound_lock:
+                            self._outbound_failures[dst_bus] = 0
+                    else:
+                        self._record_outbound_failure(dst_bus)
+            except Exception:
+                log.exception("bus: error in outbound health check")
+
+    def _ping_outbound(self, dst_bus: str) -> bool:
+        # Probe with a ping addressed at the peer's manager. _handle_ping
+        # always responds (with ok=False if the resource is missing), so
+        # any Pong we get back proves the socket and peer are alive.
+        src = f"{self.url.bus}/_HealthCheck/{Protocol.id()}"
+        ping = Protocol.ping(src=src, dst=f"{dst_bus}/Manager/manager")
+        try:
+            self._push(ping)
+            try:
+                response = self._q[src].get(timeout=self._outbound_ping_timeout)
+            except queue.Empty:
+                return False
+            return isinstance(response, Pong)
+        finally:
+            self._q.pop(src, None)
+
+    def _record_outbound_failure(self, dst_bus: str) -> None:
+        evict = False
+        with self._outbound_lock:
+            if dst_bus not in self._outbound:
+                return
+            self._outbound_failures[dst_bus] += 1
+            if self._outbound_failures[dst_bus] >= self._max_send_failures:
+                try:
+                    self._outbound[dst_bus].close()
+                except Exception:
+                    pass
+                del self._outbound[dst_bus]
+                self._outbound_failures.pop(dst_bus, None)
+                evict = True
+        if evict:
+            log.debug(f"bus: evicted dead outbound peer {dst_bus}")
+            self._cleanup_dead_subscribers(dst_bus)
 
     #
     # bus server-side handling
