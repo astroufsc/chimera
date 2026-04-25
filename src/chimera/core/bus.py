@@ -63,6 +63,7 @@ class Bus:
 
         self._running = threading.Event()
         self._bus_started = threading.Event()
+        self._shutdown_done = threading.Event()
 
         self._q: dict[str, queue.SimpleQueue[Messages | None]] = (
             collections.defaultdict(queue.SimpleQueue)
@@ -96,36 +97,63 @@ class Bus:
         self._decoder = msgspec.json.Decoder(Messages)
 
     def shutdown(self):
-        if not self.is_dead():
-            self._running.clear()
+        if self._shutdown_done.is_set():
+            return
+        self._shutdown_done.set()
 
+        was_running = self._bus_started.is_set()
+        self._running.clear()
+
+        if was_running:
             shutdown = create_transport(f"inproc://{self.url.path}")
             try:
                 shutdown.connect()
                 shutdown.send(b"shutdown request")
+            except Exception:
+                log.exception("bus: failed to signal shutdown")
             finally:
                 try:
                     shutdown.close()
                 except Exception:
                     pass
 
-            # signal all response queue handlers that we are shutting down
-            for key in self._q.keys():
-                # FIXME: why we need to send multiple Nones? only one fails to unblock some threads.
-                # send a few Nones to unblock any pending gets
-                for _ in range(5):
-                    self._q[key].put(None)
+        # signal all response queue handlers that we are shutting down
+        for key in self._q.keys():
+            # FIXME: why we need to send multiple Nones? only one fails to unblock some threads.
+            # send a few Nones to unblock any pending gets
+            for _ in range(5):
+                self._q[key].put(None)
 
-            self._process_queue_future.result()
-            self._pool.shutdown()
+        process_queue_future = getattr(self, "_process_queue_future", None)
+        if process_queue_future is not None:
+            try:
+                process_queue_future.result()
+            except Exception:
+                log.exception("bus: process queue exited with error")
+        self._pool.shutdown()
 
+        try:
             self._inbound.close()
-            self._internal.close()
+        except Exception:
+            log.exception("bus: error closing inbound transport")
 
-            for socket in self._outbound.values():
+        internal = getattr(self, "_internal", None)
+        if internal is not None:
+            try:
+                internal.close()
+            except Exception:
+                log.exception("bus: error closing internal transport")
+
+        for socket in self._outbound.values():
+            try:
                 socket.close()
+            except Exception:
+                pass
+        self._outbound.clear()
 
     def is_dead(self) -> bool:
+        if self._shutdown_done.is_set():
+            return True
         return self._bus_started.is_set() and self._running.is_set() is False
 
     def __del__(self):
