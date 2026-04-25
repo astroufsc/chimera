@@ -179,15 +179,20 @@ class Bus:
             with self._outbound_lock:
                 if message.dst_bus not in self._outbound:
                     # TODO: define some policy to handle closing of these sockets when not in use
-                    self._outbound[message.dst_bus] = create_transport(message.dst_bus)
+                    transport = create_transport(message.dst_bus)
                     try:
-                        self._outbound[message.dst_bus].connect()
-                        self._outbound_failures[message.dst_bus] = 0
+                        transport.connect()
                     except Exception:
                         log.exception(
                             f"bus: failed to connect to outbound bus: {message.dst_bus}"
                         )
+                        try:
+                            transport.close()
+                        except Exception:
+                            pass
                         return
+                    self._outbound[message.dst_bus] = transport
+                    self._outbound_failures[message.dst_bus] = 0
 
                 try:
                     message_bytes = self._encoder.encode(message)
