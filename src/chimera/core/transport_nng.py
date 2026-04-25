@@ -17,13 +17,29 @@ class TransportNNG(Transport):
 
     @override
     def bind(self):
-        self._sk = pynng.Pull0()
-        self._sk.listen(f"{self.url}")
+        sk = pynng.Pull0()
+        try:
+            sk.listen(f"{self.url}")
+        except Exception:
+            try:
+                sk.close()
+            except Exception:
+                pass
+            raise
+        self._sk = sk
 
     @override
     def connect(self):
-        self._sk = pynng.Push0()
-        self._sk.dial(f"{self.url}", block=True)
+        sk = pynng.Push0()
+        try:
+            sk.dial(f"{self.url}", block=True)
+        except Exception:
+            try:
+                sk.close()
+            except Exception:
+                pass
+            raise
+        self._sk = sk
 
     @override
     def close(self):
