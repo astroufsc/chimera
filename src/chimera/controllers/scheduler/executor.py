@@ -63,20 +63,20 @@ class ProgramExecutor:
 
                 log_msg = str(self.current_handler.log(action))
                 log.debug(f"[start] {log_msg} ")
-                self.controller.action_begin(action, log_msg)
+                self.controller.action_begin(action.id, log_msg)
 
                 self.current_handler.process(action)
 
                 # instruments just returns in case of abort, so we need to check handler
                 # returned 'cause of abort or not
                 if self.must_stop.is_set():
-                    self.controller.action_complete(action, SchedulerStatus.ABORTED)
+                    self.controller.action_complete(action.id, SchedulerStatus.ABORTED)
                     raise ProgramExecutionAborted()
                 else:
-                    self.controller.action_complete(action, SchedulerStatus.OK)
+                    self.controller.action_complete(action.id, SchedulerStatus.OK)
 
             except ProgramExecutionException:
-                self.controller.action_complete(action, SchedulerStatus.ERROR)
+                self.controller.action_complete(action.id, SchedulerStatus.ERROR)
                 raise
             except KeyError:
                 log.debug(f"No handler to {action} action. Skipping it")

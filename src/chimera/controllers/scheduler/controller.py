@@ -88,19 +88,19 @@ class Scheduler(ChimeraObject):
         return self.machine.state()
 
     @event
-    def program_begin(self, program):
+    def program_begin(self, program_id):
         pass
 
     @event
-    def program_complete(self, program, status, message=None):
+    def program_complete(self, program_id, status, message=None):
         pass
 
     @event
-    def action_begin(self, action, message):
+    def action_begin(self, action_id, message):
         pass
 
     @event
-    def action_complete(self, action, status, message=None):
+    def action_complete(self, action_id, status, message=None):
         pass
 
     @event
