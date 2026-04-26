@@ -15,11 +15,12 @@ from astropy.io import fits
 from chimera.core.lock import lock
 from chimera.instruments.camera import CameraBase
 from chimera.interfaces.camera import CameraFeature, CameraStatus, ReadoutMode
+from chimera.interfaces.rotator import Rotator
 from chimera.util.position import Epoch, Position
 
 
 class FakeCamera(CameraBase):
-    __config__ = {"use_dss": True, "ccd_width": 512, "ccd_height": 512}
+    __config__ = {"use_dss": True, "ccd_width": 512, "ccd_height": 512, "rotator": None}
 
     def __init__(self):
         CameraBase.__init__(self)
@@ -59,6 +60,14 @@ class FakeCamera(CameraBase):
         readout_mode.pixel_height = 9.0
 
         self._readout_modes = {self._my_readout_mode: readout_mode}
+
+        try:
+            from scipy.ndimage import rotate
+
+            self.rotate = rotate
+        except ImportError:
+            self.log.warning("scipy not installed, cannot rotate images with rotator.")
+            self.rotate = None
 
     def __start__(self):
         self["camera_model"] = "Fake Cameras Inc."
@@ -145,10 +154,19 @@ class FakeCamera(CameraBase):
         if not dome.ping():
             dome = None
 
+        if self["rotator"] and self.rotate:
+            rotator: Rotator = self.get_proxy(self["rotator"])
+            if not rotator.ping():
+                rotator = None
+        else:
+            rotator = None
+
         if not telescope:
             self.log.debug("FakeCamera couldn't find telescope.")
         if not dome:
             self.log.debug("FakeCamera couldn't find dome.")
+        if not rotator:
+            self.log.debug("FakeCamera couldn't find rotator.")
 
         ccd_width, ccd_height = self.get_physical_size()
 
@@ -250,6 +268,14 @@ class FakeCamera(CameraBase):
         # Last resort if nothing else could make a picture
         if pix is None:
             pix = np.zeros((ccd_height, ccd_width), dtype=np.int32)
+
+        # Rotate image
+        if rotator:
+            angle = rotator.get_position()
+            self.log.debug(f"Rotating image by {angle} degrees")
+            pix = self.rotate(
+                pix, angle, reshape=False
+            )  # Position Angle (PA) is Counter-Clockwise
 
         image = self._save_image(
             image_request,
