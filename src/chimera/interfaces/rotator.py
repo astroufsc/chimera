@@ -33,7 +33,9 @@ class Rotator(Interface):
         """
         Set the rotator position.
 
-        @param position: The position to set in degrees.
+        @param position: The position to set in degrees. Angle is in the range
+        [0, 360) and must be measured East of North, i.e. turning positive into
+        the direction of the right ascension axis.
         @type  position: float
         @rtype: None
         """
@@ -61,15 +63,6 @@ class Rotator(Interface):
 
         @return: False if move couldn't be aborted, True otherwise.
         @rtype: bool
-        """
-
-    def sync(self, position: float) -> None:
-        """
-        Synchronize the rotator position to the given value.
-
-        @param position: The position to synchronize to in degrees.
-        @type  position: float
-        @rtype: None
         """
 
     @event
