@@ -71,18 +71,18 @@ class FakeFocuser(FocuserBase):
     @lock
     def get_position(self, axis=FocuserAxis.Z):
         self._check_axis(axis)
-        return self._position
+        return int(self._position)
 
     def get_range(self, axis=FocuserAxis.Z):
         self._check_axis(axis)
         return (0, 7000)
 
     def get_temperature(self):
-        return random.randrange(10, 30)
+        return float(random.randrange(10, 30))
 
     def _set_position(self, n):
         self.log.info(f"Changing focuser to {n}")
-        self._position = n
+        self._position = int(n)
 
     def _in_range(self, n):
         min_pos, max_pos = self.get_range()
