@@ -66,8 +66,12 @@ class Manager:
 
         self.resources = ResourcesManager()
         self.class_loader = ClassLoader()
+        # one worker per object __main__ loop: the default pool size
+        # (cpu count + 4) starves objects on small machines once several
+        # control loops run forever
         self._pool = concurrent.futures.ThreadPoolExecutor(
-            thread_name_prefix=f"{self._bus.url.bus}/Manager-"
+            max_workers=64,
+            thread_name_prefix=f"{self._bus.url.bus}/Manager-",
         )
 
         # shutdown event
