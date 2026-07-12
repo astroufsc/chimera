@@ -100,6 +100,10 @@ class Bus:
         self._decoder = msgspec.json.Decoder(Messages)
 
     def shutdown(self):
+        # wait for the bus loop to finish starting, so we don't race its
+        # initialization
+        self._bus_started.wait(5.0)
+
         if not self.is_dead():
             self._running.clear()
 
@@ -108,11 +112,17 @@ class Bus:
             shutdown.send(b"shutdown request")
 
             # signal all response queue handlers that we are shutting down
-            for key in self._q.keys():
+            for key in list(self._q.keys()):
                 # FIXME: why we need to send multiple Nones? only one fails to unblock some threads.
                 # send a few Nones to unblock any pending gets
                 for _ in range(5):
                     self._q[key].put(None)
+
+            # always wake the main queue handler explicitly: its queue entry
+            # may not exist yet if _process_queue didn't get to run before
+            # shutdown was requested, and it would block forever on a queue
+            # nobody will ever fill again
+            self._q[self.url.url].put(None)
 
             self._process_queue_future.result()
             self._pool.shutdown()
