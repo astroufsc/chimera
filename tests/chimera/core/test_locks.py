@@ -1,4 +1,3 @@
-import copy
 import sys
 import threading
 import time
@@ -55,10 +54,11 @@ class TestLock:
 
             def get_obj(o):
                 """
-                Copy Proxy to share between threads.
+                Create a fresh Proxy per thread: proxies have their own bus
+                identity and cannot be shared between threads.
                 """
                 if isinstance(o, Proxy):
-                    return copy.copy(o)
+                    return manager.get_proxy("/Minimo/m")
                 return o
 
             def run_unlocked():

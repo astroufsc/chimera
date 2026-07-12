@@ -24,16 +24,10 @@ class TestSite:
 
         site = manager.get_proxy("/Site/0")
 
-        try:
-            print()
-            print("local:", site.localtime())
-            print("UT   :", site.ut())
-            print("JD   :", site.JD())
-            print("MJD  :", site.MJD())
-            print("LST  :", site.LST())
-            print("GST  :", site.GST())
-        except Exception as e:
-            print(e)
+        print()
+        print("UT   :", site.ut())
+        print("JD   :", site.jd())
+        print("MJD  :", site.mjd())
 
     @pytest.mark.skip
     def test_sidereal_clock(self, manager):
@@ -76,7 +70,7 @@ class TestSite:
             },
         )
 
-        site = manager.get_proxy(Site)
+        site = manager.get_proxy("/Site/0")
 
         try:
             print()

@@ -10,14 +10,21 @@ class Publisher(ChimeraObject):
     def __init__(self):
         ChimeraObject.__init__(self)
         self.counter = 0
+        self._clbk = None
 
     def __start__(self):
         # ATTENTION: get_proxy works only after __init__
-        self.foo_done += self.foo_done_clbk
+        # NOTE: keep a reference to the callback: the bus identifies callbacks
+        # by identity, so subscribe/unsubscribe must use the same object
+        self._clbk = self.foo_done_clbk
+        self.foo_done += self._clbk
         return True
 
     def __stop__(self):
-        self.foo_done -= self.foo_done_clbk
+        self.foo_done -= self._clbk
+
+    def unsubscribe_foo_done(self):
+        self.foo_done -= self._clbk
 
     def foo(self):
         self.foo_done(time.time())
@@ -63,7 +70,10 @@ class TestEvents:
         s = manager.get_proxy("/Subscriber/s")
         assert isinstance(s, Proxy)
 
-        p.foo_done += s.foo_done_clbk
+        # NOTE: keep a reference to the callback: the bus identifies callbacks
+        # by identity, so subscribe/unsubscribe must use the same object
+        s_clbk = s.foo_done_clbk
+        p.foo_done += s_clbk
 
         assert p.foo() == 42
         time.sleep(0.5)  # delay to get messages delivered
@@ -76,8 +86,8 @@ class TestEvents:
         assert p.get_counter() == 2
 
         # unsubscribe
-        p.foo_done -= s.foo_done_clbk
-        p.foo_done -= p.foo_done_clbk
+        p.foo_done -= s_clbk
+        p.unsubscribe_foo_done()
 
         assert p.foo() == 42
         time.sleep(0.5)  # delay to get messages delivered

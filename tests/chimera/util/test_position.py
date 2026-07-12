@@ -50,18 +50,16 @@ class TestPosition:
 
     def test_alt_az_ra_dec(self):
         alt_az = Position.from_alt_az("20:30:40", "222:11:00")
-        lat = Coord.from_d(0)
+        lat = 0.0
         o = ephem.Observer()
         o.lat = "0:0:0"
         o.long = "0:0:0"
         o.date = dt.now(tz.tzutc())
         lst = float(o.sidereal_time())
-        ra_dec = Position.alt_az_to_ra_dec(alt_az, lat, lst)
+        ra, dec = Position.alt_az_to_ra_dec(alt_az.alt, alt_az.az, lat, lst)
 
-        alt_az2 = Position.ra_dec_to_alt_az(ra_dec, lat, lst)
-        assert equal(alt_az.alt.to_r(), alt_az2.alt.to_r()) & equal(
-            alt_az.az.to_r(), alt_az2.az.to_r()
-        )
+        alt, az = Position.ra_dec_to_alt_az(ra, dec, lat, lst)
+        assert equal(alt_az.alt, alt) & equal(alt_az.az, az)
 
     def test_distances(self):
         p1 = Position.from_ra_dec("10:00:00", "0:0:0")

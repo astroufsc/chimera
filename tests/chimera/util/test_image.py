@@ -1,8 +1,14 @@
 import os
+import shutil
 
 import numpy as np
+import pytest
 
 from chimera.util.image import Image, ImageUtil
+
+
+def sextractor_available():
+    return any(shutil.which(program) for program in ("sextractor", "sex"))
 
 
 class TestImage:
@@ -28,6 +34,9 @@ class TestImage:
         assert world.ra.deg is not None
         assert world.dec.deg is not None
 
+    @pytest.mark.skipif(
+        not sextractor_available(), reason="SExtractor program not installed"
+    )
     def test_extractor(self):
         for f in ["teste-com-wcs.fits", "teste-sem-wcs.fits"]:
             img = Image.from_file(os.path.join(self.base, f), fix=False)

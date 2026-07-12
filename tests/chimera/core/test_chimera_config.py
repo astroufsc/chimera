@@ -1,16 +1,17 @@
 import logging
 
+import msgspec
 import pytest
 
-from chimera.core.chimera_config import (
-    ChimeraConfig,
-    ChimeraConfigSyntaxException,
-    TypeNotFoundException,
-)
+from chimera.core.chimera_config import ChimeraConfig
 from chimera.core.constants import MANAGER_DEFAULT_HOST, MANAGER_DEFAULT_PORT
 from chimera.core.log import set_console_level
 
 set_console_level(logging.DEBUG)
+
+
+def parse(s: str) -> ChimeraConfig:
+    return ChimeraConfig(s, decoder=msgspec.yaml.decode)
 
 
 class TestChimeraConfig:
@@ -65,44 +66,47 @@ class TestChimeraConfig:
           filters: [R, G, B, RGB, CLEAR]
         """
 
-        system = ChimeraConfig.from_string(s)
+        system = parse(s)
 
-        assert system.sites[0][0].name == "site1"
-        assert system.sites[0][0].cls == "SiteType"
-        assert system.sites[0][0].host == "200.131.64.200"
-        assert system.sites[0][0].port == 10000
-        assert system.sites[0][1]["config0"] == "value0"
+        sites = list(system.sites.items())
+        instruments = list(system.instruments.items())
 
-        assert system.instruments[0][0].name == "tel1"
-        assert system.instruments[0][0].cls == "TelescopeType"
-        assert system.instruments[0][0].host == "127.0.0.1"
-        assert system.instruments[0][0].port == 8000
-        assert system.instruments[0][1]["config1"] == "value1"
+        assert sites[0][0].name == "site1"
+        assert sites[0][0].cls == "SiteType"
+        assert sites[0][0].host == "200.131.64.200"
+        assert sites[0][0].port == 10000
+        assert sites[0][1]["config0"] == "value0"
 
-        assert system.instruments[1][0].name == "cam1"
-        assert system.instruments[1][0].cls == "CameraType"
-        assert system.instruments[1][0].host == "200.131.64.202"
-        assert system.instruments[1][0].port == 10002
-        assert system.instruments[1][1]["config2"] == "value2"
+        assert instruments[0][0].name == "tel1"
+        assert instruments[0][0].cls == "TelescopeType"
+        assert instruments[0][0].host == "127.0.0.1"
+        assert instruments[0][0].port == 8000
+        assert instruments[0][1]["config1"] == "value1"
 
-        assert system.instruments[2][0].name == "focuser1"
-        assert system.instruments[2][0].cls == "FocuserType"
-        assert system.instruments[2][0].host == "200.131.64.203"
-        assert system.instruments[2][0].port == 10003
-        assert system.instruments[2][1]["config3"] == "value3"
+        assert instruments[1][0].name == "cam1"
+        assert instruments[1][0].cls == "CameraType"
+        assert instruments[1][0].host == "200.131.64.202"
+        assert instruments[1][0].port == 10002
+        assert instruments[1][1]["config2"] == "value2"
 
-        assert system.instruments[3][0].name == "dome1"
-        assert system.instruments[3][0].cls == "DomeType"
-        assert system.instruments[3][0].host == "200.131.64.204"
-        assert system.instruments[3][0].port == 10004
-        assert system.instruments[3][1]["config4"] == "value4"
+        assert instruments[2][0].name == "focuser1"
+        assert instruments[2][0].cls == "FocuserType"
+        assert instruments[2][0].host == "200.131.64.203"
+        assert instruments[2][0].port == 10003
+        assert instruments[2][1]["config3"] == "value3"
 
-        assert system.instruments[4][0].name == "wheel1"
-        assert system.instruments[4][0].cls == "FilterWheelType"
-        assert system.instruments[4][0].host == "200.131.64.205"
-        assert system.instruments[4][0].port == 10005
-        assert system.instruments[4][1]["config5"] == "value5"
-        assert system.instruments[4][1]["filters"] == [
+        assert instruments[3][0].name == "dome1"
+        assert instruments[3][0].cls == "DomeType"
+        assert instruments[3][0].host == "200.131.64.204"
+        assert instruments[3][0].port == 10004
+        assert instruments[3][1]["config4"] == "value4"
+
+        assert instruments[4][0].name == "wheel1"
+        assert instruments[4][0].cls == "FilterWheelType"
+        assert instruments[4][0].host == "200.131.64.205"
+        assert instruments[4][0].port == 10005
+        assert instruments[4][1]["config5"] == "value5"
+        assert instruments[4][1]["filters"] == [
             "R",
             "G",
             "B",
@@ -116,18 +120,19 @@ class TestChimeraConfig:
         s = """
         site:
           name: site1
-          #type: SiteType # type would be Site (key.capitalize())
+          #type: SiteType # type defaults to Site
           host: 200.131.64.200
           port: 10000
           config0: value0
         """
 
-        system = ChimeraConfig.from_string(s)
-        assert system.sites[0][0].name == "site1"
-        assert system.sites[0][0].cls == "Site"
-        assert system.sites[0][0].host == "200.131.64.200"
-        assert system.sites[0][0].port == 10000
-        assert system.sites[0][1]["config0"] == "value0"
+        system = parse(s)
+        sites = list(system.sites.items())
+        assert sites[0][0].name == "site1"
+        assert sites[0][0].cls == "Site"
+        assert sites[0][0].host == "200.131.64.200"
+        assert sites[0][0].port == 10000
+        assert sites[0][1]["config0"] == "value0"
 
     def test_auto_host_port(self):
         s = """
@@ -137,9 +142,10 @@ class TestChimeraConfig:
           #port: 10000 # default=None
         """
 
-        system = ChimeraConfig.from_string(s)
-        assert system.sites[0][0].host == MANAGER_DEFAULT_HOST
-        assert system.sites[0][0].port == MANAGER_DEFAULT_PORT
+        system = parse(s)
+        sites = list(system.sites.items())
+        assert sites[0][0].host == MANAGER_DEFAULT_HOST
+        assert sites[0][0].port == MANAGER_DEFAULT_PORT
 
     def test_errors(self):
         s = """
@@ -149,15 +155,15 @@ class TestChimeraConfig:
         """
         # class cannot have $
         with pytest.raises(ValueError):
-            ChimeraConfig.from_string(s)
+            parse(s)
 
         s = """
         telescope
            name: 0
         """
-        # syntax eror on first line (forgot ':' after telescope)
-        with pytest.raises(ChimeraConfigSyntaxException):
-            ChimeraConfig.from_string(s)
+        # syntax error on first line (forgot ':' after telescope)
+        with pytest.raises(msgspec.DecodeError):
+            parse(s)
 
     #
     # instrument primitive
@@ -169,22 +175,23 @@ class TestChimeraConfig:
          type: InstrumentType
         """
 
-        system = ChimeraConfig.from_string(s)
+        system = parse(s)
 
-        assert system.instruments[0][0].name == "simple"
-        assert system.instruments[0][0].cls == "InstrumentType"
+        instruments = list(system.instruments.items())
+        assert instruments[0][0].name == "simple"
+        assert instruments[0][0].cls == "InstrumentType"
 
     def test_multiple_instruments(self):
         s = """
         instrument:
-         - name: simple
+         - name: simple1
            type: InstrumentType
 
-         - name: simple
+         - name: simple2
            type: InstrumentType
         """
 
-        system = ChimeraConfig.from_string(s)
+        system = parse(s)
         assert len(system.instruments) == 2
 
     def test_instrument_error(self):
@@ -193,8 +200,8 @@ class TestChimeraConfig:
          name: simple
          #type: InstrumentType
         """
-        with pytest.raises(TypeNotFoundException):
-            ChimeraConfig.from_string(s)
+        with pytest.raises(KeyError):
+            parse(s)
 
     #
     # controller primitive
@@ -206,22 +213,23 @@ class TestChimeraConfig:
          type: ControllerType
         """
 
-        system = ChimeraConfig.from_string(s)
+        system = parse(s)
 
-        assert system.controllers[0][0].name == "simple"
-        assert system.controllers[0][0].cls == "ControllerType"
+        controllers = list(system.controllers.items())
+        assert controllers[0][0].name == "simple"
+        assert controllers[0][0].cls == "ControllerType"
 
     def test_multiple_controllers(self):
         s = """
         controller:
-         - name: simple
+         - name: simple1
            type: ControllerType
 
-         - name: simple
+         - name: simple2
            type: ControllerType
         """
 
-        system = ChimeraConfig.from_string(s)
+        system = parse(s)
         assert len(system.controllers) == 2
 
     def test_controller_error(self):
@@ -230,5 +238,5 @@ class TestChimeraConfig:
          name: simple
          #type: ControllerType
         """
-        with pytest.raises(TypeNotFoundException):
-            ChimeraConfig.from_string(s)
+        with pytest.raises(KeyError):
+            parse(s)

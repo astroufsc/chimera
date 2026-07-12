@@ -6,8 +6,8 @@ from chimera.core.chimeraobject import ChimeraObject
 from chimera.core.exceptions import (
     ChimeraObjectException,
     ClassLoaderException,
-    InvalidLocationException,
     NotValidChimeraObjectException,
+    ObjectNotFoundException,
 )
 from chimera.core.proxy import Proxy
 
@@ -30,12 +30,12 @@ class TestManager:
         assert manager.add_class(Simple, "simple", start=True)
 
         # already started
-        with pytest.raises(InvalidLocationException):
+        with pytest.raises(ValueError):
             manager.add_class(Simple, "simple")
 
         with pytest.raises(NotValidChimeraObjectException):
             manager.add_class(NotValid, "nonono")
-        with pytest.raises(InvalidLocationException):
+        with pytest.raises(ValueError):
             manager.add_class(Simple, "")
 
         # by location
@@ -44,7 +44,7 @@ class TestManager:
         )
         with pytest.raises(ClassLoaderException):
             manager.add_location("/What/h")
-        with pytest.raises(InvalidLocationException):
+        with pytest.raises(ValueError):
             manager.add_location("foo")
 
         # start with error
@@ -53,20 +53,22 @@ class TestManager:
         # manager.start, '/ManagerHelperWithError/h')
 
         # start who?
-        with pytest.raises(InvalidLocationException):
+        with pytest.raises(ValueError):
             manager.start("/Who/am/I")
+        with pytest.raises(ObjectNotFoundException):
+            manager.start("/Who/ami")
 
         # exceptional cases
         # __init__
         with pytest.raises(ChimeraObjectException):
             manager.add_location(
-                "/ManagerHelperWithInitException/h", [os.path.dirname(__file__)]
+                "/ManagerHelperWithInitException/h", path=[os.path.dirname(__file__)]
             )
 
         # __start__
         with pytest.raises(ChimeraObjectException):
             manager.add_location(
-                "/ManagerHelperWithStartException/h", [os.path.dirname(__file__)]
+                "/ManagerHelperWithStartException/h", path=[os.path.dirname(__file__)]
             )
 
         # __main__
@@ -76,15 +78,20 @@ class TestManager:
     def test_remove_stop(self, manager):
         assert manager.add_class(Simple, "simple")
 
-        # who?
-        with pytest.raises(InvalidLocationException):
+        # who? (malformed locations raise ValueError, well-formed but
+        # unknown ones raise ObjectNotFoundException)
+        with pytest.raises(ValueError):
             manager.remove("Simple/what")
-        with pytest.raises(InvalidLocationException):
+        with pytest.raises(ValueError):
             manager.remove("foo")
+        with pytest.raises(ObjectNotFoundException):
+            manager.remove("/Simple/what")
 
         # stop who?
-        with pytest.raises(InvalidLocationException):
+        with pytest.raises(ValueError):
             manager.stop("foo")
+        with pytest.raises(ObjectNotFoundException):
+            manager.stop("/Simple/what")
 
         # ok
         assert manager.remove("/Simple/simple") is True
@@ -108,9 +115,9 @@ class TestManager:
         assert manager.add_class(Simple, "simple")
 
         # who?
-        with pytest.raises(InvalidLocationException):
+        with pytest.raises(ValueError):
             manager.get_proxy("wrong")
-        with pytest.raises(InvalidLocationException):
+        with pytest.raises(ValueError):
             manager.get_proxy("Simple/simple")
 
         # ok
@@ -121,11 +128,7 @@ class TestManager:
         p = manager.get_proxy("/Simple/0")
         assert isinstance(p, Proxy)
 
-        # # assert p.answer() == 42
-
-        # # oops
-        # with pytest.raises(AttributeError):
-        #     p.wrong()
+        assert p.answer() == 42
 
     def test_manager(self, manager):
         assert manager.add_class(Simple, "simple")
