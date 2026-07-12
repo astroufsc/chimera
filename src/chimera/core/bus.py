@@ -59,7 +59,11 @@ class Bus:
     def __init__(self, url: str):
         self.url = create_url(url, cls="Bus")
 
-        self._pool = ThreadPoolExecutor()
+        # NOTE: requests are handled on this pool and user methods can block
+        # for a long time (or forever, e.g. an object control loop), so don't
+        # rely on the cpu-based default size: it is too small on small machines
+        # and exhausting it silently stalls all message handling.
+        self._pool = ThreadPoolExecutor(max_workers=32)
 
         self._running = threading.Event()
         self._bus_started = threading.Event()

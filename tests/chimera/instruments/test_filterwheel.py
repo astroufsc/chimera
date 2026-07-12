@@ -33,13 +33,14 @@ class TestFakeFilterWheel:
         assert isinstance(fired_events["filter_change"][1], str)
         assert isinstance(fired_events["filter_change"][2], str)
 
-    def test_filters(self, filterwheel):
+    def test_filters(self, filterwheel, wait_for):
         filters = filterwheel.get_filters()
 
         for filter in filters:
+            fired_events.clear()
             filterwheel.set_filter(filter)
             assert filterwheel.get_filter() == filter
-            time.sleep(0.5)  # delay to get events delivered
+            assert wait_for(lambda: "filter_change" in fired_events)
             self.assert_events()
 
     def test_get_filters(self, filterwheel):

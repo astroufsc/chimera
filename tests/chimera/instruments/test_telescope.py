@@ -66,15 +66,17 @@ def telescope(manager):
 
 class TestFakeTelescope:
     def assert_events(self, slew_status):
-        # for every slew, we need to check if all events were fired in the
-        # right order and with the right parameters
+        # for every slew, we need to check if all events were fired with the
+        # right parameters.
+        # NOTE: no delivery-time ordering asserts: events are delivered
+        # asynchronously and the bus does not guarantee cross-event callback
+        # ordering
 
         assert "slew_begin" in fired_events
         assert isinstance(fired_events["slew_begin"][1], (int, float))
         assert isinstance(fired_events["slew_begin"][2], (int, float))
 
         assert "slew_complete" in fired_events
-        assert fired_events["slew_complete"][0] > fired_events["slew_begin"][0]
         assert isinstance(fired_events["slew_complete"][1], (int, float))
         assert isinstance(fired_events["slew_complete"][2], (int, float))
         assert fired_events["slew_complete"][3] in TelescopeStatus
@@ -85,7 +87,7 @@ class TestFakeTelescope:
         # telescope above the minimum altitude limit
         telescope.slew_to_alt_az(60.0, 30.0)
 
-    def test_slew(self, telescope):
+    def test_slew(self, telescope, wait_for):
         self.goto_safe_position(telescope)
         ra, dec = telescope.get_position_ra_dec()
 
@@ -101,10 +103,10 @@ class TestFakeTelescope:
         assert_eps_equal(dec, dest_dec, 60)
 
         # event checkings
-        time.sleep(0.5)  # delay to get events delivered
+        assert wait_for(lambda: "slew_complete" in fired_events)
         self.assert_events(TelescopeStatus.OK)
 
-    def test_slew_abort(self, telescope, manager):
+    def test_slew_abort(self, telescope, manager, wait_for):
         # go to known position
         self.goto_safe_position(telescope)
         last_ra, last_dec = telescope.get_position_ra_dec()
@@ -137,7 +139,7 @@ class TestFakeTelescope:
         assert last_dec < dec < dest_dec
 
         # event checkings
-        time.sleep(0.5)  # delay to get events delivered
+        assert wait_for(lambda: "slew_complete" in fired_events)
         self.assert_events(TelescopeStatus.ABORTED)
 
     def test_sync(self, telescope):

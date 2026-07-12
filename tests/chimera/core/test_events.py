@@ -60,7 +60,7 @@ class Subscriber(ChimeraObject):
 
 
 class TestEvents:
-    def test_publish(self, manager):
+    def test_publish(self, manager, wait_for):
         assert manager.add_class(Publisher, "p") is not False
         assert manager.add_class(Subscriber, "s") is not False
 
@@ -76,21 +76,17 @@ class TestEvents:
         p.foo_done += s_clbk
 
         assert p.foo() == 42
-        time.sleep(0.5)  # delay to get messages delivered
-        assert s.get_counter() == 1
-        assert p.get_counter() == 1
+        assert wait_for(lambda: s.get_counter() == 1 and p.get_counter() == 1)
 
         assert p.foo() == 42
-        time.sleep(0.5)  # delay to get messages delivered
-        assert s.get_counter() == 2
-        assert p.get_counter() == 2
+        assert wait_for(lambda: s.get_counter() == 2 and p.get_counter() == 2)
 
         # unsubscribe
         p.foo_done -= s_clbk
         p.unsubscribe_foo_done()
 
         assert p.foo() == 42
-        time.sleep(0.5)  # delay to get messages delivered
+        time.sleep(0.5)  # delay to get messages (not) delivered
         assert s.get_counter() == 2
         assert p.get_counter() == 2
 
