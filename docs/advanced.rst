@@ -96,7 +96,7 @@ Default configuration parameters by interface type
 * Point Verify
 
 .. literalinclude:: ../src/chimera/interfaces/pointverify.py
-    :lines: 29-52
+    :lines: 29-39
 
 * Telescope
 
