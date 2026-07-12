@@ -59,7 +59,10 @@ class Bus:
     def __init__(self, url: str):
         self.url = create_url(url, cls="Bus")
 
-        self._pool = ThreadPoolExecutor()
+        # request handlers and event callbacks run on this pool and may issue
+        # nested requests that block until another worker serves them: the
+        # default size (cpu count + 4) deadlocks under load on small machines
+        self._pool = ThreadPoolExecutor(max_workers=64)
 
         self._running = threading.Event()
         self._bus_started = threading.Event()
