@@ -148,11 +148,16 @@ class ChimeraObject(ILifeCycle, metaclass=MetaObject):
 
             time_to_wake_up = (1.0 / self.get_hz()) - loop_time
             if time_to_wake_up > 0:
-                run_condition = not self._loop_abort.wait(time_to_wake_up)
+                # NOTE: don't overwrite control() decision to stop the loop,
+                # just abort earlier if requested while sleeping
+                if self._loop_abort.wait(time_to_wake_up):
+                    run_condition = False
             else:
                 self.log.warning(
                     f"{self.get_location()}: control loop took more than {1.0 / self.get_hz()} seconds to run: {loop_time:.3f} s"
                 )
+
+        return True
 
     def __abort_loop__(self):
         self._loop_abort.set()

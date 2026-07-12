@@ -144,7 +144,11 @@ class Manager:
         @rtype: Proxy
         """
 
-        url = parse_url(location)
+        try:
+            url = parse_url(location)
+        except ValueError:
+            # assume that location only contains the path, so use our bus as the url
+            url = parse_url(f"{self._bus.url.bus}{location}")
         return Proxy(url, self._bus)
 
     def shutdown(self):
@@ -185,7 +189,7 @@ class Manager:
     # objects lifecycle
     def add_location(
         self,
-        location: URL,
+        location: URL | str,
         *,
         config: dict[str, Any] = {},
         path: list[str] | None = None,
@@ -211,6 +215,12 @@ class Manager:
         @return: returns a proxy for the object if successful, False otherwise.
         @rtype: Proxy or bool
         """
+        try:
+            location = parse_url(location)
+        except ValueError:
+            # assume that location only contains the path, so use our bus as the url
+            location = parse_url(f"{self._bus.url.bus}{location}")
+
         # get the class
         cls = self.class_loader.load_class(location.cls, path)
         return self.add_class(cls, location.name, config, start)

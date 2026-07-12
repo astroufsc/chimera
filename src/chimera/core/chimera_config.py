@@ -140,9 +140,11 @@ class ChimeraConfig:
         # FIXME: raise and let user fix it
         assert isinstance(site_config, dict)
 
-        site_config["type"] = "Site"
-        site_url, site_conf = self._parse_config(site_config)
-        self.sites[site_url] = site_conf
+        if site_config:
+            site_config.setdefault("type", "Site")
+            site_config.setdefault("name", "site")
+            site_url, site_conf = self._parse_config(site_config)
+            self.sites[site_url] = site_conf
 
         for type, object_configs in config.items():
             # NOTE: this allow both toml and yaml to coexist

@@ -101,13 +101,21 @@ class EventWrapperDispatcher(MethodWrapperDispatcher):
 
     def __iadd__(self, other):
         self.instance.__bus__.subscribe(
-            f"{self.instance.get_location()}/{self.func.__name__}", other
+            sub=self.instance.get_location(),
+            pub=self.instance.get_location(),
+            event=self.func.__name__,
+            callback=other,
         )
+        return self
 
     def __isub__(self, other):
         self.instance.__bus__.unsubscribe(
-            f"{self.instance.get_location()}/{self.func.__name__}", other
+            sub=self.instance.get_location(),
+            pub=self.instance.get_location(),
+            event=self.func.__name__,
+            callback=other,
         )
+        return self
 
 
 class LockWrapperDispatcher(MethodWrapperDispatcher):

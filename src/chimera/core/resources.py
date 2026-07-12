@@ -40,10 +40,13 @@ class ResourcesManager:
         self._res[path] = resource
 
     def remove(self, path: str) -> None:
-        if path not in self:
+        # resolve the path first, so indexed paths (e.g. /Simple/0) remove the
+        # resource they point to
+        resource = self.get(path)
+        if resource is None:
             raise KeyError(f"{path} not found")
 
-        del self._res[path]
+        del self._res[resource.path]
 
     def get(self, path: str) -> Resource | None:
         cls, name = parse_path(path)
@@ -63,7 +66,7 @@ class ResourcesManager:
 
     def _get_by_index(self, cls: str, index: int) -> Resource | None:
         resources = self.get_by_class(cls)
-        if not resources or index > len(resources):
+        if not resources or index >= len(resources):
             return None
         return self._res[resources[index].path]
 
