@@ -312,7 +312,6 @@ class Bus:
 
         return response
 
-    # TODO: add timeout?
     def request(
         self,
         *,
@@ -321,6 +320,7 @@ class Bus:
         method: str,
         args: list[Any] | None = None,
         kwargs: dict[str, Any] | None = None,
+        timeout: float | None = 300.0,
     ) -> None | Response:
         request = Protocol.request(
             src=parse_url(src).url,
@@ -332,7 +332,12 @@ class Bus:
 
         self._push(request)
 
-        response = self._pop(request.src)
+        try:
+            response = self._pop(request.src, timeout=timeout)
+        except queue.Empty:
+            raise TimeoutError(
+                f"request {request.dst}.{method} timed out after {timeout} s"
+            )
         if response is None or not isinstance(response, Response):
             raise RuntimeError("bus is dead")
 

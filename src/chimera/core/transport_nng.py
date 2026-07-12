@@ -23,6 +23,10 @@ class TransportNNG(Transport):
     @override
     def connect(self):
         self._sk = pynng.Push0()
+        # block sends up to this long when the send buffer is full
+        # (backpressure), instead of silently dropping messages under load.
+        # A dead peer still fails the send with a Timeout after this period.
+        self._sk.send_timeout = 5000  # ms
         self._sk.dial(f"{self.url}", block=True)
 
     @override
@@ -36,7 +40,10 @@ class TransportNNG(Transport):
     def send(self, data: bytes) -> bool:
         assert self._sk is not None
         try:
-            self._sk.send(data, block=False)
+            # blocking send (up to send_timeout): waits for buffer space
+            # instead of dropping messages when sending faster than the
+            # receiver can keep up
+            self._sk.send(data, block=True)
             return True
         except pynng.TryAgain:
             # Would block - send buffer is full
