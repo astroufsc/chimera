@@ -391,7 +391,7 @@ class SExtractor:
                     close_fds=True,
                 )
                 (_out_err, _in) = (p.stdout, p.stdin)
-                versionline = _out_err.read()
+                versionline = _out_err.read().decode(errors="replace")
                 if versionline.find("SExtractor") != -1:
                     selected = candidate
                     break

@@ -74,7 +74,7 @@ class CameraBase(ChimeraObject, CameraExpose, CameraTemperature, CameraInformati
         # use image server if any and save image on server's default dir if
         # filename given as a relative path.
         server = get_image_server(self)
-        if not os.path.isabs(image_request["filename"]):
+        if server and not os.path.isabs(image_request["filename"]):
             image_request["filename"] = os.path.join(
                 server.default_night_dir(), image_request["filename"]
             )
