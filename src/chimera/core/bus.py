@@ -3,6 +3,7 @@ import logging
 import queue
 import selectors
 import threading
+import time
 from collections.abc import Callable
 from concurrent.futures import Future, ThreadPoolExecutor
 from dataclasses import dataclass
@@ -10,6 +11,7 @@ from typing import Any, NamedTuple
 
 import msgspec
 
+from chimera.core.exceptions import RequestTimeoutException
 from chimera.core.protocol import (
     Event,
     Messages,
@@ -306,16 +308,26 @@ class Bus:
 
         self._push(ping)
 
-        try:
-            response = self._pop(ping.src, timeout=timeout)
-        except queue.Empty:
-            return ping.pong(ok=False)
-        if response is None or not isinstance(response, Pong):
-            return None
+        deadline = time.monotonic() + timeout
+        while True:
+            try:
+                response = self._pop(
+                    ping.src, timeout=max(0.001, deadline - time.monotonic())
+                )
+            except queue.Empty:
+                return ping.pong(ok=False)
+            if response is None:
+                # shutdown flushed the queues: the bus is really dead
+                return None
+            if not isinstance(response, Pong):
+                # stale leftover of an earlier timed-out exchange on this
+                # src queue; drop it and keep waiting for our pong
+                log.debug(
+                    f"bus: discarding stale message while waiting for pong: {response}"
+                )
+                continue
+            return response
 
-        return response
-
-    # TODO: add timeout?
     def request(
         self,
         *,
@@ -324,7 +336,18 @@ class Bus:
         method: str,
         args: list[Any] | None = None,
         kwargs: dict[str, Any] | None = None,
+        timeout: float | None = None,
     ) -> None | Response:
+        """Send a request and wait for its response.
+
+        With ``timeout`` (seconds) a lost response raises
+        :class:`~chimera.core.exceptions.RequestTimeoutException` instead of
+        blocking forever; without it the call blocks until the response
+        arrives or the bus shuts down.  Stale messages left on the queue by
+        earlier timed-out exchanges (a late pong, a response to a request
+        that already timed out) are discarded instead of being mistaken for
+        a dead bus.
+        """
         request = Protocol.request(
             src=parse_url(src).url,
             dst=parse_url(dst).url,
@@ -335,11 +358,26 @@ class Bus:
 
         self._push(request)
 
-        response = self._pop(request.src)
-        if response is None or not isinstance(response, Response):
-            raise RuntimeError("bus is dead")
-
-        return response
+        deadline = None if timeout is None else time.monotonic() + timeout
+        while True:
+            remaining = (
+                None if deadline is None else max(0.001, deadline - time.monotonic())
+            )
+            try:
+                response = self._pop(request.src, timeout=remaining)
+            except queue.Empty:
+                raise RequestTimeoutException(
+                    f"no response for {request.dst}.{method}() after {timeout}s"
+                ) from None
+            if response is None:
+                # shutdown flushed the queues: the bus is really dead
+                raise RuntimeError("bus is dead")
+            if not isinstance(response, Response) or response.id != request.id:
+                log.debug(
+                    f"bus: discarding stale message while waiting for response: {response}"
+                )
+                continue
+            return response
 
     def subscribe(
         self,

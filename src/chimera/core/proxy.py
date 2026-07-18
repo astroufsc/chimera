@@ -9,11 +9,16 @@ __all__ = ["Proxy", "ProxyMethod"]
 
 
 class Proxy:
-    def __init__(self, url: str | URL, bus: Bus):
+    def __init__(self, url: str | URL, bus: Bus, timeout: float | None = None):
+        """``timeout`` (seconds) bounds every method call made through this
+        proxy: a lost response raises RequestTimeoutException instead of
+        blocking forever.  Leave it None for objects with legitimately
+        long-running methods (exposures, slews)."""
         self.__url__ = parse_url(url)
         self.__resolved_url__: URL | None = None
         self.__proxy_url__ = create_url(bus=bus.url.bus, cls="Proxy")
         self.__bus__ = bus
+        self.__timeout__ = timeout
 
     def resolve(self) -> None:
         if self.__resolved_url__ is not None:
@@ -36,7 +41,7 @@ class Proxy:
     def get_proxy(self, url: str) -> "Proxy":
         """Returns a Proxy for a resource relative to this Proxy's URL."""
         resolved_url = resolve_url(url, bus=self.__url__.bus)
-        proxy = Proxy(resolved_url, self.__bus__)
+        proxy = Proxy(resolved_url, self.__bus__, timeout=self.__timeout__)
         proxy.resolve()
         return proxy
 
@@ -86,6 +91,7 @@ class ProxyMethod:
             # FIXME: requests should use tuple
             args=list(args),
             kwargs=kwargs,
+            timeout=self.proxy.__timeout__,
         )
 
         # FIXME: bus should not return None, either good or error

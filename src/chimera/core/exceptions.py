@@ -64,6 +64,10 @@ class ObjectNotFoundException(ChimeraException):
     pass
 
 
+class RequestTimeoutException(ChimeraException):
+    """A bus request got no response within the caller-supplied timeout."""
+
+
 class NotValidChimeraObjectException(ChimeraException):
     pass
 
