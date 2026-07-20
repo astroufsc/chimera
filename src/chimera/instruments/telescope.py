@@ -207,7 +207,8 @@ class TelescopeBase(
                 str(Coord.from_d(dec).to_dms()),
                 "Declination of the observed object",
             ),
-            ("EQUINOX", "NOW", "coordinate epoch"),
+            # FITS requires a numeric epoch; coords are J2000/ICRS (see RADESYS) (#228)
+            ("EQUINOX", 2000.0, "coordinate epoch"),
             ("ALT", str(Coord.from_d(alt).to_dms()), "Altitude of the observed object"),
             ("AZ", str(Coord.from_d(az).to_dms()), "Azimuth of the observed object"),
             ("AIRMASS", alt, "Airmass of the observed object"),
