@@ -61,10 +61,18 @@ class Bus:
     def __init__(self, url: str):
         self.url = create_url(url, cls="Bus")
 
-        # request handlers and event callbacks run on this pool and may issue
-        # nested requests that block until another worker serves them: the
-        # default size (cpu count + 4) deadlocks under load on small machines
+        # request handlers run on this pool and may issue nested requests
+        # that block until another worker serves them: the default size
+        # (cpu count + 4) deadlocks under load on small machines
         self._pool = ThreadPoolExecutor(max_workers=64)
+
+        # event callbacks get their OWN pool: they make nested requests and
+        # can be slow (uploads, dome syncs), and sharing the request pool
+        # let a burst of events starve the workers their own nested
+        # requests needed - deadlocking the bus (2026-07-20)
+        self._event_pool = ThreadPoolExecutor(
+            max_workers=64, thread_name_prefix="bus-event"
+        )
 
         self._running = threading.Event()
         self._bus_started = threading.Event()
@@ -117,6 +125,9 @@ class Bus:
 
             self._process_queue_future.result()
             self._pool.shutdown()
+            # don't wait for in-flight callbacks: one blocked on a request
+            # that will never be answered would hang the shutdown forever
+            self._event_pool.shutdown(wait=False, cancel_futures=True)
 
             self._inbound.close()
             self._internal.close()
@@ -579,10 +590,20 @@ class Bus:
 
             for callback in self._callbacks[event_id].values():
                 method = callback.callable
-                # NOTE: we cannot see exception happening inside the event handlers,
-                #       so we schedule a check on the future result in a separate task.
-                event_future = self._pool.submit(method, *event.args, **event.kwargs)
-                self._pool.submit(self._check_event_result, event, event_future)
+                # callbacks run on their own pool: they routinely make
+                # nested requests (and can be slow, e.g. uploads), and on
+                # the request pool each in-flight event held a worker while
+                # waiting for another worker to serve its nested request -
+                # enough events deadlocked the whole bus (seen 2026-07-20:
+                # 41 workers parked in nested request(), server dead)
+                event_future = self._event_pool.submit(
+                    method, *event.args, **event.kwargs
+                )
+                # done-callback instead of a blocked checker thread (the
+                # old pattern burned a SECOND worker per event just to log)
+                event_future.add_done_callback(
+                    lambda future, event=event: self._check_event_result(event, future)
+                )
         except Exception:
             log.exception("error handling event")
 
