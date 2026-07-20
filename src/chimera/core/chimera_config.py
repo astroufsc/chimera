@@ -141,7 +141,10 @@ class ChimeraConfig:
         assert isinstance(site_config, dict)
 
         site_config["type"] = "Site"
+        # `name` is popped for the URL, but Site also needs it as the SITE header (#231)
+        site_config.setdefault("name", "UFSC")
         site_url, site_conf = self._parse_config(site_config)
+        site_conf["name"] = site_url.name
         self.sites[site_url] = site_conf
 
         for type, object_configs in config.items():
