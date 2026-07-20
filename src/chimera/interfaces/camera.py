@@ -219,6 +219,13 @@ class CameraTemperature(Camera):
     A camera that supports temperature monitoring and control.
     """
 
+    __config__ = {
+        # Temperature SetPoint (in degrees Celsius) to apply automatically when
+        # the camera starts. Leave as None (the default) to NOT start cooling at
+        # startup; cooling can still be commanded later via start_cooling().
+        "temperature_setpoint": None,
+    }
+
     def start_cooling(self, temp_c):
         """
         Start cooling the camera with SetPoint setted to temp_c.
