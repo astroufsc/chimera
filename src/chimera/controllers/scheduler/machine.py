@@ -83,7 +83,15 @@ class Machine(threading.Thread):
             elif self.state() == State.STOP:
                 log.debug("[stop] trying to stop current program")
                 self.executor.stop()
-                self.state(State.OFF)
+                # executor.stop() blocks until the running action gives up -
+                # for a camera that is the rest of the exposure plus readout.
+                # A START requested in that window (chimera-sched --start)
+                # only flips the state variable, because this thread is not
+                # reading it; dropping unconditionally to OFF here threw that
+                # request away, so the scheduler stayed dead and the CLI
+                # looked like it did nothing.
+                if self.state() == State.STOP:
+                    self.state(State.OFF)
 
             elif self.state() == State.SHUTDOWN:
                 log.debug("[shutdown] trying to stop current program")
