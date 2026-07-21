@@ -240,6 +240,29 @@ class AutoFlatHandler(ActionHandler):
         skyflat.abort()
 
 
+class AutoguideHandler(ActionHandler):
+    @staticmethod
+    @requires("autoguider")
+    def process(action):
+        autoguider = AutoguideHandler.autoguider
+
+        try:
+            if action.enable:
+                autoguider.start_guiding(
+                    recalibrate=action.recalibrate, wait=action.wait
+                )
+            else:
+                autoguider.stop_guiding()
+        except Exception as e:
+            print_exception(e)
+            raise ProgramExecutionException("Error while autoguiding")
+
+    @staticmethod
+    def abort(action):
+        autoguider = copy.copy(AutoguideHandler.autoguider)
+        autoguider.abort()
+
+
 class PointVerifyHandler(ActionHandler):
     @staticmethod
     @requires("point_verify")

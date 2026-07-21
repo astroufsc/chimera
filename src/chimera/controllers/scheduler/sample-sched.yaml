@@ -28,6 +28,11 @@ programs:
             -   action: pointverify
                 here: True
 
+            -   action: autoguide       # Enable autoguiding before the science exposures
+                enable: True
+                recalibrate: False
+                wait: True              # Block until guiding has settled
+
             -   action: expose
                 filter: V
                 frames: 1
@@ -49,6 +54,9 @@ programs:
                 exptime: 5
                 image_type: OBJECT
                 object_name: obj1 acq
+
+            -   action: autoguide       # Stop autoguiding after the science exposures
+                enable: False
 
     # new target with no autofocus or pointverify
     -   program:

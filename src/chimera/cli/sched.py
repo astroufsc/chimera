@@ -17,6 +17,7 @@ from astropy.time import Time
 from chimera.controllers.scheduler.model import (
     AutoFlat,
     AutoFocus,
+    Autoguide,
     Expose,
     Point,
     PointVerify,
@@ -36,6 +37,7 @@ from .cli import ChimeraCLI, action
 action_dict = {
     "autofocus": AutoFocus,
     "autoflat": AutoFlat,
+    "autoguide": Autoguide,
     "pointverify": PointVerify,
     "point": Point,
     "expose": Expose,
