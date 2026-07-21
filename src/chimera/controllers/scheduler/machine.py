@@ -6,7 +6,6 @@ from chimera.controllers.scheduler.model import Program, Session
 from chimera.controllers.scheduler.states import State
 from chimera.controllers.scheduler.status import SchedulerStatus
 from chimera.core.exceptions import ProgramExecutionAborted, ProgramExecutionException
-from chimera.core.site import Site
 
 log = logging.getLogger(__name__)
 
@@ -124,7 +123,8 @@ class Machine(threading.Thread):
 
             log.debug(f"[start] {str(task)}")
 
-            site = Site()
+            # the configured site, not a private Site(): one clock system-wide
+            site = self.controller.get_proxy(self.controller["site"])
             now_mjd = site.mjd()
             log.debug("[start] Current MJD is %f", now_mjd)
             if program.start_at:
