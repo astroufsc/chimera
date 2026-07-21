@@ -23,6 +23,9 @@ class Machine(threading.Thread):
         self.controller = controller
 
         self.current_program = None
+        # handle on the thread running the current program, so the IDLE
+        # branch can tell whether one is still in flight
+        self._worker = None
 
         self.daemon = False
 
@@ -58,6 +61,19 @@ class Machine(threading.Thread):
                 self.state(State.IDLE)
 
             if self.state() == State.IDLE:
+                # A program already executing must not be picked again.
+                # START overwrites BUSY, so every start() arriving while a
+                # program ran sent us back through here, next(scheduler)
+                # returned the SAME still-unfinished program and _process
+                # forked another thread for it. Seen live: robobs calls
+                # start() once per program it queues, and five concurrent
+                # autofocus runs plus four concurrent sky flats were racing
+                # on one camera.
+                if self._worker is not None and self._worker.is_alive():
+                    log.debug("[idle] a program is still running; staying busy")
+                    self.state(State.BUSY)
+                    continue
+
                 log.debug("[idle] looking for something to do...")
 
                 # find something to do
@@ -191,6 +207,7 @@ class Machine(threading.Thread):
 
             session.commit()
 
-        t = threading.Thread(target=process)
+        t = threading.Thread(target=process, name="scheduler-program")
         t.daemon = False
+        self._worker = t
         t.start()
