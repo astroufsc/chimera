@@ -113,6 +113,21 @@ class AutoFlat(Action):
         return f"Flat fields: filter={self.filter} frames={self.frames}"
 
 
+class Autoguide(Action):
+    __tablename__ = "action_autoguide"
+    __mapper_args__ = {"polymorphic_identity": "Autoguide"}
+
+    id = Column(Integer, ForeignKey("action.id"), primary_key=True)
+    enable = Column(Boolean, default=True)  # True: start guiding, False: stop guiding
+    recalibrate = Column(Boolean, default=False)  # recalibrate before guiding
+    wait = Column(Boolean, default=True)  # block until guiding settled/started
+
+    def __str__(self):
+        if self.enable:
+            return f"autoguide: start (recalibrate={self.recalibrate})"
+        return "autoguide: stop"
+
+
 class PointVerify(Action):
     __tablename__ = "action_pv"
     __mapper_args__ = {"polymorphic_identity": "PointVerify"}
