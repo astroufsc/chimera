@@ -30,7 +30,8 @@ class FilterWheel(Interface):
         # Focuser used to compensate for the different optical thickness of
         # each filter. Leave as None (the default) to disable compensation.
         "focuser": None,
-        # Focus offsets in focuser steps, as "FILTER:OFFSET" pairs, e.g.
+        # Focus offsets in the focuser's own units (steps, microns, ...),
+        # as "FILTER:OFFSET" pairs, e.g.
         # "U:-100 B:0 V:0". Filters absent from the table get no offset.
         "focus_offsets": "",
         # Fail the filter change when the focus offset cannot be applied. Set
@@ -74,7 +75,8 @@ class FilterWheel(Interface):
 
     def get_focus_offsets(self):
         """
-        Return the configured focus offsets, in focuser steps, keyed by filter
+        Return the configured focus offsets, in the focuser's own units,
+        keyed by filter
         name. Filters with no configured offset are absent from the mapping.
 
         @return: Focus offset of each filter.

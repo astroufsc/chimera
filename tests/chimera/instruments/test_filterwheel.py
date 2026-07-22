@@ -304,8 +304,7 @@ class TestFilterWheelFocusOffsetErrors:
         assert wheel.get_filter() == "V"
         assert events == [("V", "U")]
         assert any(
-            "Could not apply 100 step focus offset" in message
-            for message in chimera_log
+            "Could not apply a 100 focus offset" in message for message in chimera_log
         )
 
     def test_malformed_offsets_fail_at_startup(self, make_wheel, focuser):
