@@ -2,9 +2,7 @@
 # SPDX-FileCopyrightText: 2006-present Paulo Henrique Silva <ph.silva@gmail.com>
 
 
-from chimera.core.lock import lock
 from chimera.instruments.filterwheel import FilterWheelBase
-from chimera.interfaces.filterwheel import InvalidFilterPositionException
 
 
 class FakeFilterWheel(FilterWheelBase):
@@ -16,13 +14,5 @@ class FakeFilterWheel(FilterWheelBase):
     def get_filter(self):
         return self._get_filter_name(self._last_filter)
 
-    @lock
-    def set_filter(self, filter):
-        filter_name = str(filter)
-
-        if filter_name not in self.get_filters():
-            raise InvalidFilterPositionException(f"Invalid filter {filter}.")
-
-        self.filter_change(filter, self._get_filter_name(self._last_filter))
-
-        self._last_filter = self._get_filter_position(filter)
+    def _set_filter(self, filter_name):
+        self._last_filter = self._get_filter_position(filter_name)
