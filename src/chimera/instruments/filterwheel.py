@@ -115,19 +115,19 @@ class FilterWheelBase(ChimeraObject, FilterWheel):
                 focuser = self.get_proxy(self["focuser"])
                 if delta < 0:
                     self.log.debug(
-                        f"Moving focuser {-delta} steps IN for filter {new_filter}"
+                        f"Moving focuser {-delta} IN for filter {new_filter}"
                     )
                     focuser.move_in(-delta)
                 else:
                     self.log.debug(
-                        f"Moving focuser {delta} steps OUT for filter {new_filter}"
+                        f"Moving focuser {delta} OUT for filter {new_filter}"
                     )
                     focuser.move_out(delta)
             except Exception as e:
                 # leave _applied_focus_offset alone: it still describes the
                 # last offset we know reached the focuser
                 message = (
-                    f"Could not apply {delta} step focus offset for filter "
+                    f"Could not apply a {delta} focus offset for filter "
                     f"{new_filter}: {e}"
                 )
                 if self["focus_offset_required"]:
@@ -178,7 +178,7 @@ class FilterWheelBase(ChimeraObject, FilterWheel):
                 (
                     "FOCUSOFF",
                     self._applied_focus_offset,
-                    "Filter focus offset applied [steps]",
+                    "Filter focus offset applied [focuser units]",
                 )
             ]
 
