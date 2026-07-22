@@ -5,11 +5,30 @@ import pytest
 from dateutil import tz
 
 from chimera.util.coord import Coord
-from chimera.util.position import Epoch, Position
+from chimera.util.position import Epoch, Position, airmass
 
 
 def equal(a, b, e=0.0001):
     return abs(a - b) <= e
+
+
+class TestAirmass:
+    def test_zenith_clamped_to_one(self):
+        assert airmass(90.0) == 1.0
+
+    def test_mid_altitudes_match_sec_z(self):
+        # cross-checked against astropy AltAz.secz on real frames
+        assert equal(airmass(44.07), 1.4360, 1e-3)
+        assert equal(airmass(30.0), 1.9940, 1e-3)
+        assert equal(airmass(10.0), 5.5860, 1e-3)
+
+    def test_horizon_and_below_are_finite(self):
+        horizon = airmass(0.0)
+        assert equal(horizon, 37.920, 1e-2)
+        assert airmass(-10.0) == horizon
+
+    def test_accepts_coord(self):
+        assert airmass(Coord.from_d(90.0)) == 1.0
 
 
 class TestPosition:
