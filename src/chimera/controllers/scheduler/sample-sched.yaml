@@ -108,13 +108,13 @@ programs:
             # BIAS
             -   action: expose
                 frames: 10
-                image_type: BIAS  # This will set shutter to close
+                image_type: BIAS  # implies exptime 0 and shutter close
 
             # DARK
             -   action: expose
                 frames: 10
                 exptime: 100
-                image_type: DARK  # This will set shutter to close already
+                image_type: DARK  # implies shutter close
 
             # LIGHT DARK
             -   action: expose
