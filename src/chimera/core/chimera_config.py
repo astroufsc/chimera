@@ -103,7 +103,11 @@ class ChimeraConfig:
     def from_file(filename: str):
         if filename.endswith(".toml"):
             decode = msgspec.toml.decode
-        elif filename.endswith(".config"):
+        elif (
+            filename.endswith(".config")
+            or filename.endswith(".yaml")
+            or filename.endswith(".yml")
+        ):
             decode = msgspec.yaml.decode
         else:
             raise ValueError(
