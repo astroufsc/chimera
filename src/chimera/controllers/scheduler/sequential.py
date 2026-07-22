@@ -21,9 +21,16 @@ class SequentialScheduler(IScheduler):
         session = Session()
 
         # FIXME: remove noqa
+        # Execution order: start_at first, priority as the tie-break.
+        # Ordering by priority alone starved the night when a program with
+        # a FUTURE start_at outranked everything: the machine picked the
+        # morning sky flat at 22:00 and waited 10 h on it while the whole
+        # night's science sat queued behind (2026-07-22). Programs without
+        # a start_at (hand-written queues) sort first and keep the old
+        # priority behaviour among themselves.
         programs = (
             session.query(Program)
-            .order_by(desc(Program.priority))
+            .order_by(Program.start_at.asc().nullsfirst(), desc(Program.priority))
             .filter(Program.finished == False)  # noqa
             .all()
         )
