@@ -10,11 +10,11 @@ from unittest.mock import MagicMock
 import msgspec
 import pytest
 
-from chimera.core.bus import Bus, Callback, CallbackId, EventId, Subscriber
+from chimera.core.bus import Bus, EventId
 from chimera.core.chimeraobject import ChimeraObject
 from chimera.core.exceptions import BusDeadException, RequestTimeoutException
 from chimera.core.manager import Manager
-from chimera.core.protocol import Protocol
+from chimera.core.protocol import Protocol, Subscribe
 from chimera.core.proxy import Proxy
 from chimera.core.transport import SendResult, Transport
 from chimera.core.transport_factory import create_transport
@@ -187,31 +187,25 @@ def pubsub_test(*, n_subscribers: int, n_events: int, src_bus: Bus, dst_bus: Bus
         # check subscriber-side callback registrations
         event_id = EventId(pub, event)
 
-        assert len(src_bus.callbacks(event_id)) == n_subscribers
+        registered = src_bus.callbacks(event_id)
+        assert len(registered) == n_subscribers
 
+        # for a given event and callback, only one subscription was created,
+        # even if tried twice; callables are matched by ==
+        registered_callables = [callback.callable for callback in registered.values()]
         for i in range(n_subscribers):
-            callback_id = CallbackId.new(callbacks[i])
-            callback = Callback(callback_id, callbacks[i])
-            subscriber = Subscriber(parse_url(sub[i]), callback_id)
-
-            # for a given event and callback, only one subscription was created, even if tried twice
-            assert src_bus.callbacks(event_id)[subscriber] == callback
+            assert registered_callables.count(callbacks[i]) == 1
 
         time.sleep(0.5)  # give some time for subscriptions to propagate
 
-        # check publisher-side subscriber registrations
-        assert len(dst_bus.subscribers(event_id)) == n_subscribers
-
-        for i in range(n_subscribers):
-            callback_id = CallbackId.new(callbacks[i])
-            callback = Callback(callback_id, callbacks[i])
-            subscriber = Subscriber(parse_url(sub[i]), callback_id)
-
-            subscribers = dst_bus.subscribers(event_id)
-            assert subscriber in subscribers
-            our_subscriber = [sub for sub in subscribers if sub == subscriber][0]
-            assert our_subscriber.subscriber == parse_url(sub[i])
-            assert our_subscriber.callback == subscriber.callback
+        # check publisher-side subscriber registrations: same tokens and
+        # subscriber urls as the client side
+        subscribers = dst_bus.subscribers(event_id)
+        assert len(subscribers) == n_subscribers
+        assert {s.callback for s in subscribers} == {
+            callback.id for callback in registered.values()
+        }
+        assert {s.subscriber for s in subscribers} == {parse_url(u) for u in sub}
 
     def unsubscribe():
         t0 = time.monotonic()
@@ -566,6 +560,204 @@ def test_peer_disconnect_evicts_and_unsubscribes(create_bus: Callable[[str], Bus
     bus_a.shutdown()
     a_future.result()
     b_future.result()
+    pool.shutdown()
+
+
+def test_outbound_burst_not_dropped(create_bus: Callable[..., Bus]):
+    """A back-to-back burst of outbound messages must survive: nng's default
+    zero send buffer dropped roughly half of any burst even against a healthy
+    peer (e.g. a CLI subscribing to its events at startup)."""
+    bus_a = create_bus("tcp://127.0.0.1:15030")
+    bus_b = create_bus("tcp://127.0.0.1:15031")
+
+    pub = f"{bus_b.url.bus}/Telescope/0"
+    event_id = EventId(pub, "tick")
+
+    pool = ThreadPoolExecutor()
+    a_future = pool.submit(bus_a.run_forever)
+    b_future = pool.submit(bus_b.run_forever)
+    assert bus_a._bus_started.wait(5)
+    assert bus_b._bus_started.wait(5)
+
+    # 100 subscriptions pushed as fast as the loop can go, no retries
+    n = 100
+    for i in range(n):
+        bus_a._push(
+            Protocol.subscribe(
+                sub=f"{bus_a.url.bus}/Proxy/{i}", pub=pub, event="tick", callback=i
+            )
+        )
+
+    deadline = time.monotonic() + 5
+    while len(bus_b.subscribers(event_id)) < n:
+        assert time.monotonic() < deadline, (
+            f"only {len(bus_b.subscribers(event_id))}/{n} survived the burst"
+        )
+        time.sleep(0.01)
+
+    bus_a.shutdown()
+    bus_b.shutdown()
+    a_future.result()
+    b_future.result()
+    pool.shutdown()
+
+
+#
+# pub/sub correctness: tokens, snapshots, register-before-push
+#
+
+
+class TickHandler:
+    """Subscriber helper whose bound method is the callback."""
+
+    def __init__(self):
+        self.calls: list[str] = []
+        self.received = threading.Event()
+
+    def on_tick(self, marker: str):
+        self.calls.append(marker)
+        self.received.set()
+
+
+def test_unsubscribe_bound_method_stops_delivery(create_bus: Callable[..., Bus]):
+    """subscribe and unsubscribe get DIFFERENT bound-method objects (every
+    attribute access creates one): equal by ==, different by id(). Token-based
+    subscriptions must still find and remove the registration."""
+    bus = create_bus("tcp://127.0.0.1:15027")
+    handler = TickHandler()
+
+    pub = f"{bus.url.bus}/Telescope/0"
+    event_id = EventId(pub, "tick")
+
+    pool = ThreadPoolExecutor()
+    bus_future = pool.submit(bus.run_forever)
+    assert bus._bus_started.wait(5)
+
+    bus.subscribe(
+        sub=f"{bus.url.bus}/Proxy/0", pub=pub, event="tick", callback=handler.on_tick
+    )
+    bus.publish(pub=pub, event="tick", args=["first"], kwargs={})
+    assert handler.received.wait(5)
+
+    bus.unsubscribe(
+        sub=f"{bus.url.bus}/Proxy/0", pub=pub, event="tick", callback=handler.on_tick
+    )
+    assert len(bus.callbacks(event_id)) == 0
+
+    deadline = time.monotonic() + 5
+    while len(bus.subscribers(event_id)) > 0:
+        assert time.monotonic() < deadline, "publisher never dropped the subscriber"
+        time.sleep(0.01)
+
+    # a sentinel subscriber proves the next publish went through while the
+    # unsubscribed handler stayed silent
+    sentinel = threading.Event()
+    bus.subscribe(
+        sub=f"{bus.url.bus}/Proxy/1",
+        pub=pub,
+        event="tick",
+        callback=lambda marker: sentinel.set(),
+    )
+    bus.publish(pub=pub, event="tick", args=["second"], kwargs={})
+    assert sentinel.wait(5)
+    time.sleep(0.1)  # settle before asserting an absence
+    assert handler.calls == ["first"]
+
+    bus.shutdown()
+    bus_future.result()
+    pool.shutdown()
+
+
+def test_subscribe_registers_before_push(create_bus: Callable[..., Bus]):
+    """The local callback is registered before the Subscribe message goes
+    out, so a publish racing the subscription cannot fire into a gap (M6)."""
+    bus = create_bus("tcp://127.0.0.1:15028")
+
+    pub = f"{bus.url.bus}/Telescope/0"
+    event_id = EventId(pub, "tick")
+
+    seen_at_push: list[int] = []
+    original_push = bus._push
+
+    def spying_push(message):
+        if isinstance(message, Subscribe):
+            seen_at_push.append(len(bus.callbacks(event_id)))
+        return original_push(message)
+
+    bus._push = spying_push
+
+    bus.subscribe(
+        sub=f"{bus.url.bus}/Proxy/0", pub=pub, event="tick", callback=lambda: None
+    )
+
+    assert seen_at_push == [1], "callback not registered before Subscribe was pushed"
+
+    bus._push = original_push
+    bus.shutdown()
+
+
+def test_pubsub_churn_no_lost_events(create_bus: Callable[..., Bus]):
+    """A publish storm during subscribe/unsubscribe churn loses no events to
+    the stable subscriber (unlocked iteration used to drop them silently)."""
+    bus = create_bus("tcp://127.0.0.1:15029")
+
+    pub = f"{bus.url.bus}/Telescope/0"
+    n_events = 500
+
+    count = 0
+    count_lock = threading.Lock()
+    done = threading.Event()
+
+    def stable(i: int):
+        nonlocal count
+        with count_lock:
+            count += 1
+            if count == n_events:
+                done.set()
+
+    bus.subscribe(
+        sub=f"{bus.url.bus}/Proxy/stable", pub=pub, event="tick", callback=stable
+    )
+
+    pool = ThreadPoolExecutor()
+    bus_future = pool.submit(bus.run_forever)
+    assert bus._bus_started.wait(5)
+
+    stop_churn = threading.Event()
+
+    def churn():
+        i = 0
+        while not stop_churn.is_set():
+
+            def throwaway(x, _i=i):
+                pass
+
+            bus.subscribe(
+                sub=f"{bus.url.bus}/Proxy/churn{i}",
+                pub=pub,
+                event="tick",
+                callback=throwaway,
+            )
+            bus.unsubscribe(
+                sub=f"{bus.url.bus}/Proxy/churn{i}",
+                pub=pub,
+                event="tick",
+                callback=throwaway,
+            )
+            i += 1
+
+    churn_future = pool.submit(churn)
+
+    for i in range(n_events):
+        bus.publish(pub=pub, event="tick", args=[i], kwargs={})
+
+    assert done.wait(15), f"only {count}/{n_events} events delivered"
+
+    stop_churn.set()
+    churn_future.result(timeout=10)
+
+    bus.shutdown()
+    bus_future.result()
     pool.shutdown()
 
 
