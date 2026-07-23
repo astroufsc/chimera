@@ -7,11 +7,34 @@ from math import sqrt
 import pytest
 
 from chimera.core.chimeraobject import ChimeraObject
+from chimera.core.constants import (
+    INSTANCE_MONITOR_ATTRIBUTE_NAME,
+    RWLOCK_ATTRIBUTE_NAME,
+)
 from chimera.core.lock import lock
 from chimera.core.proxy import Proxy
 
 
 class TestLock:
+    def test_per_instance_locks(self):
+        """Two instances of the same driver must not share their monitor or
+        config rwlock (M1): a locked method on one cannot block the other."""
+
+        class Minimo(ChimeraObject):
+            @lock
+            def do_locked(self):
+                return True
+
+        a = Minimo()
+        b = Minimo()
+
+        assert getattr(a, INSTANCE_MONITOR_ATTRIBUTE_NAME) is not getattr(
+            b, INSTANCE_MONITOR_ATTRIBUTE_NAME
+        )
+        assert getattr(a, RWLOCK_ATTRIBUTE_NAME) is not getattr(
+            b, RWLOCK_ATTRIBUTE_NAME
+        )
+
     @pytest.mark.slow
     def test_autolock(self, manager):
         class Minimo(ChimeraObject):
