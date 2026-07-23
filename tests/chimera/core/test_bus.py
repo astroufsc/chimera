@@ -1030,16 +1030,23 @@ def test_event_callback_exception_logged_not_fatal(
     bus_future = pool.submit(bus.run_forever)
     assert bus._bus_started.wait(5)
 
-    with caplog.at_level(logging.ERROR, logger="chimera.core.bus"):
-        bus.publish(pub=pub, event="tick", args=["bad"], kwargs={})
-        bus.publish(pub=pub, event="tick", args=["good"], kwargs={})
+    bus_logger = logging.getLogger("chimera.core.bus")
+    bus_logger.addHandler(caplog.handler)
+    try:
+        with caplog.at_level(logging.ERROR, logger="chimera.core.bus"):
+            bus.publish(pub=pub, event="tick", args=["bad"], kwargs={})
+            bus.publish(pub=pub, event="tick", args=["good"], kwargs={})
 
-        assert marker.wait(5), "later event not delivered after callback error"
+            assert marker.wait(5), "later event not delivered after callback error"
 
-        deadline = time.monotonic() + 5
-        while not any("error in event handler" in r.message for r in caplog.records):
-            assert time.monotonic() < deadline, "callback exception never logged"
-            time.sleep(0.01)
+            deadline = time.monotonic() + 5
+            while not any(
+                "error in event handler" in r.message for r in caplog.records
+            ):
+                assert time.monotonic() < deadline, "callback exception never logged"
+                time.sleep(0.01)
+    finally:
+        bus_logger.removeHandler(caplog.handler)
 
     bus.shutdown()
     bus_future.result()
@@ -1923,9 +1930,16 @@ def test_unmatched_response_dropped(
     )
     orphan = request.ok(42.0)
 
-    with caplog.at_level(logging.DEBUG, logger="chimera.core.bus"):
-        # local delivery is synchronous: no waiter registered for this id
-        bus._push(orphan)
+    # chimera.core.log (imported by other test modules at collection) turns
+    # off propagation for the chimera logger: capture at the source instead
+    bus_logger = logging.getLogger("chimera.core.bus")
+    bus_logger.addHandler(caplog.handler)
+    try:
+        with caplog.at_level(logging.DEBUG, logger="chimera.core.bus"):
+            # local delivery is synchronous: no waiter registered for this id
+            bus._push(orphan)
+    finally:
+        bus_logger.removeHandler(caplog.handler)
 
     assert any("no waiter" in record.message for record in caplog.records)
     assert len(bus._mailboxes._boxes) == 0

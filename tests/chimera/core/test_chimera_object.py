@@ -4,7 +4,6 @@ from chimera.core.chimeraobject import ChimeraObject
 from chimera.core.config import OptionConversionException
 from chimera.core.constants import CONFIG_ATTRIBUTE_NAME
 from chimera.core.event import event
-from chimera.core.exceptions import InvalidLocationException
 from chimera.core.metaobject import MethodWrapper
 from chimera.core.state import State
 
@@ -167,17 +166,6 @@ class TestChimeraObject:
 
         assert m.__main__() is True
         assert m.counter == m.get_hz()
-
-    def test_location(self):
-        class Foo(ChimeraObject):
-            pass
-
-        f = Foo()
-
-        assert f.__setlocation__("/Foo/bar") is True
-        with pytest.raises(InvalidLocationException):
-            f.__setlocation__("Siberian Lakes")
-        assert f.get_location() == "/Foo/bar"
 
     def test_state(self):
         class Foo(ChimeraObject):

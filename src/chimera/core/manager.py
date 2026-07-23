@@ -22,6 +22,7 @@ from chimera.core.constants import (
 from chimera.core.exceptions import (
     ChimeraException,
     ChimeraObjectException,
+    InvalidLocationException,
     NotValidChimeraObjectException,
     ObjectNotFoundException,
     OptionConversionException,
@@ -29,7 +30,7 @@ from chimera.core.exceptions import (
 from chimera.core.proxy import Proxy
 from chimera.core.resources import ResourcesManager
 from chimera.core.state import State
-from chimera.core.url import URL, parse_url
+from chimera.core.url import URL, parse_url, resolve_url
 from chimera.core.version import chimera_version
 
 __all__ = ["Manager", "get_manager_uri", "ManagerNotFoundException"]
@@ -100,6 +101,21 @@ class Manager:
             return resource.path, callable
         except AttributeError:
             return resource.path, None
+
+    def _resolve_location(self, location: str | URL) -> URL:
+        """Resolve a possibly-relative location ('/Simple/simple') against
+        this manager's bus, raising the typed exception the API promises for
+        unparseable input."""
+        try:
+            return resolve_url(str(location), bus=self._bus.url.bus)
+        except ValueError as e:
+            raise InvalidLocationException(f"invalid location '{location}': {e}")
+
+    def _known_location(self, location) -> bool:
+        try:
+            return location in self.resources
+        except ValueError as e:
+            raise InvalidLocationException(f"invalid location '{location}': {e}")
 
     # private
     def __repr__(self):
@@ -213,7 +229,11 @@ class Manager:
         @rtype: Proxy
         """
 
-        url = parse_url(location)
+        if isinstance(location, type):
+            # a class: proxy the first instance of it
+            location = f"/{location.__name__}/0"
+
+        url = self._resolve_location(location)
         return Proxy(url, self._bus)
 
     def shutdown(self):
@@ -254,10 +274,10 @@ class Manager:
     # objects lifecycle
     def add_location(
         self,
-        location: URL,
-        *,
-        config: dict[str, Any] = {},
+        location: str | URL,
         path: list[str] | None = None,
+        *,
+        config: dict[str, Any] | None = None,
         start: bool = True,
     ):
         """
@@ -281,11 +301,16 @@ class Manager:
         @rtype: Proxy or bool
         """
         # get the class
+        location = self._resolve_location(location)
         cls = self.class_loader.load_class(location.cls, path)
-        return self.add_class(cls, location.name, config, start)
+        return self.add_class(cls, location.name, config or {}, start)
 
     def add_class(
-        self, cls: type, name: str, config: dict[str, Any] = {}, start: bool = True
+        self,
+        cls: type,
+        name: str,
+        config: dict[str, Any] | None = None,
+        start: bool = True,
     ):
         """
         Add the class 'cls' to the system configuring it using 'config'.
@@ -310,17 +335,16 @@ class Manager:
         @rtype: Proxy or bool
         """
 
-        url = parse_url(
-            f"{self.get_hostname()}:{self.get_port()}/{cls.__name__}/{name}"
-        )
+        url = self._resolve_location(f"/{cls.__name__}/{name}")
+
         # names must not start with a digit
         if url.name[0] in "0123456789":
-            raise ValueError(
+            raise InvalidLocationException(
                 f"Invalid instance name: {url.name} (must start with a letter)"
             )
 
         if url.path in self.resources:
-            raise ValueError(
+            raise InvalidLocationException(
                 f"Location {url.path} is already in the system. Only one allowed (Tip: change the name!)."
             )
 
@@ -340,7 +364,7 @@ class Manager:
             raise ChimeraObjectException(f"Error in {url} __init__.")
 
         try:
-            for k, v in list(config.items()):
+            for k, v in list((config or {}).items()):
                 obj[k] = v
         except (OptionConversionException, KeyError) as e:
             log.exception(f"Error configuring {url.path}.")
@@ -370,12 +394,11 @@ class Manager:
         @rtype: bool
         """
 
-        if location not in self.resources:
+        if not self._known_location(location):
             raise ObjectNotFoundException(f"Location {location} was not found.")
 
         self.stop(location)
 
-        self.resources.get(location)
         # self.adapter.disconnect(resource.instance)
         self.resources.remove(location)
 
@@ -395,7 +418,7 @@ class Manager:
         @rtype: bool
         """
 
-        if location not in self.resources:
+        if not self._known_location(location):
             raise ObjectNotFoundException(f"Location {location} was not found.")
 
         log.info(f"Starting {location}.")
@@ -443,7 +466,7 @@ class Manager:
         @rtype: bool
         """
 
-        if location not in self.resources:
+        if not self._known_location(location):
             raise ObjectNotFoundException(f"Location {location} was not found.")
 
         log.info(f"Stopping {location}.")

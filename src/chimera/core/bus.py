@@ -258,10 +258,12 @@ class Bus:
         # subscribers represent the publisher-side of the pubsub model, where we don't have references to the callbacks
         self._subscribers: dict[EventId, set[Subscriber]] = {}
 
-        # client-side map from what the user subscribed to the wire token, so
-        # unsubscribe can find the token by callable equality (==)
+        # client-side map from what the user subscribed to the wire token,
+        # keyed by (pub, event): unsubscribe finds the entry by callable
+        # equality (==) and takes the subscriber identity from the entry, so
+        # it works whichever proxy or object made the subscription
         self._subscriptions: dict[
-            tuple[str, str, str], list[tuple[Callable[..., None], int]]
+            tuple[str, str], list[tuple[URL, Callable[..., None], int]]
         ] = {}
 
         self._pubsub_lock = threading.Lock()
@@ -816,16 +818,16 @@ class Bus:
         pub_url = parse_url(pub)
         sub_url = parse_url(sub)
         event_id = EventId(pub_url.url, event)
-        registry_key = (sub_url.url, pub_url.url, event)
+        registry_key = (pub_url.url, event)
 
         with self._pubsub_lock:
             entries = self._subscriptions.setdefault(registry_key, [])
-            if any(registered == callback for registered, _ in entries):
+            if any(registered == callback for _, registered, _ in entries):
                 # already subscribed: keep the original token, nothing to do
                 return
 
             token = CallbackId.new()
-            entries.append((callback, token))
+            entries.append((sub_url, callback, token))
 
             # register the callback before pushing Subscribe: a publish racing
             # this subscription cannot fire into the registration gap (M6)
@@ -852,30 +854,31 @@ class Bus:
         callback: Callable[..., None],
     ):
         pub_url = parse_url(pub)
-        sub_url = parse_url(sub)
         event_id = EventId(pub_url.url, event)
-        registry_key = (sub_url.url, pub_url.url, event)
+        registry_key = (pub_url.url, event)
 
         with self._pubsub_lock:
-            token = None
+            found = None
             entries = self._subscriptions.get(registry_key, [])
-            for index, (registered, registered_token) in enumerate(entries):
-                # bound methods compare equal by == even though every access
-                # creates a distinct object — this is what makes
-                # unsubscribe(self.on_x) work
+            for index, (entry_sub, registered, registered_token) in enumerate(entries):
+                # matched by ==: bound methods compare equal even though every
+                # access creates a distinct object, and ProxyMethod equality
+                # matches any handle to the same object+method — this is what
+                # makes unsubscribe(self.on_x) and `p.event -= s.clbk` work
                 if registered == callback:
-                    token = registered_token
+                    found = (entry_sub, registered_token)
                     del entries[index]
                     break
 
-            if token is None:
+            if found is None:
                 log.debug(f"unsubscribe: no subscription for {event} matches")
                 return
 
             if not entries:
                 del self._subscriptions[registry_key]
 
-            subscriber = Subscriber(sub_url, token)
+            entry_sub, token = found
+            subscriber = Subscriber(entry_sub, token)
             event_callbacks = self._callbacks.get(event_id)
             if event_callbacks is not None:
                 event_callbacks.pop(subscriber, None)
@@ -884,7 +887,7 @@ class Bus:
 
         self._push(
             Protocol.unsubscribe(
-                sub=sub_url.url,
+                sub=entry_sub.url,
                 pub=pub_url.url,
                 event=event,
                 callback=token,

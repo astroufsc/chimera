@@ -41,10 +41,13 @@ class ResourcesManager:
         self._res[path] = resource
 
     def remove(self, path: str) -> None:
-        if path not in self:
+        # resolve first: path may be an index form ('/Simple/0') whose real
+        # key is the instance name
+        resource = self.get(path)
+        if resource is None:
             raise KeyError(f"{path} not found")
 
-        del self._res[path]
+        del self._res[resource.path]
 
     def get(self, path: str) -> Resource | None:
         cls, name = parse_path(path)
