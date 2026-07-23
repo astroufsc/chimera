@@ -22,7 +22,7 @@ from chimera.core.protocol import (
     Subscribe,
     Unsubscribe,
 )
-from chimera.core.transport import Transport
+from chimera.core.transport import SendResult, Transport
 from chimera.core.transport_factory import create_transport
 from chimera.core.url import URL, create_url, parse_url
 
@@ -191,36 +191,41 @@ class Bus:
 
                 # Non-blocking send - if it fails, log and continue
                 # This prevents blocking on dead or slow remote buses
-                if not self._outbound[message.dst_bus].send(message_bytes):
-                    self._outbound_failures[message.dst_bus] += 1
-
-                    if (
-                        self._outbound_failures[message.dst_bus]
-                        >= self._max_send_failures
-                    ):
-                        log.debug(
-                            f"bus: too many failures ({self._outbound_failures[message.dst_bus]}) "
-                            f"sending to {message.dst_bus}, closing connection"
+                match self._outbound[message.dst_bus].send(message_bytes):
+                    case SendResult.OK:
+                        self._outbound_failures[message.dst_bus] = 0
+                    case SendResult.AGAIN:
+                        # backpressure on a live peer: drop this message but never
+                        # count it toward eviction, or three bursts of a slow
+                        # subscriber would destroy its subscriptions
+                        log.warning(
+                            f"bus: send buffer full for {message.dst_bus}, "
+                            f"dropping {type(message).__name__}"
                         )
-                        # Close and remove the dead connection
-                        try:
+                    case SendResult.DEAD:
+                        self._outbound_failures[message.dst_bus] += 1
+
+                        if (
+                            self._outbound_failures[message.dst_bus]
+                            >= self._max_send_failures
+                        ):
+                            log.debug(
+                                f"bus: too many failures ({self._outbound_failures[message.dst_bus]}) "
+                                f"sending to {message.dst_bus}, closing connection"
+                            )
+                            # Close and remove the dead connection
                             self._outbound[message.dst_bus].close()
-                        except Exception:
-                            pass
-                        del self._outbound[message.dst_bus]
-                        del self._outbound_failures[message.dst_bus]
+                            del self._outbound[message.dst_bus]
+                            del self._outbound_failures[message.dst_bus]
 
-                        # Clean up dead subscribers from this bus
-                        self._cleanup_dead_subscribers(message.dst_bus)
-                    else:
-                        log.debug(
-                            f"bus: failed to send message to {message.dst_bus} "
-                            f"({self._outbound_failures[message.dst_bus]}/{self._max_send_failures}), "
-                            f"remote bus may be dead or send buffer full"
-                        )
-                else:
-                    # Send succeeded, reset failure counter
-                    self._outbound_failures[message.dst_bus] = 0
+                            # Clean up dead subscribers from this bus
+                            self._cleanup_dead_subscribers(message.dst_bus)
+                        else:
+                            log.debug(
+                                f"bus: failed to send message to {message.dst_bus} "
+                                f"({self._outbound_failures[message.dst_bus]}/{self._max_send_failures}), "
+                                f"remote bus may be dead"
+                            )
 
     def _pop(
         self, /, key: str | None = None, timeout: float | None = None
@@ -274,17 +279,19 @@ class Bus:
 
             new_messages = any([key.fd == self._inbound.recv_fd() for key, _ in events])
             if new_messages:
-                recv_bytes = self._inbound.recv()
+                # drain until empty: one fd readiness event can cover many queued
+                # messages, and a spurious wakeup (no message at all) must not
+                # crash the loop — recv() returns None in both cases
+                while (recv_bytes := self._inbound.recv()) is not None:
+                    # FIXME: this could fail, check and push back errors if needed.
+                    try:
+                        message: Messages = self._decoder.decode(recv_bytes)
+                    except msgspec.DecodeError:
+                        log.exception(f"bus: failed to decode message: {recv_bytes}")
+                        continue
 
-                # FIXME: this could fail, check and push back errors if needed.
-                try:
-                    message: Messages = self._decoder.decode(recv_bytes)
-                except msgspec.DecodeError:
-                    log.exception(f"bus: failed to decode message: {recv_bytes}")
-                    continue
-
-                # FIXME: check for simple mistakes, like messages to the wrong receiver
-                self._push(message)
+                    # FIXME: check for simple mistakes, like messages to the wrong receiver
+                    self._push(message)
 
     #
     # bus client API
