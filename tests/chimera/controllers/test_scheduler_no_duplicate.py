@@ -261,3 +261,44 @@ def test_sequential_runs_in_time_order():
 
     session.query(Program).delete()
     session.commit()
+
+
+def test_finished_program_is_not_rerun_after_reschedule():
+    """A reschedule while a program runs re-enqueues that same program (its
+    finished flag is only written at completion), and the pop must skip the
+    stale entry - or the night replays it. Live on 2026-07-23 02:21: robobs
+    handed over the queue one program at a time, each hand-over rebuilt the
+    run queue while the first focus was executing, and SAO 189035 ran twice
+    back to back."""
+    from chimera.controllers.scheduler.model import Program, Session
+    from chimera.controllers.scheduler.sequential import SequentialScheduler
+
+    session = Session()
+    session.query(Program).delete()
+    session.add(Program(name="focus", priority=-2, start_at=61244.19))
+    session.add(Program(name="science", priority=-19, start_at=61244.20))
+    session.commit()
+
+    machine = type("M", (), {"wake_up": staticmethod(lambda: None)})()
+    scheduler = SequentialScheduler()
+    scheduler.reschedule(machine)
+    running = next(scheduler)
+    assert running.name == "focus"
+
+    # robobs hands over another program mid-run: the rebuilt queue holds
+    # the still-unfinished focus again
+    scheduler.reschedule(machine)
+
+    # the focus completes, exactly as machine._process does it
+    worker_session = Session()
+    task = worker_session.merge(running)
+    scheduler.done(task)
+    worker_session.commit()
+
+    picked = next(scheduler)
+    assert picked is not None, "the science program was lost with the stale entry"
+    assert picked.name == "science", f"finished program re-ran: {picked.name}"
+
+    session = Session()
+    session.query(Program).delete()
+    session.commit()

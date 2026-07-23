@@ -275,11 +275,17 @@ class Machine(threading.Thread):
                 self.executor.execute(task)
                 log.debug(f"[finish] {str(task)}")
                 self.scheduler.done(task)
+                # the finished flag must be on disk BEFORE the machine is
+                # released: the idle picker re-checks it against the
+                # database, and the commit at the end of this function
+                # raced that check (stale entries then re-ran the program)
+                session.commit()
                 self._stop_tracking()
                 self.controller.program_complete(program.id, SchedulerStatus.OK)
                 self.state(State.IDLE)
             except ProgramExecutionException as e:
                 self.scheduler.done(task, error=e)
+                session.commit()
                 self._stop_tracking()
                 self.controller.program_complete(
                     program.id, SchedulerStatus.ERROR, str(e)
@@ -288,6 +294,7 @@ class Machine(threading.Thread):
                 log.debug(f"[error] {str(task)} ({str(e)})")
             except ProgramExecutionAborted as e:
                 self.scheduler.done(task, error=e)
+                session.commit()
                 self._stop_tracking()
                 self.controller.program_complete(
                     program.id, SchedulerStatus.ABORTED, "Aborted by user."

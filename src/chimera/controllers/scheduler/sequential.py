@@ -46,8 +46,19 @@ class SequentialScheduler(IScheduler):
         machine.wake_up()
 
     def __next__(self):
-        if not self.run_queue.empty():
-            return self.run_queue.get()
+        session = Session()
+        while not self.run_queue.empty():
+            program = self.run_queue.get()
+            # reschedule() rebuilds the queue from every unfinished row -
+            # including the program RUNNING at that moment, whose finished
+            # flag is only written at completion. By the time its entry is
+            # popped it may have finished: re-check the row or the night
+            # replays it (a focus ran twice back to back, 2026-07-23).
+            current = session.query(Program).get(program.id)
+            if current is None or current.finished:
+                self.run_queue.task_done()
+                continue
+            return program
 
         return None
 
