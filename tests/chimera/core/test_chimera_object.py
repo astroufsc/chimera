@@ -6,6 +6,7 @@ from chimera.core.constants import CONFIG_ATTRIBUTE_NAME
 from chimera.core.event import event
 from chimera.core.metaobject import MethodWrapper
 from chimera.core.state import State
+from chimera.core.url import parse_url
 
 
 class TestChimeraObject:
@@ -181,6 +182,18 @@ class TestChimeraObject:
 
         assert m.__main__() is True
         assert m.counter == m.get_hz()
+
+    def test_location(self):
+        class Foo(ChimeraObject):
+            pass
+
+        f = Foo()
+
+        f.__location__ = parse_url("127.0.0.1:7666/Foo/bar")
+        assert f.get_location() == "tcp://127.0.0.1:7666/Foo/bar"
+
+        with pytest.raises(ValueError):
+            f.__location__ = parse_url("Siberian Lakes")
 
     def test_state(self):
         class Foo(ChimeraObject):
