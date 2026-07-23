@@ -10,7 +10,7 @@ from unittest.mock import MagicMock
 import msgspec
 import pytest
 
-from chimera.core.bus import Bus, EventId
+from chimera.core.bus import Bus, EventId, _Peer
 from chimera.core.chimeraobject import ChimeraObject
 from chimera.core.exceptions import (
     BusDeadException,
@@ -449,7 +449,7 @@ def test_backpressure_does_not_evict_subscribers(create_bus: Callable[[str], Bus
 
     # events to the remote bus will hit a full send buffer every time
     fake = AlwaysAgainTransport(remote_bus)
-    bus._outbound[remote_bus] = fake
+    bus._peers[remote_bus] = _Peer(fake)
 
     pool = ThreadPoolExecutor()
     bus_future = pool.submit(bus.run_forever)
@@ -466,7 +466,7 @@ def test_backpressure_does_not_evict_subscribers(create_bus: Callable[[str], Bus
         )
         time.sleep(0.01)
 
-    assert remote_bus in bus._outbound
+    assert remote_bus in bus._peers
     assert len(bus.subscribers(event_id)) == 1
 
     bus.shutdown()
@@ -491,7 +491,7 @@ def test_dead_send_does_not_evict(create_bus: Callable[[str], Bus]):
     )
 
     fake = AlwaysDeadTransport(remote_bus)
-    bus._outbound[remote_bus] = fake
+    bus._peers[remote_bus] = _Peer(fake)
 
     pool = ThreadPoolExecutor()
     bus_future = pool.submit(bus.run_forever)
@@ -508,7 +508,7 @@ def test_dead_send_does_not_evict(create_bus: Callable[[str], Bus]):
         )
         time.sleep(0.01)
 
-    assert remote_bus in bus._outbound
+    assert remote_bus in bus._peers
     assert len(bus.subscribers(event_id)) == 1
 
     bus.shutdown()
@@ -542,7 +542,7 @@ def test_peer_disconnect_evicts_and_unsubscribes(create_bus: Callable[[str], Bus
     bus_a.publish(pub=pub, event=event, args=[], kwargs={})
 
     deadline = time.monotonic() + 5
-    while bus_b.url.bus not in bus_a._outbound:
+    while bus_b.url.bus not in bus_a._peers:
         assert time.monotonic() < deadline, "A never connected to B"
         time.sleep(0.01)
 
@@ -552,9 +552,9 @@ def test_peer_disconnect_evicts_and_unsubscribes(create_bus: Callable[[str], Bus
     bus_b.shutdown()
 
     deadline = time.monotonic() + 5
-    while bus_b.url.bus in bus_a._outbound or len(bus_a.subscribers(event_id)) > 0:
+    while bus_b.url.bus in bus_a._peers or len(bus_a.subscribers(event_id)) > 0:
         assert time.monotonic() < deadline, (
-            f"peer not evicted: outbound={bus_b.url.bus in bus_a._outbound}, "
+            f"peer not evicted: outbound={bus_b.url.bus in bus_a._peers}, "
             f"subscribers={len(bus_a.subscribers(event_id))}"
         )
         time.sleep(0.01)
@@ -565,6 +565,180 @@ def test_peer_disconnect_evicts_and_unsubscribes(create_bus: Callable[[str], Bus
     bus_a.shutdown()
     a_future.result()
     b_future.result()
+    pool.shutdown()
+
+
+class BlockingTransport(AlwaysAgainTransport):
+    """send blocks until released, then succeeds — a wedged peer."""
+
+    def __init__(self, url: str, release: threading.Event):
+        super().__init__(url)
+        self.release = release
+
+    def send(self, data: bytes) -> SendResult:
+        self.send_count += 1
+        self.release.wait(20)
+        return SendResult.OK
+
+
+class BlackholeTransport(AlwaysAgainTransport):
+    """send accepts everything; nothing ever arrives anywhere — a silent
+    partition, invisible to pipe-removal callbacks."""
+
+    def send(self, data: bytes) -> SendResult:
+        self.send_count += 1
+        return SendResult.OK
+
+
+def test_slow_peer_does_not_block_other_peer(create_bus: Callable[..., Bus]):
+    """A sender wedged inside one peer's transport must not delay traffic to
+    healthy peers: locking is per peer, not global."""
+    bus = create_bus("tcp://127.0.0.1:15039")
+    bus_b = create_bus("tcp://127.0.0.1:15040")
+
+    def echo(x: int) -> int:
+        return x
+
+    bus_b.resolve_request = lambda object, method: ("/Echo/0", echo)
+
+    pool = ThreadPoolExecutor()
+    bus_future = pool.submit(bus.run_forever)
+    b_future = pool.submit(bus_b.run_forever)
+    assert bus._bus_started.wait(5)
+    assert bus_b._bus_started.wait(5)
+
+    release = threading.Event()
+    slow_url = "tcp://127.0.0.1:15041"
+    slow = BlockingTransport(slow_url, release)
+    bus._peers[slow_url] = _Peer(slow)
+
+    stuck = pool.submit(
+        lambda: bus._push(
+            Protocol.request(
+                src=f"{bus.url.bus}/Proxy/0", dst=f"{slow_url}/X/0", method="x"
+            )
+        )
+    )
+
+    deadline = time.monotonic() + 5
+    while slow.send_count < 1:
+        assert time.monotonic() < deadline, "sender never entered the slow peer"
+        time.sleep(0.01)
+
+    # the healthy peer answers while the slow one holds its sender hostage
+    response = bus.request(
+        src=f"{bus.url.bus}/Proxy/1",
+        dst=f"{bus_b.url.bus}/Echo/0",
+        method="echo",
+        args=[7],
+        timeout=5.0,
+    )
+    assert response.result == 7
+
+    release.set()
+    stuck.result(timeout=5)
+
+    bus.shutdown()
+    bus_b.shutdown()
+    bus_future.result()
+    b_future.result()
+    pool.shutdown()
+
+
+def test_unresponsive_peer_evicted_by_health_check(create_bus: Callable[..., Bus]):
+    """A silently partitioned peer (sends succeed, nothing ever answers) is
+    evicted by the health check and its pending requests fail."""
+    bus = create_bus("tcp://127.0.0.1:15042", health_timeout=0.1)
+
+    dead_url = "tcp://127.0.0.1:15043"
+    bus._peers[dead_url] = _Peer(BlackholeTransport(dead_url))
+
+    pool = ThreadPoolExecutor()
+    bus_future = pool.submit(bus.run_forever)
+    assert bus._bus_started.wait(5)
+
+    pending = pool.submit(
+        lambda: bus.request(
+            src=f"{bus.url.bus}/Proxy/0",
+            dst=f"{dead_url}/X/0",
+            method="x",
+            timeout=10.0,
+        )
+    )
+
+    deadline = time.monotonic() + 5
+    while not bus.stats()["mailboxes"]:
+        assert time.monotonic() < deadline, "request never became pending"
+        time.sleep(0.01)
+
+    for _ in range(3):
+        bus._health_check_once()
+
+    # the pending request fails well before its own timeout
+    with pytest.raises(BusDeadException):
+        pending.result(timeout=5)
+    assert dead_url not in bus._peers
+
+    bus.shutdown()
+    bus_future.result()
+    pool.shutdown()
+
+
+def test_evicted_peer_reconnects_on_next_send(create_bus: Callable[..., Bus]):
+    """After an eviction, the next send to that bus address dials again
+    transparently — a restarted peer is reachable without manual action."""
+    bus_a = create_bus("tcp://127.0.0.1:15044")
+
+    def fake_location() -> str:
+        return "tcp://127.0.0.1:15045/X/0"
+
+    bus_b = create_bus("tcp://127.0.0.1:15045")
+    bus_b.resolve_request = lambda object, method: ("/X/0", fake_location)
+
+    pool = ThreadPoolExecutor()
+    a_future = pool.submit(bus_a.run_forever)
+    b_future = pool.submit(bus_b.run_forever)
+    assert bus_a._bus_started.wait(5)
+    assert bus_b._bus_started.wait(5)
+
+    pong = bus_a.ping(
+        src=f"{bus_a.url.bus}/Proxy/0", dst="tcp://127.0.0.1:15045/X/0", timeout=5.0
+    )
+    assert pong is not None and pong.ok is True
+    assert "tcp://127.0.0.1:15045" in bus_a._peers
+
+    bus_b.shutdown()
+    b_future.result()
+
+    deadline = time.monotonic() + 5
+    while "tcp://127.0.0.1:15045" in bus_a._peers:
+        assert time.monotonic() < deadline, "dead peer never evicted"
+        time.sleep(0.01)
+
+    # a fresh bus on the same address: rebinding can take a moment
+    deadline = time.monotonic() + 5
+    while True:
+        try:
+            bus_b2 = create_bus("tcp://127.0.0.1:15045")
+            break
+        except Exception:
+            assert time.monotonic() < deadline, "could not rebind the port"
+            time.sleep(0.1)
+
+    bus_b2.resolve_request = lambda object, method: ("/X/0", fake_location)
+    b2_future = pool.submit(bus_b2.run_forever)
+    assert bus_b2._bus_started.wait(5)
+
+    pong = bus_a.ping(
+        src=f"{bus_a.url.bus}/Proxy/0", dst="tcp://127.0.0.1:15045/X/0", timeout=5.0
+    )
+    assert pong is not None and pong.ok is True
+    assert "tcp://127.0.0.1:15045" in bus_a._peers
+
+    bus_a.shutdown()
+    bus_b2.shutdown()
+    a_future.result()
+    b2_future.result()
     pool.shutdown()
 
 
@@ -1407,6 +1581,129 @@ def test_unlocked_methods_not_routed_to_lane(create_bus: Callable[..., Bus]):
 
 
 #
+# soak: everything at once, sustained
+#
+
+
+@pytest.mark.slow
+def test_soak_no_crossed_responses_no_lost_events(create_bus: Callable[..., Bus]):
+    """a ~100 Hz publisher plus 8 concurrent RPC threads across two real buses.
+    Zero crossed responses, zero lost subscriptions, >=99% event delivery, no
+    leaked mailboxes and bounded memory growth.
+    Set CHIMERA_SOAK_SECONDS=60 for the full soak."""
+    import subprocess
+
+    duration = float(os.environ.get("CHIMERA_SOAK_SECONDS", "5"))
+
+    server = create_bus("tcp://127.0.0.1:15046")
+    client = create_bus("tcp://127.0.0.1:15047")
+
+    def echo(x: int) -> int:
+        return x
+
+    server.resolve_request = lambda object, method: ("/Echo/0", echo)
+
+    pool = ThreadPoolExecutor(max_workers=16)
+    server_future = pool.submit(server.run_forever)
+    client_future = pool.submit(client.run_forever)
+    assert server._bus_started.wait(5)
+    assert client._bus_started.wait(5)
+
+    pub = f"{server.url.bus}/Telescope/0"
+    event_id = EventId(pub, "tick")
+
+    events_received = 0
+    events_lock = threading.Lock()
+
+    def on_tick(i: int) -> None:
+        nonlocal events_received
+        with events_lock:
+            events_received += 1
+
+    client.subscribe(
+        sub=f"{client.url.bus}/Proxy/sub", pub=pub, event="tick", callback=on_tick
+    )
+    deadline = time.monotonic() + 5
+    while len(server.subscribers(event_id)) != 1:
+        assert time.monotonic() < deadline, "subscription never propagated"
+        time.sleep(0.01)
+
+    def rss_kb() -> int:
+        out = subprocess.check_output(["ps", "-o", "rss=", "-p", str(os.getpid())])
+        return int(out.strip())
+
+    rss_start = rss_kb()
+    stop = threading.Event()
+    crossed = 0
+    rpc_ok = 0
+    rpc_errors = 0
+    counters_lock = threading.Lock()
+
+    def rpc_worker(thread_id: int) -> None:
+        nonlocal crossed, rpc_ok, rpc_errors
+        i = 0
+        while not stop.is_set():
+            value = thread_id * 10_000_000 + i
+            try:
+                response = client.request(
+                    src=f"{client.url.bus}/Proxy/{thread_id}",
+                    dst=f"{server.url.bus}/Echo/0",
+                    method="echo",
+                    args=[value],
+                    timeout=10.0,
+                )
+                with counters_lock:
+                    if response.result != value:
+                        crossed += 1
+                    else:
+                        rpc_ok += 1
+            except (BusDeadException, RequestTimeoutException):
+                with counters_lock:
+                    rpc_errors += 1
+            i += 1
+
+    events_published = 0
+
+    def publisher() -> None:
+        nonlocal events_published
+        while not stop.is_set():
+            server.publish(pub=pub, event="tick", args=[events_published], kwargs={})
+            events_published += 1
+            time.sleep(0.01)  # ~100 Hz
+
+    workers = [pool.submit(rpc_worker, thread_id) for thread_id in range(8)]
+    publisher_future = pool.submit(publisher)
+
+    time.sleep(duration)
+    stop.set()
+    for worker in workers:
+        worker.result(timeout=30)
+    publisher_future.result(timeout=30)
+
+    time.sleep(1.0)  # drain in-flight events
+    rss_end = rss_kb()
+
+    assert rpc_ok > 0
+    assert crossed == 0, f"{crossed} crossed responses"
+    assert rpc_errors == 0, f"{rpc_errors} rpc errors"
+    assert len(server.subscribers(event_id)) == 1, "subscription lost"
+    assert events_received >= events_published * 0.99, (
+        f"event loss: {events_received}/{events_published}"
+    )
+    assert len(client.stats()["mailboxes"]) == 0
+    assert len(server.stats()["mailboxes"]) == 0
+    assert rss_end < rss_start + 100_000, (
+        f"rss grew {rss_end - rss_start} kB during the soak"
+    )
+
+    client.shutdown()
+    server.shutdown()
+    client_future.result(timeout=10)
+    server_future.result(timeout=10)
+    pool.shutdown()
+
+
+#
 # observability (chimera-ctl status)
 #
 
@@ -1444,7 +1741,7 @@ def test_bus_stats_snapshot(create_bus: Callable[[str], Bus]):
     )
 
     peer_url = "tcp://127.0.0.1:15016"
-    bus._outbound[peer_url] = AlwaysAgainTransport(peer_url)
+    bus._peers[peer_url] = _Peer(AlwaysAgainTransport(peer_url))
 
     pool = ThreadPoolExecutor()
     bus_future = pool.submit(bus.run_forever)

@@ -11,7 +11,7 @@ from typing import Any, NamedTuple
 
 import msgspec
 
-from chimera.core.constants import LOCK_ATTRIBUTE_NAME
+from chimera.core.constants import LOCK_ATTRIBUTE_NAME, MANAGER_LOCATION
 from chimera.core.exceptions import BusDeadException, RequestTimeoutException
 from chimera.core.protocol import (
     Event,
@@ -30,6 +30,9 @@ from chimera.core.transport_factory import create_transport
 from chimera.core.url import URL, create_url, parse_url
 
 log = logging.getLogger(__name__)
+
+# consecutive missed health pongs before a peer is declared gone
+_MAX_MISSED_PONGS = 3
 
 
 def pool_stats(pool: ThreadPoolExecutor) -> dict[str, Any]:
@@ -89,6 +92,17 @@ def _is_locked_method(method: Callable[..., Any]) -> bool:
     `is True` defends against mock auto-attributes in tests."""
     func = getattr(method, "func", method)
     return getattr(func, LOCK_ATTRIBUTE_NAME, False) is True
+
+
+class _Peer:
+    """One outbound connection: its own transport, its own lock and its own
+    health state — a slow or black-holed peer stalls only its own senders,
+    never traffic to healthy peers."""
+
+    def __init__(self, transport: Transport):
+        self.transport = transport
+        self.lock = threading.Lock()
+        self.missed_pongs = 0
 
 
 class _ObjectLane:
@@ -194,6 +208,8 @@ class Bus:
         control_pool_size: int = 16,
         lane_queue_size: int = 32,
         lane_idle_timeout: float = 60.0,
+        health_interval: float = 30.0,
+        health_timeout: float = 2.0,
     ):
         self.url = create_url(url, cls="Bus")
 
@@ -253,8 +269,15 @@ class Bus:
         self._inbound: Transport = create_transport(self.url.bus)
         self._inbound.bind()
 
-        self._outbound: dict[str, Transport] = {}
-        self._outbound_lock = threading.Lock()
+        # outbound peers, one connection each; the map lock guards only the
+        # map — dialing and sending happen under each peer's own lock
+        self._peers: dict[str, _Peer] = {}
+        self._peers_lock = threading.Lock()
+
+        # health check: the backstop for silent partitions that never emit a
+        # pipe-removal event (no FIN/RST — pipe eviction cannot see those)
+        self._health_interval = health_interval
+        self._health_timeout = health_timeout
 
         self._encoder = msgspec.json.Encoder()
         self._decoder = msgspec.json.Decoder(Messages)
@@ -301,8 +324,9 @@ class Bus:
                 return
             self._teardown_claimed.set()
 
-        # make sure the dispatch thread is signalled even when teardown is
+        # make sure the helper threads are signalled even when teardown is
         # entered without shutdown() (loop crash, ctrl-c)
+        self._shutdown_done.set()
         self._running.clear()
         self._mailboxes.close_all()
         self._inbox.put(None)
@@ -310,6 +334,10 @@ class Bus:
         dispatch = getattr(self, "_dispatch_thread", None)
         if dispatch is not None and dispatch is not threading.current_thread():
             dispatch.join(timeout=5)
+
+        health = getattr(self, "_health_thread", None)
+        if health is not None and health is not threading.current_thread():
+            health.join(timeout=5)
 
         # stop the lanes: a sentinel wakes each worker; short join only —
         # they are daemon threads, so a truly hung instrument method cannot
@@ -349,9 +377,9 @@ class Bus:
 
         # snapshot under the lock: a concurrent peer eviction may still
         # mutate the map while we tear down
-        with self._outbound_lock:
-            outbound = list(self._outbound.values())
-            self._outbound.clear()
+        with self._peers_lock:
+            outbound = [peer.transport for peer in self._peers.values()]
+            self._peers.clear()
         for socket in outbound:
             socket.close()
 
@@ -390,8 +418,8 @@ class Bus:
                 for event_id, cbs in self._callbacks.items()
             ]
 
-        with self._outbound_lock:
-            peers = list(self._outbound.keys())
+        with self._peers_lock:
+            peers = list(self._peers.keys())
 
         with self._lanes_lock:
             lanes = [
@@ -446,6 +474,46 @@ class Bus:
 
         log.debug(f"bus: cleaned up subscribers from dead bus: {bus_url}")
 
+    def _ping_peer(self, dst_bus: str) -> bool:
+        """True if the peer answered anything at all within the health
+        timeout — even a not-found Pong proves the bus over there is alive."""
+        ping = Protocol.ping(src=self.url.url, dst=f"{dst_bus}{MANAGER_LOCATION}")
+        mailbox = self._mailboxes.register(ping.id, ping.dst_bus)
+        try:
+            if not self._push(ping):
+                return False
+            try:
+                return mailbox.get(timeout=self._health_timeout) is not None
+            except queue.Empty:
+                return False
+        finally:
+            self._mailboxes.unregister(ping.id)
+
+    def _health_check_once(self) -> None:
+        with self._peers_lock:
+            peers = dict(self._peers)
+
+        for dst_bus, peer in peers.items():
+            if self._ping_peer(dst_bus):
+                peer.missed_pongs = 0
+                continue
+
+            peer.missed_pongs += 1
+            log.warning(
+                f"bus: peer {dst_bus} missed pong "
+                f"({peer.missed_pongs}/{_MAX_MISSED_PONGS})"
+            )
+            if peer.missed_pongs >= _MAX_MISSED_PONGS:
+                log.warning(f"bus: peer {dst_bus} unresponsive, evicting")
+                self._evict_peer(dst_bus)
+
+    def _health_loop(self) -> None:
+        while not self._shutdown_done.wait(self._health_interval):
+            try:
+                self._health_check_once()
+            except Exception:
+                log.exception("bus: health check failed")
+
     def _schedule_peer_eviction(self, dst_bus: str) -> None:
         # called from a transport worker thread on connection loss: hand off
         # immediately, socket operations are not allowed in that context
@@ -463,15 +531,15 @@ class Bus:
         subscriptions and every request still waiting on it. The peer
         reconnects implicitly on the next send to it (and reconnecting
         subscribers must re-subscribe)."""
-        with self._outbound_lock:
-            transport = self._outbound.pop(dst_bus, None)
+        with self._peers_lock:
+            peer = self._peers.pop(dst_bus, None)
 
-        if transport is None:
+        if peer is None:
             # already evicted, or racing our own shutdown
             return
 
         log.debug(f"bus: peer disconnected, evicting: {dst_bus}")
-        transport.close()
+        peer.transport.close()
         self._cleanup_dead_subscribers(dst_bus)
         self._mailboxes.fail_peer(dst_bus)
 
@@ -508,55 +576,78 @@ class Bus:
                 self._inbox.put(message)
             return True
         else:
-            with self._outbound_lock:
-                if message.dst_bus not in self._outbound:
-                    # TODO: define some policy to handle closing of these sockets when not in use
-                    transport = create_transport(message.dst_bus)
-                    # peer loss is detected by the transport (pipe removal)
-                    # and handled off the transport thread; the send path
-                    # itself never evicts
-                    transport.on_disconnect = (
-                        lambda dst_bus=message.dst_bus: self._schedule_peer_eviction(
-                            dst_bus
-                        )
-                    )
-                    try:
-                        transport.connect()
-                    except Exception:
-                        log.exception(
-                            f"bus: failed to connect to outbound bus: {message.dst_bus}"
-                        )
-                        # nothing stored: the next push retries the dial
-                        return False
-                    self._outbound[message.dst_bus] = transport
+            # encode outside every lock
+            try:
+                message_bytes = self._encoder.encode(message)
+            except Exception:
+                log.exception(f"bus: failed to encode message: {message}")
+                return False
 
-                try:
-                    message_bytes = self._encoder.encode(message)
-                except Exception:
-                    log.exception(f"bus: failed to encode message: {message}")
+            peer = self._get_peer(message.dst_bus)
+            if peer is None:
+                return False
+
+            with peer.lock:
+                result = peer.transport.send(message_bytes)
+                if result is SendResult.AGAIN:
+                    # backpressure beyond the socket buffer: a short bounded
+                    # retry absorbs sustained bursts; only this peer's
+                    # senders wait
+                    for _ in range(3):
+                        time.sleep(0.01)
+                        result = peer.transport.send(message_bytes)
+                        if result is not SendResult.AGAIN:
+                            break
+
+            match result:
+                case SendResult.OK:
+                    return True
+                case SendResult.AGAIN:
+                    # still full: drop this message but never evict — a slow
+                    # peer is not a dead one
+                    log.warning(
+                        f"bus: send buffer full for {message.dst_bus}, "
+                        f"dropping {type(message).__name__}"
+                    )
+                    return True
+                case SendResult.DEAD:
+                    # if the peer is really gone the transport will notify
+                    # us and _evict_peer does the cleanup
+                    log.warning(
+                        f"bus: send failed to {message.dst_bus}, "
+                        f"dropping {type(message).__name__}"
+                    )
                     return False
 
-                # Non-blocking send - if it fails, log and continue
-                # This prevents blocking on dead or slow remote buses
-                match self._outbound[message.dst_bus].send(message_bytes):
-                    case SendResult.OK:
-                        return True
-                    case SendResult.AGAIN:
-                        # backpressure on a live peer: drop this message but
-                        # never evict — a slow subscriber is not a dead one
-                        log.warning(
-                            f"bus: send buffer full for {message.dst_bus}, "
-                            f"dropping {type(message).__name__}"
-                        )
-                        return True
-                    case SendResult.DEAD:
-                        # if the peer is really gone the transport will notify
-                        # us and _evict_peer does the cleanup
-                        log.warning(
-                            f"bus: send failed to {message.dst_bus}, "
-                            f"dropping {type(message).__name__}"
-                        )
-                        return False
+    def _get_peer(self, dst_bus: str) -> _Peer | None:
+        with self._peers_lock:
+            peer = self._peers.get(dst_bus)
+        if peer is not None:
+            return peer
+
+        # dial outside the map lock: a black-holed peer blocking in connect
+        # must not freeze senders to healthy peers (H1)
+        # TODO: define some policy to handle closing of these sockets when not in use
+        transport = create_transport(dst_bus)
+        # peer loss is detected by the transport (pipe removal) and handled
+        # off the transport thread; the send path itself never evicts
+        transport.on_disconnect = lambda: self._schedule_peer_eviction(dst_bus)
+        try:
+            transport.connect()
+        except Exception:
+            log.exception(f"bus: failed to connect to outbound bus: {dst_bus}")
+            # nothing stored: the next push retries the dial
+            return None
+
+        with self._peers_lock:
+            existing = self._peers.get(dst_bus)
+            if existing is not None:
+                # lost a connect race: keep the winner's connection
+                transport.close()
+                return existing
+            peer = _Peer(transport)
+            self._peers[dst_bus] = peer
+            return peer
 
     def _pop(self, /, timeout: float | None = None) -> Messages | None:
         message = self._inbox.get(block=True, timeout=timeout)
@@ -593,6 +684,13 @@ class Bus:
                 daemon=True,
             )
             self._dispatch_thread.start()
+
+            self._health_thread = threading.Thread(
+                target=self._health_loop,
+                name=f"chimera-bus-health-{self.url.port}",
+                daemon=True,
+            )
+            self._health_thread.start()
 
             self._bus_started.set()
 
@@ -975,6 +1073,13 @@ class Bus:
                 self._push(message.pong(ok=False))
         except Exception:
             log.exception("error handling ping")
+            # still answer: a reachable bus must never look silently
+            # partitioned just because resolution raised (health checks
+            # count any pong as proof of life)
+            try:
+                self._push(message.pong(ok=False))
+            except Exception:
+                pass
 
     def _handle_subscribe(self, message: Subscribe):
         try:
