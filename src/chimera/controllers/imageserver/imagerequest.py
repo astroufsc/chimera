@@ -115,8 +115,15 @@ class ImageRequest(dict):
             if not dome.ping():
                 log.info("No dome present, taking exposure without dome sync.")
                 return
-            dome.sync_with_tel()
-            if dome.is_sync_with_tel():
+            # a dome hiccup must not abort the exposure (and with it the
+            # focus run or the whole program): degrade to the log line below
+            try:
+                dome.sync_with_tel()
+                synced = dome.is_sync_with_tel()
+            except Exception as e:
+                log.warning(f"Dome sync failed ({e}). Taking exposure anyway.")
+                return
+            if synced:
                 log.debug("Dome slit position synchronized with telescope position.")
             else:
                 log.info(

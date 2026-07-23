@@ -123,6 +123,10 @@ class DomeBase(ChimeraObject, DomeSlew, DomeSlit, DomeFlap, DomeSync):
             try:
                 self.log.debug(f"[queue] slewing to {target}")
                 self.slew_to_az(target)
+            except Exception as e:
+                # control() must survive a failed slew: a raise here would
+                # kill the control loop and silently stop dome tracking
+                self.log.warning(f"[queue] slew to {target} failed ({e})")
             finally:
                 self.log.debug(f"[queue] slew to {target} complete")
                 self.queue.task_done()
