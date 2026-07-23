@@ -6,7 +6,7 @@ import selectors
 import threading
 import time
 from collections.abc import Callable
-from concurrent.futures import Future, ThreadPoolExecutor
+from concurrent.futures import CancelledError, Future, ThreadPoolExecutor
 from dataclasses import dataclass
 from typing import Any, NamedTuple
 
@@ -160,10 +160,28 @@ class _Mailboxes:
 
 
 class Bus:
-    def __init__(self, url: str):
+    def __init__(
+        self,
+        url: str,
+        *,
+        handler_pool_size: int = 64,
+        control_pool_size: int = 16,
+    ):
         self.url = create_url(url, cls="Bus")
 
-        self._pool = ThreadPoolExecutor()
+        # tiered dispatch: requests and event callbacks (arbitrary user code,
+        # can block) run on the bounded handler pool; pings and publish
+        # fan-out (small, framework-only work that still touches sockets) run
+        # on their own control pool so a wedged handler pool can never starve
+        # liveness checks or event distribution
+        self._handler_pool = ThreadPoolExecutor(
+            max_workers=handler_pool_size,
+            thread_name_prefix=f"chimera-bus-handler-{self.url.port}",
+        )
+        self._control_pool = ThreadPoolExecutor(
+            max_workers=control_pool_size,
+            thread_name_prefix=f"chimera-bus-control-{self.url.port}",
+        )
 
         self._running = threading.Event()
         self._bus_started = threading.Event()
@@ -230,7 +248,7 @@ class Bus:
             # worker the teardown itself joins)
             current = threading.current_thread()
             if current is not getattr(self, "_loop_thread", None) and (
-                current not in self._pool._threads
+                not self._is_own_worker()
             ):
                 self._teardown_finished.wait(timeout=5)
         else:
@@ -256,8 +274,14 @@ class Bus:
         if dispatch is not None and dispatch is not threading.current_thread():
             dispatch.join(timeout=5)
 
-        # a pool worker asking for teardown must not join its own pool
-        self._pool.shutdown(wait=threading.current_thread() not in self._pool._threads)
+        # a pool worker asking for teardown must not join its own pool;
+        # queued handler work is cancelled (their done-callbacks see
+        # CancelledError), queued control work is small and drains
+        current = threading.current_thread()
+        self._handler_pool.shutdown(
+            wait=current not in self._handler_pool._threads, cancel_futures=True
+        )
+        self._control_pool.shutdown(wait=current not in self._control_pool._threads)
 
         self._inbound.close()
         for fd in (self._waker_w, self._waker_r):
@@ -279,6 +303,13 @@ class Bus:
     def is_dead(self) -> bool:
         return self._shutdown_done.is_set() or (
             self._bus_started.is_set() and self._running.is_set() is False
+        )
+
+    def _is_own_worker(self) -> bool:
+        current = threading.current_thread()
+        return (
+            current in self._handler_pool._threads
+            or current in self._control_pool._threads
         )
 
     def stats(self) -> dict[str, Any]:
@@ -316,7 +347,8 @@ class Bus:
             "peers": peers,
             "subscribers": subscribers,
             "callbacks": callbacks,
-            "pool": pool_stats(self._pool),
+            "handler_pool": pool_stats(self._handler_pool),
+            "control_pool": pool_stats(self._control_pool),
         }
 
     def __del__(self):
@@ -351,7 +383,8 @@ class Bus:
         if self.is_dead():
             return
         try:
-            self._pool.submit(self._evict_peer, dst_bus)
+            # eviction is control work: it must run even when handlers are wedged
+            self._control_pool.submit(self._evict_peer, dst_bus)
         except RuntimeError:
             # pool already shut down: the bus is going away anyway
             pass
@@ -686,18 +719,21 @@ class Bus:
                     break
 
                 match message:
-                    case Ping():
-                        _ = self._pool.submit(self._handle_ping, message)
-                    case Request():
-                        _ = self._pool.submit(self._handle_request, message)
+                    # table-only ops run inline: nothing here may block
+                    # (no _push, no user code), so they are structurally
+                    # immune to pool starvation
                     case Subscribe():
-                        _ = self._pool.submit(self._handle_subscribe, message)
+                        self._handle_subscribe(message)
                     case Unsubscribe():
-                        _ = self._pool.submit(self._handle_unsubscribe, message)
+                        self._handle_unsubscribe(message)
+                    case Ping():
+                        _ = self._control_pool.submit(self._handle_ping, message)
                     case Publish():
-                        _ = self._pool.submit(self._handle_publish, message)
+                        _ = self._control_pool.submit(self._handle_publish, message)
+                    case Request():
+                        _ = self._handler_pool.submit(self._handle_request, message)
                     case Event():
-                        _ = self._pool.submit(self._handle_event, message)
+                        _ = self._handler_pool.submit(self._handle_event, message)
                     case _:
                         log.warning(f"Invalid message type: {type(message)}")
 
@@ -807,16 +843,25 @@ class Bus:
             event_id = EventId(event.src, event.event)
 
             for callback in self._callbacks[event_id].values():
-                method = callback.callable
-                # NOTE: we cannot see exception happening inside the event handlers,
-                #       so we schedule a check on the future result in a separate task.
-                event_future = self._pool.submit(method, *event.args, **event.kwargs)
-                self._pool.submit(self._check_event_result, event, event_future)
+                # exceptions inside event handlers are invisible to the
+                # publisher: observe them via a (free) done-callback instead
+                # of burning a second pool task on it
+                event_future = self._handler_pool.submit(
+                    callback.callable, *event.args, **event.kwargs
+                )
+                event_future.add_done_callback(self._log_event_result(event))
         except Exception:
             log.exception("error handling event")
 
-    def _check_event_result(self, event: Event, future: Future[Any]) -> None:
-        try:
-            _ = future.result()
-        except Exception:
-            log.exception(f"error in event handler: {event.event}")
+    @staticmethod
+    def _log_event_result(event: Event) -> Callable[[Future[Any]], None]:
+        def check(future: Future[Any]) -> None:
+            try:
+                _ = future.result()
+            except CancelledError:
+                # shutdown cancelled callbacks still queued: not an error
+                pass
+            except Exception:
+                log.exception(f"error in event handler: {event.event}")
+
+        return check

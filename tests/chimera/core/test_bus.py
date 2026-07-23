@@ -278,11 +278,11 @@ def pubsub_test(*, n_subscribers: int, n_events: int, src_bus: Bus, dst_bus: Bus
 
 
 @pytest.fixture
-def create_bus() -> Generator[Callable[[str], Bus]]:
+def create_bus() -> Generator[Callable[..., Bus]]:
     buses: list[Bus] = []
 
-    def _wrapper(url: str) -> Bus:
-        bus = Bus(url)
+    def _wrapper(url: str, **kwargs: Any) -> Bus:
+        bus = Bus(url, **kwargs)
         buses.append(bus)
         return bus
 
@@ -570,6 +570,112 @@ def test_peer_disconnect_evicts_and_unsubscribes(create_bus: Callable[[str], Bus
 
 
 #
+# tiered dispatch: control lane vs handler pool
+#
+
+
+def test_hung_handlers_do_not_starve_control(create_bus: Callable[..., Bus]):
+    """With every handler-pool worker wedged and more requests queued, pings
+    and subscriptions must still be served: they run on their own lane."""
+    bus = create_bus("tcp://127.0.0.1:15025", handler_pool_size=2)
+
+    release = threading.Event()
+
+    def hang() -> bool:
+        release.wait(20)
+        return True
+
+    def fake_get_location() -> str:
+        return "/Slow/0"
+
+    def resolve(object: str, method: str):
+        if method == "get_location":
+            return "/Slow/0", fake_get_location
+        return "/Slow/0", hang
+
+    bus.resolve_request = resolve
+
+    pool = ThreadPoolExecutor()
+    bus_future = pool.submit(bus.run_forever)
+    assert bus._bus_started.wait(5)
+
+    # wedge both handler workers and queue two more requests behind them
+    for i in range(4):
+        bus._push(
+            Protocol.request(
+                src=f"{bus.url.bus}/Proxy/{i}",
+                dst=f"{bus.url.bus}/Slow/0",
+                method="hang",
+            )
+        )
+
+    deadline = time.monotonic() + 5
+    while bus.stats()["handler_pool"]["queued"] < 2:
+        assert time.monotonic() < deadline, "handler pool never saturated"
+        time.sleep(0.01)
+
+    # liveness must survive: ping answers within its timeout...
+    pong = bus.ping(
+        src=f"{bus.url.bus}/Proxy/ping", dst=f"{bus.url.bus}/Slow/0", timeout=5.0
+    )
+    assert pong is not None and pong.ok is True
+
+    # ...and a subscription lands (handled inline on the dispatch thread)
+    pub = f"{bus.url.bus}/Telescope/0"
+    event_id = EventId(pub, "slew_begin")
+    bus.subscribe(
+        sub=f"{bus.url.bus}/Proxy/0", pub=pub, event="slew_begin", callback=lambda: None
+    )
+    deadline = time.monotonic() + 2
+    while len(bus.subscribers(event_id)) != 1:
+        assert time.monotonic() < deadline, "subscribe starved by hung handlers"
+        time.sleep(0.01)
+
+    release.set()
+    bus.shutdown()
+    bus_future.result()
+    pool.shutdown()
+
+
+def test_event_callback_exception_logged_not_fatal(
+    create_bus: Callable[..., Bus], caplog: pytest.LogCaptureFixture
+):
+    """A raising event callback is logged and does not stop delivery."""
+    bus = create_bus("tcp://127.0.0.1:15026")
+
+    pub = f"{bus.url.bus}/Telescope/0"
+    marker = threading.Event()
+
+    def callback(kind: str):
+        if kind == "bad":
+            raise RuntimeError("callback exploded")
+        marker.set()
+
+    bus.subscribe(
+        sub=f"{bus.url.bus}/Proxy/0", pub=pub, event="tick", callback=callback
+    )
+
+    pool = ThreadPoolExecutor()
+    bus_future = pool.submit(bus.run_forever)
+    assert bus._bus_started.wait(5)
+
+    with caplog.at_level(logging.ERROR, logger="chimera.core.bus"):
+        bus.publish(pub=pub, event="tick", args=["bad"], kwargs={})
+        bus.publish(pub=pub, event="tick", args=["good"], kwargs={})
+
+        assert marker.wait(5), "later event not delivered after callback error"
+
+        deadline = time.monotonic() + 5
+        while not any("error in event handler" in r.message for r in caplog.records):
+            assert time.monotonic() < deadline, "callback exception never logged"
+            time.sleep(0.01)
+
+    bus.shutdown()
+    bus_future.result()
+    pool.shutdown()
+
+
+#
 # dispatch thread + robust shutdown
 #
 
@@ -829,11 +935,11 @@ def test_bus_stats_snapshot(create_bus: Callable[[str], Bus]):
     # pool snapshot: limits, backlog and per-thread state (the pool spawns
     # lazily, so wait until the pending request's handler occupies a thread)
     deadline = time.monotonic() + 5
-    while not bus.stats()["pool"]["threads"]:
+    while not bus.stats()["handler_pool"]["threads"]:
         assert time.monotonic() < deadline, "handler never occupied a pool thread"
         time.sleep(0.01)
 
-    pool_info = bus.stats()["pool"]
+    pool_info = bus.stats()["handler_pool"]
     assert pool_info["max_workers"] >= 1
     assert pool_info["queued"] >= 0
     for thread in pool_info["threads"]:

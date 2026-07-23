@@ -167,7 +167,8 @@ class ChimeraCtl(ChimeraCLI):
         console.print(grid)
         console.print()
 
-        self._print_pool("Bus pool", bus["pool"])
+        self._print_pool("Handler pool", bus["handler_pool"])
+        self._print_pool("Control pool", bus["control_pool"])
 
         # our own ephemeral bus shows up as a peer of the manager: mark it
         us = self.bus.url.bus
