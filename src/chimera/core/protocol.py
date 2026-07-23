@@ -92,6 +92,16 @@ class Request(RpcMessage, frozen=True):
             error=msg,
         )
 
+    def busy(self, msg: str) -> "Response":
+        return Response(
+            ts=Protocol.timestamp(),
+            src=self.dst,
+            dst=self.src,
+            id=self.id,
+            code=503,
+            error=msg,
+        )
+
     def error(self, error: Exception) -> "Response":
         tb = "".join(traceback.format_exception(error))
         return Response(

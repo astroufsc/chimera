@@ -12,7 +12,12 @@ import pytest
 
 from chimera.core.bus import Bus, EventId
 from chimera.core.chimeraobject import ChimeraObject
-from chimera.core.exceptions import BusDeadException, RequestTimeoutException
+from chimera.core.exceptions import (
+    BusDeadException,
+    ObjectBusyException,
+    RequestTimeoutException,
+)
+from chimera.core.lock import lock
 from chimera.core.manager import Manager
 from chimera.core.protocol import Protocol, Subscribe
 from chimera.core.proxy import Proxy
@@ -1054,6 +1059,350 @@ def test_request_after_shutdown_raises_bus_dead(create_bus: Callable[[str], Bus]
             src=f"{bus.url.bus}/Proxy/0", dst=f"{bus.url.bus}/X/0", method="get"
         )
 
+    pool.shutdown()
+
+
+#
+# @lock per-object FIFO lanes
+#
+
+
+def test_locked_methods_serialize_per_object(create_bus: Callable[..., Bus]):
+    """@lock methods of one object never run concurrently, whatever the
+    handler pool does."""
+    bus = create_bus("tcp://127.0.0.1:15032")
+
+    n = 10
+    concurrent = 0
+    max_concurrent = 0
+    calls = 0
+    counter_lock = threading.Lock()
+
+    @lock
+    def locked_step() -> bool:
+        nonlocal concurrent, max_concurrent, calls
+        with counter_lock:
+            concurrent += 1
+            max_concurrent = max(max_concurrent, concurrent)
+        time.sleep(0.01)  # widen any overlap window
+        with counter_lock:
+            concurrent -= 1
+            calls += 1
+        return True
+
+    bus.resolve_request = lambda object, method: ("/Locked/0", locked_step)
+
+    pool = ThreadPoolExecutor()
+    bus_future = pool.submit(bus.run_forever)
+    assert bus._bus_started.wait(5)
+
+    def call(i: int):
+        return bus.request(
+            src=f"{bus.url.bus}/Proxy/{i}",
+            dst=f"{bus.url.bus}/Locked/0",
+            method="locked_step",
+            timeout=10.0,
+        )
+
+    futures = [pool.submit(call, i) for i in range(n)]
+    for future in futures:
+        assert future.result().code == 200
+
+    assert calls == n
+    assert max_concurrent == 1, f"locked methods overlapped: {max_concurrent}"
+
+    bus.shutdown()
+    bus_future.result()
+    pool.shutdown()
+
+
+def test_lane_fifo_order(create_bus: Callable[..., Bus]):
+    """Locked methods execute in arrival order."""
+    bus = create_bus("tcp://127.0.0.1:15033")
+
+    n = 10
+    order: list[int] = []
+    done = threading.Event()
+
+    @lock
+    def record(i: int) -> bool:
+        order.append(i)
+        if len(order) == n:
+            done.set()
+        return True
+
+    bus.resolve_request = lambda object, method: ("/Locked/0", record)
+
+    pool = ThreadPoolExecutor()
+    bus_future = pool.submit(bus.run_forever)
+    assert bus._bus_started.wait(5)
+
+    # pushed from one thread: arrival order is the push order (responses have
+    # no waiters and are dropped, which is fine here)
+    for i in range(n):
+        bus._push(
+            Protocol.request(
+                src=f"{bus.url.bus}/Proxy/0",
+                dst=f"{bus.url.bus}/Locked/0",
+                method="record",
+                args=[i],
+            )
+        )
+
+    assert done.wait(5)
+    assert order == list(range(n))
+
+    bus.shutdown()
+    bus_future.result()
+    pool.shutdown()
+
+
+def test_hung_locked_object_does_not_block_other_object(
+    create_bus: Callable[..., Bus],
+):
+    bus = create_bus("tcp://127.0.0.1:15034")
+
+    release = threading.Event()
+
+    @lock
+    def hang() -> bool:
+        release.wait(20)
+        return True
+
+    @lock
+    def quick() -> bool:
+        return True
+
+    def resolve(object: str, method: str):
+        if object == "/A/0":
+            return "/A/0", hang
+        return "/B/0", quick
+
+    bus.resolve_request = resolve
+
+    pool = ThreadPoolExecutor()
+    bus_future = pool.submit(bus.run_forever)
+    assert bus._bus_started.wait(5)
+
+    hang_future = pool.submit(
+        lambda: bus.request(
+            src=f"{bus.url.bus}/Proxy/0",
+            dst=f"{bus.url.bus}/A/0",
+            method="hang",
+            timeout=30.0,
+        )
+    )
+
+    deadline = time.monotonic() + 5
+    while "/A/0" not in bus._lanes:
+        assert time.monotonic() < deadline, "lane for A never appeared"
+        time.sleep(0.01)
+
+    # B's lane is independent: its locked method completes while A hangs
+    response = bus.request(
+        src=f"{bus.url.bus}/Proxy/1",
+        dst=f"{bus.url.bus}/B/0",
+        method="quick",
+        timeout=5.0,
+    )
+    assert response.code == 200
+
+    release.set()
+    assert hang_future.result().code == 200
+
+    bus.shutdown()
+    bus_future.result()
+    pool.shutdown()
+
+
+def test_hung_locked_method_does_not_block_unlocked_same_object(
+    create_bus: Callable[..., Bus],
+):
+    bus = create_bus("tcp://127.0.0.1:15035")
+
+    release = threading.Event()
+
+    @lock
+    def hang() -> bool:
+        release.wait(20)
+        return True
+
+    def get_status() -> str:
+        return "ok"
+
+    def resolve(object: str, method: str):
+        if method == "hang":
+            return "/A/0", hang
+        return "/A/0", get_status
+
+    bus.resolve_request = resolve
+
+    pool = ThreadPoolExecutor()
+    bus_future = pool.submit(bus.run_forever)
+    assert bus._bus_started.wait(5)
+
+    hang_future = pool.submit(
+        lambda: bus.request(
+            src=f"{bus.url.bus}/Proxy/0",
+            dst=f"{bus.url.bus}/A/0",
+            method="hang",
+            timeout=30.0,
+        )
+    )
+
+    deadline = time.monotonic() + 5
+    while "/A/0" not in bus._lanes:
+        assert time.monotonic() < deadline, "lane never appeared"
+        time.sleep(0.01)
+
+    # unlocked methods of the same object run on the handler pool
+    response = bus.request(
+        src=f"{bus.url.bus}/Proxy/1",
+        dst=f"{bus.url.bus}/A/0",
+        method="get_status",
+        timeout=5.0,
+    )
+    assert response.code == 200 and response.result == "ok"
+
+    release.set()
+    assert hang_future.result().code == 200
+
+    bus.shutdown()
+    bus_future.result()
+    pool.shutdown()
+
+
+def test_lane_overload_rejected_503(create_bus: Callable[..., Bus]):
+    """A full lane rejects new locked requests immediately with 503, and the
+    Proxy surfaces it as ObjectBusyException."""
+    bus = create_bus("tcp://127.0.0.1:15036", lane_queue_size=2)
+
+    release = threading.Event()
+    entered = threading.Event()
+
+    @lock
+    def hang() -> bool:
+        entered.set()
+        release.wait(20)
+        return True
+
+    def fake_get_location() -> str:
+        return f"{bus.url.bus}/A/0"
+
+    def resolve(object: str, method: str):
+        if method == "get_location":
+            return "/A/0", fake_get_location
+        return "/A/0", hang
+
+    bus.resolve_request = resolve
+
+    pool = ThreadPoolExecutor()
+    bus_future = pool.submit(bus.run_forever)
+    assert bus._bus_started.wait(5)
+
+    # first the worker must be executing (queue empty), then two more fill
+    # the queue — deterministic, no race with the worker's first dequeue
+    bus._push(
+        Protocol.request(
+            src=f"{bus.url.bus}/Proxy/0", dst=f"{bus.url.bus}/A/0", method="hang"
+        )
+    )
+    assert entered.wait(5), "locked method never started"
+
+    for i in (1, 2):
+        bus._push(
+            Protocol.request(
+                src=f"{bus.url.bus}/Proxy/{i}",
+                dst=f"{bus.url.bus}/A/0",
+                method="hang",
+            )
+        )
+
+    deadline = time.monotonic() + 5
+    while not any(
+        lane["path"] == "/A/0" and lane["queued"] == 2 for lane in bus.stats()["lanes"]
+    ):
+        assert time.monotonic() < deadline, "lane never filled"
+        time.sleep(0.01)
+
+    response = bus.request(
+        src=f"{bus.url.bus}/Proxy/x",
+        dst=f"{bus.url.bus}/A/0",
+        method="hang",
+        timeout=5.0,
+    )
+    assert response.code == 503
+    assert "busy" in response.error
+
+    proxy = Proxy(f"{bus.url.bus}/A/0", bus)
+    with pytest.raises(ObjectBusyException):
+        proxy.hang()
+
+    release.set()
+    bus.shutdown()
+    bus_future.result()
+    pool.shutdown()
+
+
+def test_lane_idle_eviction_and_respawn(create_bus: Callable[..., Bus]):
+    bus = create_bus("tcp://127.0.0.1:15037", lane_idle_timeout=0.2)
+
+    @lock
+    def quick() -> bool:
+        return True
+
+    bus.resolve_request = lambda object, method: ("/L/0", quick)
+
+    pool = ThreadPoolExecutor()
+    bus_future = pool.submit(bus.run_forever)
+    assert bus._bus_started.wait(5)
+
+    src = f"{bus.url.bus}/Proxy/0"
+    dst = f"{bus.url.bus}/L/0"
+
+    assert bus.request(src=src, dst=dst, method="quick", timeout=5.0).code == 200
+    assert "/L/0" in bus._lanes
+
+    deadline = time.monotonic() + 5
+    while "/L/0" in bus._lanes:
+        assert time.monotonic() < deadline, "idle lane never evicted"
+        time.sleep(0.02)
+
+    # a fresh lane spawns transparently for the next locked call
+    assert bus.request(src=src, dst=dst, method="quick", timeout=5.0).code == 200
+    assert "/L/0" in bus._lanes
+
+    bus.shutdown()
+    bus_future.result()
+    pool.shutdown()
+
+
+def test_unlocked_methods_not_routed_to_lane(create_bus: Callable[..., Bus]):
+    bus = create_bus("tcp://127.0.0.1:15038")
+
+    def echo(x: int) -> int:
+        return x
+
+    bus.resolve_request = lambda object, method: ("/Echo/0", echo)
+
+    pool = ThreadPoolExecutor()
+    bus_future = pool.submit(bus.run_forever)
+    assert bus._bus_started.wait(5)
+
+    for i in range(5):
+        response = bus.request(
+            src=f"{bus.url.bus}/Proxy/0",
+            dst=f"{bus.url.bus}/Echo/0",
+            method="echo",
+            args=[i],
+            timeout=5.0,
+        )
+        assert response.result == i
+
+    assert bus._lanes == {}
+
+    bus.shutdown()
+    bus_future.result()
     pool.shutdown()
 
 
