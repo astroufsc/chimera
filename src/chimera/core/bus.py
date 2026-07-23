@@ -55,6 +55,68 @@ class Callback(NamedTuple):
     callable: Callable[..., None]
 
 
+class _Mailbox:
+    """A single-waiter reply box for one in-flight request/ping."""
+
+    def __init__(self, dst_bus: str):
+        # dst_bus is recorded so a peer eviction can fail every request
+        # pending on it
+        self.dst_bus = dst_bus
+        self._queue: queue.SimpleQueue[Messages | None] = queue.SimpleQueue()
+
+    def get(self, timeout: float | None = None) -> Messages | None:
+        return self._queue.get(block=True, timeout=timeout)
+
+    def put(self, message: Messages | None) -> None:
+        self._queue.put(message)
+
+
+class _Mailboxes:
+    """Reply mailboxes keyed by request id.
+
+    Responses are correlated to their caller by the id echoed in the
+    Response/Pong, never by src URL, so concurrent calls sharing one src
+    cannot receive each other's replies. Lifecycle: register before send,
+    deliver by id, unregister when done. close_all() wakes every waiter
+    with None exactly once — each mailbox has a single reader.
+    """
+
+    def __init__(self):
+        self._boxes: dict[int, _Mailbox] = {}
+        self._lock = threading.Lock()
+        self._closed = False
+
+    def register(self, key: int, dst_bus: str) -> _Mailbox:
+        mailbox = _Mailbox(dst_bus)
+        with self._lock:
+            if self._closed:
+                # bus is dead: the waiter wakes immediately with None
+                mailbox.put(None)
+                return mailbox
+            self._boxes[key] = mailbox
+        return mailbox
+
+    def unregister(self, key: int) -> None:
+        with self._lock:
+            self._boxes.pop(key, None)
+
+    def deliver(self, key: int, message: Messages) -> bool:
+        with self._lock:
+            mailbox = self._boxes.get(key)
+        if mailbox is None:
+            return False
+        mailbox.put(message)
+        return True
+
+    def close_all(self) -> None:
+        with self._lock:
+            self._closed = True
+            boxes = list(self._boxes.values())
+            self._boxes.clear()
+        for mailbox in boxes:
+            mailbox.put(None)
+
+
 class Bus:
     def __init__(self, url: str):
         self.url = create_url(url, cls="Bus")
@@ -64,9 +126,11 @@ class Bus:
         self._running = threading.Event()
         self._bus_started = threading.Event()
 
-        self._q: dict[str, queue.SimpleQueue[Messages | None]] = (
-            collections.defaultdict(queue.SimpleQueue)
-        )
+        # inbound messages to be dispatched by _process_queue
+        self._inbox: queue.SimpleQueue[Messages | None] = queue.SimpleQueue()
+
+        # reply mailboxes for in-flight requests/pings, keyed by request id
+        self._mailboxes = _Mailboxes()
 
         # callbacks represent the subscriber-side of the pubsub model, where we can have references to the callbacks
         self._callbacks: collections.defaultdict[
@@ -103,12 +167,10 @@ class Bus:
             shutdown.connect()
             shutdown.send(b"shutdown request")
 
-            # signal all response queue handlers that we are shutting down
-            for key in self._q.keys():
-                # FIXME: why we need to send multiple Nones? only one fails to unblock some threads.
-                # send a few Nones to unblock any pending gets
-                for _ in range(5):
-                    self._q[key].put(None)
+            # wake every pending request/ping with None (single reader each)
+            # and stop the dispatch loop
+            self._mailboxes.close_all()
+            self._inbox.put(None)
 
             self._process_queue_future.result()
             self._pool.shutdown()
@@ -166,9 +228,15 @@ class Bus:
 
             # FIXME: this could block if you send too much without receiving.
             if isinstance(message, Response) or isinstance(message, Pong):
-                self._q[message.dst].put(message)
+                if not self._mailboxes.deliver(message.id, message):
+                    # nobody is waiting: late reply after a timeout/unregister,
+                    # or a stray id — drop it loudly, never resurrect a queue
+                    log.debug(
+                        f"bus: dropping {type(message).__name__} with no waiter "
+                        f"(id={message.id}, src={message.src})"
+                    )
             else:
-                self._q[self.url.url].put(message)
+                self._inbox.put(message)
         else:
             with self._outbound_lock:
                 if message.dst_bus not in self._outbound:
@@ -227,11 +295,13 @@ class Bus:
                                 f"remote bus may be dead"
                             )
 
-    def _pop(
-        self, /, key: str | None = None, timeout: float | None = None
-    ) -> Messages | None:
-        key = key or self.url.url
-        return self._q[key].get(block=True, timeout=timeout)
+    def _pop(self, /, timeout: float | None = None) -> Messages | None:
+        message = self._inbox.get(block=True, timeout=timeout)
+        if message is None:
+            # None is the shutdown poison pill: re-circulate it so every other
+            # reader blocked on the inbox wakes too, whatever the wake order
+            self._inbox.put(None)
+        return message
 
     def run_forever(self):
         try:
@@ -308,16 +378,20 @@ class Bus:
             dst=parse_url(dst).url,
         )
 
-        self._push(ping)
-
+        mailbox = self._mailboxes.register(ping.id, ping.dst_bus)
         try:
-            response = self._pop(ping.src, timeout=timeout)
-        except queue.Empty:
-            return ping.pong(ok=False)
-        if response is None or not isinstance(response, Pong):
-            return None
+            self._push(ping)
 
-        return response
+            try:
+                response = mailbox.get(timeout=timeout)
+            except queue.Empty:
+                return ping.pong(ok=False)
+            if response is None or not isinstance(response, Pong):
+                return None
+
+            return response
+        finally:
+            self._mailboxes.unregister(ping.id)
 
     # TODO: add timeout?
     def request(
@@ -337,13 +411,17 @@ class Bus:
             kwargs=kwargs or {},
         )
 
-        self._push(request)
+        mailbox = self._mailboxes.register(request.id, request.dst_bus)
+        try:
+            self._push(request)
 
-        response = self._pop(request.src)
-        if response is None or not isinstance(response, Response):
-            raise RuntimeError("bus is dead")
+            response = mailbox.get()
+            if response is None or not isinstance(response, Response):
+                raise RuntimeError("bus is dead")
 
-        return response
+            return response
+        finally:
+            self._mailboxes.unregister(request.id)
 
     def subscribe(
         self,
