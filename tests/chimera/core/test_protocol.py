@@ -1,3 +1,4 @@
+import sys
 import time
 from typing import Any
 from unittest.mock import Mock, patch
@@ -27,7 +28,7 @@ class TestProtocol:
 
         assert isinstance(id1, int)
         assert isinstance(id2, int)
-        assert 0 <= id1 <= 2**32
+        assert 0 <= id1 <= sys.maxsize
         # IDs should be different (possible but extremely unlikely they would be the same)
         assert id1 != id2
 

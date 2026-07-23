@@ -1,3 +1,5 @@
+import threading
+
 import pytest
 
 from chimera.core.resources import ResourcesManager
@@ -107,6 +109,35 @@ class TestResources:
 
         with pytest.raises(ValueError):
             resources.get("wrong location")
+
+    def test_get_by_index_boundary(self, resources: ResourcesManager):
+        resources.add("/Location/l1")
+        resources.add("/Location/l2")
+
+        # exactly one past the end used to raise IndexError (off-by-one)
+        assert resources.get("/Location/2") is None
+
+    def test_concurrent_add_single_winner(self, resources: ResourcesManager):
+        winners: list[int] = []
+        losers: list[int] = []
+        barrier = threading.Barrier(8)
+
+        def add(i: int):
+            barrier.wait(5)
+            try:
+                resources.add("/Race/r")
+                winners.append(i)
+            except ValueError:
+                losers.append(i)
+
+        threads = [threading.Thread(target=add, args=(i,)) for i in range(8)]
+        for thread in threads:
+            thread.start()
+        for thread in threads:
+            thread.join(5)
+
+        assert len(winners) == 1
+        assert len(losers) == 7
 
     def test_contains(self, resources: ResourcesManager):
         resources.add("/Location/l1")

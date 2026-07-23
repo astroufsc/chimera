@@ -1,4 +1,6 @@
+import logging
 import os.path
+import time
 
 import pytest
 
@@ -126,6 +128,51 @@ class TestManager:
         # # oops
         # with pytest.raises(AttributeError):
         #     p.wrong()
+
+    def test_stop_joins_control_loop(self, manager):
+        class Looper(ChimeraObject):
+            def control(self):
+                time.sleep(0.05)
+                return True
+
+        manager.add_class(Looper, "looper", start=True)
+        resource = manager.resources.get("/Looper/looper")
+
+        deadline = time.monotonic() + 5
+        while getattr(resource.instance, "__loop_native_id__", None) is None:
+            assert time.monotonic() < deadline, "loop never started"
+            time.sleep(0.01)
+
+        loop_future = resource.loop
+        manager.stop("/Looper/looper")
+
+        # __stop__ must not race a still-executing control()
+        assert loop_future.done(), "stop() returned before the loop finished"
+        assert resource.loop is None
+
+    def test_control_loop_exception_is_logged(self, manager):
+        class Bomb(ChimeraObject):
+            def control(self):
+                raise RuntimeError("boom")
+
+        records: list[logging.LogRecord] = []
+
+        class Capture(logging.Handler):
+            def emit(self, record: logging.LogRecord):
+                records.append(record)
+
+        handler = Capture()
+        manager_logger = logging.getLogger("chimera.core.manager")
+        manager_logger.addHandler(handler)
+        try:
+            manager.add_class(Bomb, "bomb", start=True)
+
+            deadline = time.monotonic() + 5
+            while not any("control loop died" in r.getMessage() for r in records):
+                assert time.monotonic() < deadline, "loop death never logged"
+                time.sleep(0.01)
+        finally:
+            manager_logger.removeHandler(handler)
 
     def test_manager(self, manager):
         assert manager.add_class(Simple, "simple")

@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 # SPDX-FileCopyrightText: 2006-present Paulo Henrique Silva <ph.silva@gmail.com>
 
+import threading
 import time
 from concurrent.futures import Future
 from dataclasses import dataclass, field
@@ -24,13 +25,14 @@ class Resource:
 class ResourcesManager:
     def __init__(self):
         self._res = {}
+        # add/remove are check-then-act sequences called from concurrent RPC
+        # handlers: they must be atomic (M5)
+        self._lock = threading.Lock()
 
     def add(
         self, path: str, instance: Any | None = None, loop: Future[bool] | None = None
     ) -> None:
         cls, name = parse_path(path)
-        if path in self:
-            raise ValueError(f"'{path}' already exists.")
 
         resource = Resource(path=path, cls=cls, name=name)
         resource.instance = instance
@@ -38,16 +40,20 @@ class ResourcesManager:
             resource.bases = [b.__name__ for b in type(resource.instance).mro()]
         resource.loop = loop
 
-        self._res[path] = resource
+        with self._lock:
+            if path in self:
+                raise ValueError(f"'{path}' already exists.")
+            self._res[path] = resource
 
     def remove(self, path: str) -> None:
-        # resolve first: path may be an index form ('/Simple/0') whose real
-        # key is the instance name
-        resource = self.get(path)
-        if resource is None:
-            raise KeyError(f"{path} not found")
+        with self._lock:
+            # resolve first: path may be an index form ('/Simple/0') whose
+            # real key is the instance name
+            resource = self.get(path)
+            if resource is None:
+                raise KeyError(f"{path} not found")
 
-        del self._res[resource.path]
+            del self._res[resource.path]
 
     def get(self, path: str) -> Resource | None:
         cls, name = parse_path(path)
@@ -67,7 +73,7 @@ class ResourcesManager:
 
     def _get_by_index(self, cls: str, index: int) -> Resource | None:
         resources = self.get_by_class(cls)
-        if not resources or index > len(resources):
+        if not resources or index >= len(resources):
             return None
         return self._res[resources[index].path]
 
@@ -87,10 +93,11 @@ class ResourcesManager:
         return len(self._res)
 
     def items(self):
-        return self._res.items()
+        # snapshots: callers iterate while RPC handlers mutate the registry
+        return list(self._res.items())
 
     def keys(self):
-        return iter(self._res.keys())
+        return list(self._res.keys())
 
     def values(self):
-        return iter(self._res.values())
+        return list(self._res.values())

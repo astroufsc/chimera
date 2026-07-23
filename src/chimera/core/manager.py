@@ -117,6 +117,18 @@ class Manager:
         except ValueError as e:
             raise InvalidLocationException(f"invalid location '{location}': {e}")
 
+    @staticmethod
+    def _log_loop_result(location: str) -> Callable[[concurrent.futures.Future], None]:
+        def check(future: concurrent.futures.Future) -> None:
+            try:
+                future.result()
+            except concurrent.futures.CancelledError:
+                pass
+            except Exception:
+                log.exception(f"{location}: control loop died with an exception")
+
+        return check
+
     # private
     def __repr__(self):
         return f"<Manager for {self._bus.url} at {hex(id(self))}>"
@@ -266,6 +278,9 @@ class Manager:
                 self.stop(resource.path)
             except ChimeraException:
                 pass
+
+        # every control loop stopped above: drain the pool
+        self._pool.shutdown(wait=True, cancel_futures=True)
 
         # die!
         self.died.set()
@@ -435,11 +450,12 @@ class Manager:
             raise ChimeraObjectException(f"Error running {location} __start__ method.")
 
         try:
-            # FIXME: thread exception handling
             # ok, now schedule object main in a new thread
             log.info(f"Running {location}.__main___.")
 
             loop = self._pool.submit(resource.instance.__main__)
+            # a control loop dying with an exception must never be silent (M3)
+            loop.add_done_callback(self._log_loop_result(str(location)))
 
             resource.instance.__setstate__(State.RUNNING)
             resource.created = time.time()
@@ -482,6 +498,20 @@ class Manager:
                 except KeyboardInterrupt:
                     # ignore Ctrl+C on shutdown
                     pass
+
+                # wait for control() to actually leave before __stop__ runs,
+                # or the two would race on device state (M3)
+                try:
+                    resource.loop.result(timeout=5)
+                except concurrent.futures.CancelledError:
+                    pass
+                except TimeoutError:
+                    log.warning(f"{location}: control loop did not stop within 5s")
+                except Exception:
+                    # the loop died on its own; already logged by the
+                    # done callback
+                    pass
+                resource.loop = None
 
             if resource.instance.get_state() != State.STOPPED:
                 resource.instance.__stop__()
