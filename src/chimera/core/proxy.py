@@ -2,18 +2,20 @@ from collections.abc import Callable
 from typing import Any
 
 from chimera.core.bus import Bus
-from chimera.core.exceptions import ObjectNotFoundException
+from chimera.core.exceptions import BusDeadException, ObjectNotFoundException
 from chimera.core.url import URL, create_url, parse_url, resolve_url
 
 __all__ = ["Proxy", "ProxyMethod"]
 
 
 class Proxy:
-    def __init__(self, url: str | URL, bus: Bus):
+    def __init__(self, url: str | URL, bus: Bus, timeout: float | None = None):
         self.__url__ = parse_url(url)
         self.__resolved_url__: URL | None = None
         self.__proxy_url__ = create_url(bus=bus.url.bus, cls="Proxy")
         self.__bus__ = bus
+        # per-proxy request timeout; None uses the bus default
+        self.__timeout__ = timeout
 
     def resolve(self) -> None:
         if self.__resolved_url__ is not None:
@@ -24,10 +26,12 @@ class Proxy:
         if not self.__resolved_url__:
             raise ObjectNotFoundException(f"could not resolve proxy for {self.__url__}")
 
-    def ping(self) -> bool:
-        pong = self.__bus__.ping(src=self.__proxy_url__, dst=self.__url__)
+    def ping(self, timeout: float = 5.0) -> bool:
+        pong = self.__bus__.ping(
+            src=self.__proxy_url__, dst=self.__url__, timeout=timeout
+        )
         if pong is None:
-            raise RuntimeError("bus is dead")
+            raise BusDeadException("bus is dead")
         resolved = self.__resolved_url__ is not None
         if not resolved and pong.ok and pong.resolved_url:
             self.__resolved_url__ = parse_url(pong.resolved_url)
@@ -79,6 +83,8 @@ class ProxyMethod:
         self.proxy.resolve()
         assert self.proxy.__resolved_url__ is not None
 
+        # raises RequestTimeoutException/BusDeadException on failure; a None
+        # timeout (the default) waits as long as the operation takes
         response = self.proxy.__bus__.request(
             src=self.proxy.__proxy_url__.url,
             dst=self.proxy.__resolved_url__,
@@ -86,11 +92,8 @@ class ProxyMethod:
             # FIXME: requests should use tuple
             args=list(args),
             kwargs=kwargs,
+            timeout=self.proxy.__timeout__,
         )
-
-        # FIXME: bus should not return None, either good or error
-        if response is None:
-            raise RuntimeError("bus is dead")
 
         if response.error:
             raise Exception(response.error)

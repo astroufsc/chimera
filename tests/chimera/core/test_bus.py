@@ -12,6 +12,7 @@ import pytest
 
 from chimera.core.bus import Bus, Callback, CallbackId, EventId, Subscriber
 from chimera.core.chimeraobject import ChimeraObject
+from chimera.core.exceptions import BusDeadException, RequestTimeoutException
 from chimera.core.manager import Manager
 from chimera.core.protocol import Protocol
 from chimera.core.proxy import Proxy
@@ -565,6 +566,89 @@ def test_peer_disconnect_evicts_and_unsubscribes(create_bus: Callable[[str], Bus
     bus_a.shutdown()
     a_future.result()
     b_future.result()
+    pool.shutdown()
+
+
+#
+# request timeout + typed exceptions
+#
+
+
+def test_request_timeout_raises(create_bus: Callable[[str], Bus]):
+    """A request whose handler never answers fails with a typed timeout
+    instead of hanging the caller forever."""
+    bus = create_bus("tcp://127.0.0.1:15017")
+
+    release = threading.Event()
+
+    def hang() -> bool:
+        release.wait(10)
+        return True
+
+    bus.resolve_request = lambda object, method: ("/Slow/0", hang)
+
+    pool = ThreadPoolExecutor()
+    bus_future = pool.submit(bus.run_forever)
+    assert bus._bus_started.wait(5)
+
+    t0 = time.monotonic()
+    with pytest.raises(RequestTimeoutException):
+        bus.request(
+            src=f"{bus.url.bus}/Proxy/0",
+            dst=f"{bus.url.bus}/Slow/0",
+            method="hang",
+            timeout=0.3,
+        )
+    assert time.monotonic() - t0 < 5
+
+    # the timed-out request left no mailbox behind
+    assert len(bus._mailboxes._boxes) == 0
+
+    release.set()
+    bus.shutdown()
+    bus_future.result()
+    pool.shutdown()
+
+
+def test_request_to_never_up_peer_fails_fast(create_bus: Callable[[str], Bus]):
+    """A request to a peer that never existed fails immediately with a typed
+    error, not after waiting out the full timeout."""
+    bus = create_bus("tcp://127.0.0.1:15018")
+
+    pool = ThreadPoolExecutor()
+    bus_future = pool.submit(bus.run_forever)
+    assert bus._bus_started.wait(5)
+
+    t0 = time.monotonic()
+    with pytest.raises(BusDeadException):
+        bus.request(
+            src=f"{bus.url.bus}/Proxy/0",
+            dst="tcp://127.0.0.1:15019/Telescope/0",  # never bound
+            method="get_az",
+            timeout=10.0,  # backstop only: the refusal must fail fast
+        )
+    assert time.monotonic() - t0 < 2, "refused connection should fail fast"
+
+    bus.shutdown()
+    bus_future.result()
+    pool.shutdown()
+
+
+def test_request_after_shutdown_raises_bus_dead(create_bus: Callable[[str], Bus]):
+    bus = create_bus("tcp://127.0.0.1:15020")
+
+    pool = ThreadPoolExecutor()
+    bus_future = pool.submit(bus.run_forever)
+    assert bus._bus_started.wait(5)
+
+    bus.shutdown()
+    bus_future.result()
+
+    with pytest.raises(BusDeadException):
+        bus.request(
+            src=f"{bus.url.bus}/Proxy/0", dst=f"{bus.url.bus}/X/0", method="get"
+        )
+
     pool.shutdown()
 
 
