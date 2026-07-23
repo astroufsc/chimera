@@ -16,6 +16,7 @@ from chimera.core.constants import (
 )
 from chimera.core.metaobject import MetaObject
 from chimera.core.proxy import Proxy
+from chimera.core.rwlock import ReadWriteLock
 from chimera.core.state import State
 from chimera.core.url import URL, parse_url
 from chimera.interfaces.lifecycle import ILifeCycle
@@ -26,6 +27,16 @@ __all__ = ["ChimeraObject"]
 class ChimeraObject(ILifeCycle, metaclass=MetaObject):
     def __init__(self):
         super().__init__()
+
+        # per-instance locks: the monitor serializes @lock methods and the
+        # rwlock guards config access. They must not live in the class dict —
+        # two instances of the same driver would block each other
+        setattr(
+            self,
+            INSTANCE_MONITOR_ATTRIBUTE_NAME,
+            threading.Condition(threading.RLock()),
+        )
+        setattr(self, RWLOCK_ATTRIBUTE_NAME, ReadWriteLock())
 
         # configuration handling
         self.__config_proxy__ = Config(self)
@@ -145,8 +156,10 @@ class ChimeraObject(ILifeCycle, metaclass=MetaObject):
 
         while run_condition:
             t0 = time.monotonic()
-            with self:
-                run_condition = self.control()
+            # control runs unlocked on its own thread: a long @lock method
+            # (an exposure, a slew) must not stall the control loop. Keeping
+            # control() thread-safe is the implementer's job.
+            run_condition = self.control()
             loop_time = time.monotonic() - t0
 
             time_to_wake_up = (1.0 / self.get_hz()) - loop_time

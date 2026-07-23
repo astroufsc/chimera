@@ -1,7 +1,6 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 # SPDX-FileCopyrightText: 2006-present Paulo Henrique Silva <ph.silva@gmail.com>
 import logging
-import threading
 from collections.abc import Callable
 
 from chimera.core.constants import (
@@ -11,9 +10,7 @@ from chimera.core.constants import (
     INSTANCE_MONITOR_ATTRIBUTE_NAME,
     LOCK_ATTRIBUTE_NAME,
     METHODS_ATTRIBUTE_NAME,
-    RWLOCK_ATTRIBUTE_NAME,
 )
-from chimera.core.rwlock import ReadWriteLock
 
 # import chimera.core.log
 log = logging.getLogger(__name__)
@@ -116,25 +113,22 @@ class LockWrapperDispatcher(MethodWrapperDispatcher):
 
     def call(self, *args, **kwargs):
         """
-        Locked or synchronized methods holds two locks. The object
-        monitor, which gives exclusive right to run locked methods and
-        the object configuration writer lock, which gives exclusive
-        right to read/write config values.
+        Locked methods take the object monitor: the bus dispatch layer
+        already serializes bus-routed @lock calls per object (FIFO lane),
+        but direct in-process calls bypass the bus — the monitor is what
+        keeps those mutually exclusive too. The RLock makes nested @lock
+        calls on the same thread reentrant.
         """
 
         lock = getattr(self.instance, INSTANCE_MONITOR_ATTRIBUTE_NAME)
 
-        # t0 = time.time()
-        # log.debug("[trying to acquire monitor] %s %s" % (self.instance, self.func.__name__))
         lock.acquire()
-        # log.debug("[acquired monitor] %s %s after %f" % (self.instance, self.func.__name__, time.time()-t0))
 
         ret = None
 
         try:
             ret = self.func(*args, **kwargs)
         finally:
-            # log.debug("[release monitor] %s %s" % (self.instance, self.func.__name__))
             lock.release()
 
         return ret
@@ -169,7 +163,10 @@ class MetaObject(type):
                     _dict[name] = MethodWrapper(obj, dispatcher=EventWrapperDispatcher)
                     events.append(name)
 
-                # auto-locked methods
+                # @lock methods: the marker on the raw function (the
+                # wrapper's .func) routes bus requests through a per-object
+                # FIFO lane, and the dispatcher takes the instance monitor so
+                # direct in-process calls stay mutually exclusive too
                 elif hasattr(obj, LOCK_ATTRIBUTE_NAME):
                     _dict[name] = MethodWrapper(obj, dispatcher=LockWrapperDispatcher)
                     methods.append(name)
@@ -186,8 +183,8 @@ class MetaObject(type):
         _dict[EVENTS_ATTRIBUTE_NAME] = events
         _dict[METHODS_ATTRIBUTE_NAME] = methods
 
-        # our great Monitors (put here to force use of it)
-        _dict[INSTANCE_MONITOR_ATTRIBUTE_NAME] = threading.Condition(threading.RLock())
-        _dict[RWLOCK_ATTRIBUTE_NAME] = ReadWriteLock()
+        # NOTE: the instance monitor and config rwlock are created per
+        # instance in ChimeraObject.__init__ — class-level locks made two
+        # instances of the same driver block each other
 
         return super().__new__(cls, clsname, bases, _dict)
