@@ -34,10 +34,10 @@ class FakeWeatherStation(
         WeatherStationBase.__init__(self)
         self["model"] = "FakeWeatherStation v1.0"
 
-    def _hour_in_radians(self, hour=datetime.datetime.now(datetime.UTC).hour):
-        """
-        For testing purposes, the function converts a given hour in radians.
-        """
+    def _hour_in_radians(self, hour=None):
+        if hour is None:
+            now = datetime.datetime.now(datetime.UTC)
+            hour = now.hour + now.minute / 60.0
         return (math.pi / 12.0) * hour
 
     def get_last_measurement_time(self):
