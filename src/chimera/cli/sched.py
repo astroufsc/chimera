@@ -140,6 +140,24 @@ class ChimeraSched(ChimeraCLI):
         else:
             self._generate_database_basic(options)
 
+    @staticmethod
+    def _calibration_defaults(actconfig):
+        """Values an expose action implies from its image_type but did not spell out.
+
+        Only fills keys the user left out, so an explicit `shutter: OPEN` still
+        gets a light dark.
+        """
+        implied = {}
+        image_type = str(actconfig.get("image_type", "")).upper()
+
+        if image_type == "BIAS" and "exptime" not in actconfig:
+            implied["exptime"] = 0
+
+        if image_type in ("BIAS", "DARK") and "shutter" not in actconfig:
+            implied["shutter"] = "CLOSE"
+
+        return implied
+
     def _generate_database_yaml(self, options):
         with open(options.filename) as stream:
             try:
@@ -270,6 +288,12 @@ class ChimeraSched(ChimeraCLI):
                                     "Could not set attribute %s = %s on action %s"
                                     % (key, actconfig[key], actconfig["action"])
                                 )
+
+                    if actconfig["action"] == "expose":
+                        for key, value in self._calibration_defaults(actconfig).items():
+                            self.out("\t%s: %s (implied by image_type)" % (key, value))
+                            setattr(act, key, value)
+
                 program.actions.append(act)
 
             self.out("")
