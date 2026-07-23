@@ -1,5 +1,6 @@
 import collections
 import logging
+import os
 import queue
 import selectors
 import threading
@@ -167,6 +168,16 @@ class Bus:
         self._running = threading.Event()
         self._bus_started = threading.Event()
 
+        # always-available waker for the selector loop: exists from birth so
+        # shutdown can signal no matter when it happens (no start/stop window)
+        self._waker_r, self._waker_w = os.pipe()
+
+        # shutdown()/teardown are idempotent and race-safe
+        self._shutdown_lock = threading.Lock()
+        self._shutdown_done = threading.Event()
+        self._teardown_claimed = threading.Event()
+        self._teardown_finished = threading.Event()
+
         # inbound messages to be dispatched by _process_queue
         self._inbox: queue.SimpleQueue[Messages | None] = queue.SimpleQueue()
 
@@ -193,35 +204,82 @@ class Bus:
         self._encoder = msgspec.json.Encoder()
         self._decoder = msgspec.json.Decoder(Messages)
 
+    def _wake_selector(self) -> None:
+        try:
+            os.write(self._waker_w, b"\0")
+        except OSError:
+            # waker already closed by teardown: the loop is gone anyway
+            pass
+
     def shutdown(self):
-        if not self.is_dead():
-            self._running.clear()
+        with self._shutdown_lock:
+            if self._shutdown_done.is_set():
+                return
+            self._shutdown_done.set()
 
-            shutdown = create_transport(f"inproc://{self.url.path}")
-            shutdown.connect()
-            shutdown.send(b"shutdown request")
+        # signal: stop the loop, wake every pending request/ping with None
+        # (single reader each) and stop the dispatch thread
+        self._running.clear()
+        self._wake_selector()
+        self._mailboxes.close_all()
+        self._inbox.put(None)
 
-            # wake every pending request/ping with None (single reader each)
-            # and stop the dispatch loop
-            self._mailboxes.close_all()
-            self._inbox.put(None)
+        if self._bus_started.is_set():
+            # the selector-loop thread owns teardown on its way out; wait for
+            # it unless waiting would deadlock (we are that thread, or a pool
+            # worker the teardown itself joins)
+            current = threading.current_thread()
+            if current is not getattr(self, "_loop_thread", None) and (
+                current not in self._pool._threads
+            ):
+                self._teardown_finished.wait(timeout=5)
+        else:
+            # the bus never ran: there is no loop thread to do it
+            self._teardown()
 
-            self._process_queue_future.result()
-            self._pool.shutdown()
+    def _teardown(self):
+        """Release every resource, exactly once. Runs on the selector-loop
+        thread's way out, or directly from shutdown() when the bus never
+        started."""
+        with self._shutdown_lock:
+            if self._teardown_claimed.is_set():
+                return
+            self._teardown_claimed.set()
 
-            self._inbound.close()
-            self._internal.close()
+        # make sure the dispatch thread is signalled even when teardown is
+        # entered without shutdown() (loop crash, ctrl-c)
+        self._running.clear()
+        self._mailboxes.close_all()
+        self._inbox.put(None)
 
-            # snapshot under the lock: a concurrent peer eviction may still
-            # mutate the map while we tear down
-            with self._outbound_lock:
-                outbound = list(self._outbound.values())
-                self._outbound.clear()
-            for socket in outbound:
-                socket.close()
+        dispatch = getattr(self, "_dispatch_thread", None)
+        if dispatch is not None and dispatch is not threading.current_thread():
+            dispatch.join(timeout=5)
+
+        # a pool worker asking for teardown must not join its own pool
+        self._pool.shutdown(wait=threading.current_thread() not in self._pool._threads)
+
+        self._inbound.close()
+        for fd in (self._waker_w, self._waker_r):
+            try:
+                os.close(fd)
+            except OSError:
+                pass
+
+        # snapshot under the lock: a concurrent peer eviction may still
+        # mutate the map while we tear down
+        with self._outbound_lock:
+            outbound = list(self._outbound.values())
+            self._outbound.clear()
+        for socket in outbound:
+            socket.close()
+
+        self._teardown_finished.set()
 
     def is_dead(self) -> bool:
-        return self._bus_started.is_set() and self._running.is_set() is False
+        return self._shutdown_done.is_set() or (
+            self._bus_started.is_set() and self._running.is_set() is False
+        )
 
     def stats(self) -> dict[str, Any]:
         """A read-only, JSON-serializable snapshot of the bus internals, for
@@ -418,21 +476,32 @@ class Bus:
             self.shutdown()
 
     def _run(self):
-        self._internal = create_transport(f"inproc://{self.url.path}")
-        self._internal.bind()
+        self._loop_thread = threading.current_thread()
 
         selector = selectors.DefaultSelector()
-        selector.register(self._inbound.recv_fd(), selectors.EVENT_READ)
-        selector.register(self._internal.recv_fd(), selectors.EVENT_READ)
+        try:
+            selector.register(self._inbound.recv_fd(), selectors.EVENT_READ)
+            selector.register(self._waker_r, selectors.EVENT_READ)
 
-        self._running.set()
+            self._running.set()
 
-        self._process_queue_future: Future[None] = self._pool.submit(
-            self._process_queue
-        )
+            self._dispatch_thread = threading.Thread(
+                target=self._process_queue,
+                name=f"chimera-bus-dispatch-{self.url.port}",
+                daemon=True,
+            )
+            self._dispatch_thread.start()
 
-        self._bus_started.set()
+            self._bus_started.set()
 
+            self._run_loop(selector)
+        finally:
+            selector.close()
+            # this thread owns resource teardown: it is the only one that
+            # knows the selector is no longer using the sockets and fds
+            self._teardown()
+
+    def _run_loop(self, selector: selectors.BaseSelector) -> None:
         while self._running.is_set():
             events = selector.select(timeout=None)
             if not events:
@@ -440,13 +509,9 @@ class Bus:
                 # Do spurious events happen? unprobably, but just in case...
                 continue
 
-            shutdown_requested = any(
-                [key.fd == self._internal.recv_fd() for key, _ in events]
-            )
-            # NOTE: if asked for shutdown, the caller is already closing sockets, so we cannot
-            #       handle anything more, so better exit here. If we implement a way to ack the
-            #       shutdown request, we might be able to process in-progress messages and then exit
+            shutdown_requested = any([key.fd == self._waker_r for key, _ in events])
             if shutdown_requested:
+                os.read(self._waker_r, 4096)
                 log.debug("bus: shutdown requested")
                 return
 
@@ -641,7 +706,10 @@ class Bus:
         except Exception:
             log.exception("Error processing queue")
         finally:
-            self.shutdown()
+            # signal only — never call shutdown() from this thread: teardown
+            # joins us and pool.shutdown() could self-join
+            self._running.clear()
+            self._wake_selector()
 
     def resolve_request(
         self, object: str, method: str

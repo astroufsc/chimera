@@ -570,6 +570,113 @@ def test_peer_disconnect_evicts_and_unsubscribes(create_bus: Callable[[str], Bus
 
 
 #
+# dispatch thread + robust shutdown
+#
+
+
+def test_shutdown_before_start(create_bus: Callable[[str], Bus]):
+    """shutdown() on a bus that never ran must clean up, not crash."""
+    bus = create_bus("tcp://127.0.0.1:15021")
+    bus.shutdown()
+    assert bus.is_dead()
+
+
+def test_shutdown_idempotent_and_concurrent(create_bus: Callable[[str], Bus]):
+    bus = create_bus("tcp://127.0.0.1:15022")
+
+    pool = ThreadPoolExecutor()
+    bus_future = pool.submit(bus.run_forever)
+    assert bus._bus_started.wait(5)
+
+    barrier = threading.Barrier(4)
+
+    def shutdown():
+        barrier.wait(5)
+        bus.shutdown()
+
+    futures = [pool.submit(shutdown) for _ in range(4)]
+    for future in futures:
+        future.result(timeout=10)
+
+    bus_future.result(timeout=10)
+    assert bus.is_dead()
+    assert not bus._dispatch_thread.is_alive()
+
+    # one more, for idempotency
+    bus.shutdown()
+    pool.shutdown()
+
+
+def test_dispatch_crash_shuts_down_cleanly(create_bus: Callable[[str], Bus]):
+    """A crash in the dispatch loop must bring the whole bus down cleanly
+    instead of deadlocking on a self-join."""
+    bus = create_bus("tcp://127.0.0.1:15023")
+
+    def poisoned_pop(timeout=None):
+        raise RuntimeError("poisoned")
+
+    bus._pop = poisoned_pop
+
+    pool = ThreadPoolExecutor()
+    bus_future = pool.submit(bus.run_forever)
+
+    # the dispatch thread crashes immediately and the whole bus follows
+    bus_future.result(timeout=5)
+    assert bus.is_dead()
+    pool.shutdown()
+
+
+def test_shutdown_under_load(create_bus: Callable[[str], Bus]):
+    """Callers in flight during shutdown get typed errors or responses,
+    never hangs."""
+    bus = create_bus("tcp://127.0.0.1:15024")
+
+    def echo(x: int) -> int:
+        return x
+
+    bus.resolve_request = lambda object, method: ("/Echo/0", echo)
+
+    pool = ThreadPoolExecutor()
+    bus_future = pool.submit(bus.run_forever)
+    assert bus._bus_started.wait(5)
+
+    stop = threading.Event()
+    finished: list[int] = []
+    finished_lock = threading.Lock()
+
+    def caller(thread_id: int):
+        i = 0
+        while not stop.is_set():
+            try:
+                response = bus.request(
+                    src=f"{bus.url.bus}/Proxy/{thread_id}",
+                    dst=f"{bus.url.bus}/Echo/0",
+                    method="echo",
+                    args=[i],
+                    timeout=5.0,
+                )
+                assert response.result == i
+            except (BusDeadException, RequestTimeoutException):
+                break
+            i += 1
+        with finished_lock:
+            finished.append(thread_id)
+
+    callers = [pool.submit(caller, thread_id) for thread_id in range(4)]
+
+    time.sleep(0.2)  # not correctness: just lets some load build up
+    bus.shutdown()
+    stop.set()
+
+    for future in callers:
+        future.result(timeout=10)
+
+    assert sorted(finished) == [0, 1, 2, 3]
+    bus_future.result(timeout=10)
+    pool.shutdown()
+
+
+#
 # request timeout + typed exceptions
 #
 
@@ -719,11 +826,16 @@ def test_bus_stats_snapshot(create_bus: Callable[[str], Bus]):
         "subscribers"
     ]
 
-    # pool snapshot: limits, backlog and per-thread state
-    pool_info = stats["pool"]
+    # pool snapshot: limits, backlog and per-thread state (the pool spawns
+    # lazily, so wait until the pending request's handler occupies a thread)
+    deadline = time.monotonic() + 5
+    while not bus.stats()["pool"]["threads"]:
+        assert time.monotonic() < deadline, "handler never occupied a pool thread"
+        time.sleep(0.01)
+
+    pool_info = bus.stats()["pool"]
     assert pool_info["max_workers"] >= 1
     assert pool_info["queued"] >= 0
-    assert pool_info["threads"], "pool has no threads while a request is running"
     for thread in pool_info["threads"]:
         assert thread["id"] and thread["name"]
         assert thread["alive"] is True
