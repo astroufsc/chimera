@@ -1,4 +1,5 @@
 import logging
+import os
 import threading
 import time
 from collections.abc import Callable, Generator
@@ -10,7 +11,10 @@ import msgspec
 import pytest
 
 from chimera.core.bus import Bus, Callback, CallbackId, EventId, Subscriber
+from chimera.core.chimeraobject import ChimeraObject
+from chimera.core.manager import Manager
 from chimera.core.protocol import Protocol
+from chimera.core.proxy import Proxy
 from chimera.core.transport import SendResult, Transport
 from chimera.core.transport_factory import create_transport
 from chimera.core.url import parse_url
@@ -561,6 +565,153 @@ def test_peer_disconnect_evicts_and_unsubscribes(create_bus: Callable[[str], Bus
     bus_a.shutdown()
     a_future.result()
     b_future.result()
+    pool.shutdown()
+
+
+#
+# observability (chimera-ctl status)
+#
+
+
+class StatusInstrument(ChimeraObject):
+    __config__ = {"speed": 42.0}
+
+    def get_speed(self) -> float:
+        return self["speed"]
+
+
+class LoopingInstrument(StatusInstrument):
+    def control(self) -> bool:
+        return True
+
+
+def test_bus_stats_snapshot(create_bus: Callable[[str], Bus]):
+    """Bus.stats() reports liveness, pending mailboxes with ages, peers and
+    pub/sub tables — and the whole snapshot survives the wire format."""
+    bus = create_bus("tcp://127.0.0.1:15013")
+
+    release = threading.Event()
+
+    def slow() -> bool:
+        release.wait(10)
+        return True
+
+    bus.resolve_request = lambda object, method: ("/Slow/0", slow)
+
+    pub = f"{bus.url.bus}/Telescope/0"
+    bus._handle_subscribe(
+        Protocol.subscribe(
+            sub=f"{bus.url.bus}/Proxy/0", pub=pub, event="slew_begin", callback=7
+        )
+    )
+
+    peer_url = "tcp://127.0.0.1:15016"
+    bus._outbound[peer_url] = AlwaysAgainTransport(peer_url)
+
+    pool = ThreadPoolExecutor()
+    bus_future = pool.submit(bus.run_forever)
+    assert bus._bus_started.wait(5)
+
+    request_future = pool.submit(
+        lambda: bus.request(
+            src=f"{bus.url.bus}/Proxy/0", dst=f"{bus.url.bus}/Slow/0", method="slow"
+        )
+    )
+
+    deadline = time.monotonic() + 5
+    while not bus.stats()["mailboxes"]:
+        assert time.monotonic() < deadline, "pending request never showed up"
+        time.sleep(0.01)
+
+    stats = bus.stats()
+    assert stats["url"] == bus.url.url
+    assert stats["inbox_url"] == bus.url.bus
+    assert stats["running"] is True and stats["started"] is True
+    box = stats["mailboxes"][0]
+    assert box["dst_bus"] == bus.url.bus
+    assert box["age"] >= 0
+    assert peer_url in stats["peers"]
+    assert {"publisher": pub, "event": "slew_begin", "subscribers": 1} in stats[
+        "subscribers"
+    ]
+
+    # pool snapshot: limits, backlog and per-thread state
+    pool_info = stats["pool"]
+    assert pool_info["max_workers"] >= 1
+    assert pool_info["queued"] >= 0
+    assert pool_info["threads"], "pool has no threads while a request is running"
+    for thread in pool_info["threads"]:
+        assert thread["id"] and thread["name"]
+        assert thread["alive"] is True
+
+    # the whole snapshot must survive the wire format
+    msgspec.json.encode(stats)
+
+    release.set()
+    assert request_future.result().code == 200
+
+    bus.shutdown()
+    bus_future.result()
+    assert bus.stats()["running"] is False
+    pool.shutdown()
+
+
+def test_manager_status_over_proxy(create_bus: Callable[[str], Bus]):
+    """The chimera-ctl path: resolve the Manager through a Proxy (requires
+    Manager.get_location) and fetch the full system status over the bus."""
+    bus = create_bus("tcp://127.0.0.1:15014")
+    manager = Manager(bus)
+
+    pool = ThreadPoolExecutor()
+    bus_future = pool.submit(bus.run_forever)
+    assert bus._bus_started.wait(5)
+
+    manager.add_class(StatusInstrument, "fake", start=False)
+    manager.add_class(LoopingInstrument, "looper", start=True)
+
+    proxy = Proxy(f"{bus.url.bus}/Manager/0", bus)
+    proxy.resolve()  # pings; fails without Manager.get_location
+
+    status = proxy.get_status()
+
+    assert status["system"]["pid"] == os.getpid()
+    assert status["bus"]["url"] == bus.url.url
+    assert status["bus"]["running"] is True
+
+    objects = {obj["path"]: obj for obj in status["objects"]}
+    assert "/Manager/manager" in objects
+
+    fake = objects["/StatusInstrument/fake"]
+    assert fake["class"] == "StatusInstrument"
+    assert fake["state"] == "STOPPED"
+    assert fake["loop"] == "none"
+    assert fake["loop_id"] is None
+    assert fake["config"]["speed"] == 42.0
+    assert fake["age"] >= 0
+
+    # the running control loop reports the OS thread it runs on, and that
+    # thread shows up in the control-loops pool
+    deadline = time.monotonic() + 5
+    looper = None
+    while time.monotonic() < deadline:
+        looper = {obj["path"]: obj for obj in manager.get_status()["objects"]}[
+            "/LoopingInstrument/looper"
+        ]
+        if looper["loop_id"] is not None:
+            break
+        time.sleep(0.01)
+
+    assert looper is not None and looper["loop"] == "running"
+    assert looper["state"] == "RUNNING"
+    assert isinstance(looper["loop_id"], int)
+
+    manager_pool = manager.get_status()["pool"]
+    assert manager_pool["max_workers"] >= 1
+    assert looper["loop_id"] in [thread["id"] for thread in manager_pool["threads"]]
+
+    manager.shutdown()
+    bus.shutdown()
+    bus_future.result()
     pool.shutdown()
 
 

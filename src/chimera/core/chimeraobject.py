@@ -137,6 +137,9 @@ class ChimeraObject(ILifeCycle, metaclass=MetaObject):
         return tmp_hz
 
     def __main__(self):
+        # observability: which OS thread runs this object's control loop
+        self.__loop_native_id__ = threading.get_native_id()
+
         self._loop_abort.clear()
         run_condition = True
 
