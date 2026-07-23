@@ -1,12 +1,17 @@
+import threading
 import time
 from collections.abc import Callable, Generator
 from concurrent.futures.thread import ThreadPoolExecutor
 from typing import Any
 from unittest.mock import MagicMock
 
+import msgspec
 import pytest
 
 from chimera.core.bus import Bus, Callback, CallbackId, EventId, Subscriber
+from chimera.core.protocol import Protocol
+from chimera.core.transport import SendResult, Transport
+from chimera.core.transport_factory import create_transport
 from chimera.core.url import parse_url
 
 
@@ -312,3 +317,146 @@ def test_pubsub_remote(create_bus: Callable[[str], Bus]):
     my_bus = create_bus("tcp://127.0.0.1:4001")
     other_bus = create_bus("tcp://127.0.0.1:4002")
     pubsub_test(n_subscribers=2, n_events=1_000, src_bus=my_bus, dst_bus=other_bus)
+
+
+#
+# transport hardening: recv drain + backpressure classification
+#
+
+
+class AlwaysAgainTransport(Transport):
+    """A transport whose peer never drains its buffer: every send is backpressure."""
+
+    def __init__(self, url: str):
+        super().__init__(url)
+        self.send_count = 0
+
+    def connect(self) -> None:
+        pass
+
+    def close(self) -> None:
+        pass
+
+    def send(self, data: bytes) -> SendResult:
+        self.send_count += 1
+        return SendResult.AGAIN
+
+
+def test_transport_recv_empty_returns_none():
+    transport = create_transport("tcp://127.0.0.1:15001")
+    transport.bind()
+    try:
+        # fd not readable and no message queued: must not raise (spurious wakeup)
+        assert transport.recv() is None
+    finally:
+        transport.close()
+
+
+def test_transport_closed_is_safe():
+    transport = create_transport("tcp://127.0.0.1:15002")
+    transport.bind()
+    transport.close()
+    transport.close()  # idempotent
+    assert transport.send(b"data") is SendResult.DEAD
+    assert transport.recv() is None
+
+
+def test_recv_burst_drained(create_bus: Callable[[str], Bus]):
+    """One selector readiness event can cover many queued messages; the recv
+    drain loop must process all of them."""
+    src_bus = create_bus("tcp://127.0.0.1:15003")
+    dst_bus = create_bus("tcp://127.0.0.1:15004")
+
+    n = 200
+    received: list[int] = []
+    received_lock = threading.Lock()
+    done = threading.Event()
+
+    def poke(i: int) -> int:
+        with received_lock:
+            received.append(i)
+            if len(received) == n:
+                done.set()
+        return i
+
+    dst_bus.resolve_request = lambda object, method: ("/Fake/0", poke)
+
+    pool = ThreadPoolExecutor()
+    dst_future = pool.submit(dst_bus.run_forever)
+    src_future = pool.submit(src_bus.run_forever)
+    assert dst_bus._bus_started.wait(5)
+    assert src_bus._bus_started.wait(5)
+
+    # burst messages over the wire as fast as the buffers accept them, retrying
+    # on backpressure at the test level so all n arrive
+    sender = create_transport(dst_bus.url.bus)
+    sender.connect()
+    encoder = msgspec.json.Encoder()
+    try:
+        for i in range(n):
+            request = Protocol.request(
+                src=f"{src_bus.url.bus}/Proxy/0",
+                dst=f"{dst_bus.url.bus}/Fake/0",
+                method="poke",
+                args=[i],
+            )
+            data = encoder.encode(request)
+            deadline = time.monotonic() + 5
+            while sender.send(data) is not SendResult.OK:
+                assert time.monotonic() < deadline, f"send of message {i} stuck"
+                time.sleep(0.001)
+
+        assert done.wait(10), f"only {len(received)}/{n} messages processed"
+    finally:
+        sender.close()
+
+    src_bus.shutdown()
+    dst_bus.shutdown()
+    dst_future.result()
+    src_future.result()
+    pool.shutdown()
+
+
+def test_backpressure_does_not_evict_subscribers(create_bus: Callable[[str], Bus]):
+    """TryAgain means the peer is alive but slow: repeated backpressure must not
+    close the connection nor destroy the peer's subscriptions."""
+    bus = create_bus("tcp://127.0.0.1:15005")
+    remote_bus = parse_url("tcp://127.0.0.1:15006/Proxy/0").bus
+
+    pub = f"{bus.url.bus}/Telescope/0"
+    event = "slew_begin"
+    event_id = EventId(pub, event)
+
+    # a remote subscriber, registered as if its Subscribe arrived over the wire
+    bus._handle_subscribe(
+        Protocol.subscribe(
+            sub=f"{remote_bus}/Proxy/0", pub=pub, event=event, callback=1234
+        )
+    )
+
+    # events to the remote bus will hit a full send buffer every time
+    fake = AlwaysAgainTransport(remote_bus)
+    bus._outbound[remote_bus] = fake
+
+    pool = ThreadPoolExecutor()
+    bus_future = pool.submit(bus.run_forever)
+    assert bus._bus_started.wait(5)
+
+    n = 5  # > _max_send_failures, so miscounting backpressure would evict
+    for i in range(n):
+        bus.publish(pub=pub, event=event, args=[i], kwargs={})
+
+    deadline = time.monotonic() + 5
+    while fake.send_count < n:
+        assert time.monotonic() < deadline, (
+            f"only {fake.send_count}/{n} sends attempted"
+        )
+        time.sleep(0.01)
+
+    assert remote_bus in bus._outbound
+    assert len(bus.subscribers(event_id)) == 1
+    assert bus._outbound_failures[remote_bus] == 0
+
+    bus.shutdown()
+    bus_future.result()
+    pool.shutdown()
