@@ -24,16 +24,10 @@ class TestSite:
 
         site = manager.get_proxy("/Site/0")
 
-        try:
-            print()
-            print("local:", site.localtime())
-            print("UT   :", site.ut())
-            print("JD   :", site.JD())
-            print("MJD  :", site.MJD())
-            print("LST  :", site.LST())
-            print("GST  :", site.GST())
-        except Exception as e:
-            print(e)
+        print()
+        print("UT   :", site.ut())
+        print("JD   :", site.jd())
+        print("MJD  :", site.mjd())
 
     @pytest.mark.skip
     def test_sidereal_clock(self, manager):
@@ -76,41 +70,37 @@ class TestSite:
             },
         )
 
-        site = manager.get_proxy(Site)
+        site = manager.get_proxy("/Site/0")
 
-        try:
-            print()
-            print("local   :", site.localtime())
-            print()
-            print("moonrise  :", site.moonrise())
-            print("moonset   :", site.moonset())
-            print("moon pos  :", site.moonpos())
-            print("moon phase:", site.moonphase())
-            print()
-            print("sunrise:", site.sunrise())
-            print("sunset :", site.sunset())
-            print("sun pos:", site.sunpos())
-            print()
+        print()
+        print("local   :", site.localtime())
+        print()
+        print("moonrise  :", site.moonrise())
+        print("moonset   :", site.moonset())
+        print("moon pos  :", site.moonpos())
+        print("moon phase:", site.moonphase())
+        print()
+        print("sunrise:", site.sunrise())
+        print("sunset :", site.sunset())
+        print("sun pos:", site.sunpos())
+        print()
 
-            sunset_twilight_begin = site.sunset_twilight_begin()
-            sunset_twilight_end = site.sunset_twilight_end()
-            sunset_twilight_duration = relativedelta(
-                sunset_twilight_end, sunset_twilight_begin
-            )
+        sunset_twilight_begin = site.sunset_twilight_begin()
+        sunset_twilight_end = site.sunset_twilight_end()
+        sunset_twilight_duration = relativedelta(
+            sunset_twilight_end, sunset_twilight_begin
+        )
 
-            sunrise_twilight_begin = site.sunrise_twilight_begin()
-            sunrise_twilight_end = site.sunrise_twilight_end()
-            sunrise_twilight_duration = relativedelta(
-                sunrise_twilight_end, sunrise_twilight_begin
-            )
+        sunrise_twilight_begin = site.sunrise_twilight_begin()
+        sunrise_twilight_end = site.sunrise_twilight_end()
+        sunrise_twilight_duration = relativedelta(
+            sunrise_twilight_end, sunrise_twilight_begin
+        )
 
-            print("next sunset twilight begins at:", sunset_twilight_begin)
-            print("next sunset twilight ends   at:", sunset_twilight_end)
-            print("sunset twilight duration      :", sunset_twilight_duration)
-            print()
-            print("next sunrise twilight begins at:", sunrise_twilight_begin)
-            print("next sunrise twilight ends   at:", sunrise_twilight_end)
-            print("sunrise twilight duration      :", sunrise_twilight_duration)
-
-        except Exception as e:
-            print(e)
+        print("next sunset twilight begins at:", sunset_twilight_begin)
+        print("next sunset twilight ends   at:", sunset_twilight_end)
+        print("sunset twilight duration      :", sunset_twilight_duration)
+        print()
+        print("next sunrise twilight begins at:", sunrise_twilight_begin)
+        print("next sunrise twilight ends   at:", sunrise_twilight_end)
+        print("sunrise twilight duration      :", sunrise_twilight_duration)
