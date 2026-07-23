@@ -10,6 +10,7 @@ from chimera.core.exceptions import (
     ClassLoaderException,
     InvalidLocationException,
     NotValidChimeraObjectException,
+    ObjectNotFoundException,
 )
 from chimera.core.proxy import Proxy
 
@@ -57,6 +58,8 @@ class TestManager:
         # start who?
         with pytest.raises(InvalidLocationException):
             manager.start("/Who/am/I")
+        with pytest.raises(ObjectNotFoundException):
+            manager.start("/Who/ami")
 
         # exceptional cases
         # __init__
@@ -78,15 +81,20 @@ class TestManager:
     def test_remove_stop(self, manager):
         assert manager.add_class(Simple, "simple")
 
-        # who?
+        # who? (malformed locations raise InvalidLocationException,
+        # well-formed but unknown ones raise ObjectNotFoundException)
         with pytest.raises(InvalidLocationException):
             manager.remove("Simple/what")
         with pytest.raises(InvalidLocationException):
             manager.remove("foo")
+        with pytest.raises(ObjectNotFoundException):
+            manager.remove("/Simple/what")
 
         # stop who?
         with pytest.raises(InvalidLocationException):
             manager.stop("foo")
+        with pytest.raises(ObjectNotFoundException):
+            manager.stop("/Simple/what")
 
         # ok
         assert manager.remove("/Simple/simple") is True
@@ -123,11 +131,7 @@ class TestManager:
         p = manager.get_proxy("/Simple/0")
         assert isinstance(p, Proxy)
 
-        # # assert p.answer() == 42
-
-        # # oops
-        # with pytest.raises(AttributeError):
-        #     p.wrong()
+        assert p.answer() == 42
 
     def test_stop_joins_control_loop(self, manager):
         class Looper(ChimeraObject):
