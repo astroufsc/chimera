@@ -85,12 +85,15 @@ class ChimeraObject(ILifeCycle, metaclass=MetaObject):
     def __iadd__(self, config_dict):
         # only one thread can write
         lock = getattr(self, RWLOCK_ATTRIBUTE_NAME)
+        lock.acquire_write()
         try:
-            lock.acquire_write()
+            # no return inside finally: it would swallow any exception
+            # raised while applying the config (M2)
             self.__config_proxy__.__iadd__(config_dict)
         finally:
             lock.release()
-            return self.get_proxy()
+
+        return self.get_proxy()
 
     # locking
     def __enter__(self):

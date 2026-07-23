@@ -145,6 +145,21 @@ class TestChimeraObject:
         with pytest.raises(TypeError):
             c.__getitem__(100)
 
+    def test_iadd_propagates_config_errors(self):
+        class ConfigErr(ChimeraObject):
+            __config__ = {"a": 1}
+
+        c = ConfigErr()
+
+        def boom(other):
+            raise OptionConversionException("bad value")
+
+        c.__config_proxy__.__iadd__ = boom
+
+        # a return inside finally used to swallow this exception (M2)
+        with pytest.raises(OptionConversionException):
+            c.__iadd__({"a": 2})
+
     def test_main(self):
         class MainTest(ChimeraObject):
             def __init__(self):
