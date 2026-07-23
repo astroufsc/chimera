@@ -64,6 +64,10 @@ class ObjectNotFoundException(ChimeraException):
     pass
 
 
+class InvalidLocationException(ChimeraException):
+    """A location string could not be parsed or names an invalid object."""
+
+
 class RequestTimeoutException(ChimeraException):
     """A bus request got no response within its timeout."""
 

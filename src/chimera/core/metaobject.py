@@ -61,6 +61,17 @@ class MethodWrapperDispatcher:
         else:
             return self.unbound_name
 
+    def __eq__(self, other):
+        # every attribute access creates a fresh dispatcher: two of them are
+        # the same logical callable when they wrap the same function bound to
+        # the same instance (what makes `self.event -= self.handler` work)
+        if isinstance(other, MethodWrapperDispatcher):
+            return self.func is other.func and self.instance is other.instance
+        return NotImplemented
+
+    def __hash__(self):
+        return hash((id(self.func), id(self.instance)))
+
     def __call__(self, *args, **kwargs):
         # handle unbound cases (with or without instance as first argument)
         if not self.instance:
@@ -97,14 +108,23 @@ class EventWrapperDispatcher(MethodWrapperDispatcher):
         )
 
     def __iadd__(self, other):
+        # the object subscribing to its own event: it is both ends
         self.instance.__bus__.subscribe(
-            f"{self.instance.get_location()}/{self.func.__name__}", other
+            sub=self.instance.get_location(),
+            pub=self.instance.get_location(),
+            event=self.func.__name__,
+            callback=other,
         )
+        return self
 
     def __isub__(self, other):
         self.instance.__bus__.unsubscribe(
-            f"{self.instance.get_location()}/{self.func.__name__}", other
+            sub=self.instance.get_location(),
+            pub=self.instance.get_location(),
+            event=self.func.__name__,
+            callback=other,
         )
+        return self
 
 
 class LockWrapperDispatcher(MethodWrapperDispatcher):

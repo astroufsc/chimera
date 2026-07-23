@@ -49,6 +49,11 @@ class Proxy:
         return proxy
 
     def __getattr__(self, attr: str):
+        # copy/pickle and other protocols probe dunders via getattr: never
+        # fabricate remote methods for them (copy.copy would happily call a
+        # phantom __setstate__ over the bus)
+        if attr.startswith("__") and attr.endswith("__"):
+            raise AttributeError(attr)
         return ProxyMethod(self, attr)
 
     def __getitem__(self, item: str):
@@ -76,10 +81,49 @@ class ProxyMethod:
         self.__name__ = method
 
     def __repr__(self):
-        return f"<{self.proxy.__proxy_url__}.{self.method} method proxy at {hex(hash(self))}>"
+        return f"<{self.proxy.__proxy_url__}.{self.method} method proxy at {hex(id(self))}>"
 
     def __str__(self):
         return f"[method proxy for {self.proxy.__proxy_url__} {self.method} method]"
+
+    def _target_url(self) -> str:
+        url = self.proxy.__resolved_url__ or self.proxy.__url__
+        return url.url
+
+    def __eq__(self, other: Any):
+        """Two ProxyMethods for the same object and method are the same
+        logical callback, and so is a bound method of that very object —
+        this is what lets `p.event -= s.callback` find the registration
+        even though every attribute access creates a fresh object."""
+        if isinstance(other, ProxyMethod):
+            return (
+                self._target_url() == other._target_url()
+                and self.method == other.method
+            )
+
+        other_self = getattr(other, "__self__", None)
+        get_location = getattr(other_self, "get_location", None)
+        if callable(get_location) and getattr(other, "__name__", None) == self.method:
+            return get_location() == self._target_url()
+
+        # a wrapped chimera method (MethodWrapperDispatcher) of that object
+        other_instance = getattr(other, "instance", None)
+        other_func = getattr(other, "func", None)
+        if other_instance is not None and other_func is not None:
+            get_location = getattr(other_instance, "get_location", None)
+            if (
+                callable(get_location)
+                and getattr(other_func, "__name__", None) == self.method
+            ):
+                try:
+                    return get_location() == self._target_url()
+                except Exception:
+                    return NotImplemented
+
+        return NotImplemented
+
+    def __hash__(self):
+        return hash((self._target_url(), self.method))
 
     # synchronous call
     def __call__(self, *args: Any, **kwargs: Any):
