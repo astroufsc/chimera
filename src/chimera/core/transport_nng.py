@@ -28,6 +28,8 @@ class TransportNNG(Transport):
     @override
     def connect(self):
         self._sk = pynng.Push0()
+        # registered before dial so no removal event can be missed
+        self._sk.add_post_pipe_remove_cb(self._pipe_removed)
         try:
             self._sk.dial(f"{self.url}", block=True)
         except Exception as e:
@@ -36,10 +38,19 @@ class TransportNNG(Transport):
             self._sk = None
             raise
 
+    def _pipe_removed(self, pipe: pynng.Pipe) -> None:
+        # runs on an nng worker thread: socket operations are not allowed here
+        # (nng#1665) — only notify whoever is watching
+        callback = self.on_disconnect
+        if callback is not None:
+            callback()
+
     @override
     def close(self):
         if self._sk is None:
             return
+        # closing removes our own pipes: that is not a peer loss
+        self.on_disconnect = None
         try:
             self._sk.close()
         except Exception as e:

@@ -108,6 +108,15 @@ class _Mailboxes:
         mailbox.put(message)
         return True
 
+    def fail_peer(self, dst_bus: str) -> None:
+        """Wake every request pending on dst_bus with None: the peer is gone
+        and its replies will never arrive."""
+        with self._lock:
+            keys = [key for key, box in self._boxes.items() if box.dst_bus == dst_bus]
+            boxes = [self._boxes.pop(key) for key in keys]
+        for mailbox in boxes:
+            mailbox.put(None)
+
     def close_all(self) -> None:
         with self._lock:
             self._closed = True
@@ -147,14 +156,7 @@ class Bus:
         self._inbound.bind()
 
         self._outbound: dict[str, Transport] = {}
-        self._outbound_failures: collections.defaultdict[str, int] = (
-            collections.defaultdict(int)
-        )
-
         self._outbound_lock = threading.Lock()
-
-        # Maximum consecutive failures before we consider a connection dead
-        self._max_send_failures = 3
 
         self._encoder = msgspec.json.Encoder()
         self._decoder = msgspec.json.Decoder(Messages)
@@ -178,7 +180,12 @@ class Bus:
             self._inbound.close()
             self._internal.close()
 
-            for socket in self._outbound.values():
+            # snapshot under the lock: a concurrent peer eviction may still
+            # mutate the map while we tear down
+            with self._outbound_lock:
+                outbound = list(self._outbound.values())
+                self._outbound.clear()
+            for socket in outbound:
                 socket.close()
 
     def is_dead(self) -> bool:
@@ -209,6 +216,34 @@ class Bus:
                     del self._callbacks[event_id]
 
         log.debug(f"bus: cleaned up subscribers from dead bus: {bus_url}")
+
+    def _schedule_peer_eviction(self, dst_bus: str) -> None:
+        # called from a transport worker thread on connection loss: hand off
+        # immediately, socket operations are not allowed in that context
+        if self.is_dead():
+            return
+        try:
+            self._pool.submit(self._evict_peer, dst_bus)
+        except RuntimeError:
+            # pool already shut down: the bus is going away anyway
+            pass
+
+    def _evict_peer(self, dst_bus: str) -> None:
+        """A peer connection was lost: drop the outbound link, its
+        subscriptions and every request still waiting on it. The peer
+        reconnects implicitly on the next send to it (and reconnecting
+        subscribers must re-subscribe)."""
+        with self._outbound_lock:
+            transport = self._outbound.pop(dst_bus, None)
+
+        if transport is None:
+            # already evicted, or racing our own shutdown
+            return
+
+        log.debug(f"bus: peer disconnected, evicting: {dst_bus}")
+        transport.close()
+        self._cleanup_dead_subscribers(dst_bus)
+        self._mailboxes.fail_peer(dst_bus)
 
     def _push(self, message: Messages) -> None:
         if self.is_dead():
@@ -241,15 +276,24 @@ class Bus:
             with self._outbound_lock:
                 if message.dst_bus not in self._outbound:
                     # TODO: define some policy to handle closing of these sockets when not in use
-                    self._outbound[message.dst_bus] = create_transport(message.dst_bus)
+                    transport = create_transport(message.dst_bus)
+                    # peer loss is detected by the transport (pipe removal)
+                    # and handled off the transport thread; the send path
+                    # itself never evicts
+                    transport.on_disconnect = (
+                        lambda dst_bus=message.dst_bus: self._schedule_peer_eviction(
+                            dst_bus
+                        )
+                    )
                     try:
-                        self._outbound[message.dst_bus].connect()
-                        self._outbound_failures[message.dst_bus] = 0
+                        transport.connect()
                     except Exception:
                         log.exception(
                             f"bus: failed to connect to outbound bus: {message.dst_bus}"
                         )
+                        # nothing stored: the next push retries the dial
                         return
+                    self._outbound[message.dst_bus] = transport
 
                 try:
                     message_bytes = self._encoder.encode(message)
@@ -261,39 +305,21 @@ class Bus:
                 # This prevents blocking on dead or slow remote buses
                 match self._outbound[message.dst_bus].send(message_bytes):
                     case SendResult.OK:
-                        self._outbound_failures[message.dst_bus] = 0
+                        pass
                     case SendResult.AGAIN:
-                        # backpressure on a live peer: drop this message but never
-                        # count it toward eviction, or three bursts of a slow
-                        # subscriber would destroy its subscriptions
+                        # backpressure on a live peer: drop this message but
+                        # never evict — a slow subscriber is not a dead one
                         log.warning(
                             f"bus: send buffer full for {message.dst_bus}, "
                             f"dropping {type(message).__name__}"
                         )
                     case SendResult.DEAD:
-                        self._outbound_failures[message.dst_bus] += 1
-
-                        if (
-                            self._outbound_failures[message.dst_bus]
-                            >= self._max_send_failures
-                        ):
-                            log.debug(
-                                f"bus: too many failures ({self._outbound_failures[message.dst_bus]}) "
-                                f"sending to {message.dst_bus}, closing connection"
-                            )
-                            # Close and remove the dead connection
-                            self._outbound[message.dst_bus].close()
-                            del self._outbound[message.dst_bus]
-                            del self._outbound_failures[message.dst_bus]
-
-                            # Clean up dead subscribers from this bus
-                            self._cleanup_dead_subscribers(message.dst_bus)
-                        else:
-                            log.debug(
-                                f"bus: failed to send message to {message.dst_bus} "
-                                f"({self._outbound_failures[message.dst_bus]}/{self._max_send_failures}), "
-                                f"remote bus may be dead"
-                            )
+                        # if the peer is really gone the transport will notify
+                        # us and _evict_peer does the cleanup
+                        log.warning(
+                            f"bus: send failed to {message.dst_bus}, "
+                            f"dropping {type(message).__name__}"
+                        )
 
     def _pop(self, /, timeout: float | None = None) -> Messages | None:
         message = self._inbox.get(block=True, timeout=timeout)

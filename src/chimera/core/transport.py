@@ -1,4 +1,5 @@
 import enum
+from collections.abc import Callable
 
 
 class SendResult(enum.StrEnum):
@@ -12,6 +13,11 @@ class SendResult(enum.StrEnum):
 class Transport:
     def __init__(self, url: str):
         self.url = url
+
+        # invoked from a transport worker thread when an established
+        # connection to the peer is lost; receivers must only schedule work,
+        # never perform socket operations in the callback
+        self.on_disconnect: Callable[[], None] | None = None
 
     def bind(self) -> None: ...
 

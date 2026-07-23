@@ -343,6 +343,14 @@ class AlwaysAgainTransport(Transport):
         return SendResult.AGAIN
 
 
+class AlwaysDeadTransport(AlwaysAgainTransport):
+    """A transport whose sends always fail terminally."""
+
+    def send(self, data: bytes) -> SendResult:
+        self.send_count += 1
+        return SendResult.DEAD
+
+
 def test_transport_recv_empty_returns_none():
     transport = create_transport("tcp://127.0.0.1:15001")
     transport.bind()
@@ -443,7 +451,7 @@ def test_backpressure_does_not_evict_subscribers(create_bus: Callable[[str], Bus
     bus_future = pool.submit(bus.run_forever)
     assert bus._bus_started.wait(5)
 
-    n = 5  # > _max_send_failures, so miscounting backpressure would evict
+    n = 5
     for i in range(n):
         bus.publish(pub=pub, event=event, args=[i], kwargs={})
 
@@ -456,10 +464,103 @@ def test_backpressure_does_not_evict_subscribers(create_bus: Callable[[str], Bus
 
     assert remote_bus in bus._outbound
     assert len(bus.subscribers(event_id)) == 1
-    assert bus._outbound_failures[remote_bus] == 0
 
     bus.shutdown()
     bus_future.result()
+    pool.shutdown()
+
+
+def test_dead_send_does_not_evict(create_bus: Callable[[str], Bus]):
+    """The send path never evicts: peer cleanup is driven by the transport's
+    disconnect notification, not by send failures."""
+    bus = create_bus("tcp://127.0.0.1:15009")
+    remote_bus = parse_url("tcp://127.0.0.1:15010/Proxy/0").bus
+
+    pub = f"{bus.url.bus}/Telescope/0"
+    event = "slew_begin"
+    event_id = EventId(pub, event)
+
+    bus._handle_subscribe(
+        Protocol.subscribe(
+            sub=f"{remote_bus}/Proxy/0", pub=pub, event=event, callback=1234
+        )
+    )
+
+    fake = AlwaysDeadTransport(remote_bus)
+    bus._outbound[remote_bus] = fake
+
+    pool = ThreadPoolExecutor()
+    bus_future = pool.submit(bus.run_forever)
+    assert bus._bus_started.wait(5)
+
+    n = 5
+    for i in range(n):
+        bus.publish(pub=pub, event=event, args=[i], kwargs={})
+
+    deadline = time.monotonic() + 5
+    while fake.send_count < n:
+        assert time.monotonic() < deadline, (
+            f"only {fake.send_count}/{n} sends attempted"
+        )
+        time.sleep(0.01)
+
+    assert remote_bus in bus._outbound
+    assert len(bus.subscribers(event_id)) == 1
+
+    bus.shutdown()
+    bus_future.result()
+    pool.shutdown()
+
+
+def test_peer_disconnect_evicts_and_unsubscribes(create_bus: Callable[[str], Bus]):
+    """When an established peer connection drops, the peer is evicted:
+    outbound link gone, its subscriptions cleaned, pending requests failed."""
+    bus_a = create_bus("tcp://127.0.0.1:15011")
+    bus_b = create_bus("tcp://127.0.0.1:15012")
+
+    pub = f"{bus_a.url.bus}/Telescope/0"
+    event = "slew_begin"
+    event_id = EventId(pub, event)
+
+    pool = ThreadPoolExecutor()
+    a_future = pool.submit(bus_a.run_forever)
+    b_future = pool.submit(bus_b.run_forever)
+    assert bus_a._bus_started.wait(5)
+    assert bus_b._bus_started.wait(5)
+
+    # B subscribes to an event published on A; one publish makes A actually
+    # dial B so the outbound connection (and its pipe) exists
+    bus_a._handle_subscribe(
+        Protocol.subscribe(
+            sub=f"{bus_b.url.bus}/Proxy/0", pub=pub, event=event, callback=1
+        )
+    )
+    bus_a.publish(pub=pub, event=event, args=[], kwargs={})
+
+    deadline = time.monotonic() + 5
+    while bus_b.url.bus not in bus_a._outbound:
+        assert time.monotonic() < deadline, "A never connected to B"
+        time.sleep(0.01)
+
+    # a request pending on B, which will never be answered
+    pending = bus_a._mailboxes.register(999_999, bus_b.url.bus)
+
+    bus_b.shutdown()
+
+    deadline = time.monotonic() + 5
+    while bus_b.url.bus in bus_a._outbound or len(bus_a.subscribers(event_id)) > 0:
+        assert time.monotonic() < deadline, (
+            f"peer not evicted: outbound={bus_b.url.bus in bus_a._outbound}, "
+            f"subscribers={len(bus_a.subscribers(event_id))}"
+        )
+        time.sleep(0.01)
+
+    # the pending request was woken instead of hanging forever
+    assert pending.get(timeout=5) is None
+
+    bus_a.shutdown()
+    a_future.result()
+    b_future.result()
     pool.shutdown()
 
 
