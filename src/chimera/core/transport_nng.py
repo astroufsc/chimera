@@ -28,6 +28,12 @@ class TransportNNG(Transport):
     @override
     def connect(self):
         self._sk = pynng.Push0()
+        # nng's default send buffer is ZERO: a non-blocking send succeeds only
+        # if the pipe can take the message at that exact instant, so any
+        # back-to-back burst (a CLI subscribing to several events, an event
+        # storm) drops messages against a perfectly healthy peer. Buffer the
+        # bursts; sustained backpressure still surfaces as AGAIN.
+        self._sk.send_buffer_size = 128
         # registered before dial so no removal event can be missed
         self._sk.add_post_pipe_remove_cb(self._pipe_removed)
         try:

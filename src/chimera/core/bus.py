@@ -1,4 +1,3 @@
-import collections
 import logging
 import os
 import queue
@@ -58,8 +57,12 @@ type SubscriberId = URL
 
 class CallbackId:
     @classmethod
-    def new(cls, callable: Callable[..., None]) -> int:
-        return id(callable)
+    def new(cls) -> int:
+        # an opaque random token. id(callable) cannot work: every access to a
+        # bound method creates a new object with a different id, so a later
+        # unsubscribe(self.on_x) never matched and freed ids can even collide.
+        # The client keeps a (sub, pub, event, callable) -> token map instead.
+        return Protocol.id()
 
 
 class EventId(NamedTuple):
@@ -203,14 +206,17 @@ class Bus:
         self._mailboxes = _Mailboxes()
 
         # callbacks represent the subscriber-side of the pubsub model, where we can have references to the callbacks
-        self._callbacks: collections.defaultdict[
-            EventId, dict[Subscriber, Callback]
-        ] = collections.defaultdict(dict)
+        self._callbacks: dict[EventId, dict[Subscriber, Callback]] = {}
 
         # subscribers represent the publisher-side of the pubsub model, where we don't have references to the callbacks
-        self._subscribers: collections.defaultdict[EventId, set[Subscriber]] = (
-            collections.defaultdict(set)
-        )
+        self._subscribers: dict[EventId, set[Subscriber]] = {}
+
+        # client-side map from what the user subscribed to the wire token, so
+        # unsubscribe can find the token by callable equality (==)
+        self._subscriptions: dict[
+            tuple[str, str, str], list[tuple[Callable[..., None], int]]
+        ] = {}
+
         self._pubsub_lock = threading.Lock()
 
         self._inbound: Transport = create_transport(self.url.bus)
@@ -647,22 +653,34 @@ class Bus:
         callback: Callable[..., None],
     ):
         pub_url = parse_url(pub)
-
-        callback_id = CallbackId.new(callback)
-        subscriber = Subscriber(parse_url(sub), callback_id)
+        sub_url = parse_url(sub)
         event_id = EventId(pub_url.url, event)
+        registry_key = (sub_url.url, pub_url.url, event)
+
+        with self._pubsub_lock:
+            entries = self._subscriptions.setdefault(registry_key, [])
+            if any(registered == callback for registered, _ in entries):
+                # already subscribed: keep the original token, nothing to do
+                return
+
+            token = CallbackId.new()
+            entries.append((callback, token))
+
+            # register the callback before pushing Subscribe: a publish racing
+            # this subscription cannot fire into the registration gap (M6)
+            subscriber = Subscriber(sub_url, token)
+            self._callbacks.setdefault(event_id, {})[subscriber] = Callback(
+                token, callback
+            )
 
         self._push(
             Protocol.subscribe(
-                sub=parse_url(sub).url,
+                sub=sub_url.url,
                 pub=pub_url.url,
                 event=event,
-                callback=callback_id,
+                callback=token,
             )
         )
-
-        with self._pubsub_lock:
-            self._callbacks[event_id][subscriber] = Callback(callback_id, callback)
 
     def unsubscribe(
         self,
@@ -673,22 +691,44 @@ class Bus:
         callback: Callable[..., None],
     ):
         pub_url = parse_url(pub)
-        callback_id = CallbackId.new(callback)
-        subscriber = Subscriber(parse_url(sub), callback_id)
+        sub_url = parse_url(sub)
         event_id = EventId(pub_url.url, event)
+        registry_key = (sub_url.url, pub_url.url, event)
+
+        with self._pubsub_lock:
+            token = None
+            entries = self._subscriptions.get(registry_key, [])
+            for index, (registered, registered_token) in enumerate(entries):
+                # bound methods compare equal by == even though every access
+                # creates a distinct object — this is what makes
+                # unsubscribe(self.on_x) work
+                if registered == callback:
+                    token = registered_token
+                    del entries[index]
+                    break
+
+            if token is None:
+                log.debug(f"unsubscribe: no subscription for {event} matches")
+                return
+
+            if not entries:
+                del self._subscriptions[registry_key]
+
+            subscriber = Subscriber(sub_url, token)
+            event_callbacks = self._callbacks.get(event_id)
+            if event_callbacks is not None:
+                event_callbacks.pop(subscriber, None)
+                if not event_callbacks:
+                    del self._callbacks[event_id]
 
         self._push(
             Protocol.unsubscribe(
-                sub=parse_url(sub).url,
+                sub=sub_url.url,
                 pub=pub_url.url,
                 event=event,
-                callback=callback_id,
+                callback=token,
             )
         )
-
-        with self._pubsub_lock:
-            if subscriber in self._callbacks[event_id]:
-                del self._callbacks[event_id][subscriber]
 
     def publish(
         self,
@@ -776,10 +816,12 @@ class Bus:
             log.exception("error handling request")
 
     def callbacks(self, /, event_id: EventId) -> dict[Subscriber, Callback]:
-        return self._callbacks[event_id]
+        with self._pubsub_lock:
+            return dict(self._callbacks.get(event_id, {}))
 
     def subscribers(self, /, event_id: EventId) -> set[Subscriber]:
-        return self._subscribers[event_id]
+        with self._pubsub_lock:
+            return set(self._subscribers.get(event_id, ()))
 
     def _handle_ping(self, message: Ping) -> None:
         try:
@@ -800,7 +842,7 @@ class Bus:
             with self._pubsub_lock:
                 event_id = EventId(message.pub, message.event)
                 subscriber = Subscriber(parse_url(message.sub), message.callback)
-                self._subscribers[event_id].add(subscriber)
+                self._subscribers.setdefault(event_id, set()).add(subscriber)
         except Exception:
             log.exception("error handling subscribe")
 
@@ -810,15 +852,22 @@ class Bus:
                 event_id = EventId(message.pub, message.event)
                 subscriber = Subscriber(parse_url(message.sub), message.callback)
 
-                if subscriber in self._subscribers[event_id]:
-                    self._subscribers[event_id].remove(subscriber)
+                subscribers = self._subscribers.get(event_id)
+                if subscribers is not None:
+                    subscribers.discard(subscriber)
+                    if not subscribers:
+                        del self._subscribers[event_id]
         except Exception:
             log.exception("error handling unsubscribe")
 
     def _handle_publish(self, message: Publish):
         try:
             event_id = EventId(message.pub, message.event)
-            subscribers = self._subscribers[event_id]
+
+            # snapshot under the lock: subscribe/unsubscribe mutate the set
+            # concurrently and an unlocked iteration silently drops the event
+            with self._pubsub_lock:
+                subscribers = set(self._subscribers.get(event_id, ()))
 
             # no subscribers for this event
             if not subscribers:
@@ -842,12 +891,19 @@ class Bus:
         try:
             event_id = EventId(event.src, event.event)
 
-            for callback in self._callbacks[event_id].values():
+            # snapshot under the lock (see _handle_publish)
+            with self._pubsub_lock:
+                callables = [
+                    callback.callable
+                    for callback in self._callbacks.get(event_id, {}).values()
+                ]
+
+            for callable in callables:
                 # exceptions inside event handlers are invisible to the
                 # publisher: observe them via a (free) done-callback instead
                 # of burning a second pool task on it
                 event_future = self._handler_pool.submit(
-                    callback.callable, *event.args, **event.kwargs
+                    callable, *event.args, **event.kwargs
                 )
                 event_future.add_done_callback(self._log_event_result(event))
         except Exception:
