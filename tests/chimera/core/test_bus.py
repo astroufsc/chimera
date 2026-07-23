@@ -1,3 +1,4 @@
+import logging
 import threading
 import time
 from collections.abc import Callable, Generator
@@ -456,6 +457,86 @@ def test_backpressure_does_not_evict_subscribers(create_bus: Callable[[str], Bus
     assert remote_bus in bus._outbound
     assert len(bus.subscribers(event_id)) == 1
     assert bus._outbound_failures[remote_bus] == 0
+
+    bus.shutdown()
+    bus_future.result()
+    pool.shutdown()
+
+
+#
+# response correlation by request id (reply mailboxes)
+#
+
+
+def test_concurrent_requests_one_src_are_correlated(create_bus: Callable[[str], Bus]):
+    """Concurrent requests sharing one src URL must each get their own
+    response, matched by request id — never a sibling's reply."""
+    bus = create_bus("tcp://127.0.0.1:15007")
+
+    def echo(x: int) -> int:
+        return x
+
+    bus.resolve_request = lambda object, method: ("/Echo/0", echo)
+
+    pool = ThreadPoolExecutor()
+    bus_future = pool.submit(bus.run_forever)
+    assert bus._bus_started.wait(5)
+
+    src = f"{bus.url.bus}/Proxy/shared"
+    dst = f"{bus.url.bus}/Echo/0"
+    n_threads, n_requests = 4, 200
+    errors: list[str] = []
+
+    def caller(thread_id: int):
+        for i in range(n_requests):
+            value = thread_id * 1_000_000 + i
+            response = bus.request(src=src, dst=dst, method="echo", args=[value])
+            if response is None or response.result != value:
+                errors.append(
+                    f"thread {thread_id} sent {value}, "
+                    f"got {response.result if response else None}"
+                )
+                return
+
+    futures = [pool.submit(caller, thread_id) for thread_id in range(n_threads)]
+    for future in futures:
+        future.result()
+
+    assert not errors, errors[:5]
+
+    # every mailbox was unregistered once its request completed
+    assert len(bus._mailboxes._boxes) == 0
+
+    bus.shutdown()
+    bus_future.result()
+    pool.shutdown()
+
+
+def test_unmatched_response_dropped(
+    create_bus: Callable[[str], Bus], caplog: pytest.LogCaptureFixture
+):
+    """A Response whose id has no registered waiter (late reply after a
+    timeout, stray id) is dropped and logged, not queued forever."""
+    bus = create_bus("tcp://127.0.0.1:15008")
+
+    pool = ThreadPoolExecutor()
+    bus_future = pool.submit(bus.run_forever)
+    assert bus._bus_started.wait(5)
+
+    request = Protocol.request(
+        src=f"{bus.url.bus}/Proxy/0",
+        dst=f"{bus.url.bus}/Echo/0",
+        method="echo",
+        args=[1],
+    )
+    orphan = request.ok(42.0)
+
+    with caplog.at_level(logging.DEBUG, logger="chimera.core.bus"):
+        # local delivery is synchronous: no waiter registered for this id
+        bus._push(orphan)
+
+    assert any("no waiter" in record.message for record in caplog.records)
+    assert len(bus._mailboxes._boxes) == 0
 
     bus.shutdown()
     bus_future.result()
