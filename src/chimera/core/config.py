@@ -178,6 +178,11 @@ class OptionsChecker(Checker):
         options = []
 
         for value in opt:
+            # NOTE: bool must be checked before int, as bool is a subclass of int
+            if isinstance(value, bool):
+                options.append({"value": value, "checker": BoolChecker()})
+                continue
+
             if isinstance(value, int):
                 options.append({"value": value, "checker": IntChecker()})
                 continue
@@ -188,10 +193,6 @@ class OptionsChecker(Checker):
 
             if isinstance(value, str):
                 options.append({"value": value, "checker": StringChecker()})
-                continue
-
-            if isinstance(value, bool):
-                options.append({"value": value, "checker": BoolChecker()})
                 continue
 
         return options
@@ -332,6 +333,11 @@ class Config:
         options = {}
 
         for name, value in list(opt.items()):
+            # NOTE: bool must be checked before int, as bool is a subclass of int
+            if isinstance(value, bool):
+                options[name] = Option(name, value, BoolChecker())
+                continue
+
             if isinstance(value, int):
                 options[name] = Option(name, value, IntChecker())
                 continue
@@ -342,10 +348,6 @@ class Config:
 
             if isinstance(value, str):
                 options[name] = Option(name, value, StringChecker())
-                continue
-
-            if isinstance(value, bool):
-                options[name] = Option(name, value, BoolChecker())
                 continue
 
             if isinstance(value, NoneType):
@@ -436,7 +438,7 @@ class Config:
         return [(name, value) for name, value in self._options.items()]
 
     def __iadd__(self, other):
-        if isinstance(other, (Config, dict)):
+        if not isinstance(other, (Config, dict)):
             return self
 
         if isinstance(other, dict):
