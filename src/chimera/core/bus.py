@@ -11,6 +11,7 @@ from typing import Any, NamedTuple
 
 import msgspec
 
+from chimera.core.exceptions import BusDeadException, RequestTimeoutException
 from chimera.core.protocol import (
     Event,
     Messages,
@@ -314,10 +315,14 @@ class Bus:
         self._cleanup_dead_subscribers(dst_bus)
         self._mailboxes.fail_peer(dst_bus)
 
-    def _push(self, message: Messages) -> None:
+    def _push(self, message: Messages) -> bool:
+        """Hand a message to its destination. Returns False only when the
+        message definitively could not be delivered (dead bus, connect or
+        encode failure, dead socket); backpressure drops still return True —
+        the peer is alive and a caller timeout covers the loss."""
         if self.is_dead():
             log.warning("push failed, bus is dead, not accepting new messages")
-            return
+            return False
 
         if message.dst_bus == self.url.bus:
             # NOTE: we don't need to serialize/deserialize messages sent locally
@@ -341,6 +346,7 @@ class Bus:
                     )
             else:
                 self._inbox.put(message)
+            return True
         else:
             with self._outbound_lock:
                 if message.dst_bus not in self._outbound:
@@ -361,20 +367,20 @@ class Bus:
                             f"bus: failed to connect to outbound bus: {message.dst_bus}"
                         )
                         # nothing stored: the next push retries the dial
-                        return
+                        return False
                     self._outbound[message.dst_bus] = transport
 
                 try:
                     message_bytes = self._encoder.encode(message)
                 except Exception:
                     log.exception(f"bus: failed to encode message: {message}")
-                    return
+                    return False
 
                 # Non-blocking send - if it fails, log and continue
                 # This prevents blocking on dead or slow remote buses
                 match self._outbound[message.dst_bus].send(message_bytes):
                     case SendResult.OK:
-                        pass
+                        return True
                     case SendResult.AGAIN:
                         # backpressure on a live peer: drop this message but
                         # never evict — a slow subscriber is not a dead one
@@ -382,6 +388,7 @@ class Bus:
                             f"bus: send buffer full for {message.dst_bus}, "
                             f"dropping {type(message).__name__}"
                         )
+                        return True
                     case SendResult.DEAD:
                         # if the peer is really gone the transport will notify
                         # us and _evict_peer does the cleanup
@@ -389,6 +396,7 @@ class Bus:
                             f"bus: send failed to {message.dst_bus}, "
                             f"dropping {type(message).__name__}"
                         )
+                        return False
 
     def _pop(self, /, timeout: float | None = None) -> Messages | None:
         message = self._inbox.get(block=True, timeout=timeout)
@@ -488,7 +496,6 @@ class Bus:
         finally:
             self._mailboxes.unregister(ping.id)
 
-    # TODO: add timeout?
     def request(
         self,
         *,
@@ -497,7 +504,10 @@ class Bus:
         method: str,
         args: list[Any] | None = None,
         kwargs: dict[str, Any] | None = None,
-    ) -> None | Response:
+        # no default timeout: instrument operations (slew, expose, ...) can
+        # legitimately take unbounded time; callers opt in per call or proxy
+        timeout: float | None = None,
+    ) -> Response:
         request = Protocol.request(
             src=parse_url(src).url,
             dst=parse_url(dst).url,
@@ -508,11 +518,23 @@ class Bus:
 
         mailbox = self._mailboxes.register(request.id, request.dst_bus)
         try:
-            self._push(request)
+            if not self._push(request):
+                raise BusDeadException(
+                    f"cannot send request {method} to {request.dst}: "
+                    "bus or peer is dead"
+                )
 
-            response = mailbox.get()
+            try:
+                response = mailbox.get(timeout=timeout)
+            except queue.Empty:
+                raise RequestTimeoutException(
+                    f"no response for {method} on {request.dst} after {timeout}s"
+                ) from None
+
             if response is None or not isinstance(response, Response):
-                raise RuntimeError("bus is dead")
+                raise BusDeadException(
+                    f"bus died while waiting for {method} on {request.dst}"
+                )
 
             return response
         finally:

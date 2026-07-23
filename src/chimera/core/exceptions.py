@@ -64,6 +64,15 @@ class ObjectNotFoundException(ChimeraException):
     pass
 
 
+class RequestTimeoutException(ChimeraException):
+    """A bus request got no response within its timeout."""
+
+
+class BusDeadException(ChimeraException):
+    """The bus (or the peer the request was destined to) is gone: the
+    request definitively cannot be delivered or answered."""
+
+
 class NotValidChimeraObjectException(ChimeraException):
     pass
 
