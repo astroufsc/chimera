@@ -148,6 +148,7 @@ class ChimeraCtl(ChimeraCLI):
         grid = Table.grid(padding=(0, 2))
         grid.add_column(style="dim")
         grid.add_column()
+        grid.add_row("host", f"{bus['inbox_url']}")
         grid.add_row("version", str(system["version"]))
         grid.add_row("pid", str(system["pid"]))
         grid.add_row("python", system["python"])
@@ -157,8 +158,7 @@ class ChimeraCtl(ChimeraCLI):
         grid = Table.grid(padding=(0, 2))
         grid.add_column(style="dim")
         grid.add_column()
-        grid.add_row("url", bus["url"])
-        grid.add_row("inbox url", f"{bus['inbox_url']} [dim](how peers see us)[/dim]")
+        grid.add_row("bus url", bus["url"])
         grid.add_row(
             "running",
             "[green]yes[/green]" if bus["running"] else "[red]no[/red]",
