@@ -1,10 +1,27 @@
 import random
 import threading
+import time
 
 import pytest
 
 from chimera.core.bus import Bus
 from chimera.core.manager import Manager
+
+
+@pytest.fixture
+def wait_for():
+    """
+    Poll a predicate until it is true or the timeout expires. Use this
+    instead of fixed sleeps when waiting for asynchronous event delivery.
+    """
+
+    def waiter(predicate, timeout=10.0, interval=0.05):
+        t0 = time.monotonic()
+        while not predicate() and time.monotonic() - t0 < timeout:
+            time.sleep(interval)
+        return predicate()
+
+    return waiter
 
 
 @pytest.fixture
