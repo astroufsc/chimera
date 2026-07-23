@@ -11,6 +11,7 @@ from typing import Any, NamedTuple
 
 import msgspec
 
+from chimera.core.constants import LOCK_ATTRIBUTE_NAME
 from chimera.core.exceptions import BusDeadException, RequestTimeoutException
 from chimera.core.protocol import (
     Event,
@@ -79,6 +80,28 @@ class Subscriber:
 class Callback(NamedTuple):
     id: int
     callable: Callable[..., None]
+
+
+def _is_locked_method(method: Callable[..., Any]) -> bool:
+    """@lock methods are serialized per object by the dispatch layer. The
+    resolved callable is a MethodWrapperDispatcher whose .func is the raw
+    function carrying the __lock__ marker; plain callables carry it directly.
+    `is True` defends against mock auto-attributes in tests."""
+    func = getattr(method, "func", method)
+    return getattr(func, LOCK_ATTRIBUTE_NAME, False) is True
+
+
+class _ObjectLane:
+    """A per-object FIFO for @lock methods: one worker thread executes them
+    one at a time, in arrival order. A hung method stacks bounded queue
+    entries here instead of pool workers."""
+
+    def __init__(self, maxsize: int):
+        self.queue: queue.Queue[tuple[Request, Callable[..., Any]] | None] = (
+            queue.Queue(maxsize=maxsize)
+        )
+        self.closed = False
+        self.thread: threading.Thread | None = None
 
 
 class _Mailbox:
@@ -169,6 +192,8 @@ class Bus:
         *,
         handler_pool_size: int = 64,
         control_pool_size: int = 16,
+        lane_queue_size: int = 32,
+        lane_idle_timeout: float = 60.0,
     ):
         self.url = create_url(url, cls="Bus")
 
@@ -198,6 +223,12 @@ class Bus:
         self._shutdown_done = threading.Event()
         self._teardown_claimed = threading.Event()
         self._teardown_finished = threading.Event()
+
+        # per-object FIFO lanes for @lock methods
+        self._lanes: dict[str, _ObjectLane] = {}
+        self._lanes_lock = threading.Lock()
+        self._lane_queue_size = lane_queue_size
+        self._lane_idle_timeout = lane_idle_timeout
 
         # inbound messages to be dispatched by _process_queue
         self._inbox: queue.SimpleQueue[Messages | None] = queue.SimpleQueue()
@@ -280,6 +311,26 @@ class Bus:
         if dispatch is not None and dispatch is not threading.current_thread():
             dispatch.join(timeout=5)
 
+        # stop the lanes: a sentinel wakes each worker; short join only —
+        # they are daemon threads, so a truly hung instrument method cannot
+        # block the interpreter from exiting
+        with self._lanes_lock:
+            lanes = list(self._lanes.values())
+            self._lanes.clear()
+            for lane in lanes:
+                lane.closed = True
+        for lane in lanes:
+            try:
+                lane.queue.put_nowait(None)
+            except queue.Full:
+                pass
+        for lane in lanes:
+            if (
+                lane.thread is not None
+                and lane.thread is not threading.current_thread()
+            ):
+                lane.thread.join(timeout=1)
+
         # a pool worker asking for teardown must not join its own pool;
         # queued handler work is cancelled (their done-callbacks see
         # CancelledError), queued control work is small and drains
@@ -342,6 +393,17 @@ class Bus:
         with self._outbound_lock:
             peers = list(self._outbound.keys())
 
+        with self._lanes_lock:
+            lanes = [
+                {
+                    "path": path,
+                    "queued": lane.queue.qsize(),
+                    "alive": lane.thread.is_alive() if lane.thread else False,
+                    "id": lane.thread.native_id if lane.thread else None,
+                }
+                for path, lane in self._lanes.items()
+            ]
+
         return {
             "url": self.url.url,
             # the address peers see us as (dst_bus of messages we send)
@@ -355,6 +417,7 @@ class Bus:
             "callbacks": callbacks,
             "handler_pool": pool_stats(self._handler_pool),
             "control_pool": pool_stats(self._control_pool),
+            "lanes": lanes,
         }
 
     def __del__(self):
@@ -771,7 +834,9 @@ class Bus:
                     case Publish():
                         _ = self._control_pool.submit(self._handle_publish, message)
                     case Request():
-                        _ = self._handler_pool.submit(self._handle_request, message)
+                        # routed inline (resolve + pick a lane/pool); the
+                        # actual execution never happens on this thread
+                        self._route_request(message)
                     case Event():
                         _ = self._handler_pool.submit(self._handle_event, message)
                     case _:
@@ -792,7 +857,11 @@ class Bus:
     ) -> tuple[str | None, Callable[..., Any] | None]:
         return None, None
 
-    def _handle_request(self, request: Request) -> None:
+    def _route_request(self, request: Request) -> None:
+        """Runs inline on the dispatch thread: resolve and route, never
+        execute. Resolution is a dict lookup (framework code, microseconds);
+        routing must not depend on the handler pool, or a wedged pool would
+        starve the locked-method lanes it feeds."""
         try:
             dst = parse_url(request.dst)
 
@@ -800,20 +869,90 @@ class Bus:
             resource, method = self.resolve_request(dst.path, request.method)
 
             if not resource:
-                self._push(request.not_found(f"'{dst.cls}' not found"))
+                self._control_pool.submit(
+                    self._push, request.not_found(f"'{dst.cls}' not found")
+                )
                 return
 
             if not method:
-                self._push(request.not_found(f"'{dst.cls}.{request.method}' not found"))
+                self._control_pool.submit(
+                    self._push,
+                    request.not_found(f"'{dst.cls}.{request.method}' not found"),
+                )
                 return
 
+            if _is_locked_method(method):
+                self._enqueue_lane(resource, request, method)
+            else:
+                self._handler_pool.submit(self._execute_request, request, method)
+        except Exception as e:
+            log.exception("error routing request")
+            self._control_pool.submit(self._push, request.error(e))
+
+    def _execute_request(self, request: Request, method: Callable[..., Any]) -> None:
+        try:
             try:
                 result = method(*request.args, **request.kwargs)
                 self._push(request.ok(result))
             except Exception as e:
                 self._push(request.error(e))
         except Exception:
-            log.exception("error handling request")
+            log.exception("error executing request")
+
+    def _enqueue_lane(
+        self, resource: str, request: Request, method: Callable[..., Any]
+    ) -> None:
+        with self._lanes_lock:
+            lane = self._lanes.get(resource)
+            if lane is None or lane.closed:
+                lane = _ObjectLane(self._lane_queue_size)
+                lane.thread = threading.Thread(
+                    target=self._lane_worker,
+                    args=(resource, lane),
+                    name=f"chimera-bus-lane-{self.url.port}{resource}",
+                    daemon=True,
+                )
+                self._lanes[resource] = lane
+                lane.thread.start()
+
+            try:
+                lane.queue.put_nowait((request, method))
+                return
+            except queue.Full:
+                pass
+
+        # outside the lock: the object is drowning, tell the caller now
+        # instead of piling stale commands behind a stuck instrument
+        log.warning(
+            f"bus: lane full for {resource} ({self._lane_queue_size} pending), "
+            f"rejecting {request.method}"
+        )
+        self._control_pool.submit(
+            self._push,
+            request.busy(f"{resource} busy: {self._lane_queue_size} requests pending"),
+        )
+
+    def _lane_worker(self, resource: str, lane: _ObjectLane) -> None:
+        while True:
+            try:
+                item = lane.queue.get(timeout=self._lane_idle_timeout)
+            except queue.Empty:
+                # idle: evict the lane. Re-check under the lock — enqueue
+                # holds it while putting, so nothing can slip in unseen
+                with self._lanes_lock:
+                    if not lane.queue.empty():
+                        continue
+                    lane.closed = True
+                    if self._lanes.get(resource) is lane:
+                        del self._lanes[resource]
+                return
+
+            if item is None:
+                # shutdown sentinel
+                return
+
+            request, method = item
+            self._execute_request(request, method)
 
     def callbacks(self, /, event_id: EventId) -> dict[Subscriber, Callback]:
         with self._pubsub_lock:

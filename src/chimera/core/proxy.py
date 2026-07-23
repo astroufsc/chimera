@@ -2,7 +2,11 @@ from collections.abc import Callable
 from typing import Any
 
 from chimera.core.bus import Bus
-from chimera.core.exceptions import BusDeadException, ObjectNotFoundException
+from chimera.core.exceptions import (
+    BusDeadException,
+    ObjectBusyException,
+    ObjectNotFoundException,
+)
 from chimera.core.url import URL, create_url, parse_url, resolve_url
 
 __all__ = ["Proxy", "ProxyMethod"]
@@ -94,6 +98,9 @@ class ProxyMethod:
             kwargs=kwargs,
             timeout=self.proxy.__timeout__,
         )
+
+        if response.code == 503:
+            raise ObjectBusyException(response.error)
 
         if response.error:
             raise Exception(response.error)

@@ -73,6 +73,11 @@ class BusDeadException(ChimeraException):
     request definitively cannot be delivered or answered."""
 
 
+class ObjectBusyException(ChimeraException):
+    """The object's locked-method lane is full: it is processing as much as
+    it can and new requests are rejected instead of piling up."""
+
+
 class NotValidChimeraObjectException(ChimeraException):
     pass
 

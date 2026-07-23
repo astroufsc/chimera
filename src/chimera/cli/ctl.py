@@ -170,6 +170,13 @@ class ChimeraCtl(ChimeraCLI):
         self._print_pool("Handler pool", bus["handler_pool"])
         self._print_pool("Control pool", bus["control_pool"])
 
+        lanes = _table(
+            f"Locked-method lanes ({len(bus['lanes'])})", "object", "queued", "thread"
+        )
+        for lane in bus["lanes"]:
+            lanes.add_row(lane["path"], str(lane["queued"]), str(lane["id"] or "-"))
+        self._print_table(lanes, "no active lanes")
+
         # our own ephemeral bus shows up as a peer of the manager: mark it
         us = self.bus.url.bus
         peers = _table(f"Peers ({len(bus['peers'])})", "bus")
