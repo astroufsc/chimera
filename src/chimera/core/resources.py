@@ -16,7 +16,8 @@ class Resource:
     name: str | int
     instance: Any | None = None
     bases: list[str] = field(default_factory=list[str])
-    created: float = field(default_factory=time.monotonic)
+    # wall-clock, same basis as Manager.start() which resets it
+    created: float = field(default_factory=time.time)
     loop: Future[bool] | None = None
 
 

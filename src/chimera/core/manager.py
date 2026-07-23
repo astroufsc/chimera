@@ -4,12 +4,14 @@
 import concurrent.futures
 import logging
 import operator
+import os
+import sys
 import threading
 import time
 from collections.abc import Callable
 from typing import Any
 
-from chimera.core.bus import Bus
+from chimera.core.bus import Bus, pool_stats
 from chimera.core.chimeraobject import ChimeraObject
 from chimera.core.classloader import ClassLoader
 from chimera.core.constants import (
@@ -28,8 +30,15 @@ from chimera.core.proxy import Proxy
 from chimera.core.resources import ResourcesManager
 from chimera.core.state import State
 from chimera.core.url import URL, parse_url
+from chimera.core.version import chimera_version
 
 __all__ = ["Manager", "get_manager_uri", "ManagerNotFoundException"]
+
+
+def _json_safe(value: Any) -> Any:
+    if value is None or isinstance(value, (bool, int, float, str)):
+        return value
+    return str(value)
 
 
 log = logging.getLogger(__name__)
@@ -102,6 +111,66 @@ class Manager:
 
     def get_port(self):
         return self._bus.url.port
+
+    def get_location(self) -> str:
+        # full url so remote proxies can resolve us (a bare path is not
+        # parseable on the client side)
+        return f"{self._bus.url.bus}{MANAGER_LOCATION}"
+
+    # observability (chimera-ctl)
+    def get_status(self) -> dict[str, Any]:
+        """A read-only, JSON-serializable snapshot of the whole system:
+        manager, bus internals and every managed object."""
+        now = time.time()
+
+        objects = []
+        for _, resource in list(self.resources.items()):
+            instance = resource.instance
+
+            state = None
+            get_state = getattr(instance, "get_state", None)
+            if callable(get_state):
+                state = str(get_state())
+
+            loop = "none"
+            if resource.loop is not None:
+                loop = "done" if resource.loop.done() else "running"
+
+            # the OS thread currently running this object's control loop
+            loop_id = None
+            if loop == "running":
+                loop_id = getattr(instance, "__loop_native_id__", None)
+
+            config = {}
+            config_proxy = getattr(instance, "__config_proxy__", None)
+            if config_proxy is not None:
+                for key in config_proxy.keys():
+                    config[key] = _json_safe(instance[key])
+
+            objects.append(
+                {
+                    "path": resource.path,
+                    "class": type(instance).__name__,
+                    "bases": resource.bases,
+                    "state": state,
+                    "loop": loop,
+                    "loop_id": loop_id,
+                    "age": now - resource.created,
+                    "config": config,
+                }
+            )
+
+        return {
+            "system": {
+                "version": chimera_version,
+                "pid": os.getpid(),
+                "python": sys.version.split()[0],
+            },
+            "bus": self._bus.stats(),
+            # the control-loops pool (one worker per running object loop)
+            "pool": pool_stats(self._pool),
+            "objects": objects,
+        }
 
     # reflection (console)
     def get_resources(self) -> list[str]:

@@ -44,6 +44,7 @@ source = "https://github.com/astroufsc/chimera"
 [project.scripts]
 chimera = "chimera.cli.chimera:main"
 chimera-cam = "chimera.cli.cam:main"
+chimera-ctl = "chimera.cli.ctl:main"
 chimera-filter = "chimera.cli.filter:main"
 chimera-tel = "chimera.cli.tel:main"
 chimera-dome = "chimera.cli.dome:main"

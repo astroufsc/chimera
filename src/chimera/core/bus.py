@@ -3,6 +3,7 @@ import logging
 import queue
 import selectors
 import threading
+import time
 from collections.abc import Callable
 from concurrent.futures import Future, ThreadPoolExecutor
 from dataclasses import dataclass
@@ -27,6 +28,26 @@ from chimera.core.transport_factory import create_transport
 from chimera.core.url import URL, create_url, parse_url
 
 log = logging.getLogger(__name__)
+
+
+def pool_stats(pool: ThreadPoolExecutor) -> dict[str, Any]:
+    """JSON-safe snapshot of a ThreadPoolExecutor: limits, backlog and
+    per-thread state."""
+    threads = [
+        {
+            "id": thread.native_id,
+            "name": thread.name,
+            "alive": thread.is_alive(),
+            "daemon": thread.daemon,
+        }
+        for thread in list(pool._threads)
+    ]
+
+    return {
+        "max_workers": pool._max_workers,
+        "queued": pool._work_queue.qsize(),
+        "threads": threads,
+    }
 
 
 type PublisherId = str
@@ -62,6 +83,7 @@ class _Mailbox:
         # dst_bus is recorded so a peer eviction can fail every request
         # pending on it
         self.dst_bus = dst_bus
+        self.created = time.monotonic()
         self._queue: queue.SimpleQueue[Messages | None] = queue.SimpleQueue()
 
     def get(self, timeout: float | None = None) -> Messages | None:
@@ -107,6 +129,15 @@ class _Mailboxes:
             return False
         mailbox.put(message)
         return True
+
+    def stats(self) -> list[dict[str, Any]]:
+        """Pending mailboxes as JSON-safe entries, ages in seconds."""
+        now = time.monotonic()
+        with self._lock:
+            return [
+                {"id": key, "dst_bus": box.dst_bus, "age": now - box.created}
+                for key, box in self._boxes.items()
+            ]
 
     def fail_peer(self, dst_bus: str) -> None:
         """Wake every request pending on dst_bus with None: the peer is gone
@@ -190,6 +221,44 @@ class Bus:
 
     def is_dead(self) -> bool:
         return self._bus_started.is_set() and self._running.is_set() is False
+
+    def stats(self) -> dict[str, Any]:
+        """A read-only, JSON-serializable snapshot of the bus internals, for
+        observability (chimera-ctl status)."""
+        with self._pubsub_lock:
+            subscribers = [
+                {
+                    "publisher": event_id.publisher,
+                    "event": event_id.event,
+                    "subscribers": len(subs),
+                }
+                for event_id, subs in self._subscribers.items()
+            ]
+            callbacks = [
+                {
+                    "publisher": event_id.publisher,
+                    "event": event_id.event,
+                    "callbacks": len(cbs),
+                }
+                for event_id, cbs in self._callbacks.items()
+            ]
+
+        with self._outbound_lock:
+            peers = list(self._outbound.keys())
+
+        return {
+            "url": self.url.url,
+            # the address peers see us as (dst_bus of messages we send)
+            "inbox_url": self.url.bus,
+            "running": self._running.is_set(),
+            "started": self._bus_started.is_set(),
+            "inbox_size": self._inbox.qsize(),
+            "mailboxes": self._mailboxes.stats(),
+            "peers": peers,
+            "subscribers": subscribers,
+            "callbacks": callbacks,
+            "pool": pool_stats(self._pool),
+        }
 
     def __del__(self):
         self.shutdown()
