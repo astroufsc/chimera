@@ -636,8 +636,10 @@ class Bus:
         transport.on_disconnect = lambda: self._schedule_peer_eviction(dst_bus)
         try:
             transport.connect()
-        except Exception:
-            log.exception(f"bus: failed to connect to outbound bus: {dst_bus}")
+        except Exception as e:
+            # an unreachable peer is an expected condition, not an internal
+            # error: no traceback, just the cause
+            log.warning(f"bus: failed to connect to outbound bus: {dst_bus}: {e}")
             # nothing stored: the next push retries the dial
             return None
 
@@ -750,7 +752,9 @@ class Bus:
 
         mailbox = self._mailboxes.register(ping.id, ping.dst_bus)
         try:
-            self._push(ping)
+            if not self._push(ping):
+                # peer is unreachable: don't wait out the timeout
+                return ping.pong(ok=False)
 
             try:
                 response = mailbox.get(timeout=timeout)

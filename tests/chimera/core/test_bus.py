@@ -1225,6 +1225,30 @@ def test_request_to_never_up_peer_fails_fast(create_bus: Callable[[str], Bus]):
     pool.shutdown()
 
 
+def test_ping_to_never_up_peer_fails_fast(create_bus: Callable[[str], Bus]):
+    """A ping to a peer that never existed returns ok=False immediately,
+    not after waiting out the full timeout."""
+    bus = create_bus("tcp://127.0.0.1:15048")
+
+    pool = ThreadPoolExecutor()
+    bus_future = pool.submit(bus.run_forever)
+    assert bus._bus_started.wait(5)
+
+    t0 = time.monotonic()
+    pong = bus.ping(
+        src=f"{bus.url.bus}/Proxy/0",
+        dst="tcp://127.0.0.1:15049/Telescope/0",  # never bound
+        timeout=10.0,  # backstop only: the refusal must fail fast
+    )
+    assert time.monotonic() - t0 < 2, "refused connection should fail fast"
+    assert pong is not None
+    assert pong.ok is False
+
+    bus.shutdown()
+    bus_future.result()
+    pool.shutdown()
+
+
 def test_request_after_shutdown_raises_bus_dead(create_bus: Callable[[str], Bus]):
     bus = create_bus("tcp://127.0.0.1:15020")
 
