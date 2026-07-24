@@ -24,3 +24,7 @@ chimera-cam -v --expose --dark -t2
 chimera-dome --open-slit --track && \
 chimera-tel --slew --az 10 --alt 60 && \
 chimera-cam -v -w --expose 
+# move rotator
+chimera-rotator --to 42.24
+chimera-tel --slew --object HD0217
+chimera-cam -v -w --expose
