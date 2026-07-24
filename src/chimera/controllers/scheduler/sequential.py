@@ -21,9 +21,13 @@ class SequentialScheduler(IScheduler):
         session = Session()
 
         # FIXME: remove noqa
+        # start_at orders execution, priority breaks ties: priority alone
+        # let a future-timed program hold the machine with the whole night
+        # queued behind it. Programs without start_at sort first and keep
+        # the old priority order among themselves.
         programs = (
             session.query(Program)
-            .order_by(desc(Program.priority))
+            .order_by(Program.start_at.asc().nullsfirst(), desc(Program.priority))
             .filter(Program.finished == False)  # noqa
             .all()
         )
@@ -39,8 +43,17 @@ class SequentialScheduler(IScheduler):
         machine.wake_up()
 
     def __next__(self):
-        if not self.run_queue.empty():
-            return self.run_queue.get()
+        session = Session()
+        while not self.run_queue.empty():
+            program = self.run_queue.get()
+            # reschedule() also enqueues the currently RUNNING program (its
+            # finished flag is only written at completion), so entries can
+            # be stale by the time they are popped: re-check the database
+            current = session.get(Program, program.id)
+            if current is None or current.finished:
+                self.run_queue.task_done()
+                continue
+            return program
 
         return None
 

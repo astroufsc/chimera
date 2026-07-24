@@ -34,6 +34,8 @@ class Scheduler(ChimeraObject):
         "operator": "/Operator/0",
         "site": "/Site/0",
         "algorithm": SchedulingAlgorithm.SEQUENTIAL,
+        # left tracking, an unattended mount walks into a limit
+        "stop_tracking_on_program_end": True,
     }
 
     def __init__(self):
