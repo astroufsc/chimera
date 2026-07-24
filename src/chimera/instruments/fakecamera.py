@@ -61,13 +61,25 @@ class FakeCamera(CameraBase):
 
         self._readout_modes = {self._my_readout_mode: readout_mode}
 
-        try:
-            from scipy.ndimage import rotate
-
-            self.rotate = rotate
-        except ImportError:
-            self.log.warning("scipy not installed, cannot rotate images with rotator.")
-            self.rotate = None
+    @staticmethod
+    def _rotate(pix, angle):
+        """
+        Rotate an image counter-clockwise about its center by ``angle``
+        degrees, keeping the original shape. Nearest-neighbour sampling is
+        enough for the fake camera and avoids a scipy dependency.
+        """
+        a = np.deg2rad(-angle)
+        h, w = pix.shape
+        cy, cx = (h - 1) / 2, (w - 1) / 2
+        y, x = np.indices((h, w))
+        xs = np.cos(a) * (x - cx) + np.sin(a) * (y - cy) + cx
+        ys = -np.sin(a) * (x - cx) + np.cos(a) * (y - cy) + cy
+        xi = np.rint(xs).astype(int)
+        yi = np.rint(ys).astype(int)
+        ok = (xi >= 0) & (xi < w) & (yi >= 0) & (yi < h)
+        out = np.zeros_like(pix)
+        out[ok] = pix[yi[ok], xi[ok]]
+        return out
 
     def __start__(self):
         self["camera_model"] = "Fake Cameras Inc."
@@ -154,7 +166,7 @@ class FakeCamera(CameraBase):
         if not dome.ping():
             dome = None
 
-        if self["rotator"] and self.rotate:
+        if self["rotator"]:
             rotator: Rotator = self.get_proxy(self["rotator"])
             if not rotator.ping():
                 rotator = None
@@ -269,13 +281,11 @@ class FakeCamera(CameraBase):
         if pix is None:
             pix = np.zeros((ccd_height, ccd_width), dtype=np.int32)
 
-        # Rotate image
+        # Rotate image. Position Angle (PA) is Counter-Clockwise.
         if rotator:
             angle = rotator.get_position()
             self.log.debug(f"Rotating image by {angle} degrees")
-            pix = self.rotate(
-                pix, angle, reshape=False
-            )  # Position Angle (PA) is Counter-Clockwise
+            pix = self._rotate(pix, angle)
 
         image = self._save_image(
             image_request,
