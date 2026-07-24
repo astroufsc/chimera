@@ -59,6 +59,30 @@ Instruments configuration
 
 Every defined instrument carries a number of configuration options; please refer to the :ref:`Advanced` section for details.
 
+Filter focus offsets
+^^^^^^^^^^^^^^^^^^^^
+::
+
+    filterwheel:
+        name: fake
+        type: FakeFilterWheel
+        filters: "U B V R I"
+        focuser: /FakeFocuser/fake
+        focus_offsets: "U:-100 B:0 V:0 R:25"
+
+Filters of different optical thickness need different focus positions. Point the wheel at a
+*focuser* and give it a table of *focus_offsets*, in whatever units that focuser works in (steps,
+microns, ...), and every filter change moves the focuser by the difference between the outgoing
+and the incoming filter before ``set_filter()`` returns. Offsets are relative moves, so autofocus results and temperature compensation are
+preserved. Filters left out of the table (``I`` above) get no offset.
+
+Leave ``focuser`` unset to disable the compensation. If the offset cannot be applied the filter
+change fails with a ``FocusOffsetException``; set ``focus_offset_required: false`` to only log the
+error and carry on.
+
+This replaces the ``chimera-filterfocus`` plugin, whose ``focus_filters`` and ``focus_difference``
+options map to the ``focus_offsets`` table above.
+
 Controllers Configuration
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 

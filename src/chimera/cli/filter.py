@@ -6,7 +6,10 @@
 import sys
 
 from chimera.core.version import chimera_version
-from chimera.interfaces.filterwheel import InvalidFilterPositionException
+from chimera.interfaces.filterwheel import (
+    FocusOffsetException,
+    InvalidFilterPositionException,
+)
 
 from .cli import ChimeraCLI, action
 
@@ -57,6 +60,15 @@ class ChimeraFilter(ChimeraCLI):
         for i, f in enumerate(self.wheel.get_filters()):
             self.out(str(f), end="")
         self.out()
+
+        focuser = self.wheel["focuser"]
+        if focuser:
+            offsets = self.wheel.get_focus_offsets()
+            self.out("Focus offsets (%s):" % focuser, end="")
+            for f in self.wheel.get_filters():
+                self.out("%s:%+d" % (f, offsets.get(f, 0)), end="")
+            self.out()
+
         self.out("=" * 40)
 
     @action(
@@ -89,6 +101,8 @@ class ChimeraFilter(ChimeraCLI):
             self.out("OK")
         except InvalidFilterPositionException:
             self.err("ERROR (Invalid Filter)")
+        except FocusOffsetException as e:
+            self.err(f"ERROR (filter changed, focus offset failed: {e})")
 
 
 def main():
