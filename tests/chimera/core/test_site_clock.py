@@ -11,7 +11,6 @@ def test_real_time_by_default():
     site = Site()
     assert site["time_speedup"] == 1.0
     assert site["time_start"] == ""
-    assert site.time_speedup() == 1.0
 
     before = dt.datetime.now(dt.UTC)
     now = site.ut()
@@ -41,7 +40,6 @@ def test_speedup_scales_elapsed_time():
     site = Site()
     site["time_speedup"] = 600.0
     site["time_start"] = "2026-07-20 23:00:00"
-    assert site.time_speedup() == 600.0
 
     first = site.ut()  # anchors the clock
     time.sleep(0.1)
@@ -50,16 +48,6 @@ def test_speedup_scales_elapsed_time():
     # 0.1 s of wall time is ~60 s of simulated time; the bounds are wide
     # because the sleep only guarantees a lower bound on real elapsed time
     assert 30.0 < elapsed < 300.0
-
-
-def test_localtime_follows_the_simulated_clock():
-    site = Site()
-    site["time_start"] = "2026-07-20 23:00:00"
-
-    # localtime must derive from ut(), or a fast-forwarded night still asks
-    # the real clock whether it is morning or evening
-    assert abs(site.localtime() - site.ut()) < dt.timedelta(seconds=1)
-    assert site.localtime().year == 2026
 
 
 def test_mjd_uses_the_simulated_clock():

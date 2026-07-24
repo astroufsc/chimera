@@ -64,9 +64,6 @@ class Site(ChimeraObject):
         # then return it in local timezone
         return d_utc.astimezone(tz.tzutc())
 
-    local_tz = property(lambda self: tz.tzlocal())
-    utc_tz = property(lambda self: tz.tzutc())
-
     def jd(self, t=None):
         if not t:
             t = self.ut()
@@ -80,39 +77,28 @@ class Site(ChimeraObject):
         return self.jd(t) - 2400000.5
 
     def localtime(self):
-        # derive from ut() so the fast-forward clock also drives local time
-        # (e.g. the sky-flat controller's morning/evening test)
-        return self.ut().astimezone(self.local_tz)
+        return dt.datetime.now(tz.tzlocal())
 
     def _fast_forward_enabled(self):
         return self["time_speedup"] != 1.0 or bool(self["time_start"])
 
     def ut(self):
         if not self._fast_forward_enabled():
-            return dt.datetime.now(self.utc_tz)
+            return dt.datetime.now(tz.tzutc())
         # scaled simulation clock (see __config__): anchor on the first call
-        wall_now = dt.datetime.now(self.utc_tz)
+        wall_now = dt.datetime.now(tz.tzutc())
         if self._ff_wall0 is None:
             self._ff_wall0 = wall_now
             start = str(self["time_start"]).strip()
             if start:
                 sim0 = dt.datetime.fromisoformat(start)
                 if sim0.tzinfo is None:
-                    sim0 = sim0.replace(tzinfo=self.utc_tz)
-                self._ff_sim0 = sim0.astimezone(self.utc_tz)
+                    sim0 = sim0.replace(tzinfo=tz.tzutc())
+                self._ff_sim0 = sim0.astimezone(tz.tzutc())
             else:
                 self._ff_sim0 = wall_now
         elapsed = (wall_now - self._ff_wall0).total_seconds() * self["time_speedup"]
         return self._ff_sim0 + dt.timedelta(seconds=elapsed)
-
-    def time_speedup(self):
-        """Fast-forward factor of this site's clock (1.0 = real time).
-
-        The scheduler divides its ``start_at`` waits by this so a scaled
-        clock compresses waits in real time instead of sleeping
-        sim-seconds as wall-seconds.
-        """
-        return float(self["time_speedup"])
 
     def utc_offset(self):
         offset = self.localtime().utcoffset()
