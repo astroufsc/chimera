@@ -1,4 +1,5 @@
 import enum
+import logging
 
 # TODO migrate to argparse
 import optparse
@@ -8,10 +9,15 @@ import threading
 from collections.abc import Callable
 from typing import Any, TextIO
 
+import chimera.core.log
 from chimera.core.bus import Bus
 from chimera.core.chimera_config import ChimeraConfig
 from chimera.core.constants import CHIMERA_CONFIG_DEFAULT_FILENAME
-from chimera.core.exceptions import ObjectNotFoundException
+from chimera.core.exceptions import (
+    BusDeadException,
+    ObjectNotFoundException,
+    RequestTimeoutException,
+)
 from chimera.core.proxy import Proxy
 from chimera.core.url import parse_url
 from chimera.core.version import chimera_version
@@ -290,6 +296,10 @@ class ChimeraCLI:
         # shutdown event
         self.died = threading.Event()
 
+        # sys.exit inside the daemon worker thread cannot set the process
+        # exit code: track it here and re-raise it from wait()
+        self._exit_code = 0
+
         # base actions and parameters
 
         if verbosity:
@@ -362,6 +372,7 @@ class ChimeraCLI:
         if msg:
             self.err(msg)
 
+        self._exit_code = ret
         self.died.set()
 
         if "bus" in self.__dict__:
@@ -380,6 +391,7 @@ class ChimeraCLI:
         #     self.abort()
 
         self.bus.shutdown()
+        sys.exit(self._exit_code)
 
     def abort(self):
         if self._aborting is False:
@@ -609,29 +621,47 @@ class ChimeraCLI:
             try:
                 inst_proxy.resolve()
                 setattr(self, inst.name, inst_proxy)
-            except ObjectNotFoundException:
+            except (ObjectNotFoundException, BusDeadException):
+                if self.bus.is_dead():
+                    # our own bus shut down (Ctrl-C during resolve): exit
+                    # silently, not with a misleading "is the server
+                    # running?" message
+                    self.exit(ret=1)
                 if inst.required:
                     self.exit(
-                        f"Could not connect to {inst.cls} at {inst.url.url}. [Ping failed]"
+                        f"Could not connect to {inst.cls} at {inst.url.url}. "
+                        f"Is the chimera server running on {self.config.host}:{self.config.port}?"
                     )
 
     def _start_system(self, options: optparse.Values):
+        # client CLIs talk to the user on stdout/stderr: keep bus internals
+        # off the console unless asked for (the file log still gets DEBUG)
+        chimera.core.log.set_console_level(
+            logging.DEBUG if options.verbose else logging.ERROR
+        )
+
         self.config = ChimeraConfig.from_file(options.config)
         random_port = random.randint(10000, 60000)
         self.bus = Bus(f"tcp://{self.config.host}:{random_port}")
 
     def _run_actions(self, actions: list[Action]):
-        # NOTE: we do this here to make sure the Bus is ready before we ask for Proxies
-        self._setup_objects(self.options)
+        try:
+            # NOTE: we do this here to make sure the Bus is ready before we ask for Proxies
+            self._setup_objects(self.options)
 
-        # run actions
-        for action in actions:
-            if not self._run_action(action, self.options):
+            # run actions
+            for action in actions:
+                if not self._run_action(action, self.options):
+                    self.exit(ret=1)
+        except (BusDeadException, RequestTimeoutException) as e:
+            # bus.is_dead() means *our* bus shut down (Ctrl-C): exit silently
+            if self.bus.is_dead():
                 self.exit(ret=1)
+            self.exit(f"Lost connection to the chimera server: {e}")
 
         self.died.set()
         self.bus.shutdown()
-        self.exit()
+        self.exit(ret=0)
 
     def _run_action(self, action: Action, options: list[_Option]) -> bool:
         try:
