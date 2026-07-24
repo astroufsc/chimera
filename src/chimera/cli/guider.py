@@ -15,7 +15,7 @@ from .cli import ChimeraCLI, ParameterType, action
 class ChimeraGuide(ChimeraCLI):
     def __init__(self):
         ChimeraCLI.__init__(
-            self, "chimera-guide", "Autoguider controller", chimera_version
+            self, "chimera-guider", "Autoguider controller", chimera_version
         )
 
         self.add_help_group("GUIDER", "Autoguider")
