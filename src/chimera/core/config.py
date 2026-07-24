@@ -130,6 +130,15 @@ class NoneChecker(Checker):
         return value
 
 
+class DictChecker(Checker):
+    def check(self, value):
+        # we MUST return a dict or raise OptionConversionException
+        if isinstance(value, dict):
+            return value
+
+        raise OptionConversionException(f"couldn't convert {type(value)} to dict.")
+
+
 class BoolChecker(Checker):
     def __init__(self):
         Checker.__init__(self)
@@ -352,6 +361,10 @@ class Config:
 
             if isinstance(value, NoneType):
                 options[name] = Option(name, value, NoneChecker())
+                continue
+
+            if isinstance(value, dict):
+                options[name] = Option(name, value, DictChecker())
                 continue
 
             # For list and tuple we use the first element as default option.

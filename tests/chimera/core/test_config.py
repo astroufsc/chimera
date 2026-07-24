@@ -141,6 +141,22 @@ class TestConfig:
             with pytest.raises(OptionConversionException):
                 c.__setitem__("key_range", i)
 
+    def test_dict(self):
+        c = Config({"key_dict": {"U": -100, "B": 0}})
+
+        # default is kept as-is
+        assert c.__getitem__("key_dict") == {"U": -100, "B": 0}
+
+        # any dict is accepted (including empty)
+        for value in ({"R": 25}, {}):
+            assert c.__setitem__("key_dict", value) is not False
+            assert c.__getitem__("key_dict") == value
+
+        # non-dict values are rejected
+        for value in ("U:-100", 3, ["U", "B"]):
+            with pytest.raises(OptionConversionException):
+                c.__setitem__("key_dict", value)
+
     def test_iter(self):
         d = {
             "device": "/dev/ttyS0",
