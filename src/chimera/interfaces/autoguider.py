@@ -58,19 +58,19 @@ class Autoguider(Interface):
         "dither_ra_only": False,  # Dither only in right ascension.
     }
 
-    def start_guiding(self, recalibrate=False, wait=False):
+    def start_guiding(
+        self, recalibrate: bool = False, wait: bool = False
+    ) -> list[float] | None:
         """Start a guiding sequence: acquire a guide star, calibrate if
         needed and begin sending corrections to the telescope.
 
         @param recalibrate: Discard the current calibration and recalibrate
                             before guiding.
-        @type recalibrate: bool
 
         @param wait: Block until guiding is established instead of returning
                      right after the sequence is started. Backends with a
                      settling notion wait for settle_pixels/settle_time as
                      well; the others return once corrections have begun.
-        @type wait: bool
 
         Returns the guide star position as [x, y] detector pixels, or None
         when the backend selected the star itself and does not report it.
@@ -82,7 +82,7 @@ class Autoguider(Interface):
         """
         raise NotImplementedError()
 
-    def stop_guiding(self):
+    def stop_guiding(self) -> None:
         """Stop the current guiding sequence.
 
         Raises:
@@ -90,56 +90,54 @@ class Autoguider(Interface):
         """
         raise NotImplementedError()
 
-    def abort(self):
+    def abort(self) -> None:
         """Abort the current guiding sequence as soon as possible."""
         raise NotImplementedError()
 
-    def is_guiding(self):
+    def is_guiding(self) -> bool:
         """Returns True if a guiding sequence is currently active.
 
         A backend that keeps the loop running while the star is lost
         reports True here and GuiderStatus.ERROR from get_status(), so the
         two can disagree. Use this to decide whether to stop, and
         get_status() to decide whether guiding is healthy.
-
-        @rtype: bool
         """
         raise NotImplementedError()
 
-    def get_status(self):
+    def get_status(self) -> GuiderStatus:
         """Returns the current guider status.
 
         Must not raise: an unreachable backend reports GuiderStatus.ERROR.
-
-        @rtype: GuiderStatus
         """
         raise NotImplementedError()
 
-    def dither(self, amount=None, ra_only=None, wait=False):
+    def dither(
+        self,
+        amount: float | None = None,
+        ra_only: bool | None = None,
+        wait: bool = False,
+    ) -> None:
         """Offset the guide star lock position by a small random amount
         and resume guiding at the new position.
 
         @param amount: Maximum dither offset (pixels). Uses the
                        'dither_amount' configuration value if None.
-        @type amount: float
 
         @param ra_only: Dither only in right ascension. Uses the
                         'dither_ra_only' configuration value if None.
                         Backends that do not know the guider's sky
                         orientation dither along detector x instead, which
                         is RA only if the guider is aligned.
-        @type ra_only: bool
 
         @param wait: Block until the guider has settled at the new position.
                      Ignored by backends with no settling notion.
-        @type wait: bool
 
         Raises:
             GuiderException: If not guiding or the dither failed.
         """
         raise NotImplementedError()
 
-    def find_star(self):
+    def find_star(self) -> list[float]:
         """Attempts to find a guide star in the current field of view.
 
         Returns the selected guide star as [x, y] detector pixels.
@@ -156,7 +154,7 @@ class Autoguider(Interface):
         raise NotImplementedError()
 
     @event
-    def offset_complete(self, offset):
+    def offset_complete(self, offset: dict) -> None:
         """Raised after every guide correction.
 
         @param offset: A dict with the keys 'frame' (int), 'dx', 'dy'
@@ -168,7 +166,7 @@ class Autoguider(Interface):
         """
 
     @event
-    def guide_start(self, position):
+    def guide_start(self, position: list[float] | None) -> None:
         """Raised when a guider sequence starts.
 
         @param position: Guide star as [x, y] detector pixels, or None if
@@ -176,7 +174,7 @@ class Autoguider(Interface):
         """
 
     @event
-    def guide_stop(self, state, msg=None):
+    def guide_stop(self, state: GuiderStatus, msg: str | None = None) -> None:
         """Raised when a guider sequence stops, including when it stops
         outside chimera.
 
@@ -187,14 +185,14 @@ class Autoguider(Interface):
         """
 
     @event
-    def star_acquired(self, position):
+    def star_acquired(self, position: list[float]) -> None:
         """Raised when the guide star is acquired.
 
         @param position: Guide star as [x, y] detector pixels.
         """
 
     @event
-    def star_lost(self):
+    def star_lost(self) -> None:
         """Raised when the guide star is lost.
 
         Only backends that can distinguish a lost star from a stopped
@@ -202,7 +200,7 @@ class Autoguider(Interface):
         """
 
     @event
-    def dither_complete(self, offset, status):
+    def dither_complete(self, offset: list[float] | None, status: GuiderStatus) -> None:
         """Raised when a dither offset has been applied.
 
         @param offset: Applied offset as [dx, dy] detector pixels, or None

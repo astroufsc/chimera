@@ -136,7 +136,7 @@ def test_offsets_are_published_only_while_guiding(guider):
         time.sleep(0.05)
     assert len(offsets) == 1
 
-    # the payload the interface documents and chimera-guide --monitor reads
+    # the payload the interface documents and chimera-guider --monitor reads
     assert set(offsets[0]) == {
         "frame",
         "dx",
