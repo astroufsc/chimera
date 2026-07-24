@@ -22,6 +22,15 @@ class Site(ChimeraObject):
         altitude=20,
         flat_alt=Coord.from_dms(80),
         flat_az=Coord.from_dms(0),
+        # Fast-forward (simulation) clock, OFF by default.  When
+        # time_speedup != 1 or time_start is set, ut() runs a scaled clock:
+        #   ut() = time_start + (wall_now - wall_at_first_call) * time_speedup
+        # so the whole observatory (scheduler, robobs, sky flats, FITS
+        # timestamps) advances through a night in compressed real time.
+        # time_start is an ISO/"YYYY-MM-DD HH:MM:SS" UT instant; empty means
+        # "start now" (pure speedup with no jump).
+        time_speedup=1.0,
+        time_start="",
     )
 
     def __init__(self):
@@ -29,6 +38,13 @@ class Site(ChimeraObject):
 
         self._sun = ephem.Sun()
         self._moon = ephem.Moon()
+
+        # fast-forward clock anchors, captured on the first ut() call
+        self._ff_wall0 = None
+        self._ff_sim0 = None
+
+    def __main__(self):
+        pass
 
     def _get_ephem(self, date=None):
         site = ephem.Observer()
@@ -63,8 +79,26 @@ class Site(ChimeraObject):
     def localtime(self):
         return dt.datetime.now(tz.tzlocal())
 
+    def _fast_forward_enabled(self):
+        return self["time_speedup"] != 1.0 or bool(self["time_start"])
+
     def ut(self):
-        return dt.datetime.now(tz.tzutc())
+        if not self._fast_forward_enabled():
+            return dt.datetime.now(tz.tzutc())
+        # scaled simulation clock (see __config__): anchor on the first call
+        wall_now = dt.datetime.now(tz.tzutc())
+        if self._ff_wall0 is None:
+            self._ff_wall0 = wall_now
+            start = str(self["time_start"]).strip()
+            if start:
+                sim0 = dt.datetime.fromisoformat(start)
+                if sim0.tzinfo is None:
+                    sim0 = sim0.replace(tzinfo=tz.tzutc())
+                self._ff_sim0 = sim0.astimezone(tz.tzutc())
+            else:
+                self._ff_sim0 = wall_now
+        elapsed = (wall_now - self._ff_wall0).total_seconds() * self["time_speedup"]
+        return self._ff_sim0 + dt.timedelta(seconds=elapsed)
 
     def utc_offset(self):
         offset = self.localtime().utcoffset()

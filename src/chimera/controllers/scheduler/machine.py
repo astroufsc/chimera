@@ -1,6 +1,5 @@
 import logging
 import threading
-import time
 
 from chimera.controllers.scheduler.model import Program, Session
 from chimera.controllers.scheduler.states import State
@@ -134,8 +133,18 @@ class Machine(threading.Thread):
                         "[start] Waiting until MJD %f to start slewing",
                         program.start_at,
                     )
-                    log.debug("[start] Will wait for %f seconds", wait_time)
-                    time.sleep(wait_time)
+                    log.debug("[start] Will wait %f s (site time)", wait_time)
+                    # Poll the site clock so a fast-forwarded site compresses
+                    # the wait for free (no speedup knowledge here), and block
+                    # on the machine's wake-up Condition -- notified on every
+                    # state change -- so a STOP/SHUTDOWN breaks the wait at once
+                    # instead of after a fixed sleep.
+                    while site.mjd() < program.start_at:
+                        if self.state() in (State.STOP, State.SHUTDOWN):
+                            log.debug("[start] Aborted while waiting for slew start")
+                            return
+                        with self.__wake_up_call:
+                            self.__wake_up_call.wait(1.0)
                 else:
                     if program.valid_for >= 0.0:
                         if -wait_time > program.valid_for:
