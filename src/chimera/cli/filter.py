@@ -63,10 +63,10 @@ class ChimeraFilter(ChimeraCLI):
 
         focuser = self.wheel["focuser"]
         if focuser:
-            offsets = self.wheel.get_focus_offsets()
+            offsets = self.wheel["focus_offsets"] or {}
             self.out("Focus offsets (%s):" % focuser, end="")
             for f in self.wheel.get_filters():
-                self.out("%s:%+d" % (f, offsets.get(f, 0)), end="")
+                self.out("%s:%+d" % (f, round(offsets.get(f, 0))), end="")
             self.out()
 
         self.out("=" * 40)

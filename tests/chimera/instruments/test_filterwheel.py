@@ -1,7 +1,6 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 # SPDX-FileCopyrightText: 2006-present Paulo Henrique Silva <ph.silva@gmail.com>
 
-import logging
 import time
 
 import pytest
@@ -24,7 +23,9 @@ def filter_change_clbk(new_filter, old_filter):
 @pytest.fixture
 def filterwheel(manager):
     manager.add_class(
-        FakeFilterWheel, "fake", {"device": "/dev/ttyS0", "filters": "U B V R I"}
+        FakeFilterWheel,
+        "fake",
+        {"device": "/dev/ttyS0", "filters": ["U", "B", "V", "R", "I"]},
     )
     fired_events.clear()
 
@@ -60,9 +61,9 @@ class TestFakeFilterWheel:
 # applies the configured offset through the focuser role.
 # ---------------------------------------------------------------------------
 
-FILTERS = "U B V R I"
+FILTERS = ["U", "B", "V", "R", "I"]
 # I is deliberately left out: filters with no entry get no offset
-FOCUS_OFFSETS = "U:-100 B:0 V:0 R:25"
+FOCUS_OFFSETS = {"U": -100, "B": 0, "V": 0, "R": 25}
 
 FOCUSER_LOCATION = "/FakeFocuser/0"
 
@@ -102,24 +103,6 @@ def focuser():
 
 
 @pytest.fixture
-def chimera_log():
-    """chimera's logger does not propagate to the root one, so caplog is blind."""
-    messages = []
-
-    class Recorder(logging.Handler):
-        def emit(self, record):
-            messages.append(record.getMessage())
-
-    handler = Recorder()
-    logger = logging.getLogger("chimera")
-    logger.addHandler(handler)
-    try:
-        yield messages
-    finally:
-        logger.removeHandler(handler)
-
-
-@pytest.fixture
 def make_wheel(monkeypatch, events):
     def factory(focuser_proxy=None, **config):
         wheel = FakeFilterWheel()
@@ -150,7 +133,7 @@ def wheel(make_wheel, focuser):
 #
 class TestFilterWheel:
     def test_get_filters(self, make_wheel):
-        assert make_wheel().get_filters() == FILTERS.split()
+        assert make_wheel().get_filters() == FILTERS
 
     def test_set_filter_moves_and_fires_event(self, make_wheel, events):
         wheel = make_wheel()
@@ -168,7 +151,7 @@ class TestFilterWheel:
             make_wheel().set_filter("Z")
 
     def test_no_focus_offsets_by_default(self, make_wheel):
-        assert make_wheel().get_focus_offsets() == {}
+        assert make_wheel()._focus_offsets == {}
 
     def test_offsets_without_a_focuser_are_ignored(self, make_wheel, focuser):
         # no `focuser` configured, so nothing to compensate with
@@ -199,7 +182,7 @@ class TestFilterWheelFocusOffsets:
     """
 
     def test_get_focus_offsets(self, wheel):
-        assert wheel.get_focus_offsets() == {"U": -100, "B": 0, "V": 0, "R": 25}
+        assert wheel._focus_offsets == {"U": -100, "B": 0, "V": 0, "R": 25}
 
     def test_offset_applied_on_filter_change(self, wheel, focuser):
         # the wheel starts on U, so the focuser is assumed to already carry
@@ -295,24 +278,12 @@ class TestFilterWheelFocusOffsetErrors:
         assert wheel.get_filter() == "V"
         assert events == [("V", "U")]
 
-    def test_focus_offset_not_required_only_logs(
-        self, unreachable, events, chimera_log
-    ):
-        wheel = unreachable(focus_offset_required=False)
-
-        assert wheel.set_filter("V")
-        assert wheel.get_filter() == "V"
-        assert events == [("V", "U")]
-        assert any(
-            "Could not apply a 100 focus offset" in message for message in chimera_log
-        )
-
     def test_malformed_offsets_fail_at_startup(self, make_wheel, focuser):
         with pytest.raises(FocusOffsetException):
             make_wheel(
                 focuser_proxy=focuser,
                 focuser=FOCUSER_LOCATION,
-                focus_offsets="U:deadbeef",
+                focus_offsets={"U": "deadbeef"},
             )
 
     def test_offsets_for_unknown_filter_fail_at_startup(self, make_wheel, focuser):
@@ -320,20 +291,5 @@ class TestFilterWheelFocusOffsetErrors:
             make_wheel(
                 focuser_proxy=focuser,
                 focuser=FOCUSER_LOCATION,
-                focus_offsets="Z:100",
+                focus_offsets={"Z": 100},
             )
-
-
-#
-# legacy drivers
-#
-def test_driver_overriding_set_filter_is_warned(chimera_log):
-    class LegacyFilterWheel(FakeFilterWheel):
-        def set_filter(self, filter):
-            pass
-
-    # warned at construction: a legacy driver that also overrides __start__
-    # without chaining up would never reach a check placed there
-    LegacyFilterWheel()
-
-    assert any("overrides set_filter()" in message for message in chimera_log)

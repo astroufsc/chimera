@@ -16,18 +16,12 @@ class FilterWheelBase(ChimeraObject, FilterWheel):
     def __init__(self):
         ChimeraObject.__init__(self)
 
-        # parsed lazily: __config__ is only populated after __init__, and
-        # drivers are not required to chain up to our __start__
-        self._focus_offsets = None
-        # offset currently on the focuser; None until the first filter change
-        self._applied_focus_offset = None
-
-        # here rather than in __start__: legacy drivers override __start__
-        # without chaining up, and they are exactly the ones being warned about
-        self._warn_if_set_filter_overridden()
+        # validated at __start__; empty until then so get_metadata() before
+        # start-up (and drivers that skip our __start__) still work
+        self._focus_offsets = {}
 
     def __start__(self):
-        self.get_focus_offsets()  # fail early on a malformed offset table
+        self._focus_offsets = self._validate_focus_offsets()
 
     def _set_filter(self, filter_name):
         """
@@ -61,12 +55,11 @@ class FilterWheelBase(ChimeraObject, FilterWheel):
         raise NotImplementedError()
 
     def get_filters(self):
-        return self["filters"].split()
-
-    def get_focus_offsets(self):
-        if self._focus_offsets is None:
-            self._focus_offsets = self._parse_focus_offsets()
-        return dict(self._focus_offsets)
+        filters = self["filters"] or []
+        # tolerate the old space-separated string form
+        if isinstance(filters, str):
+            filters = filters.split()
+        return list(filters)
 
     def _current_filter_or_none(self):
         try:
@@ -75,84 +68,50 @@ class FilterWheelBase(ChimeraObject, FilterWheel):
             # position unknown, e.g. a wheel that hasn't homed since power-up
             return None
 
-    def _parse_focus_offsets(self):
-        offsets = {}
+    def _validate_focus_offsets(self):
+        offsets = self["focus_offsets"] or {}
 
-        for entry in str(self["focus_offsets"] or "").split():
-            name, _, value = entry.partition(":")
+        normalized = {}
+        for name, value in offsets.items():
             try:
-                offsets[name] = int(round(float(value)))
-            except ValueError:
+                normalized[name] = int(round(float(value)))
+            except (TypeError, ValueError):
                 raise FocusOffsetException(
-                    f"Invalid focus_offsets entry '{entry}', expected 'FILTER:OFFSET'."
+                    f"Invalid focus_offsets value for filter '{name}': {value!r}."
                 )
 
-        unknown = sorted(set(offsets) - set(self.get_filters()))
+        unknown = sorted(set(normalized) - set(self.get_filters()))
         if unknown:
             raise FocusOffsetException(
                 f"focus_offsets names filters that are not on this wheel: {unknown}."
             )
 
-        return offsets
+        return normalized
 
     def _apply_focus_offset(self, new_filter, old_filter):
         if not self["focuser"]:
             return
 
-        offsets = self.get_focus_offsets()
-        target = offsets.get(new_filter, 0)
+        offsets = self._focus_offsets
+        # relative move: only the difference between the outgoing and the
+        # incoming filter. An unknown/unhomed old_filter contributes no offset.
+        delta = offsets.get(new_filter, 0) - offsets.get(old_filter, 0)
 
-        applied = self._applied_focus_offset
-        if applied is None:
-            # first change after start-up: assume the focuser already sits
-            # where the outgoing filter wants it, so only move the difference
-            applied = offsets.get(old_filter, 0)
+        if not delta:
+            return
 
-        delta = target - applied
-
-        if delta:
-            try:
-                focuser = self.get_proxy(self["focuser"])
-                if delta < 0:
-                    self.log.debug(
-                        f"Moving focuser {-delta} IN for filter {new_filter}"
-                    )
-                    focuser.move_in(-delta)
-                else:
-                    self.log.debug(
-                        f"Moving focuser {delta} OUT for filter {new_filter}"
-                    )
-                    focuser.move_out(delta)
-            except Exception as e:
-                # leave _applied_focus_offset alone: it still describes the
-                # last offset we know reached the focuser
-                message = (
-                    f"Could not apply a {delta} focus offset for filter "
-                    f"{new_filter}: {e}"
-                )
-                if self["focus_offset_required"]:
-                    raise FocusOffsetException(message) from e
-                self.log.error(message)
-                return
-
-        self._applied_focus_offset = target
-
-    def _warn_if_set_filter_overridden(self):
-        """
-        Drivers written against chimera <= 0.2 implement set_filter() instead
-        of _set_filter(), which bypasses the focus offset entirely.
-        """
-        for cls in type(self).__mro__:
-            if cls is FilterWheelBase:
-                return
-            if "set_filter" in cls.__dict__:
-                self.log.warning(
-                    f"{cls.__name__} overrides set_filter(): focus offsets will "
-                    f"NOT be applied. Rename it to _set_filter() and drop the "
-                    f"filter validation and the filter_change() call, which "
-                    f"FilterWheelBase now does."
-                )
-                return
+        try:
+            focuser = self.get_proxy(self["focuser"])
+            if delta < 0:
+                self.log.debug(f"Moving focuser {-delta} IN for filter {new_filter}")
+                focuser.move_in(-delta)
+            else:
+                self.log.debug(f"Moving focuser {delta} OUT for filter {new_filter}")
+                focuser.move_out(delta)
+        except Exception as e:
+            raise FocusOffsetException(
+                f"Could not apply a {delta} focus offset for filter {new_filter}: {e}"
+            ) from e
 
     def _get_filter_name(self, index):
         try:
@@ -173,11 +132,12 @@ class FilterWheelBase(ChimeraObject, FilterWheel):
             ("FILTER", str(self.get_filter()), "Filter used for this observation"),
         ]
 
-        if self["focuser"] and self._applied_focus_offset is not None:
+        current = self._current_filter_or_none()
+        if self["focuser"] and current is not None:
             md += [
                 (
                     "FOCUSOFF",
-                    self._applied_focus_offset,
+                    self._focus_offsets.get(current, 0),
                     "Filter focus offset applied [focuser units]",
                 )
             ]
