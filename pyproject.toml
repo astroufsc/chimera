@@ -50,7 +50,7 @@ chimera-tel = "chimera.cli.tel:main"
 chimera-dome = "chimera.cli.dome:main"
 chimera-rotator = "chimera.cli.rotator:main"
 chimera-focus = "chimera.cli.focus:main"
-chimera-guide = "chimera.cli.guide:main"
+chimera-guider = "chimera.cli.guider:main"
 chimera-sched = "chimera.cli.sched:main"
 chimera-weather = "chimera.cli.weather:main"
 
