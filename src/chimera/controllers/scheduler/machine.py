@@ -208,21 +208,26 @@ class Machine(threading.Thread):
                         )
                         return
                 else:
-                    if program.valid_for >= 0.0:
-                        if -wait_time > program.valid_for:
-                            log.debug(
-                                "[start] Program is not valid anymore {program.start_at}, {program.valid_for}"
-                            )
-                            self.controller.program_complete(
-                                program.id,
-                                SchedulerStatus.OK,
-                                "Program not valid anymore.",
-                            )
-                    else:
+                    if program.valid_for >= 0.0 and -wait_time > program.valid_for:
+                        # too late to run: finish it without executing
                         log.debug(
-                            "[start] Specified slew start MJD %s has already passed; proceeding without waiting",
+                            "[start] Program is not valid anymore (start_at %f, valid_for %f)",
                             program.start_at,
+                            program.valid_for,
                         )
+                        self.scheduler.done(task)
+                        session.commit()
+                        self.controller.program_complete(
+                            program.id,
+                            SchedulerStatus.OK,
+                            "Program not valid anymore.",
+                        )
+                        self.state(State.IDLE)
+                        return
+                    log.debug(
+                        "[start] Specified slew start MJD %s has already passed; proceeding without waiting",
+                        program.start_at,
+                    )
             else:
                 log.debug("[start] No slew time specified, so no waiting")
             log.debug("[start] Current MJD is %f", site.mjd())
