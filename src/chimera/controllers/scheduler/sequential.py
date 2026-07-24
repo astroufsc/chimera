@@ -21,13 +21,10 @@ class SequentialScheduler(IScheduler):
         session = Session()
 
         # FIXME: remove noqa
-        # Execution order: start_at first, priority as the tie-break.
-        # Ordering by priority alone starved the night when a program with
-        # a FUTURE start_at outranked everything: the machine picked the
-        # morning sky flat at 22:00 and waited 10 h on it while the whole
-        # night's science sat queued behind (2026-07-22). Programs without
-        # a start_at (hand-written queues) sort first and keep the old
-        # priority behaviour among themselves.
+        # start_at orders execution, priority breaks ties: priority alone
+        # let a future-timed program hold the machine with the whole night
+        # queued behind it. Programs without start_at sort first and keep
+        # the old priority order among themselves.
         programs = (
             session.query(Program)
             .order_by(Program.start_at.asc().nullsfirst(), desc(Program.priority))
@@ -49,12 +46,10 @@ class SequentialScheduler(IScheduler):
         session = Session()
         while not self.run_queue.empty():
             program = self.run_queue.get()
-            # reschedule() rebuilds the queue from every unfinished row -
-            # including the program RUNNING at that moment, whose finished
-            # flag is only written at completion. By the time its entry is
-            # popped it may have finished: re-check the row or the night
-            # replays it (a focus ran twice back to back, 2026-07-23).
-            current = session.query(Program).get(program.id)
+            # reschedule() also enqueues the currently RUNNING program (its
+            # finished flag is only written at completion), so entries can
+            # be stale by the time they are popped: re-check the database
+            current = session.get(Program, program.id)
             if current is None or current.finished:
                 self.run_queue.task_done()
                 continue

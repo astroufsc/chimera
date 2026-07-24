@@ -1,10 +1,8 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 """A start() arriving while a program runs must not fork a second execution.
 
-robobs calls scheduler.start() once per program it queues. START overwrites
-BUSY, so the machine re-entered IDLE, next(scheduler) handed back the SAME
-still-unfinished program and _process forked another thread for it - five
-concurrent autofocus runs and four concurrent sky flats on one camera.
+START overwrites BUSY, so the machine re-entered IDLE, next(scheduler) handed
+back the SAME still-unfinished program and _process forked another thread.
 """
 
 import threading
@@ -83,11 +81,8 @@ def test_start_while_busy_does_not_duplicate(monkeypatch):
 def test_machine_recovers_when_the_worker_exits():
     """The worker signals IDLE from inside itself, just before exiting.
 
-    The first version of the duplicate guard answered that by flipping to
-    BUSY and sleeping on the condition variable - but the wakeup had
-    already been delivered, so nothing woke the machine again and it parked
-    forever. Live on 2026-07-22: an autofocus failed, its worker set IDLE on
-    the way out, and chimera-sched --start did nothing thereafter.
+    A guard that sleeps on the condition variable misses that wakeup (it is
+    delivered before the sleep) and the machine parks forever.
     """
     picked = []
     program = type("P", (), {"id": 1, "start_at": None})()
@@ -140,10 +135,8 @@ def test_machine_recovers_when_the_worker_exits():
 def test_start_survives_a_slow_abort(monkeypatch):
     """A --start must be acted on even while executor.stop() is still running.
 
-    stop() reaches the camera through a proxy, which cannot be served until
-    the exposure and its readout finish - 280 s on a QHY600. Run inline it
-    froze the machine for that long and chimera-sched --start did nothing
-    (2026-07-22: --new, --stop, --new left the scheduler wedged).
+    stop() blocks until the running action yields (a full camera readout);
+    run inline it froze the machine for that long.
     """
     from chimera.controllers.scheduler import machine as machine_module
 
@@ -189,11 +182,9 @@ def test_start_survives_a_slow_abort(monkeypatch):
 def test_stop_cancels_a_program_waiting_for_its_slew_time():
     """--stop must release a program that is only counting down.
 
-    executor.stop() aborts the CURRENT action, but a program queued for a
-    future slew_at has not started any: it sat in an uninterruptible
-    time.sleep(). On 2026-07-22 a focus queued for 07:50 held the machine
-    for 90 minutes, and a freshly loaded queue could not run because the
-    IDLE guard was waiting on that same worker.
+    executor.stop() aborts the CURRENT action, but a program waiting for a
+    future start_at has not started any: it sat in an uninterruptible
+    time.sleep() and held the machine until its slew time.
     """
     machine = Machine(
         type(
@@ -233,10 +224,9 @@ def test_stop_cancels_a_program_waiting_for_its_slew_time():
 def test_sequential_runs_in_time_order():
     """A queue with baked start times must execute chronologically.
 
-    Priority-only ordering starved the night: the morning sky flat
-    (highest priority, start_at 08:20 next day) was picked at 22:00 and
-    the machine waited 10 h on it with the whole night queued behind
-    (2026-07-22). start_at orders execution; priority only breaks ties.
+    Priority-only ordering let a future-timed program hold the machine with
+    the whole night queued behind it: start_at orders execution, priority
+    only breaks ties.
     """
     from chimera.controllers.scheduler.model import Program, Session
     from chimera.controllers.scheduler.sequential import SequentialScheduler
@@ -265,11 +255,8 @@ def test_sequential_runs_in_time_order():
 
 def test_finished_program_is_not_rerun_after_reschedule():
     """A reschedule while a program runs re-enqueues that same program (its
-    finished flag is only written at completion), and the pop must skip the
-    stale entry - or the night replays it. Live on 2026-07-23 02:21: robobs
-    handed over the queue one program at a time, each hand-over rebuilt the
-    run queue while the first focus was executing, and SAO 189035 ran twice
-    back to back."""
+    finished flag is only written at completion); the pop must skip the
+    stale entry or the night replays it."""
     from chimera.controllers.scheduler.model import Program, Session
     from chimera.controllers.scheduler.sequential import SequentialScheduler
 

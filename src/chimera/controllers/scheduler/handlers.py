@@ -53,11 +53,8 @@ class PointHandler(ActionHandler):
                     float(ra_dec.ra.to_h()), float(ra_dec.dec.to_d()), 2000.0
                 )  # epoch is always 2000.0 for pointing
             elif action.target_alt_az is not None:
-                # Position.alt/az are already floats in degrees (they return
-                # Coord.deg), unlike .ra/.dec which are Coords - so calling
-                # .to_d() on them raised "'float' object has no attribute
-                # 'to_d'" for every alt/az point action. hasattr keeps it
-                # working if a Coord is ever passed instead.
+                # Position.alt/az are plain float degrees, unlike .ra/.dec
+                # which are Coords; accept either
                 alt = action.target_alt_az.alt
                 az = action.target_alt_az.az
                 telescope.slew_to_alt_az(

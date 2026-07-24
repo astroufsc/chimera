@@ -8,9 +8,8 @@ from chimera.core.exceptions import ProgramExecutionAborted, ProgramExecutionExc
 
 log = logging.getLogger(__name__)
 
-#: how long the state machine waits for an abort before carrying on. The
-#: abort itself keeps running in the background; this only bounds how long
-#: the machine is unable to see a new START.
+#: max time STOP waits for the abort; past it the abort continues in the
+#: background and the machine carries on
 STOP_ABORT_TIMEOUT = 30.0
 
 
@@ -27,14 +26,10 @@ class Machine(threading.Thread):
         self.controller = controller
 
         self.current_program = None
-        # handle on the thread running the current program, so the IDLE
-        # branch can tell whether one is still in flight
+        # thread running the current program; the IDLE branch waits on it
         self._worker = None
-        # set by STOP/SHUTDOWN to cancel a program that is still waiting
-        # for its slew time. Without it the wait was an uninterruptible
-        # time.sleep(): a program queued for 07:50 held the machine for
-        # 90 minutes and --stop could not touch it, because executor.stop()
-        # only aborts the CURRENT action and this one had not started any.
+        # set by STOP/SHUTDOWN to release a program still waiting for its
+        # slew time (executor.stop() only aborts an action already started)
         self._cancel_wait = threading.Event()
 
         self.daemon = False
@@ -53,8 +48,7 @@ class Machine(threading.Thread):
         finally:
             self.__state_lock.release()
 
-        # publish OUTSIDE the lock: a slow event subscriber must not be able
-        # to block a concurrent state() call (e.g. stop() racing the worker)
+        # publish outside the lock: a slow subscriber must not block state()
         self.controller.state_changed(state, old_state)
 
     def run(self):
@@ -75,22 +69,12 @@ class Machine(threading.Thread):
                 self.state(State.IDLE)
 
             if self.state() == State.IDLE:
-                # A program already executing must not be picked again.
-                # START overwrites BUSY, so every start() arriving while a
-                # program ran sent us back through here, next(scheduler)
-                # returned the SAME still-unfinished program and _process
-                # forked another thread for it. Seen live: robobs calls
-                # start() once per program it queues, and five concurrent
-                # autofocus runs plus four concurrent sky flats were racing
-                # on one camera.
+                # START overwrites BUSY, so a start() during a run lands here
+                # with the same unfinished program: wait for the worker
+                # instead of forking a duplicate execution
                 if self._worker is not None and self._worker.is_alive():
-                    # Wait for it rather than picking another program. POLL,
-                    # do not sleep on the condition variable: the worker sets
-                    # IDLE from inside its own thread just before exiting, so
-                    # the wakeup can arrive before we sleep and be lost - the
-                    # machine then parked forever with nothing left to wake
-                    # it (seen live 2026-07-22, right after an autofocus
-                    # failed and its worker signalled IDLE on the way out).
+                    # poll, don't sleep(): the worker signals IDLE just
+                    # before exiting, so the wakeup can be lost
                     self._worker.join(1.0)
                     continue
 
@@ -121,12 +105,9 @@ class Machine(threading.Thread):
                 log.debug("[stop] trying to stop current program")
                 # release a program still counting down to its slew time
                 self._cancel_wait.set()
-                # Run the abort OFF this thread. It reaches the camera through
-                # a proxy, and that request cannot be served until the current
-                # exposure and its readout finish - 280 s observed on a QHY600.
-                # Doing it inline froze the whole state machine for that long:
-                # a chimera-sched --start in the meantime was invisible and the
-                # scheduler looked permanently wedged (2026-07-22).
+                # abort off this thread: executor.stop() blocks until the
+                # running action yields (a full camera readout), and inline
+                # it froze the whole state machine for that long
                 stopper = threading.Thread(
                     target=self.executor.stop, name="scheduler-stop", daemon=True
                 )
@@ -138,13 +119,8 @@ class Machine(threading.Thread):
                         "(it will finish in the background)",
                         STOP_ABORT_TIMEOUT,
                     )
-                # executor.stop() blocks until the running action gives up -
-                # for a camera that is the rest of the exposure plus readout.
-                # A START requested in that window (chimera-sched --start)
-                # only flips the state variable, because this thread is not
-                # reading it; dropping unconditionally to OFF here threw that
-                # request away, so the scheduler stayed dead and the CLI
-                # looked like it did nothing.
+                # a START requested during the abort only flips the state
+                # variable; dropping unconditionally to OFF discarded it
                 if self.state() == State.STOP:
                     self.state(State.OFF)
 
@@ -181,11 +157,9 @@ class Machine(threading.Thread):
     def _stop_tracking(self):
         """Leave the mount idle at the end of a program.
 
-        Called inline on the program thread, before program_complete and
-        before the machine returns to IDLE. Ordering matters: issued from a
-        detached thread instead, the stop blocks on the telescope lock behind
-        the *next* program's slew and lands after it, untracking the target
-        that program just acquired (seen live 2026-07-21, robobs).
+        Must run inline on the program thread, before program_complete:
+        from a detached thread the stop queues behind the next program's
+        slew and untracks the target it just acquired.
         """
         if not self.controller["stop_tracking_on_program_end"]:
             return
@@ -220,26 +194,12 @@ class Machine(threading.Thread):
             if program.start_at:
                 wait_time = (program.start_at - now_mjd) * 86.4e3
                 if wait_time > 0.0:
-                    # wait_time is in the site's (possibly fast-forwarded)
-                    # seconds; sleep the equivalent REAL time so a scaled
-                    # clock actually compresses the wait instead of sleeping
-                    # sim-seconds as wall-seconds.  speedup is 1.0 normally.
-                    try:
-                        speedup = float(site.time_speedup())
-                    except Exception:
-                        speedup = 1.0
-                    real_wait = wait_time / speedup if speedup > 0 else wait_time
                     log.debug(
                         "[start] Waiting until MJD %f to start slewing",
                         program.start_at,
                     )
-                    log.debug(
-                        "[start] Will wait %f s (sim) = %f s (real, %gx)",
-                        wait_time,
-                        real_wait,
-                        speedup,
-                    )
-                    if self._cancel_wait.wait(real_wait):
+                    log.debug("[start] Will wait for %f seconds", wait_time)
+                    if self._cancel_wait.wait(wait_time):
                         log.debug("[start] wait cancelled; abandoning %s", str(task))
                         self.controller.program_complete(
                             program.id,
@@ -275,10 +235,8 @@ class Machine(threading.Thread):
                 self.executor.execute(task)
                 log.debug(f"[finish] {str(task)}")
                 self.scheduler.done(task)
-                # the finished flag must be on disk BEFORE the machine is
-                # released: the idle picker re-checks it against the
-                # database, and the commit at the end of this function
-                # raced that check (stale entries then re-ran the program)
+                # commit the finished flag before releasing the machine:
+                # the idle picker re-checks it against the database
                 session.commit()
                 self._stop_tracking()
                 self.controller.program_complete(program.id, SchedulerStatus.OK)

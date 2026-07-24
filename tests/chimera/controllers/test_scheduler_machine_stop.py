@@ -3,12 +3,9 @@
 
 """A START requested while executor.stop() runs must not be discarded.
 
-executor.stop() blocks until the running action gives up - for a camera
-that is the rest of the exposure plus its readout. The machine thread sits
-inside that call and is not reading the state, so a chimera-sched --start
-in that window only sets the variable. Dropping unconditionally to OFF
-afterwards threw the request away: the scheduler stayed dead and the CLI
-looked like it had done nothing.
+executor.stop() blocks until the running action gives up; a START in that
+window only sets the state variable, and dropping unconditionally to OFF
+afterwards threw the request away.
 """
 
 import threading

@@ -1,21 +1,13 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 """The scheduler leaves the mount idle when a program ends, however it ended.
 
-This used to live in robobs, which stopped tracking from a detached thread on
-program_complete. is_tracking() is unlocked but stop_tracking() is not, so the
-thread sailed past the check and then blocked on the telescope lock behind the
-*next* program's slew - landing after it, on a target that had just been
-acquired. TheSkyX turns tracking on at the end of an RA/Dec slew, so the stale
-stop silently untracked the new target and the dome dropped its lookup table.
-
-Live on 2026-07-21 (opd-40): program #2 finished at 23:18:38.66, the next
-program's 47.6 s slew held the lock, and "Tracking stopped" landed at
-23:19:25.843 - during the following program's autofocus.
-
-The fix is ordering, not timing: the stop runs inline on the program thread,
-before program_complete and while the machine is still BUSY. These tests give
-stop_tracking a delay standing in for that lock wait, so a stop moved back onto
-its own thread loses the race and fails them.
+This used to live in robobs, on a detached thread fired at program_complete:
+the stop blocked on the telescope lock behind the *next* program's slew and
+landed after it, untracking the freshly acquired target (TheSkyX re-enables
+tracking at slew end). The fix is ordering, not timing: the stop runs inline
+on the program thread, before program_complete, while the machine is still
+BUSY. These tests give stop_tracking a delay standing in for that lock wait,
+so a stop moved back onto its own thread loses the race and fails them.
 """
 
 import threading
@@ -29,8 +21,8 @@ from chimera.controllers.scheduler.states import State
 from chimera.controllers.scheduler.status import SchedulerStatus
 from chimera.core.exceptions import ProgramExecutionAborted, ProgramExecutionException
 
-#: stands in for the telescope lock held by the next program's slew (47.6 s
-#: live). Long enough that a detached stop lands after program_complete.
+#: stands in for the telescope lock held by the next program's slew; long
+#: enough that a detached stop lands after program_complete
 LOCK_WAIT = 0.2
 
 
@@ -57,9 +49,6 @@ class FakeTelescope:
 class FakeSite:
     def mjd(self):
         return 60000.0
-
-    def time_speedup(self):
-        return 1.0
 
 
 class Controller:
@@ -160,12 +149,8 @@ def _run(machine):
     ids=["completed", "errored", "aborted"],
 )
 def test_tracking_stops_before_the_program_is_reported_done(raises, expected_status):
-    """However the program ended, the stop must precede program_complete.
-
-    program_complete is what releases the next program: robobs reschedules on
-    it, and the machine leaves BUSY right after. A stop issued any later is
-    the race this replaced.
-    """
+    """However the program ended, the stop must precede program_complete,
+    which is what releases the next program."""
     timeline, telescope, controller, machine = _build(FakeTelescope, raises=raises)
 
     _run(machine)
@@ -178,11 +163,8 @@ def test_tracking_stops_before_the_program_is_reported_done(raises, expected_sta
 
 
 def test_the_stop_happens_while_the_machine_is_still_busy():
-    """The ordering that actually prevents the race.
-
-    While the machine is BUSY the IDLE branch cannot pick another program, so
-    no slew can be in flight competing for the telescope lock.
-    """
+    """While the machine is BUSY no other program can be picked, so no slew
+    can be in flight competing for the telescope lock."""
     seen_state = []
     holder = []
 
