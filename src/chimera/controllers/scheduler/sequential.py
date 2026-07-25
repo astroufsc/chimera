@@ -64,5 +64,10 @@ class SequentialScheduler(IScheduler):
         else:
             task.finished = True
 
-        self.run_queue.task_done()
+        try:
+            self.run_queue.task_done()
+        except ValueError:
+            # the queue was rebuilt by a reschedule since this program was
+            # taken: its slot is gone, nothing left to account for
+            pass
         self.machine.wake_up()

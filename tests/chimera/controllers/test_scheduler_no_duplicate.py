@@ -132,16 +132,13 @@ def test_machine_recovers_when_the_worker_exits():
     machine.state(State.SHUTDOWN)
 
 
-def test_start_survives_a_slow_abort(monkeypatch):
+def test_start_survives_a_slow_abort():
     """A --start must be acted on even while executor.stop() is still running.
 
     stop() blocks until the running action yields (a full camera readout);
-    run inline it froze the machine for that long.
+    run inline it froze the machine for that long. The machine waits on the
+    WORKER, never on the abort call, so a hung abort cannot park it either.
     """
-    from chimera.controllers.scheduler import machine as machine_module
-
-    monkeypatch.setattr(machine_module, "STOP_ABORT_TIMEOUT", 0.3)
-
     rescheduled = threading.Event()
     releasing = threading.Event()
 
@@ -201,7 +198,7 @@ def test_stop_cancels_a_program_waiting_for_its_slew_time():
         # block on the machine's wake-up Condition, which state() notifies on
         # every change, so STOP/SHUTDOWN breaks the wait at once
         wake = machine._Machine__wake_up_call
-        while machine.state() not in (State.STOP, State.SHUTDOWN):
+        while machine.state() not in (State.STOP, State.STOPPING, State.SHUTDOWN):
             with wake:
                 wake.wait(1.0)
         finished.set()

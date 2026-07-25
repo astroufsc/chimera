@@ -9,4 +9,5 @@ class State(Enum):
     IDLE = "IDLE"
     BUSY = "BUSY"
     STOP = "STOP"
+    STOPPING = "STOPPING"
     SHUTDOWN = "SHUTDOWN"

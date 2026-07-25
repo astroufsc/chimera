@@ -8,10 +8,6 @@ from chimera.core.exceptions import ProgramExecutionAborted, ProgramExecutionExc
 
 log = logging.getLogger(__name__)
 
-#: max time STOP waits for the abort; past it the abort continues in the
-#: background and the machine carries on
-STOP_ABORT_TIMEOUT = 30.0
-
 
 class Machine(threading.Thread):
     __state = None
@@ -47,6 +43,27 @@ class Machine(threading.Thread):
 
         # publish outside the lock: a slow subscriber must not block state()
         self.controller.state_changed(state, old_state)
+
+    def transition(self, expected, state):
+        """Set the state only if the machine is currently in `expected`.
+
+        Terminal transitions coming from the worker use this so a program's
+        own completion or error can never re-arm a machine that was told to
+        stop: on opd-40 a program error flipped a stopped machine OFF -> IDLE.
+        """
+        self.__state_lock.acquire()
+        try:
+            if self.__state != expected or state == self.__state:
+                return False
+            old_state = self.__state
+            log.debug(f"Changing state, from {old_state} to {state}.")
+            self.__state = state
+            self.wake_up()
+        finally:
+            self.__state_lock.release()
+
+        self.controller.state_changed(state, old_state)
+        return True
 
     def run(self):
         log.info("Starting scheduler machine")
@@ -99,35 +116,50 @@ class Machine(threading.Thread):
 
             elif self.state() == State.STOP:
                 log.debug("[stop] trying to stop current program")
-                # a program still counting down to its slew time is released
-                # by the state change itself: the wait polls state() and
-                # blocks on __wake_up_call, which state() notifies
+                # STOPPING first: a program counting down to its slew time
+                # is released by the state change itself, and the abort
+                # below may request a new state (START) that must not be
+                # overwritten afterwards
+                self.state(State.STOPPING)
                 # abort off this thread: executor.stop() blocks until the
                 # running action yields (a full camera readout), and inline
                 # it froze the whole state machine for that long
-                stopper = threading.Thread(
+                threading.Thread(
                     target=self.executor.stop, name="scheduler-stop", daemon=True
-                )
-                stopper.start()
-                stopper.join(STOP_ABORT_TIMEOUT)
-                if stopper.is_alive():
-                    log.warning(
-                        "[stop] abort still running after %.0f s; carrying on "
-                        "(it will finish in the background)",
-                        STOP_ABORT_TIMEOUT,
-                    )
-                # a START requested during the abort only flips the state
-                # variable; dropping unconditionally to OFF discarded it
-                if self.state() == State.STOP:
-                    self.state(State.OFF)
+                ).start()
+                # OFF only once the worker is dead: declaring it earlier let
+                # a surviving exposure loop run 52 min behind a closed dome
+                self._join_worker("stop")
+                # honour a START requested while the abort ran
+                self.transition(State.STOPPING, State.OFF)
 
-            elif self.state() == State.SHUTDOWN:
-                log.debug("[shutdown] trying to stop current program")
-                self.executor.stop()
-                log.debug("[shutdown] should die soon.")
-                break
-
+        # out of the loop: SHUTDOWN. Abort whatever is running and wait for
+        # the worker so nothing outlives the machine's word.
+        log.debug("[shutdown] trying to stop current program")
+        threading.Thread(
+            target=self.executor.stop, name="scheduler-stop", daemon=True
+        ).start()
+        self._join_worker("shutdown")
         log.debug("[shutdown] thread ending...")
+
+    def _join_worker(self, reason):
+        """Wait until the worker thread is actually dead, heartbeating: a
+        camera abort legitimately takes minutes, and a silent wait reads as
+        a wedged machine."""
+        worker = self._worker
+        if worker is None:
+            return
+
+        waited = 0
+        while worker.is_alive():
+            worker.join(1.0)
+            waited += 1
+            if worker.is_alive() and waited % 10 == 0:
+                log.info(
+                    "[%s] program still aborting after ~%d s, waiting...",
+                    reason,
+                    waited,
+                )
 
     def sleep(self):
         self.__wake_up_call.acquire()
@@ -201,7 +233,11 @@ class Machine(threading.Thread):
                     # state change -- so a STOP/SHUTDOWN breaks the wait at once
                     # instead of after a fixed sleep.
                     while site.mjd() < program.start_at:
-                        if self.state() in (State.STOP, State.SHUTDOWN):
+                        if self.state() in (
+                            State.STOP,
+                            State.STOPPING,
+                            State.SHUTDOWN,
+                        ):
                             log.debug(
                                 "[start] wait cancelled; abandoning %s", str(task)
                             )
@@ -228,7 +264,7 @@ class Machine(threading.Thread):
                             SchedulerStatus.OK,
                             "Program not valid anymore.",
                         )
-                        self.state(State.IDLE)
+                        self.transition(State.BUSY, State.IDLE)
                         return
                     log.debug(
                         "[start] Specified slew start MJD %s has already passed; proceeding without waiting",
@@ -251,7 +287,9 @@ class Machine(threading.Thread):
                 session.commit()
                 self._stop_tracking()
                 self.controller.program_complete(program.id, SchedulerStatus.OK)
-                self.state(State.IDLE)
+                # conditional: a completion event must not re-arm a machine
+                # that went STOPPING/SHUTDOWN while this program ran
+                self.transition(State.BUSY, State.IDLE)
             except ProgramExecutionException as e:
                 self.scheduler.done(task, error=e)
                 session.commit()
@@ -259,7 +297,7 @@ class Machine(threading.Thread):
                 self.controller.program_complete(
                     program.id, SchedulerStatus.ERROR, str(e)
                 )
-                self.state(State.IDLE)
+                self.transition(State.BUSY, State.IDLE)
                 log.debug(f"[error] {str(task)} ({str(e)})")
             except ProgramExecutionAborted as e:
                 self.scheduler.done(task, error=e)
@@ -268,7 +306,9 @@ class Machine(threading.Thread):
                 self.controller.program_complete(
                     program.id, SchedulerStatus.ABORTED, "Aborted by user."
                 )
-                self.state(State.OFF)
+                # normally the machine itself goes STOPPING -> OFF once this
+                # worker dies; cover an out-of-band abort arriving while BUSY
+                self.transition(State.BUSY, State.OFF)
                 log.debug(f"[aborted by user] {str(task)}")
 
             session.commit()

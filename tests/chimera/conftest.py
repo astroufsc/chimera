@@ -1,11 +1,21 @@
 import random
+import tempfile
 import threading
 import time
 
 import pytest
 
-from chimera.core.bus import Bus
-from chimera.core.manager import Manager
+import chimera.core.constants as constants
+
+# Redirect the scheduler database BEFORE any test module is imported:
+# scheduler.model binds its engine to DEFAULT_PROGRAM_DATABASE at import
+# time, and several test modules import it during collection — patching
+# from inside a test module is too late once a sibling imported first, and
+# the suite would then read AND WRITE the user's real ~/.chimera database.
+constants.DEFAULT_PROGRAM_DATABASE = tempfile.mkstemp(suffix="-chimera-tests.db")[1]
+
+from chimera.core.bus import Bus  # noqa: E402
+from chimera.core.manager import Manager  # noqa: E402
 
 
 @pytest.fixture
