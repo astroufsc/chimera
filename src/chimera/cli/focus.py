@@ -3,7 +3,6 @@
 # SPDX-FileCopyrightText: 2006-present Paulo Henrique Silva <ph.silva@gmail.com>
 
 
-import copy
 import os
 import re
 import sys
@@ -232,10 +231,10 @@ class ChimeraFocus(ChimeraCLI):
         " This option is exclusive, you cannot move manually at the same time.",
     )
     def __abort__(self):
-        # Ctrl-C. copy the proxy: runs from the abort thread, not the action one
+        # Ctrl-C: runs from the abort thread, not the action one
         self.out("\naborting autofocus (returning focuser to start) ... ", end="")
         if hasattr(self, "autofocus"):
-            copy.copy(self.autofocus).stop()
+            self.autofocus.stop()
         self.out("OK")
 
     def auto(self, options):
