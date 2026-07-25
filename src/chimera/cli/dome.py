@@ -113,6 +113,22 @@ class ChimeraDome(ChimeraCLI):
         self.out("OK")
 
     @action(
+        long="move-screen",
+        type="float",
+        metavar="ALT",
+        help="Move dome wind screen to ALT degrees",
+        help_group="SHUTTER",
+        action_group="SCREEN",
+    )
+    def move_screen(self, options):
+        if not self.dome.features("DomeWindScreen"):
+            self.exit("Dome does not have a wind screen.")
+
+        self.out("Moving dome wind screen to %.2f ... " % options.move_screen, end="")
+        self.dome.move_screen(options.move_screen)
+        self.out("OK")
+
+    @action(
         long="light-off",
         help="Turn light off",
         help_group="LIGHT",
@@ -285,6 +301,9 @@ class ChimeraDome(ChimeraCLI):
         else:
             self.out("Dome slit is closed.")
 
+        if self.dome.features("DomeWindScreen"):
+            self.out("Current wind screen altitude: %s." % self.dome.get_screen())
+
         if self.dome["lamps"] is not None:
             for lamp in self.dome["lamps"]:
                 onoff = green("ON") if self.lamp().is_switched_on() else red("OFF")
@@ -333,6 +352,8 @@ class ChimeraDome(ChimeraCLI):
         if hasattr(self, "dome"):
             dome = copy.copy(self.dome)
             dome.abort_slew()
+            if dome.features("DomeWindScreen"):
+                dome.abort_screen()
 
 
 def main():

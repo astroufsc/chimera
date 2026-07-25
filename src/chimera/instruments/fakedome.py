@@ -6,10 +6,14 @@ import time
 
 from chimera.core.lock import lock
 from chimera.instruments.dome import DomeBase
-from chimera.interfaces.dome import DomeStatus, InvalidDomePositionException
+from chimera.interfaces.dome import (
+    DomeStatus,
+    DomeWindScreen,
+    InvalidDomePositionException,
+)
 
 
-class FakeDome(DomeBase):
+class FakeDome(DomeBase, DomeWindScreen):
     def __init__(self):
         DomeBase.__init__(self)
 
@@ -19,6 +23,11 @@ class FakeDome(DomeBase):
         self._flap_open = False
         self._abort = threading.Event()
         self._max_slew_time = 5 / 180.0
+
+        self._screen_alt: float = 0.0
+        self._screen_moving = False
+        self._abort_screen = threading.Event()
+        self._max_screen_move_time = 5 / 90.0
 
     def __start__(self):
         self.set_hz(1.0 / 30.0)
@@ -123,3 +132,58 @@ class FakeDome(DomeBase):
 
     def is_flap_open(self):
         return self._flap_open
+
+    @lock
+    def move_screen(self, alt: float) -> None:
+        if not self["screen_min_alt"] <= alt <= self["screen_max_alt"]:
+            raise InvalidDomePositionException(
+                f"Cannot move the wind screen to {alt}. Outside screen limits."
+            )
+
+        self._abort_screen.clear()
+        self._screen_moving = True
+
+        self.screen_begin(self.get_screen())
+        self.log.info(f"Moving the wind screen to {alt}")
+
+        # move time ~ distance from current position
+        distance = abs(alt - self._screen_alt)
+        direction = 1 if alt >= self._screen_alt else -1
+        move_time = distance * self._max_screen_move_time
+
+        self.log.info(f"Wind screen move time ~ {move_time:.3f} s")
+
+        status = DomeStatus.OK
+
+        t = 0
+        while t < move_time:
+            if self._abort_screen.is_set():
+                status = DomeStatus.ABORTED
+                break
+
+            time.sleep(0.1)
+            t += 0.1
+
+        if status == DomeStatus.OK:
+            self._screen_alt = alt
+        else:
+            # assume half movement in case of abort
+            self._screen_alt += direction * distance / 2.0
+
+        self._screen_moving = False
+        self.screen_complete(self.get_screen(), status)
+
+    @lock
+    def get_screen(self) -> float:
+        return self._screen_alt
+
+    def is_screen_moving(self) -> bool:
+        return self._screen_moving
+
+    def abort_screen(self) -> None:
+        if not self.is_screen_moving():
+            return
+
+        self._abort_screen.set()
+        while self.is_screen_moving():
+            time.sleep(0.1)
