@@ -8,29 +8,11 @@ import msgspec
 import pytest
 from dateutil.relativedelta import relativedelta
 
-from chimera.core.site import Site
-
-SITE_CONFIG = {
-    "name": "UFSC",
-    "latitude": "-27 36 13 ",
-    "longitude": "-48 31 20",
-    "altitude": "20",
-}
-
 
 class TestSite:
+    # the manager fixture injects a local Site; these tests keep using the
+    # proxy on purpose: the site must stay reachable over the bus
     def test_times(self, manager):
-        manager.add_class(
-            Site,
-            "lna",
-            {
-                "name": "UFSC",
-                "latitude": "-27 36 13 ",
-                "longitude": "-48 31 20",
-                "altitude": "20",
-            },
-        )
-
         site = manager.get_proxy("/Site/0")
 
         print()
@@ -40,17 +22,6 @@ class TestSite:
 
     @pytest.mark.skip
     def test_sidereal_clock(self, manager):
-        manager.add_class(
-            Site,
-            "lna",
-            {
-                "name": "UFSC",
-                "latitude": "-27 36 13 ",
-                "longitude": "-48 31 20",
-                "altitude": "20",
-            },
-        )
-
         site = manager.get_proxy("/Site/0")
 
         times = []
@@ -68,17 +39,6 @@ class TestSite:
         print(sum(real_times) / len(real_times))
 
     def test_astros(self, manager):
-        manager.add_class(
-            Site,
-            "lna",
-            {
-                "name": "UFSC",
-                "latitude": "-27 36 13 ",
-                "longitude": "-48 31 20",
-                "altitude": "20",
-            },
-        )
-
         site = manager.get_proxy("/Site/0")
 
         print()
@@ -115,7 +75,6 @@ class TestSite:
         print("sunrise twilight duration      :", sunrise_twilight_duration)
 
     def test_sun_altitude_is_the_altitude_in_degrees(self, manager):
-        manager.add_class(Site, "lna", SITE_CONFIG)
         site = manager.get_proxy("/Site/0")
 
         when = dt.datetime(2026, 7, 27, 16, 0, tzinfo=dt.UTC)
@@ -126,7 +85,6 @@ class TestSite:
     def test_sun_altitude_survives_the_bus(self, manager):
         """A Position cannot be encoded, so sunpos() only works between
         objects sharing a bus - the reason for a plain-float accessor."""
-        manager.add_class(Site, "lna", SITE_CONFIG)
         site = manager.get_proxy("/Site/0")
 
         encoder = msgspec.json.Encoder()
@@ -138,7 +96,6 @@ class TestSite:
     def test_is_dusk_tracks_the_sun_not_the_clock(self, manager):
         """Dusk is the sun on its way down, sampled all the way around a
         day and checked against the altitude it is about to have."""
-        manager.add_class(Site, "lna", SITE_CONFIG)
         site = manager.get_proxy("/Site/0")
 
         midnight = dt.datetime(2026, 7, 27, 0, 0, tzinfo=dt.UTC)

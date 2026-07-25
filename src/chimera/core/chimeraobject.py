@@ -4,6 +4,7 @@
 import logging
 import threading
 import time
+from typing import TYPE_CHECKING
 
 from chimera.core.bus import Bus
 from chimera.core.config import Config
@@ -14,12 +15,16 @@ from chimera.core.constants import (
     METHODS_ATTRIBUTE_NAME,
     RWLOCK_ATTRIBUTE_NAME,
 )
+from chimera.core.exceptions import ObjectNotFoundException
 from chimera.core.metaobject import MetaObject
 from chimera.core.proxy import Proxy
 from chimera.core.rwlock import ReadWriteLock
 from chimera.core.state import State
 from chimera.core.url import URL, parse_url
 from chimera.interfaces.lifecycle import ILifeCycle
+
+if TYPE_CHECKING:
+    from chimera.core.site import Site
 
 __all__ = ["ChimeraObject"]
 
@@ -45,6 +50,7 @@ class ChimeraObject(ILifeCycle, metaclass=MetaObject):
 
         self.__location__: URL
         self.__bus__: Bus
+        self.__site__: Site | None = None
 
         # logging.
         # put every logger on behalf of chimera's logger so
@@ -221,6 +227,13 @@ class ChimeraObject(ILifeCycle, metaclass=MetaObject):
         :return: True if is instance, False otherwise
         """
         return any(interface == cls.__name__ for cls in self.__class__.__mro__)
+
+    def get_site(self) -> "Site":
+        if self.__site__ is None:
+            raise ObjectNotFoundException(
+                "no site available: object is not registered with a Manager that has a Site"
+            )
+        return self.__site__
 
     def get_proxy(self, url: str | None = None) -> Proxy:
         if url is not None:

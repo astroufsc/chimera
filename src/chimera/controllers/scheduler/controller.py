@@ -33,7 +33,6 @@ class Scheduler(ChimeraObject):
         "autoguider": "/Autoguider/0",
         "point_verify": "/PointVerify/0",
         "operator": "/Operator/0",
-        "site": "/Site/0",
         "algorithm": SchedulingAlgorithm.SEQUENTIAL,
     }
 

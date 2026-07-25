@@ -367,12 +367,6 @@ class ChimeraSched(ChimeraCLI):
                     else:
                         program.actions.append(Point(target_name=objname))
 
-                        # if imagetype == "FLAT":
-                        #     site = self._remote_manager.get_proxy("/Site/0")
-                        #     flat_position = Position.from_alt_az(site['flat_alt'], site['flat_az'])
-                        #     program.actions.append(Point(target_alt_az=flat_position))
-                        # TODO: point dome to its flat position too.
-
                 for exp in exps:
                     if exp.count(":") > 1:
                         filter, exptime, frames = exp.strip().split(":")
