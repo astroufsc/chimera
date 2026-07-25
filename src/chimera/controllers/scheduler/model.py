@@ -141,6 +141,7 @@ class PointVerify(Action):
             return "pointing verification: system defined field"
         elif self.here is True:
             return "pointing verification: current field"
+        return "pointing verification"
 
 
 class Operator(Action):
