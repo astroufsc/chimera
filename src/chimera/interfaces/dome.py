@@ -63,6 +63,16 @@ class DomeConfig:
     init_timeout: int = 5
     open_timeout: int = 20
     close_timeout: int = 20
+    # wind screen (DomeWindScreen domes only), all altitudes in degrees
+    screen_timeout: int = 60
+    # follow the telescope altitude when the dome is in Track mode
+    screen_track: bool = True
+    screen_offset: float = 0.0
+    screen_min_alt: float = 0.0
+    screen_max_alt: float = 90.0
+    screen_park_position: float = 0.0
+    # screen position resolution in degrees
+    screen_alt_resolution: float = 2
     # list of fans of the dome, i.e.: fans: ['/FakeFan/fake1', '/FakeFan/fake2']
     fans: list[str] = field(default_factory=list[str])
     # list of lamps of the dome, i.e.: lamps: ['/FakeLamp/fake1']
@@ -89,6 +99,14 @@ class Dome(Interface):
         "init_timeout": 5,
         "open_timeout": 20,
         "close_timeout": 20,
+        # wind screen (DomeWindScreen domes only), all altitudes in degrees
+        "screen_timeout": 60,
+        "screen_track": True,  # follow the telescope alt when in Track mode
+        "screen_offset": 0.0,
+        "screen_min_alt": 0.0,
+        "screen_max_alt": 90.0,
+        "screen_park_position": 0.0,
+        "screen_alt_resolution": 2,  # screen position resolution in degrees
         "fans": [],  # list of fans of the dome, i.e.: fans: ['/FakeFan/fake1', '/FakeFan/fake2']
         "lamps": [],  # list of lamps of the dome, i.e.: lamps: ['/FakeLamp/fake1']
     }
@@ -284,6 +302,10 @@ class DomeWindScreen(Dome):
 
     Altitudes are in decimal degrees, horizon = 0 and zenith = 90, the same
     convention used by ASCOM's Dome.Altitude.
+
+    When the dome is in L{Mode.Track} and the 'screen_track' config option is
+    set, the screen follows the telescope altitude plus 'screen_offset',
+    clamped to ['screen_min_alt', 'screen_max_alt'].
     """
 
     def move_screen(self, alt: float) -> None:
@@ -310,6 +332,22 @@ class DomeWindScreen(Dome):
         @rtype: float
         """
         ...
+
+    def is_screen_moving(self) -> bool:
+        """
+        Ask if the wind screen is moving right now.
+
+        @return: True if the screen is moving, False otherwise.
+        @rtype: bool
+        """
+        ...
+
+    def abort_screen(self) -> None:
+        """
+        Try to abort the current screen movement.
+
+        @rtype: None
+        """
 
     @event
     def screen_begin(self, alt: float) -> None:
