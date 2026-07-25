@@ -3,24 +3,17 @@
 # SPDX-FileCopyrightText: 2006-present Paulo Henrique Silva <ph.silva@gmail.com>
 
 
-import os
-import re
 import sys
-import time
 
 from chimera.core.version import chimera_version
-from chimera.interfaces.autofocus import FocusNotFoundException, StarNotFoundException
-from chimera.interfaces.filterwheel import InvalidFilterPositionException
 from chimera.interfaces.focuser import (
     ControllableAxis,
     FocuserAxis,
     FocuserFeature,
     InvalidFocusPositionException,
 )
-from chimera.util.ds9 import DS9
-from chimera.util.sextractor import SExtractorError
 
-from .cli import ChimeraCLI, ParameterType, action, parameter
+from .cli import ChimeraCLI, ParameterType, action
 
 
 class ChimeraFocus(ChimeraCLI):
@@ -50,80 +43,7 @@ class ChimeraFocus(ChimeraCLI):
             )
         )
 
-        self.add_controller(
-            name="autofocus",
-            cls="Autofocus",
-            required=False,
-            help_group="FOCUS",
-            help="Autofocus controller to be used",
-        )
-
-        self.add_help_group("AUTOFOCUS", "Autofocus")
-        self.add_parameters(
-            dict(
-                name="autofocus_step",
-                long="step",
-                type="int",
-                help_group="AUTOFOCUS",
-                help="Defines autofocus step.",
-                metavar="STEP",
-                default=500,
-            ),
-            dict(
-                name="autofocus_exptime",
-                short="-t",
-                long="exptime",
-                type="float",
-                help_group="AUTOFOCUS",
-                help="Defines autofocus frame exposure time.",
-                metavar="EXPTIME",
-                default=10.0,
-            ),
-            dict(
-                name="autofocus_debug",
-                long="debug",
-                help_group="AUTOFOCUS",
-                help="Run an autofocus debug session using data from PREVIOUS_RUN_DIR.",
-                metavar="PREVIOUS_RUN_DIR",
-                default="",
-            ),
-            dict(
-                name="autofocus_nodisplay",
-                long="disable-display",
-                type=ParameterType.BOOLEAN,
-                help_group="AUTOFOCUS",
-                help="Disable interactive display during autofocus",
-                default=False,
-            ),
-            dict(
-                name="autofocus_filter",
-                long="filter",
-                help_group="AUTOFOCUS",
-                help="Which filter to use in the autofocus run.",
-                default="use-current-filter",
-            ),
-        )
-
         self.add_help_group("COMMANDS", "Commands")
-
-    @parameter(
-        long="range",
-        help_group="AUTOFOCUS",
-        default="1000-6000",
-        help="Defines autofocus focuser range to be covered."
-        "Use start-end, as in 1000-6000 to run from 1000 to 6000.",
-        metavar="START-END",
-    )
-    def autofocus_range(self, value):
-        r = re.compile(r"(?P<start>\d+)-(?P<end>\d+)")
-        m = r.match(value)
-        if not m:
-            raise ValueError("Invalid start-end range")
-
-        start, end = m.groups()
-        start = int(start)
-        end = int(end)
-        return (start, end)
 
     @action(
         long="in",
@@ -223,119 +143,6 @@ class ChimeraFocus(ChimeraCLI):
                     "\t%-25s" % str(feature), str(bool(self.focuser.supports(feature)))
                 )
         self.out("=" * 40)
-
-    @action(
-        help_group="AUTOFOCUS",
-        help="Start an autofocus session using the selected parameters."
-        " You can select a focuser range and the size of the step for the sequence."
-        " This option is exclusive, you cannot move manually at the same time.",
-    )
-    def __abort__(self):
-        # Ctrl-C: runs from the abort thread, not the action one
-        self.out("\naborting autofocus (returning focuser to start) ... ", end="")
-        if hasattr(self, "autofocus"):
-            self.autofocus.stop()
-        self.out("OK")
-
-    def auto(self, options):
-        try:
-            if not self.autofocus:
-                self.exit(
-                    "No Autofocus controller available. Try --autofocus=..., or --help."
-                )
-        except AttributeError:
-            self.exit(
-                "No Autofocus controller available. Try --autofocus=..., or --help."
-            )
-
-        ds9 = None
-
-        if not options.autofocus_nodisplay:
-            try:
-                ds9 = DS9()
-            except OSError:
-                pass
-
-        def step_complete(position, star, filename):
-            # report the ensemble actually fit, not one star's position/flux;
-            # fall back to plain FWHM for controllers without the ensemble fields
-            metric_name = star.get("METRIC_NAME", "FWHM")
-            metric = star.get("METRIC", star.get("FWHM_IMAGE", float("nan")))
-            sigma = star.get("METRIC_SIGMA")
-            nstars = star.get("N_STARS")
-
-            if metric == metric:  # not NaN
-                body = f"{metric_name}: {metric:7.3f}"
-                if sigma is not None and sigma == sigma:
-                    body += f" +/- {sigma:5.3f}"
-                if nstars:
-                    body += f"  ({nstars} stars)"
-            else:
-                body = f"{metric_name}:      --"
-
-            self.out(f"#{position:04d}  {body}  {star['CHIMERA_FLAGS']}")
-
-            if ds9:
-                ds9.display_file(filename)
-                x = star.get("XWIN_IMAGE")
-                y = star.get("YWIN_IMAGE")
-                radius = metric if metric == metric else star.get("FWHM_IMAGE")
-                if x and y and radius and radius == radius and radius > 0:
-                    ds9.cmd(
-                        "regions command { circle %d %d %d}"
-                        % (int(x), int(y), int(radius))
-                    )
-                ds9.cmd("zoom to fit")
-                ds9.cmd("scale mode zscale")
-
-        self.autofocus.step_complete += step_complete
-
-        start, end = options.autofocus_range
-
-        if options.autofocus_debug == "":
-            debug = False
-        else:
-            debug = os.path.realpath(options.autofocus_debug)
-
-        if options.autofocus_filter == "use-current-filter":
-            filter = False
-        else:
-            filter = options.autofocus_filter
-
-        try:
-            if not debug:
-                self.out(
-                    "Looking for a star to focus on... (will try up to %d times) ..."
-                    % self.autofocus["max_tries"]
-                )
-
-            result = self.autofocus.focus(
-                exptime=options.autofocus_exptime,
-                start=start,
-                end=end,
-                step=options.autofocus_step,
-                minmax=(0, 30),
-                debug=debug,
-                filter=filter,
-            )
-
-            self.out("Best focus position found at %d." % result["best"])
-            self.out("Moving focuser to %d .. OK" % result["best"])
-
-        except OSError as e:
-            self.exit(str(e))
-        except FocusNotFoundException as e:
-            self.exit(str(e))
-        except StarNotFoundException as e:
-            self.exit(str(e))
-        except SExtractorError:
-            self.exit(
-                "Couldn't find SExtractor. If you have it installed, please add it to yout PATH variable."
-            )
-        except InvalidFilterPositionException as e:
-            self.exit(str(e))
-
-        time.sleep(1)
 
     def _current_position(self, options):
         self.out("Current focuser position: %s" % self.focuser.get_position())
