@@ -185,3 +185,24 @@ def test_metadata_carries_the_screen_altitude(dome):
     dome.move_screen(35.0)
     metadata = dict((key, value) for key, value, _ in dome.get_metadata({}))
     assert metadata["DOME_WSC"] == "35.00"
+
+
+def test_metadata_carries_the_flap_status(dome):
+    metadata = dict((key, value) for key, value, _ in dome.get_metadata({}))
+    assert metadata["DOME_FLP"] == "Closed"
+
+    dome.open_slit()
+    dome.open_flap()
+
+    metadata = dict((key, value) for key, value, _ in dome.get_metadata({}))
+    assert metadata["DOME_FLP"] == "Open"
+
+
+def test_metadata_skips_the_flap_when_the_driver_has_none():
+    class SlitOnlyDome(FakeDome):
+        def is_flap_open(self):
+            raise NotImplementedError()
+
+    metadata = dict((key, value) for key, value, _ in SlitOnlyDome().get_metadata({}))
+    assert "DOME_FLP" not in metadata
+    assert "DOME_SLT" in metadata

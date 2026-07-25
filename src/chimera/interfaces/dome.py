@@ -300,8 +300,7 @@ class DomeWindScreen(Dome):
     Dome with a wind screen: a screen that shades the lower part of the slit and
     is positioned in altitude.
 
-    Altitudes are in decimal degrees, horizon = 0 and zenith = 90, the same
-    convention used by ASCOM's Dome.Altitude.
+    Altitudes are in decimal degrees, horizon = 0 and zenith = 90.
 
     When the dome is in L{Mode.Track} and the 'screen_track' config option is
     set, the screen follows the telescope altitude plus 'screen_offset',

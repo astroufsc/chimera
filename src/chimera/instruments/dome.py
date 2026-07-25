@@ -249,6 +249,14 @@ class DomeBase(ChimeraObject, DomeSlew, DomeSlit, DomeFlap, DomeSync):
             ("DOME_SLT", str(slit), "Dome slit status"),
         ]
 
+        # every dome inherits DomeFlap, so features() cannot tell us whether the
+        # driver actually implements it
+        try:
+            flap = "Open" if self.is_flap_open() else "Closed"
+            metadata.append(("DOME_FLP", flap, "Dome flap status"))
+        except NotImplementedError:
+            pass
+
         if self.features("DomeWindScreen"):
             metadata.append(
                 ("DOME_WSC", f"{self.get_screen():.2f}", "Dome wind screen altitude")
