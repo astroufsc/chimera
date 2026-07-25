@@ -1,7 +1,6 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 # SPDX-FileCopyrightText: 2006-present Paulo Henrique Silva <ph.silva@gmail.com>
 import logging
-import threading
 from collections.abc import Callable
 
 from chimera.core.constants import (
@@ -11,9 +10,7 @@ from chimera.core.constants import (
     INSTANCE_MONITOR_ATTRIBUTE_NAME,
     LOCK_ATTRIBUTE_NAME,
     METHODS_ATTRIBUTE_NAME,
-    RWLOCK_ATTRIBUTE_NAME,
 )
-from chimera.core.rwlock import ReadWriteLock
 
 # import chimera.core.log
 log = logging.getLogger(__name__)
@@ -64,6 +61,17 @@ class MethodWrapperDispatcher:
         else:
             return self.unbound_name
 
+    def __eq__(self, other):
+        # every attribute access creates a fresh dispatcher: two of them are
+        # the same logical callable when they wrap the same function bound to
+        # the same instance (what makes `self.event -= self.handler` work)
+        if isinstance(other, MethodWrapperDispatcher):
+            return self.func is other.func and self.instance is other.instance
+        return NotImplemented
+
+    def __hash__(self):
+        return hash((id(self.func), id(self.instance)))
+
     def __call__(self, *args, **kwargs):
         # handle unbound cases (with or without instance as first argument)
         if not self.instance:
@@ -100,14 +108,23 @@ class EventWrapperDispatcher(MethodWrapperDispatcher):
         )
 
     def __iadd__(self, other):
+        # the object subscribing to its own event: it is both ends
         self.instance.__bus__.subscribe(
-            f"{self.instance.get_location()}/{self.func.__name__}", other
+            sub=self.instance.get_location(),
+            pub=self.instance.get_location(),
+            event=self.func.__name__,
+            callback=other,
         )
+        return self
 
     def __isub__(self, other):
         self.instance.__bus__.unsubscribe(
-            f"{self.instance.get_location()}/{self.func.__name__}", other
+            sub=self.instance.get_location(),
+            pub=self.instance.get_location(),
+            event=self.func.__name__,
+            callback=other,
         )
+        return self
 
 
 class LockWrapperDispatcher(MethodWrapperDispatcher):
@@ -116,25 +133,22 @@ class LockWrapperDispatcher(MethodWrapperDispatcher):
 
     def call(self, *args, **kwargs):
         """
-        Locked or synchronized methods holds two locks. The object
-        monitor, which gives exclusive right to run locked methods and
-        the object configuration writer lock, which gives exclusive
-        right to read/write config values.
+        Locked methods take the object monitor: the bus dispatch layer
+        already serializes bus-routed @lock calls per object (FIFO lane),
+        but direct in-process calls bypass the bus — the monitor is what
+        keeps those mutually exclusive too. The RLock makes nested @lock
+        calls on the same thread reentrant.
         """
 
         lock = getattr(self.instance, INSTANCE_MONITOR_ATTRIBUTE_NAME)
 
-        # t0 = time.time()
-        # log.debug("[trying to acquire monitor] %s %s" % (self.instance, self.func.__name__))
         lock.acquire()
-        # log.debug("[acquired monitor] %s %s after %f" % (self.instance, self.func.__name__, time.time()-t0))
 
         ret = None
 
         try:
             ret = self.func(*args, **kwargs)
         finally:
-            # log.debug("[release monitor] %s %s" % (self.instance, self.func.__name__))
             lock.release()
 
         return ret
@@ -169,7 +183,10 @@ class MetaObject(type):
                     _dict[name] = MethodWrapper(obj, dispatcher=EventWrapperDispatcher)
                     events.append(name)
 
-                # auto-locked methods
+                # @lock methods: the marker on the raw function (the
+                # wrapper's .func) routes bus requests through a per-object
+                # FIFO lane, and the dispatcher takes the instance monitor so
+                # direct in-process calls stay mutually exclusive too
                 elif hasattr(obj, LOCK_ATTRIBUTE_NAME):
                     _dict[name] = MethodWrapper(obj, dispatcher=LockWrapperDispatcher)
                     methods.append(name)
@@ -186,8 +203,8 @@ class MetaObject(type):
         _dict[EVENTS_ATTRIBUTE_NAME] = events
         _dict[METHODS_ATTRIBUTE_NAME] = methods
 
-        # our great Monitors (put here to force use of it)
-        _dict[INSTANCE_MONITOR_ATTRIBUTE_NAME] = threading.Condition(threading.RLock())
-        _dict[RWLOCK_ATTRIBUTE_NAME] = ReadWriteLock()
+        # NOTE: the instance monitor and config rwlock are created per
+        # instance in ChimeraObject.__init__ — class-level locks made two
+        # instances of the same driver block each other
 
         return super().__new__(cls, clsname, bases, _dict)

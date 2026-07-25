@@ -15,11 +15,17 @@ from astropy.io import fits
 from chimera.core.lock import lock
 from chimera.instruments.camera import CameraBase
 from chimera.interfaces.camera import CameraFeature, CameraStatus, ReadoutMode
+from chimera.interfaces.rotator import Rotator
 from chimera.util.position import Epoch, Position
 
 
 class FakeCamera(CameraBase):
-    __config__ = {"use_dss": True, "ccd_width": 512, "ccd_height": 512}
+    __config__ = {
+        "use_dss": True,
+        "ccd_width": 512,
+        "ccd_height": 512,
+        "rotator": "/Rotator/0",
+    }
 
     def __init__(self):
         CameraBase.__init__(self)
@@ -59,6 +65,26 @@ class FakeCamera(CameraBase):
         readout_mode.pixel_height = 9.0
 
         self._readout_modes = {self._my_readout_mode: readout_mode}
+
+    @staticmethod
+    def _rotate(pix, angle):
+        """
+        Rotate an image counter-clockwise about its center by ``angle``
+        degrees, keeping the original shape. Nearest-neighbour sampling is
+        enough for the fake camera and avoids a scipy dependency.
+        """
+        a = np.deg2rad(-angle)
+        h, w = pix.shape
+        cy, cx = (h - 1) / 2, (w - 1) / 2
+        y, x = np.indices((h, w))
+        xs = np.cos(a) * (x - cx) + np.sin(a) * (y - cy) + cx
+        ys = -np.sin(a) * (x - cx) + np.cos(a) * (y - cy) + cy
+        xi = np.rint(xs).astype(int)
+        yi = np.rint(ys).astype(int)
+        ok = (xi >= 0) & (xi < w) & (yi >= 0) & (yi < h)
+        out = np.zeros_like(pix)
+        out[ok] = pix[yi[ok], xi[ok]]
+        return out
 
     def __start__(self):
         self["camera_model"] = "Fake Cameras Inc."
@@ -145,10 +171,19 @@ class FakeCamera(CameraBase):
         if not dome.ping():
             dome = None
 
+        if self["rotator"]:
+            rotator: Rotator = self.get_proxy(self["rotator"])
+            if not rotator.ping():
+                rotator = None
+        else:
+            rotator = None
+
         if not telescope:
             self.log.debug("FakeCamera couldn't find telescope.")
         if not dome:
             self.log.debug("FakeCamera couldn't find dome.")
+        if not rotator:
+            self.log.debug("FakeCamera couldn't find rotator.")
 
         ccd_width, ccd_height = self.get_physical_size()
 
@@ -250,6 +285,12 @@ class FakeCamera(CameraBase):
         # Last resort if nothing else could make a picture
         if pix is None:
             pix = np.zeros((ccd_height, ccd_width), dtype=np.int32)
+
+        # Rotate image. Position Angle (PA) is Counter-Clockwise.
+        if rotator:
+            angle = rotator.get_position()
+            self.log.debug(f"Rotating image by {angle} degrees")
+            pix = self._rotate(pix, angle)
 
         image = self._save_image(
             image_request,

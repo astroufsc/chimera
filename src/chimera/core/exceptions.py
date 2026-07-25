@@ -64,6 +64,24 @@ class ObjectNotFoundException(ChimeraException):
     pass
 
 
+class InvalidLocationException(ChimeraException):
+    """A location string could not be parsed or names an invalid object."""
+
+
+class RequestTimeoutException(ChimeraException):
+    """A bus request got no response within its timeout."""
+
+
+class BusDeadException(ChimeraException):
+    """The bus (or the peer the request was destined to) is gone: the
+    request definitively cannot be delivered or answered."""
+
+
+class ObjectBusyException(ChimeraException):
+    """The object's locked-method lane is full: it is processing as much as
+    it can and new requests are rejected instead of piling up."""
+
+
 class NotValidChimeraObjectException(ChimeraException):
     pass
 

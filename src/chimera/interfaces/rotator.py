@@ -33,7 +33,9 @@ class Rotator(Interface):
         """
         Set the rotator position.
 
-        @param position: The position to set in degrees.
+        @param position: The position to set in degrees. Angle is in the range
+        [0, 360) and must be measured East of North, i.e. turning positive into
+        the direction of the right ascension axis.
         @type  position: float
         @rtype: None
         """

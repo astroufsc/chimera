@@ -4,9 +4,9 @@ from chimera.core.chimeraobject import ChimeraObject
 from chimera.core.config import OptionConversionException
 from chimera.core.constants import CONFIG_ATTRIBUTE_NAME
 from chimera.core.event import event
-from chimera.core.exceptions import InvalidLocationException
 from chimera.core.metaobject import MethodWrapper
 from chimera.core.state import State
+from chimera.core.url import parse_url
 
 
 class TestChimeraObject:
@@ -146,6 +146,21 @@ class TestChimeraObject:
         with pytest.raises(TypeError):
             c.__getitem__(100)
 
+    def test_iadd_propagates_config_errors(self):
+        class ConfigErr(ChimeraObject):
+            __config__ = {"a": 1}
+
+        c = ConfigErr()
+
+        def boom(other):
+            raise OptionConversionException("bad value")
+
+        c.__config_proxy__.__iadd__ = boom
+
+        # a return inside finally used to swallow this exception (M2)
+        with pytest.raises(OptionConversionException):
+            c.__iadd__({"a": 2})
+
     def test_main(self):
         class MainTest(ChimeraObject):
             def __init__(self):
@@ -174,10 +189,11 @@ class TestChimeraObject:
 
         f = Foo()
 
-        assert f.__setlocation__("/Foo/bar") is True
-        with pytest.raises(InvalidLocationException):
-            f.__setlocation__("Siberian Lakes")
-        assert f.get_location() == "/Foo/bar"
+        f.__location__ = parse_url("127.0.0.1:7666/Foo/bar")
+        assert f.get_location() == "tcp://127.0.0.1:7666/Foo/bar"
+
+        with pytest.raises(ValueError):
+            f.__location__ = parse_url("Siberian Lakes")
 
     def test_state(self):
         class Foo(ChimeraObject):

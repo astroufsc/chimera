@@ -22,6 +22,15 @@ class Site(ChimeraObject):
         altitude=20,
         flat_alt=Coord.from_dms(80),
         flat_az=Coord.from_dms(0),
+        # Fast-forward (simulation) clock, OFF by default.  When
+        # time_speedup != 1 or time_start is set, ut() runs a scaled clock:
+        #   ut() = time_start + (wall_now - wall_at_first_call) * time_speedup
+        # so the whole observatory (scheduler, robobs, sky flats, FITS
+        # timestamps) advances through a night in compressed real time.
+        # time_start is an ISO/"YYYY-MM-DD HH:MM:SS" UT instant; empty means
+        # "start now" (pure speedup with no jump).
+        time_speedup=1.0,
+        time_start="",
     )
 
     def __init__(self):
@@ -29,6 +38,10 @@ class Site(ChimeraObject):
 
         self._sun = ephem.Sun()
         self._moon = ephem.Moon()
+
+        # fast-forward clock anchors, captured on the first ut() call
+        self._ff_wall0 = None
+        self._ff_sim0 = None
 
     def __main__(self):
         pass
@@ -46,16 +59,10 @@ class Site(ChimeraObject):
         # convert date to a non-naive datetime with TZ set to UTC
         time_tuple = date.tuple()
         time_tuple = tuple(int(t) for t in time_tuple)
-        time_tuple += (0, self.utc_tz)
+        time_tuple += (0, tz.tzutc())
         d_utc = dt.datetime(*time_tuple)
         # then return it in local timezone
-        return d_utc.astimezone(self.utc_tz)
-
-    local_tz = property(lambda self: tz.tzlocal())
-    utc_tz = property(lambda self: tz.tzutc())
-
-    def get_ephem_site(self, date):
-        return self._get_ephem(date)
+        return d_utc.astimezone(tz.tzutc())
 
     def jd(self, t=None):
         if not t:
@@ -70,10 +77,28 @@ class Site(ChimeraObject):
         return self.jd(t) - 2400000.5
 
     def localtime(self):
-        return dt.datetime.now(self.local_tz)
+        return dt.datetime.now(tz.tzlocal())
+
+    def _fast_forward_enabled(self):
+        return self["time_speedup"] != 1.0 or bool(self["time_start"])
 
     def ut(self):
-        return dt.datetime.now(self.utc_tz)
+        if not self._fast_forward_enabled():
+            return dt.datetime.now(tz.tzutc())
+        # scaled simulation clock (see __config__): anchor on the first call
+        wall_now = dt.datetime.now(tz.tzutc())
+        if self._ff_wall0 is None:
+            self._ff_wall0 = wall_now
+            start = str(self["time_start"]).strip()
+            if start:
+                sim0 = dt.datetime.fromisoformat(start)
+                if sim0.tzinfo is None:
+                    sim0 = sim0.replace(tzinfo=tz.tzutc())
+                self._ff_sim0 = sim0.astimezone(tz.tzutc())
+            else:
+                self._ff_sim0 = wall_now
+        elapsed = (wall_now - self._ff_wall0).total_seconds() * self["time_speedup"]
+        return self._ff_sim0 + dt.timedelta(seconds=elapsed)
 
     def utc_offset(self):
         offset = self.localtime().utcoffset()
@@ -91,8 +116,6 @@ class Site(ChimeraObject):
         """
         Mean Local Sidereal Time
         """
-        # lst = self._get_ephem(self.ut()).sidereal_time()
-        # required since a Coord cannot be constructed from an Ephem.Angle
         if not date:
             date = self.ut()
         lst_c = Coord.from_r(self.lst_in_rads(date))

@@ -1,5 +1,7 @@
 import logging
 
+import pytest
+
 from chimera.core.chimeraobject import ChimeraObject
 from chimera.core.exceptions import ChimeraException
 
@@ -25,11 +27,10 @@ class TestLog:
         simple = manager.get_proxy("/Simple/simple")
         print("root", log.root)
 
-        try:
+        # remote exceptions are re-raised by the proxy as a plain Exception
+        # carrying the remote error message and traceback
+        with pytest.raises(Exception, match="I'm a new Exception, sorry again"):
             simple.answer()
-        except ChimeraException as e:
-            assert e.cause is not None
-            log.exception("wow, something wrong")
 
     # def test_log_custom(self, manager):
     #     manager.add_class(Simple, "simple")

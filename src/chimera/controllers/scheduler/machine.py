@@ -28,9 +28,6 @@ class Machine(threading.Thread):
         self.current_program = None
         # thread running the current program; the IDLE branch waits on it
         self._worker = None
-        # set by STOP/SHUTDOWN to release a program still waiting for its
-        # slew time (executor.stop() only aborts an action already started)
-        self._cancel_wait = threading.Event()
 
         self.daemon = False
 
@@ -87,7 +84,6 @@ class Machine(threading.Thread):
                     log.debug("[idle] there is something to do, processing...")
                     log.debug("[idle] program slew start %s", program.start_at)
                     self.state(State.BUSY)
-                    self._cancel_wait.clear()
                     self.current_program = program
                     self._process(program)
                     continue
@@ -103,8 +99,9 @@ class Machine(threading.Thread):
 
             elif self.state() == State.STOP:
                 log.debug("[stop] trying to stop current program")
-                # release a program still counting down to its slew time
-                self._cancel_wait.set()
+                # a program still counting down to its slew time is released
+                # by the state change itself: the wait polls state() and
+                # blocks on __wake_up_call, which state() notifies
                 # abort off this thread: executor.stop() blocks until the
                 # running action yields (a full camera readout), and inline
                 # it froze the whole state machine for that long
@@ -126,7 +123,6 @@ class Machine(threading.Thread):
 
             elif self.state() == State.SHUTDOWN:
                 log.debug("[shutdown] trying to stop current program")
-                self._cancel_wait.set()
                 self.executor.stop()
                 log.debug("[shutdown] should die soon.")
                 break
@@ -198,15 +194,25 @@ class Machine(threading.Thread):
                         "[start] Waiting until MJD %f to start slewing",
                         program.start_at,
                     )
-                    log.debug("[start] Will wait for %f seconds", wait_time)
-                    if self._cancel_wait.wait(wait_time):
-                        log.debug("[start] wait cancelled; abandoning %s", str(task))
-                        self.controller.program_complete(
-                            program.id,
-                            SchedulerStatus.ABORTED,
-                            "Aborted while waiting for its slew time.",
-                        )
-                        return
+                    log.debug("[start] Will wait %f s (site time)", wait_time)
+                    # Poll the site clock so a fast-forwarded site compresses
+                    # the wait for free (no speedup knowledge here), and block
+                    # on the machine's wake-up Condition -- notified on every
+                    # state change -- so a STOP/SHUTDOWN breaks the wait at once
+                    # instead of after a fixed sleep.
+                    while site.mjd() < program.start_at:
+                        if self.state() in (State.STOP, State.SHUTDOWN):
+                            log.debug(
+                                "[start] wait cancelled; abandoning %s", str(task)
+                            )
+                            self.controller.program_complete(
+                                program.id,
+                                SchedulerStatus.ABORTED,
+                                "Aborted while waiting for its slew time.",
+                            )
+                            return
+                        with self.__wake_up_call:
+                            self.__wake_up_call.wait(1.0)
                 else:
                     if program.valid_for >= 0.0 and -wait_time > program.valid_for:
                         # too late to run: finish it without executing

@@ -197,9 +197,14 @@ def test_stop_cancels_a_program_waiting_for_its_slew_time():
     finished = threading.Event()
 
     def waiter():
-        # what _process does while counting down to slew_at
-        if machine._cancel_wait.wait(60):
-            finished.set()
+        # what _process does while counting down to slew_at: poll state and
+        # block on the machine's wake-up Condition, which state() notifies on
+        # every change, so STOP/SHUTDOWN breaks the wait at once
+        wake = machine._Machine__wake_up_call
+        while machine.state() not in (State.STOP, State.SHUTDOWN):
+            with wake:
+                wake.wait(1.0)
+        finished.set()
 
     machine._worker = threading.Thread(target=waiter, daemon=True)
     machine._worker.start()

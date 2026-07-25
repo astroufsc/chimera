@@ -6,7 +6,6 @@ import os
 import shutil
 import string
 import urllib.error
-import urllib.parse
 import urllib.request
 import uuid
 import zipfile
@@ -362,7 +361,7 @@ class Image(UserDict):
         if not self._find_wcs():
             return (0, 0)
 
-        pixel = self._value_at(self._wcs.wcs_world2pix, *world)
+        pixel = self._wcs.all_world2pix(np.array([[world[0], world[1]]]), 1)[0]
 
         # round pixel to avoid large decimal numbers and get out strange -0
         pixel = list(round(p, 6) for p in pixel)
@@ -374,11 +373,28 @@ class Image(UserDict):
 
         return tuple(pixel)
 
+    def get_rotation(self):
+        """
+        Get image rotation in degrees. The rotation is given in degrees from North to East.
+        This angle is the same as the position angle (PA) of the image Y axis.
+        """
+        if not self._find_wcs():
+            return 0.0
+
+        cd = self._wcs.wcs.cd
+        if cd is None:
+            return 0.0
+
+        rot_rad = np.arctan2(cd[0, 1], cd[0, 0])
+        rot_deg = 180 - np.degrees(rot_rad)
+
+        return float(rot_deg)
+
     def world_at(self, *pixel):
         if not self._find_wcs():
             return Position.from_ra_dec(0, 0)
 
-        world = self._value_at(self._wcs.wcs_pix2world, *pixel)
+        world = self._wcs.all_pix2world(np.array([*pixel]), 1)[0]
         return Position.from_ra_dec(Coord.from_d(world[0]), Coord.from_d(world[1]))
 
     def world_at_center(self):
@@ -394,33 +410,6 @@ class Image(UserDict):
                 )
 
         return True
-
-    def _value_at(self, fn, *coords):
-        """
-        Accepts a function callback and variable coords.
-
-        If len(coords) == 1 convert (from tuple or Position) to decimal degress.
-        If len(coords) == 2, convert (from number or Coord) to decimal degress
-        """
-
-        assert len(coords) >= 1
-        assert self._wcs is not None
-
-        if len(coords) == 2:
-            c1 = Coord.from_h(coords[0]).deg
-            c2 = Coord.from_d(coords[1]).deg
-        else:
-            if isinstance(coords[0], Position):
-                c1, c2 = coords[0].dd()
-            else:  # assumes as tuple
-                c1, c2 = coords[0]
-
-        value = fn(np.array([[c1, c2]]), 1)
-
-        if len(value) >= 1:
-            return tuple(value[0])
-        else:
-            raise WCSNotFoundException("Couldn't convert coordinates.")
 
     #
     # Source extraction

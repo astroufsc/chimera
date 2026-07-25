@@ -6,6 +6,7 @@ from chimera.controllers.scheduler.handlers import (
     ActionHandler,
     AutoFlatHandler,
     AutoFocusHandler,
+    AutoguideHandler,
     ExposeHandler,
     PointHandler,
     PointVerifyHandler,
@@ -13,6 +14,7 @@ from chimera.controllers.scheduler.handlers import (
 from chimera.controllers.scheduler.model import (
     AutoFlat,
     AutoFocus,
+    Autoguide,
     Expose,
     Point,
     PointVerify,
@@ -40,6 +42,7 @@ class ProgramExecutor:
             Point: PointHandler,
             AutoFocus: AutoFocusHandler,
             AutoFlat: AutoFlatHandler,
+            Autoguide: AutoguideHandler,
             PointVerify: PointVerifyHandler,
         }
 

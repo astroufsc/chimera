@@ -4,12 +4,14 @@
 import concurrent.futures
 import logging
 import operator
+import os
+import sys
 import threading
 import time
 from collections.abc import Callable
 from typing import Any
 
-from chimera.core.bus import Bus
+from chimera.core.bus import Bus, pool_stats
 from chimera.core.chimeraobject import ChimeraObject
 from chimera.core.classloader import ClassLoader
 from chimera.core.constants import (
@@ -20,6 +22,7 @@ from chimera.core.constants import (
 from chimera.core.exceptions import (
     ChimeraException,
     ChimeraObjectException,
+    InvalidLocationException,
     NotValidChimeraObjectException,
     ObjectNotFoundException,
     OptionConversionException,
@@ -27,9 +30,16 @@ from chimera.core.exceptions import (
 from chimera.core.proxy import Proxy
 from chimera.core.resources import ResourcesManager
 from chimera.core.state import State
-from chimera.core.url import URL, parse_url
+from chimera.core.url import URL, parse_url, resolve_url
+from chimera.core.version import chimera_version
 
 __all__ = ["Manager", "get_manager_uri", "ManagerNotFoundException"]
+
+
+def _json_safe(value: Any) -> Any:
+    if value is None or isinstance(value, (bool, int, float, str)):
+        return value
+    return str(value)
 
 
 log = logging.getLogger(__name__)
@@ -92,6 +102,33 @@ class Manager:
         except AttributeError:
             return resource.path, None
 
+    def _resolve_location(self, location: str | URL) -> URL:
+        """Resolve a possibly-relative location ('/Simple/simple') against
+        this manager's bus, raising the typed exception the API promises for
+        unparseable input."""
+        try:
+            return resolve_url(str(location), bus=self._bus.url.bus)
+        except ValueError as e:
+            raise InvalidLocationException(f"invalid location '{location}': {e}")
+
+    def _known_location(self, location) -> bool:
+        try:
+            return location in self.resources
+        except ValueError as e:
+            raise InvalidLocationException(f"invalid location '{location}': {e}")
+
+    @staticmethod
+    def _log_loop_result(location: str) -> Callable[[concurrent.futures.Future], None]:
+        def check(future: concurrent.futures.Future) -> None:
+            try:
+                future.result()
+            except concurrent.futures.CancelledError:
+                pass
+            except Exception:
+                log.exception(f"{location}: control loop died with an exception")
+
+        return check
+
     # private
     def __repr__(self):
         return f"<Manager for {self._bus.url} at {hex(id(self))}>"
@@ -102,6 +139,66 @@ class Manager:
 
     def get_port(self):
         return self._bus.url.port
+
+    def get_location(self) -> str:
+        # full url so remote proxies can resolve us (a bare path is not
+        # parseable on the client side)
+        return f"{self._bus.url.bus}{MANAGER_LOCATION}"
+
+    # observability (chimera-ctl)
+    def get_status(self) -> dict[str, Any]:
+        """A read-only, JSON-serializable snapshot of the whole system:
+        manager, bus internals and every managed object."""
+        now = time.time()
+
+        objects = []
+        for _, resource in list(self.resources.items()):
+            instance = resource.instance
+
+            state = None
+            get_state = getattr(instance, "get_state", None)
+            if callable(get_state):
+                state = str(get_state())
+
+            loop = "none"
+            if resource.loop is not None:
+                loop = "done" if resource.loop.done() else "running"
+
+            # the OS thread currently running this object's control loop
+            loop_id = None
+            if loop == "running":
+                loop_id = getattr(instance, "__loop_native_id__", None)
+
+            config = {}
+            config_proxy = getattr(instance, "__config_proxy__", None)
+            if config_proxy is not None:
+                for key in config_proxy.keys():
+                    config[key] = _json_safe(instance[key])
+
+            objects.append(
+                {
+                    "path": resource.path,
+                    "class": type(instance).__name__,
+                    "bases": resource.bases,
+                    "state": state,
+                    "loop": loop,
+                    "loop_id": loop_id,
+                    "age": now - resource.created,
+                    "config": config,
+                }
+            )
+
+        return {
+            "system": {
+                "version": chimera_version,
+                "pid": os.getpid(),
+                "python": sys.version.split()[0],
+            },
+            "bus": self._bus.stats(),
+            # the control-loops pool (one worker per running object loop)
+            "pool": pool_stats(self._pool),
+            "objects": objects,
+        }
 
     # reflection (console)
     def get_resources(self) -> list[str]:
@@ -144,7 +241,11 @@ class Manager:
         @rtype: Proxy
         """
 
-        url = parse_url(location)
+        if isinstance(location, type):
+            # a class: proxy the first instance of it
+            location = f"/{location.__name__}/0"
+
+        url = self._resolve_location(location)
         return Proxy(url, self._bus)
 
     def shutdown(self):
@@ -178,6 +279,9 @@ class Manager:
             except ChimeraException:
                 pass
 
+        # every control loop stopped above: drain the pool
+        self._pool.shutdown(wait=True, cancel_futures=True)
+
         # die!
         self.died.set()
         log.info("Manager shut down.")
@@ -185,10 +289,10 @@ class Manager:
     # objects lifecycle
     def add_location(
         self,
-        location: URL,
-        *,
-        config: dict[str, Any] = {},
+        location: str | URL,
         path: list[str] | None = None,
+        *,
+        config: dict[str, Any] | None = None,
         start: bool = True,
     ):
         """
@@ -212,11 +316,16 @@ class Manager:
         @rtype: Proxy or bool
         """
         # get the class
+        location = self._resolve_location(location)
         cls = self.class_loader.load_class(location.cls, path)
-        return self.add_class(cls, location.name, config, start)
+        return self.add_class(cls, location.name, config or {}, start)
 
     def add_class(
-        self, cls: type, name: str, config: dict[str, Any] = {}, start: bool = True
+        self,
+        cls: type,
+        name: str,
+        config: dict[str, Any] | None = None,
+        start: bool = True,
     ):
         """
         Add the class 'cls' to the system configuring it using 'config'.
@@ -241,17 +350,16 @@ class Manager:
         @rtype: Proxy or bool
         """
 
-        url = parse_url(
-            f"{self.get_hostname()}:{self.get_port()}/{cls.__name__}/{name}"
-        )
+        url = self._resolve_location(f"/{cls.__name__}/{name}")
+
         # names must not start with a digit
         if url.name[0] in "0123456789":
-            raise ValueError(
+            raise InvalidLocationException(
                 f"Invalid instance name: {url.name} (must start with a letter)"
             )
 
         if url.path in self.resources:
-            raise ValueError(
+            raise InvalidLocationException(
                 f"Location {url.path} is already in the system. Only one allowed (Tip: change the name!)."
             )
 
@@ -271,7 +379,7 @@ class Manager:
             raise ChimeraObjectException(f"Error in {url} __init__.")
 
         try:
-            for k, v in list(config.items()):
+            for k, v in list((config or {}).items()):
                 obj[k] = v
         except (OptionConversionException, KeyError) as e:
             log.exception(f"Error configuring {url.path}.")
@@ -301,12 +409,11 @@ class Manager:
         @rtype: bool
         """
 
-        if location not in self.resources:
+        if not self._known_location(location):
             raise ObjectNotFoundException(f"Location {location} was not found.")
 
         self.stop(location)
 
-        self.resources.get(location)
         # self.adapter.disconnect(resource.instance)
         self.resources.remove(location)
 
@@ -326,7 +433,7 @@ class Manager:
         @rtype: bool
         """
 
-        if location not in self.resources:
+        if not self._known_location(location):
             raise ObjectNotFoundException(f"Location {location} was not found.")
 
         log.info(f"Starting {location}.")
@@ -343,11 +450,12 @@ class Manager:
             raise ChimeraObjectException(f"Error running {location} __start__ method.")
 
         try:
-            # FIXME: thread exception handling
             # ok, now schedule object main in a new thread
             log.info(f"Running {location}.__main___.")
 
             loop = self._pool.submit(resource.instance.__main__)
+            # a control loop dying with an exception must never be silent (M3)
+            loop.add_done_callback(self._log_loop_result(str(location)))
 
             resource.instance.__setstate__(State.RUNNING)
             resource.created = time.time()
@@ -374,7 +482,7 @@ class Manager:
         @rtype: bool
         """
 
-        if location not in self.resources:
+        if not self._known_location(location):
             raise ObjectNotFoundException(f"Location {location} was not found.")
 
         log.info(f"Stopping {location}.")
@@ -390,6 +498,20 @@ class Manager:
                 except KeyboardInterrupt:
                     # ignore Ctrl+C on shutdown
                     pass
+
+                # wait for control() to actually leave before __stop__ runs,
+                # or the two would race on device state (M3)
+                try:
+                    resource.loop.result(timeout=5)
+                except concurrent.futures.CancelledError:
+                    pass
+                except TimeoutError:
+                    log.warning(f"{location}: control loop did not stop within 5s")
+                except Exception:
+                    # the loop died on its own; already logged by the
+                    # done callback
+                    pass
+                resource.loop = None
 
             if resource.instance.get_state() != State.STOPPED:
                 resource.instance.__stop__()

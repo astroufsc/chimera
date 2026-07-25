@@ -1,8 +1,10 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 # SPDX-FileCopyrightText: 2006-present Paulo Henrique Silva <ph.silva@gmail.com>
 
-from chimera.core.manager import Manager
+import pytest
+
 from chimera.core.site import Site
+from chimera.instruments.fakerotator import FakeRotator
 
 
 class TestRotator:
@@ -11,12 +13,11 @@ class TestRotator:
     Tests core functionality including position control and movement operations.
     """
 
-    def setup_method(self):
-        """Setup method called before each test."""
-        self.manager = Manager(port=8001)  # Use different port to avoid conflicts
-
+    @pytest.fixture(autouse=True)
+    def setup(self, manager):
+        """Setup fixture called before each test."""
         # Add site configuration
-        self.manager.add_class(
+        manager.add_class(
             Site,
             "lna",
             {
@@ -28,14 +29,8 @@ class TestRotator:
         )
 
         # Add FakeRotator
-        from chimera.instruments.fakerotator import FakeRotator
-
-        self.manager.add_class(FakeRotator, "fake")
-        self.rotator = self.manager.get_proxy("/FakeRotator/0")
-
-    def teardown_method(self):
-        """Teardown method called after each test."""
-        self.manager.shutdown()
+        manager.add_class(FakeRotator, "fake")
+        self.rotator = manager.get_proxy("/FakeRotator/0")
 
     def test_get_position(self):
         """Test getting rotator position."""

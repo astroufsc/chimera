@@ -16,6 +16,7 @@ from chimera.core.constants import (
 )
 from chimera.core.metaobject import MetaObject
 from chimera.core.proxy import Proxy
+from chimera.core.rwlock import ReadWriteLock
 from chimera.core.state import State
 from chimera.core.url import URL, parse_url
 from chimera.interfaces.lifecycle import ILifeCycle
@@ -26,6 +27,16 @@ __all__ = ["ChimeraObject"]
 class ChimeraObject(ILifeCycle, metaclass=MetaObject):
     def __init__(self):
         super().__init__()
+
+        # per-instance locks: the monitor serializes @lock methods and the
+        # rwlock guards config access. They must not live in the class dict —
+        # two instances of the same driver would block each other
+        setattr(
+            self,
+            INSTANCE_MONITOR_ATTRIBUTE_NAME,
+            threading.Condition(threading.RLock()),
+        )
+        setattr(self, RWLOCK_ATTRIBUTE_NAME, ReadWriteLock())
 
         # configuration handling
         self.__config_proxy__ = Config(self)
@@ -74,12 +85,15 @@ class ChimeraObject(ILifeCycle, metaclass=MetaObject):
     def __iadd__(self, config_dict):
         # only one thread can write
         lock = getattr(self, RWLOCK_ATTRIBUTE_NAME)
+        lock.acquire_write()
         try:
-            lock.acquire_write()
+            # no return inside finally: it would swallow any exception
+            # raised while applying the config (M2)
             self.__config_proxy__.__iadd__(config_dict)
         finally:
             lock.release()
-            return self.get_proxy()
+
+        return self.get_proxy()
 
     # locking
     def __enter__(self):
@@ -137,22 +151,33 @@ class ChimeraObject(ILifeCycle, metaclass=MetaObject):
         return tmp_hz
 
     def __main__(self):
+        # observability: which OS thread runs this object's control loop
+        self.__loop_native_id__ = threading.get_native_id()
+
         self._loop_abort.clear()
         run_condition = True
 
         while run_condition:
             t0 = time.monotonic()
-            with self:
-                run_condition = self.control()
+            # control runs unlocked on its own thread: a long @lock method
+            # (an exposure, a slew) must not stall the control loop. Keeping
+            # control() thread-safe is the implementer's job.
+            run_condition = self.control()
             loop_time = time.monotonic() - t0
 
             time_to_wake_up = (1.0 / self.get_hz()) - loop_time
             if time_to_wake_up > 0:
-                run_condition = not self._loop_abort.wait(time_to_wake_up)
+                aborted = self._loop_abort.wait(time_to_wake_up)
+                run_condition = run_condition and not aborted
             else:
+                if self._loop_abort.is_set():
+                    # an overrunning loop must still be abortable
+                    run_condition = False
                 self.log.warning(
                     f"{self.get_location()}: control loop took more than {1.0 / self.get_hz()} seconds to run: {loop_time:.3f} s"
                 )
+
+        return True
 
     def __abort_loop__(self):
         self._loop_abort.set()

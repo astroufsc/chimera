@@ -3,9 +3,11 @@
 # SPDX-FileCopyrightText: 2006-present Paulo Henrique Silva <ph.silva@gmail.com>
 
 import argparse
+import faulthandler
 import logging
 import os.path
 import platform
+import signal
 import sys
 from typing import Any
 
@@ -48,6 +50,12 @@ class ChimeraCLI:
             self.options.port = self.config.port
 
         self.paths = ChimeraPath()
+
+        # kill -USR1 <pid> dumps every thread's stack to stderr: the only way
+        # to diagnose a stuck server in place (ptrace/py-spy are typically
+        # unavailable inside containers)
+        if hasattr(signal, "SIGUSR1"):
+            faulthandler.register(signal.SIGUSR1, all_threads=True)
 
     def parse_args(self):
         parser = argparse.ArgumentParser(

@@ -123,7 +123,7 @@ class ChimeraTel(ChimeraCLI):
         else:
             target = self._validate_coords(options)
 
-        def slew_begin(ra, dec):
+        def slew_begin(ra, dec, epoch):
             self.out(40 * "=")
             if options.object_name:
                 self.out(

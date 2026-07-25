@@ -78,7 +78,7 @@ class FakeTelescope(TelescopeBase, TelescopePier):
 
         self._validate_ra_dec(ra, dec)
 
-        self.slew_begin(ra, dec)
+        self.slew_begin(ra, dec, epoch)
 
         ra_steps = (ra - self.get_ra()) / 10
         dec_steps = (dec - self.get_dec()) / 10

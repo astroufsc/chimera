@@ -541,6 +541,18 @@ class SExtractorfile:
             "format": "%8.2f",
             "unit": "pixel",
         },
+        "FLUX_RADIUS": {
+            "comment": "Fraction-of-light radii (half-light with PHOT_FLUXFRAC=0.5)",
+            "infunc": float,
+            "format": "%10.3f",
+            "unit": "pixel",
+        },
+        "SNR_WIN": {
+            "comment": "Gaussian-weighted SNR",
+            "infunc": float,
+            "format": "%10.3f",
+            "unit": "",
+        },
         "X2_WORLD": {
             "comment": "Variance along X-WORLD (alpha)",
             "infunc": float,

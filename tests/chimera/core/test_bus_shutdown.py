@@ -36,9 +36,13 @@ def test_bus_graceful_shutdown():
 
     assert bus.is_dead(), "bus is still alive?"
 
-    assert all([th.is_alive() is False for th in bus._pool._threads]), (
-        "some bus threads are still alive?"
-    )
+    assert all(
+        [
+            th.is_alive() is False
+            for th in (bus._handler_pool._threads | bus._control_pool._threads)
+        ]
+    ), "some bus threads are still alive?"
+    assert bus._dispatch_thread.is_alive() is False, "dispatch thread still alive?"
 
 
 def test_bus_ctrl_c_shutdown():
@@ -71,6 +75,10 @@ def test_bus_ctrl_c_shutdown():
 
     assert bus.is_dead(), "bus is still alive?"
 
-    assert all([th.is_alive() is False for th in bus._pool._threads]), (
-        "some bus threads are still alive?"
-    )
+    assert all(
+        [
+            th.is_alive() is False
+            for th in (bus._handler_pool._threads | bus._control_pool._threads)
+        ]
+    ), "some bus threads are still alive?"
+    assert bus._dispatch_thread.is_alive() is False, "dispatch thread still alive?"

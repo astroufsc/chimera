@@ -30,6 +30,8 @@ class PointVerify(Interface):
         "camera": "/Camera/0",  # Camera attached to the telescope.
         "filterwheel": "/FilterWheel/0",  # Filterwheel, if exists.
         "telescope": "/Telescope/0",  # Telescope to verify pointing.
+        "rotator": None,  # Rotator to adjust field rotation, if exists.
+        "images_dir": "~/images_pointverify",  # Directory to save images.
         "exptime": 10.0,  # Exposure time.
         "filter": "R",  # Filter to expose.
         "max_fields": 100,  # Maximum number of Landlodt fields to use.

@@ -39,6 +39,13 @@ class Autofocus(Interface):
         Focus
         """
 
+    def stop(self):
+        """
+        Abort a running focus() ASAP: stop the current exposure and return
+        the focuser to its start position. No-op if nothing is running.
+        Runs concurrently with focus(), so it must not take the focus lock.
+        """
+
     @event
     def step_complete(self, position, star, frame):
         """Raised after every step in the focus sequence with

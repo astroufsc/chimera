@@ -9,9 +9,30 @@ try:
 except ImportError:
     from .enum import Enum
 
+import math
+
 import ephem
 
-__all__ = ["Position"]
+__all__ = ["Position", "airmass"]
+
+
+def airmass(alt):
+    """Airmass at a given altitude (float in degrees or Coord), using
+    Kasten & Young (1989).
+
+    Unlike sec(z) this stays finite towards the horizon. Altitudes at or
+    below the horizon are clamped to the horizon value (~37.9): nothing is
+    observable there, and NaN/inf are not valid in a FITS header.
+
+    The published fit returns 0.9997 at the zenith; airmass is by
+    definition >= 1, so the result is clamped there too.
+    """
+    alt_deg = max(float(Coord.from_d(alt).deg), 0.0)
+    return max(
+        1.0,
+        1.0
+        / (math.sin(math.radians(alt_deg)) + 0.50572 * (alt_deg + 6.07995) ** -1.6364),
+    )
 
 
 class Epoch(Enum):

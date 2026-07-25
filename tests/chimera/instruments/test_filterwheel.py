@@ -3,76 +3,280 @@
 
 import time
 
-from chimera.core.manager import Manager
+import pytest
 
-from .base import FakeHardwareTest, RealHardwareTest
+from chimera.core.exceptions import ObjectNotFoundException
+from chimera.instruments.fakefilterwheel import FakeFilterWheel
+from chimera.interfaces.filterwheel import (
+    FocusOffsetException,
+    InvalidFilterPositionException,
+)
 
 # hack for event triggering asserts
 fired_events = {}
 
 
-class FilterWheelTest:
-    filter_wheel = ""
+def filter_change_clbk(new_filter, old_filter):
+    fired_events["filter_change"] = (time.time(), new_filter, old_filter)
 
+
+@pytest.fixture
+def filterwheel(manager):
+    manager.add_class(
+        FakeFilterWheel,
+        "fake",
+        {"device": "/dev/ttyS0", "filters": ["U", "B", "V", "R", "I"]},
+    )
+    fired_events.clear()
+
+    wheel = manager.get_proxy("/FakeFilterWheel/0")
+    wheel.filter_change += filter_change_clbk
+    return wheel
+
+
+class TestFakeFilterWheel:
     def assert_events(self):
         assert "filter_change" in fired_events
         assert isinstance(fired_events["filter_change"][1], str)
         assert isinstance(fired_events["filter_change"][2], str)
 
-    def setup_events(self):
-        def filter_change_clbk(new_filter, old_filter):
-            fired_events["filter_change"] = (time.time(), new_filter, old_filter)
-
-        fw = self.manager.get_proxy(self.filter_wheel)
-        fw.filter_change += filter_change_clbk
-
-    def test_filters(self):
-        f = self.manager.get_proxy(self.filter_wheel)
-
-        filters = f.get_filters()
+    def test_filters(self, filterwheel, wait_for):
+        filters = filterwheel.get_filters()
 
         for filter in filters:
-            f.set_filter(filter)
-            assert f.get_filter() == filter
+            fired_events.clear()
+            filterwheel.set_filter(filter)
+            assert filterwheel.get_filter() == filter
+            assert wait_for(lambda: "filter_change" in fired_events)
             self.assert_events()
 
-    def test_get_filters(self):
-        f = self.manager.get_proxy(self.filter_wheel)
-        filters = f.get_filters()
+    def test_get_filters(self, filterwheel):
+        filters = filterwheel.get_filters()
 
         assert isinstance(filters, tuple) or isinstance(filters, list)
 
 
+# ---------------------------------------------------------------------------
+# Per-filter focus offsets (unit level, no bus): FilterWheelBase.set_filter
+# applies the configured offset through the focuser role.
+# ---------------------------------------------------------------------------
+
+FILTERS = ["U", "B", "V", "R", "I"]
+# I is deliberately left out: filters with no entry get no offset
+FOCUS_OFFSETS = {"U": -100, "B": 0, "V": 0, "R": 25}
+
+FOCUSER_LOCATION = "/FakeFocuser/0"
+
+
+class FakeFocuser:
+    """Just enough focuser to record the relative moves it is asked for."""
+
+    def __init__(self):
+        self.position = 3500
+        self.moves = []
+
+    def move_in(self, n):
+        self.moves.append(-n)
+        self.position -= n
+
+    def move_out(self, n):
+        self.moves.append(+n)
+        self.position += n
+
+
+@pytest.fixture
+def events(monkeypatch):
+    """filter_change goes through the bus, which we don't have here."""
+    fired = []
+    monkeypatch.setattr(
+        FakeFilterWheel,
+        "filter_change",
+        lambda self, new, old: fired.append((new, old)),
+        raising=False,
+    )
+    return fired
+
+
+@pytest.fixture
+def focuser():
+    return FakeFocuser()
+
+
+@pytest.fixture
+def make_wheel(monkeypatch, events):
+    def factory(focuser_proxy=None, **config):
+        wheel = FakeFilterWheel()
+        wheel["filters"] = FILTERS
+        for key, value in config.items():
+            wheel[key] = value
+
+        if focuser_proxy is not None:
+            monkeypatch.setattr(wheel, "get_proxy", lambda url: focuser_proxy)
+
+        wheel.__start__()
+        return wheel
+
+    return factory
+
+
+@pytest.fixture
+def wheel(make_wheel, focuser):
+    return make_wheel(
+        focuser_proxy=focuser,
+        focuser=FOCUSER_LOCATION,
+        focus_offsets=FOCUS_OFFSETS,
+    )
+
+
 #
-# setup real and fake tests
+# filter wheel basics
 #
-class TestFakeFilterWheel(FakeHardwareTest, FilterWheelTest):
-    def setup(self):
-        self.manager = Manager(port=8000)
+class TestFilterWheel:
+    def test_get_filters(self, make_wheel):
+        assert make_wheel().get_filters() == FILTERS
 
-        from chimera.instruments.fakefilterwheel import FakeFilterWheel
+    def test_set_filter_moves_and_fires_event(self, make_wheel, events):
+        wheel = make_wheel()
 
-        self.manager.add_class(
-            FakeFilterWheel, "fake", {"device": "/dev/ttyS0", "filters": "U B V R I"}
-        )
-        self.filter_wheel = "/FakeFilterWheel/0"
+        assert wheel.set_filter("B")
+        assert wheel.get_filter() == "B"
+        assert events == [("B", "U")]
 
-        self.setup_events()
+        wheel.set_filter("R")
+        assert wheel.get_filter() == "R"
+        assert events == [("B", "U"), ("R", "B")]
 
-    def teardown(self):
-        self.manager.shutdown()
+    def test_set_invalid_filter_raises(self, make_wheel):
+        with pytest.raises(InvalidFilterPositionException):
+            make_wheel().set_filter("Z")
+
+    def test_no_focus_offsets_by_default(self, make_wheel):
+        assert make_wheel()._focus_offsets == {}
+
+    def test_offsets_without_a_focuser_are_ignored(self, make_wheel, focuser):
+        # no `focuser` configured, so nothing to compensate with
+        wheel = make_wheel(focuser_proxy=focuser, focus_offsets=FOCUS_OFFSETS)
+
+        wheel.set_filter("V")
+
+        assert focuser.moves == []
+
+    def test_metadata(self, make_wheel):
+        wheel = make_wheel()
+        wheel.set_filter("V")
+
+        keywords = dict((key, value) for key, value, _ in wheel.get_metadata(None))
+
+        assert keywords["FILTER"] == "V"
+        assert "FOCUSOFF" not in keywords
 
 
-class TestRealFilterWheel(RealHardwareTest, FilterWheelTest):
-    def setup(self):
-        self.manager = Manager()
+#
+# focus offsets
+#
+class TestFilterWheelFocusOffsets:
+    """
+    The focuser move happens inside set_filter(), so every assertion on the
+    focuser position right after set_filter() returns is also asserting that
+    the offset was applied synchronously.
+    """
 
-        from chimera.instruments.sbig import SBIG
+    def test_get_focus_offsets(self, wheel):
+        assert wheel._focus_offsets == {"U": -100, "B": 0, "V": 0, "R": 25}
 
-        self.manager.add_class(SBIG, "sbig", {"filters": "R G B LUNAR CLEAR"})
-        self.filter_wheel = "/SBIG/0"
+    def test_offset_applied_on_filter_change(self, wheel, focuser):
+        # the wheel starts on U, so the focuser is assumed to already carry
+        # U's offset: moving to V has to back those -100 steps out
+        start = focuser.position
 
-        self.setup_events()
+        wheel.set_filter("V")
+        assert focuser.position == start + 100
 
-    def teardown(self):
-        self.manager.shutdown()
+        wheel.set_filter("R")
+        assert focuser.position == start + 125
+
+        wheel.set_filter("U")
+        assert focuser.position == start
+
+    def test_filter_without_offset_does_not_move(self, wheel, focuser):
+        wheel.set_filter("V")
+        focuser.moves.clear()
+
+        wheel.set_filter("I")
+
+        assert focuser.moves == []
+
+    def test_same_offset_does_not_move(self, wheel, focuser):
+        wheel.set_filter("V")
+        focuser.moves.clear()
+
+        wheel.set_filter("B")  # B and V share the same offset
+
+        assert focuser.moves == []
+
+    def test_no_drift_over_repeated_cycles(self, wheel, focuser):
+        start = focuser.position
+
+        for _ in range(5):
+            for filter in wheel.get_filters():
+                wheel.set_filter(filter)
+
+        wheel.set_filter("U")
+        assert focuser.position == start
+
+    def test_metadata_reports_applied_offset(self, wheel):
+        wheel.set_filter("R")
+
+        keywords = dict((key, value) for key, value, _ in wheel.get_metadata(None))
+
+        assert keywords["FOCUSOFF"] == 25
+
+
+#
+# focus offset failures
+#
+class TestFilterWheelFocusOffsetErrors:
+    @pytest.fixture
+    def unreachable(self, monkeypatch):
+        def factory(**config):
+            wheel = FakeFilterWheel()
+            wheel["filters"] = FILTERS
+            wheel["focuser"] = FOCUSER_LOCATION
+            wheel["focus_offsets"] = FOCUS_OFFSETS
+            for key, value in config.items():
+                wheel[key] = value
+
+            def no_such_object(url):
+                raise ObjectNotFoundException(f"{url} not found.")
+
+            monkeypatch.setattr(wheel, "get_proxy", no_such_object)
+            wheel.__start__()
+            return wheel
+
+        return factory
+
+    def test_unreachable_focuser_fails_the_filter_change(self, unreachable, events):
+        wheel = unreachable()
+
+        with pytest.raises(FocusOffsetException):
+            wheel.set_filter("V")
+
+        # the wheel itself did move and said so: the caller decides what to do
+        assert wheel.get_filter() == "V"
+        assert events == [("V", "U")]
+
+    def test_malformed_offsets_fail_at_startup(self, make_wheel, focuser):
+        with pytest.raises(FocusOffsetException):
+            make_wheel(
+                focuser_proxy=focuser,
+                focuser=FOCUSER_LOCATION,
+                focus_offsets={"U": "deadbeef"},
+            )
+
+    def test_offsets_for_unknown_filter_fail_at_startup(self, make_wheel, focuser):
+        with pytest.raises(FocusOffsetException):
+            make_wheel(
+                focuser_proxy=focuser,
+                focuser=FOCUSER_LOCATION,
+                focus_offsets={"Z": 100},
+            )

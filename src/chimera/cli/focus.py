@@ -3,6 +3,7 @@
 # SPDX-FileCopyrightText: 2006-present Paulo Henrique Silva <ph.silva@gmail.com>
 
 
+import copy
 import os
 import re
 import sys
@@ -230,6 +231,13 @@ class ChimeraFocus(ChimeraCLI):
         " You can select a focuser range and the size of the step for the sequence."
         " This option is exclusive, you cannot move manually at the same time.",
     )
+    def __abort__(self):
+        # Ctrl-C. copy the proxy: runs from the abort thread, not the action one
+        self.out("\naborting autofocus (returning focuser to start) ... ", end="")
+        if hasattr(self, "autofocus"):
+            copy.copy(self.autofocus).stop()
+        self.out("OK")
+
     def auto(self, options):
         try:
             if not self.autofocus:
@@ -250,27 +258,34 @@ class ChimeraFocus(ChimeraCLI):
                 pass
 
         def step_complete(position, star, filename):
-            self.out(
-                "#%04d (%4d, %4d) FWHM: %8.3f FLUX: %-9.3f (%s)"
-                % (
-                    position,
-                    star["XWIN_IMAGE"],
-                    star["YWIN_IMAGE"],
-                    star["FWHM_IMAGE"],
-                    star["FLUX_BEST"],
-                    star["CHIMERA_FLAGS"],
-                )
-            )
+            # report the ensemble actually fit, not one star's position/flux;
+            # fall back to plain FWHM for controllers without the ensemble fields
+            metric_name = star.get("METRIC_NAME", "FWHM")
+            metric = star.get("METRIC", star.get("FWHM_IMAGE", float("nan")))
+            sigma = star.get("METRIC_SIGMA")
+            nstars = star.get("N_STARS")
+
+            if metric == metric:  # not NaN
+                body = f"{metric_name}: {metric:7.3f}"
+                if sigma is not None and sigma == sigma:
+                    body += f" +/- {sigma:5.3f}"
+                if nstars:
+                    body += f"  ({nstars} stars)"
+            else:
+                body = f"{metric_name}:      --"
+
+            self.out(f"#{position:04d}  {body}  {star['CHIMERA_FLAGS']}")
+
             if ds9:
                 ds9.display_file(filename)
-                ds9.cmd(
-                    "regions command { circle %d %d %d}"
-                    % (
-                        int(star["XWIN_IMAGE"]),
-                        int(star["YWIN_IMAGE"]),
-                        int(star["FWHM_IMAGE"]),
+                x = star.get("XWIN_IMAGE")
+                y = star.get("YWIN_IMAGE")
+                radius = metric if metric == metric else star.get("FWHM_IMAGE")
+                if x and y and radius and radius == radius and radius > 0:
+                    ds9.cmd(
+                        "regions command { circle %d %d %d}"
+                        % (int(x), int(y), int(radius))
                     )
-                )
                 ds9.cmd("zoom to fit")
                 ds9.cmd("scale mode zscale")
 

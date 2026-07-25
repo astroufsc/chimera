@@ -15,7 +15,7 @@ from chimera.interfaces.telescope import (
     TelescopeTracking,
 )
 from chimera.util.coord import Coord
-from chimera.util.position import Position
+from chimera.util.position import Position, airmass
 from chimera.util.simbad import simbad_lookup
 
 __all__ = ["TelescopeBase"]
@@ -211,7 +211,7 @@ class TelescopeBase(
             ("EQUINOX", 2000.0, "coordinate epoch"),
             ("ALT", str(Coord.from_d(alt).to_dms()), "Altitude of the observed object"),
             ("AZ", str(Coord.from_d(az).to_dms()), "Azimuth of the observed object"),
-            ("AIRMASS", alt, "Airmass of the observed object"),
+            ("AIRMASS", airmass(alt), "Airmass of the observed object"),
             ("WCSAXES", 2, "wcs dimensionality"),
             ("RADESYS", "ICRS", "frame of reference"),
             (
