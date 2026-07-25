@@ -31,7 +31,6 @@ class IAutoFlat(Interface):
         "dome": "/Dome/0",
         "camera": "/Camera/0",
         "filterwheel": "/FilterWheel/0",
-        "site": "/Site/0",
     }
 
     def get_flats(self, filter_id, n_flats):

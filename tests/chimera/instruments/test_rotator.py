@@ -3,7 +3,6 @@
 
 import pytest
 
-from chimera.core.site import Site
 from chimera.instruments.fakerotator import FakeRotator
 
 
@@ -16,19 +15,7 @@ class TestRotator:
     @pytest.fixture(autouse=True)
     def setup(self, manager):
         """Setup fixture called before each test."""
-        # Add site configuration
-        manager.add_class(
-            Site,
-            "lna",
-            {
-                "name": "UFSC",
-                "latitude": "-27 36 13",
-                "longitude": "-48 31 20",
-                "altitude": "20",
-            },
-        )
-
-        # Add FakeRotator
+        # the manager fixture provides the injected site
         manager.add_class(FakeRotator, "fake")
         self.rotator = manager.get_proxy("/FakeRotator/0")
 

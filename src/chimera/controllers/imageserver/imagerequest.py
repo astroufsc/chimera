@@ -129,10 +129,16 @@ class ImageRequest(dict):
     def _fetch_pre_headers(self, chimera_obj):
         auto = []
         if self.auto_collect_metadata:
+            # site metadata comes from the local injected instance, first so
+            # FITS header order is preserved
+            try:
+                self.headers += chimera_obj.get_site().get_metadata(self)
+            except Exception:
+                log.warning("Unable to get metadata from site")
+
             auto += [
                 f"/{cls}/0"
                 for cls in (
-                    "Site",
                     "Camera",
                     "Dome",
                     "FilterWheel",
