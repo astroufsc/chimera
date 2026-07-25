@@ -1,4 +1,3 @@
-import copy
 import sys
 import threading
 import time
@@ -12,7 +11,6 @@ from chimera.core.constants import (
     RWLOCK_ATTRIBUTE_NAME,
 )
 from chimera.core.lock import lock
-from chimera.core.proxy import Proxy
 
 
 class TestLock:
@@ -76,19 +74,13 @@ class TestLock:
             unlocked = []
             locked = []
 
-            def get_obj(o):
-                """
-                Copy Proxy to share between threads.
-                """
-                if isinstance(o, Proxy):
-                    return copy.copy(o)
-                return o
-
+            # obj may be a Proxy shared by every thread: proxies are
+            # thread-safe, no per-thread copy needed
             def run_unlocked():
-                unlocked.append(get_obj(obj).do_unlocked())
+                unlocked.append(obj.do_unlocked())
 
             def run_locked():
-                locked.append(get_obj(obj).do_locked())
+                locked.append(obj.do_locked())
 
             threads = []
 

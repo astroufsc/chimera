@@ -3,7 +3,6 @@
 # SPDX-FileCopyrightText: 2006-present Paulo Henrique Silva <ph.silva@gmail.com>
 
 
-import copy
 import sys
 from typing import cast
 
@@ -348,12 +347,10 @@ class ChimeraDome(ChimeraCLI):
     def __abort__(self):
         self.out("\naborting... ", endl="")
 
-        # copy self.dome Proxy because we are running from a different thread
         if hasattr(self, "dome"):
-            dome = copy.copy(self.dome)
-            dome.abort_slew()
-            if dome.features("DomeWindScreen"):
-                dome.abort_screen()
+            self.dome.abort_slew()
+            if self.dome.features("DomeWindScreen"):
+                self.dome.abort_screen()
 
 
 def main():
