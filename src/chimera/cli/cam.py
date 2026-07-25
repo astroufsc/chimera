@@ -2,7 +2,6 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 # SPDX-FileCopyrightText: 2006-present Paulo Henrique Silva <ph.silva@gmail.com>
 
-import copy
 import sys
 import time
 
@@ -412,11 +411,8 @@ class ChimeraCam(ChimeraCLI):
     def __abort__(self):
         self.out("\naborting... ", endl="")
 
-        # copy self.camera Proxy because we are running from a different
-        # thread
         if hasattr(self, "camera"):
-            cam = copy.copy(self.camera)
-            cam.abort_exposure()
+            self.camera.abort_exposure()
 
     @action(
         # default=True,
