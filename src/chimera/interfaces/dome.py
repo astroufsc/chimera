@@ -221,7 +221,7 @@ class DomeSlit(Dome):
 
 class DomeFlap(Dome):
     """
-    Dome with Slit
+    Dome with Flap
     """
 
     def open_flap(self) -> None:
@@ -263,6 +263,43 @@ class DomeFlap(Dome):
 
         @param az: The azimuth when the flap closed.
         @type  az: float
+        """
+
+
+class DomeWindScreen(Dome):
+    """
+    Dome with Wind Screen
+    """
+
+    def move_screen(self, alt: float) -> None:
+        """
+        Move wind screen to an angle
+
+        @param alt: Windscreen altitude to move to
+        @type  alt: float
+        """
+
+    def get_screen(self) -> float:
+        """
+        Get current wind screen altitude
+
+        @return: Current windscreen altitude
+        @rtype: float
+        """
+
+    @event
+    def windscren_begin(self) -> None:
+        """
+        Event sent when windscreen starts moving
+        """
+
+    @event
+    def windscreen_complete(self, status: DomeStatus = DomeStatus.OK) -> None:
+        """
+        Event when windscreen finished moving
+
+        @param status: Status after windscreen command
+        @type  status: L{DomeStatus}
         """
 
 
