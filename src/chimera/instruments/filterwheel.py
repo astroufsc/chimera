@@ -3,7 +3,6 @@
 
 
 from chimera.core.chimeraobject import ChimeraObject
-from chimera.core.exceptions import ChimeraException
 from chimera.core.lock import lock
 from chimera.interfaces.filterwheel import (
     FilterWheel,
@@ -40,7 +39,7 @@ class FilterWheelBase(ChimeraObject, FilterWheel):
         if filter_name not in self.get_filters():
             raise InvalidFilterPositionException(f"Invalid filter {filter}.")
 
-        old_filter = self._current_filter_or_none()
+        old_filter = self.get_filter()
 
         self._set_filter(filter_name)
 
@@ -56,13 +55,6 @@ class FilterWheelBase(ChimeraObject, FilterWheel):
 
     def get_filters(self):
         return list(self["filters"] or [])
-
-    def _current_filter_or_none(self):
-        try:
-            return self.get_filter()
-        except ChimeraException:
-            # position unknown, e.g. a wheel that hasn't homed since power-up
-            return None
 
     def _validate_focus_offsets(self):
         offsets = self["focus_offsets"] or {}
@@ -128,12 +120,11 @@ class FilterWheelBase(ChimeraObject, FilterWheel):
             ("FILTER", str(self.get_filter()), "Filter used for this observation"),
         ]
 
-        current = self._current_filter_or_none()
-        if self["focuser"] and current is not None:
+        if self["focuser"]:
             md += [
                 (
                     "FOCUSOFF",
-                    self._focus_offsets.get(current, 0),
+                    self._focus_offsets.get(self.get_filter(), 0),
                     "Filter focus offset applied [focuser units]",
                 )
             ]

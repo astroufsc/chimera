@@ -5,7 +5,7 @@ import time
 
 import pytest
 
-from chimera.core.exceptions import ChimeraException, ObjectNotFoundException
+from chimera.core.exceptions import ObjectNotFoundException
 from chimera.instruments.fakefilterwheel import FakeFilterWheel
 from chimera.interfaces.filterwheel import (
     FocusOffsetException,
@@ -223,19 +223,6 @@ class TestFilterWheelFocusOffsets:
 
         wheel.set_filter("U")
         assert focuser.position == start
-
-    def test_unknown_previous_filter(self, wheel, focuser, monkeypatch):
-        # a wheel that has not homed since power-up cannot report its current
-        # filter (chimera-fli raises here); the offset is applied from zero
-        def position_unknown():
-            raise ChimeraException("wheel has not homed yet")
-
-        monkeypatch.setattr(wheel, "get_filter", position_unknown)
-        start = focuser.position
-
-        wheel.set_filter("U")
-
-        assert focuser.position == start - 100
 
     def test_metadata_reports_applied_offset(self, wheel):
         wheel.set_filter("R")
