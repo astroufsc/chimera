@@ -55,11 +55,7 @@ class FilterWheelBase(ChimeraObject, FilterWheel):
         raise NotImplementedError()
 
     def get_filters(self):
-        filters = self["filters"] or []
-        # tolerate the old space-separated string form
-        if isinstance(filters, str):
-            filters = filters.split()
-        return list(filters)
+        return list(self["filters"] or [])
 
     def _current_filter_or_none(self):
         try:
