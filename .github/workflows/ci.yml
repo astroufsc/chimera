@@ -10,6 +10,10 @@ on:
 env:
   RUFF_OUTPUT_FORMAT: github
 
+permissions:
+  contents: read
+  id-token: write
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -29,7 +33,13 @@ jobs:
         run: uv run pre-commit run --all-files
 
       - name: test
-        run: uv run pytest
+        run: uv run pytest --cov-report=xml
+
+      - name: upload coverage to codecov
+        uses: codecov/codecov-action@v5
+        with:
+          use_oidc: true
+          files: coverage.xml
 
       - name: build
         run: uv build
