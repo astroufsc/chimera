@@ -3,7 +3,6 @@
 # SPDX-FileCopyrightText: 2006-present Paulo Henrique Silva <ph.silva@gmail.com>
 
 
-import copy
 import sys
 
 from chimera.core.version import chimera_version
@@ -80,10 +79,8 @@ class ChimeraRotator(ChimeraCLI):
     def __abort__(self):
         self.out("\naborting... ", end="")
 
-        # copy self.rotator Proxy because we are running from a different thread
         if hasattr(self, "rotator"):
-            rotator = copy.copy(self.rotator)
-            rotator.abort_move()
+            self.rotator.abort_move()
 
 
 def main():

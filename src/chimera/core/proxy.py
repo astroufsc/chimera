@@ -13,6 +13,14 @@ __all__ = ["Proxy", "ProxyMethod"]
 
 
 class Proxy:
+    """A remote-object handle, safe to share between threads.
+
+    Every attribute access builds a fresh ProxyMethod, so calls carry no
+    shared state; the only mutable field, __resolved_url__, is set once and
+    never invalidated; and the bus correlates replies by message id, so
+    concurrent calls through one proxy cannot receive each other's answers.
+    """
+
     def __init__(self, url: str | URL, bus: Bus, timeout: float | None = None):
         self.__url__ = parse_url(url)
         self.__resolved_url__: URL | None = None
@@ -65,6 +73,16 @@ class Proxy:
     def __iadd__(self, config_dict: dict[str, Any]):
         ProxyMethod(self, "__iadd__")(config_dict)
         return self
+
+    def __copy__(self) -> "Proxy":
+        new = Proxy.__new__(Proxy)
+        new.__dict__.update(self.__dict__)
+        return new
+
+    def __deepcopy__(self, memo: dict[int, Any]) -> "Proxy":
+        # a Proxy is a handle: a "deep" copy is a new handle to the same
+        # remote object on the same live bus, never a copy of the bus
+        return self.__copy__()
 
     def __repr__(self):
         return f"<{self.__url__} proxy at {hex(id(self))}>"
@@ -127,7 +145,8 @@ class ProxyMethod:
 
     # synchronous call
     def __call__(self, *args: Any, **kwargs: Any):
-        # this is not thread safe
+        # concurrent resolves race benignly: __resolved_url__ is set once to
+        # the same value, worst case a duplicate ping
         self.proxy.resolve()
         assert self.proxy.__resolved_url__ is not None
 
