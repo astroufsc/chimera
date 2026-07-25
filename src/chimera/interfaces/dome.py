@@ -10,7 +10,18 @@ from chimera.core.exceptions import ChimeraException
 from chimera.core.interface import Interface
 from chimera.util.enum import Enum
 
-__all__ = ["Mode", "Style", "Dome", "InvalidDomePositionException"]
+__all__ = [
+    "Mode",
+    "Style",
+    "DomeStatus",
+    "Dome",
+    "DomeSlew",
+    "DomeSlit",
+    "DomeFlap",
+    "DomeWindScreen",
+    "DomeSync",
+    "InvalidDomePositionException",
+]
 
 
 class Mode(Enum):
@@ -268,37 +279,59 @@ class DomeFlap(Dome):
 
 class DomeWindScreen(Dome):
     """
-    Dome with Wind Screen
+    Dome with a wind screen: a screen that shades the lower part of the slit and
+    is positioned in altitude.
+
+    Altitudes are in decimal degrees, horizon = 0 and zenith = 90, the same
+    convention used by ASCOM's Dome.Altitude.
     """
 
     def move_screen(self, alt: float) -> None:
         """
-        Move wind screen to an angle
+        Move the wind screen to the given altitude.
 
-        @param alt: Windscreen altitude to move to
+        The request is accepted with the slit closed as well: the screen must be
+        at the requested altitude by the time the slit opens.
+
+        @param alt: Screen altitude in decimal degrees.
         @type  alt: float
+
+        @raises InvalidDomePositionException: When the requested altitude is
+        outside the screen travel limits.
+
+        @rtype: None
         """
 
     def get_screen(self) -> float:
         """
-        Get current wind screen altitude
+        Get the current wind screen altitude.
 
-        @return: Current windscreen altitude
+        @return: Screen current altitude in decimal degrees.
         @rtype: float
         """
+        ...
 
     @event
-    def windscren_begin(self) -> None:
+    def screen_begin(self, alt: float) -> None:
         """
-        Event sent when windscreen starts moving
+        Indicates that a new screen movement started.
+
+        @param alt: The screen altitude when the movement started, in decimal
+        degrees.
+        @type  alt: float
         """
 
     @event
-    def windscreen_complete(self, status: DomeStatus = DomeStatus.OK) -> None:
+    def screen_complete(self, alt: float, status: DomeStatus) -> None:
         """
-        Event when windscreen finished moving
+        Indicates that the last screen movement finished (with or without
+        success, check L{status} field for more information.).
 
-        @param status: Status after windscreen command
+        @param alt: The screen altitude when the movement finished, in decimal
+        degrees.
+        @type  alt: float
+
+        @param status: Status of the screen command
         @type  status: L{DomeStatus}
         """
 
