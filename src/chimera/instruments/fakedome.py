@@ -7,13 +7,14 @@ import time
 from chimera.core.lock import lock
 from chimera.instruments.dome import DomeBase
 from chimera.interfaces.dome import (
+    DomeFlap,
     DomeStatus,
     DomeWindScreen,
     InvalidDomePositionException,
 )
 
 
-class FakeDome(DomeBase, DomeWindScreen):
+class FakeDome(DomeBase, DomeFlap, DomeWindScreen):
     def __init__(self):
         DomeBase.__init__(self)
 

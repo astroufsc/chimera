@@ -9,13 +9,13 @@ from typing import cast
 
 from chimera.core.chimeraobject import ChimeraObject
 from chimera.core.lock import lock
-from chimera.interfaces.dome import DomeFlap, DomeSlew, DomeSlit, DomeSync, Mode
+from chimera.interfaces.dome import DomeSlew, DomeSlit, DomeSync, Mode
 from chimera.interfaces.telescope import Telescope
 
 __all__ = ["DomeBase"]
 
 
-class DomeBase(ChimeraObject, DomeSlew, DomeSlit, DomeFlap, DomeSync):
+class DomeBase(ChimeraObject, DomeSlew, DomeSlit, DomeSync):
     def __init__(self):
         ChimeraObject.__init__(self)
 
@@ -220,17 +220,6 @@ class DomeBase(ChimeraObject, DomeSlew, DomeSlit, DomeFlap, DomeSync):
     def is_slit_open(self) -> bool:
         raise NotImplementedError()
 
-    @lock
-    def open_flap(self) -> None:
-        raise NotImplementedError()
-
-    @lock
-    def close_flap(self) -> None:
-        raise NotImplementedError()
-
-    def is_flap_open(self) -> bool:
-        raise NotImplementedError()
-
     def get_metadata(self, request) -> list[tuple[str, str, str]]:
         # Check first if there is metadata from a metadata override method.
         metadata = self.get_metadata_override(request)
@@ -249,13 +238,9 @@ class DomeBase(ChimeraObject, DomeSlew, DomeSlit, DomeFlap, DomeSync):
             ("DOME_SLT", str(slit), "Dome slit status"),
         ]
 
-        # every dome inherits DomeFlap, so features() cannot tell us whether the
-        # driver actually implements it
-        try:
+        if self.features("DomeFlap"):
             flap = "Open" if self.is_flap_open() else "Closed"
             metadata.append(("DOME_FLP", flap, "Dome flap status"))
-        except NotImplementedError:
-            pass
 
         if self.features("DomeWindScreen"):
             metadata.append(

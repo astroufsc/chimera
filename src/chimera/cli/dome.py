@@ -96,6 +96,9 @@ class ChimeraDome(ChimeraCLI):
         action_group="FLAP",
     )
     def open_flap(self, options):
+        if not self.dome.features("DomeFlap"):
+            self.exit("Dome does not have a flap.")
+
         self.out("Opening dome flap ... ", end="")
         self.dome.open_flap()
         self.out("OK")
@@ -107,6 +110,9 @@ class ChimeraDome(ChimeraCLI):
         action_group="FLAP",
     )
     def close_flap(self, options):
+        if not self.dome.features("DomeFlap"):
+            self.exit("Dome does not have a flap.")
+
         self.out("Closing dome flap ... ", end="")
         self.dome.close_flap()
         self.out("OK")
@@ -299,6 +305,12 @@ class ChimeraDome(ChimeraCLI):
             self.out("Dome slit is open.")
         else:
             self.out("Dome slit is closed.")
+
+        if self.dome.features("DomeFlap"):
+            if self.dome.is_flap_open():
+                self.out("Dome flap is open.")
+            else:
+                self.out("Dome flap is closed.")
 
         if self.dome.features("DomeWindScreen"):
             self.out("Current wind screen altitude: %s." % self.dome.get_screen())

@@ -10,6 +10,7 @@ import pytest
 
 from chimera.core.bus import Bus
 from chimera.core.manager import Manager
+from chimera.instruments.dome import DomeBase
 from chimera.instruments.fakedome import FakeDome
 from chimera.interfaces.dome import (
     DomeStatus,
@@ -61,8 +62,11 @@ def test_reference_implementation_is_complete(name):
     assert callable(getattr(FakeDome(), name))
 
 
-def test_features_reports_the_wind_screen():
-    assert FakeDome().features("DomeWindScreen")
+def test_features_reports_the_optional_parts():
+    dome = FakeDome()
+    assert dome.features("DomeWindScreen")
+    assert dome.features("DomeFlap")
+    assert not DomeBase().features("DomeFlap")
 
 
 def test_config_keys_resolve():
@@ -199,9 +203,10 @@ def test_metadata_carries_the_flap_status(dome):
 
 
 def test_metadata_skips_the_flap_when_the_driver_has_none():
-    class SlitOnlyDome(FakeDome):
-        def is_flap_open(self):
-            raise NotImplementedError()
+    # DomeBase no longer claims DomeFlap: drivers with a flap mix it in
+    class SlitOnlyDome(DomeBase):
+        def is_slit_open(self):
+            return False
 
     metadata = dict((key, value) for key, value, _ in SlitOnlyDome().get_metadata({}))
     assert "DOME_FLP" not in metadata
