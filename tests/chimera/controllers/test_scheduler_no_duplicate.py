@@ -291,3 +291,41 @@ def test_finished_program_is_not_rerun_after_reschedule():
     session = Session()
     session.query(Program).delete()
     session.commit()
+
+
+def test_reschedule_during_run_does_not_unbalance_the_queue():
+    """Popping the stale re-enqueued program must not raise on the queue.
+
+    reschedule() rebuilds run_queue and re-enqueues the still-running program;
+    done() and the stale-entry pop then both accounted for it with
+    task_done(), and the second call raised 'task_done() called too many
+    times', killing the machine thread mid-night. A single-program night is
+    the minimal case that drove the counter negative.
+    """
+    from chimera.controllers.scheduler.model import Program, Session
+    from chimera.controllers.scheduler.sequential import SequentialScheduler
+
+    session = Session()
+    session.query(Program).delete()
+    session.add(Program(name="only", priority=0, start_at=61244.0))
+    session.commit()
+
+    machine = type("M", (), {"wake_up": staticmethod(lambda: None)})()
+    scheduler = SequentialScheduler()
+    scheduler.reschedule(machine)
+    running = next(scheduler)
+    assert running.name == "only"
+
+    # a re-plan mid-run re-enqueues the still-unfinished program
+    scheduler.reschedule(machine)
+
+    worker_session = Session()
+    scheduler.done(worker_session.merge(running))
+    worker_session.commit()
+
+    # the stale entry is skipped and the night ends cleanly, no ValueError
+    assert next(scheduler) is None
+
+    session = Session()
+    session.query(Program).delete()
+    session.commit()

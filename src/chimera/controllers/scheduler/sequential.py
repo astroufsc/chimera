@@ -16,6 +16,9 @@ class SequentialScheduler(IScheduler):
 
     def reschedule(self, machine):
         self.machine = machine
+        # a plain thread-safe FIFO, rebuilt on every reschedule; we never
+        # join() it, so no task_done() accounting (which drifts across the
+        # rebuild and raised "task_done() called too many times")
         self.run_queue = Queue(-1)
 
         session = Session()
@@ -51,7 +54,6 @@ class SequentialScheduler(IScheduler):
             # be stale by the time they are popped: re-check the database
             current = session.get(Program, program.id)
             if current is None or current.finished:
-                self.run_queue.task_done()
                 continue
             return program
 
@@ -64,10 +66,4 @@ class SequentialScheduler(IScheduler):
         else:
             task.finished = True
 
-        try:
-            self.run_queue.task_done()
-        except ValueError:
-            # the queue was rebuilt by a reschedule since this program was
-            # taken: its slot is gone, nothing left to account for
-            pass
         self.machine.wake_up()
