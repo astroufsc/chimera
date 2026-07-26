@@ -162,7 +162,13 @@ class ChimeraObject(ILifeCycle, metaclass=MetaObject):
             # control runs unlocked on its own thread: a long @lock method
             # (an exposure, a slew) must not stall the control loop. Keeping
             # control() thread-safe is the implementer's job.
-            run_condition = self.control()
+            try:
+                run_condition = self.control()
+            except Exception:
+                # an exception must not kill the loop: a dome that hiccups on
+                # one serial frame would otherwise silently stop tracking for
+                # the rest of the night. Log it and retry on the next cycle.
+                self.log.exception("control() raised; retrying next cycle")
             loop_time = time.monotonic() - t0
 
             time_to_wake_up = (1.0 / self.get_hz()) - loop_time
