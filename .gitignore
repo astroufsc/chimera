@@ -30,6 +30,7 @@ pip-log.txt
 .coverage
 coverage.xml
 htmlcov/
+junit.xml
 .tox
 nosetests.xml
 

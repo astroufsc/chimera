@@ -27,19 +27,26 @@ jobs:
           enable-cache: true        
 
       - name: install
-        run: uv sync --locked --all-extras --dev        
+        run: uv sync --locked --all-extras --dev || { echo "::error title=uv sync failed::Dependency sync failed — likely uv.lock is out of date with pyproject.toml. Run 'uv lock' and commit."; exit 1; }
 
       - name: lint
-        run: uv run pre-commit run --all-files
+        run: uv run pre-commit run --all-files --show-diff-on-failure || { echo "::error title=lint failed::pre-commit checks failed — run 'uv run pre-commit run --all-files' locally."; exit 1; }
 
       - name: test
-        run: uv run pytest --cov-report=xml
+        run: uv run pytest --cov-report=xml --junitxml=junit.xml
+
+      - name: test summary
+        if: ${{ !cancelled() }}
+        uses: test-summary/action@v2
+        with:
+          paths: junit.xml
 
       - name: upload coverage to codecov
+        if: ${{ !cancelled() }}
         uses: codecov/codecov-action@v5
         with:
           use_oidc: true
           files: coverage.xml
 
       - name: build
-        run: uv build
+        run: uv build || { echo "::error title=uv build failed::Package build failed — see the build step logs."; exit 1; }
