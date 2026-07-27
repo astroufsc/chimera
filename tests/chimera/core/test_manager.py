@@ -166,17 +166,17 @@ class TestManager:
                 records.append(record)
 
         handler = Capture()
-        manager_logger = logging.getLogger("chimera.core.manager")
-        manager_logger.addHandler(handler)
+        chimera_logger = logging.getLogger("chimera")
+        chimera_logger.addHandler(handler)
         try:
             manager.add_class(Bomb, "bomb", start=True)
 
             deadline = time.monotonic() + 5
-            while not any("control loop died" in r.getMessage() for r in records):
-                assert time.monotonic() < deadline, "loop death never logged"
+            while not any("control() raised" in r.getMessage() for r in records):
+                assert time.monotonic() < deadline, "control() exception never logged"
                 time.sleep(0.01)
         finally:
-            manager_logger.removeHandler(handler)
+            chimera_logger.removeHandler(handler)
 
     def test_manager(self, manager):
         assert manager.add_class(Simple, "simple")
