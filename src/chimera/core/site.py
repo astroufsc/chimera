@@ -176,6 +176,40 @@ class Site(ChimeraObject):
             Coord.from_r(self._sun.alt), Coord.from_r(self._sun.az)
         )
 
+    def sun_altitude(self, date=None):
+        """
+        Sun altitude in DEGREES.
+
+        Prefer this over reading sunpos(): a float crosses the bus, a
+        Position does not (it is not serializable), and unpacking sunpos()
+        hands out Coords in radians that read like degrees.
+
+        @rtype: float
+        """
+        date = date or self.ut()
+        self._sun.compute(self._get_ephem(date))
+        return float(Coord.from_r(self._sun.alt).to_d())
+
+    def is_dusk(self, date=None):
+        """
+        True while the Sun is on its way down, False while it is climbing.
+
+        Which side of the day it is decides what a twilight routine should
+        do when it runs out of sky: sky flats wait for a fainter sky at
+        dusk and give up at dawn, and the other way around when the sky is
+        too bright. The local clock cannot answer that question - it is the
+        wall clock, so it says nothing about a simulated night run under
+        `time_speedup`.
+
+        The Sun is descending exactly when its last meridian crossing was a
+        transit (its highest point) rather than an anti-transit.
+
+        @rtype: bool
+        """
+        date = date or self.ut()
+        site = self._get_ephem(date)
+        return site.previous_transit(self._sun) > site.previous_antitransit(self._sun)
+
     def moonrise(self, date=None):
         date = date or self.ut()
         site = self._get_ephem(date)
