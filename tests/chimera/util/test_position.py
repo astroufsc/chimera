@@ -88,6 +88,40 @@ class TestPosition:
         assert p1.within(p2, Coord.from_d(29.99)) is False
         assert p1.within(p2, Coord.from_d(30.01)) is True
 
+    def test_distances_in_alt_az(self):
+        """from_alt_az stores (alt, az) - latitude first - while gcdist
+        reads its pair as (longitude, latitude). Passing the stored order
+        straight through called two points 2 degrees apart at the zenith
+        180 degrees apart."""
+        zenith_north = Position.from_alt_az(89, 0)
+        zenith_south = Position.from_alt_az(89, 180)
+        assert equal(float(zenith_north.angsep(zenith_south)), 2.0, 1e-6)
+
+        # a degree of altitude is a degree of separation, anywhere
+        assert equal(
+            float(Position.from_alt_az(80, 78).angsep(Position.from_alt_az(81, 78))),
+            1.0,
+            1e-6,
+        )
+
+        # a degree of azimuth is less than a degree of separation, by
+        # roughly cos(alt): 1.04143 deg from the spherical law of cosines
+        assert equal(
+            float(Position.from_alt_az(80, 78).angsep(Position.from_alt_az(80, 84))),
+            1.04143,
+            1e-5,
+        )
+
+        near_zenith = Position.from_alt_az(89, 0)
+        assert near_zenith.within(zenith_south, Coord.from_d(2.01)) is True
+        assert near_zenith.within(zenith_south, Coord.from_d(1.99)) is False
+
+    def test_distance_between_different_systems_is_refused(self):
+        with pytest.raises(ValueError):
+            Position.from_alt_az(45, 90).angsep(
+                Position.from_ra_dec("10:00:00", "0:0:0")
+            )
+
     def test_change_epoch(self):
         sirius_j2000 = Position.from_ra_dec("06 45 08.9173", "-16 42 58.017")
         sirius_now = sirius_j2000.to_epoch(epoch=Epoch.NOW)
