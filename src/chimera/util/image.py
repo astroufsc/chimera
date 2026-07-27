@@ -358,10 +358,17 @@ class Image(UserDict):
     # WCS
     #
     def pixel_at(self, *world):
+        """
+        World to pixel coordinates. Accepts either two scalars in decimal
+        degrees, a (ra, dec) tuple, or a Position.
+        """
         if not self._find_wcs():
             return (0, 0)
 
-        pixel = self._wcs.all_world2pix(np.array([[world[0], world[1]]]), 1)[0]
+        if len(world) == 1:
+            world = world[0].dd() if isinstance(world[0], Position) else tuple(world[0])
+
+        pixel = self._wcs.all_world2pix(np.array([world]), 1)[0]
 
         # round pixel to avoid large decimal numbers and get out strange -0
         pixel = list(round(p, 6) for p in pixel)
@@ -391,14 +398,21 @@ class Image(UserDict):
         return float(rot_deg)
 
     def world_at(self, *pixel):
+        """
+        Pixel to world coordinates. Accepts either two scalars or an
+        (x, y) tuple.
+        """
         if not self._find_wcs():
             return Position.from_ra_dec(0, 0)
 
-        world = self._wcs.all_pix2world(np.array([*pixel]), 1)[0]
+        if len(pixel) == 1:
+            pixel = tuple(pixel[0])
+
+        world = self._wcs.all_pix2world(np.array([pixel]), 1)[0]
         return Position.from_ra_dec(Coord.from_d(world[0]), Coord.from_d(world[1]))
 
     def world_at_center(self):
-        return self.pixel_at(self.center())
+        return self.world_at(self.center())
 
     def _find_wcs(self):
         if not self._wcs:
