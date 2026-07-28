@@ -49,7 +49,7 @@ class FakeTelescope(TelescopeBase, TelescopePier):
     def __start__(self):
         self.set_hz(1)
 
-    def control(self):
+    def _control(self):
         if not self._slewing:
             if self._tracking:
                 self._set_alt_az_from_ra_dec()

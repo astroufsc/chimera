@@ -10,7 +10,9 @@ from concurrent.futures import ThreadPoolExecutor, wait
 import pytest
 
 import chimera.core.log
+from chimera.core.exceptions import ChimeraException
 from chimera.instruments.faketelescope import FakeTelescope
+from chimera.instruments.telescope import TelescopeBase
 from chimera.interfaces.telescope import TelescopeStatus
 from chimera.util.coord import Coord
 
@@ -211,3 +213,168 @@ class TestFakeTelescope:
                 (start_dec - dec) * 3600,
             )
             assert (start_ra, start_dec) != (ra, dec)
+
+
+# ---------------------------------------------------------------------------
+# Automatic pier flip (unit level, no bus): TelescopeBase.control() re-slews a
+# mount that tracked past pier_flip_ha.
+# ---------------------------------------------------------------------------
+
+
+class PierTelescope(TelescopeBase):
+    """Just enough telescope to drive the pier flip check by hand."""
+
+    def __init__(self):
+        TelescopeBase.__init__(self)
+
+        self.ha = -1.0  # hour angle the site will report, in hours
+        self.tracking = True
+        self.slewing = False
+        self.slews = []
+        self.controls = 0
+        self.slew_error = None
+
+    def _control(self):
+        self.controls += 1
+        return True
+
+    def is_slewing(self):
+        return self.slewing
+
+    def is_tracking(self):
+        return self.tracking
+
+    def get_ra(self):
+        return 12.0
+
+    def get_dec(self):
+        return -30.0
+
+    def get_position_ra_dec(self):
+        return self.get_ra(), self.get_dec()
+
+    def slew_to_ra_dec(self, ra, dec, epoch=2000):
+        if self.slew_error is not None:
+            raise self.slew_error
+        self.slews.append((ra, dec))
+
+
+@pytest.fixture
+def pier_telescope(monkeypatch):
+    def factory(**config):
+        telescope = PierTelescope()
+        for key, value in config.items():
+            telescope[key] = value
+
+        monkeypatch.setattr(
+            telescope,
+            "get_site",
+            lambda: type("site", (), {"ra_to_ha": lambda _, ra: telescope.ha})(),
+        )
+        return telescope
+
+    return factory
+
+
+class TestPierFlip:
+    def test_disabled_by_default(self, pier_telescope):
+        telescope = pier_telescope()
+
+        telescope.ha = -0.1
+        telescope.control()
+        telescope.ha = +0.1
+        telescope.control()
+
+        assert telescope.slews == []
+        # the driver's own periodic work still runs on every cycle
+        assert telescope.controls == 2
+
+    def test_tracking_past_the_limit_flips(self, pier_telescope):
+        telescope = pier_telescope(pier_flip_ha=0)
+
+        telescope.ha = -0.1
+        telescope.control()
+        assert telescope.slews == []
+
+        telescope.ha = +0.1
+        telescope.control()
+        assert telescope.slews == [(12.0, -30.0)]
+
+    def test_flips_only_once(self, pier_telescope):
+        telescope = pier_telescope(pier_flip_ha=0)
+
+        telescope.ha = -0.1
+        telescope.control()
+
+        for telescope.ha in (0.1, 0.2, 0.3):
+            telescope.control()
+
+        assert telescope.slews == [(12.0, -30.0)]
+
+    def test_a_slew_past_the_limit_does_not_flip(self, pier_telescope):
+        """The mount never tracked into the limit: the driver put it on
+        whichever side it wanted when it slewed there."""
+        telescope = pier_telescope(pier_flip_ha=0)
+
+        telescope.ha = +1.0
+        telescope.control()
+        telescope.ha = +1.5
+        telescope.control()
+
+        assert telescope.slews == []
+
+    def test_slewing_disarms_the_flip(self, pier_telescope):
+        telescope = pier_telescope(pier_flip_ha=0)
+
+        telescope.ha = -0.1
+        telescope.control()
+
+        telescope.slewing = True
+        telescope.ha = +0.1
+        telescope.control()
+
+        telescope.slewing = False
+        telescope.control()
+
+        assert telescope.slews == []
+
+    def test_a_parked_mount_is_not_flipped(self, pier_telescope):
+        telescope = pier_telescope(pier_flip_ha=0)
+
+        telescope.ha = -0.1
+        telescope.control()
+
+        telescope.tracking = False
+        telescope.ha = +0.1
+        telescope.control()
+
+        assert telescope.slews == []
+
+    def test_the_limit_is_configurable(self, pier_telescope):
+        telescope = pier_telescope(pier_flip_ha=0.5)
+
+        for telescope.ha in (-0.1, 0.1, 0.4):
+            telescope.control()
+        assert telescope.slews == []
+
+        telescope.ha = 0.6
+        telescope.control()
+        assert telescope.slews == [(12.0, -30.0)]
+
+    def test_a_failed_flip_is_retried(self, pier_telescope):
+        """The mount is tracking into the pier: giving up quietly is the one
+        thing the check must not do."""
+        telescope = pier_telescope(pier_flip_ha=0)
+
+        telescope.ha = -0.1
+        telescope.control()
+
+        telescope.slew_error = ChimeraException("mount is not answering")
+        telescope.ha = +0.1
+        with pytest.raises(ChimeraException):
+            telescope.control()
+        assert telescope.slews == []
+
+        telescope.slew_error = None
+        telescope.control()
+        assert telescope.slews == [(12.0, -30.0)]

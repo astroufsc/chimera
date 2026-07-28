@@ -25,6 +25,67 @@ class TelescopeBase(
         super().__init__()
 
         self._park_position = None
+        # True once the mount has been seen tracking east of pier_flip_ha, i.e.
+        # heading for the flip. See _check_pier_flip().
+        self._pier_flip_armed = False
+
+        # a pier flip is a minutes-scale event and every check asks the mount
+        # where it is: 2 Hz (the ChimeraObject default) is pointless traffic on
+        # a serial mount. Drivers needing a faster loop call set_hz() in
+        # __start__, which runs after this.
+        self.set_hz(1 / 5.0)
+
+    def control(self) -> bool:
+        """
+        Runs the automatic pier flip check on every cycle of the object's
+        control loop, then the driver's own periodic work. Drivers implement
+        L{_control}.
+        """
+        self._check_pier_flip()
+        return self._control()
+
+    def _control(self) -> bool:
+        """
+        Periodic driver work, called from L{control} on every cycle of the
+        control loop. Runs unlocked, on the control loop thread.
+
+        @return: False to stop the control loop.
+        @rtype: bool
+        """
+        return True
+
+    def _check_pier_flip(self):
+        """
+        Flip a German equatorial mount that has tracked past C{pier_flip_ha}.
+
+        The mount is re-slewed to where it is already pointing, which is what
+        makes it choose the other side of the pier. Only a mount that reached
+        the limit by tracking is flipped: one that slewed straight to an object
+        past the limit is already on the side the mount driver picked for it.
+        """
+        flip_ha = self["pier_flip_ha"]
+        if flip_ha is None:
+            return
+
+        if self.is_slewing() or not self.is_tracking():
+            # wherever the next slew lands is the new starting point
+            self._pier_flip_armed = False
+            return
+
+        ha = self.get_site().ra_to_ha(self.get_ra())
+
+        if ha < flip_ha:
+            self._pier_flip_armed = True
+            return
+
+        if not self._pier_flip_armed:
+            return
+
+        self.log.info(f"Hour angle {ha:.3f} h is past {flip_ha} h, flipping the pier.")
+        self.slew_to_ra_dec(*self.get_position_ra_dec())
+        # only on success: a flip that raised stays armed and is retried on the
+        # next cycle, rather than leaving the mount tracking into the pier
+        self._pier_flip_armed = False
 
     @lock
     def slew_to_object(self, name):

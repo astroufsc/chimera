@@ -65,6 +65,10 @@ class TelescopeSlew(Telescope):
         "position_sigma_delta": 60.0,  # arcseconds
         "skip_init": False,
         "min_altitude": 20,
+        # Hour angle, in hours, at which a German equatorial mount that tracked
+        # into it is flipped to the other side of the pier. None (the default)
+        # never flips.
+        "pier_flip_ha": None,
     }
 
     def slew_to_object(self, name: str) -> None:
