@@ -255,6 +255,37 @@ def test_sequential_runs_in_time_order():
     session.commit()
 
 
+def test_sequential_keeps_file_order_for_untimed_programs():
+    """A hand-written queue must run in the order it was written.
+
+    `chimera-sched --new` bakes no start_at and usually one priority, so
+    the ordering fell through to whatever the database returned - the
+    targets came out in the reverse of the YAML (2026-07-20).
+    """
+    from chimera.controllers.scheduler.model import Program, Session
+    from chimera.controllers.scheduler.sequential import SequentialScheduler
+
+    session = Session()
+    session.query(Program).delete()
+    for name in ("first", "second", "third"):
+        session.add(Program(name=name, priority=0))
+    session.commit()
+
+    scheduler = SequentialScheduler()
+    scheduler.reschedule(type("M", (), {"wake_up": staticmethod(lambda: None)})())
+
+    order = []
+    while True:
+        program = next(scheduler)
+        if program is None:
+            break
+        order.append(program.name)
+    assert order == ["first", "second", "third"], order
+
+    session.query(Program).delete()
+    session.commit()
+
+
 def test_finished_program_is_not_rerun_after_reschedule():
     """A reschedule while a program runs re-enqueues that same program (its
     finished flag is only written at completion); the pop must skip the

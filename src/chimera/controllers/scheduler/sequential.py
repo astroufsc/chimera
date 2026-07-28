@@ -27,10 +27,17 @@ class SequentialScheduler(IScheduler):
         # start_at orders execution, priority breaks ties: priority alone
         # let a future-timed program hold the machine with the whole night
         # queued behind it. Programs without start_at sort first and keep
-        # the old priority order among themselves.
+        # the old priority order among themselves; equal priorities then run
+        # in insertion order, which for a hand-written `chimera-sched --new`
+        # queue is the order the targets appear in the YAML (they came out
+        # reversed, which is not what anyone writing a file expects).
         programs = (
             session.query(Program)
-            .order_by(Program.start_at.asc().nullsfirst(), desc(Program.priority))
+            .order_by(
+                Program.start_at.asc().nullsfirst(),
+                desc(Program.priority),
+                Program.id.asc(),
+            )
             .filter(Program.finished == False)  # noqa
             .all()
         )
