@@ -216,6 +216,21 @@ class Site(ChimeraObject):
         self._sun.compute(self._get_ephem(date))
         return float(Coord.from_r(self._sun.alt).to_d())
 
+    def sun_azimuth(self, date=None):
+        """
+        Sun azimuth in DEGREES.
+
+        The companion to sun_altitude(), and for the same reason: reading
+        sunpos().az drags a Position across the bus, which is not
+        serializable. Anything pointing away from the Sun needs this -
+        twilight sky flats shoot the anti-solar point, 180 degrees from it.
+
+        @rtype: float
+        """
+        date = date or self.ut()
+        self._sun.compute(self._get_ephem(date))
+        return float(Coord.from_r(self._sun.az).to_d())
+
     def is_dusk(self, date=None):
         """
         True while the Sun is on its way down, False while it is climbing.
