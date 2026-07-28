@@ -265,12 +265,13 @@ class Site(ChimeraObject):
 
     def ra_to_ha(self, ra: float):
         # ra in hours
-        # returns ha in hours
-        return float(
+        # returns ha in hours, in [-12, +12): east of the meridian is negative
+        ha = float(
             CoordUtil.ra_to_ha(
                 Coord.from_h(ra), Coord.from_r(self.lst_in_rads())
             ).to_h()
         )
+        return (ha + 12) % 24 - 12
 
     def ha_to_ra(self, ha: float):
         return float(
