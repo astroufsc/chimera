@@ -25,10 +25,10 @@ class FakeDome(DomeBase, DomeFlap, DomeWindScreen):
         self._abort = threading.Event()
         self._max_slew_time = 5 / 180.0
 
-        self._screen_alt: float = 0.0
-        self._screen_moving = False
-        self._abort_screen = threading.Event()
-        self._max_screen_move_time = 5 / 90.0
+        self._wind_screen_alt: float = 0.0
+        self._wind_screen_moving = False
+        self._abort_wind_screen_move = threading.Event()
+        self._max_wind_screen_move_time = 5 / 90.0
 
     def __start__(self):
         self.set_hz(1.0 / 30.0)
@@ -135,22 +135,22 @@ class FakeDome(DomeBase, DomeFlap, DomeWindScreen):
         return self._flap_open
 
     @lock
-    def move_screen(self, alt: float) -> None:
-        if not self["screen_min_alt"] <= alt <= self["screen_max_alt"]:
+    def move_wind_screen(self, alt: float) -> None:
+        if not self["wind_screen_min_alt"] <= alt <= self["wind_screen_max_alt"]:
             raise InvalidDomePositionException(
                 f"Cannot move the wind screen to {alt}. Outside screen limits."
             )
 
-        self._abort_screen.clear()
-        self._screen_moving = True
+        self._abort_wind_screen_move.clear()
+        self._wind_screen_moving = True
 
-        self.screen_begin(self.get_screen())
+        self.wind_screen_move_begin(self.get_wind_screen_alt())
         self.log.info(f"Moving the wind screen to {alt}")
 
         # move time ~ distance from current position
-        distance = abs(alt - self._screen_alt)
-        direction = 1 if alt >= self._screen_alt else -1
-        move_time = distance * self._max_screen_move_time
+        distance = abs(alt - self._wind_screen_alt)
+        direction = 1 if alt >= self._wind_screen_alt else -1
+        move_time = distance * self._max_wind_screen_move_time
 
         self.log.info(f"Wind screen move time ~ {move_time:.3f} s")
 
@@ -158,7 +158,7 @@ class FakeDome(DomeBase, DomeFlap, DomeWindScreen):
 
         t = 0
         while t < move_time:
-            if self._abort_screen.is_set():
+            if self._abort_wind_screen_move.is_set():
                 status = DomeStatus.ABORTED
                 break
 
@@ -166,25 +166,25 @@ class FakeDome(DomeBase, DomeFlap, DomeWindScreen):
             t += 0.1
 
         if status == DomeStatus.OK:
-            self._screen_alt = alt
+            self._wind_screen_alt = alt
         else:
             # assume half movement in case of abort
-            self._screen_alt += direction * distance / 2.0
+            self._wind_screen_alt += direction * distance / 2.0
 
-        self._screen_moving = False
-        self.screen_complete(self.get_screen(), status)
+        self._wind_screen_moving = False
+        self.wind_screen_move_complete(self.get_wind_screen_alt(), status)
 
     @lock
-    def get_screen(self) -> float:
-        return self._screen_alt
+    def get_wind_screen_alt(self) -> float:
+        return self._wind_screen_alt
 
-    def is_screen_moving(self) -> bool:
-        return self._screen_moving
+    def is_wind_screen_moving(self) -> bool:
+        return self._wind_screen_moving
 
-    def abort_screen(self) -> None:
-        if not self.is_screen_moving():
+    def abort_wind_screen_move(self) -> None:
+        if not self.is_wind_screen_moving():
             return
 
-        self._abort_screen.set()
-        while self.is_screen_moving():
+        self._abort_wind_screen_move.set()
+        while self.is_wind_screen_moving():
             time.sleep(0.1)

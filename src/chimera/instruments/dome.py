@@ -57,7 +57,7 @@ class DomeBase(ChimeraObject, DomeSlew, DomeSlit, DomeSync):
         if self["park_on_shutdown"] and self.features("DomeWindScreen"):
             try:
                 self.log.info("Parking the wind screen...")
-                self.move_screen(self["screen_park_position"])
+                self.move_wind_screen(self["wind_screen_park_position"])
             except Exception as e:
                 self.log.warning("Unable to park the wind screen: %s", str(e))
 
@@ -85,7 +85,7 @@ class DomeBase(ChimeraObject, DomeSlew, DomeSlit, DomeSync):
 
         # _get_telescope_az() drops to Stand when the telescope is unreachable
         if self.get_mode() == Mode.Track:
-            self._move_screen_if_needed(self.telescope.get_alt())
+            self._move_wind_screen_if_needed(self.telescope.get_alt())
 
         # flag all waiting threads that the control loop already checked the new telescope position
         # probably adding new azimuth to the queue
@@ -123,28 +123,30 @@ class DomeBase(ChimeraObject, DomeSlew, DomeSlit, DomeSync):
     def _need_to_move(self, az: float) -> bool:
         return abs(az - self.get_az()) >= self["az_resolution"]
 
-    def _move_screen_if_needed(self, telescope_alt: float) -> None:
-        if not (self.features("DomeWindScreen") and self["screen_track"]):
+    def _move_wind_screen_if_needed(self, telescope_alt: float) -> None:
+        if not (self.features("DomeWindScreen") and self["wind_screen_track"]):
             return
 
-        target = self._screen_target(telescope_alt)
-        current = self.get_screen()
+        target = self._wind_screen_target(telescope_alt)
+        current = self.get_wind_screen_alt()
 
-        if abs(target - current) < self["screen_alt_resolution"]:
+        if abs(target - current) < self["wind_screen_alt_resolution"]:
             self.log.debug(
                 f"[control] no need to move the wind screen"
-                f" (screen alt={current}, target={target}.)"
+                f" (wind screen alt={current}, target={target}.)"
             )
             return
 
         self.log.debug(f"[control] moving the wind screen to {target}")
-        self.move_screen(target)
+        self.move_wind_screen(target)
 
-    def _screen_target(self, telescope_alt: float) -> float:
-        # clamp so tracking never asks for a position outside the screen travel
+    def _wind_screen_target(self, telescope_alt: float) -> float:
+        # clamp so tracking never asks for a position outside the wind screen travel
         return min(
-            max(telescope_alt + self["screen_offset"], self["screen_min_alt"]),
-            self["screen_max_alt"],
+            max(
+                telescope_alt + self["wind_screen_offset"], self["wind_screen_min_alt"]
+            ),
+            self["wind_screen_max_alt"],
         )
 
     def _process_queue(self):
@@ -244,7 +246,11 @@ class DomeBase(ChimeraObject, DomeSlew, DomeSlit, DomeSync):
 
         if self.features("DomeWindScreen"):
             metadata.append(
-                ("DOME_WSC", f"{self.get_screen():.2f}", "Dome wind screen altitude")
+                (
+                    "DOME_WSC",
+                    f"{self.get_wind_screen_alt():.2f}",
+                    "Dome wind screen altitude",
+                )
             )
 
         return metadata

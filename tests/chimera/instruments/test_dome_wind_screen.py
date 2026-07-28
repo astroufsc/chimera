@@ -19,8 +19,13 @@ from chimera.interfaces.dome import (
     Mode,
 )
 
-METHODS = ["move_screen", "get_screen", "is_screen_moving", "abort_screen"]
-EVENTS = ["screen_begin", "screen_complete"]
+METHODS = [
+    "move_wind_screen",
+    "get_wind_screen_alt",
+    "is_wind_screen_moving",
+    "abort_wind_screen_move",
+]
+EVENTS = ["wind_screen_move_begin", "wind_screen_move_complete"]
 
 
 def _free_tcp_port():
@@ -75,56 +80,60 @@ def test_config_keys_resolve():
         dome[key]
 
 
-def test_move_screen(dome):
-    dome.move_screen(45.0)
-    assert dome.get_screen() == 45.0
-    assert not dome.is_screen_moving()
+def test_move_wind_screen(dome):
+    dome.move_wind_screen(45.0)
+    assert dome.get_wind_screen_alt() == 45.0
+    assert not dome.is_wind_screen_moving()
 
-    dome.move_screen(10.0)
-    assert dome.get_screen() == 10.0
+    dome.move_wind_screen(10.0)
+    assert dome.get_wind_screen_alt() == 10.0
 
 
-def test_move_screen_outside_limits():
+def test_move_wind_screen_outside_limits():
     # direct instance: the bus re-raises remote errors as plain Exception,
     # which would hide the exception type this asserts on
     dome = FakeDome()
 
     with pytest.raises(InvalidDomePositionException):
-        dome.move_screen(dome["screen_max_alt"] + 1)
+        dome.move_wind_screen(dome["wind_screen_max_alt"] + 1)
 
     with pytest.raises(InvalidDomePositionException):
-        dome.move_screen(dome["screen_min_alt"] - 1)
+        dome.move_wind_screen(dome["wind_screen_min_alt"] - 1)
 
 
-def test_abort_screen(dome):
+def test_abort_wind_screen_move(dome):
     completed = []
-    dome.screen_complete += lambda alt, status: completed.append((alt, status))
+    dome.wind_screen_move_complete += lambda alt, status: completed.append(
+        (alt, status)
+    )
 
-    mover = threading.Thread(target=dome.move_screen, args=(90.0,))
+    mover = threading.Thread(target=dome.move_wind_screen, args=(90.0,))
     mover.start()
 
-    while not dome.is_screen_moving():
+    while not dome.is_wind_screen_moving():
         time.sleep(0.05)
 
-    dome.abort_screen()
+    dome.abort_wind_screen_move()
     mover.join(timeout=10)
 
-    assert not dome.is_screen_moving()
-    assert 0.0 < dome.get_screen() < 90.0
+    assert not dome.is_wind_screen_moving()
+    assert 0.0 < dome.get_wind_screen_alt() < 90.0
 
     # events are delivered asynchronously over the bus
     deadline = time.time() + 10.0
     while not completed and time.time() < deadline:
         time.sleep(0.05)
-    assert completed[0] == (dome.get_screen(), DomeStatus.ABORTED)
+    assert completed[0] == (dome.get_wind_screen_alt(), DomeStatus.ABORTED)
 
 
 def test_screen_events(dome):
     begun, completed = [], []
-    dome.screen_begin += begun.append
-    dome.screen_complete += lambda alt, status: completed.append((alt, status))
+    dome.wind_screen_move_begin += begun.append
+    dome.wind_screen_move_complete += lambda alt, status: completed.append(
+        (alt, status)
+    )
 
-    dome.move_screen(30.0)
+    dome.move_wind_screen(30.0)
 
     deadline = time.time() + 10.0
     while not (begun and completed) and time.time() < deadline:
@@ -135,29 +144,29 @@ def test_screen_events(dome):
 
 
 def test_tracking_follows_the_telescope_altitude(dome):
-    dome["screen_offset"] = 5.0
-    assert dome._screen_target(40.0) == 45.0
+    dome["wind_screen_offset"] = 5.0
+    assert dome._wind_screen_target(40.0) == 45.0
 
     # never asks for a position outside the screen travel
-    assert dome._screen_target(89.0) == dome["screen_max_alt"]
-    assert dome._screen_target(-10.0) == dome["screen_min_alt"]
+    assert dome._wind_screen_target(89.0) == dome["wind_screen_max_alt"]
+    assert dome._wind_screen_target(-10.0) == dome["wind_screen_min_alt"]
 
 
 def test_tracking_respects_the_resolution_deadband(dome):
-    dome["screen_alt_resolution"] = 10.0
-    dome.move_screen(40.0)
+    dome["wind_screen_alt_resolution"] = 10.0
+    dome.move_wind_screen(40.0)
 
-    dome._move_screen_if_needed(45.0)
-    assert dome.get_screen() == 40.0  # within the deadband, no move
+    dome._move_wind_screen_if_needed(45.0)
+    assert dome.get_wind_screen_alt() == 40.0  # within the deadband, no move
 
-    dome._move_screen_if_needed(55.0)
-    assert dome.get_screen() == 55.0
+    dome._move_wind_screen_if_needed(55.0)
+    assert dome.get_wind_screen_alt() == 55.0
 
 
 def test_tracking_can_be_turned_off(dome):
-    dome["screen_track"] = False
-    dome._move_screen_if_needed(45.0)
-    assert dome.get_screen() == 0.0
+    dome["wind_screen_track"] = False
+    dome._move_wind_screen_if_needed(45.0)
+    assert dome.get_wind_screen_alt() == 0.0
 
 
 def test_control_loop_tracks_the_telescope(manager):
@@ -176,17 +185,17 @@ def test_control_loop_tracks_the_telescope(manager):
     )
     telescope = manager.add_class(FakeTelescope, "fake")
     dome = manager.add_class(FakeDome, "dome", {"telescope": "/FakeTelescope/fake"})
-    dome["screen_offset"] = 3.0
+    dome["wind_screen_offset"] = 3.0
 
     dome.track()
     assert dome.get_mode() == Mode.Track
 
     dome.control()
-    assert dome.get_screen() == telescope.get_alt() + 3.0
+    assert dome.get_wind_screen_alt() == telescope.get_alt() + 3.0
 
 
-def test_metadata_carries_the_screen_altitude(dome):
-    dome.move_screen(35.0)
+def test_metadata_carries_the_wind_screen_altitude(dome):
+    dome.move_wind_screen(35.0)
     metadata = dict((key, value) for key, value, _ in dome.get_metadata({}))
     assert metadata["DOME_WSC"] == "35.00"
 
