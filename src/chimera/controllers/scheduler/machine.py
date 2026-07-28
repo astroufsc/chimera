@@ -1,5 +1,6 @@
 import logging
 import threading
+import time
 
 from chimera.controllers.scheduler.model import Program, Session
 from chimera.controllers.scheduler.states import State
@@ -7,6 +8,9 @@ from chimera.controllers.scheduler.status import SchedulerStatus
 from chimera.core.exceptions import ProgramExecutionAborted, ProgramExecutionException
 
 log = logging.getLogger(__name__)
+
+#: seconds between heartbeat lines while a program runs
+HEARTBEAT_SECONDS = 60.0
 
 
 class Machine(threading.Thread):
@@ -24,6 +28,9 @@ class Machine(threading.Thread):
         self.current_program = None
         # thread running the current program; the IDLE branch waits on it
         self._worker = None
+        # heartbeat bookkeeping (monotonic seconds)
+        self._last_heartbeat = 0.0
+        self._program_started_at = 0.0
 
         self.daemon = False
 
@@ -90,6 +97,7 @@ class Machine(threading.Thread):
                     # poll, don't sleep(): the worker signals IDLE just
                     # before exiting, so the wakeup can be lost
                     self._worker.join(1.0)
+                    self._heartbeat()
                     continue
 
                 log.debug("[idle] looking for something to do...")
@@ -102,6 +110,8 @@ class Machine(threading.Thread):
                     log.debug("[idle] program slew start %s", program.start_at)
                     self.state(State.BUSY)
                     self.current_program = program
+                    self._program_started_at = time.monotonic()
+                    self._last_heartbeat = self._program_started_at
                     self._process(program)
                     continue
 
@@ -112,7 +122,11 @@ class Machine(threading.Thread):
 
             elif self.state() == State.BUSY:
                 log.debug("[busy] waiting tasks to finish..")
-                self.sleep()
+                # bounded, so the heartbeat below gets a turn; the Condition
+                # is notified on every state change, so a STOP still lands
+                # immediately
+                self.sleep(timeout=HEARTBEAT_SECONDS)
+                self._heartbeat()
 
             elif self.state() == State.STOP:
                 log.debug("[stop] trying to stop current program")
@@ -142,6 +156,37 @@ class Machine(threading.Thread):
         self._join_worker("shutdown")
         log.debug("[shutdown] thread ending...")
 
+    def _heartbeat(self):
+        """Say what the machine is doing, at most once a minute.
+
+        Both waits are silent: BUSY sleeps on the wake-up Condition while
+        the worker runs, and a worker counting down to its slew time (or
+        running a 10 min autofocus) prints nothing either. Twice that
+        silence was diagnosed as "the scheduler is wedged" from the log
+        alone.
+        """
+        now = time.monotonic()
+        if now - self._last_heartbeat < HEARTBEAT_SECONDS:
+            return
+        self._last_heartbeat = now
+
+        program = self.current_program
+        waiting_for = ""
+        start_at = getattr(program, "start_at", None)
+        if start_at:
+            waiting_for = f", waiting until MJD {start_at:.5f}"
+            try:
+                waiting_for += f" (now {self.controller.get_site().mjd():.5f})"
+            except Exception:
+                pass
+        log.info(
+            "[%s] running %s for %.0f s%s",
+            self.state(),
+            program,
+            now - self._program_started_at,
+            waiting_for,
+        )
+
     def _join_worker(self, reason):
         """Wait until the worker thread is actually dead, heartbeating: a
         camera abort legitimately takes minutes, and a silent wait reads as
@@ -161,10 +206,10 @@ class Machine(threading.Thread):
                     waited,
                 )
 
-    def sleep(self):
+    def sleep(self, timeout=None):
         self.__wake_up_call.acquire()
         log.debug("Sleeping")
-        self.__wake_up_call.wait()
+        self.__wake_up_call.wait(timeout)
         self.__wake_up_call.release()
 
     def wake_up(self):
@@ -213,7 +258,14 @@ class Machine(threading.Thread):
 
             task = session.merge(program)
 
-            log.debug(f"[start] {str(task)}")
+            # Describe the program ONCE, while its row is certainly there:
+            # every commit below expires the instance, and the queue can be
+            # rewritten under a running program (robobs cleans it, a replan
+            # rebuilds it), so formatting it afterwards reloads a row that
+            # may be gone.
+            label = str(task)
+
+            log.debug(f"[start] {label}")
 
             # the manager-injected site, not a private Site(): one clock
             # system-wide
@@ -279,40 +331,52 @@ class Machine(threading.Thread):
             )
             self.controller.program_begin(program.id)
 
-            try:
-                self.executor.execute(task)
-                log.debug(f"[finish] {str(task)}")
-                self.scheduler.done(task)
-                # commit the finished flag before releasing the machine:
-                # the idle picker re-checks it against the database
-                session.commit()
+            def finish(status, message=None, error=None, next_state=State.IDLE):
+                """Close the program out. Nothing here may kill this thread.
+
+                The program is over by the time we get here, so a failure to
+                record it must not cost the completion event (robobs waits
+                for it to pick the next program) nor the state transition
+                (the machine would sit BUSY until chimera is restarted).
+                """
+                try:
+                    self.scheduler.done(task, error=error)
+                    # commit the finished flag before releasing the machine:
+                    # the idle picker re-checks it against the database
+                    session.commit()
+                except Exception:
+                    log.exception("[finish] could not record the end of %s", label)
                 self._stop_tracking()
-                self.controller.program_complete(program.id, SchedulerStatus.OK)
+                try:
+                    self.controller.program_complete(program.id, status, message)
+                except Exception:
+                    log.exception("[finish] could not publish the end of %s", label)
                 # conditional: a completion event must not re-arm a machine
                 # that went STOPPING/SHUTDOWN while this program ran
-                self.transition(State.BUSY, State.IDLE)
+                self.transition(State.BUSY, next_state)
+
+            try:
+                self.executor.execute(task)
+                log.debug(f"[finish] {label}")
+                finish(SchedulerStatus.OK)
             except ProgramExecutionException as e:
-                self.scheduler.done(task, error=e)
-                session.commit()
-                self._stop_tracking()
-                self.controller.program_complete(
-                    program.id, SchedulerStatus.ERROR, str(e)
-                )
-                self.transition(State.BUSY, State.IDLE)
-                log.debug(f"[error] {str(task)} ({str(e)})")
+                finish(SchedulerStatus.ERROR, str(e), error=e)
+                log.debug(f"[error] {label} ({str(e)})")
             except ProgramExecutionAborted as e:
-                self.scheduler.done(task, error=e)
-                session.commit()
-                self._stop_tracking()
-                self.controller.program_complete(
-                    program.id, SchedulerStatus.ABORTED, "Aborted by user."
-                )
                 # normally the machine itself goes STOPPING -> OFF once this
                 # worker dies; cover an out-of-band abort arriving while BUSY
-                self.transition(State.BUSY, State.OFF)
-                log.debug(f"[aborted by user] {str(task)}")
+                finish(
+                    SchedulerStatus.ABORTED,
+                    "Aborted by user.",
+                    error=e,
+                    next_state=State.OFF,
+                )
+                log.debug(f"[aborted by user] {label}")
 
-            session.commit()
+            try:
+                session.commit()
+            except Exception:
+                log.exception("[finish] final commit failed for %s", label)
 
         t = threading.Thread(target=process, name="scheduler-program")
         t.daemon = False
