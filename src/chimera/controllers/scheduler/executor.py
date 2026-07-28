@@ -51,8 +51,7 @@ class ProgramExecutor:
             self._inject_instrument(handler)
 
     def execute(self, program):
-        self.must_stop.clear()
-
+        # must_stop is armed by Machine._process before this thread starts
         for action in program.actions:
             # aborted?
             if self.must_stop.is_set():
@@ -87,9 +86,16 @@ class ProgramExecutor:
                 log.debug("[finish] took: %f s" % (time.time() - t0))
 
     def stop(self):
+        # always arm: a worker that has not reached its first action yet must
+        # still see the abort at its next checkpoint
+        self.must_stop.set()
         if self.current_handler:
-            self.must_stop.set()
-            self.current_handler.abort(self.current_action)
+            try:
+                self.current_handler.abort(self.current_action)
+            except Exception:
+                # abort is a bus round-trip; if the bus is already gone the
+                # machine must still exit cleanly
+                log.exception("error aborting current action")
 
     def _inject_instrument(self, handler):
         if not issubclass(handler, ActionHandler):

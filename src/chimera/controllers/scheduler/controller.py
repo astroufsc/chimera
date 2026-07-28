@@ -85,7 +85,19 @@ class Scheduler(ChimeraObject):
 
     def __stop__(self):
         self.log.debug("Attempting to stop machine")
-        self.shutdown()
+        self.shutdown()  # machine.state(SHUTDOWN); wakes any sleep
+        machine = self.machine
+        if machine is not None and machine.ident is not None:
+            # the machine runs executor.stop() on its way out: this join
+            # covers the abort round-trip (abort_exposure waits the readout)
+            machine.join(timeout=10)
+            if machine.is_alive():
+                self.log.warning("scheduler machine did not stop in 10s")
+            worker = machine.current_worker
+            if worker is not None and worker.is_alive():
+                worker.join(timeout=10)
+                if worker.is_alive():
+                    self.log.warning("scheduler program worker did not stop in 10s")
         self.log.debug("Machine stopped")
         Session().commit()
         return True

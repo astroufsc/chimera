@@ -1,5 +1,10 @@
 from chimera.controllers.imageserver.imagerequest import ImageRequest
-from chimera.core.exceptions import ProgramExecutionException, print_exception
+from chimera.core.exceptions import (
+    BusDeadException,
+    ObjectNotFoundException,
+    ProgramExecutionException,
+    print_exception,
+)
 from chimera.util.position import Epoch
 
 
@@ -84,6 +89,9 @@ class PointHandler(ActionHandler):
             if action.pa is not None:
                 rotator.move_to(action.pa)
 
+        except (BusDeadException, ObjectNotFoundException):
+            # shutdown/bus loss is an abort condition, not a program error
+            raise
         except Exception as e:
             raise ProgramExecutionException(str(e))
 
@@ -171,6 +179,9 @@ class ExposeHandler(ActionHandler):
 
         try:
             camera.expose(ir)
+        except (BusDeadException, ObjectNotFoundException):
+            # shutdown/bus loss is an abort condition, not a program error
+            raise
         except Exception as e:
             print_exception(e)
             raise ProgramExecutionException("Error while exposing")
@@ -200,6 +211,9 @@ class AutoFocusHandler(ActionHandler):
                 step=action.step,
                 filter=action.filter,
             )
+        except (BusDeadException, ObjectNotFoundException):
+            # shutdown/bus loss is an abort condition, not a program error
+            raise
         except Exception as e:
             print_exception(e)
             raise ProgramExecutionException("Error while autofocusing")
@@ -222,6 +236,9 @@ class AutoFlatHandler(ActionHandler):
 
         try:
             autoflat.get_flats(action.filter, n_flats=action.frames, request=request)
+        except (BusDeadException, ObjectNotFoundException):
+            # shutdown/bus loss is an abort condition, not a program error
+            raise
         except Exception as e:
             print_exception(e)
             raise ProgramExecutionException("Error trying to take flats")
@@ -244,6 +261,9 @@ class AutoguideHandler(ActionHandler):
                 )
             else:
                 autoguider.stop_guiding()
+        except (BusDeadException, ObjectNotFoundException):
+            # shutdown/bus loss is an abort condition, not a program error
+            raise
         except Exception as e:
             print_exception(e)
             raise ProgramExecutionException("Error while autoguiding")
@@ -265,6 +285,9 @@ class PointVerifyHandler(ActionHandler):
                 pv.point_verify()
             elif action.choose is not None:
                 pv.choose()
+        except (BusDeadException, ObjectNotFoundException):
+            # shutdown/bus loss is an abort condition, not a program error
+            raise
         except Exception as e:
             raise ProgramExecutionException(str(e))
 
@@ -281,6 +304,9 @@ class OperatorHandler(ActionHandler):
 
         try:
             op.request(action.type, action.message)
+        except (BusDeadException, ObjectNotFoundException):
+            # shutdown/bus loss is an abort condition, not a program error
+            raise
         except Exception as e:
             raise ProgramExecutionException(str(e))
 
