@@ -1971,3 +1971,41 @@ def test_unmatched_response_dropped(
     bus.shutdown()
     bus_future.result()
     pool.shutdown()
+
+
+class UnserializableResult:
+    pass
+
+
+def test_remote_unserializable_result_returns_error(create_bus: Callable[..., Bus]):
+    """A remote method returning an object the wire cannot encode must yield
+    a 500 error naming the type — not a silently dropped reply that leaves
+    the caller blocked forever (the chimera-sched --info hang)."""
+    src_bus = create_bus("tcp://127.0.0.1:15050")
+    dst_bus = create_bus("tcp://127.0.0.1:15051")
+
+    def bad_result() -> UnserializableResult:
+        return UnserializableResult()
+
+    dst_bus.resolve_request = lambda object, method: ("/Bad/0", bad_result)
+
+    pool = ThreadPoolExecutor()
+    dst_bus_future = pool.submit(dst_bus.run_forever)
+    src_bus_future = pool.submit(src_bus.run_forever)
+
+    response = src_bus.request(
+        src=f"{src_bus.url.bus}/Proxy/0",
+        dst=f"{dst_bus.url.bus}/Bad/0",
+        method="bad_result",
+        timeout=10.0,  # pre-fix the reply was dropped: fail as a timeout, not a hang
+    )
+    assert response.code == 500
+    assert response.error is not None
+    assert "UnserializableResult" in response.error
+    assert "bad_result" in response.error
+
+    src_bus.shutdown()
+    dst_bus.shutdown()
+    dst_bus_future.result()
+    src_bus_future.result()
+    pool.shutdown()

@@ -1,3 +1,4 @@
+import enum
 import logging
 import os
 import queue
@@ -33,6 +34,28 @@ log = logging.getLogger(__name__)
 
 # consecutive missed health pongs before a peer is declared gone
 _MAX_MISSED_PONGS = 3
+
+
+class PushResult(enum.StrEnum):
+    """Outcome of Bus._push. Truthiness answers "may the caller still expect
+    delivery-or-timeout semantics?": OK and DROPPED (backpressure — the peer
+    is alive, a caller timeout covers the loss) are truthy; the definitive
+    failures are falsy, so `if not self._push(...)` reads as before."""
+
+    OK = "ok"
+    # send buffer still full after retries: message dropped, peer alive
+    DROPPED = "dropped"
+    # the message payload cannot be JSON-encoded for the wire
+    ENCODE_FAILED = "encode_failed"
+    # could not create a transport to the destination bus
+    NO_PEER = "no_peer"
+    # socket closed, connection refused or errored
+    SEND_DEAD = "send_dead"
+    # this bus is shutting down and accepts no new messages
+    BUS_DEAD = "bus_dead"
+
+    def __bool__(self) -> bool:
+        return self in (PushResult.OK, PushResult.DROPPED)
 
 
 def pool_stats(pool: ThreadPoolExecutor) -> dict[str, Any]:
@@ -545,14 +568,14 @@ class Bus:
         self._cleanup_dead_subscribers(dst_bus)
         self._mailboxes.fail_peer(dst_bus)
 
-    def _push(self, message: Messages) -> bool:
-        """Hand a message to its destination. Returns False only when the
-        message definitively could not be delivered (dead bus, connect or
-        encode failure, dead socket); backpressure drops still return True —
-        the peer is alive and a caller timeout covers the loss."""
+    def _push(self, message: Messages) -> PushResult:
+        """Hand a message to its destination. Falsy results mean the message
+        definitively could not be delivered — and say why; backpressure drops
+        (DROPPED) are truthy: the peer is alive and a caller timeout covers
+        the loss."""
         if self.is_dead():
             log.warning("push failed, bus is dead, not accepting new messages")
-            return False
+            return PushResult.BUS_DEAD
 
         if message.dst_bus == self.url.bus:
             # NOTE: we don't need to serialize/deserialize messages sent locally
@@ -576,18 +599,18 @@ class Bus:
                     )
             else:
                 self._inbox.put(message)
-            return True
+            return PushResult.OK
         else:
             # encode outside every lock
             try:
                 message_bytes = self._encoder.encode(message)
             except Exception:
                 log.exception(f"bus: failed to encode message: {message}")
-                return False
+                return PushResult.ENCODE_FAILED
 
             peer = self._get_peer(message.dst_bus)
             if peer is None:
-                return False
+                return PushResult.NO_PEER
 
             with peer.lock:
                 result = peer.transport.send(message_bytes)
@@ -603,7 +626,7 @@ class Bus:
 
             match result:
                 case SendResult.OK:
-                    return True
+                    return PushResult.OK
                 case SendResult.AGAIN:
                     # still full: drop this message but never evict — a slow
                     # peer is not a dead one
@@ -611,7 +634,7 @@ class Bus:
                         f"bus: send buffer full for {message.dst_bus}, "
                         f"dropping {type(message).__name__}"
                     )
-                    return True
+                    return PushResult.DROPPED
                 case SendResult.DEAD:
                     # if the peer is really gone the transport will notify
                     # us and _evict_peer does the cleanup
@@ -619,7 +642,7 @@ class Bus:
                         f"bus: send failed to {message.dst_bus}, "
                         f"dropping {type(message).__name__}"
                     )
-                    return False
+                    return PushResult.SEND_DEAD
 
     def _get_peer(self, dst_bus: str) -> _Peer | None:
         with self._peers_lock:
@@ -840,7 +863,7 @@ class Bus:
                 token, callback
             )
 
-        self._push(
+        push_result = self._push(
             Protocol.subscribe(
                 sub=sub_url.url,
                 pub=pub_url.url,
@@ -848,6 +871,13 @@ class Bus:
                 callback=token,
             )
         )
+        if not push_result:
+            # the local registry now believes it is subscribed but the
+            # publisher never heard: every future event is silently lost
+            log.warning(
+                f"bus: subscribe to {event} on {pub_url.url} not delivered "
+                f"({push_result}); events will not arrive until re-subscribed"
+            )
 
     def unsubscribe(
         self,
@@ -998,9 +1028,22 @@ class Bus:
         try:
             try:
                 result = method(*request.args, **request.kwargs)
-                self._push(request.ok(result))
             except Exception as e:
                 self._push(request.error(e))
+                return
+
+            if self._push(request.ok(result)) is PushResult.ENCODE_FAILED:
+                # the payload is the problem: answer with an all-string error
+                # (always encodable) instead of leaving the caller blocked on
+                # a reply that will never arrive
+                self._push(
+                    request.error(
+                        TypeError(
+                            f"result of {request.method}() is not serializable "
+                            f"({type(result).__name__})"
+                        )
+                    )
+                )
         except Exception:
             log.exception("error executing request")
 

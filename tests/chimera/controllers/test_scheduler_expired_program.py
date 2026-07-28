@@ -35,6 +35,9 @@ class Controller:
     def get_proxy(self, location):
         return FakeSite()
 
+    def get_site(self):
+        return FakeSite()
+
     def program_begin(self, program_id):
         self.begun.append(program_id)
 

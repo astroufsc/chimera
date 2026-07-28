@@ -15,7 +15,7 @@ import chimera.core.log
 from chimera.core.bus import Bus
 from chimera.core.chimera_config import ChimeraConfig
 from chimera.core.constants import CHIMERA_CONFIG_DEFAULT_FILENAME
-from chimera.core.exceptions import ChimeraException
+from chimera.core.exceptions import ChimeraException, OptionConversionException
 from chimera.core.manager import Manager
 from chimera.core.path import ChimeraPath
 from chimera.core.site import Site
@@ -115,9 +115,20 @@ class ChimeraCLI:
         log.info(f"Python: {platform.python_version()}")
         log.info(f"System: {platform.uname()}")
 
+        # create the site object shared by every managed object; the parser
+        # guarantees exactly one [site] entry
+        ((site_url, site_config),) = self.config.sites.items()
+        site = Site()
+        try:
+            for k, v in site_config.items():
+                site[k] = v
+        except (OptionConversionException, KeyError) as e:
+            log.error(f"There was a problem configuring the site {site_url}. ({e})")
+            sys.exit(1)
+
         try:
             self.bus = Bus(f"tcp://{self.options.host}:{self.options.port}")
-            self.manager = Manager(bus=self.bus)
+            self.manager = Manager(bus=self.bus, site=site)
         except ChimeraException:
             log.error(
                 "Chimera is already running on this machine. Use chimera-admin to manage it."
@@ -125,10 +136,6 @@ class ChimeraCLI:
             sys.exit(1)
 
         log.info(f"Chimera: running on {self.options.host}:{self.options.port}")
-
-        # add site object
-        for url, config in self.config.sites.items():
-            self.manager.add_class(Site, url.name, config, start=True)
 
         # init from config
         log.info("Starting instruments...")

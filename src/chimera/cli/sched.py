@@ -367,12 +367,6 @@ class ChimeraSched(ChimeraCLI):
                     else:
                         program.actions.append(Point(target_name=objname))
 
-                        # if imagetype == "FLAT":
-                        #     site = self._remote_manager.get_proxy("/Site/0")
-                        #     flat_position = Position.from_alt_az(site['flat_alt'], site['flat_az'])
-                        #     program.actions.append(Point(target_alt_az=flat_position))
-                        # TODO: point dome to its flat position too.
-
                 for exp in exps:
                     if exp.count(":") > 1:
                         filter, exptime, frames = exp.strip().split(":")
@@ -445,13 +439,14 @@ class ChimeraSched(ChimeraCLI):
     def info(self, options):
         self.out("=" * 40)
         self.out("Scheduler: %s" % self.scheduler.get_location())
-        self.out("State: %s" % self.scheduler.state())
-        if self.scheduler.state() == State.BUSY and self.scheduler.current_action():
-            session = Session()
-            program = (
-                session.query(Program).filter(Program.id == action.program_id).one()
-            )
-            self.out("Working on: %s (%s)" % (program.name, str(action)))
+        state = self.scheduler.state()
+        self.out("State: %s" % state)
+        if state == State.BUSY:
+            current_program = self.scheduler.current_program()
+            current_action = self.scheduler.current_action()
+            if current_program:
+                description = current_action["description"] if current_action else "-"
+                self.out("Working on: %s (%s)" % (current_program["name"], description))
 
         self.out("=" * 40)
 

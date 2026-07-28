@@ -2,12 +2,9 @@
 # SPDX-FileCopyrightText: 2006-present Paulo Henrique Silva <ph.silva@gmail.com>
 
 
-from typing import cast
-
 from chimera.core.chimeraobject import ChimeraObject
 from chimera.core.exceptions import ObjectNotFoundException, ObjectTooLowException
 from chimera.core.lock import lock
-from chimera.core.site import Site
 from chimera.interfaces.telescope import (
     TelescopePark,
     TelescopeSlew,
@@ -29,11 +26,6 @@ class TelescopeBase(
 
         self._park_position = None
 
-    # @property
-    # @functools.cache
-    def site(self) -> Site:
-        return cast(Site, self.get_proxy("/Site/0"))
-
     @lock
     def slew_to_object(self, name):
         _, ra, dec, epoch = simbad_lookup(name) or (None, None, None, None)
@@ -47,8 +39,9 @@ class TelescopeBase(
 
     def _validate_ra_dec(self, ra: float, dec: float):
         # TODO: remove Position dependency
-        lst = self.site().lst_in_rads()  # in radians
-        latitude = self.site().latitude_in_degs()
+        site = self.get_site()
+        lst = site.lst_in_rads()  # in radians
+        latitude = site.latitude_in_degs()
 
         alt, az = Position.ra_dec_to_alt_az(ra, dec, latitude, lst)
 

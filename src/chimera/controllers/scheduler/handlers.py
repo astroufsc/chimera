@@ -1,5 +1,3 @@
-import copy
-
 from chimera.controllers.imageserver.imagerequest import ImageRequest
 from chimera.core.exceptions import ProgramExecutionException, print_exception
 from chimera.util.position import Epoch
@@ -95,12 +93,8 @@ class PointHandler(ActionHandler):
 
     @staticmethod
     def abort(action):
-        # use newer Proxies as Proxies cannot be shared between threads
-        telescope = copy.copy(PointHandler.telescope)
-        dome = copy.copy(PointHandler.dome)
-
-        telescope.abort_slew()
-        dome.abort_slew()
+        PointHandler.telescope.abort_slew()
+        PointHandler.dome.abort_slew()
 
     @staticmethod
     def log(action):
@@ -187,8 +181,7 @@ class ExposeHandler(ActionHandler):
 
     @staticmethod
     def abort(action):
-        camera = copy.copy(ExposeHandler.camera)
-        camera.abort_exposure()
+        ExposeHandler.camera.abort_exposure()
 
     @staticmethod
     def log(action):
@@ -217,8 +210,7 @@ class AutoFocusHandler(ActionHandler):
 
     @staticmethod
     def abort(action):
-        autofocus = copy.copy(AutoFocusHandler.autofocus)
-        autofocus.abort()
+        AutoFocusHandler.autofocus.abort()
 
 
 class AutoFlatHandler(ActionHandler):
@@ -240,8 +232,7 @@ class AutoFlatHandler(ActionHandler):
 
     @staticmethod
     def abort(action):
-        skyflat = copy.copy(AutoFlatHandler.autoflat)
-        skyflat.abort()
+        AutoFlatHandler.autoflat.abort()
 
 
 class AutoguideHandler(ActionHandler):
@@ -263,8 +254,7 @@ class AutoguideHandler(ActionHandler):
 
     @staticmethod
     def abort(action):
-        autoguider = copy.copy(AutoguideHandler.autoguider)
-        autoguider.abort()
+        AutoguideHandler.autoguider.abort()
 
 
 class PointVerifyHandler(ActionHandler):

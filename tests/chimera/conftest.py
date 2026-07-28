@@ -16,6 +16,7 @@ constants.DEFAULT_PROGRAM_DATABASE = tempfile.mkstemp(suffix="-chimera-tests.db"
 
 from chimera.core.bus import Bus  # noqa: E402
 from chimera.core.manager import Manager  # noqa: E402
+from chimera.core.site import Site  # noqa: E402
 
 
 @pytest.fixture
@@ -43,7 +44,16 @@ def manager():
     bus_thread.start()
     assert bus._bus_started.wait(5)
 
-    manager = Manager(bus)
+    site = Site()
+    for k, v in {
+        "name": "lna",
+        "latitude": "-27 36 13",
+        "longitude": "-48 31 20",
+        "altitude": "20",
+    }.items():
+        site[k] = v
+
+    manager = Manager(bus, site=site)
 
     yield manager
 

@@ -10,7 +10,6 @@ from concurrent.futures import ThreadPoolExecutor, wait
 import pytest
 
 import chimera.core.log
-from chimera.core.site import Site
 from chimera.instruments.faketelescope import FakeTelescope
 from chimera.interfaces.telescope import TelescopeStatus
 from chimera.util.coord import Coord
@@ -44,17 +43,8 @@ def slew_complete_callback(ra, dec, status):
 
 @pytest.fixture
 def telescope(manager):
-    manager.add_class(
-        Site,
-        "lna",
-        {
-            "name": "UFSC",
-            "latitude": "-27 36 13",
-            "longitude": "-48 31 20",
-            "altitude": "20",
-        },
-    )
-
+    # the manager fixture provides the injected site (latitude matches
+    # SITE_LATITUDE above)
     manager.add_class(FakeTelescope, "fake")
 
     fired_events.clear()

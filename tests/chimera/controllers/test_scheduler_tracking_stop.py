@@ -70,6 +70,9 @@ class Controller:
     def get_proxy(self, location):
         return FakeSite() if location == "/Site/0" else self.telescope
 
+    def get_site(self):
+        return FakeSite()
+
     def program_begin(self, program_id):
         pass
 

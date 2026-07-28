@@ -210,6 +210,7 @@ dev = [
     { name = "pystack", marker = "sys_platform == 'linux'" },
     { name = "pytest" },
     { name = "pytest-cover" },
+    { name = "pytest-github-actions-annotate-failures" },
     { name = "pytest-memray" },
     { name = "pytest-mock" },
     { name = "pytest-timeout" },
@@ -240,6 +241,7 @@ dev = [
     { name = "pystack", marker = "sys_platform == 'linux'", specifier = ">=1.5.1" },
     { name = "pytest", specifier = ">=8.3.3" },
     { name = "pytest-cover", specifier = ">=3.0.0" },
+    { name = "pytest-github-actions-annotate-failures", specifier = ">=0.3.0" },
     { name = "pytest-memray", specifier = ">=1.8.0" },
     { name = "pytest-mock", specifier = ">=3.14.1" },
     { name = "pytest-timeout", specifier = ">=2.4.0" },
@@ -832,6 +834,18 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/30/27/20964101a7cdb260f8d6c4e854659026968321d10c90552b1fe7f6c5f913/pytest-cover-3.0.0.tar.gz", hash = "sha256:5bdb6c1cc3dd75583bb7bc2c57f5e1034a1bfcb79d27c71aceb0b16af981dbf4", size = 3211, upload-time = "2015-08-01T19:20:22.562Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/71/9b/7b4700c462628e169bd859c6368d596a6aedc87936bde733bead9f875fce/pytest_cover-3.0.0-py2.py3-none-any.whl", hash = "sha256:578249955eb3b5f3991209df6e532bb770b647743b7392d3d97698dc02f39ebb", size = 3769, upload-time = "2015-08-01T19:20:18.534Z" },
+]
+
+[[package]]
+name = "pytest-github-actions-annotate-failures"
+version = "0.4.2"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pytest" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/00/a0/bdb91581b03c41016c78e16b8ec36c34d8508206fcb30f1951c9cdff2e97/pytest_github_actions_annotate_failures-0.4.2.tar.gz", hash = "sha256:5dd18304512361788bc7b5c5c805db853f03f4950c6be09b088de6bab8e2e6c9", size = 12158, upload-time = "2026-06-19T15:59:17.445Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/3c/09/c44e658f3a27c588c2017d858c8b0fa962612af9b74326beabbf010c839c/pytest_github_actions_annotate_failures-0.4.2-py3-none-any.whl", hash = "sha256:02911cd3b55f235328a334f8ca6037a89944398b8e8b028c82de97111eff4071", size = 6151, upload-time = "2026-06-19T15:59:16.486Z" },
 ]
 
 [[package]]
