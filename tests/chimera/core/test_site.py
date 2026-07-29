@@ -82,13 +82,22 @@ class TestSite:
         assert site.sun_altitude(when) == pytest.approx(float(site.sunpos(when).alt))
         assert site.sun_altitude() == pytest.approx(float(site.sunpos().alt), abs=0.01)
 
-    def test_sun_altitude_survives_the_bus(self, manager):
+    def test_sun_azimuth_is_the_azimuth_in_degrees(self, manager):
+        site = manager.get_proxy("/Site/0")
+
+        when = dt.datetime(2026, 7, 27, 16, 0, tzinfo=dt.UTC)
+
+        assert site.sun_azimuth(when) == pytest.approx(float(site.sunpos(when).az))
+        assert site.sun_azimuth() == pytest.approx(float(site.sunpos().az), abs=0.01)
+
+    def test_sun_accessors_survive_the_bus(self, manager):
         """A Position cannot be encoded, so sunpos() only works between
-        objects sharing a bus - the reason for a plain-float accessor."""
+        objects sharing a bus - the reason for the plain-float accessors."""
         site = manager.get_proxy("/Site/0")
 
         encoder = msgspec.json.Encoder()
         assert encoder.encode(site.sun_altitude())
+        assert encoder.encode(site.sun_azimuth())
 
         with pytest.raises(TypeError):
             encoder.encode(site.sunpos())
