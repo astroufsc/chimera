@@ -16,14 +16,28 @@ class SequentialScheduler(IScheduler):
 
     def reschedule(self, machine):
         self.machine = machine
+        # a plain thread-safe FIFO, rebuilt on every reschedule; we never
+        # join() it, so no task_done() accounting (which drifts across the
+        # rebuild and raised "task_done() called too many times")
         self.run_queue = Queue(-1)
 
         session = Session()
 
         # FIXME: remove noqa
+        # start_at orders execution, priority breaks ties: priority alone
+        # let a future-timed program hold the machine with the whole night
+        # queued behind it. Programs without start_at sort first and keep
+        # the old priority order among themselves; equal priorities then run
+        # in insertion order, which for a hand-written `chimera-sched --new`
+        # queue is the order the targets appear in the YAML (they came out
+        # reversed, which is not what anyone writing a file expects).
         programs = (
             session.query(Program)
-            .order_by(desc(Program.priority))
+            .order_by(
+                Program.start_at.asc().nullsfirst(),
+                desc(Program.priority),
+                Program.id.asc(),
+            )
             .filter(Program.finished == False)  # noqa
             .all()
         )
@@ -39,8 +53,16 @@ class SequentialScheduler(IScheduler):
         machine.wake_up()
 
     def __next__(self):
-        if not self.run_queue.empty():
-            return self.run_queue.get()
+        session = Session()
+        while not self.run_queue.empty():
+            program = self.run_queue.get()
+            # reschedule() also enqueues the currently RUNNING program (its
+            # finished flag is only written at completion), so entries can
+            # be stale by the time they are popped: re-check the database
+            current = session.get(Program, program.id)
+            if current is None or current.finished:
+                continue
+            return program
 
         return None
 
@@ -51,5 +73,4 @@ class SequentialScheduler(IScheduler):
         else:
             task.finished = True
 
-        self.run_queue.task_done()
         self.machine.wake_up()

@@ -53,43 +53,54 @@ class ProgramExecutor:
     def execute(self, program):
         self.must_stop.clear()
 
-        for action in program.actions:
-            # aborted?
-            if self.must_stop.is_set():
-                raise ProgramExecutionAborted()
-
-            t0 = time.time()
-
-            try:
-                self.current_action = action
-                self.current_handler = self.action_handlers[type(action)]
-
-                log_msg = str(self.current_handler.log(action))
-                log.debug(f"[start] {log_msg} ")
-                self.controller.action_begin(action.id, log_msg)
-
-                self.current_handler.process(action)
-
-                # instruments just returns in case of abort, so we need to check handler
-                # returned 'cause of abort or not
+        try:
+            for action in program.actions:
+                # aborted?
                 if self.must_stop.is_set():
-                    self.controller.action_complete(action.id, SchedulerStatus.ABORTED)
                     raise ProgramExecutionAborted()
-                else:
-                    self.controller.action_complete(action.id, SchedulerStatus.OK)
 
-            except ProgramExecutionException:
-                self.controller.action_complete(action.id, SchedulerStatus.ERROR)
-                raise
-            except KeyError:
-                log.debug(f"No handler to {action} action. Skipping it")
-            finally:
-                log.debug("[finish] took: %f s" % (time.time() - t0))
+                t0 = time.time()
+
+                try:
+                    self.current_action = action
+                    self.current_handler = self.action_handlers[type(action)]
+
+                    log_msg = str(self.current_handler.log(action))
+                    log.debug(f"[start] {log_msg} ")
+                    self.controller.action_begin(action.id, log_msg)
+
+                    self.current_handler.process(action)
+
+                    # instruments just returns in case of abort, so we need to check handler
+                    # returned 'cause of abort or not
+                    if self.must_stop.is_set():
+                        self.controller.action_complete(
+                            action.id, SchedulerStatus.ABORTED
+                        )
+                        raise ProgramExecutionAborted()
+                    else:
+                        self.controller.action_complete(action.id, SchedulerStatus.OK)
+
+                except ProgramExecutionException:
+                    self.controller.action_complete(action.id, SchedulerStatus.ERROR)
+                    raise
+                except KeyError:
+                    log.debug(f"No handler to {action} action. Skipping it")
+                finally:
+                    log.debug("[finish] took: %f s" % (time.time() - t0))
+        finally:
+            # a later stop() must not abort an action of a finished program
+            self.current_action = None
+            self.current_handler = None
 
     def stop(self):
-        if self.current_handler:
-            self.must_stop.set()
-            self.current_handler.abort(self.current_action)
+        # flag first: a worker between actions must see the stop even when
+        # there is no action in flight to abort
+        self.must_stop.set()
+
+        handler, action = self.current_handler, self.current_action
+        if handler:
+            handler.abort(action)
 
     def _inject_instrument(self, handler):
         if not issubclass(handler, ActionHandler):

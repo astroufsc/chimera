@@ -62,6 +62,8 @@ class Scheduler(ChimeraObject):
         "point_verify": "/PointVerify/0",
         "operator": "/Operator/0",
         "algorithm": SchedulingAlgorithm.SEQUENTIAL,
+        # left tracking, an unattended mount walks into a limit
+        "stop_tracking_on_program_end": True,
     }
 
     def __init__(self):

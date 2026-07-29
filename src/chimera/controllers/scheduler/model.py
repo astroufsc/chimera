@@ -11,6 +11,7 @@ from sqlalchemy import (
     PickleType,
     String,
     create_engine,
+    inspect,
 )
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import backref, relation, sessionmaker
@@ -71,7 +72,20 @@ class Program(Base):
     )
 
     def __str__(self):
-        return f"#{self.id} {self.name} pi:{self.pi} #actions: {len(self.actions)}"
+        # Never depend on live database state: every session.commit()
+        # expires the instance, so this triggers a lazy reload - and if the
+        # queue was rewritten while the program ran (robobs cleans it on
+        # start AND on stop, plan_robobs rebuilds it), the row is gone and
+        # the reload raises ObjectDeletedError. From a log line inside an
+        # exception handler that killed the scheduler-program thread
+        # outright (opd-40 2026-07-28, on every operator lock during a
+        # program). A __str__ that can raise is a trap wherever it is used.
+        try:
+            return f"#{self.id} {self.name} pi:{self.pi} #actions: {len(self.actions)}"
+        except Exception:
+            identity = inspect(self).identity
+            program_id = identity[0] if identity else "?"
+            return f"#{program_id} <detached program>"
 
 
 class Action(Base):
