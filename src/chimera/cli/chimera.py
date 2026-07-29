@@ -9,6 +9,7 @@ import os.path
 import platform
 import signal
 import sys
+import threading
 from typing import Any
 
 import chimera.core.log
@@ -28,6 +29,9 @@ log = logging.getLogger(__name__)
 class ChimeraCLI:
     def __init__(self):
         self.options = self.parse_args()
+
+        self._shutdown_requested = threading.Event()
+        self._shutdown_done = False
 
         try:
             self.config = ChimeraConfig.from_file(self.options.config_file)
@@ -135,6 +139,12 @@ class ChimeraCLI:
             )
             sys.exit(1)
 
+        # ctrl-c must not break the selector loop: responses from remote buses
+        # arrive on the socket only that loop reads, so the shutdown RPCs need
+        # it alive. The handler spawns the orderly shutdown off-thread and
+        # select() simply resumes (PEP 475); a second ctrl-c force-quits.
+        signal.signal(signal.SIGINT, self._on_sigint)
+
         log.info(f"Chimera: running on {self.options.host}:{self.options.port}")
 
         # init from config
@@ -151,9 +161,8 @@ class ChimeraCLI:
         log.info("System up and running.")
 
         try:
+            # returns when the shutdown thread calls bus.shutdown()
             self.bus.run_forever()
-        except KeyboardInterrupt:
-            log.info("Caught Ctrl-C, shutting down...")
         finally:
             self.shutdown()
 
@@ -168,10 +177,29 @@ class ChimeraCLI:
         except Exception:
             log.exception(f"error starting {location.path}")
 
+    def _on_sigint(self, signum, frame):
+        # no logging in a signal handler: the interrupted thread may hold the
+        # logging lock
+        if self._shutdown_requested.is_set():
+            os.write(2, b"ctrl-c again: forcing exit\n")
+            os._exit(130)
+        self._shutdown_requested.set()
+        threading.Thread(
+            target=self.shutdown, name="chimera-shutdown", daemon=True
+        ).start()
+
     def shutdown(self):
+        # entered by the sigint thread and by run()'s finally: first one wins
+        if self._shutdown_done:
+            return
+        self._shutdown_done = True
         log.info("Shutting down system.")
-        self.bus.shutdown()
+        # stop objects first, while the bus still routes: the scheduler aborts
+        # its running program over live RPC, instruments stop cleanly
         self.manager.shutdown()
+        # the bus goes down last: this wakes the selector and run_forever returns
+        self.bus.shutdown()
+        log.info("System shut down.")
 
 
 def main():

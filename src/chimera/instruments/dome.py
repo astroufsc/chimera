@@ -9,13 +9,13 @@ from typing import cast
 
 from chimera.core.chimeraobject import ChimeraObject
 from chimera.core.lock import lock
-from chimera.interfaces.dome import DomeFlap, DomeSlew, DomeSlit, DomeSync, Mode
+from chimera.interfaces.dome import DomeSlew, DomeSlit, DomeSync, Mode
 from chimera.interfaces.telescope import Telescope
 
 __all__ = ["DomeBase"]
 
 
-class DomeBase(ChimeraObject, DomeSlew, DomeSlit, DomeFlap, DomeSync):
+class DomeBase(ChimeraObject, DomeSlew, DomeSlit, DomeSync):
     def __init__(self):
         ChimeraObject.__init__(self)
 
@@ -54,6 +54,13 @@ class DomeBase(ChimeraObject, DomeSlew, DomeSlit, DomeFlap, DomeSync):
             except Exception as e:
                 self.log.warning("Unable to park dome: %s", str(e))
 
+        if self["park_on_shutdown"] and self.features("DomeWindScreen"):
+            try:
+                self.log.info("Parking the wind screen...")
+                self.move_wind_screen(self["wind_screen_park_position"])
+            except Exception as e:
+                self.log.warning("Unable to park the wind screen: %s", str(e))
+
         if self["close_on_shutdown"] and self.is_slit_open():
             try:
                 self.log.info("Closing the slit...")
@@ -75,6 +82,10 @@ class DomeBase(ChimeraObject, DomeSlew, DomeSlit, DomeFlap, DomeSync):
             return True
 
         self._move_if_needed(self._get_telescope_az())
+
+        # _get_telescope_az() drops to Stand when the telescope is unreachable
+        if self.get_mode() == Mode.Track:
+            self._move_wind_screen_if_needed(self.telescope.get_alt())
 
         # flag all waiting threads that the control loop already checked the new telescope position
         # probably adding new azimuth to the queue
@@ -111,6 +122,32 @@ class DomeBase(ChimeraObject, DomeSlew, DomeSlit, DomeFlap, DomeSync):
 
     def _need_to_move(self, az: float) -> bool:
         return abs(az - self.get_az()) >= self["az_resolution"]
+
+    def _move_wind_screen_if_needed(self, telescope_alt: float) -> None:
+        if not (self.features("DomeWindScreen") and self["wind_screen_track"]):
+            return
+
+        target = self._wind_screen_target(telescope_alt)
+        current = self.get_wind_screen_alt()
+
+        if abs(target - current) < self["wind_screen_alt_resolution"]:
+            self.log.debug(
+                f"[control] no need to move the wind screen"
+                f" (wind screen alt={current}, target={target}.)"
+            )
+            return
+
+        self.log.debug(f"[control] moving the wind screen to {target}")
+        self.move_wind_screen(target)
+
+    def _wind_screen_target(self, telescope_alt: float) -> float:
+        # clamp so tracking never asks for a position outside the wind screen travel
+        return min(
+            max(
+                telescope_alt + self["wind_screen_offset"], self["wind_screen_min_alt"]
+            ),
+            self["wind_screen_max_alt"],
+        )
 
     def _process_queue(self):
         if self.queue.empty():
@@ -185,17 +222,6 @@ class DomeBase(ChimeraObject, DomeSlew, DomeSlit, DomeFlap, DomeSync):
     def is_slit_open(self) -> bool:
         raise NotImplementedError()
 
-    @lock
-    def open_flap(self) -> None:
-        raise NotImplementedError()
-
-    @lock
-    def close_flap(self) -> None:
-        raise NotImplementedError()
-
-    def is_flap_open(self) -> bool:
-        raise NotImplementedError()
-
     def get_metadata(self, request) -> list[tuple[str, str, str]]:
         # Check first if there is metadata from a metadata override method.
         metadata = self.get_metadata_override(request)
@@ -207,9 +233,24 @@ class DomeBase(ChimeraObject, DomeSlew, DomeSlit, DomeFlap, DomeSync):
         else:
             slit = "Closed"
 
-        return [
+        metadata = [
             ("DOME_MDL", str(self["model"]), "Dome Model"),
             ("DOME_TYP", str(self["style"]), "Dome Type"),
             ("DOME_TRK", str(self["mode"]), "Dome Tracking/Standing"),
             ("DOME_SLT", str(slit), "Dome slit status"),
         ]
+
+        if self.features("DomeFlap"):
+            flap = "Open" if self.is_flap_open() else "Closed"
+            metadata.append(("DOME_FLP", flap, "Dome flap status"))
+
+        if self.features("DomeWindScreen"):
+            metadata.append(
+                (
+                    "DOME_WSC",
+                    f"{self.get_wind_screen_alt():.2f}",
+                    "Dome wind screen altitude",
+                )
+            )
+
+        return metadata
