@@ -3,6 +3,7 @@
 
 
 import datetime as dt
+import threading
 
 import ephem
 from dateutil import tz
@@ -15,6 +16,16 @@ __all__ = ["Site"]
 
 
 class Site(ChimeraObject):
+    """
+    Site-related information: coordinates, clocks (including the
+    fast-forward simulation clock), sidereal time and sun/moon ephemeris.
+
+    A single instance is shared in-process by every managed object through
+    ChimeraObject.get_site(), so its methods are called concurrently from
+    many threads. Config access is rwlock-guarded; the shared ephem state
+    is NOT (see the NOTEs below).
+    """
+
     __config__ = dict(
         name="UFSC",
         latitude=Coord.from_dms("-23 00 00"),
@@ -36,10 +47,14 @@ class Site(ChimeraObject):
     def __init__(self):
         super().__init__()
 
+        # NOTE(thread-safety): shared mutable pyephem bodies. compute() and
+        # next_rising/next_setting() mutate them in place, so concurrent
+        # calls to the sun/moon methods race on these objects.
         self._sun = ephem.Sun()
         self._moon = ephem.Moon()
 
         # fast-forward clock anchors, captured on the first ut() call
+        self._ff_lock = threading.Lock()
         self._ff_wall0 = None
         self._ff_sim0 = None
 
@@ -85,18 +100,24 @@ class Site(ChimeraObject):
     def ut(self):
         if not self._fast_forward_enabled():
             return dt.datetime.now(tz.tzutc())
-        # scaled simulation clock (see __config__): anchor on the first call
+        # scaled simulation clock (see __config__): anchor on the first call.
+        # Double-checked locking: anchors are write-once, so once _ff_wall0
+        # is visible the lock-free fast path below is safe.
         wall_now = dt.datetime.now(tz.tzutc())
         if self._ff_wall0 is None:
-            self._ff_wall0 = wall_now
-            start = str(self["time_start"]).strip()
-            if start:
-                sim0 = dt.datetime.fromisoformat(start)
-                if sim0.tzinfo is None:
-                    sim0 = sim0.replace(tzinfo=tz.tzutc())
-                self._ff_sim0 = sim0.astimezone(tz.tzutc())
-            else:
-                self._ff_sim0 = wall_now
+            with self._ff_lock:
+                if self._ff_wall0 is None:
+                    start = str(self["time_start"]).strip()
+                    if start:
+                        sim0 = dt.datetime.fromisoformat(start)
+                        if sim0.tzinfo is None:
+                            sim0 = sim0.replace(tzinfo=tz.tzutc())
+                        self._ff_sim0 = sim0.astimezone(tz.tzutc())
+                    else:
+                        self._ff_sim0 = wall_now
+                    # set last: readers test _ff_wall0, so _ff_sim0 must
+                    # already be in place when they see it non-None
+                    self._ff_wall0 = wall_now
         elapsed = (wall_now - self._ff_wall0).total_seconds() * self["time_speedup"]
         return self._ff_sim0 + dt.timedelta(seconds=elapsed)
 
@@ -129,6 +150,9 @@ class Site(ChimeraObject):
         gst = (lst - self["longitude"].to_h()) % Coord.from_h(24)
         return gst
 
+    # NOTE(thread-safety): the rise/set/twilight family below passes the
+    # shared _sun/_moon bodies into next_rising/next_setting, which mutate
+    # them — concurrent callers race on the shared body.
     def sunrise(self, date=None):
         date = date or self.ut()
         site = self._get_ephem(date)
@@ -169,12 +193,63 @@ class Site(ChimeraObject):
         return self._date_to_local(site.next_rising(self._sun))
 
     def sunpos(self, date=None):
+        # NOTE(thread-safety): compute-then-read on the shared _sun body is
+        # not atomic; a concurrent sun method can recompute it in between.
         date = date or self.ut()
         self._sun.compute(self._get_ephem(date))
 
         return Position.from_alt_az(
             Coord.from_r(self._sun.alt), Coord.from_r(self._sun.az)
         )
+
+    def sun_altitude(self, date=None):
+        """
+        Sun altitude in DEGREES.
+
+        Prefer this over reading sunpos(): a float crosses the bus, a
+        Position does not (it is not serializable), and unpacking sunpos()
+        hands out Coords in radians that read like degrees.
+
+        @rtype: float
+        """
+        date = date or self.ut()
+        self._sun.compute(self._get_ephem(date))
+        return float(Coord.from_r(self._sun.alt).to_d())
+
+    def sun_azimuth(self, date=None):
+        """
+        Sun azimuth in DEGREES.
+
+        The companion to sun_altitude(), and for the same reason: reading
+        sunpos().az drags a Position across the bus, which is not
+        serializable. Anything pointing away from the Sun needs this -
+        twilight sky flats shoot the anti-solar point, 180 degrees from it.
+
+        @rtype: float
+        """
+        date = date or self.ut()
+        self._sun.compute(self._get_ephem(date))
+        return float(Coord.from_r(self._sun.az).to_d())
+
+    def is_dusk(self, date=None):
+        """
+        True while the Sun is on its way down, False while it is climbing.
+
+        Which side of the day it is decides what a twilight routine should
+        do when it runs out of sky: sky flats wait for a fainter sky at
+        dusk and give up at dawn, and the other way around when the sky is
+        too bright. The local clock cannot answer that question - it is the
+        wall clock, so it says nothing about a simulated night run under
+        `time_speedup`.
+
+        The Sun is descending exactly when its last meridian crossing was a
+        transit (its highest point) rather than an anti-transit.
+
+        @rtype: bool
+        """
+        date = date or self.ut()
+        site = self._get_ephem(date)
+        return site.previous_transit(self._sun) > site.previous_antitransit(self._sun)
 
     def moonrise(self, date=None):
         date = date or self.ut()
@@ -187,6 +262,8 @@ class Site(ChimeraObject):
         return self._date_to_local(site.next_setting(self._moon))
 
     def moonpos(self, date=None):
+        # NOTE(thread-safety): compute-then-read race on the shared _moon
+        # body, same as sunpos.
         date = date or self.ut()
         self._moon.compute(self._get_ephem(date))
 
@@ -195,6 +272,8 @@ class Site(ChimeraObject):
         )
 
     def moonphase(self, date=None):
+        # NOTE(thread-safety): compute-then-read race on the shared _moon
+        # body, same as sunpos.
         date = date or self.ut()
         self._moon.compute(self._get_ephem(date))
         return self._moon.phase / 100.0

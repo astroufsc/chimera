@@ -40,11 +40,12 @@ class Telescope(Interface):
     __config__ = {
         "device": None,
         "model": "Fake Telescopes Inc.",
-        "optics": ["Newtonian", "SCT", "RCT"],
+        # free-form OPTICS header text (Newtonian, SCT, RCT, CDK, ...)
+        "optics": "Newtonian",
         "mount": "Mount type Inc.",
         "aperture": 100.0,  # mm
-        "focal_length": 1000.0,  # mm unit (ex., 0.5 for a half length focal reducer)
-        "focal_reduction": 1.0,
+        "focal_length": 1000.0,  # mm
+        "focal_reduction": 1.0,  # ex., 0.5 for a half length focal reducer
         "fans": [],  # List of fans of the telescope, i.e.: ['/FakeFan/fake1', '/FakeFan/fake2']
     }
 

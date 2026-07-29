@@ -1,27 +1,18 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 # SPDX-FileCopyrightText: 2006-present Paulo Henrique Silva <ph.silva@gmail.com>
 
+import datetime as dt
 import time
 
+import msgspec
 import pytest
 from dateutil.relativedelta import relativedelta
 
-from chimera.core.site import Site
-
 
 class TestSite:
+    # the manager fixture injects a local Site; these tests keep using the
+    # proxy on purpose: the site must stay reachable over the bus
     def test_times(self, manager):
-        manager.add_class(
-            Site,
-            "lna",
-            {
-                "name": "UFSC",
-                "latitude": "-27 36 13 ",
-                "longitude": "-48 31 20",
-                "altitude": "20",
-            },
-        )
-
         site = manager.get_proxy("/Site/0")
 
         print()
@@ -31,17 +22,6 @@ class TestSite:
 
     @pytest.mark.skip
     def test_sidereal_clock(self, manager):
-        manager.add_class(
-            Site,
-            "lna",
-            {
-                "name": "UFSC",
-                "latitude": "-27 36 13 ",
-                "longitude": "-48 31 20",
-                "altitude": "20",
-            },
-        )
-
         site = manager.get_proxy("/Site/0")
 
         times = []
@@ -59,17 +39,6 @@ class TestSite:
         print(sum(real_times) / len(real_times))
 
     def test_astros(self, manager):
-        manager.add_class(
-            Site,
-            "lna",
-            {
-                "name": "UFSC",
-                "latitude": "-27 36 13 ",
-                "longitude": "-48 31 20",
-                "altitude": "20",
-            },
-        )
-
         site = manager.get_proxy("/Site/0")
 
         print()
@@ -104,3 +73,44 @@ class TestSite:
         print("next sunrise twilight begins at:", sunrise_twilight_begin)
         print("next sunrise twilight ends   at:", sunrise_twilight_end)
         print("sunrise twilight duration      :", sunrise_twilight_duration)
+
+    def test_sun_altitude_is_the_altitude_in_degrees(self, manager):
+        site = manager.get_proxy("/Site/0")
+
+        when = dt.datetime(2026, 7, 27, 16, 0, tzinfo=dt.UTC)
+
+        assert site.sun_altitude(when) == pytest.approx(float(site.sunpos(when).alt))
+        assert site.sun_altitude() == pytest.approx(float(site.sunpos().alt), abs=0.01)
+
+    def test_sun_azimuth_is_the_azimuth_in_degrees(self, manager):
+        site = manager.get_proxy("/Site/0")
+
+        when = dt.datetime(2026, 7, 27, 16, 0, tzinfo=dt.UTC)
+
+        assert site.sun_azimuth(when) == pytest.approx(float(site.sunpos(when).az))
+        assert site.sun_azimuth() == pytest.approx(float(site.sunpos().az), abs=0.01)
+
+    def test_sun_accessors_survive_the_bus(self, manager):
+        """A Position cannot be encoded, so sunpos() only works between
+        objects sharing a bus - the reason for the plain-float accessors."""
+        site = manager.get_proxy("/Site/0")
+
+        encoder = msgspec.json.Encoder()
+        assert encoder.encode(site.sun_altitude())
+        assert encoder.encode(site.sun_azimuth())
+
+        with pytest.raises(TypeError):
+            encoder.encode(site.sunpos())
+
+    def test_is_dusk_tracks_the_sun_not_the_clock(self, manager):
+        """Dusk is the sun on its way down, sampled all the way around a
+        day and checked against the altitude it is about to have."""
+        site = manager.get_proxy("/Site/0")
+
+        midnight = dt.datetime(2026, 7, 27, 0, 0, tzinfo=dt.UTC)
+        for hour in range(24):
+            when = midnight + dt.timedelta(hours=hour)
+            descending = site.sun_altitude(
+                when + dt.timedelta(minutes=1)
+            ) < site.sun_altitude(when)
+            assert site.is_dusk(when) is descending, f"{when} is not settled"

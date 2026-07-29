@@ -10,7 +10,6 @@ import time
 import pytest
 
 import chimera.core.log
-from chimera.core.site import Site
 from chimera.instruments.fakedome import FakeDome
 from chimera.instruments.faketelescope import FakeTelescope
 from chimera.interfaces.dome import DomeStatus
@@ -46,17 +45,7 @@ def assert_dome_az(dome_az, other_az, eps):
 
 @pytest.fixture
 def dome(manager):
-    manager.add_class(
-        Site,
-        "lna",
-        {
-            "name": "UFSC",
-            "latitude": "-27 36 13 ",
-            "longitude": "-48 31 20",
-            "altitude": "20",
-        },
-    )
-
+    # the manager fixture provides the injected site
     manager.add_class(FakeTelescope, "fake")
     manager.add_class(
         FakeDome, "dome", {"telescope": "/FakeTelescope/0", "mode": "Track"}

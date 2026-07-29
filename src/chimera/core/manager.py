@@ -29,6 +29,7 @@ from chimera.core.exceptions import (
 )
 from chimera.core.proxy import Proxy
 from chimera.core.resources import ResourcesManager
+from chimera.core.site import Site
 from chimera.core.state import State
 from chimera.core.url import URL, parse_url, resolve_url
 from chimera.core.version import chimera_version
@@ -68,11 +69,13 @@ class Manager:
     @group Shutdown: wait, shutdown
     """
 
-    def __init__(self, bus: Bus):
+    def __init__(self, bus: Bus, site: Site | None = None):
         log.info("Starting manager.")
 
         self._bus = bus
         self._bus.resolve_request = self._resolve_request
+
+        self.site = site
 
         self.resources = ResourcesManager()
         self.class_loader = ClassLoader()
@@ -85,6 +88,11 @@ class Manager:
 
         # register ourselves
         self.resources.add("/Manager/manager", self)
+
+        # register the site as a regular resource so it stays reachable
+        # over a Proxy (e.g. for remote config changes)
+        if site is not None:
+            self.add_object(site, site["name"], start=True)
 
     def _resolve_request(
         self, object: str, method: str
@@ -350,19 +358,6 @@ class Manager:
         @rtype: Proxy or bool
         """
 
-        url = self._resolve_location(f"/{cls.__name__}/{name}")
-
-        # names must not start with a digit
-        if url.name[0] in "0123456789":
-            raise InvalidLocationException(
-                f"Invalid instance name: {url.name} (must start with a letter)"
-            )
-
-        if url.path in self.resources:
-            raise InvalidLocationException(
-                f"Location {url.path} is already in the system. Only one allowed (Tip: change the name!)."
-            )
-
         # check if it's a valid ChimeraObject
         if not issubclass(cls, ChimeraObject):
             raise NotValidChimeraObjectException(
@@ -375,8 +370,59 @@ class Manager:
         try:
             obj = cls()
         except Exception:
-            log.exception(f"Error in {url} __init__.")
-            raise ChimeraObjectException(f"Error in {url} __init__.")
+            log.exception(f"Error in /{cls.__name__}/{name} __init__.")
+            raise ChimeraObjectException(f"Error in /{cls.__name__}/{name} __init__.")
+
+        return self.add_object(obj, name, config, start)
+
+    def add_object(
+        self,
+        obj: ChimeraObject,
+        name: str,
+        config: dict[str, Any] | None = None,
+        start: bool = True,
+    ):
+        """
+        Add an already-constructed ChimeraObject instance to the system,
+        configuring it using 'config'.
+
+        @param obj: The instance to add to the system.
+        @type obj: ChimeraObject
+
+        @param name: The name of the instance.
+        @type name: str
+
+        @param config: The configuration dictionary for the object.
+        @type config: dict
+
+        @param start: start the object after initialization.
+        @type start: bool
+
+        @raises ChimeraObjectException: Internal error on managed (user) object.
+        @raises NotValidChimeraObjectException: When an object which doesn't inherit from ChimeraObject is given.
+        @raises InvalidLocationException: When the requested location is invalid.
+
+        @return: returns a proxy for the object if successful.
+        @rtype: Proxy
+        """
+
+        if not isinstance(obj, ChimeraObject):
+            raise NotValidChimeraObjectException(
+                f"Cannot add {obj!r}. It doesn't descend from ChimeraObject."
+            )
+
+        url = self._resolve_location(f"/{type(obj).__name__}/{name}")
+
+        # names must not start with a digit
+        if url.name[0] in "0123456789":
+            raise InvalidLocationException(
+                f"Invalid instance name: {url.name} (must start with a letter)"
+            )
+
+        if url.path in self.resources:
+            raise InvalidLocationException(
+                f"Location {url.path} is already in the system. Only one allowed (Tip: change the name!)."
+            )
 
         try:
             for k, v in list((config or {}).items()):
@@ -388,6 +434,7 @@ class Manager:
         # connect
         obj.__location__ = url
         obj.__bus__ = self._bus
+        obj.__site__ = self.site
         self.resources.add(url.path, obj)
 
         if start:

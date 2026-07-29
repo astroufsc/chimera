@@ -40,15 +40,11 @@ class FakeTelescope(TelescopeBase, TelescopePier):
         self._az: float = 0.0
 
     def _set_alt_az_from_ra_dec(self):
-        self._alt, self._az = self._get_site().ra_dec_to_alt_az(self._ra, self._dec)
-
-    def _get_site(self):
-        # FIXME: create the proxy directly and cache it
-        return self.get_proxy("/Site/0")
+        self._alt, self._az = self.get_site().ra_dec_to_alt_az(self._ra, self._dec)
 
     def _set_ra_dec_from_alt_az(self):
         # alt, az in degrees
-        self._ra, self._dec = self._get_site().alt_az_to_ra_dec(self._alt, self._az)
+        self._ra, self._dec = self.get_site().alt_az_to_ra_dec(self._alt, self._az)
 
     def __start__(self):
         self.set_hz(1)
@@ -113,7 +109,7 @@ class FakeTelescope(TelescopeBase, TelescopePier):
     def slew_to_alt_az(self, alt: float, az: float):
         self._validate_alt_az(alt, az)
 
-        ra, dec = self._get_site().alt_az_to_ra_dec(alt, az)
+        ra, dec = self.get_site().alt_az_to_ra_dec(alt, az)
         self.slew_begin(ra, dec)
 
         alt_steps = (alt - self.get_alt()) / 10

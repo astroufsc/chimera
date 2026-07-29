@@ -64,6 +64,7 @@ dev = [
     "pre-commit>=4.1.0",
     "pystack>=1.5.1; sys_platform == 'linux'",
     "pytest-cover>=3.0.0",
+    "pytest-github-actions-annotate-failures>=0.3.0",
     "pytest-memray>=1.8.0",
     "pytest-mock>=3.14.1",
     "pytest-timeout>=2.4.0",

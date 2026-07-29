@@ -20,6 +20,34 @@ scheduling_algorithms = {
 }
 
 
+def program_info(program) -> dict | None:
+    """JSON-safe snapshot of a Program for the bus. Reads only its own
+    columns — never the lazy .actions relation: the instance belongs to
+    another thread's session and may be detached."""
+    if program is None:
+        return None
+    return {
+        "id": program.id,
+        "name": program.name,
+        "pi": program.pi,
+        "priority": program.priority,
+    }
+
+
+def action_info(action) -> dict | None:
+    """JSON-safe snapshot of an Action for the bus. Uses type(action).__name__
+    rather than the action_type discriminator: that column is only populated
+    on flush, and AutoFlat's polymorphic identity is spelled 'AutoFlats'."""
+    if action is None:
+        return None
+    return {
+        "id": action.id,
+        "program_id": action.program_id,
+        "type": type(action).__name__,
+        "description": str(action),
+    }
+
+
 class Scheduler(ChimeraObject):
     __config__ = {
         "telescope": "/Telescope/0",
@@ -33,7 +61,6 @@ class Scheduler(ChimeraObject):
         "autoguider": "/Autoguider/0",
         "point_verify": "/PointVerify/0",
         "operator": "/Operator/0",
-        "site": "/Site/0",
         "algorithm": SchedulingAlgorithm.SEQUENTIAL,
     }
 
@@ -64,10 +91,10 @@ class Scheduler(ChimeraObject):
         return True
 
     def current_program(self):
-        return self.machine.current_program
+        return program_info(self.machine.current_program)
 
     def current_action(self):
-        return self.executor.current_action
+        return action_info(self.executor.current_action)
 
     def start(self):
         if self.machine:

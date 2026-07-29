@@ -183,6 +183,25 @@ class TestChimeraObject:
         assert m.__main__() is True
         assert m.counter == m.get_hz()
 
+    def test_main_survives_control_exceptions(self):
+        # one bad cycle (a flaky serial frame, an unreachable proxy) must not
+        # kill the control loop: the exception is logged and the loop retries
+        class FlakyControl(ChimeraObject):
+            def __init__(self):
+                ChimeraObject.__init__(self)
+                self.calls = 0
+
+            def control(self):
+                self.calls += 1
+                if self.calls == 1:
+                    raise RuntimeError("one bad serial frame")
+                return self.calls < 3
+
+        m = FlakyControl()
+        m.set_hz(100)
+        m.__main__()
+        assert m.calls == 3
+
     def test_location(self):
         class Foo(ChimeraObject):
             pass

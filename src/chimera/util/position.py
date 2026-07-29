@@ -46,6 +46,8 @@ class System(Enum):
     GALACTIC = "GALACTIC"
     ECLIPTIC = "ECLIPTIC"
     TOPOCENTRIC = "TOPOCENTRIC"
+    # alt/az, stored latitude first (alt, az) unlike every other system
+    HORIZONTAL = "HORIZONTAL"
 
 
 class PositionOutsideLimitsError(Exception):
@@ -194,7 +196,7 @@ class Position:
                 f"Invalid ALT range {str(alt)}. Must be between 0-180 deg or -90 - +90 deg."
             )
 
-        return Position((alt, az), system=System.TOPOCENTRIC)
+        return Position((alt, az), system=System.HORIZONTAL)
 
     @staticmethod
     def from_long_lat(long, lat):
@@ -367,6 +369,19 @@ class Position:
     #
     # great circle distance
     #
+    @property
+    def _spherical(self):
+        """(longitude-like, latitude-like) in radians.
+
+        gcdist wants the pair in that order - it is written for (ra, dec) -
+        and every factory here stores it that way except from_alt_az, which
+        stores (alt, az): latitude first.
+        """
+        long_like, lat_like = self.radian
+        if self.system == System.HORIZONTAL:
+            return lat_like, long_like
+        return long_like, lat_like
+
     def angsep(self, other):
         """
         Calculate the Great Circle Distance from other.
@@ -376,8 +391,17 @@ class Position:
 
         @returns: The distance from this point to L{other}.
         @rtype: L{Coord} in degress (convertable, as this is a Coord).
+
+        @raises ValueError: when the two positions are in different
+        reference systems - the distance between an alt/az and an ra/dec
+        position is not a number, it is a mistake.
         """
-        return Coord.from_r(CoordUtil.gcdist(self.radian, other.radian)).to_d()
+        if self.system != other.system:
+            raise ValueError(
+                f"Cannot measure a distance between a {self.system} and a "
+                f"{other.system} position."
+            )
+        return Coord.from_r(CoordUtil.gcdist(self._spherical, other._spherical)).to_d()
 
     def within(self, other, eps=Coord.from_as(60)):
         """

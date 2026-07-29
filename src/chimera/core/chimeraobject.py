@@ -4,6 +4,7 @@
 import logging
 import threading
 import time
+from typing import TYPE_CHECKING
 
 from chimera.core.bus import Bus
 from chimera.core.config import Config
@@ -14,12 +15,16 @@ from chimera.core.constants import (
     METHODS_ATTRIBUTE_NAME,
     RWLOCK_ATTRIBUTE_NAME,
 )
+from chimera.core.exceptions import ObjectNotFoundException
 from chimera.core.metaobject import MetaObject
 from chimera.core.proxy import Proxy
 from chimera.core.rwlock import ReadWriteLock
 from chimera.core.state import State
 from chimera.core.url import URL, parse_url
 from chimera.interfaces.lifecycle import ILifeCycle
+
+if TYPE_CHECKING:
+    from chimera.core.site import Site
 
 __all__ = ["ChimeraObject"]
 
@@ -45,6 +50,7 @@ class ChimeraObject(ILifeCycle, metaclass=MetaObject):
 
         self.__location__: URL
         self.__bus__: Bus
+        self.__site__: Site | None = None
 
         # logging.
         # put every logger on behalf of chimera's logger so
@@ -162,7 +168,13 @@ class ChimeraObject(ILifeCycle, metaclass=MetaObject):
             # control runs unlocked on its own thread: a long @lock method
             # (an exposure, a slew) must not stall the control loop. Keeping
             # control() thread-safe is the implementer's job.
-            run_condition = self.control()
+            try:
+                run_condition = self.control()
+            except Exception:
+                # an exception must not kill the loop: a dome that hiccups on
+                # one serial frame would otherwise silently stop tracking for
+                # the rest of the night. Log it and retry on the next cycle.
+                self.log.exception("control() raised; retrying next cycle")
             loop_time = time.monotonic() - t0
 
             time_to_wake_up = (1.0 / self.get_hz()) - loop_time
@@ -215,6 +227,13 @@ class ChimeraObject(ILifeCycle, metaclass=MetaObject):
         :return: True if is instance, False otherwise
         """
         return any(interface == cls.__name__ for cls in self.__class__.__mro__)
+
+    def get_site(self) -> "Site":
+        if self.__site__ is None:
+            raise ObjectNotFoundException(
+                "no site available: object is not registered with a Manager that has a Site"
+            )
+        return self.__site__
 
     def get_proxy(self, url: str | None = None) -> Proxy:
         if url is not None:
