@@ -2,6 +2,7 @@
 # SPDX-FileCopyrightText: 2006-present Paulo Henrique Silva <ph.silva@gmail.com>
 
 import datetime as dt
+import math
 import time
 
 import msgspec
@@ -114,3 +115,36 @@ class TestSite:
                 when + dt.timedelta(minutes=1)
             ) < site.sun_altitude(when)
             assert site.is_dusk(when) is descending, f"{when} is not settled"
+
+    def test_moon_ra_dec_survives_the_bus_and_includes_parallax(self, manager):
+        """moonpos() cannot be encoded and a bare pyephem Moon is geocentric:
+        this must cross the bus AND include the observer's parallax."""
+        import ephem
+
+        site = manager.get_proxy("/Site/0")
+        when = dt.datetime(2026, 7, 31, 3, 0, tzinfo=dt.UTC)
+
+        ra, dec = site.moon_ra_dec(when)
+
+        encoder = msgspec.json.Encoder()
+        assert encoder.encode(site.moon_ra_dec())
+        with pytest.raises(TypeError):
+            encoder.encode(site.moonpos())
+
+        assert 0.0 <= ra < 24.0
+        assert -90.0 <= dec <= 90.0
+
+        # geocentric, for contrast
+        geo = ephem.Moon()
+        geo.compute(when.strftime("%Y/%m/%d %H:%M:%S"))
+        geo_ra = math.degrees(float(geo.ra)) / 15.0
+        geo_dec = math.degrees(float(geo.dec))
+
+        sep = math.hypot(
+            (ra - geo_ra) * 15.0 * math.cos(math.radians(dec)), dec - geo_dec
+        )
+        assert sep > 0.05, (
+            f"moon_ra_dec() returned the geocentric position (sep {sep:.3f} deg); "
+            "it must be computed against the observer"
+        )
+        assert sep < 1.5, f"parallax should be under ~1 deg, got {sep:.3f}"
