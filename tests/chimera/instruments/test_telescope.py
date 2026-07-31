@@ -6,6 +6,7 @@ import logging
 import sys
 import time
 from concurrent.futures import ThreadPoolExecutor, wait
+from types import SimpleNamespace
 
 import pytest
 
@@ -213,6 +214,28 @@ class TestFakeTelescope:
                 (start_dec - dec) * 3600,
             )
             assert (start_ra, start_dec) != (ra, dec)
+
+
+def test_jog_wraps_ra_at_the_clock(monkeypatch):
+    """A jog either side of 0 h stays on the clock: RA 0.05 h jogged 6 minutes
+    west is 23.95 h, not the negative RA Position refuses to be built from."""
+    telescope = FakeTelescope()
+    monkeypatch.setattr(
+        telescope,
+        "get_site",
+        lambda: SimpleNamespace(ra_dec_to_alt_az=lambda ra, dec: (60.0, 30.0)),
+    )
+    for event in ("slew_begin", "slew_complete"):
+        monkeypatch.setattr(FakeTelescope, event, lambda *args: None, raising=False)
+
+    telescope._ra, telescope._dec = 0.05, -30.0
+    six_minutes = float(Coord.from_h(0.1).to_as())
+
+    telescope.move_west(six_minutes)
+    assert telescope.get_ra() == pytest.approx(23.95)
+
+    telescope.move_east(six_minutes)
+    assert telescope.get_ra() == pytest.approx(0.05)
 
 
 # ---------------------------------------------------------------------------
