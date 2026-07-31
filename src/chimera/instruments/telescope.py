@@ -25,9 +25,9 @@ class TelescopeBase(
         super().__init__()
 
         self._park_position = None
-        # True once the mount has been seen tracking east of pier_flip_ha, i.e.
-        # heading for the flip. See _check_pier_flip().
-        self._pier_flip_armed = False
+        # hour angle seen on the previous control cycle, None while slewing or
+        # not tracking. See _check_pier_flip().
+        self._last_ha = None
 
         # a pier flip is a minutes-scale event and every check asks the mount
         # where it is: 2 Hz (the ChimeraObject default) is pointless traffic on
@@ -59,9 +59,10 @@ class TelescopeBase(
         Flip a German equatorial mount that has tracked past C{pier_flip_ha}.
 
         The mount is re-slewed to where it is already pointing, which is what
-        makes it choose the other side of the pier. Only a mount that reached
-        the limit by tracking is flipped: one that slewed straight to an object
-        past the limit is already on the side the mount driver picked for it.
+        makes it choose the other side of the pier. What triggers it is the
+        hour angle crossing the limit between two cycles: a mount that slewed
+        straight to an object already past the limit never crosses it here and
+        is left on the side its driver picked.
         """
         flip_ha = self["pier_flip_ha"]
         if flip_ha is None:
@@ -69,23 +70,24 @@ class TelescopeBase(
 
         if self.is_slewing() or not self.is_tracking():
             # wherever the next slew lands is the new starting point
-            self._pier_flip_armed = False
+            self._last_ha = None
             return
 
         ha = self.get_site().ra_to_ha(self.get_ra())
 
-        if ha < flip_ha:
-            self._pier_flip_armed = True
-            return
+        if self._last_ha is not None and self._last_ha < flip_ha <= ha:
+            self.log.info(
+                f"Hour angle {ha:.3f} h is past {flip_ha} h, flipping the pier."
+            )
+            # get_position_ra_dec() and slew_to_ra_dec() are both in the
+            # interface's default epoch, so this re-slews to exactly where the
+            # mount already is, with no precession in or out
+            self.slew_to_ra_dec(*self.get_position_ra_dec(), epoch=2000)
 
-        if not self._pier_flip_armed:
-            return
-
-        self.log.info(f"Hour angle {ha:.3f} h is past {flip_ha} h, flipping the pier.")
-        self.slew_to_ra_dec(*self.get_position_ra_dec())
-        # only on success: a flip that raised stays armed and is retried on the
-        # next cycle, rather than leaving the mount tracking into the pier
-        self._pier_flip_armed = False
+        # last: a flip that raised leaves the crossing unrecorded and is
+        # retried on the next cycle, rather than leaving the mount tracking
+        # into the pier
+        self._last_ha = ha
 
     @lock
     def slew_to_object(self, name):

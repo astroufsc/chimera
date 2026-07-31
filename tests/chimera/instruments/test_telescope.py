@@ -256,7 +256,7 @@ class PierTelescope(TelescopeBase):
     def slew_to_ra_dec(self, ra, dec, epoch=2000):
         if self.slew_error is not None:
             raise self.slew_error
-        self.slews.append((ra, dec))
+        self.slews.append((ra, dec, epoch))
 
 
 @pytest.fixture
@@ -298,7 +298,9 @@ class TestPierFlip:
 
         telescope.ha = +0.1
         telescope.control()
-        assert telescope.slews == [(12.0, -30.0)]
+        # same position, same epoch the position accessors answer in: the
+        # mount changes side of pier, not target
+        assert telescope.slews == [(12.0, -30.0, 2000)]
 
     def test_flips_only_once(self, pier_telescope):
         telescope = pier_telescope(pier_flip_ha=0)
@@ -309,7 +311,7 @@ class TestPierFlip:
         for telescope.ha in (0.1, 0.2, 0.3):
             telescope.control()
 
-        assert telescope.slews == [(12.0, -30.0)]
+        assert telescope.slews == [(12.0, -30.0, 2000)]
 
     def test_a_slew_past_the_limit_does_not_flip(self, pier_telescope):
         """The mount never tracked into the limit: the driver put it on
@@ -359,7 +361,7 @@ class TestPierFlip:
 
         telescope.ha = 0.6
         telescope.control()
-        assert telescope.slews == [(12.0, -30.0)]
+        assert telescope.slews == [(12.0, -30.0, 2000)]
 
     def test_a_failed_flip_is_retried(self, pier_telescope):
         """The mount is tracking into the pier: giving up quietly is the one
@@ -377,4 +379,4 @@ class TestPierFlip:
 
         telescope.slew_error = None
         telescope.control()
-        assert telescope.slews == [(12.0, -30.0)]
+        assert telescope.slews == [(12.0, -30.0, 2000)]

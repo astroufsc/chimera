@@ -3,7 +3,7 @@ import time
 
 from astropy.io import ascii
 
-from chimera.util.coord import Coord
+from chimera.util.coord import Coord, CoordUtil
 
 
 class TestCoord:
@@ -159,3 +159,34 @@ class TestCoord:
         print(
             f"#{len(coords)} coords parsed in {t_parse:.3f}s ({len(coords) / t_parse:.3f}/s) and checked in {t_check:.3f}s ({len(coords) / t_check:.3f}/s) ..."
         )
+
+
+class TestHourAngle:
+    """
+    ra_to_ha() and ha_to_ra() answer in the conventional ranges, including
+    across the 0/24 h boundary, where a bare lst - ra is ~24 h out.
+    """
+
+    def test_ra_to_ha_is_signed_around_the_meridian(self):
+        for lst, ra, ha in [
+            (2.0, 1.0, +1.0),  # west of the meridian
+            (1.0, 2.0, -1.0),  # east of it
+            (12.0, 12.0, 0.0),  # on it
+            (0.5, 23.5, +1.0),  # one hour past, across the wrap
+            (23.5, 0.5, -1.0),  # one hour short of it, across the wrap
+        ]:
+            assert TestCoord.equal(
+                float(CoordUtil.ra_to_ha(Coord.from_h(ra), Coord.from_h(lst)).to_h()),
+                ha,
+            )
+
+    def test_ha_to_ra_stays_on_the_clock(self):
+        for lst, ha, ra in [
+            (2.0, 1.0, 1.0),
+            (0.5, 1.0, 23.5),  # would be -0.5 h without the wrap
+            (23.5, -1.0, 0.5),
+        ]:
+            assert TestCoord.equal(
+                float(CoordUtil.ha_to_ra(Coord.from_h(ha), Coord.from_h(lst)).to_h()),
+                ra,
+            )
