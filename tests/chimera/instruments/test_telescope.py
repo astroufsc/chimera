@@ -16,6 +16,7 @@ from chimera.instruments.faketelescope import FakeTelescope
 from chimera.instruments.telescope import TelescopeBase
 from chimera.interfaces.telescope import TelescopeStatus
 from chimera.util.coord import Coord
+from chimera.util.position import Epoch, Position
 
 chimera.core.log.set_console_level(int(1e10))
 log = logging.getLogger("chimera.tests")
@@ -256,6 +257,7 @@ class PierTelescope(TelescopeBase):
         self.slews = []
         self.controls = 0
         self.slew_error = None
+        self.hour_angle_args = []
 
     def _control(self):
         self.controls += 1
@@ -289,10 +291,12 @@ def pier_telescope(monkeypatch):
         for key, value in config.items():
             telescope[key] = value
 
+        def ra_to_ha(ra):
+            telescope.hour_angle_args.append(ra)
+            return telescope.ha
+
         monkeypatch.setattr(
-            telescope,
-            "get_site",
-            lambda: type("site", (), {"ra_to_ha": lambda _, ra: telescope.ha})(),
+            telescope, "get_site", lambda: SimpleNamespace(ra_to_ha=ra_to_ha)
         )
         return telescope
 
@@ -324,6 +328,23 @@ class TestPierFlip:
         # same position, same epoch the position accessors answer in: the
         # mount changes side of pier, not target
         assert telescope.slews == [(12.0, -30.0, 2000)]
+
+    def test_the_hour_angle_is_measured_in_the_epoch_of_date(self, pier_telescope):
+        """The position accessors answer in J2000; the local sidereal time an
+        hour angle is measured against is epoch of date. Subtracting one from
+        the other is 26 years of precession out -- ~2 minutes of time in 2026,
+        and more every year -- so the flip fires early."""
+        telescope = pier_telescope(pier_flip_ha=0)
+
+        telescope.control()
+
+        (ra,) = telescope.hour_angle_args
+        of_date = Position.from_ra_dec(12.0, -30.0, epoch=Epoch.J2000).to_epoch(
+            Epoch.NOW
+        )
+        assert ra == pytest.approx(float(of_date.ra.to_h()))
+        # a quarter century of precession, not the J2000 number it started from
+        assert 0.01 < ra - 12.0 < 0.05
 
     def test_flips_only_once(self, pier_telescope):
         telescope = pier_telescope(pier_flip_ha=0)

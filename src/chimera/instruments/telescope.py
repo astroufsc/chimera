@@ -12,7 +12,7 @@ from chimera.interfaces.telescope import (
     TelescopeTracking,
 )
 from chimera.util.coord import Coord
-from chimera.util.position import Position, airmass
+from chimera.util.position import Epoch, Position, airmass
 from chimera.util.simbad import simbad_lookup
 
 __all__ = ["TelescopeBase"]
@@ -73,21 +73,34 @@ class TelescopeBase(
             self._last_ha = None
             return
 
-        ha = self.get_site().ra_to_ha(self.get_ra())
+        ra, dec = self.get_position_ra_dec()
+        ha = self.get_site().ra_to_ha(self._ra_of_date(ra, dec))
 
         if self._last_ha is not None and self._last_ha < flip_ha <= ha:
             self.log.info(
                 f"Hour angle {ha:.3f} h is past {flip_ha} h, flipping the pier."
             )
-            # get_position_ra_dec() and slew_to_ra_dec() are both in the
-            # interface's default epoch, so this re-slews to exactly where the
-            # mount already is, with no precession in or out
-            self.slew_to_ra_dec(*self.get_position_ra_dec(), epoch=2000)
+            # the position went out in the epoch it came back in, so this
+            # re-slews to exactly where the mount already is: it changes side
+            # of pier, not target
+            self.slew_to_ra_dec(ra, dec, epoch=2000)
 
         # last: a flip that raised leaves the crossing unrecorded and is
         # retried on the next cycle, rather than leaving the mount tracking
         # into the pier
         self._last_ha = ha
+
+    def _ra_of_date(self, ra: float, dec: float) -> float:
+        """
+        C{ra} precessed from the J2000 the position accessors answer in to the
+        epoch of date, in hours.
+
+        An hour angle is a difference against the local sidereal time, which is
+        epoch of date: measuring it from a J2000 right ascension is 26 years of
+        accumulated precession out, ~2 minutes of time in 2026 and growing.
+        """
+        of_date = Position.from_ra_dec(ra, dec, epoch=Epoch.J2000).to_epoch(Epoch.NOW)
+        return float(of_date.ra.to_h())
 
     @lock
     def slew_to_object(self, name):
