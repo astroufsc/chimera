@@ -114,3 +114,80 @@ class TestSite:
                 when + dt.timedelta(minutes=1)
             ) < site.sun_altitude(when)
             assert site.is_dusk(when) is descending, f"{when} is not settled"
+
+    def test_the_night_boundary_defaults_to_astronomical_twilight(self, manager):
+        """-18 deg was hardcoded before it was configurable; the default has
+        to reproduce it exactly or every existing schedule shifts."""
+        site = manager.get_proxy("/Site/0")
+
+        when = dt.datetime(2026, 7, 27, 12, 0, tzinfo=dt.UTC)
+
+        assert site["horizon"]["night"] == -18.0
+
+        # next_setting() places the sun's UPPER LIMB on the horizon while
+        # sun_altitude() reports its centre, so the altitude at the returned
+        # instant sits one solar semi-diameter (~0.27 deg) lower
+        assert site.sun_altitude(site.sunset_twilight_end(when)) == pytest.approx(
+            -18.0, abs=0.3
+        )
+        assert site.sun_altitude(site.sunrise_twilight_begin(when)) == pytest.approx(
+            -18.0, abs=0.3
+        )
+        # the bracket is derived, not pinned: -18 + 6 = the historical -12
+        assert site.sun_altitude(site.sunset_twilight_begin(when)) == pytest.approx(
+            -12.0, abs=0.3
+        )
+
+    def test_raising_the_night_horizon_lengthens_the_night(self, manager):
+        """Raising the boundary EXTENDS the observing window at both ends:
+        descending, the sun reaches -8 before -18, so the night starts
+        earlier; rising, it reaches -8 after -18, so it ends later. That is
+        the point - a site whose twilight calibrations cannot begin until
+        -8 should keep observing until then instead of handing the sky over
+        at -18 and waiting (lna40 PENDING_ISSUES 50)."""
+        from chimera.core.site import Site
+
+        site = manager.get_proxy("/Site/0")
+        when = dt.datetime(2026, 7, 27, 12, 0, tzinfo=dt.UTC)
+        dusk18, dawn18 = (
+            site.sunset_twilight_end(when),
+            site.sunrise_twilight_begin(when),
+        )
+
+        manager.add_class(Site, "longnight", {"horizon": {"night": -8.0}}, True)
+        try:
+            short = manager.get_proxy("/Site/longnight")
+
+            assert short.sun_altitude(short.sunset_twilight_end(when)) == pytest.approx(
+                -8.0, abs=0.3
+            )
+            # the derived bracket followed it and stayed above: -8 + 6 = -2
+            assert short.sun_altitude(
+                short.sunset_twilight_begin(when)
+            ) == pytest.approx(-2.0, abs=0.3)
+            # starts earlier at dusk, ends later at dawn: strictly more sky
+            assert short.sunset_twilight_end(when) < dusk18
+            assert short.sunrise_twilight_begin(when) > dawn18
+        finally:
+            manager.remove("/Site/longnight")
+
+    def test_an_inverted_horizon_pair_is_refused_at_startup(self, manager):
+        """a twilight bracket below the night boundary turns every window inside
+        out; fail at start rather than at the first dusk."""
+        from chimera.core.site import Site
+
+        with pytest.raises(Exception):
+            manager.add_class(
+                Site,
+                "inverted",
+                {"horizon": {"night": -6.0, "twilight": -12.0}},
+                True,
+            )
+
+    def test_an_unknown_horizon_key_is_refused(self, manager):
+        """A dict option cannot be spell-checked by the config layer, so a
+        typo would silently fall back to the defaults."""
+        from chimera.core.site import Site
+
+        with pytest.raises(Exception):
+            manager.add_class(Site, "typo", {"horizon": {"nite": -8.0}}, True)
