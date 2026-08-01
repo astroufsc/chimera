@@ -49,7 +49,7 @@ class FakeTelescope(TelescopeBase, TelescopePier):
     def __start__(self):
         self.set_hz(1)
 
-    def control(self):
+    def _control(self):
         if not self._slewing:
             if self._tracking:
                 self._set_alt_az_from_ra_dec()
@@ -149,27 +149,21 @@ class FakeTelescope(TelescopeBase, TelescopePier):
 
     @lock
     def move_east(self, offset, rate=None):
-        self._slewing = True
-
-        ra, dec = self.get_position_ra_dec()
-        pos = Position.from_ra_dec(ra + Coord.from_as(offset), dec, epoch=Epoch.NOW)
-        self.slew_begin(float(pos.ra), float(pos.dec))
-
-        self._ra += float(Coord.from_as(offset).to_h())
-        self._set_alt_az_from_ra_dec()
-
-        self._slewing = False
-        self.slew_complete(self._ra, self._dec, TelescopeStatus.OK)
+        self._jog_ra(float(Coord.from_as(offset).to_h()))
 
     @lock
     def move_west(self, offset, rate=None):
+        self._jog_ra(-float(Coord.from_as(offset).to_h()))
+
+    def _jog_ra(self, offset):
+        # offset in hours. RA is a clock: a jog either side of 0 h wraps, it
+        # does not run off the end into a Position that refuses to be built
         self._slewing = True
 
-        ra, dec = self.get_position_ra_dec()
-        pos = Position.from_ra_dec(ra + Coord.from_as(-offset), dec)
-        self.slew_begin(float(pos.ra), float(pos.dec))
+        ra = (self.get_ra() + offset) % 24
+        self.slew_begin(ra, self.get_dec())
 
-        self._ra += float(Coord.from_as(-offset).to_h())
+        self._ra = ra
         self._set_alt_az_from_ra_dec()
 
         self._slewing = False

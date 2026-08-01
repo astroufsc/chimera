@@ -103,6 +103,17 @@ class TestSite:
         with pytest.raises(TypeError):
             encoder.encode(site.sunpos())
 
+    def test_ra_to_ha_is_signed_around_the_meridian(self, manager):
+        """HA comes back in [-12, +12), east of the meridian negative, even
+        for a right ascension on the other side of the 0/24 h wrap."""
+        site = manager.get_proxy("/Site/0")
+        lst = site.lst_in_rads() * 12 / math.pi
+
+        for hour_angle in (-11.5, -1, 0, 1, 11.5):
+            ra = (lst - hour_angle) % 24
+            # the sidereal clock keeps running: 0.01 h is 36 seconds of slack
+            assert site.ra_to_ha(ra) == pytest.approx(hour_angle, abs=0.01)
+
     def test_is_dusk_tracks_the_sun_not_the_clock(self, manager):
         """Dusk is the sun on its way down, sampled all the way around a
         day and checked against the altitude it is about to have."""

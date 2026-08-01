@@ -12,7 +12,7 @@ from chimera.interfaces.telescope import (
     TelescopeTracking,
 )
 from chimera.util.coord import Coord
-from chimera.util.position import Position, airmass
+from chimera.util.position import Epoch, Position, airmass
 from chimera.util.simbad import simbad_lookup
 
 __all__ = ["TelescopeBase"]
@@ -25,6 +25,82 @@ class TelescopeBase(
         super().__init__()
 
         self._park_position = None
+        # hour angle seen on the previous control cycle, None while slewing or
+        # not tracking. See _check_pier_flip().
+        self._last_ha = None
+
+        # a pier flip is a minutes-scale event and every check asks the mount
+        # where it is: 2 Hz (the ChimeraObject default) is pointless traffic on
+        # a serial mount. Drivers needing a faster loop call set_hz() in
+        # __start__, which runs after this.
+        self.set_hz(1 / 5.0)
+
+    def control(self) -> bool:
+        """
+        Runs the automatic pier flip check on every cycle of the object's
+        control loop, then the driver's own periodic work. Drivers implement
+        L{_control}.
+        """
+        self._check_pier_flip()
+        return self._control()
+
+    def _control(self) -> bool:
+        """
+        Periodic driver work, called from L{control} on every cycle of the
+        control loop. Runs unlocked, on the control loop thread.
+
+        @return: False to stop the control loop.
+        @rtype: bool
+        """
+        return True
+
+    def _check_pier_flip(self):
+        """
+        Flip a German equatorial mount that has tracked past C{pier_flip_ha}.
+
+        The mount is re-slewed to where it is already pointing, which is what
+        makes it choose the other side of the pier. What triggers it is the
+        hour angle crossing the limit between two cycles: a mount that slewed
+        straight to an object already past the limit never crosses it here and
+        is left on the side its driver picked.
+        """
+        flip_ha = self["pier_flip_ha"]
+        if flip_ha is None:
+            return
+
+        if self.is_slewing() or not self.is_tracking():
+            # wherever the next slew lands is the new starting point
+            self._last_ha = None
+            return
+
+        ra, dec = self.get_position_ra_dec()
+        ha = self.get_site().ra_to_ha(self._ra_of_date(ra, dec))
+
+        if self._last_ha is not None and self._last_ha < flip_ha <= ha:
+            self.log.info(
+                f"Hour angle {ha:.3f} h is past {flip_ha} h, flipping the pier."
+            )
+            # the position went out in the epoch it came back in, so this
+            # re-slews to exactly where the mount already is: it changes side
+            # of pier, not target
+            self.slew_to_ra_dec(ra, dec, epoch=2000)
+
+        # last: a flip that raised leaves the crossing unrecorded and is
+        # retried on the next cycle, rather than leaving the mount tracking
+        # into the pier
+        self._last_ha = ha
+
+    def _ra_of_date(self, ra: float, dec: float) -> float:
+        """
+        C{ra} precessed from the J2000 the position accessors answer in to the
+        epoch of date, in hours.
+
+        An hour angle is a difference against the local sidereal time, which is
+        epoch of date: measuring it from a J2000 right ascension is 26 years of
+        accumulated precession out, ~2 minutes of time in 2026 and growing.
+        """
+        of_date = Position.from_ra_dec(ra, dec, epoch=Epoch.J2000).to_epoch(Epoch.NOW)
+        return float(of_date.ra.to_h())
 
     @lock
     def slew_to_object(self, name):
