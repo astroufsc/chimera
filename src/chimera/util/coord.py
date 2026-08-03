@@ -284,11 +284,24 @@ class CoordUtil:
 
     @staticmethod
     def ra_to_ha(ra, lst):
-        return Coord.from_r(CoordUtil.coord_to_r(lst) - CoordUtil.coord_to_r(ra))
+        """
+        Hour angle of C{ra} at C{lst}, wrapped to +/-12 h: negative east of
+        the meridian, positive west of it. Without the wrap an object either
+        side of the 0/24 h boundary comes back ~24 h away from the meridian
+        it is actually sitting on.
+        """
+        return CoordUtil.make_valid_180_to_180(
+            CoordUtil.coord_to_r(lst) - CoordUtil.coord_to_r(ra)
+        )
 
     @staticmethod
     def ha_to_ra(ha, lst):
-        return Coord.from_r(CoordUtil.coord_to_r(lst) - CoordUtil.coord_to_r(ha))
+        """
+        Right ascension of C{ha} at C{lst}, wrapped to [0, 24) h.
+        """
+        return CoordUtil.make_valid_0_to_360(
+            CoordUtil.coord_to_r(lst) - CoordUtil.coord_to_r(ha)
+        )
 
     # coord_rotate adopted from sidereal.py
     # http://www.nmt.edu/tcc/help/lang/python/examples/sidereal/ims/

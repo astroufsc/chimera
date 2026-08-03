@@ -381,6 +381,14 @@ class ChimeraTel(ChimeraCLI):
                 "current side of pier: %s "
                 % telescope.get_pier_side().__str__().lower()
             )
+        self.out(
+            "automatic pier flip: %s"
+            % (
+                f"at hour angle {telescope['pier_flip_ha']} h"
+                if telescope["pier_flip_ha"] is not None
+                else "disabled"
+            )
+        )
 
         if self.telescope["fans"] is not None:
             for fan in self.telescope["fans"]:

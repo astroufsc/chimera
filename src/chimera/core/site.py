@@ -337,6 +337,23 @@ class Site(ChimeraObject):
             Coord.from_r(self._moon.alt), Coord.from_r(self._moon.az)
         )
 
+    def moon_ra_dec(self, date=None):
+        """
+        Moon apparent TOPOCENTRIC position as (ra in HOURS, dec in DEGREES).
+
+        The companion to sun_altitude()/sun_azimuth(): moonpos() returns a
+        Position, which does not cross the bus. Computed against the
+        observer, so the ~1 degree of horizontal parallax is included.
+
+        @rtype: tuple(float, float)
+        """
+        date = date or self.ut()
+        self._moon.compute(self._get_ephem(date))
+        return (
+            float(Coord.from_r(self._moon.ra).to_h()),
+            float(Coord.from_r(self._moon.dec).to_d()),
+        )
+
     def moonphase(self, date=None):
         # NOTE(thread-safety): compute-then-read race on the shared _moon
         # body, same as sunpos.
@@ -346,7 +363,7 @@ class Site(ChimeraObject):
 
     def ra_to_ha(self, ra: float):
         # ra in hours
-        # returns ha in hours
+        # returns ha in hours, +/-12: east of the meridian is negative
         return float(
             CoordUtil.ra_to_ha(
                 Coord.from_h(ra), Coord.from_r(self.lst_in_rads())

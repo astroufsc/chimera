@@ -2,6 +2,7 @@
 # SPDX-FileCopyrightText: 2006-present Paulo Henrique Silva <ph.silva@gmail.com>
 
 import datetime as dt
+import math
 import time
 
 import msgspec
@@ -102,6 +103,17 @@ class TestSite:
         with pytest.raises(TypeError):
             encoder.encode(site.sunpos())
 
+    def test_ra_to_ha_is_signed_around_the_meridian(self, manager):
+        """HA comes back in [-12, +12), east of the meridian negative, even
+        for a right ascension on the other side of the 0/24 h wrap."""
+        site = manager.get_proxy("/Site/0")
+        lst = site.lst_in_rads() * 12 / math.pi
+
+        for hour_angle in (-11.5, -1, 0, 1, 11.5):
+            ra = (lst - hour_angle) % 24
+            # the sidereal clock keeps running: 0.01 h is 36 seconds of slack
+            assert site.ra_to_ha(ra) == pytest.approx(hour_angle, abs=0.01)
+
     def test_is_dusk_tracks_the_sun_not_the_clock(self, manager):
         """Dusk is the sun on its way down, sampled all the way around a
         day and checked against the altitude it is about to have."""
@@ -191,3 +203,36 @@ class TestSite:
 
         with pytest.raises(Exception):
             manager.add_class(Site, "typo", {"horizon": {"nite": -8.0}}, True)
+
+    def test_moon_ra_dec_survives_the_bus_and_includes_parallax(self, manager):
+        """moonpos() cannot be encoded and a bare pyephem Moon is geocentric:
+        this must cross the bus AND include the observer's parallax."""
+        import ephem
+
+        site = manager.get_proxy("/Site/0")
+        when = dt.datetime(2026, 7, 31, 3, 0, tzinfo=dt.UTC)
+
+        ra, dec = site.moon_ra_dec(when)
+
+        encoder = msgspec.json.Encoder()
+        assert encoder.encode(site.moon_ra_dec())
+        with pytest.raises(TypeError):
+            encoder.encode(site.moonpos())
+
+        assert 0.0 <= ra < 24.0
+        assert -90.0 <= dec <= 90.0
+
+        # geocentric, for contrast
+        geo = ephem.Moon()
+        geo.compute(when.strftime("%Y/%m/%d %H:%M:%S"))
+        geo_ra = math.degrees(float(geo.ra)) / 15.0
+        geo_dec = math.degrees(float(geo.dec))
+
+        sep = math.hypot(
+            (ra - geo_ra) * 15.0 * math.cos(math.radians(dec)), dec - geo_dec
+        )
+        assert sep > 0.05, (
+            f"moon_ra_dec() returned the geocentric position (sep {sep:.3f} deg); "
+            "it must be computed against the observer"
+        )
+        assert sep < 1.5, f"parallax should be under ~1 deg, got {sep:.3f}"

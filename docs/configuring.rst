@@ -83,6 +83,30 @@ cannot reach position surfaces as an error instead of silently unfocused data.
 This replaces the ``chimera-filterfocus`` plugin, whose ``focus_filters`` and ``focus_difference``
 options map to the ``focus_offsets`` mapping above.
 
+Automatic pier flip
+^^^^^^^^^^^^^^^^^^^
+
+::
+
+    telescope:
+        name: fake
+        type: FakeTelescope
+        pier_flip_ha: 0
+
+A German equatorial mount cannot track indefinitely past the meridian: sooner or later the tube
+runs into the pier. Set *pier_flip_ha* to the hour angle, in hours, where that becomes a problem
+and the telescope re-slews to the position it is already pointing at as soon as tracking takes it
+there, which is what makes the mount pick the other side of the pier. ``0`` flips at the meridian,
+``0.5`` gives it another 30 minutes of tracking.
+
+Only a mount that arrived at the limit *by tracking* is flipped; slewing straight to an object
+that is already past it leaves the mount on whichever side its own driver chose. The flip fires
+``slew_begin``/``slew_complete`` like any other slew, so a dome in ``track`` mode follows along.
+
+Leave ``pier_flip_ha`` unset (the default) on a fork or alt-azimuth mount, which has nothing to
+flip. This replaces the ``chimera-autopierchange`` plugin, whose ``ha_flip`` option maps to
+``pier_flip_ha``.
+
 Controllers Configuration
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
