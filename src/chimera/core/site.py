@@ -3,6 +3,7 @@
 
 
 import datetime as dt
+import math
 import threading
 
 import ephem
@@ -42,7 +43,19 @@ class Site(ChimeraObject):
         # "start now" (pure speedup with no jump).
         time_speedup=1.0,
         time_start="",
+        # Sun altitudes, in DEGREES, bounding the observable night.
+        #
+        # "night" is the schedulers' observing window (sunset_twilight_end
+        # .. sunrise_twilight_begin); raise it at a site whose twilight
+        # calibrations cannot start that low. "twilight" is the outer
+        # bracket (sunset_twilight_begin, sunrise_twilight_end) and must
+        # sit ABOVE it; omit it to derive it 6 deg above "night".
+        horizon={"night": -18.0, "twilight": -12.0},
     )
+
+    #: derived bracket offset above horizon["night"]; 6 gives the
+    #: historical -18/-12 pair
+    TWILIGHT_BRACKET_OFFSET = 6.0
 
     def __init__(self):
         super().__init__()
@@ -58,6 +71,47 @@ class Site(ChimeraObject):
         self._ff_wall0 = None
         self._ff_sim0 = None
 
+    def __start__(self):
+        # An inverted pair turns every window inside out; fail here rather
+        # than at the first dusk.
+        night, twilight = self._night_horizons()
+        if not night < twilight:
+            raise ValueError(
+                f"horizon['night'] ({night:g} deg) must be BELOW "
+                f"horizon['twilight'] ({twilight:g} deg): the sun reaches "
+                "the twilight bracket first at dusk and last at dawn."
+            )
+        if night != -18.0:
+            self.log.info(
+                f"Observable night bounded at sun altitude {night:g} deg "
+                f"(twilight bracket {twilight:g} deg)."
+            )
+        return True
+
+    def _night_horizons(self):
+        """(night, twilight) sun altitudes in degrees, bracket derived when
+        "twilight" is not given."""
+        horizon = self["horizon"] or {}
+
+        unknown = sorted(set(horizon) - {"night", "twilight"})
+        if unknown:
+            raise ValueError(
+                f"Unknown horizon key(s) {unknown}: expected 'night' and 'twilight'."
+            )
+
+        try:
+            night = float(horizon.get("night", -18.0))
+            twilight = horizon.get("twilight")
+            twilight = (
+                night + self.TWILIGHT_BRACKET_OFFSET
+                if twilight is None or str(twilight).strip() == ""
+                else float(twilight)
+            )
+        except (TypeError, ValueError):
+            raise ValueError(f"Horizon values must be numbers, got {horizon!r}.")
+
+        return night, twilight
+
     def __main__(self):
         pass
 
@@ -69,6 +123,16 @@ class Site(ChimeraObject):
         site.date = date or self.ut()
         site.epoch = "2000/1/1 00:00:00"
         return site
+
+    def _horizon(self, which):
+        """A configured sun altitude as ephem wants it.
+
+        ephem reads a float horizon as RADIANS and a string as degrees;
+        the config is in degrees, so convert explicitly rather than relying
+        on which type happens to arrive.
+        """
+        night, twilight = self._night_horizons()
+        return math.radians(night if which == "night" else twilight)
 
     def _date_to_local(self, date):
         # convert date to a non-naive datetime with TZ set to UTC
@@ -168,28 +232,30 @@ class Site(ChimeraObject):
         date = date or self.ut()
         site = self._get_ephem(date)
         site.elev = 0
-        site.horizon = "-12:00:00"
+        site.horizon = self._horizon("twilight")
         return self._date_to_local(site.next_setting(self._sun))
 
     def sunset_twilight_end(self, date=None):
+        """The instant the observable night BEGINS (horizon['night'])."""
         date = date or self.ut()
         site = self._get_ephem(date)
         site.elev = 0
-        site.horizon = "-18:00:00"
+        site.horizon = self._horizon("night")
         return self._date_to_local(site.next_setting(self._sun))
 
     def sunrise_twilight_begin(self, date=None):
+        """The instant the observable night ENDS (horizon['night'])."""
         date = date or self.ut()
         site = self._get_ephem(date)
         site.elev = 0
-        site.horizon = "-18:00:00"
+        site.horizon = self._horizon("night")
         return self._date_to_local(site.next_rising(self._sun))
 
     def sunrise_twilight_end(self, date=None):
         date = date or self.ut()
         site = self._get_ephem(date)
         site.elev = 0
-        site.horizon = "-12:00:00"
+        site.horizon = self._horizon("twilight")
         return self._date_to_local(site.next_rising(self._sun))
 
     def sunpos(self, date=None):
