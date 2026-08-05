@@ -200,6 +200,25 @@ def test_metadata_carries_the_wind_screen_altitude(dome):
     assert metadata["DOME_WSC"] == "35.00"
 
 
+def test_metadata_reports_the_live_mode(manager):
+    """DOME_TRK follows track()/stand(), not the mode the dome started in."""
+    from chimera.instruments.faketelescope import FakeTelescope
+
+    manager.add_class(FakeTelescope, "modes")
+    dome = manager.add_class(
+        FakeDome, "modes", {"telescope": "/FakeTelescope/modes", "mode": Mode.Stand}
+    )
+
+    def reported():
+        return dict((key, value) for key, value, _ in dome.get_metadata({}))["DOME_TRK"]
+
+    assert reported() == "Stand"
+    dome.track()
+    assert reported() == "Track"
+    dome.stand()
+    assert reported() == "Stand"
+
+
 def test_metadata_carries_the_flap_status(dome):
     metadata = dict((key, value) for key, value, _ in dome.get_metadata({}))
     assert metadata["DOME_FLP"] == "Closed"
