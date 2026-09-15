@@ -16,6 +16,7 @@ from astropy import wcs
 from astropy.io import fits
 
 from chimera.core.exceptions import ChimeraException
+from chimera.interfaces.camera import Bitpix
 from chimera.util.coord import Coord
 from chimera.util.position import Position
 from chimera.util.sextractor import SExtractor
@@ -25,6 +26,49 @@ log = logging.getLogger(__name__)
 
 class WCSNotFoundException(ChimeraException):
     pass
+
+
+#: The numpy type each BITPIX name means. FITS has no unsigned 16-bit type, so
+#: astropy writes `uint16` as BITPIX=16 with BZERO=32768 and reads it back as
+#: uint16 -- which is exactly what a real camera driver already produces.
+_BITPIX_DTYPE = {
+    Bitpix.char8: np.uint8,
+    Bitpix.uint16: np.uint16,
+    Bitpix.int16: np.int16,
+    Bitpix.int32: np.int32,
+    Bitpix.int64: np.int64,
+    Bitpix.float32: np.float32,
+    Bitpix.float64: np.float64,
+}
+
+
+def _as_bitpix(data, bitpix):
+    """`data` in the type `bitpix` names, or untouched if it says nothing.
+
+    **Nothing in chimera calls this by default, and that is the point.** BITPIX
+    belongs to the camera -- see `ImageRequest` -- so a driver hands over an
+    array already in its native type and this leaves it alone. The coercion is
+    here for a caller that genuinely wants one, not for the framework to impose.
+
+    Narrowing **saturates rather than wraps**, the same reasoning as
+    `chimera.controllers.chz1streamer.core`: a stray negative or an
+    above-full-well float is a pixel at the end of its range, and wrapping it
+    would put a bright star at zero.
+    """
+    if bitpix is None or data is None:
+        return data
+    try:
+        dtype = _BITPIX_DTYPE[Bitpix(bitpix)]
+    except (ValueError, KeyError):
+        log.warning(f"Unknown bitpix {bitpix!r}; leaving pixels as {data.dtype}")
+        return data
+    if data.dtype == dtype:
+        # Full frames are big enough that a needless copy is a real cost.
+        return data
+    if np.issubdtype(dtype, np.integer):
+        info = np.iinfo(dtype)
+        return np.clip(np.rint(data), info.min, info.max).astype(dtype)
+    return data.astype(dtype)
 
 
 class ImageUtil:
@@ -230,7 +274,14 @@ class Image(UserDict):
         return img
 
     @staticmethod
-    def create(data, image_request=None, filename=None):
+    def create(data, image_request=None, filename=None, bitpix=None):
+        """Write `data` to a FITS file and return the `Image`.
+
+        The pixels are written **as the caller made them** -- the array's dtype
+        is what sets BITPIX. Pass `bitpix` only to override that; it is not
+        read from the `image_request`, because the pixel type is the camera's
+        to decide and not the requester's.
+        """
         if image_request:
             try:
                 filename = image_request["filename"]
@@ -253,9 +304,10 @@ class Image(UserDict):
             ("FILENAME", os.path.basename(filename), "name of the file"),
         ]
 
-        hdu = fits.PrimaryHDU()
-        # TODO: Implement BITPIX support
-        hdu.scale("int16", "", bzero=32768, bscale=1)
+        data = _as_bitpix(data, bitpix)
+        # Built **with** its data: assigning `hdu.data` afterwards is what sets
+        # BITPIX, so anything done to an empty HDU before that point is lost.
+        hdu = fits.PrimaryHDU(data=data)
 
         if image_request:
             headers += image_request.headers
@@ -273,8 +325,6 @@ class Image(UserDict):
                 )
                 img.writeto(filename, checksum=True)
                 return Image.from_file(filename)
-
-        hdu.data = data
 
         hdu_list = fits.HDUList([hdu])
         hdu_list.writeto(filename)
