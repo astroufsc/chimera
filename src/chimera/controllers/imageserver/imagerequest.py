@@ -1,12 +1,23 @@
 import logging
 
 from chimera.core.exceptions import ChimeraValueError
-from chimera.interfaces.camera import Bitpix, Shutter
+from chimera.interfaces.camera import Shutter
 
 log = logging.getLogger(__name__)
 
 
 class ImageRequest(dict):
+    """What the caller wants from an exposure.
+
+    **`bitpix` is deliberately not here.** It was, defaulting to
+    `Bitpix.uint16`, and nothing ever read it -- which was the lucky part. The
+    pixel type is a property of the camera: of its ADC, and often of the
+    readout mode, since digitisation depth trades against readout speed. A
+    caller cannot know it, and a caller that guessed wrong would have silently
+    truncated real data with the driver having no standing to refuse. Drivers
+    own their own type and hand over an array already in it.
+    """
+
     valid_keys = [
         "exptime",
         "frames",
@@ -14,7 +25,6 @@ class ImageRequest(dict):
         "shutter",
         "binning",
         "window",
-        "bitpix",
         "filename",
         "compress_format",
         "type",
@@ -30,7 +40,6 @@ class ImageRequest(dict):
             "shutter": Shutter.OPEN,
             "binning": "1x1",
             "window": None,
-            "bitpix": Bitpix.uint16,
             "filename": "$DATE-$TIME",
             "compress_format": "NO",
             "type": "object",
