@@ -223,6 +223,50 @@ def test_stop_cancels_a_program_waiting_for_its_slew_time():
     machine.state(State.SHUTDOWN)
 
 
+def _machine_stub(mjd=None):
+    """The bits of Machine the SequentialScheduler touches, with a site clock
+    when the test needs an eligibility decision. mjd=None models a harness
+    with no site at all, where selection falls back to the static order."""
+
+    class Site:
+        @staticmethod
+        def mjd():
+            return mjd
+
+    class MachineController:
+        @staticmethod
+        def get_site():
+            if mjd is None:
+                raise Exception("no site in this harness")
+            return Site()
+
+    return type(
+        "M",
+        (),
+        {"wake_up": staticmethod(lambda: None), "controller": MachineController()},
+    )()
+
+
+def _drain(scheduler):
+    """Run the queue the way the machine does: pick, execute, mark done.
+
+    Selection is a fresh query per call, so an undone program is offered
+    again - draining without done() would spin forever.
+    """
+    from chimera.controllers.scheduler.model import Session
+
+    order = []
+    while True:
+        program = next(scheduler)
+        if program is None:
+            break
+        order.append(program.name)
+        session = Session()
+        scheduler.done(session.merge(program))
+        session.commit()
+    return order
+
+
 def test_sequential_runs_in_time_order():
     """A queue with baked start times must execute chronologically.
 
@@ -240,16 +284,12 @@ def test_sequential_runs_in_time_order():
     session.add(Program(name="evening-flat", priority=0, start_at=61243.86))
     session.commit()
 
+    # 22:00 on the incident night: nothing has reached its start_at yet, so
+    # each program becomes eligible in turn and none can jump the queue
     scheduler = SequentialScheduler()
-    scheduler.reschedule(type("M", (), {"wake_up": staticmethod(lambda: None)})())
+    scheduler.reschedule(_machine_stub(mjd=61243.80))
 
-    order = []
-    while True:
-        program = next(scheduler)
-        if program is None:
-            break
-        order.append(program.name)
-    assert order == ["evening-flat", "science", "morning-flat"], order
+    assert _drain(scheduler) == ["evening-flat", "science", "morning-flat"]
 
     session.query(Program).delete()
     session.commit()
@@ -271,17 +311,81 @@ def test_sequential_keeps_file_order_for_untimed_programs():
         session.add(Program(name=name, priority=0))
     session.commit()
 
+    # no start_at at all: every one is ready, so insertion order decides
     scheduler = SequentialScheduler()
-    scheduler.reschedule(type("M", (), {"wake_up": staticmethod(lambda: None)})())
+    scheduler.reschedule(_machine_stub(mjd=61244.0))
 
-    order = []
-    while True:
-        program = next(scheduler)
-        if program is None:
-            break
-        order.append(program.name)
-    assert order == ["first", "second", "third"], order
+    assert _drain(scheduler) == ["first", "second", "third"]
 
+    session.query(Program).delete()
+    session.commit()
+
+
+def test_sequential_ready_program_beats_an_unpinned_chain():
+    """A pinned program PAST its start_at must not starve behind an
+    unpinned one.
+
+    An unpinned program (start_at 0.0, the "no constraint" sentinel) read
+    as "earliest" under a static time sort, so a monitoring chain that
+    starts a new visit the second the last one ends won every pop - the
+    00:58 timed focus never ran on opd-40 2026-07-28 although priority
+    ranked it above the monitor. Both are ready; priority decides.
+    """
+    from chimera.controllers.scheduler.model import Program, Session
+    from chimera.controllers.scheduler.sequential import SequentialScheduler
+
+    session = Session()
+    session.query(Program).delete()
+    # chimera priority is descending (robobs negates its ascending ranks):
+    # focus -5 outranks monitor -25
+    session.add(Program(name="monitor-1", priority=-25, start_at=0.0))
+    session.add(Program(name="monitor-2", priority=-25, start_at=0.0))
+    session.add(Program(name="focus", priority=-5, start_at=61250.0410))
+    session.commit()
+
+    scheduler = SequentialScheduler()
+
+    # before the focus's time: the monitor runs
+    scheduler.reschedule(_machine_stub(mjd=61250.0000))
+    assert next(scheduler).name == "monitor-1"
+
+    # past it (01:16 against a 00:59 start): the focus is ready and outranks
+    scheduler.reschedule(_machine_stub(mjd=61250.0530))
+    order = _drain(scheduler)
+    assert order == ["focus", "monitor-1", "monitor-2"], order
+
+    session = Session()
+    session.query(Program).delete()
+    session.commit()
+
+
+def test_sequential_errored_program_is_not_retried_forever():
+    """done(error=...) must defer the failing program, or a dynamic pick
+    returns it again immediately and the machine livelocks on it."""
+    from chimera.controllers.scheduler.model import Program, Session
+    from chimera.controllers.scheduler.sequential import SequentialScheduler
+
+    session = Session()
+    session.query(Program).delete()
+    session.add(Program(name="bad-focus", priority=-5, start_at=0.0))
+    session.add(Program(name="science", priority=-25, start_at=0.0))
+    session.commit()
+
+    scheduler = SequentialScheduler()
+    scheduler.reschedule(_machine_stub(mjd=61250.0))
+
+    failing = next(scheduler)
+    assert failing.name == "bad-focus"
+    scheduler.done(failing, error=Exception("Error while autofocusing"))
+
+    picked = next(scheduler)
+    assert picked is not None and picked.name == "science"
+
+    # a reschedule clears the deferral: the program may be retried then
+    scheduler.reschedule(_machine_stub(mjd=61250.0))
+    assert next(scheduler).name == "bad-focus"
+
+    session = Session()
     session.query(Program).delete()
     session.commit()
 
@@ -299,14 +403,14 @@ def test_finished_program_is_not_rerun_after_reschedule():
     session.add(Program(name="science", priority=-19, start_at=61244.20))
     session.commit()
 
-    machine = type("M", (), {"wake_up": staticmethod(lambda: None)})()
+    machine = _machine_stub(mjd=61244.25)  # both are past their start_at
     scheduler = SequentialScheduler()
     scheduler.reschedule(machine)
     running = next(scheduler)
     assert running.name == "focus"
 
-    # robobs hands over another program mid-run: the rebuilt queue holds
-    # the still-unfinished focus again
+    # robobs hands over another program mid-run: the queue is rebuilt while
+    # the focus is still unfinished
     scheduler.reschedule(machine)
 
     # the focus completes, exactly as machine._process does it
@@ -341,7 +445,7 @@ def test_reschedule_during_run_does_not_unbalance_the_queue():
     session.add(Program(name="only", priority=0, start_at=61244.0))
     session.commit()
 
-    machine = type("M", (), {"wake_up": staticmethod(lambda: None)})()
+    machine = _machine_stub(mjd=61244.25)
     scheduler = SequentialScheduler()
     scheduler.reschedule(machine)
     running = next(scheduler)
