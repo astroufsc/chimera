@@ -109,7 +109,7 @@ class ChimeraTel(ChimeraCLI):
             f"{tag} position ra/dec: {Coord.from_h(ra).to_hms()}/{Coord.from_d(dec).to_dms()}"
         )
         self.out(
-            f"{tag} position alt/az: {Coord.from_d(alt).to_dms()}/{Coord.from_d(az).to_hms()}"
+            f"{tag} position alt/az: {Coord.from_d(alt).to_dms()}/{Coord.from_d(az).to_dms()}"
         )
 
     @action(

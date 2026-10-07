@@ -6,7 +6,11 @@ from chimera.core.chimeraobject import ChimeraObject
 from chimera.core.exceptions import ObjectNotFoundException, ObjectTooLowException
 from chimera.core.lock import lock
 from chimera.interfaces.telescope import (
+    TelescopeAxis,
+    TelescopeAxisRate,
     TelescopePark,
+    TelescopePierSide,
+    TelescopePointingModel,
     TelescopeSlew,
     TelescopeSync,
     TelescopeTracking,
@@ -15,11 +19,98 @@ from chimera.util.coord import Coord
 from chimera.util.position import Epoch, Position, airmass
 from chimera.util.simbad import simbad_lookup
 
-__all__ = ["TelescopeBase"]
+__all__ = ["TelescopeBase", "axes"]
+
+# The axis vocabularies a caller might reasonably use, each mapped to
+# Wallace's generic pair. TCSpk: roll and pitch are [-h, dec] on an
+# equatorial and [pi - az, alt] on an altazimuth, so the generic names are
+# the only ones that stay true across mount types -- but a caller writing a
+# German equatorial driver thinks in hour angle, and one writing an altaz
+# thinks in azimuth. This lets each of them say what they mean.
+_VOCABULARIES = (
+    ("roll", "pitch"),
+    ("ha", "dec"),
+    ("az", "alt"),
+    ("axis1", "axis2"),
+    ("primary", "secondary"),
+)
+
+
+def axes(
+    *,
+    roll: float | None = None,
+    pitch: float | None = None,
+    ha: float | None = None,
+    dec: float | None = None,
+    az: float | None = None,
+    alt: float | None = None,
+    axis1: float | None = None,
+    axis2: float | None = None,
+    primary: float | None = None,
+    secondary: float | None = None,
+) -> tuple[float, float]:
+    """Normalise any axis vocabulary to Wallace's (roll, pitch).
+
+    The axis interfaces take one canonical pair, so that the WS schema and
+    everything generated from it stay typed. This is the sugar that lets a
+    call site read the way its author thinks::
+
+        tel.set_axis_rate(*axes(ha=0.5, dec=0.0))
+        tel.set_axis_rate(*axes(az=0.5, alt=0.0))
+        tel.set_axis_rate(*axes(primary=0.5, secondary=0.0))
+
+    It is a naming convenience and nothing more: no unit conversion and no
+    coordinate transform happen here, because roll *is* the hour-angle axis
+    and pitch *is* the declination axis on the mount those names describe.
+
+    Raises:
+        ValueError: If no pair was given, if a pair is half-given, or if
+            two vocabularies are mixed -- passing ha= with alt= is a bug in
+            the caller, not something to silently pick a winner from.
+    """
+    given = {
+        "roll": roll,
+        "pitch": pitch,
+        "ha": ha,
+        "dec": dec,
+        "az": az,
+        "alt": alt,
+        "axis1": axis1,
+        "axis2": axis2,
+        "primary": primary,
+        "secondary": secondary,
+    }
+    named = {k for k, v in given.items() if v is not None}
+    if not named:
+        raise ValueError(
+            "axes() needs one pair, e.g. axes(roll=..., pitch=...) or "
+            "axes(ha=..., dec=...)"
+        )
+
+    matched = [pair for pair in _VOCABULARIES if named & set(pair)]
+    if len(matched) > 1:
+        mixed = ", ".join(sorted(named))
+        raise ValueError(
+            f"axes() got {mixed}, which mixes axis vocabularies; use one of "
+            + ", ".join("/".join(pair) for pair in _VOCABULARIES)
+        )
+
+    first, second = matched[0]
+    if given[first] is None or given[second] is None:
+        missing = first if given[first] is None else second
+        raise ValueError(f"axes() got {'/'.join(matched[0])} without {missing}")
+    return given[first], given[second]
 
 
 class TelescopeBase(
-    ChimeraObject, TelescopeSlew, TelescopeSync, TelescopePark, TelescopeTracking
+    ChimeraObject,
+    TelescopeSlew,
+    TelescopeSync,
+    TelescopePark,
+    TelescopeTracking,
+    TelescopeAxis,
+    TelescopeAxisRate,
+    TelescopePointingModel,
 ):
     def __init__(self):
         super().__init__()
@@ -249,6 +340,24 @@ class TelescopeBase(
     def is_tracking(self):
         raise NotImplementedError()
 
+    def get_axis_counts(self) -> tuple[int, int]:
+        raise NotImplementedError()
+
+    def get_axis_scale(self) -> tuple[float, float]:
+        raise NotImplementedError()
+
+    def set_axis_rate(self, roll: float, pitch: float) -> None:
+        raise NotImplementedError()
+
+    def get_axis_rate(self) -> tuple[float, float]:
+        raise NotImplementedError()
+
+    def clear_pointing_model(self) -> None:
+        raise NotImplementedError()
+
+    def apply_pointing_model(self, ra: float, dec: float) -> tuple[float, float]:
+        raise NotImplementedError()
+
     def get_metadata(self, request):
         # Check first if there is metadata from an metadata override method.
         md = self.get_metadata_override(request)
@@ -257,7 +366,7 @@ class TelescopeBase(
         # If not, just go on with the instrument's default metadata.
         ra, dec = self.get_position_ra_dec()
         alt, az = self.get_position_alt_az()
-        return [
+        return self._pier_cards() + [
             ("TELESCOP", self["model"], "Telescope Model"),
             ("OPTICS", self["optics"], "Telescope Optics Type"),
             ("MOUNT", self["mount"], "Telescope Mount Type"),
@@ -298,3 +407,40 @@ class TelescopeBase(
             ("CUNIT1", "deg", "units of coordinate value"),
             ("CUNIT2", "deg", "units of coordinate value"),
         ]
+
+    def _pier_cards(self):
+        """`PIERSIDE` and `MNTSIDE`, when the mount can say.
+
+        **Two cards because they are two quantities**, and collapsing them into
+        one is the mistake the ASCOM note (Simpson 2009) exists to prevent:
+
+          `PIERSIDE`  ASCOM's mechanical side, `EAST`/`WEST`.
+          `MNTSIDE`   Wallace's geometric pointing state, `normal`/`beyond`,
+                      which is what decides whether a pointing model reverses
+                      `CH` and `NP` (SPIE 7019 Eqn 24). Lower case, and spelled
+                      the way mirage spells it, so the two projects' frames read
+                      alike.
+
+        A telescope that does not implement `TelescopePier`, or one that answers
+        `UNKNOWN`, contributes no card at all. An absent card is honest; a card
+        saying `normal` because nobody knew is how a survey silently fits one
+        branch to both.
+        """
+        cards = []
+        for call, key, comment in (
+            ("get_pier_side", "PIERSIDE", "Mechanical side of pier (ASCOM)"),
+            ("get_mount_side", "MNTSIDE", "Pointing state (Wallace normal/beyond)"),
+        ):
+            reader = getattr(self, call, None)
+            if reader is None:
+                continue
+            try:
+                value = reader()
+            except Exception:
+                continue
+            # `==`, not `is`: across a bus this is a plain `str`.
+            if value is None or value == TelescopePierSide.UNKNOWN:
+                continue
+            text = str(value)
+            cards.append((key, text.lower() if key == "MNTSIDE" else text, comment))
+        return cards

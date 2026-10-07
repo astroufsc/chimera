@@ -3,6 +3,7 @@
 
 
 import logging
+import math
 import sys
 import time
 from concurrent.futures import ThreadPoolExecutor, wait
@@ -13,8 +14,8 @@ import pytest
 import chimera.core.log
 from chimera.core.exceptions import ChimeraException
 from chimera.instruments.faketelescope import FakeTelescope
-from chimera.instruments.telescope import TelescopeBase
-from chimera.interfaces.telescope import TelescopeStatus
+from chimera.instruments.telescope import TelescopeBase, axes
+from chimera.interfaces.telescope import TelescopePierSide, TelescopeStatus
 from chimera.util.coord import Coord
 from chimera.util.position import Epoch, Position
 
@@ -239,6 +240,60 @@ def test_jog_wraps_ra_at_the_clock(monkeypatch):
     assert telescope.get_ra() == pytest.approx(0.05)
 
 
+class TestFakeTelescopePierSide:
+    """FakeTelescope derives both sides from the hour angle instead of
+    reporting UNKNOWN forever: `h < 0` is WEST (the AM5 simulator's rule),
+    WEST is declared NORMAL, and a pin from set_pier_side lasts until the
+    next slew."""
+
+    LST_H = 6.0
+
+    @pytest.fixture
+    def telescope(self, monkeypatch):
+        telescope = FakeTelescope()
+        site = SimpleNamespace(
+            lst_in_rads=lambda: self.LST_H * math.pi / 12.0,
+            ra_dec_to_alt_az=lambda ra, dec: (60.0, 30.0),
+        )
+        monkeypatch.setattr(telescope, "get_site", lambda: site)
+        for event in ("slew_begin", "slew_complete"):
+            monkeypatch.setattr(FakeTelescope, event, lambda *args: None, raising=False)
+        telescope._dec = -30.0
+        return telescope
+
+    def test_west_of_the_meridian_is_west_and_normal(self, telescope):
+        telescope._ra = self.LST_H - 3.0  # h = +3 h: already past the meridian
+        assert telescope.get_pier_side() == TelescopePierSide.EAST
+        assert telescope.get_mount_side() == TelescopePierSide.BEYOND
+
+        telescope._ra = self.LST_H + 3.0  # h = -3 h: still rising
+        assert telescope.get_pier_side() == TelescopePierSide.WEST
+        assert telescope.get_mount_side() == TelescopePierSide.NORMAL
+
+    def test_the_hour_angle_wraps_like_a_clock(self, telescope):
+        telescope._ra = (self.LST_H + 14.0) % 24.0  # h = -14 h, which is +10 h
+        assert telescope.get_pier_side() == TelescopePierSide.EAST
+
+    def test_a_pinned_side_lasts_until_the_next_slew(self, telescope):
+        telescope._ra = self.LST_H + 3.0
+        assert telescope.get_pier_side() == TelescopePierSide.WEST
+
+        telescope.set_pier_side(TelescopePierSide.EAST)
+        assert telescope.get_pier_side() == TelescopePierSide.EAST
+        assert telescope.get_mount_side() == TelescopePierSide.BEYOND
+
+        telescope.move_east(float(Coord.from_h(0.1).to_as()))
+        assert telescope.get_pier_side() == TelescopePierSide.WEST
+
+    def test_without_a_site_the_side_is_unknown(self, telescope, monkeypatch):
+        def no_site():
+            raise RuntimeError("no bus")
+
+        monkeypatch.setattr(telescope, "get_site", no_site)
+        assert telescope.get_pier_side() == TelescopePierSide.UNKNOWN
+        assert telescope.get_mount_side() == TelescopePierSide.UNKNOWN
+
+
 # ---------------------------------------------------------------------------
 # Automatic pier flip (unit level, no bus): TelescopeBase.control() re-slews a
 # mount that tracked past pier_flip_ha.
@@ -424,3 +479,78 @@ class TestPierFlip:
         telescope.slew_error = None
         telescope.control()
         assert telescope.slews == [(12.0, -30.0, 2000)]
+
+
+class TestAxesHelper:
+    """The axis-vocabulary helper in chimera.instruments.telescope.
+
+    The axis interfaces take one canonical (roll, pitch) pair so the WS
+    schema stays typed; `axes` is what lets a call site read in whichever
+    vocabulary its author thinks in.
+    """
+
+    @pytest.mark.parametrize(
+        "kwargs",
+        [
+            {"roll": 1.5, "pitch": -2.5},
+            {"ha": 1.5, "dec": -2.5},
+            {"az": 1.5, "alt": -2.5},
+            {"axis1": 1.5, "axis2": -2.5},
+            {"primary": 1.5, "secondary": -2.5},
+        ],
+        ids=["roll_pitch", "ha_dec", "az_alt", "axis1_axis2", "primary_secondary"],
+    )
+    def test_every_vocabulary_normalises_to_roll_pitch(self, kwargs):
+        assert axes(**kwargs) == (1.5, -2.5)
+
+    def test_zero_is_a_value_not_an_absence(self):
+        # The whole point of set_axis_rate(0, 0) is "stop offsetting", so a
+        # falsy-but-present rate must survive.
+        assert axes(roll=0.0, pitch=0.0) == (0.0, 0.0)
+        assert axes(ha=0.0, dec=-1.0) == (0.0, -1.0)
+
+    def test_no_arguments_is_an_error(self):
+        with pytest.raises(ValueError, match="needs one pair"):
+            axes()
+
+    @pytest.mark.parametrize(
+        "kwargs", [{"ha": 1.0}, {"dec": 1.0}, {"roll": 1.0}, {"secondary": 1.0}]
+    )
+    def test_half_a_pair_is_an_error(self, kwargs):
+        with pytest.raises(ValueError, match="without"):
+            axes(**kwargs)
+
+    @pytest.mark.parametrize(
+        "kwargs",
+        [
+            {"ha": 1.0, "alt": 2.0},
+            {"roll": 1.0, "pitch": 2.0, "az": 3.0},
+            {"axis1": 1.0, "secondary": 2.0},
+        ],
+    )
+    def test_mixing_vocabularies_is_an_error(self, kwargs):
+        # Deliberately not resolved by precedence: asking in two vocabularies
+        # at once is a bug in the caller, and picking a winner would hide it.
+        with pytest.raises(ValueError, match="mixes axis vocabularies"):
+            axes(**kwargs)
+
+
+class TestTelescopeBaseAxisStubs:
+    """TelescopeBase gained three interfaces; a driver that does not
+    implement them should fail honestly rather than silently."""
+
+    @pytest.mark.parametrize(
+        "call",
+        [
+            lambda t: t.get_axis_counts(),
+            lambda t: t.get_axis_scale(),
+            lambda t: t.set_axis_rate(0.0, 0.0),
+            lambda t: t.get_axis_rate(),
+            lambda t: t.clear_pointing_model(),
+            lambda t: t.apply_pointing_model(0.0, 0.0),
+        ],
+    )
+    def test_unimplemented_axis_methods_raise(self, call):
+        assert issubclass(FakeTelescope, TelescopeBase)
+        with pytest.raises(NotImplementedError):
+            call(FakeTelescope())
