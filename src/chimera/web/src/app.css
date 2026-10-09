@@ -1,0 +1,6 @@
+@import 'tailwindcss';
+
+/* observatory pages live in the dark */
+body {
+	@apply bg-slate-950 text-slate-200 antialiased;
+}

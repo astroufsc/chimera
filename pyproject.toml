@@ -35,6 +35,7 @@ dependencies = [
     "pyyaml>=6.0.2",
     "rich>=13.9.4",
     "sqlalchemy==1.4",
+    "websockets>=15.0",
 ]
 
 [project.urls]
@@ -53,10 +54,25 @@ chimera-focus = "chimera.cli.focus:main"
 chimera-guider = "chimera.cli.guider:main"
 chimera-sched = "chimera.cli.sched:main"
 chimera-weather = "chimera.cli.weather:main"
+chimera-ws = "chimera.controllers.ws.standalone:main"
+chimera-ws-codegen = "chimera.controllers.ws.codegen:main"
 
 [build-system]
 requires = ["uv_build>=0.7.19,<0.8.0"]
 build-backend = "uv_build"
+
+[tool.uv.build-backend]
+# the SvelteKit app and the TypeScript client are not Python code: keep them
+# (and their node_modules/build trees) out of sdists and wheels
+source-exclude = [
+    "src/chimera/web/**",
+    "src/chimera/controllers/ws/ts/node_modules/**",
+    "src/chimera/controllers/ws/ts/dist/**",
+]
+wheel-exclude = [
+    "chimera/web/**",
+    "chimera/controllers/ws/ts/**",
+]
 
 [dependency-groups]
 dev = [
@@ -83,6 +99,7 @@ timeout = 300
 [tool.ruff]
 line-length = 88
 target-version = "py313"
+extend-exclude = ["src/chimera/web", "src/chimera/controllers/ws/ts"]
 
 [tool.ruff.lint]
 select = ["N", "I", "UP", "F"]

@@ -50,3 +50,5 @@ doc.pdf
 .noseids
 
 .history
+# Node (TypeScript client and web app)
+node_modules/
