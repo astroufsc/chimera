@@ -33,7 +33,7 @@ class WeatherStation(Interface):
         "airmass": "",
     }
 
-    def get_units(self, u: str | None) -> str | dict:
+    def get_units(self, u: str | None = None) -> str | dict[str, str]:
         """
         Returns a dictionary with the units used by the weather station.
         The keys are: temperature, dew_point, humidity, pressure, wind_speed, wind_direction, rain_rate, sky_transparency, seeing, seeing_at_zenith, flux, airmass
@@ -58,7 +58,7 @@ class WeatherStation(Interface):
                  Can be converted into an astropy Time object using:
                  Time('2025-11-17T21:46:41.896', format="fits")
         """
-        pass
+        ...
 
 
 class WeatherHumidity(WeatherStation):
@@ -71,6 +71,7 @@ class WeatherHumidity(WeatherStation):
         Returns the 100% relative humidity in percentage.
         @return: the humidity.
         """
+        ...
 
 
 class WeatherTemperature(WeatherStation):
@@ -83,12 +84,14 @@ class WeatherTemperature(WeatherStation):
         Returns the temperature in Celsius.
         @return: the temperature.
         """
+        ...
 
     def dew_point(self) -> float:
         """
         Returns the dew point temperature in Celsius.
         @return: the dew point temperature.
         """
+        ...
 
 
 class WeatherWind(WeatherStation):
@@ -101,12 +104,14 @@ class WeatherWind(WeatherStation):
         Returns the wind speed in meters per second.
         @return: the wind speed.
         """
+        ...
 
     def wind_direction(self) -> float:
         """
         Returns the wind direction in Degrees.
         @return: the wind direction.
         """
+        ...
 
 
 class WeatherPressure(WeatherStation):
@@ -119,6 +124,7 @@ class WeatherPressure(WeatherStation):
         Returns the atmospheric pressure in Pascals.
         @return: the pressure.
         """
+        ...
 
 
 class WeatherRain(WeatherStation):
@@ -131,11 +137,13 @@ class WeatherRain(WeatherStation):
         Returns the precipitation rate in mm/hour.
         @return: the precipitation rate.
         """
+        ...
 
     def is_raining(self) -> bool:
         """
         Returns True if it is raining and False otherwise
         """
+        ...
 
 
 class WeatherTransparency(WeatherStation):
@@ -150,6 +158,7 @@ class WeatherTransparency(WeatherStation):
         For a system with only two/three stages, the suggestion is to use:
         0% for overcast, 50% to cloudy and 100% to clear
         """
+        ...
 
 
 class WeatherSafety(WeatherStation):
@@ -163,6 +172,7 @@ class WeatherSafety(WeatherStation):
         """
         Returns True if it is SAFE to open the dome and False otherwise.
         """
+        ...
 
 
 class WeatherSeeing(WeatherStation):
@@ -175,21 +185,25 @@ class WeatherSeeing(WeatherStation):
         Returns the current seeing measurement in arcseconds.
         @return: the seeing value.
         """
+        ...
 
     def seeing_at_zenith(self) -> float:
         """
         Returns the seeing extrapolated to zenith (airmass = 1.0) in arcseconds.
         @return: the seeing at zenith value.
         """
+        ...
 
     def flux(self) -> float:
         """
         Returns the flux of the source being used for measuring seeing in counts.
         @return: the flux value.
         """
+        ...
 
     def airmass(self) -> float:
         """
         Returns the airmass of the source used for measuring seeing (dimensionless).
         @return: the airmass value.
         """
+        ...

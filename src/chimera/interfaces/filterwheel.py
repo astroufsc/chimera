@@ -37,7 +37,7 @@ class FilterWheel(Interface):
         "focus_offsets": {},
     }
 
-    def set_filter(self, filter):
+    def set_filter(self, filter: str) -> None:
         """
         Set the current filter, applying the configured focus offset (if any)
         before returning.
@@ -53,25 +53,28 @@ class FilterWheel(Interface):
 
         @rtype: None
         """
+        ...
 
-    def get_filter(self):
+    def get_filter(self) -> str:
         """
         Return the current filter.
 
         @return: Current filter.
         @rtype: str
         """
+        ...
 
-    def get_filters(self):
+    def get_filters(self) -> list[str]:
         """
-        Return a tuple with the available filter on this wheel.
+        Return the filters available on this wheel, in wheel order.
 
-        @return: Tuple of all filters available.
-        @rtype: tuple
+        @return: All filters available.
+        @rtype: list
         """
+        ...
 
     @event
-    def filter_change(self, new_filter, old_filter):
+    def filter_change(self, new_filter: str, old_filter: str) -> None:
         """
         Fired when the wheel changes the current filter.
 
@@ -81,3 +84,4 @@ class FilterWheel(Interface):
         @param old_filter: The last filter.
         @type  old_filter: str
         """
+        ...

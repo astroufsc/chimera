@@ -74,7 +74,7 @@ class Focuser(Interface):
         "move_timeout": 60,
     }
 
-    def move_in(self, n, axis=FocuserAxis.Z):
+    def move_in(self, n: int, axis: FocuserAxis = FocuserAxis.Z) -> None:
         """
         Move the focuser IN by n steps. Steps could be absolute units
         (for focuser with absolute encoders) or just a pulse of
@@ -92,8 +92,9 @@ class Focuser(Interface):
 
         @rtype   : None
         """
+        ...
 
-    def move_out(self, n, axis=FocuserAxis.Z):
+    def move_out(self, n: int, axis: FocuserAxis = FocuserAxis.Z) -> None:
         """
         Move the focuser OUT by n steps. Steps could be absolute units
         (for focuser with absolute encoders) or just a pulse of
@@ -111,8 +112,9 @@ class Focuser(Interface):
 
         @rtype   : None
         """
+        ...
 
-    def move_to(self, position, axis=FocuserAxis.Z):
+    def move_to(self, position: int, axis: FocuserAxis = FocuserAxis.Z) -> None:
         """
         Move the focuser to the select position (if ENCODER_BASED
         supported).
@@ -128,8 +130,9 @@ class Focuser(Interface):
 
         @rtype   : None
         """
+        ...
 
-    def get_position(self, axis=FocuserAxis.Z):
+    def get_position(self, axis: FocuserAxis = FocuserAxis.Z) -> int:
         """
         Gets the current focuser position (if the POSITION_FEEDBACK
         supported).
@@ -140,28 +143,32 @@ class Focuser(Interface):
         @rtype   : int
         @return  : Current focuser position.
         """
+        ...
 
-    def get_range(self, axis=FocuserAxis.Z):
+    def get_range(self, axis: FocuserAxis = FocuserAxis.Z) -> tuple[int, int]:
         """
         Gets the focuser total range
         @rtype: tuple
         @return: Start and end positions of the focuser (start, end)
         """
+        ...
 
-    def get_temperature(self):
+    def get_temperature(self) -> float:
         """
         Returns the temperature of the focuser probe
         @rtype: float
         """
+        ...
 
-    def supports(self, feature=None):
+    def supports(self, feature: FocuserFeature | None = None) -> bool:
         """
         Ask Focuser if it supports the given feature. Feature list
         is availble on L{FocuserFeature} enum.
 
         @param feature: Feature to inquire about
-        @type  feature: FocusrFeature or str
+        @type  feature: FocuserFeature
 
         @returns: True is supported, False otherwise.
         @rtype: bool
         """
+        ...

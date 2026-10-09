@@ -2,7 +2,10 @@
 # SPDX-FileCopyrightText: 2006-present Paulo Henrique Silva <ph.silva@gmail.com>
 
 
+from typing import Any
+
 from chimera.core.interface import Interface
+from chimera.core.state import State
 
 __all__ = ["ILifeCycle"]
 
@@ -14,7 +17,7 @@ class ILifeCycle(Interface):
 
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """
         Do object initialization.
 
@@ -25,8 +28,9 @@ class ILifeCycle(Interface):
         @note: Runs on the Manager's thread.
         @warning: This method must not block, so be a good boy/girl.
         """
+        ...
 
-    def __start__(self):
+    def __start__(self) -> None:
         """
         Do device initialization. Open files, sockets, etc. This
         method it's called by Manager, just after the constructor.
@@ -34,8 +38,9 @@ class ILifeCycle(Interface):
         @note: Runs on the L{Manager} thread.
         @warning: This method must not block, so be a good boy/girl.
         """
+        ...
 
-    def __stop__(self):
+    def __stop__(self) -> None:
         """
         Cleanup {__start__} actions.
 
@@ -46,28 +51,32 @@ class ILifeCycle(Interface):
         @note: Runs on the Manager thread.
         @warning: This method must not block, so be a good boy/girl.
         """
+        ...
 
-    def __main__(self):
+    def __main__(self) -> None:
         """
         Main control method. Implementers could use this method to
         implement control loop functions.
 
         @note: This method runs on their own thread.
         """
+        ...
 
-    def get_state(self):
+    def get_state(self) -> State:
         """
         Get the current state of the object as a L{State} enum.
 
         @see: L{State} for possible values.
         """
+        ...
 
-    def __setstate__(self, state):
+    def __setstate__(self, state: State) -> State:
         """
         Internally used function to set the current state of the object.
 
         @see: L{State} for possible values.
         """
+        ...
 
     def get_location(self) -> str:
         """
@@ -75,12 +84,13 @@ class ILifeCycle(Interface):
         """
         ...
 
-    def get_proxy(self, url: str | None = None):
+    def get_proxy(self, url: str | None = None) -> Any:
         """
         Get a Proxy for this object (useful for callbacks)
         """
+        ...
 
-    def get_metadata(self, data):
+    def get_metadata(self, data: Any) -> list[tuple[str, Any, str]]:
         """
         Get metadata about this object to be added to other objects
         (like images) metadata.
@@ -90,6 +100,8 @@ class ILifeCycle(Interface):
         information.
         @type data: Whatever the caller want to pass, object doesn't need to use it.
 
-        @return: Current object metadata to be added to data metadata.
-        @rtype: dict
+        @return: Current object metadata to be added to data metadata, as
+        (key, value, comment) triples.
+        @rtype: list
         """
+        ...

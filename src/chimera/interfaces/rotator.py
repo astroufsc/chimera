@@ -28,6 +28,7 @@ class Rotator(Interface):
         @return: The current position in degrees.
         @rtype: float
         """
+        ...
 
     def move_to(self, position: float) -> None:
         """
@@ -39,6 +40,7 @@ class Rotator(Interface):
         @type  position: float
         @rtype: None
         """
+        ...
 
     def move_by(self, angle: float) -> None:
         """
@@ -48,6 +50,7 @@ class Rotator(Interface):
         @type  angle: float
         @rtype: None
         """
+        ...
 
     def is_moving(self) -> bool:
         """
@@ -56,6 +59,7 @@ class Rotator(Interface):
         @return: True if the rotator is moving, False otherwise.
         @rtype: bool
         """
+        ...
 
     def abort_move(self) -> bool:
         """
@@ -64,6 +68,7 @@ class Rotator(Interface):
         @return: False if move couldn't be aborted, True otherwise.
         @rtype: bool
         """
+        ...
 
     def sync(self, position: float) -> None:
         """
@@ -73,6 +78,7 @@ class Rotator(Interface):
         @type  position: float
         @rtype: None
         """
+        ...
 
     @event
     def move_begin(self, angle: float) -> None:
@@ -82,6 +88,7 @@ class Rotator(Interface):
         @param angle: The new position in degrees.
         @type  angle: float
         """
+        ...
 
     @event
     def move_complete(self, angle: float, status: RotatorStatus) -> None:
@@ -93,3 +100,4 @@ class Rotator(Interface):
         @param status: The status of the move operation.
         @type  status: RotatorStatus
         """
+        ...

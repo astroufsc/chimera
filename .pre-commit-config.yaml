@@ -8,3 +8,9 @@ repos:
       args: [ --fix ]
     # Run the formatter.
     - id: ruff-format
+
+- repo: https://github.com/astral-sh/ty-pre-commit
+  rev: v0.0.77
+  hooks:
+    # Scoped to src/chimera/interfaces by [tool.ty.src] in pyproject.toml.
+    - id: ty

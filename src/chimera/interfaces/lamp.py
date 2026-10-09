@@ -35,16 +35,16 @@ class LampSwitch(Switch):
 
 
 class LampDimmer(Lamp):
-    def set_intensity(self, intensity):
+    def set_intensity(self, intensity: float) -> None:
         """
         Sets the intensity of the calibration lamp.
 
         @param intensity: Desired intensity.
         @type  intensity: float
         """
-        pass
+        ...
 
-    def get_intensity(self):
+    def get_intensity(self) -> float:
         """
         Return the current intensity level of the calibration lamp.
 
@@ -55,12 +55,12 @@ class LampDimmer(Lamp):
         @return: Current intensity
         @rtype: float
         """
-        pass
+        ...
 
-    def get_range(self):
+    def get_range(self) -> tuple[float, float]:
         """
         Gets the dimmer total range
         @rtype: tuple
         @return: Start and end positions of the dimmer (start, end)
         """
-        pass
+        ...

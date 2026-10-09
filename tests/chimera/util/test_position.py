@@ -80,6 +80,34 @@ class TestPosition:
         alt, az = Position.ra_dec_to_alt_az(ra, dec, lat, lst)
         assert equal(alt_az.alt, alt) & equal(alt_az.az, az)
 
+    @pytest.mark.parametrize(
+        ("lat", "dec", "alt", "az"),
+        [
+            # The latitude that found this: M117, -27*39:39.4. The acos
+            # argument evaluates to -1.0000000000000002 here and to something
+            # inside the domain at -27.6 and at -22.5, so the crash rides on
+            # the site and nothing but the right site reveals it.
+            (-27.660833, -90.0, 27.660833, 180.0),
+            (-27.6, -90.0, 27.6, 180.0),
+            (-22.5, -90.0, 22.5, 180.0),
+            # The other pole, and the northern hemisphere, for symmetry.
+            (45.0, 90.0, 45.0, 0.0),
+            (-27.660833, 90.0, -27.660833, 0.0),
+        ],
+    )
+    def test_a_pole_does_not_raise_a_math_domain_error(self, lat, dec, alt, az):
+        """The visible pole sits at an altitude of the latitude, due south of a
+        southern observer and due north of a northern one.
+
+        `coord_rotate` reaches `asin` and `acos` arguments that are exactly +-1
+        there, and floating point puts them just outside, which raised
+        `ValueError: math domain error` for any RA. A mount parked at the pole
+        asks for this on every poll.
+        """
+        got_alt, got_az = Position.ra_dec_to_alt_az(6.0, dec, lat, 0.0)
+        assert equal(got_alt, alt, 1e-6)
+        assert equal(got_az, az, 1e-6)
+
     def test_distances(self):
         p1 = Position.from_ra_dec("10:00:00", "0:0:0")
         p2 = Position.from_ra_dec("12:00:00", "0:0:0")

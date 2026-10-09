@@ -45,15 +45,16 @@ class FanControllableSpeed(Fan):
     Fans with controllable speeds.
     """
 
-    def get_rotation(self):
+    def get_rotation(self) -> float:
         """
         Get fan current rotation speed.
 
         @return: Rotation speed in Hz
         @rtype: float
         """
+        ...
 
-    def set_rotation(self, freq):
+    def set_rotation(self, freq: float) -> None:
         """
         Set fan rotation speed.
 
@@ -61,14 +62,16 @@ class FanControllableSpeed(Fan):
         @rtype:
 
         """
+        ...
 
-    def get_range(self):
+    def get_range(self) -> tuple[float, float]:
         """
         Gets the fan valid speed range.
 
         @rtype: tuple
         @return: Minimum and maximum fan speed (min, max).
         """
+        ...
 
 
 class FanControllableDirection(Fan):
@@ -76,7 +79,7 @@ class FanControllableDirection(Fan):
     Fans with controllable direction.
     """
 
-    def get_direction(self):
+    def get_direction(self) -> FanDirection:
         """
         Get fan rotation direction.
 
@@ -84,8 +87,9 @@ class FanControllableDirection(Fan):
         @rtype: Enum{FanDirection}
 
         """
+        ...
 
-    def set_direction(self, direction):
+    def set_direction(self, direction: FanDirection) -> None:
         """
         Set fan rotation direction.
 
@@ -93,3 +97,4 @@ class FanControllableDirection(Fan):
         @rtype:
 
         """
+        ...

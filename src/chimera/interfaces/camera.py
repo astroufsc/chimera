@@ -2,6 +2,8 @@
 # SPDX-FileCopyrightText: 2006-present Paulo Henrique Silva <ph.silva@gmail.com>
 
 
+from typing import Any
+
 from chimera.core.event import event
 from chimera.core.exceptions import ChimeraException
 from chimera.core.interface import Interface
@@ -59,35 +61,35 @@ class ReadoutMode:
     value) are in pixels.
     """
 
-    mode = 0
-    gain = 0.0
-    width = 0
-    height = 0
-    pixel_width = 0.0
-    pixel_height = 0.0
+    mode: int = 0
+    gain: float = 0.0
+    width: int = 0
+    height: int = 0
+    pixel_width: float = 0.0
+    pixel_height: float = 0.0
 
-    def __init__(self, mode_string=""):
+    def __init__(self, mode_string: str = "") -> None:
         pass
 
-    def get_size(self):
+    def get_size(self) -> tuple[int, int]:
         return (self.width, self.height)
 
-    def get_window(self):
+    def get_window(self) -> list[int]:
         return [0, 0, self.width, self.height]
 
-    def get_pixel_size(self):
+    def get_pixel_size(self) -> tuple[float, float]:
         return (self.pixel_width, self.pixel_height)
 
-    def get_line(self):
+    def get_line(self) -> list[int]:
         return [0, self.width]
 
-    def __str__(self):
+    def __str__(self) -> str:
         return (
             f"mode: {self.mode}: \n\tgain: {self.gain:.2f}\n\tWxH: [{self.width},{self.height}]"
             f"\n\tpix WxH: [{self.pixel_width:.2f}, {self.pixel_height:.2f}]"
         )
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return self.__str__()
 
 
@@ -117,7 +119,7 @@ class Camera(Interface):
     }
 
     # List of supported features by this camera. e.g. {CameraFeature.TEMPERATURE_CONTROL: True}
-    supported_features = {}
+    supported_features: dict[CameraFeature, bool] = {}
 
 
 class CameraExpose(Camera):
@@ -125,19 +127,22 @@ class CameraExpose(Camera):
     Basic camera that can expose and abort exposures.
     """
 
-    def expose(self, request=None, **kwargs):
+    def expose(
+        self, request: dict[str, Any] | None = None, **kwargs: Any
+    ) -> tuple[str, ...]:
         """
         Start an exposure based upon the specified image request or
         will create a new image request from kwargs
 
         @param request: ImageRequest containing details of the image to be taken
-        @type  request: ImageRequest
+        @type  request: ImageRequest (a dict, and it travels as one)
 
-        @return: Iterable of L{str} Image URLs (empty if no one was taken)
-        @rtype: Iterable(L{str})
+        @return: Image URLs, one per frame (empty if none was taken)
+        @rtype: tuple of L{str}
         """
+        ...
 
-    def abort_exposure(self, readout=True):
+    def abort_exposure(self, readout: bool = True) -> bool:
         """
         Try abort the current exposure, reading out the current
         frame if asked to.
@@ -150,20 +155,21 @@ class CameraExpose(Camera):
         @return: True if successful, False otherwise.
         @rtype: bool
         """
+        ...
 
-    def is_exposing(self):
+    def is_exposing(self) -> bool:
         """
         Ask if camera is exposing right now.(where exposing
         includes both integration time and readout).
 
-        @return: The currently exposing ImageRequest if the camera is
-        exposing, False otherwise.
+        @return: True if the camera is exposing, False otherwise.
 
-        @rtype: bool or L{ImageRequest}
+        @rtype: bool
         """
+        ...
 
     @event
-    def expose_begin(self, request):
+    def expose_begin(self, request: dict[str, Any]) -> None:
         """
         Indicates that new exposure is starting.
 
@@ -173,9 +179,10 @@ class CameraExpose(Camera):
         @param request: The image request.
         @type  request: L{ImageRequest}
         """
+        ...
 
     @event
-    def expose_complete(self, request, status):
+    def expose_complete(self, request: dict[str, Any], status: CameraStatus) -> None:
         """
         Indicates that new exposure frame was taken.
 
@@ -188,9 +195,10 @@ class CameraExpose(Camera):
         @param status: The status of the current expose.
         @type  status: L{CameraStatus}
         """
+        ...
 
     @event
-    def readout_begin(self, request):
+    def readout_begin(self, request: dict[str, Any]) -> None:
         """
         Indicates that new readout is starting.
 
@@ -200,18 +208,20 @@ class CameraExpose(Camera):
         @param request: The image request.
         @type  request: L{ImageRequest}
         """
+        ...
 
     @event
-    def readout_complete(self, image_url, status):
+    def readout_complete(self, image_url: str | None, status: CameraStatus) -> None:
         """
         Indicates that new readout is complete.
 
-        @param image: The just taken Image URL or None if status=[ERROR or ABORTED].
-        @type  image: L{str} or None
+        @param image_url: The just taken Image URL or None if status=[ERROR or ABORTED].
+        @type  image_url: L{str} or None
 
         @param status: The status of the current expose.
         @type  status: L{CameraStatus}
         """
+        ...
 
 
 class CameraTemperature(Camera):
@@ -226,7 +236,7 @@ class CameraTemperature(Camera):
         "temperature_setpoint": None,
     }
 
-    def start_cooling(self, temp_c):
+    def start_cooling(self, temp_c: float) -> bool:
         """
         Start cooling the camera with SetPoint setted to temp_c.
 
@@ -236,50 +246,52 @@ class CameraTemperature(Camera):
         @return: True if successful, False otherwise.
         @rtype: bool
         """
+        ...
 
-    def stop_cooling(self):
+    def stop_cooling(self) -> bool:
         """
         Stop cooling the camera
 
         @return: True if successful, False otherwise.
         @rtype: bool
         """
+        ...
 
-    def is_cooling(self):
+    def is_cooling(self) -> bool:
         """
         Returns whether the camera is currently cooling.
 
         @return: True if cooling, False otherwise.
         @rtype: bool
         """
+        ...
 
-    def get_temperature(self):
+    def get_temperature(self) -> float:
         """
         Get the current camera temperature.
 
         @return: The current camera temperature in degrees Celsius.
         @rtype: float
         """
+        ...
 
-    def get_set_point(self):
+    def get_set_point(self) -> float:
         """
         Get the current camera temperature SetPoint.
 
         @return: The current camera temperature SetPoint in degrees Celsius.
         @rtype: float
         """
+        ...
 
-    def start_fan(self, rate=None):
-        pass
+    def start_fan(self, rate: float | None = None) -> None: ...
 
-    def stop_fan(self):
-        pass
+    def stop_fan(self) -> None: ...
 
-    def is_fanning(self):
-        pass
+    def is_fanning(self) -> bool: ...
 
     @event
-    def temperature_change(self, new_temp_c, delta):
+    def temperature_change(self, new_temp_c: float, delta: float) -> None:
         """
         Camera temperature probe. Will be fired everytime that the camera
         temperature changes more than temperature_monitor_delta
@@ -291,6 +303,7 @@ class CameraTemperature(Camera):
         @param delta: How much the temperature has changed in degrees Celsius.
         @type  delta: float
         """
+        ...
 
 
 class CameraInformation(Camera):
@@ -302,30 +315,25 @@ class CameraInformation(Camera):
     # ADCs = {'12 bits': SomeInternalValueWhichMapsTo12BitsADC,
     #         '16 bits': SomeInternalValueWhichMapsTo16BitsADC}
 
-    def get_binnings(self):
-        pass
+    def get_binnings(self) -> dict[str, Any]: ...
 
-    def get_adcs(self):
-        pass
+    def get_adcs(self) -> dict[str, Any]: ...
 
-    def get_physical_size(self):
-        pass
+    def get_physical_size(self) -> tuple[int, int]: ...
 
-    def get_pixel_size(self):
-        pass
+    def get_pixel_size(self) -> tuple[float, float]: ...
 
-    def get_overscan_size(self):
-        pass
+    def get_overscan_size(self) -> tuple[int, int]: ...
 
-    def get_readout_modes(self):
+    def get_readout_modes(self) -> dict[int, ReadoutMode]:
         """Get readout modes supported by this camera.
         The return value would have the following format:
          {mode1: ReadoutMode(), mode2: ReadoutMode2(), ...}
         """
+        ...
 
     #
     # special features support
     #
 
-    def supports(self, feature=None):
-        pass
+    def supports(self, feature: CameraFeature | None = None) -> bool: ...

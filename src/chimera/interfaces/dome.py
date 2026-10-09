@@ -117,6 +117,7 @@ class Dome(Interface):
 
         @rtype: None
         """
+        ...
 
     def track(self) -> None:
         """
@@ -124,6 +125,7 @@ class Dome(Interface):
         the telescope given in 'telescope' config parameter.
         @rtype: None
         """
+        ...
 
     def get_mode(self) -> Mode:
         """
@@ -159,6 +161,7 @@ class DomeSlew(Dome):
 
         @rtype: None
         """
+        ...
 
     def is_slewing(self) -> bool:
         """
@@ -176,6 +179,7 @@ class DomeSlew(Dome):
         @return: False if slew couldn't be aborted, True otherwise.
         @rtype: bool
         """
+        ...
 
     @event
     def slew_begin(self, position: float) -> None:
@@ -185,6 +189,7 @@ class DomeSlew(Dome):
         @param position: The dome current position when the slew started
         @type  position: float
         """
+        ...
 
     @event
     def slew_complete(self, position: float, status: DomeStatus) -> None:
@@ -199,6 +204,7 @@ class DomeSlew(Dome):
         @param status: Status of the slew command
         @type  status: L{DomeStatus}
         """
+        ...
 
 
 class DomeSlit(Dome):
@@ -212,6 +218,7 @@ class DomeSlit(Dome):
 
         @rtype: None
         """
+        ...
 
     def close_slit(self) -> None:
         """
@@ -219,6 +226,7 @@ class DomeSlit(Dome):
 
         @rtype: None
         """
+        ...
 
     def is_slit_open(self) -> bool:
         """
@@ -237,6 +245,7 @@ class DomeSlit(Dome):
         @param az: The azimuth when the slit opend
         @type  az: float
         """
+        ...
 
     @event
     def slit_closed(self, az: float) -> None:
@@ -246,6 +255,7 @@ class DomeSlit(Dome):
         @param az: The azimuth when the slit closed.
         @type  az: float
         """
+        ...
 
 
 class DomeFlap(Dome):
@@ -259,6 +269,7 @@ class DomeFlap(Dome):
 
         @rtype: None
         """
+        ...
 
     def close_flap(self) -> None:
         """
@@ -266,6 +277,7 @@ class DomeFlap(Dome):
 
         @rtype: None
         """
+        ...
 
     def is_flap_open(self) -> bool:
         """
@@ -284,6 +296,7 @@ class DomeFlap(Dome):
         @param az: The azimuth when the flap opend
         @type  az: float
         """
+        ...
 
     @event
     def flap_closed(self, az: float) -> None:
@@ -293,6 +306,7 @@ class DomeFlap(Dome):
         @param az: The azimuth when the flap closed.
         @type  az: float
         """
+        ...
 
 
 class DomeWindScreen(Dome):
@@ -322,6 +336,7 @@ class DomeWindScreen(Dome):
 
         @rtype: None
         """
+        ...
 
     def get_wind_screen_alt(self) -> float:
         """
@@ -347,6 +362,7 @@ class DomeWindScreen(Dome):
 
         @rtype: None
         """
+        ...
 
     @event
     def wind_screen_move_begin(self, alt: float) -> None:
@@ -357,6 +373,7 @@ class DomeWindScreen(Dome):
         degrees.
         @type  alt: float
         """
+        ...
 
     @event
     def wind_screen_move_complete(self, alt: float, status: DomeStatus) -> None:
@@ -371,6 +388,7 @@ class DomeWindScreen(Dome):
         @param status: Status of the wind screen command
         @type  status: L{DomeStatus}
         """
+        ...
 
 
 class DomeSync(Dome):
@@ -383,12 +401,14 @@ class DomeSync(Dome):
         """
         Indicates that the dome was asked and is starting to sync with the telescope (if any).
         """
+        ...
 
     @event
     def sync_complete(self) -> None:
         """
         Indicates that the dome was asked and finished the sync with the telescope (if any).
         """
+        ...
 
     def sync_with_tel(self) -> None:
         """
@@ -396,6 +416,7 @@ class DomeSync(Dome):
 
         @rtype: None
         """
+        ...
 
     def is_sync_with_tel(self) -> bool:
         """

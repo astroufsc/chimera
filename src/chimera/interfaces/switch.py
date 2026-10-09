@@ -22,43 +22,48 @@ class Switch(Interface):
         "switch_timeout": None,  # Maximum number of seconds to wait for state change
     }
 
-    def switch_on(self):
+    def switch_on(self) -> bool:
         """
         Switch on.
 
         @return: True if successful, False otherwise
         @rtype: bool
         """
+        ...
 
-    def switch_off(self):
+    def switch_off(self) -> bool:
         """
         Switch off.
 
         @return: True if successful, False otherwise
         @rtype: bool
         """
+        ...
 
-    def is_switched_on(self):
+    def is_switched_on(self) -> bool:
         """
         Get current state of switch
 
         @return: True if On, False otherwise
         @rtype: bool
         """
+        ...
 
     @event
-    def switched_on(self):
+    def switched_on(self) -> None:
         """
         Event triggered when switched ON
 
         """
+        ...
 
     @event
-    def switched_off(self):
+    def switched_off(self) -> None:
         """
         Event triggered when switched OFF
 
         """
+        ...
 
 
 class SwitchState(Switch):
@@ -66,7 +71,8 @@ class SwitchState(Switch):
     For switches that have status information
     """
 
-    def status(self):
+    def status(self) -> SwitchStatus:
         """
         :return: state from SwitchStatus Enum
         """
+        ...

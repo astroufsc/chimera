@@ -164,6 +164,7 @@ class Autoguider(Interface):
 
         Only backends that publish per-correction telemetry raise this.
         """
+        ...
 
     @event
     def guide_start(self, position: list[float] | None) -> None:
@@ -172,6 +173,7 @@ class Autoguider(Interface):
         @param position: Guide star as [x, y] detector pixels, or None if
                          the backend has not reported its selection yet.
         """
+        ...
 
     @event
     def guide_stop(self, state: GuiderStatus, msg: str | None = None) -> None:
@@ -183,6 +185,7 @@ class Autoguider(Interface):
                       when guiding failed.
         @param msg: Optional detail, e.g. why guiding stopped.
         """
+        ...
 
     @event
     def star_acquired(self, position: list[float]) -> None:
@@ -190,6 +193,7 @@ class Autoguider(Interface):
 
         @param position: Guide star as [x, y] detector pixels.
         """
+        ...
 
     @event
     def star_lost(self) -> None:
@@ -198,6 +202,7 @@ class Autoguider(Interface):
         Only backends that can distinguish a lost star from a stopped
         guider raise this; the rest report GuiderStatus.ERROR instead.
         """
+        ...
 
     @event
     def dither_complete(self, offset: list[float] | None, status: GuiderStatus) -> None:
@@ -211,3 +216,4 @@ class Autoguider(Interface):
         the others it fires as soon as the offset is applied, so it does
         not by itself mean guiding is stable again.
         """
+        ...

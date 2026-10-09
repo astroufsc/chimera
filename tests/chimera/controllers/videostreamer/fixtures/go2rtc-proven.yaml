@@ -1,0 +1,22 @@
+# The hand-written go2rtc config proved against real hardware before any of
+# this controller existed, with the credentials replaced. Kept as a fixture
+# because it is the thing the generator has to reproduce: if a source string
+# here stops round-tripping, the generator broke, not go2rtc.
+#
+# Two source forms, and the difference between them is the whole of Part 1 of
+# docs/plans/streaming/monitoring-cameras.md:
+#
+#   rtsp://…    an IP camera. H.264 comes off the camera's own ASIC and is
+#               passed through untouched — no "#video=" suffix, no transcode,
+#               no CPU. This is the form that matters at an observatory.
+#   ffmpeg:…    a UVC webcam, via avfoundation on macOS. The device hands over
+#               raw or MJPEG, so "#video=h264" asks ffmpeg to encode. That is a
+#               real cost and it is unavoidable here — never copy the suffix
+#               onto an IP camera.
+#
+# Hikvision channel numbering: 101 is camera 1's main stream, 201 camera 2's.
+streams:
+  quintal: rtsp://admin:REDACTED@192.168.0.247:554/Streaming/channels/101
+  quintal-zoom: rtsp://admin:REDACTED@192.168.0.247:554/Streaming/channels/201
+  portao: rtsp://admin:REDACTED@192.168.0.174:554/Streaming/channels/101
+  mac: ffmpeg:device?video=0&video_size=1280x720&framerate=30#video=h264

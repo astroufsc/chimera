@@ -2,6 +2,8 @@
 # SPDX-FileCopyrightText: 2006-present Paulo Henrique Silva <ph.silva@gmail.com>
 
 
+from typing import Any
+
 from chimera.core.event import event
 from chimera.core.exceptions import ChimeraException
 from chimera.core.interface import Interface
@@ -33,21 +35,26 @@ class IAutoFlat(Interface):
         "filterwheel": "/FilterWheel/0",
     }
 
-    def get_flats(self, filter_id, n_flats):
+    def get_flats(self, filter_id: str, n_flats: int) -> None:
         """
         Takes sequence of flats, starts taking one frame to determine current level
         Then predicts next exposure time based on exponential decay of sky brightness
         Creates a list of sunZD, intensity.  It should have the right exponential behavior.
         If not exponential raise some flag about sky condition.
         """
+        ...
 
-    def get_flat_level(self, filename, image):
+    def get_flat_level(self, filename: str, image: Any) -> float:
         """
         Returns average level from image
         """
+        ...
 
     @event
-    def expose_complete(self, filter_id, i_flat, exp_time, level):
+    def expose_complete(
+        self, filter_id: str, i_flat: int, exp_time: float, level: float
+    ) -> None:
         """
         Called on exposuse completion
         """
+        ...

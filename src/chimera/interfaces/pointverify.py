@@ -2,6 +2,8 @@
 # SPDX-FileCopyrightText: 2006-present Paulo Henrique Silva <ph.silva@gmail.com>
 
 
+from typing import Any
+
 from chimera.core.event import event
 from chimera.core.exceptions import ChimeraException
 from chimera.core.interface import Interface
@@ -40,13 +42,15 @@ class PointVerify(Interface):
         "ra_tolerance": 0.0167,  # Maximum right ascension error tolerance (degrees).
     }
 
-    def check_pointing(self, n_fields):
+    def check_pointing(self, n_fields: int) -> bool:
         """
         Check pointing choosing field and using default exposure time
         """
+        ...
 
     @event
-    def point_complete(self, position, star, frame):
+    def point_complete(self, position: int, star: dict[str, Any], frame: str) -> None:
         """Raised after every step in the focus sequence with
         information about the last step.
         """
+        ...

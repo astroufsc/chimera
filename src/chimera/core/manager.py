@@ -37,6 +37,10 @@ from chimera.core.version import chimera_version
 __all__ = ["Manager", "get_manager_uri", "ManagerNotFoundException"]
 
 
+#: stands in for any config value an object marks __config_private__
+REDACTED = "***"
+
+
 def _json_safe(value: Any) -> Any:
     if value is None or isinstance(value, (bool, int, float, str)):
         return value
@@ -180,8 +184,17 @@ class Manager:
             config = {}
             config_proxy = getattr(instance, "__config_proxy__", None)
             if config_proxy is not None:
+                # get_status() is what the WS gateway's list() and describe()
+                # hand to any browser that connects, and there is no auth in
+                # v1 — so a config key holding a camera password or an API
+                # token must never be serialised. Objects opt keys out by
+                # name; read with getattr so MetaObject needs no change.
+                private = frozenset(getattr(instance, "__config_private__", ()))
                 for key in config_proxy.keys():
-                    config[key] = _json_safe(instance[key])
+                    if key in private:
+                        config[key] = REDACTED
+                    else:
+                        config[key] = _json_safe(instance[key])
 
             objects.append(
                 {
