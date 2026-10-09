@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 # SPDX-FileCopyrightText: 2006-present Paulo Henrique Silva <ph.silva@gmail.com>
 
+import math
 import threading
 import time
 from typing import override
@@ -32,7 +33,8 @@ class FakeTelescope(TelescopeBase, TelescopePier):
         self._epoch = 2000.0  # Default epoch for RA/Dec
 
         self._cover = False
-        self._pier_side = TelescopePierSide.UNKNOWN
+        #: Set by `set_pier_side`, cleared by a slew. None means "derive it".
+        self._pier_side_override = None
 
         self._ra: float = 0.0
         self._dec: float = 0.0
@@ -74,6 +76,8 @@ class FakeTelescope(TelescopeBase, TelescopePier):
 
         self._validate_ra_dec(ra, dec)
 
+        # A slew picks its own branch, so a pinned side stops applying.
+        self._pier_side_override = None
         self.slew_begin(ra, dec, epoch)
 
         ra_steps = (ra - self.get_ra()) / 10
@@ -110,6 +114,8 @@ class FakeTelescope(TelescopeBase, TelescopePier):
         self._validate_alt_az(alt, az)
 
         ra, dec = self.get_site().alt_az_to_ra_dec(alt, az)
+        # A slew picks its own branch, so a pinned side stops applying.
+        self._pier_side_override = None
         self.slew_begin(ra, dec)
 
         alt_steps = (alt - self.get_alt()) / 10
@@ -161,6 +167,8 @@ class FakeTelescope(TelescopeBase, TelescopePier):
         self._slewing = True
 
         ra = (self.get_ra() + offset) % 24
+        # A slew picks its own branch, so a pinned side stops applying.
+        self._pier_side_override = None
         self.slew_begin(ra, self.get_dec())
 
         self._ra = ra
@@ -175,6 +183,8 @@ class FakeTelescope(TelescopeBase, TelescopePier):
 
         ra, dec = self.get_position_ra_dec()
         pos = Position.from_ra_dec(ra, dec + Coord.from_as(offset))
+        # A slew picks its own branch, so a pinned side stops applying.
+        self._pier_side_override = None
         self.slew_begin(float(pos.ra), float(pos.dec))
 
         self._dec += float(Coord.from_as(offset).to_d())
@@ -189,6 +199,8 @@ class FakeTelescope(TelescopeBase, TelescopePier):
 
         ra, dec = self.get_position_ra_dec()
         pos = Position.from_ra_dec(ra, dec + Coord.from_as(-offset))
+        # A slew picks its own branch, so a pinned side stops applying.
+        self._pier_side_override = None
         self.slew_begin(float(pos.ra), float(pos.dec))
 
         self._dec += float(Coord.from_as(-offset).to_d())
@@ -281,7 +293,59 @@ class FakeTelescope(TelescopeBase, TelescopePier):
         return self._cover
 
     def set_pier_side(self, side):
-        self._pier_side = side
+        """Pin the reported side, overriding what the position implies.
+
+        Kept because `chimera tel --pier-side-east/west` calls it. The override
+        is cleared by the next slew, which is what a real mount does: it picks
+        its own branch on the way to the target.
+        """
+        self._pier_side_override = side
 
     def get_pier_side(self):
-        return self._pier_side
+        """The MECHANICAL side, from the hour angle.
+
+        The rule is the AM5 simulator's `AxesModel.branch_for`, deliberately:
+        `h < 0` is WEST and `h > 0` is EAST, so the two simulators agree and a
+        survey written against one runs against the other. `h == 0` exactly is a
+        coin flip on real hardware, so it reports the EAST branch rather than
+        pretending to a precision it does not have.
+
+        This was a bare cell that started UNKNOWN and never changed until
+        2026-08, so a simulated meridian flip did not exist.
+        """
+        if self._pier_side_override is not None:
+            return self._pier_side_override
+        h = self._hour_angle_hours()
+        if h is None:
+            return TelescopePierSide.UNKNOWN
+        return TelescopePierSide.WEST if h < 0.0 else TelescopePierSide.EAST
+
+    def get_mount_side(self):
+        """The GEOMETRIC pointing state -- Wallace's normal/beyond.
+
+        A German equatorial reaches the same sky point two ways: `(-h, dec)`,
+        or `(-h + 180, 180 - dec)` with the declination axis carried past the
+        pole. The second has `|mechanical dec| > 90`, which is what BEYOND
+        means, and Eqn 24 reverses `CH` and `NP` there.
+
+        **Which mechanical side that is, is a property of the mount, and for a
+        simulator it is a declared convention rather than a measurement.** This
+        one declares WEST to be NORMAL and EAST to be BEYOND, so a survey
+        crossing the meridian exercises both branches of
+        `PointingModel::apply`. A real driver must derive this from its own
+        encoder -- see `TelescopePierSide` -- and must not copy this line.
+        """
+        mechanical = self.get_pier_side()
+        if mechanical == TelescopePierSide.WEST:
+            return TelescopePierSide.NORMAL
+        if mechanical == TelescopePierSide.EAST:
+            return TelescopePierSide.BEYOND
+        return TelescopePierSide.UNKNOWN
+
+    def _hour_angle_hours(self):
+        """LST - RA, wrapped to [-12, +12) hours, or None if the site cannot say."""
+        try:
+            lst_deg = self.get_site().lst_in_rads() * 180.0 / math.pi
+        except Exception:
+            return None
+        return ((lst_deg - self._ra * 15.0) / 15.0 + 12.0) % 24.0 - 12.0

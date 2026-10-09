@@ -28,6 +28,16 @@ class State(Enum):
     AS = "AS"
 
 
+def _clamp_unit(value: float) -> float:
+    """`value` brought back into [-1, 1], for `asin` and `acos` arguments.
+
+    Only ever moves a value that rounding pushed past a limit it reaches
+    exactly: the corrections are of order 1e-16 and the domain error they
+    prevent is unconditional.
+    """
+    return max(-1.0, min(1.0, value))
+
+
 class CoordUtil:
     COORD_RE = re.compile(
         r"((?P<dd>(?P<sign>[+-]?)[\s]*\d+)[dh]?[\s:]*)?((?P<mm>\d+)[m]?[\s:]*)?((?P<ss>\d+)(?P<msec>\.\d*)?([\ss]*))?"
@@ -317,12 +327,26 @@ class CoordUtil:
               yt=arccos((sin(x)-sin(y)*sin(xt))/(cos(y)*cos(xt))) ]
         """
         # -- 1 --
+        # Both arguments below are mathematically in [-1, 1] and land OUTSIDE
+        # it in floating point at the degenerate points, where the terms are
+        # equal in magnitude and cancel: at dec -90 seen from latitude
+        # -27*39:39 the acos argument evaluates to -1.0000000000000002 and
+        # `math` raises "math domain error". It is data-dependent -- the same
+        # declination is fine from -27.6 and from -22.5 -- so it survives every
+        # test that does not happen to use the one site that triggers it. A
+        # mount sitting at the celestial pole asks for exactly this on every
+        # poll, and an AM5 that has not been homed reports itself there.
         xt = math.asin(
-            math.sin(x) * math.sin(y) + math.cos(x) * math.cos(y) * math.cos(z)
+            _clamp_unit(
+                math.sin(x) * math.sin(y) + math.cos(x) * math.cos(y) * math.cos(z)
+            )
         )
         # -- 2 --
         yt = math.acos(
-            (math.sin(x) - math.sin(y) * math.sin(xt)) / (math.cos(y) * math.cos(xt))
+            _clamp_unit(
+                (math.sin(x) - math.sin(y) * math.sin(xt))
+                / (math.cos(y) * math.cos(xt))
+            )
         )
         # -- 3 --
         if math.sin(z) > 0.0:
